@@ -20,7 +20,7 @@ import {
     LIST_TASKS_FUNCTION_ID,
     RUN_TASK_FUNCTION_ID
 } from './workspace-functions';
-import { TODO_WRITE_FUNCTION_ID } from '../browser/todo-tool';
+import { TODO_WRITE_FUNCTION_ID } from './todo-tool';
 import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {

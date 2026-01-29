@@ -16,8 +16,9 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core/lib/common';
+import { TODO_WRITE_FUNCTION_ID, isValidTodoItem } from '../common/todo-tool';
 
-export const TODO_WRITE_FUNCTION_ID = 'todoWrite';
+export { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from '../common/todo-tool';
 
 @injectable()
 export class TodoWriteTool implements ToolProvider {
@@ -73,22 +74,4 @@ export class TodoWriteTool implements ToolProvider {
             }
         };
     }
-}
-
-export interface TodoItem {
-    content: string;
-    activeForm: string;
-    status: 'pending' | 'in_progress' | 'completed';
-}
-
-export function isValidTodoItem(item: unknown): item is TodoItem {
-    if (!item || typeof item !== 'object') {
-        return false;
-    }
-    const obj = item as Record<string, unknown>;
-    return (
-        typeof obj.content === 'string' &&
-        typeof obj.activeForm === 'string' &&
-        (obj.status === 'pending' || obj.status === 'in_progress' || obj.status === 'completed')
-    );
 }
