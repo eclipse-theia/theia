@@ -99,3 +99,18 @@ module-level CSS file.
 - **Color variable contribution example**: `packages/core/src/browser/common-frontend-contribution.ts`
 - **Package-level CSS example**: `packages/ai-ide/src/browser/style/index.css`
 - **Module-specific CSS example**: `packages/core/src/browser/style/tabs.css`
+
+### FileService and Filesystem Access (Browser Mode)
+
+The `FileService` in browser mode communicates with the backend via RPC and has **restricted filesystem access**:
+
+- **Accessible paths:** Files within the current workspace directory or the Theia user config directory (e.g., `~/.theia/`)
+- **Inaccessible paths:** Arbitrary filesystem paths outside these boundaries (e.g., `/tmp/`, `/etc/`)
+
+When implementing browser-side services that need to read files from user-configured directories:
+1. Use `FileService` from `@theia/filesystem/lib/browser/file-service`
+2. Convert paths to URIs using `URI.fromFilePath(path)`
+3. Expect `fileService.exists()` to return `false` for paths outside allowed boundaries
+4. Document that users should configure paths within their workspace or config directory
+
+**Reference implementation:** `packages/ai-core/src/browser/skill-service.ts` and `packages/ai-core/src/browser/frontend-prompt-customization-service.ts`

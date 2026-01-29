@@ -30,6 +30,8 @@ export * from './frontend-variable-service';
 export * from './prompttemplate-contribution';
 export * from './theia-variable-contribution';
 export * from './open-editors-variable-contribution';
+export * from './skills-variable-contribution';
+export * from './skill-service';
 export * from './frontend-variable-service';
 export * from './ai-core-command-contribution';
 export * from '../common/language-model-service';
