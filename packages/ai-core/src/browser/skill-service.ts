@@ -19,11 +19,10 @@ import { DisposableCollection, Emitter, Event, ILogger, URI } from '@theia/core'
 import { Path } from '@theia/core/lib/common/path';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
+import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
 import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile, combineSkillDirectories } from '../common/skill';
-import { PromptService } from '../common/prompt-service';
 
 export const SkillService = Symbol('SkillService');
 export interface SkillService {
@@ -55,28 +54,57 @@ export class DefaultSkillService implements SkillService {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(PromptService)
-    protected readonly promptService: PromptService;
-
     protected skills = new Map<string, Skill>();
     protected toDispose = new DisposableCollection();
+    protected watchedDirectories = new Set<string>();
 
     protected readonly onSkillsChangedEmitter = new Emitter<void>();
     readonly onSkillsChanged: Event<void> = this.onSkillsChangedEmitter.event;
+    protected lastSkillDirectoriesValue: string | undefined;
 
     @postConstruct()
     protected init(): void {
-        this.preferences.onPreferenceChanged(event => {
-            if (event.preferenceName === PREFERENCE_NAME_SKILL_DIRECTORIES) {
-                this.update();
+        // Register file change listener (global, always active)
+        this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
+            const isRelevantChange = event.changes.some(change => {
+                const changeUri = change.resource.toString();
+                const isInWatchedDir = Array.from(this.watchedDirectories).some(dirUri =>
+                    changeUri.startsWith(dirUri)
+                );
+                if (!isInWatchedDir) {
+                    return false;
+                }
+                // Trigger on SKILL.md changes or directory additions/deletions
+                const isSkillFile = change.resource.path.base === SKILL_FILE_NAME;
+                const isDirectoryChange = change.type === FileChangeType.ADDED || change.type === FileChangeType.DELETED;
+                return isSkillFile || isDirectoryChange;
+            });
+            if (isRelevantChange) {
+                await this.update();
             }
         });
-        this.workspaceService.onWorkspaceChanged(() => {
-            this.update();
-        });
-        // Wait for preferences to be ready before initial update
-        this.preferences.ready.then(() => {
-            this.update();
+
+        // Wait for workspace to be ready before initial update
+        this.workspaceService.ready.then(() => {
+            this.update().then(() => {
+                // Only after initial update, start listening for changes
+                this.lastSkillDirectoriesValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
+
+                this.preferences.onPreferenceChanged(event => {
+                    if (event.preferenceName === PREFERENCE_NAME_SKILL_DIRECTORIES) {
+                        const currentValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
+                        if (currentValue === this.lastSkillDirectoriesValue) {
+                            return;
+                        }
+                        this.lastSkillDirectoriesValue = currentValue;
+                        this.update();
+                    }
+                });
+
+                this.workspaceService.onWorkspaceChanged(() => {
+                    this.update();
+                });
+            });
         });
     }
 
@@ -89,6 +117,7 @@ export class DefaultSkillService implements SkillService {
     }
 
     protected async update(): Promise<void> {
+        this.toDispose.dispose();
         const newDisposables = new DisposableCollection();
         const newSkills = new Map<string, Skill>();
 
@@ -106,13 +135,10 @@ export class DefaultSkillService implements SkillService {
         // Priority: workspace > configured > default (first directory wins on duplicates)
         const allDirectories = combineSkillDirectories(workspaceSkillsDir, configuredDirectories, defaultSkillsDir);
 
-        for (const directoryPath of allDirectories) {
-            await this.processSkillDirectory(directoryPath, newSkills, newDisposables);
-        }
+        const newWatchedDirectories = new Set<string>();
 
-        // Unregister old skill commands
-        for (const name of this.skills.keys()) {
-            this.promptService.removePromptFragment(`skill-command-${name}`);
+        for (const directoryPath of allDirectories) {
+            await this.processSkillDirectory(directoryPath, newSkills, newDisposables, newWatchedDirectories);
         }
 
         // Log skill count changes (before replacing state)
@@ -123,20 +149,10 @@ export class DefaultSkillService implements SkillService {
         }
 
         // Atomically replace state
-        this.toDispose.dispose();
         this.toDispose = newDisposables;
         this.skills = newSkills;
+        this.watchedDirectories = newWatchedDirectories;
 
-        // Register new skill commands
-        for (const [name, skill] of newSkills) {
-            this.promptService.addBuiltInPromptFragment({
-                id: `skill-command-${name}`,
-                template: `{{skill:${name}}}`,
-                isCommand: true,
-                commandName: name,
-                commandDescription: skill.description
-            });
-        }
         this.onSkillsChangedEmitter.fire();
     }
 
@@ -155,7 +171,7 @@ export class DefaultSkillService implements SkillService {
         return configDir.resolve('skills').path.fsPath();
     }
 
-    protected async processSkillDirectory(directoryPath: string, skills: Map<string, Skill>, disposables: DisposableCollection): Promise<void> {
+    protected async processSkillDirectory(directoryPath: string, skills: Map<string, Skill>, disposables: DisposableCollection, watchedDirectories: Set<string>): Promise<void> {
         const dirURI = URI.fromFilePath(directoryPath);
 
         try {
@@ -176,7 +192,7 @@ export class DefaultSkillService implements SkillService {
                 }
             }
 
-            this.setupDirectoryWatcher(dirURI, disposables);
+            this.setupDirectoryWatcher(dirURI, disposables, watchedDirectories);
         } catch (error) {
             this.logger.error(`Error processing directory '${directoryPath}': ${error}`);
         }
@@ -228,18 +244,8 @@ export class DefaultSkillService implements SkillService {
         }
     }
 
-    protected setupDirectoryWatcher(dirURI: URI, disposables: DisposableCollection): void {
+    protected setupDirectoryWatcher(dirURI: URI, disposables: DisposableCollection, watchedDirectories: Set<string>): void {
         disposables.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
-        disposables.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
-            const isRelevantChange = event.changes.some(change => {
-                const changeUri = change.resource.toString();
-                return changeUri.startsWith(dirURI.toString()) &&
-                    change.resource.path.base === SKILL_FILE_NAME;
-            });
-
-            if (isRelevantChange) {
-                await this.update();
-            }
-        }));
+        watchedDirectories.add(dirURI.toString());
     }
 }
