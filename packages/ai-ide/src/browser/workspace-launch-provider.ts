@@ -27,17 +27,25 @@ import {
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
 } from '../common/workspace-functions';
 
+export interface LaunchConfigurationInfo {
+    name: string;
+    running: boolean;
+}
+
 @injectable()
 export class LaunchListProvider implements ToolProvider {
 
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
+    @inject(DebugSessionManager)
+    protected readonly debugSessionManager: DebugSessionManager;
+
     getTool(): ToolRequest {
         return {
             id: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
             name: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
-            description: 'Lists available launch configurations in the workspace. Launch configurations can be filtered by name.',
+            description: 'Lists available launch configurations in the workspace. Launch configurations can be filtered by name. Each configuration includes its running status.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -56,14 +64,20 @@ export class LaunchListProvider implements ToolProvider {
         };
     }
 
-    private async getAvailableLaunchConfigurations(filter: string = ''): Promise<string[]> {
+    private async getAvailableLaunchConfigurations(filter: string = ''): Promise<LaunchConfigurationInfo[]> {
         await this.debugConfigurationManager.load();
-        const configurations: string[] = [];
+        const configurations: LaunchConfigurationInfo[] = [];
+        const runningSessions = new Set(
+            this.debugSessionManager.sessions.map(session => session.configuration.name)
+        );
 
         for (const options of this.debugConfigurationManager.all) {
             const name = this.getDisplayName(options);
             if (name.toLowerCase().includes(filter.toLowerCase())) {
-                configurations.push(name);
+                configurations.push({
+                    name,
+                    running: runningSessions.has(name)
+                });
             }
         }
 
