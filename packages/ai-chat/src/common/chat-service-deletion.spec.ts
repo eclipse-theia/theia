@@ -67,11 +67,17 @@ describe('ChatService Session Deletion', () => {
     }
 
     class MockChatAgentService {
+        readonly onDidChangeAgents = { dispose: () => { } };
+        readonly onDefaultAgentChanged = { dispose: () => { } };
+
         getAgent(): undefined {
             return undefined;
         }
         getAgents(): never[] {
             return [];
+        }
+        resolveAgent(): undefined {
+            return undefined;
         }
     }
 

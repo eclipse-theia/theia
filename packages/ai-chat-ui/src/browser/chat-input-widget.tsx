@@ -16,8 +16,10 @@
 import {
     ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatHierarchyBranch,
     ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel,
-    ChatRequestParser, ChatMode
+    ChatRequestParser, ChatMode, ChatSession
 } from '@theia/ai-chat';
+import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
+import { ParsedChatRequest } from '@theia/ai-chat/lib/common/parsed-chat-request';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest, ParsedCapability } from '@theia/ai-core';
@@ -103,6 +105,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
+
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
 
     @inject(AIActivationService)
     protected readonly aiActivationService: AIActivationService;
@@ -388,6 +393,9 @@ export class AIChatInputWidget extends ReactWidget {
         this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
             this.setEnabled(this.aiActivationService.isActive);
         }));
+        this.toDispose.push(this.chatAgentService.onDefaultAgentChanged(() => {
+            this.scheduleUpdateReceivingAgent();
+        }));
         this.toDispose.push(this.onDidResizeEmitter);
         this.toDispose.push(Disposable.create(() => {
             if (this.updateReceivingAgentTimeout !== undefined) {
@@ -479,33 +487,10 @@ export class AIChatInputWidget extends ReactWidget {
             const resolvedContext = { variables: [] };
             const parsedRequest = await this.chatRequestParser.parseChatRequest(request, this._chatModel.location, resolvedContext);
             const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel.id);
+
             if (session) {
-                const agent = this.chatService.getAgent(parsedRequest, session);
-                const agentId = agent?.id ?? '';
-                const previousAgentId = this.receivingAgent?.agentId;
-
-                this.chatInputReceivingAgentKey.set(agentId);
-
-                // Only update and re-render when the agent changes
-                if (agent && agentId !== previousAgentId) {
-                    const modes = agent.modes ?? [];
-                    const defaultMode = modes.find(m => m.isDefault);
-                    const initialModeId = defaultMode?.id;
-                    this.receivingAgent = {
-                        agentId: agentId,
-                        modes,
-                        currentModeId: initialModeId
-                    };
-                    this.chatInputHasModesKey.set(modes.length > 1);
-                    await this.updateCapabilitiesForAgent(agentId, initialModeId);
-                } else if (!agent && this.receivingAgent !== undefined) {
-                    this.receivingAgent = undefined;
-                    this.capabilityDefaults = [];
-                    this.userCapabilityOverrides = new Map();
-                    this.chatInputHasModesKey.set(false);
-                    this.chatInputHasCapabilitiesKey.set(false);
-                    this.update();
-                }
+                const agent = this.resolveAgentFromParsedRequest(parsedRequest, session);
+                await this.updateAgentState(agent);
             } else if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
@@ -522,6 +507,52 @@ export class AIChatInputWidget extends ReactWidget {
                 this.receivingAgent = undefined;
                 this.update();
             }
+        }
+    }
+
+    /**
+     * Resolves the agent to use for the given parsed request.
+     * If a session is provided, uses session-based logic including pinned agents.
+     * Otherwise, delegates to ChatAgentService.
+     */
+    protected resolveAgentFromParsedRequest(
+        parsedRequest: ParsedChatRequest,
+        session?: ChatSession
+    ): ChatAgent | undefined {
+        if (session) {
+            return this.chatService.getAgent(parsedRequest, session);
+        }
+        return this.chatAgentService.resolveAgent(parsedRequest);
+    }
+
+    /**
+     * Updates the receiving agent state and triggers re-render if the agent changed.
+     */
+    protected async updateAgentState(agent: ChatAgent | undefined): Promise<void> {
+        const agentId = agent?.id ?? '';
+        const previousAgentId = this.receivingAgent?.agentId;
+
+        this.chatInputReceivingAgentKey.set(agentId);
+
+        // Only update and re-render when the agent changes
+        if (agent && agentId !== previousAgentId) {
+            const modes = agent.modes ?? [];
+            const defaultMode = modes.find(m => m.isDefault);
+            const initialModeId = defaultMode?.id;
+            this.receivingAgent = {
+                agentId: agentId,
+                modes,
+                currentModeId: initialModeId
+            };
+            this.chatInputHasModesKey.set(modes.length > 1);
+            await this.updateCapabilitiesForAgent(agentId, initialModeId);
+        } else if (!agent && this.receivingAgent !== undefined) {
+            this.receivingAgent = undefined;
+            this.capabilityDefaults = [];
+            this.userCapabilityOverrides = new Map();
+            this.chatInputHasModesKey.set(false);
+            this.chatInputHasCapabilitiesKey.set(false);
+            this.update();
         }
     }
 

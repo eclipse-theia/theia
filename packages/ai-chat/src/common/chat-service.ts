@@ -23,7 +23,7 @@ import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariab
 import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { ChatAgentService } from './chat-agent-service';
+import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
     ChangeSetElement,
@@ -45,6 +45,9 @@ import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
 import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
 import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization';
 import debounce = require('@theia/core/shared/lodash.debounce');
+
+// Re-export for backward compatibility
+export { DefaultChatAgentId, FallbackChatAgentId };
 
 export interface ChatRequestInvocation {
     /**
@@ -110,22 +113,6 @@ export interface SessionOptions {
     focus?: boolean;
 }
 
-/**
- * The default chat agent to invoke
- */
-export const DefaultChatAgentId = Symbol('DefaultChatAgentId');
-export interface DefaultChatAgentId {
-    id: string;
-}
-
-/**
- * In case no fitting chat agent is available, this one will be used (if it is itself available)
- */
-export const FallbackChatAgentId = Symbol('FallbackChatAgentId');
-export interface FallbackChatAgentId {
-    id: string;
-}
-
 export const PinChatAgent = Symbol('PinChatAgent');
 export type PinChatAgent = boolean;
 
@@ -180,12 +167,6 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
-
-    @inject(DefaultChatAgentId) @optional()
-    protected defaultChatAgentId: DefaultChatAgentId | undefined;
-
-    @inject(FallbackChatAgentId) @optional()
-    protected fallbackChatAgentId: FallbackChatAgentId | undefined;
 
     @inject(ChatSessionNamingService) @optional()
     protected chatSessionNamingService: ChatSessionNamingService | undefined;
@@ -437,17 +418,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
-        const agentPart = this.getMentionedAgent(parsedRequest);
-        if (agentPart) {
-            return this.chatAgentService.getAgent(agentPart.agentId);
-        }
-        if (this.defaultChatAgentId) {
-            return this.chatAgentService.getAgent(this.defaultChatAgentId.id);
-        }
-        if (this.fallbackChatAgentId) {
-            return this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
-        }
-        return undefined;
+        return this.chatAgentService.resolveAgent(parsedRequest);
     }
 
     protected getMentionedAgent(parsedRequest: ParsedChatRequest): ParsedChatRequestAgentPart | undefined {
