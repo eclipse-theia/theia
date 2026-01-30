@@ -111,32 +111,54 @@ export class EditorLanguageStatusService {
 
     updateLanguageStatus(editor: TextEditor | undefined): void {
         this.toDisposeOnEditorChange.dispose();
+        this.scheduleUpdate(editor, true);
 
-        if (!editor) {
-            this.statusBar.removeElement(EditorLanguageStatusService.LANGUAGE_MODE_ID);
-        } else {
-            const language = this.languages.getLanguage(editor.document.languageId);
-            const languageName = language ? language.name : '';
-            this.statusBar.setElement(EditorLanguageStatusService.LANGUAGE_MODE_ID, {
-                text: languageName,
-                alignment: StatusBarAlignment.RIGHT,
-                priority: 1,
-                command: EditorCommands.CHANGE_LANGUAGE.id,
-                tooltip: nls.localizeByDefault('Select Language Mode')
-            });
-
+        if (editor) {
             this.toDisposeOnEditorChange.push(
-                editor.onLanguageChanged(() => this.updateLanguageStatusItems(editor))
+                editor.onLanguageChanged(() => this.scheduleUpdate(editor, false))
             );
 
             if (this.formatterService) {
                 this.toDisposeOnEditorChange.push(
-                    this.formatterService.onDidChangeFormatters(() => this.updateLanguageStatusItems(editor))
+                    this.formatterService.onDidChangeFormatters(() => this.scheduleUpdate(editor, false))
                 );
             }
         }
+    }
 
-        this.updateLanguageStatusItems(editor);
+    /**
+     * Schedules an update to the status bar. All updates are chained to prevent race conditions.
+     * @param editor The current editor, or undefined if no editor is active
+     * @param updateLanguageMode Whether to update the language mode element (only needed on editor change)
+     */
+    protected scheduleUpdate(editor: TextEditor | undefined, updateLanguageMode: boolean): void {
+        const doUpdate = async (): Promise<void> => {
+            if (updateLanguageMode) {
+                await this.updateLanguageModeElement(editor);
+            }
+            await this.doUpdateLanguageStatusItems(editor);
+        };
+
+        if (!this.pendingUpdate) {
+            this.pendingUpdate = Promise.resolve();
+        }
+        this.pendingUpdate = this.pendingUpdate.then(doUpdate, doUpdate);
+    }
+
+    protected async updateLanguageModeElement(editor: TextEditor | undefined): Promise<void> {
+        if (!editor) {
+            await this.statusBar.removeElement(EditorLanguageStatusService.LANGUAGE_MODE_ID);
+            return;
+        }
+        const language = this.languages.getLanguage(editor.document.languageId);
+        const languageName = language ? language.name : '';
+        await this.statusBar.setElement(EditorLanguageStatusService.LANGUAGE_MODE_ID, {
+            text: languageName,
+            alignment: StatusBarAlignment.RIGHT,
+            priority: 1,
+            command: EditorCommands.CHANGE_LANGUAGE.id,
+            tooltip: nls.localizeByDefault('Select Language Mode')
+        });
     }
 
     protected createFormatterStatusItem(editor: TextEditor): LanguageStatus | undefined {
@@ -147,13 +169,7 @@ export class EditorLanguageStatusService {
      * Schedules a language status items update. Called when language status items are added/removed.
      */
     protected updateLanguageStatusItems(editor = this.editorAccess.editor): void {
-        if (this.pendingUpdate) {
-            return;
-        }
-        this.pendingUpdate = this.doUpdateLanguageStatusItems(editor)
-            .finally(() => {
-                this.pendingUpdate = undefined;
-            });
+        this.scheduleUpdate(editor, false);
     }
 
     /**
