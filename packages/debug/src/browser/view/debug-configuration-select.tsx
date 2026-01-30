@@ -22,6 +22,7 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { DebugSessionConfigurationLabelProvider } from '../debug-session-configuration-label-provider';
+import { DynamicDebugConfigurationProvider } from '../../common/debug-service';
 
 interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string, workspaceFolderUri?: string }
 
@@ -33,7 +34,7 @@ export interface DebugConfigurationSelectProps {
 }
 
 export interface DebugProviderSelectState {
-    providerTypes: string[],
+    providers: DynamicDebugConfigurationProvider[],
     currentValue: string | undefined
 }
 
@@ -53,18 +54,20 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         this.manager = props.manager;
         this.quickInputService = props.quickInputService;
         this.state = {
-            providerTypes: [],
+            providers: [],
             currentValue: undefined
         };
-        this.manager.onDidChangeConfigurationProviders(() => {
+        this.manager.onDidChangeDynamicConfigurations(() => {
             this.refreshDebugConfigurations();
         });
     }
 
     override componentDidUpdate(): void {
         // synchronize the currentValue with the selectComponent value
-        if (this.selectRef.current?.value !== this.currentValue) {
-            this.refreshDebugConfigurations();
+        const currentValue = this.currentValue;
+        if (this.state.currentValue !== currentValue) {
+            this.selectRef.current!.value = currentValue;
+            this.setState({ currentValue });
         }
     }
 
@@ -77,8 +80,6 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             options={this.renderOptions()}
             defaultValue={this.state.currentValue}
             onChange={option => this.setCurrentConfiguration(option)}
-            onFocus={() => this.refreshDebugConfigurations()}
-            onBlur={() => this.refreshDebugConfigurations()}
             ref={this.selectRef}
         />;
     }
@@ -114,12 +115,14 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         } else if (value === DebugConfigurationSelect.ADD_CONFIGURATION) {
             setTimeout(() => this.manager.addConfiguration());
         } else if (value.startsWith(DebugConfigurationSelect.PICK)) {
-            const providerType = this.parsePickValue(value);
-            this.selectDynamicConfigFromQuickPick(providerType);
+            const providerIndex = parseInt(this.parsePickValue(value), 10);
+            const provider = this.state.providers[providerIndex];
+            if (provider) {
+                this.selectDynamicConfigFromQuickPick(provider);
+            }
         } else {
             const data = JSON.parse(value) as DebugSessionOptions;
             this.manager.current = data;
-            this.refreshDebugConfigurations();
         }
     };
 
@@ -131,28 +134,46 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         return value.slice(DebugConfigurationSelect.PICK.length);
     }
 
-    protected async resolveDynamicConfigurationPicks(providerType: string): Promise<DynamicPickItem[]> {
-        const configurationsOfProviderType =
-            (await this.manager.provideDynamicDebugConfigurations())[providerType];
+    /**
+     * Fetches the actual debug configurations for a specific provider type.
+     * This is called lazily when the user selects a provider type from the dropdown,
+     * triggering extension activation and provideDebugConfigurations call only for the
+     * specified type, rather than activating all extensions.
+     */
+    /**
+     * Fetches the actual debug configurations for a provider (which may have multiple types).
+     * This is called lazily when the user selects a provider from the dropdown,
+     * triggering extension activation and provideDebugConfigurations call only for the
+     * specified types, rather than activating all extensions.
+     */
+    protected async resolveDynamicConfigurationPicks(provider: DynamicDebugConfigurationProvider): Promise<DynamicPickItem[]> {
+        // Fetch configurations for all types under this provider's label
+        const allPicks: DynamicPickItem[] = [];
+        for (const providerType of provider.types) {
+            const configurationsOfProviderType = await this.manager.provideDynamicDebugConfigurationsByType(providerType);
 
-        if (!configurationsOfProviderType) {
-            return [];
+            if (configurationsOfProviderType && configurationsOfProviderType.length > 0) {
+                allPicks.push(...configurationsOfProviderType.map(options => ({
+                    label: options.configuration.name,
+                    configurationType: options.configuration.type,
+                    request: options.configuration.request,
+                    providerType: options.providerType,
+                    description: this.toBaseName(options.workspaceFolderUri),
+                    workspaceFolderUri: options.workspaceFolderUri
+                })));
+            }
         }
-
-        return configurationsOfProviderType.map(options => ({
-            label: options.configuration.name,
-            configurationType: options.configuration.type,
-            request: options.configuration.request,
-            providerType: options.providerType,
-            description: this.toBaseName(options.workspaceFolderUri),
-            workspaceFolderUri: options.workspaceFolderUri
-        }));
+        return allPicks;
     }
 
-    protected async selectDynamicConfigFromQuickPick(providerType: string): Promise<void> {
-        const picks: DynamicPickItem[] = await this.resolveDynamicConfigurationPicks(providerType);
+    protected async selectDynamicConfigFromQuickPick(provider: DynamicDebugConfigurationProvider): Promise<void> {
+        const picks: DynamicPickItem[] = await this.resolveDynamicConfigurationPicks(provider);
 
         if (picks.length === 0) {
+            this.quickInputService.showQuickPick(
+                [{ label: nls.localizeByDefault('No Configurations') }],
+                { placeholder: nls.localizeByDefault('Select Launch Configuration') }
+            );
             return;
         }
 
@@ -173,21 +194,18 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             request: selected.request
         };
         this.manager.current = this.manager.find(selectedConfiguration, selected.workspaceFolderUri, selected.providerType);
-        this.refreshDebugConfigurations();
     }
 
-    protected refreshDebugConfigurations = async () => {
-        const configsOptionsPerType = await this.manager.provideDynamicDebugConfigurations();
-        const providerTypes = [];
-        for (const [type, configurationsOptions] of Object.entries(configsOptionsPerType)) {
-            if (configurationsOptions.length > 0) {
-                providerTypes.push(type);
-            }
-        }
-
+    /**
+     * Refreshes the list of dynamic configuration providers shown in the dropdown.
+     * This is lightweight - it only gets the provider labels without invoking the
+     * providers.
+     */
+    protected refreshDebugConfigurations = () => {
+        const providers = this.manager.getDynamicDebugConfigurationProviders();
         const value = this.currentValue;
         this.selectRef.current!.value = value;
-        this.setState({ providerTypes, currentValue: value });
+        this.setState({ providers, currentValue: value });
     };
 
     protected renderOptions(): SelectOption[] {
@@ -231,19 +249,19 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             });
         }
 
-        // Add dynamic configuration types for quick pick selection
-        const types = this.state.providerTypes;
-        if (types.length > 0) {
+        // Add dynamic configuration providers for quick pick selection (grouped by label)
+        const providers = this.state.providers;
+        if (providers.length > 0) {
             options.push({
                 separator: true
             });
-            for (const type of types) {
-                const value = this.toPickValue(type);
+            providers.forEach((provider, index) => {
+                const value = this.toPickValue(String(index));
                 options.push({
                     value,
-                    label: type + '...'
+                    label: provider.label + '...'
                 });
-            }
+            });
         }
 
         options.push({
