@@ -25,3 +25,4 @@ export * from './decorations';
 export * from './editor-linenumber-contribution';
 export * from './split-editor-contribution';
 export * from './text-editor-split-contribution';
+export * from './editor-formatter-service';

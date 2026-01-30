@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { codicon, StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { codicon, HoverService, StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
-import { CommandRegistry, nls } from '@theia/core';
+import { CommandRegistry, DisposableCollection, MessageService, nls } from '@theia/core';
 import { TextEditor } from '../editor';
 import { EditorCommands } from '../editor-command';
 import { LanguageSelector, score } from '../../common/language-selector';
@@ -26,6 +26,8 @@ import URI from '@theia/core/lib/common/uri';
 import { CurrentEditorAccess } from '../editor-manager';
 import { Severity } from '@theia/core/lib/common/severity';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
+import { FormatterService } from '../editor-formatter-service';
+import { EditorFormatterStatusContribution } from './editor-formatter-status-contribution';
 
 /**
  * Represents the severity of a language status item.
@@ -83,11 +85,19 @@ export class EditorLanguageStatusService {
     @inject(CurrentEditorAccess) protected readonly editorAccess: CurrentEditorAccess;
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
+    @inject(FormatterService) @optional() protected readonly formatterService: FormatterService | undefined;
+    @inject(EditorFormatterStatusContribution) @optional() protected readonly formatterStatusContribution: EditorFormatterStatusContribution | undefined;
+    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(HoverService) protected readonly hoverService: HoverService;
+
     protected static LANGUAGE_MODE_ID = 'editor-status-language';
     protected static LANGUAGE_STATUS_ID = 'editor-language-status-items';
 
     protected readonly status = new Map<number, LanguageStatus>();
     protected pinnedCommands = new Set<string>();
+    protected currentlyPinnedItems = new Set<string>();
+    protected readonly toDisposeOnEditorChange = new DisposableCollection();
+    protected pendingUpdate: Promise<void> | undefined;
 
     setLanguageStatusItem(handle: number, item: LanguageStatus): void {
         this.status.set(handle, item);
@@ -100,130 +110,300 @@ export class EditorLanguageStatusService {
     }
 
     updateLanguageStatus(editor: TextEditor | undefined): void {
+        this.toDisposeOnEditorChange.dispose();
+
         if (!editor) {
             this.statusBar.removeElement(EditorLanguageStatusService.LANGUAGE_MODE_ID);
-            return;
+        } else {
+            const language = this.languages.getLanguage(editor.document.languageId);
+            const languageName = language ? language.name : '';
+            this.statusBar.setElement(EditorLanguageStatusService.LANGUAGE_MODE_ID, {
+                text: languageName,
+                alignment: StatusBarAlignment.RIGHT,
+                priority: 1,
+                command: EditorCommands.CHANGE_LANGUAGE.id,
+                tooltip: nls.localizeByDefault('Select Language Mode')
+            });
+
+            this.toDisposeOnEditorChange.push(
+                editor.onLanguageChanged(() => this.updateLanguageStatusItems(editor))
+            );
+
+            if (this.formatterService) {
+                this.toDisposeOnEditorChange.push(
+                    this.formatterService.onDidChangeFormatters(() => this.updateLanguageStatusItems(editor))
+                );
+            }
         }
-        const language = this.languages.getLanguage(editor.document.languageId);
-        const languageName = language ? language.name : '';
-        this.statusBar.setElement(EditorLanguageStatusService.LANGUAGE_MODE_ID, {
-            text: languageName,
-            alignment: StatusBarAlignment.RIGHT,
-            priority: 1,
-            command: EditorCommands.CHANGE_LANGUAGE.id,
-            tooltip: nls.localizeByDefault('Select Language Mode')
-        });
+
         this.updateLanguageStatusItems(editor);
     }
 
+    protected createFormatterStatusItem(editor: TextEditor): LanguageStatus | undefined {
+        return this.formatterStatusContribution?.createFormatterStatusItem(editor);
+    }
+
+    /**
+     * Schedules a language status items update. Called when language status items are added/removed.
+     */
     protected updateLanguageStatusItems(editor = this.editorAccess.editor): void {
+        if (this.pendingUpdate) {
+            return;
+        }
+        this.pendingUpdate = this.doUpdateLanguageStatusItems(editor)
+            .finally(() => {
+                this.pendingUpdate = undefined;
+            });
+    }
+
+    /**
+     * Performs the actual language status items update.
+     */
+    protected async doUpdateLanguageStatusItems(editor: TextEditor | undefined): Promise<void> {
         if (!editor) {
-            this.statusBar.removeElement(EditorLanguageStatusService.LANGUAGE_STATUS_ID);
-            this.updatePinnedItems();
+            await this.statusBar.removeElement(EditorLanguageStatusService.LANGUAGE_STATUS_ID);
+            await this.updatePinnedItems();
             return;
         }
         const uri = new URI(editor.document.uri);
+        const formatterItemId = EditorFormatterStatusContribution.FORMATTER_STATUS_ITEM_ID;
+
         const items = Array.from(this.status.values())
+            .filter(item => item.id !== formatterItemId)
             .filter(item => score(item.selector, uri.scheme, uri.path.toString(), editor.document.languageId, true))
             .sort((left, right) => right.severity - left.severity);
-        if (!items.length) {
-            this.statusBar.removeElement(EditorLanguageStatusService.LANGUAGE_STATUS_ID);
+
+        const formatterItem = this.createFormatterStatusItem(editor);
+        const allItems = formatterItem ? [formatterItem, ...items] : items;
+
+        if (!allItems.length) {
+            await this.statusBar.removeElement(EditorLanguageStatusService.LANGUAGE_STATUS_ID);
+            await this.updatePinnedItems();
             return;
         }
-        const severityText = items[0].severity === Severity.Info
+        const maxSeverity = allItems.reduce((max, item) => Math.max(max, item.severity), Severity.Ignore);
+        const severityText = maxSeverity === Severity.Info
             ? '$(bracket)'
-            : items[0].severity === Severity.Warning
+            : maxSeverity === Severity.Warning
                 ? '$(bracket-dot)'
                 : '$(bracket-error)';
-        this.statusBar.setElement(EditorLanguageStatusService.LANGUAGE_STATUS_ID, {
+        await this.statusBar.setElement(EditorLanguageStatusService.LANGUAGE_STATUS_ID, {
             text: severityText,
             alignment: StatusBarAlignment.RIGHT,
             priority: 2,
-            tooltip: this.createTooltip(items),
+            tooltip: this.createTooltip(allItems, editor),
             affinity: { id: EditorLanguageStatusService.LANGUAGE_MODE_ID, alignment: StatusBarAlignment.LEFT, compact: true },
         });
-        this.updatePinnedItems(items);
+        await this.updatePinnedItems(allItems, editor);
     }
 
-    protected updatePinnedItems(items?: LanguageStatus[]): void {
-        const toRemoveFromStatusBar = new Set(this.pinnedCommands);
-        items?.forEach(item => {
-            if (toRemoveFromStatusBar.has(item.id)) {
-                toRemoveFromStatusBar.delete(item.id);
-                this.statusBar.setElement(item.id, this.toPinnedItem(item));
+    /**
+     * Updates pinned status bar items. Removes all currently pinned items first,
+     * then adds back only those relevant to the current editor context.
+     */
+    protected async updatePinnedItems(items?: LanguageStatus[], editor?: TextEditor): Promise<void> {
+        for (const id of this.currentlyPinnedItems) {
+            await this.statusBar.removeElement(id);
+        }
+        this.currentlyPinnedItems.clear();
+
+        for (const item of items ?? []) {
+            if (this.pinnedCommands.has(item.id)) {
+                await this.statusBar.setElement(item.id, this.toPinnedItem(item, editor));
+                this.currentlyPinnedItems.add(item.id);
+            }
+        }
+    }
+
+    protected toPinnedItem(item: LanguageStatus, editor?: TextEditor): StatusBarEntry {
+        if (this.isFormatterItem(item)) {
+            return this.createFormatterPinnedItem(item, editor);
+        }
+
+        return this.createDefaultPinnedItem(item);
+    }
+
+    protected isFormatterItem(item: LanguageStatus): boolean {
+        return item.id === EditorFormatterStatusContribution.FORMATTER_STATUS_ITEM_ID;
+    }
+
+    protected createFormatterPinnedItem(item: LanguageStatus, editor?: TextEditor): StatusBarEntry {
+        if (!this.formatterStatusContribution) {
+            return this.createDefaultPinnedItem(item);
+        }
+
+        const currentEditor = editor ?? this.editorAccess.editor;
+        return this.formatterStatusContribution.createPinnedStatusBarEntry(currentEditor, e => {
+            e.preventDefault();
+            if (currentEditor) {
+                this.formatterStatusContribution?.showFormatterQuickPick(currentEditor);
             }
         });
-        toRemoveFromStatusBar.forEach(id => this.statusBar.removeElement(id));
     }
 
-    protected toPinnedItem(item: LanguageStatus): StatusBarEntry {
+    protected createDefaultPinnedItem(item: LanguageStatus): StatusBarEntry {
+        let onclick: ((e: MouseEvent) => void) | undefined;
+        if (item.command) {
+            onclick = e => {
+                e.preventDefault();
+                this.commandRegistry.executeCommand(item.command!.id, ...(item.command?.arguments ?? []));
+            };
+        }
+
         return {
             text: item.label,
             affinity: { id: EditorLanguageStatusService.LANGUAGE_MODE_ID, alignment: StatusBarAlignment.RIGHT, compact: false },
             alignment: StatusBarAlignment.RIGHT,
-            onclick: item.command && (e => { e.preventDefault(); this.commandRegistry.executeCommand(item.command!.id, ...(item.command?.arguments ?? [])); }),
+            onclick,
         };
     }
 
-    protected createTooltip(items: LanguageStatus[]): HTMLElement {
+    protected createTooltip(items: LanguageStatus[], editor?: TextEditor): HTMLElement {
         const hoverContainer = document.createElement('div');
         hoverContainer.classList.add('hover-row');
         for (const item of items) {
-            const itemContainer = document.createElement('div');
-            itemContainer.classList.add('hover-language-status');
-            {
-                const severityContainer = document.createElement('div');
-                severityContainer.classList.add('severity', `sev${item.severity}`);
-                severityContainer.classList.toggle('show', item.severity === Severity.Error || item.severity === Severity.Warning);
-                {
-                    const severityIcon = document.createElement('span');
-                    severityIcon.className = this.getSeverityIconClasses(item.severity);
-                    severityContainer.appendChild(severityIcon);
-                }
-                itemContainer.appendChild(severityContainer);
-            }
-            const textContainer = document.createElement('div');
-            textContainer.className = 'element';
-            const labelContainer = document.createElement('div');
-            labelContainer.className = 'left';
-            const label = document.createElement('span');
-            label.classList.add('label');
-            this.renderWithIcons(label, item.busy ? `$(sync~spin)\u00A0\u00A0${item.label}` : item.label);
-            labelContainer.appendChild(label);
-            const detail = document.createElement('span');
-            detail.classList.add('detail');
-            this.renderWithIcons(detail, item.detail);
-            labelContainer.appendChild(detail);
-            textContainer.appendChild(labelContainer);
-            const commandContainer = document.createElement('div');
-            commandContainer.classList.add('right');
-            if (item.command) {
-                const link = document.createElement('a');
-                link.classList.add('language-status-link');
-                link.href = new URI()
-                    .withScheme('command')
-                    .withPath(item.command.id)
-                    .withQuery(item.command.arguments ? encodeURIComponent(JSON.stringify(item.command.arguments)) : '')
-                    .toString(false);
-                link.onclick = e => { e.preventDefault(); this.commandRegistry.executeCommand(item.command!.id, ...(item.command?.arguments ?? [])); };
-                link.textContent = item.command.title ?? item.command.id;
-                link.title = item.command.tooltip ?? '';
-                link.ariaRoleDescription = 'button';
-                link.ariaDisabled = 'false';
-                commandContainer.appendChild(link);
-                const pinContainer = document.createElement('div');
-                pinContainer.classList.add('language-status-action-bar');
-                const pin = document.createElement('a');
-                this.setPinProperties(pin, item.id);
-                pin.onclick = e => { e.preventDefault(); this.togglePinned(item); this.setPinProperties(pin, item.id); };
-                pinContainer.appendChild(pin);
-                commandContainer.appendChild(pinContainer);
-            }
-            textContainer.appendChild(commandContainer);
-            itemContainer.append(textContainer);
-            hoverContainer.appendChild(itemContainer);
+            hoverContainer.appendChild(this.createTooltipItem(item, editor));
         }
         return hoverContainer;
+    }
+
+    protected createTooltipItem(item: LanguageStatus, editor?: TextEditor): HTMLElement {
+        const itemContainer = document.createElement('div');
+        itemContainer.classList.add('hover-language-status');
+
+        const alwaysShowIcon = this.isFormatterItem(item);
+        itemContainer.appendChild(this.createSeverityIndicator(item.severity, alwaysShowIcon));
+
+        const textContainer = document.createElement('div');
+        textContainer.className = 'element';
+        textContainer.appendChild(this.createLabelSection(item));
+        textContainer.appendChild(this.createCommandSection(item, editor));
+
+        itemContainer.appendChild(textContainer);
+        return itemContainer;
+    }
+
+    protected createSeverityIndicator(severity: Severity, alwaysShow = false): HTMLElement {
+        const severityContainer = document.createElement('div');
+        severityContainer.classList.add('severity', `sev${severity}`);
+        severityContainer.classList.toggle('show', alwaysShow || severity === Severity.Error || severity === Severity.Warning);
+
+        const severityIcon = document.createElement('span');
+        severityIcon.className = this.getSeverityIconClasses(severity);
+        severityContainer.appendChild(severityIcon);
+
+        return severityContainer;
+    }
+
+    protected createLabelSection(item: LanguageStatus): HTMLElement {
+        const labelContainer = document.createElement('div');
+        labelContainer.className = 'left';
+
+        const label = document.createElement('span');
+        label.classList.add('label');
+        const labelText = item.busy ? `$(sync~spin)\u00A0\u00A0${item.label}` : item.label;
+        this.renderWithIcons(label, labelText);
+        labelContainer.appendChild(label);
+
+        const detail = document.createElement('span');
+        detail.classList.add('detail');
+        this.renderWithIcons(detail, item.detail);
+        labelContainer.appendChild(detail);
+
+        return labelContainer;
+    }
+
+    protected createCommandSection(item: LanguageStatus, editor?: TextEditor): HTMLElement {
+        const commandContainer = document.createElement('div');
+        commandContainer.classList.add('right');
+
+        if (this.isFormatterItem(item) && editor && this.formatterStatusContribution) {
+            this.addFormatterCommands(commandContainer, item, editor);
+        } else if (item.command) {
+            commandContainer.appendChild(this.createCommandLink(item));
+            commandContainer.appendChild(this.createPinButton(item, editor));
+        }
+
+        return commandContainer;
+    }
+
+    protected addFormatterCommands(commandContainer: HTMLElement, item: LanguageStatus, editor: TextEditor): void {
+        const hasConfigureAction = this.formatterStatusContribution!.hasConfigureAction(editor);
+
+        if (hasConfigureAction) {
+            commandContainer.appendChild(this.createFormatterConfigureButton(editor));
+        }
+        commandContainer.appendChild(this.createFormatterInfoButton(editor));
+        commandContainer.appendChild(this.createPinButton(item, editor));
+    }
+
+    protected createFormatterConfigureButton(editor: TextEditor): HTMLElement {
+        const link = document.createElement('a');
+        link.classList.add('language-status-link');
+        link.onclick = e => {
+            e.preventDefault();
+            this.hoverService.cancelHover();
+            this.formatterStatusContribution?.showFormatterQuickPick(editor);
+        };
+        link.textContent = nls.localizeByDefault('Configure');
+        link.title = nls.localizeByDefault('Configure Default Formatter');
+        link.ariaRoleDescription = 'button';
+        link.ariaDisabled = 'false';
+        return link;
+    }
+
+    protected createFormatterInfoButton(editor: TextEditor): HTMLElement {
+        const link = document.createElement('a');
+        link.classList.add('language-status-link');
+        link.onclick = e => {
+            e.preventDefault();
+            this.hoverService.cancelHover();
+            const tooltip = this.formatterStatusContribution?.getTooltip(editor) ?? '';
+            this.messageService.info(tooltip);
+        };
+        link.textContent = nls.localizeByDefault('Info');
+        link.title = nls.localize('theia/editor/showFormatterInfo', 'Show Formatter Info');
+        link.ariaRoleDescription = 'button';
+        link.ariaDisabled = 'false';
+        return link;
+    }
+
+    protected createCommandLink(item: LanguageStatus): HTMLElement {
+        const command = item.command!;
+        const link = document.createElement('a');
+        link.classList.add('language-status-link');
+        link.href = new URI()
+            .withScheme('command')
+            .withPath(command.id)
+            .withQuery(command.arguments ? encodeURIComponent(JSON.stringify(command.arguments)) : '')
+            .toString(false);
+
+        link.onclick = e => {
+            e.preventDefault();
+            this.commandRegistry.executeCommand(command.id, ...(command.arguments ?? []));
+        };
+
+        link.textContent = command.title ?? command.id;
+        link.title = command.tooltip ?? '';
+        link.ariaRoleDescription = 'button';
+        link.ariaDisabled = 'false';
+        return link;
+    }
+
+    protected createPinButton(item: LanguageStatus, editor?: TextEditor): HTMLElement {
+        const pinContainer = document.createElement('div');
+        pinContainer.classList.add('language-status-action-bar');
+
+        const pin = document.createElement('a');
+        this.setPinProperties(pin, item.id);
+        pin.onclick = e => {
+            e.preventDefault();
+            this.togglePinned(item, editor);
+            this.setPinProperties(pin, item.id);
+        };
+        pinContainer.appendChild(pin);
+
+        return pinContainer;
     }
 
     protected setPinProperties(pin: HTMLElement, id: string): void {
@@ -236,21 +416,24 @@ export class EditorLanguageStatusService {
         pin.title = pinText;
     }
 
-    protected togglePinned(item: LanguageStatus): void {
+    /**
+     * Toggles whether a language status item is pinned to the status bar.
+     */
+    protected togglePinned(item: LanguageStatus, editor?: TextEditor): void {
         if (this.pinnedCommands.has(item.id)) {
             this.pinnedCommands.delete(item.id);
-            this.statusBar.removeElement(item.id);
         } else {
             this.pinnedCommands.add(item.id);
-            this.statusBar.setElement(item.id, this.toPinnedItem(item));
         }
+
+        this.updateLanguageStatusItems(editor);
     }
 
     protected getSeverityIconClasses(severity: Severity): string {
         switch (severity) {
             case Severity.Error: return codicon('error');
-            case Severity.Warning: return codicon('info');
-            default: return codicon('check');
+            case Severity.Warning: return codicon('warning');
+            default: return codicon('info');
         }
     }
 
