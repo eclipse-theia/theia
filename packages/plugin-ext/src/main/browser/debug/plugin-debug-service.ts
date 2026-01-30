@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DebuggerDescription, DebugPath, DebugService } from '@theia/debug/lib/common/debug-service';
+import { DebuggerDescription, DebugPath, DebugService, DynamicDebugConfigurationProvider } from '@theia/debug/lib/common/debug-service';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { deepClone, Emitter, Event, nls } from '@theia/core';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -47,6 +47,10 @@ export class PluginDebugService implements DebugService {
     protected readonly configurationProviders = new Map<number, PluginDebugConfigurationProvider>();
     protected readonly toDispose = new DisposableCollection(this.onDidChangeDebuggersEmitter);
 
+    // Debug configurations discovered from plugin manifests (activation events) before providers register.
+    // Maps type -> { label, refCount } since multiple plugins may register the same type.
+    protected readonly dynamicDebugConfigsFromManifests = new Map<string, { label: string; refCount: number }>();
+
     protected readonly onDidChangeDebugConfigurationProvidersEmitter = new Emitter<void>();
     get onDidChangeDebugConfigurationProviders(): Event<void> {
         return this.onDidChangeDebugConfigurationProvidersEmitter.event;
@@ -72,7 +76,8 @@ export class PluginDebugService implements DebugService {
                     contrib.terminateDebugSession(sessionId);
                 }
                 this.sessionId2contrib.clear();
-            })]);
+            })
+        ]);
     }
 
     registerDebugAdapterContribution(contrib: PluginDebugAdapterContribution): Disposable {
@@ -167,6 +172,81 @@ export class PluginDebugService implements DebugService {
         }
     }
 
+    /**
+     * Registers a dynamic debug configuration type discovered from a plugin manifest.
+     * This allows showing provider types in the dropdown before the extension has activated.
+     */
+    registerDynamicDebugConfigurationType(type: string, label: string): Disposable {
+        const existing = this.dynamicDebugConfigsFromManifests.get(type);
+        if (existing) {
+            existing.refCount++;
+        } else {
+            this.dynamicDebugConfigsFromManifests.set(type, { label, refCount: 1 });
+        }
+        this.fireOnDidConfigurationProvidersChanged();
+        return Disposable.create(() => {
+            const entry = this.dynamicDebugConfigsFromManifests.get(type);
+            if (entry) {
+                if (entry.refCount <= 1) {
+                    this.dynamicDebugConfigsFromManifests.delete(type);
+                } else {
+                    entry.refCount--;
+                }
+            }
+            this.fireOnDidConfigurationProvidersChanged();
+        });
+    }
+
+    /**
+     * Returns dynamic debug configuration providers grouped by label.
+     * Each entry contains a label and all the types that share that label.
+     * Includes both registered providers and types discovered from plugin manifests.
+     */
+    getDynamicDebugConfigurationProviders(): DynamicDebugConfigurationProvider[] {
+        // Group by label -> types
+        const labelToTypes = new Map<string, Set<string>>();
+
+        // Add types from manifests (before activation)
+        for (const [type, { label }] of this.dynamicDebugConfigsFromManifests) {
+            const types = labelToTypes.get(label) ?? new Set();
+            types.add(type);
+            labelToTypes.set(label, types);
+        }
+
+        // Add types from registered providers, looking up their labels
+        for (const provider of this.configurationProviders.values()) {
+            if (provider.triggerKind === DebugConfigurationProviderTriggerKind.Dynamic &&
+                'provideDebugConfigurations' in provider) {
+                const label = this.getDebuggerLabel(provider.type) ?? provider.type;
+                const types = labelToTypes.get(label) ?? new Set();
+                types.add(provider.type);
+                labelToTypes.set(label, types);
+            }
+        }
+
+        // Convert to array of { label, types }
+        return Array.from(labelToTypes.entries()).map(([label, types]) => ({
+            label,
+            types: Array.from(types)
+        }));
+    }
+
+    /**
+     * Returns the types of dynamic debug configuration providers.
+     * @deprecated Use getDynamicDebugConfigurationProviders() instead for proper label support.
+     */
+    getDynamicDebugConfigurationProviderTypes(): string[] {
+        return this.getDynamicDebugConfigurationProviders().flatMap(p => p.types);
+    }
+
+    /**
+     * Gets the label for a debugger type.
+     */
+    protected getDebuggerLabel(type: string): string | undefined {
+        const debugger_ = this.debuggers.find(d => d.type === type);
+        return debugger_?.label;
+    }
+
     async provideDynamicDebugConfigurations(folder?: string): Promise<Record<string, DebugConfiguration[]>> {
         const pluginProviders =
             Array.from(this.configurationProviders.values()).filter(p => (
@@ -187,6 +267,31 @@ export class PluginDebugService implements DebugService {
         }));
 
         return configurationsRecord;
+    }
+
+    /**
+     * Provides dynamic debug configurations for a specific provider type only.
+     * This is more efficient than provideDynamicDebugConfigurations when you only
+     * need configurations for a single type.
+     */
+    async provideDynamicDebugConfigurationsByType(type: string, folder?: string): Promise<DebugConfiguration[]> {
+        const pluginProviders =
+            Array.from(this.configurationProviders.values()).filter(p => (
+                p.triggerKind === DebugConfigurationProviderTriggerKind.Dynamic &&
+                p.type === type &&
+                p.provideDebugConfigurations
+            ));
+
+        const allConfigurations: DebugConfiguration[] = [];
+
+        await Promise.all(pluginProviders.map(async provider => {
+            const configurations = await provider.provideDebugConfigurations(folder);
+            if (configurations) {
+                allConfigurations.push(...configurations);
+            }
+        }));
+
+        return allConfigurations;
     }
 
     async resolveDebugConfiguration(
