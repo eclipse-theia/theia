@@ -25,6 +25,7 @@ import { AuthenticationExt, AuthenticationMain, MAIN_RPC_CONTEXT } from '../../c
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ConfirmDialog, Dialog, StorageService } from '@theia/core/lib/browser';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import {
     AuthenticationProvider,
     AuthenticationProviderSessionOptions,
@@ -47,6 +48,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     private readonly storageService: StorageService;
     private readonly authenticationService: AuthenticationService;
     private readonly quickPickService: QuickPickService;
+    private readonly providers: Map<string, AuthenticationProviderImpl> = new Map();
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT);
         this.messageService = container.get(MessageService);
@@ -61,11 +63,13 @@ export class AuthenticationMainImpl implements AuthenticationMain {
 
     async $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): Promise<void> {
         const provider = new AuthenticationProviderImpl(this.proxy, id, label, supportsMultipleAccounts, this.storageService, this.messageService);
+        this.providers.set(id, provider);
         this.authenticationService.registerAuthenticationProvider(id, provider);
     }
 
     async $unregisterAuthenticationProvider(id: string): Promise<void> {
         this.authenticationService.unregisterAuthenticationProvider(id);
+        this.providers.delete(id);
     }
 
     async $updateSessions(id: string, event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void> {
@@ -248,7 +252,10 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     }
 
     $onDidChangeSessions(providerId: string, event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): void {
-        this.authenticationService.updateSessions(providerId, event);
+        const provider = this.providers.get(providerId);
+        if (provider) {
+            provider.fireSessionsChanged(event);
+        }
     }
 }
 
@@ -290,7 +297,8 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
     /** map from session id to account name */
     private sessions = new Map<string, string>();
 
-    readonly onDidChangeSessions: theia.Event<theia.AuthenticationProviderAuthenticationSessionsChangeEvent>;
+    private readonly onDidChangeSessionsEmitter = new Emitter<theia.AuthenticationProviderAuthenticationSessionsChangeEvent>();
+    readonly onDidChangeSessions: Event<theia.AuthenticationProviderAuthenticationSessionsChangeEvent> = this.onDidChangeSessionsEmitter.event;
 
     constructor(
         private readonly proxy: AuthenticationExt,
@@ -300,6 +308,10 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         private readonly storageService: StorageService,
         private readonly messageService: MessageService
     ) { }
+
+    fireSessionsChanged(event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): void {
+        this.onDidChangeSessionsEmitter.fire(event);
+    }
 
     public hasSessions(): boolean {
         return !!this.sessions.size;
