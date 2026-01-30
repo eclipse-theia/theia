@@ -16,6 +16,7 @@
 
 import { CommandService, DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
 import { LabelProvider, ApplicationShell, ConfirmDialog } from '@theia/core/lib/browser';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -169,6 +170,9 @@ export class DebugSessionManager {
     @inject(DebugSessionConfigurationLabelProvider)
     protected readonly sessionConfigurationLabelProvider: DebugSessionConfigurationLabelProvider;
 
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
+
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
     protected debugStateKey: ContextKey<string>;
@@ -225,6 +229,12 @@ export class DebugSessionManager {
     protected async startConfiguration(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
         return this.progressService.withProgress(nls.localizeByDefault('Starting...'), 'debug', async () => {
             try {
+                // Check workspace trust before starting debug session
+                const trust = await this.workspaceTrustService.requestWorkspaceTrust();
+                if (!trust) {
+                    return undefined;
+                }
+
                 // If a parent session is available saving should be handled by the parent
                 if (!options.configuration.parentSessionId && !options.configuration.suppressSaveBeforeStart && !await this.saveAll()) {
                     return undefined;
@@ -283,6 +293,12 @@ export class DebugSessionManager {
     }
 
     protected async startCompound(options: DebugCompoundSessionOptions): Promise<boolean | undefined> {
+        // Check workspace trust before starting compound debug session
+        const trust = await this.workspaceTrustService.requestWorkspaceTrust();
+        if (!trust) {
+            return false;
+        }
+
         let configurations: DebugConfigurationSessionOptions[] = [];
         const compoundRoot = options.compound.stopAll ? new DebugCompoundRoot() : undefined;
         try {

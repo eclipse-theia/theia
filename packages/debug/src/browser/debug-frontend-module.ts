@@ -33,7 +33,7 @@ import {
     DebugSessionContributionRegistry,
     DebugSessionContributionRegistryImpl
 } from './debug-session-contribution';
-import { bindContributionProvider, ResourceResolver } from '@theia/core';
+import { bindContributionProvider, nls, ResourceResolver } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
@@ -65,6 +65,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 import { AddOrEditDataBreakpointAddress } from './breakpoint/debug-data-breakpoint-actions';
+import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);
@@ -137,4 +138,12 @@ export default new ContainerModule((bind: interfaces.Bind) => {
 
     bind(DebugSessionConfigurationLabelProvider).toSelf().inSingletonScope();
     bind(AddOrEditDataBreakpointAddress).toSelf().inSingletonScope();
+
+    bind(WorkspaceRestrictionContribution).toConstantValue({
+        getRestrictions(): WorkspaceRestriction[] {
+            return [{
+                label: nls.localize('theia/debug/debugRestricted', 'Debugging is disabled in Restricted Mode')
+            }];
+        }
+    });
 });

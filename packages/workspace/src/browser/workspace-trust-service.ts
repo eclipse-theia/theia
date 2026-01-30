@@ -101,6 +101,7 @@ export class WorkspaceTrustService {
     protected workspaceTrust = new Deferred<boolean>();
     protected currentTrust: boolean | undefined;
     protected pendingTrustDialog: Deferred<boolean> | undefined;
+    protected pendingTrustRequest: Deferred<boolean | undefined> | undefined;
 
     protected readonly onDidChangeWorkspaceTrustEmitter = new Emitter<boolean>();
     readonly onDidChangeWorkspaceTrust: Event<boolean> = this.onDidChangeWorkspaceTrustEmitter.event;
@@ -509,11 +510,43 @@ export class WorkspaceTrustService {
         }
     }
 
+    /**
+     * Request workspace trust from the user. This method follows VS Code's pattern:
+     * - If already trusted, returns true immediately
+     * - If there's already a pending trust request, returns the same promise (avoiding duplicate dialogs)
+     * - Otherwise, shows a dialog and waits for the user's response
+     *
+     * Unlike the initial trust resolution, this can be called multiple times and will
+     * prompt the user each time (unless a dialog is already open).
+     */
     async requestWorkspaceTrust(): Promise<boolean | undefined> {
-        if (!this.isWorkspaceTrustResolved()) {
-            const trusted = await this.showTrustPromptDialog();
-            await this.resolveWorkspaceTrust(trusted);
+        // If already trusted, return true immediately
+        if (this.currentTrust === true) {
+            return true;
         }
-        return this.workspaceTrust.promise;
+
+        // If there's already a pending request, return the same promise to avoid duplicate dialogs
+        if (this.pendingTrustRequest) {
+            return this.pendingTrustRequest.promise;
+        }
+
+        // Create a new pending request
+        this.pendingTrustRequest = new Deferred<boolean | undefined>();
+
+        try {
+            const grantedTrust = await this.showTrustPromptDialog();
+            if (grantedTrust) {
+                // User granted trust - update the state
+                this.setWorkspaceTrust(true);
+                await this.addToTrustedFolders();
+            }
+            this.pendingTrustRequest.resolve(grantedTrust);
+            return grantedTrust;
+        } catch (e) {
+            this.pendingTrustRequest.resolve(undefined);
+            throw e;
+        } finally {
+            this.pendingTrustRequest = undefined;
+        }
     }
 }
