@@ -166,6 +166,28 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-badge-foreground);
 }
 
+.theia-RequestNode-Images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.theia-RequestNode-ImagePreview {
+  position: relative;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 100px;
+  width: 120px;
+}
+
+.theia-RequestNode-ImagePreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .theia-RequestNode-Footer {
   display: flex;
   align-items: center;

@@ -242,7 +242,21 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 });
                 this.update();
-            } else if (event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
+            } else if (event.kind === 'addRequest') {
+                // Only clear image context variables, preserve other context (e.g., attached files)
+                // Never clear on parse failure.
+                const variables = chatModel.context.getVariables();
+                const imageIndices = variables
+                    .map((v, i) => {
+                        const origin = ImageContextVariable.getOriginSafe(v);
+                        return origin === 'temporary' ? i : -1;
+                    })
+                    .filter(i => i !== -1);
+                if (imageIndices.length > 0) {
+                    chatModel.context.deleteVariables(...imageIndices);
+                }
+                this.update();
+            } else if (event.kind === 'removeVariable' || event.kind === 'changeHierarchyBranch') {
                 this.update();
             }
         }));
@@ -1461,14 +1475,23 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
         <ul>
             {context.map((element, index) => {
                 if (ImageContextVariable.isImageContextRequest(element.variable)) {
-                    const variable = ImageContextVariable.parseRequest(element.variable)!;
+                    let variable: ImageContextVariable | undefined;
+                    try {
+                        variable = ImageContextVariable.parseRequest(element.variable);
+                    } catch {
+                        variable = undefined;
+                    }
+
+                    const title = variable?.name ?? variable?.wsRelativePath ?? element.details ?? element.name;
+                    const label = variable?.name ?? variable?.wsRelativePath?.split('/').pop() ?? element.name;
+
                     return <li key={index} className="theia-ChatInput-ChatContext-Element theia-ChatInput-ImageContext-Element"
-                        title={variable.name ?? variable.wsRelativePath} onClick={() => element.open?.()}>
+                        title={title} onClick={() => element.open?.()}>
                         <div className="theia-ChatInput-ChatContext-Row">
                             <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
                             <div className="theia-ChatInput-ChatContext-labelParts">
                                 <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
-                                    {variable.name ?? variable.wsRelativePath?.split('/').pop()}
+                                    {label}
                                 </span>
                                 <span className='theia-ChatInput-ChatContext-additionalInfo'>
                                     {element.additionalInfo}
@@ -1476,11 +1499,11 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                             </div>
                             <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
                         </div>
-                        <div className="theia-ChatInput-ChatContext-ImageRow">
+                        {variable && <div className="theia-ChatInput-ChatContext-ImageRow">
                             <div className='theia-ChatInput-ImagePreview-Item'>
-                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name} />
+                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name ?? label} />
                             </div>
-                        </div>
+                        </div>}
                     </li>;
                 }
                 const isWarning = element.className === 'warning-file';
