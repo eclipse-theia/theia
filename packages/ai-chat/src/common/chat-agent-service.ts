@@ -20,9 +20,9 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatAgents.ts
 
 import { ContributionProvider, ILogger } from '@theia/core';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgent } from './chat-agents';
-import { AgentService } from '@theia/ai-core';
+import { AgentService, AISettingsService } from '@theia/ai-core';
 
 export const ChatAgentService = Symbol('ChatAgentService');
 export const ChatAgentServiceFactory = Symbol('ChatAgentServiceFactory');
@@ -67,7 +67,33 @@ export class ChatAgentServiceImpl implements ChatAgentService {
     @inject(AgentService)
     protected agentService: AgentService;
 
+    @inject(AISettingsService) @optional()
+    protected readonly aiSettingsService: AISettingsService | undefined;
+
     protected _agents: ChatAgent[] = [];
+
+    protected hiddenFromChatAgents = new Set<string>();
+
+    @postConstruct()
+    protected init(): void {
+        this.aiSettingsService?.getSettings().then(settings => {
+            Object.entries(settings).forEach(([agentId, agentSettings]) => {
+                if (agentSettings.showInChat === false) {
+                    this.hiddenFromChatAgents.add(agentId);
+                }
+            });
+        });
+        this.aiSettingsService?.onDidChange(() => {
+            this.aiSettingsService?.getSettings().then(settings => {
+                this.hiddenFromChatAgents.clear();
+                Object.entries(settings).forEach(([agentId, agentSettings]) => {
+                    if (agentSettings.showInChat === false) {
+                        this.hiddenFromChatAgents.add(agentId);
+                    }
+                });
+            });
+        });
+    }
 
     protected get agents(): ChatAgent[] {
         // We can't collect the contributions at @postConstruct because this will lead to a circular dependency
@@ -89,7 +115,7 @@ export class ChatAgentServiceImpl implements ChatAgentService {
         return this.getAgents().find(agent => agent.id === id);
     }
     getAgents(): ChatAgent[] {
-        return this.agents.filter(a => this._agentIsEnabled(a.id));
+        return this.agents.filter(a => this._agentIsEnabled(a.id) && this._agentShowsInChat(a.id));
     }
     getAllAgents(): ChatAgent[] {
         return this.agents;
@@ -97,5 +123,9 @@ export class ChatAgentServiceImpl implements ChatAgentService {
 
     private _agentIsEnabled(id: string): boolean {
         return this.agentService.isEnabled(id);
+    }
+
+    private _agentShowsInChat(id: string): boolean {
+        return !this.hiddenFromChatAgents.has(id);
     }
 }

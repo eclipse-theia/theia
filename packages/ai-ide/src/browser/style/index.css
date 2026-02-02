@@ -207,6 +207,13 @@
   margin-left: var(--theia-ui-padding);
 }
 
+.agent-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+  align-items: flex-end;
+}
+
 .agent-enable-toggle {
   display: flex;
   align-items: center;
@@ -214,6 +221,12 @@
   cursor: pointer;
   user-select: none;
   flex-shrink: 0;
+}
+
+.toggle-label {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+  font-weight: normal;
 }
 
 /* Toggle switch */
