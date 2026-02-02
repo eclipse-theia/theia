@@ -394,12 +394,11 @@ export class WorkspaceTrustService {
                 this.storage.setData(STORAGE_TRUSTED, undefined);
             }
 
-            if (change.preferenceName === WORKSPACE_TRUST_ENABLED && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
-                this.windowService.setSafeToShutDown();
-                this.windowService.reload();
-            }
-
             if (change.preferenceName === WORKSPACE_TRUST_ENABLED) {
+                if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
+                    this.windowService.setSafeToShutDown();
+                    this.windowService.reload();
+                }
                 this.resolveWorkspaceTrust();
             }
 
