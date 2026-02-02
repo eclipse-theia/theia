@@ -36,6 +36,13 @@
     padding: var(--theia-ui-padding);
 }
 
+.build-result-container .markdown-content,
+.build-result-container .markdown-content > *,
+.build-result-container .markdown-content p {
+    margin: 0;
+    padding: 0;
+}
+
 .build-result-status {
     display: flex;
     align-items: flex-start;
