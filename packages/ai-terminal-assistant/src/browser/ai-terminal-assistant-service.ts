@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AiTerminalSummaryAgent, ErrorDetail, Summary } from './terminal-output-analysis-agent';
+import { AiTerminalSummaryAgent, ErrorDetail, ErrorLines, Summary } from './terminal-output-analysis-agent';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
-import { Emitter, Event } from '@theia/core';
+import { Emitter, Event, URI } from '@theia/core';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import * as monaco from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
@@ -27,6 +27,9 @@ import { Widget } from '@theia/core/lib/browser';
 import { TaskTerminalWidgetManager } from '@theia/task/lib/browser/task-terminal-widget-manager';
 import { TaskWatcher } from '@theia/task/lib/common';
 import { TaskService } from '@theia/task/lib/browser/task-service';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export interface SummaryRequest {
     cwd: string;
@@ -46,6 +49,7 @@ export interface SummaryService {
 
     currentTerminal: TerminalWidget;
     currentSummary: Summary | undefined;
+    currentErrorLines: string[];
     isTaskRunning: boolean;
 
     sendSummaryRequest(request: SummaryRequest): Promise<Summary | undefined>;
@@ -72,8 +76,14 @@ export class SummaryServiceImpl implements SummaryService {
     @inject(MonacoEditorService)
     protected readonly monacoEditorService: MonacoEditorService;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     @inject(LocalFileLinkProvider)
     protected readonly fileLinkProvider: LocalFileLinkProvider;
+
+    @inject(FileSearchService)
+    protected readonly fileSearchService: FileSearchService;
 
     @inject(TaskTerminalWidgetManager)
     protected readonly taskTerminalWidgetManager: TaskTerminalWidgetManager;
@@ -83,6 +93,9 @@ export class SummaryServiceImpl implements SummaryService {
 
     @inject(TaskWatcher)
     protected readonly taskWatcher: TaskWatcher;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
@@ -117,6 +130,11 @@ export class SummaryServiceImpl implements SummaryService {
     protected _currentSummary: Summary | undefined;
     get currentSummary(): Summary | undefined {
         return this._currentSummary;
+    }
+
+    protected _currentErrorLines: string[] = [];
+    get currentErrorLines(): string[] {
+        return this._currentErrorLines;
     }
 
     protected _summaryDebounce: ReturnType<typeof setTimeout> | undefined;
@@ -258,7 +276,8 @@ export class SummaryServiceImpl implements SummaryService {
 
     async requestSummary() {
         this.onSummaryRequestStartedEmitter.fire();
-        this._currentSummary = await this.sendSummaryRequestForLastUsedTerminal();
+        const summary = await this.sendSummaryRequestForLastUsedTerminal();
+        this._currentSummary = summary ? await this.enrichErrorsWithFileContent(summary) : undefined;
         this.onSummaryRequestFinishedEmitter.fire(this.currentSummary);
     }
 
@@ -286,6 +305,70 @@ export class SummaryServiceImpl implements SummaryService {
             );
         }
         throw new Error('No active terminal found.');
+    }
+
+    protected async enrichErrorsWithFileContent(summary: Summary): Promise<Summary> {
+        const enrichedErrors = await Promise.all(summary.errors.map(async (error) => {
+            const errorLines = await this.getErrorLines(error);
+            return {
+                ...error,
+                errorLines,
+            };
+        }));
+        console.log('Enriched errors with file content:', enrichedErrors);
+        return {
+            ...summary,
+            errors: enrichedErrors,
+        }
+    }
+
+    protected async getErrorLines(error: ErrorDetail): Promise<ErrorLines | undefined> {
+        if (!error.file || !error.line) {
+            console.log('Error does not contain file or line information:', error);
+            return undefined;
+        }
+        const fileUri = await this.getFileUriFromError(error);
+        if (!fileUri) {
+            console.log('Could not find file URI for error:', error);
+            return undefined;
+        }
+        const uri: URI = new URI(fileUri);
+        const fileContent = await this.fileService.read(uri)
+        const lines = fileContent.value.split('\n');
+        console.log('Fetched file content for error lines:', lines);
+
+        const start = Math.max(0, error.line - 2);
+        const end = Math.min(lines.length, error.line + 1);
+        if (error.line && error.line > 0 && error.line <= lines.length) {
+            const errorLines = lines.slice(start, end);
+            // prefix each line with line number
+            const numberedLines = errorLines.map((line, index) => {
+                return `${start + index + 1}: ${line}`;
+            });
+            return {
+                errorLines: numberedLines,
+                errorLinesStart: start + 1
+            };
+        }
+        return undefined;
+    }
+
+    protected async getFileUriFromError(error: ErrorDetail): Promise<string | undefined> {
+        if (!error.file) {
+            return undefined;
+        }
+        const searchTerm = error.file.replace(/`/g, '');
+        console.log('Searching for file URI with term:', searchTerm);
+        const roots = this.workspaceService.tryGetRoots().map(root => root.resource.toString());
+        const opts: FileSearchService.Options = {
+            rootUris: roots,
+            fuzzyMatch: true,
+            limit: 1,
+        };
+
+        const results = await this.fileSearchService.find(searchTerm, opts);
+
+        return results.length > 0 ? results[0] : undefined;
     }
 
     async openErrorInEditor(error: ErrorDetail): Promise<void> {
