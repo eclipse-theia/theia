@@ -232,7 +232,7 @@ const BuildResultOverview: React.FunctionComponent<BuildResultOverviewProps> = (
 };
 
 const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, onOpenError, onExecuteCommand, commands, onRenderMarkdown }: ErrorOverviewProps) => {
-    const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
+    const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(true);
 
     const handleToggleDropdown = React.useCallback(() => {
         setDropdownOpen(prev => !prev);
