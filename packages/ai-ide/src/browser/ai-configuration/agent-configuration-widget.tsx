@@ -215,12 +215,16 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (agent) {
             this.parsedPromptParts = await this.parsePromptFragmentsForVariableAndFunction(agent);
+            const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
+            this.showInChatState = agentSettings?.showInChat ?? true;
         } else {
             this.parsedPromptParts = undefined;
         }
         this.isLoadingDetails = false;
         this.update();
     }
+
+    protected showInChatState: boolean = true;
 
     protected renderItemDetail(agent: Agent): React.ReactNode {
         if (this.isLoadingDetails) {
@@ -249,12 +253,22 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                         {agentNameWithTags}
                         <pre className='ai-id-label'>Id: {agent.id}</pre>
                     </div>
-                    <label className='agent-enable-toggle' title={nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}>
-                        <div className='toggle-switch' onClick={this.toggleAgentEnabled}>
-                            <input type="checkbox" checked={enabled} onChange={this.toggleAgentEnabled} />
-                            <span className='toggle-slider'></span>
-                        </div>
-                    </label>
+                    <div className='agent-toggles'>
+                        <label className='agent-enable-toggle' title={nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}>
+                            <span className='toggle-label'>{nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}</span>
+                            <div className='toggle-switch' onClick={this.toggleShowInChat}>
+                                <input type="checkbox" checked={this.showInChatState} onChange={this.toggleShowInChat} />
+                                <span className='toggle-slider'></span>
+                            </div>
+                        </label>
+                        <label className='agent-enable-toggle' title={nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}>
+                            <span className='toggle-label'>{nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}</span>
+                            <div className='toggle-switch' onClick={this.toggleAgentEnabled}>
+                                <input type="checkbox" checked={enabled} onChange={this.toggleAgentEnabled} />
+                                <span className='toggle-slider'></span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -431,6 +445,17 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         } else {
             await this.agentService.enableAgent(agent.id);
         }
+        this.update();
+    };
+
+    private toggleShowInChat = async () => {
+        const agent = this.aiConfigurationSelectionService.getActiveAgent();
+        if (!agent) {
+            return;
+        }
+        const newValue = !this.showInChatState;
+        await this.aiSettingsService.updateAgentSettings(agent.id, { showInChat: newValue });
+        this.showInChatState = newValue;
         this.update();
     };
 }

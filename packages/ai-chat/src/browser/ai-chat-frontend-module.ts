@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AISettingsService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -128,8 +128,8 @@ export default new ContainerModule(bind => {
     bind(ToolConfirmationManager).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();
-    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string]>(
-        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string) => {
+    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined]>(
+        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string, showInChat?: boolean) => {
             const agent = ctx.container.get<CustomChatAgent>(CustomChatAgent);
             agent.id = id;
             agent.name = name;
@@ -141,6 +141,17 @@ export default new ContainerModule(bind => {
             }];
             ctx.container.get<ChatAgentService>(ChatAgentService).registerChatAgent(agent);
             ctx.container.get<AgentService>(AgentService).registerAgent(agent);
+
+            // Initialize showInChat preference from YAML if not already set
+            if (showInChat === false) {
+                const settingsService = ctx.container.get<AISettingsService>(AISettingsService);
+                settingsService.getAgentSettings(id).then(settings => {
+                    if (settings?.showInChat === undefined) {
+                        settingsService.updateAgentSettings(id, { showInChat: false });
+                    }
+                });
+            }
+
             return agent;
         });
     bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
