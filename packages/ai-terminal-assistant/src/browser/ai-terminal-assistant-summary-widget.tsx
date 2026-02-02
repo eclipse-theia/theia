@@ -19,7 +19,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { SummaryService } from './ai-terminal-assistant-service';
-import { Summary, ErrorDetail } from './terminal-output-analysis-agent';
+import { Summary, ErrorDetail, ErrorLines } from './terminal-output-analysis-agent';
 import { AiTerminalAssistantCommandService } from './ai-terminal-assistant-command-service';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
@@ -142,6 +142,7 @@ type ErrorDetailHeaderProps = {
     onOpenError: (error: ErrorDetail) => void;
     commands: Command[];
     onExecuteCommand: (commandId: string, error: ErrorDetail) => void;
+    onRenderMarkdown: (content: string) => React.ReactNode;
 };
 
 type ErrorDetailBodyProps = {
@@ -246,6 +247,7 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                 isDropdownOpen={dropdownOpen}
                 onOpenError={onOpenError}
                 onExecuteCommand={onExecuteCommand}
+                onRenderMarkdown={onRenderMarkdown}
                 commands={commands}
             />
             <ErrorDetailBody
@@ -259,18 +261,19 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
 
 };
 
-const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> = ({ errorDetail, commands, onOpenError, onExecuteCommand, onDropdownToggle, isDropdownOpen }: ErrorDetailHeaderProps) => {
+const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> = ({ errorDetail, commands, onOpenError, onExecuteCommand, onRenderMarkdown, onDropdownToggle, isDropdownOpen }: ErrorDetailHeaderProps) => {
     const chevronDownIcon = codicon('chevron-down');
     const chevronRightIcon = codicon('chevron-right');
+    const lineText = typeof errorDetail.line === 'number' ? `, Line ${errorDetail.line}` : '';
 
     return (
         <div className='error-detail-header'>
-            <div
-                className='error-detail-dropdown'
-                onClick={onDropdownToggle}
-            >
+            <div className='error-detail-dropdown' onClick={onDropdownToggle}>
                 {isDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
-                <div>{errorDetail.type}</div>
+                <div className='error-detail-header-title'>
+                    {errorDetail.type}
+                    {errorDetail.file && <>{onRenderMarkdown(`${errorDetail.file}${lineText}`)}</>}
+                </div>
             </div>
             <div className='button-group'>
                 {errorDetail.file && <OpenErrorInEditorButton onOpenError={() => onOpenError(errorDetail)} />}
@@ -281,49 +284,75 @@ const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> = ({ er
 }
 
 const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorDetail, isDropdownOpen, onRenderMarkdown }: ErrorDetailBodyProps) => {
-    const lineText = typeof errorDetail.line === 'number' ? `, Line ${errorDetail.line}` : '';
+    const [fixDropdownOpen, setFixDropdownOpen] = React.useState<boolean>(false);
+
+    const chevronDownIcon = codicon('chevron-down');
+    const chevronRightIcon = codicon('chevron-right');
+
+    const handleToggleFixDropdown = React.useCallback(() => {
+        setFixDropdownOpen(prev => !prev);
+    }, []);
 
     return (
         isDropdownOpen && (
             <div className={`error-detail-body ${isDropdownOpen ? "open" : "closed"}`}>
-                {
-                    errorDetail.file &&
-                    <div className='error-detail-field'>
-                        <div className='error-detail-content'>
-                            <span className='error-detail-subheader'>File:</span>{' '}
-                            {onRenderMarkdown(`${errorDetail.file}${lineText}`)}
-                        </div>
-                    </div>
-                }
-                <div className='error-detail-divider' />
                 <div className='error-detail-field'>
-                    <div className='error-detail-content'>
-                        <span className='error-detail-subheader'>Description:</span>
-                        <ul className='error-explanation-steps'>
-                            {errorDetail.explanationSteps.map((step, idx) => (
-                                <li key={idx}>
-                                    {onRenderMarkdown(step)}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    {
+                        errorDetail.errorLines && errorDetail.errorLines.errorLines.length > 0 &&
+                        <ErrorContext errorLines={errorDetail.errorLines} errorIndex={errorDetail.line ?? -1} />
+                    }
+                </div>
+                <div className='error-detail-field'>
+                    {/* <span className='error-detail-subheader'>Description:</span> */}
+                    <ul className='error-explanation-steps'>
+                        {errorDetail.explanationSteps.map((step, idx) => (
+                            <li key={idx}>
+                                {onRenderMarkdown(step)}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
                 <div className='error-detail-divider' />
                 <div className='error-detail-field'>
                     <div className='error-detail-content'>
-                        <span className='error-detail-subheader'>Fix:</span>
-                        <ol className='error-fix-steps'>
-                            {errorDetail.fixSteps.map((step, idx) => (
-                                <li key={idx}>
-                                    {onRenderMarkdown(step)}
-                                </li>
-                            ))}
-                        </ol>
+                        <div
+                            className='error-detail-dropdown'
+                            onClick={handleToggleFixDropdown}
+                        >
+                            {fixDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
+                            <span className='error-detail-subheader'>Fix (click to expand)</span>
+                        </div>
+                        {fixDropdownOpen && (
+                            <ol className='error-fix-steps'>
+                                {errorDetail.fixSteps.map((step, idx) => (
+                                    <li key={idx}>
+                                        {onRenderMarkdown(step)}
+                                    </li>
+                                ))}
+                            </ol>
+                        )}
                     </div>
                 </div>
             </div>
         )
     )
+}
+
+const ErrorContext: React.FunctionComponent<{ errorLines: ErrorLines, errorIndex: number }> = ({ errorLines, errorIndex }) => {
+    const isErrorLine = (index: number) => {
+        return errorLines.errorLinesStart + index === errorIndex;
+    }
+
+    return <div className='error-lines-container'>
+        {
+            errorLines.errorLines.map((line, index) => (
+                <p
+                    key={index}
+                    className={`command-line ${isErrorLine(index) ? 'error-line' : ''}`}
+                >{line}</p>
+            ))
+        }
+    </div>
 }
 
 // const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void, disabled?: boolean }> = ({ onRequestSummary, disabled }: { onRequestSummary: () => void, disabled?: boolean }) => {

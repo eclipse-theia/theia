@@ -30,13 +30,19 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
 
+const ErrorLines = z.object({
+    errorLines: z.array(z.string()),
+    errorLinesStart: z.number()
+});
+export type ErrorLines = z.infer<typeof ErrorLines>;
 const ErrorDetail = z.object({
     type: z.string(),
     file: z.string().optional(),
     line: z.number().optional(),
     column: z.number().optional(),
+    errorLines: ErrorLines.optional(),
     explanationSteps: z.array(z.string()),
-    fixSteps: z.array(z.string())
+    fixSteps: z.array(z.string()),
 });
 export type ErrorDetail = z.infer<typeof ErrorDetail>;
 const Summary = z.object({

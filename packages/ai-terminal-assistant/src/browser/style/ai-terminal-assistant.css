@@ -37,7 +37,7 @@
 }
 
 .build-result-container .markdown-content,
-.build-result-container .markdown-content > *,
+.build-result-container .markdown-content>*,
 .build-result-container .markdown-content p {
     margin: 0;
     padding: 0;
@@ -84,7 +84,6 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 4/3);
     padding: calc(var(--theia-ui-padding) * 4/3);
 }
 
@@ -104,6 +103,18 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
+}
+
+.error-detail-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.error-detail-title .markdown-content,
+.error-detail-title .markdown-content>*,
+.error-detail-title .markdown-content p {
+    margin: 0;
+    padding: 0;
 }
 
 .error-detail-dropdown {
@@ -140,10 +151,7 @@
     align-items: center;
     justify-content: flex-start;
     gap: calc(var(--theia-ui-padding) * 4/3);
-    padding-left: calc(var(--theia-ui-padding) * 8/3);
-    padding-right: calc(var(--theia-ui-padding) * 8/3);
-    padding-top: 0px;
-    padding-bottom: 0px;
+    padding: 0px;
     box-sizing: border-box;
 }
 
@@ -203,6 +211,24 @@ code {
     box-sizing: border-box;
 }
 
+.error-lines-container {
+    width: 100%;
+    max-width: min(600px, 100%);
+    background-color: var(--theia-editor-background);
+    border: var(--theia-border-width) solid var(--theia-editorWidget-border);
+    border-radius: var(--theia-border-radius);
+    overflow: hidden;
+    font-family: var(--theia-editor-font-family);
+    font-size: var(--theia-editor-font-size);
+    line-height: var(--theia-editor-line-height);
+    padding: calc(var(--theia-ui-padding) * 2/3) 0;
+}
+
+.error-lines-container .error-line {
+    background-color: var(--theia-errorBackground);
+    color: var(--theia-errorForeground);
+}
+
 .command-line {
     font-family: var(--theia-editor-font-family);
     font-size: var(--theia-editor-font-size);
@@ -210,4 +236,7 @@ code {
     color: var(--theia-editor-foreground);
     white-space: pre-wrap;
     margin: 0;
+    padding: 0 calc(var(--theia-ui-padding) * 2);
+    position: relative;
+    padding-left: calc(var(--theia-ui-padding) * 6);
 }
