@@ -308,26 +308,13 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     /**
-     * Initializes the storage directory on disk, creating it if necessary
-     * and seeding it from global storage for new workspace storage locations.
+     * Initializes the storage directory on disk, creating it if necessary.
      */
     protected async initializeStorage(root: URI): Promise<void> {
-        const storageConfig = await this.getStorageConfig();
-        const workspaceRoot = this.getWorkspaceRoot();
-        // Only consider it workspace storage if both the preference is workspace AND we have a workspace open.
-        // When no workspace is open, we fall back to global storage even if scope preference is 'workspace'.
-        const isActuallyWorkspaceStorage = storageConfig.scope === 'workspace' && workspaceRoot !== undefined;
-        const indexExists = await this.fileService.exists(root.resolve(INDEX_FILE));
-
         try {
             await this.fileService.createFolder(root);
         } catch (e) {
             // Folder may already exist
-        }
-
-        // Seed new workspace storage from global storage
-        if (isActuallyWorkspaceStorage && !indexExists) {
-            await this.seedFromGlobalStorage(root);
         }
     }
 
@@ -344,47 +331,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         const storageConfig = await this.getStorageConfig();
         // globalPath will always have a value from the dynamic default
         return new URI(storageConfig.globalPath).withScheme('file');
-    }
-
-    protected async seedFromGlobalStorage(workspaceRoot: URI): Promise<void> {
-        const globalRoot = await this.getGlobalStorageRoot();
-        if (!globalRoot) {
-            return;
-        }
-
-        try {
-            // Check if global storage has content
-            const globalContents = await this.fileService.resolve(globalRoot);
-            if (!globalContents.children || globalContents.children.length === 0) {
-                return;
-            }
-            const globalIndexExists = await this.fileService.exists(globalRoot.resolve(INDEX_FILE));
-            if (!globalIndexExists) {
-                return;
-            }
-
-            // Copy each JSON file to workspace storage
-            let copiedCount = 0;
-            for (const child of globalContents.children) {
-                if (child.name.endsWith('.json')) {
-                    const sourceUri = child.resource;
-                    const targetUri = workspaceRoot.resolve(child.name);
-                    try {
-                        await this.fileService.copy(sourceUri, targetUri, { overwrite: false });
-                        copiedCount++;
-                    } catch (copyError) {
-                        // File may already exist, skip it
-                        this.logger.debug('Could not copy file during seeding', { file: child.name, error: copyError });
-                    }
-                }
-            }
-
-            if (copiedCount > 0) {
-                this.logger.info(`Seeded workspace chat storage from global storage (${copiedCount} files)`);
-            }
-        } catch (e) {
-            this.logger.warn('Failed to seed workspace storage from global storage', e);
-        }
     }
 
     protected async resolveStorageRoot(): Promise<URI | undefined> {
@@ -613,29 +559,24 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             return true;
         }
 
-        // Check global storage for sessions without triggering workspace initialization.
-        // If global storage has sessions, workspace storage will be seeded from it,
-        // so we know sessions will be available.
-        if (await this.hasGlobalSessions()) {
-            return true;
+        const storageRoot = await this.getStorageRoot();
+        if (!storageRoot) {
+            return false;
         }
 
-        // If workspace storage is already initialized, check its index
-        if (this.storageInitialized && this.storageRoot) {
-            const indexFile = this.storageRoot.resolve(INDEX_FILE);
-            try {
-                const exists = await this.fileService.exists(indexFile);
-                if (exists) {
-                    const content = await this.fileService.readFile(indexFile);
-                    const index = JSON.parse(content.value.toString());
-                    return Object.keys(index).length > 0;
-                }
-            } catch (e) {
-                // Index doesn't exist or is unreadable
+        const indexFile = storageRoot.resolve(INDEX_FILE);
+        try {
+            const exists = await this.fileService.exists(indexFile);
+            if (!exists) {
+                return false;
             }
-        }
 
-        return false;
+            const content = await this.fileService.readFile(indexFile);
+            const index = JSON.parse(content.value.toString());
+            return Object.keys(index).length > 0;
+        } catch (e) {
+            return false;
+        }
     }
 
     protected async hasGlobalSessions(): Promise<boolean> {
