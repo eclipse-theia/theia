@@ -170,6 +170,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this._buffer;
     }
 
+    private _currentTerminalOutput: string[];
+
     @postConstruct()
     protected init(): void {
         this.id = this._terminalDOMId;
@@ -207,6 +209,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             theme: this.themeService.theme
         });
         this._buffer = new TerminalBufferImpl(this.term);
+        this._currentTerminalOutput = [];
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
@@ -317,6 +320,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.term.onKey(data => {
             this.onKeyEmitter.fire(data);
+        }));
+
+        this.toDispose.push(this.term.onWriteParsed(() => {
+            if (this._currentTerminalOutput.length > 0) {
+                const terminalOutput = this._currentTerminalOutput.join('');
+                this._currentTerminalOutput = [];
+                this.onOutputEmitter.fire(terminalOutput);
+            }
         }));
 
         for (const contribution of this.terminalContributionProvider.getContributions()) {
@@ -780,7 +791,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
-            this.onOutputEmitter.fire(data);
+            this._currentTerminalOutput.push(data);
         } else {
             this.initialData += data;
         }
@@ -832,7 +843,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     writeLine(text: string): void {
         this.term.writeln(text);
-        this.onOutputEmitter.fire(text + '\n');
+        this._currentTerminalOutput.push(text + '\n');
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {
