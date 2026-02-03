@@ -167,7 +167,7 @@ export class DefaultSkillService implements SkillService {
 
         for (const configuredDir of configuredDirectories) {
             const configuredDirUri = URI.fromFilePath(configuredDir).toString();
-            if (!newWatchedDirectories.has(configuredDirUri) && !newParentWatchers.has(configuredDirUri)) {
+            if (!newWatchedDirectories.has(configuredDirUri)) {
                 await this.processConfiguredSkillDirectory(configuredDir, newSkills, newDisposables, newWatchedDirectories);
             }
         }

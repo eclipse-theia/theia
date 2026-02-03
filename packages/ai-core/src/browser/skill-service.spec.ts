@@ -344,10 +344,10 @@ description: Skill with no content
 
             // Default skills directory does not exist, but parent does
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
                 .resolves(false);
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'))
                 .resolves(true);
 
             // Call init to trigger update
@@ -358,7 +358,7 @@ description: Skill with no content
 
             // Verify parent directory is watched
             expect(fileServiceMock.watch.calledWith(
-                sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide'),
+                sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'),
                 sinon.match({ recursive: false, excludes: [] })
             )).to.be.true;
 
@@ -393,15 +393,15 @@ description: Skill with no content
 
             // Default skills directory exists (to avoid additional warnings)
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
                 .resolves(true);
             fileServiceMock.resolve
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
                 .resolves({ children: [] });
 
             // Configured directory does not exist
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/custom/nonexistent/skills'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/custom/nonexistent/skills'))
                 .resolves(false);
 
             // Call init to trigger update
@@ -420,10 +420,10 @@ description: Skill with no content
 
             // Initially, skills directory does not exist but parent does
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
                 .resolves(false);
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide'))
                 .resolves(true);
 
             // Call init to trigger initial update
@@ -436,10 +436,10 @@ description: Skill with no content
 
             // Now simulate skills directory being created with a skill
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
                 .resolves(true);
             fileServiceMock.resolve
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
                 .resolves({
                     children: [{
                         isDirectory: true,
@@ -448,10 +448,10 @@ description: Skill with no content
                     }]
                 });
             fileServiceMock.exists
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills/test-skill/SKILL.md'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills/test-skill/SKILL.md'))
                 .resolves(true);
             fileServiceMock.read
-                .withArgs(sinon.match((uri: URI) => uri.path.fsPath() === '/home/testuser/.theia-ide/skills/test-skill/SKILL.md'))
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills/test-skill/SKILL.md'))
                 .resolves({
                     value: `---
 name: test-skill
@@ -469,6 +469,7 @@ Test skill content`
                 rawChanges: []
             } as unknown as FileChangesEvent);
 
+            // Wait for async operations to complete
             await new Promise(resolve => setTimeout(resolve, 10));
 
             // Verify skill was loaded
