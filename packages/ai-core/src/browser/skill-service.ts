@@ -22,7 +22,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
-import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile, combineSkillDirectories } from '../common/skill';
+import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile } from '../common/skill';
 
 export const SkillService = Symbol('SkillService');
 export interface SkillService {
@@ -57,6 +57,7 @@ export class DefaultSkillService implements SkillService {
     protected skills = new Map<string, Skill>();
     protected toDispose = new DisposableCollection();
     protected watchedDirectories = new Set<string>();
+    protected parentWatchers = new Map<string, { parentUri: string; skillsPath: string; isWorkspace: boolean }>();
 
     protected readonly onSkillsChangedEmitter = new Emitter<void>();
     readonly onSkillsChanged: Event<void> = this.onSkillsChangedEmitter.event;
@@ -64,8 +65,28 @@ export class DefaultSkillService implements SkillService {
 
     @postConstruct()
     protected init(): void {
-        // Register file change listener (global, always active)
         this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
+            for (const change of event.changes) {
+                if (change.type === FileChangeType.ADDED) {
+                    const changeUri = change.resource.toString();
+                    for (const [, watchInfo] of this.parentWatchers) {
+                        const expectedSkillsUri = URI.fromFilePath(watchInfo.skillsPath).toString();
+                        if (changeUri === expectedSkillsUri) {
+                            await this.update();
+                            return;
+                        }
+                    }
+                }
+                // Check for skills directory deletion - switch back to parent watching
+                if (change.type === FileChangeType.DELETED) {
+                    const changeUri = change.resource.toString();
+                    if (this.watchedDirectories.has(changeUri)) {
+                        await this.update();
+                        return;
+                    }
+                }
+            }
+
             const isRelevantChange = event.changes.some(change => {
                 const changeUri = change.resource.toString();
                 const isInWatchedDir = Array.from(this.watchedDirectories).some(dirUri =>
@@ -123,35 +144,54 @@ export class DefaultSkillService implements SkillService {
 
         const workspaceSkillsDir = this.getWorkspaceSkillsDirectoryPath();
 
-        // Get home directory for tilde expansion
         const homeDirUri = await this.envVariablesServer.getHomeDirUri();
         const homePath = new URI(homeDirUri).path.fsPath();
 
-        // Get configured directories from preferences and expand tilde
         const configuredDirectories = (this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [])
             .map(dir => Path.untildify(dir, homePath));
         const defaultSkillsDir = await this.getDefaultSkillsDirectoryPath();
 
-        // Priority: workspace > configured > default (first directory wins on duplicates)
-        const allDirectories = combineSkillDirectories(workspaceSkillsDir, configuredDirectories, defaultSkillsDir);
-
         const newWatchedDirectories = new Set<string>();
+        const newParentWatchers = new Map<string, { parentUri: string; skillsPath: string; isWorkspace: boolean }>();
 
-        for (const directoryPath of allDirectories) {
-            await this.processSkillDirectory(directoryPath, newSkills, newDisposables, newWatchedDirectories);
+        if (workspaceSkillsDir) {
+            await this.processSkillDirectoryWithParentWatching(
+                workspaceSkillsDir,
+                newSkills,
+                newDisposables,
+                newWatchedDirectories,
+                newParentWatchers,
+                true // isWorkspace
+            );
         }
 
-        // Log skill count changes (before replacing state)
-        const newCount = newSkills.size;
-        const oldCount = this.skills.size;
-        if (newCount > 0 || newCount !== oldCount) {
-            this.logger.info(`Loaded ${newCount} skills`);
+        for (const configuredDir of configuredDirectories) {
+            const configuredDirUri = URI.fromFilePath(configuredDir).toString();
+            if (!newWatchedDirectories.has(configuredDirUri) && !newParentWatchers.has(configuredDirUri)) {
+                await this.processConfiguredSkillDirectory(configuredDir, newSkills, newDisposables, newWatchedDirectories);
+            }
         }
 
-        // Atomically replace state
+        const defaultSkillsDirUri = URI.fromFilePath(defaultSkillsDir).toString();
+        if (!newWatchedDirectories.has(defaultSkillsDirUri)) {
+            await this.processSkillDirectoryWithParentWatching(
+                defaultSkillsDir,
+                newSkills,
+                newDisposables,
+                newWatchedDirectories,
+                newParentWatchers,
+                false // not workspace
+            );
+        }
+
+        if (newSkills.size > 0 || newSkills.size !== this.skills.size) {
+            this.logger.info(`Loaded ${newSkills.size} skills`);
+        }
+
         this.toDispose = newDisposables;
         this.skills = newSkills;
         this.watchedDirectories = newWatchedDirectories;
+        this.parentWatchers = newParentWatchers;
 
         this.onSkillsChangedEmitter.fire();
     }
@@ -171,31 +211,80 @@ export class DefaultSkillService implements SkillService {
         return configDir.resolve('skills').path.fsPath();
     }
 
-    protected async processSkillDirectory(directoryPath: string, skills: Map<string, Skill>, disposables: DisposableCollection, watchedDirectories: Set<string>): Promise<void> {
+    protected async processSkillDirectoryWithParentWatching(
+        directoryPath: string,
+        skills: Map<string, Skill>,
+        disposables: DisposableCollection,
+        watchedDirectories: Set<string>,
+        parentWatchers: Map<string, { parentUri: string; skillsPath: string; isWorkspace: boolean }>,
+        isWorkspace: boolean
+    ): Promise<void> {
         const dirURI = URI.fromFilePath(directoryPath);
 
         try {
             const dirExists = await this.fileService.exists(dirURI);
-            if (!dirExists) {
-                return;
-            }
 
-            const stat = await this.fileService.resolve(dirURI);
-            if (stat.children === undefined) {
-                return;
-            }
+            if (dirExists) {
+                await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories);
+            } else {
+                const parentPath = dirURI.parent.path.fsPath();
+                const parentURI = URI.fromFilePath(parentPath);
+                const parentExists = await this.fileService.exists(parentURI);
 
-            for (const child of stat.children) {
-                if (child.isDirectory) {
-                    const directoryName = child.name;
-                    await this.loadSkillFromDirectory(child.resource, directoryName, skills);
+                if (parentExists) {
+                    disposables.push(this.fileService.watch(parentURI, { recursive: false, excludes: [] }));
+                    parentWatchers.set(parentURI.toString(), { parentUri: parentURI.toString(), skillsPath: directoryPath, isWorkspace });
+                    this.logger.info(`Watching parent directory '${parentPath}' for skills folder creation`);
+                } else {
+                    this.logger.warn(`Cannot watch ${isWorkspace ? 'workspace' : 'default'} skills directory '${directoryPath}': parent directory does not exist`);
                 }
             }
-
-            this.setupDirectoryWatcher(dirURI, disposables, watchedDirectories);
         } catch (error) {
             this.logger.error(`Error processing directory '${directoryPath}': ${error}`);
         }
+    }
+
+    protected async processConfiguredSkillDirectory(
+        directoryPath: string,
+        skills: Map<string, Skill>,
+        disposables: DisposableCollection,
+        watchedDirectories: Set<string>
+    ): Promise<void> {
+        const dirURI = URI.fromFilePath(directoryPath);
+
+        try {
+            const dirExists = await this.fileService.exists(dirURI);
+
+            if (!dirExists) {
+                this.logger.warn(`Configured skill directory '${directoryPath}' does not exist`);
+                return;
+            }
+
+            await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories);
+        } catch (error) {
+            this.logger.error(`Error processing configured directory '${directoryPath}': ${error}`);
+        }
+    }
+
+    protected async processExistingSkillDirectory(
+        dirURI: URI,
+        skills: Map<string, Skill>,
+        disposables: DisposableCollection,
+        watchedDirectories: Set<string>
+    ): Promise<void> {
+        const stat = await this.fileService.resolve(dirURI);
+        if (!stat.children) {
+            return;
+        }
+
+        for (const child of stat.children) {
+            if (child.isDirectory) {
+                const directoryName = child.name;
+                await this.loadSkillFromDirectory(child.resource, directoryName, skills);
+            }
+        }
+
+        this.setupDirectoryWatcher(dirURI, disposables, watchedDirectories);
     }
 
     protected async loadSkillFromDirectory(directoryUri: URI, directoryName: string, skills: Map<string, Skill>): Promise<void> {
