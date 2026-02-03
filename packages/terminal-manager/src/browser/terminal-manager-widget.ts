@@ -161,17 +161,28 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         }
     }
 
+    /**
+     * Set to `true` while {@link createTerminalWidget} is executing, so that external
+     * listeners can distinguish internally created terminals from external ones (e.g. from plugins).
+     */
+    creatingTerminalInternally = false;
+
     async createTerminalWidget(options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
-        const terminalWidget = await this.terminalFrontendContribution.newTerminal({
-            // passing 'created' here as a millisecond value rather than the default `new Date().toString()` that Theia uses in
-            // its factory (resolves to something like 'Tue Aug 09 2022 13:21:26 GMT-0500 (Central Daylight Time)').
-            // The state restoration system relies on identifying terminals by their unique options, using an ms value ensures we don't
-            // get a duplication since the original date method is only accurate to within 1s.
-            created: new Date().getTime().toString(),
-            ...options,
-        } as TerminalWidgetOptions);
-        terminalWidget.start();
-        return terminalWidget;
+        this.creatingTerminalInternally = true;
+        try {
+            const terminalWidget = await this.terminalFrontendContribution.newTerminal({
+                // passing 'created' here as a millisecond value rather than the default `new Date().toString()` that Theia uses in
+                // its factory (resolves to something like 'Tue Aug 09 2022 13:21:26 GMT-0500 (Central Daylight Time)').
+                // The state restoration system relies on identifying terminals by their unique options, using an ms value ensures we don't
+                // get a duplication since the original date method is only accurate to within 1s.
+                created: new Date().getTime().toString(),
+                ...options,
+            } as TerminalWidgetOptions);
+            terminalWidget.start();
+            return terminalWidget;
+        } finally {
+            this.creatingTerminalInternally = false;
+        }
     }
 
     protected registerListeners(): void {
