@@ -964,7 +964,8 @@ div:last-child > .theia-ChatNode {
   font-weight: bold;
 }
 
-.theia-toolCall-allowed .codicon-loading {
+.theia-toolCall-allowed .codicon-loading,
+.theia-toolCall-pending .codicon-loading {
   font-size: 1em;
 }
 

@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolProvider, ToolRequest, AutoActionResult } from '@theia/ai-core';
+import { ShellCommandPermissionService } from './shell-command-permission-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
@@ -34,6 +35,9 @@ export class ShellExecutionTool implements ToolProvider {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(ShellCommandPermissionService)
+    protected readonly shellCommandPermissionService: ShellCommandPermissionService;
 
     protected readonly runningExecutions = new Map<string, string>();
 
@@ -111,7 +115,26 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                 },
                 required: ['command']
             },
-            handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx)
+            handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
+            checkAutoAction: (argString: string): AutoActionResult | undefined => {
+                try {
+                    const args = JSON.parse(argString);
+                    const result = this.shellCommandPermissionService.checkCommand(args.command);
+
+                    if (result.reason === 'denied') {
+                        return {
+                            action: 'deny',
+                            reason: `Command denied because it matched deny pattern: ${result.matchedPattern}`
+                        };
+                    }
+                    if (result.allowed) {
+                        return { action: 'allow' };
+                    }
+                    return undefined; // Show confirmation UI
+                } catch {
+                    return undefined; // Show confirmation UI
+                }
+            }
         };
     }
 
