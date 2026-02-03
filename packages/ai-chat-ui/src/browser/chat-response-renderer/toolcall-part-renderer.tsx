@@ -21,7 +21,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
+import { ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
@@ -185,8 +185,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     showArgsTooltip,
     contextMenuRenderer
 }) => {
-    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
-    const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
+    const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
     const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
 
     const formatReason = (reason: unknown): string => {
@@ -205,30 +204,6 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
             return String(reason);
         }
     };
-
-    React.useEffect(() => {
-        if (confirmationMode === ToolConfirmationMode.ALWAYS_ALLOW) {
-            response.confirm();
-            setConfirmationState('allowed');
-            return;
-        } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
-            response.deny();
-            setConfirmationState('denied');
-            return;
-        }
-        response.confirmed
-            .then(confirmed => {
-                if (confirmed === true) {
-                    setConfirmationState('allowed');
-                } else {
-                    setConfirmationState('denied');
-                }
-            })
-            .catch(reason => {
-                setRejectionReason(reason);
-                setConfirmationState('rejected');
-            });
-    }, [response, confirmationMode]);
 
     const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
         if (mode === 'forever' && response.name) {
@@ -264,6 +239,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
             ) : confirmationState === 'denied' ? (
                 <span className='theia-toolCall-denied'>
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                    {ToolCallChatResponseContent.isDenialResult(response.result) && response.result.reason ? <span> — {response.result.reason}</span> : undefined}
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>
@@ -278,6 +254,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         {responseRenderer(response)}
                     </div>
                 </details>
+            ) : confirmationState === 'pending' ? (
+                <span className='theia-toolCall-pending'>
+                    <Spinner /> {response.name}
+                </span>
             ) : (
                 confirmationState === 'allowed' && !requestCanceled && (
                     <span className='theia-toolCall-allowed'>

@@ -63,6 +63,20 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     case ToolConfirmationMode.CONFIRM:
                     default: {
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
+
+                        // Check for auto-action hook
+                        const autoAction = toolRequest.checkAutoAction?.(arg_string);
+
+                        if (autoAction?.action === 'allow') {
+                            toolCallContent.confirm();
+                        } else if (autoAction?.action === 'deny') {
+                            toolCallContent.deny(autoAction.reason);
+                            return toolCallContent.result;
+                        } else {
+                            // No auto-action — needs user confirmation
+                            toolCallContent.requestUserConfirmation();
+                        }
+
                         const confirmed = await toolCallContent.confirmed;
 
                         if (confirmed) {

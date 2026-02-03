@@ -16,7 +16,7 @@
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
-import { ToolConfirmationActions, ConfirmationScope } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import { ToolConfirmationActions, ConfirmationScope, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
@@ -99,8 +99,6 @@ interface ShellExecutionToolComponentProps {
     contextMenuRenderer: ContextMenuRenderer;
 }
 
-type ConfirmationState = 'waiting' | 'allowed' | 'denied' | 'rejected';
-
 const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = ({
     response,
     input,
@@ -113,39 +111,9 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     requestCanceled,
     contextMenuRenderer
 }) => {
-    const getInitialState = (): ConfirmationState => {
-        if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
-            return 'allowed';
-        }
-        if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
-            return 'denied';
-        }
-        if (response.finished) {
-            return ToolCallChatResponseContent.isDenialResult(response.result) ? 'denied' : 'allowed';
-        }
-        return 'waiting';
-    };
-
-    const [confirmationState, setConfirmationState] = React.useState<ConfirmationState>(getInitialState);
+    const { confirmationState } = useToolConfirmationState(response, confirmationMode);
     const [toolFinished, setToolFinished] = React.useState(response.finished);
     const [isCanceling, setIsCanceling] = React.useState(false);
-
-    React.useEffect(() => {
-        if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
-            response.confirm();
-        } else if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
-            response.deny();
-        } else {
-            response.confirmed
-                .then(confirmed => {
-                    setConfirmationState(confirmed ? 'allowed' : 'denied');
-                })
-                .catch(err => {
-                    console.debug('Shell execution tool confirmation rejected:', err);
-                    setConfirmationState('rejected');
-                });
-        }
-    }, [response, confirmationMode]);
 
     React.useEffect(() => {
         if (toolFinished || response.finished) {
@@ -217,6 +185,20 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
                 <div className="shell-execution-tool header running">
                     <span className={codicon('terminal')} />
                     <span className={`${codicon('loading')} theia-animation-spin`} />
+                </div>
+            </div>
+        );
+    }
+
+    if (confirmationState === 'pending') {
+        return (
+            <div className="shell-execution-tool container">
+                <div className="shell-execution-tool header running">
+                    <span className={codicon('terminal')} />
+                    <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                    <span className="shell-execution-tool meta-badges">
+                        <span className={`${codicon('loading')} shell-execution-tool status-icon theia-animation-spin`} />
+                    </span>
                 </div>
             </div>
         );

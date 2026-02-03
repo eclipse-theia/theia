@@ -1352,3 +1352,58 @@
   color: var(--theia-descriptionForeground);
   font-style: italic;
 }
+
+/* Shell Command Permission List Section */
+.ai-shell-permission-list-section {
+  margin-top: calc(var(--theia-ui-padding) * 3);
+  padding-top: calc(var(--theia-ui-padding) * 2);
+  border-top: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.ai-shell-permission-list-description {
+  color: var(--theia-descriptionForeground);
+  margin-bottom: var(--theia-ui-padding);
+}
+
+.ai-shell-permission-list-input-row {
+  display: flex;
+  gap: var(--theia-ui-padding);
+  margin-bottom: var(--theia-ui-padding);
+}
+
+.ai-shell-permission-list-input-row .theia-input {
+  flex: 1;
+}
+
+.ai-shell-permission-list-patterns {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ai-shell-permission-list-pattern-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  background-color: var(--theia-editor-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 3px;
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-shell-permission-list-pattern-item code {
+  font-family: var(--theia-code-font-family);
+  font-size: var(--theia-code-font-size);
+}
+
+.ai-shell-permission-list-empty {
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+.ai-shell-permission-list-error {
+  color: var(--theia-errorForeground);
+  margin-top: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: var(--theia-ui-padding);
+}
