@@ -57,11 +57,13 @@ export class DefaultSkillService implements SkillService {
     protected skills = new Map<string, Skill>();
     protected toDispose = new DisposableCollection();
     protected watchedDirectories = new Set<string>();
-    protected parentWatchers = new Map<string, { parentUri: string; skillsPath: string; isWorkspace: boolean }>();
+    protected parentWatchers = new Map<string, string>();
 
     protected readonly onSkillsChangedEmitter = new Emitter<void>();
     readonly onSkillsChanged: Event<void> = this.onSkillsChangedEmitter.event;
     protected lastSkillDirectoriesValue: string | undefined;
+
+    protected updateDebounceTimeout: ReturnType<typeof setTimeout> | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -69,10 +71,10 @@ export class DefaultSkillService implements SkillService {
             for (const change of event.changes) {
                 if (change.type === FileChangeType.ADDED) {
                     const changeUri = change.resource.toString();
-                    for (const [, watchInfo] of this.parentWatchers) {
-                        const expectedSkillsUri = URI.fromFilePath(watchInfo.skillsPath).toString();
+                    for (const [, skillsPath] of this.parentWatchers) {
+                        const expectedSkillsUri = URI.fromFilePath(skillsPath).toString();
                         if (changeUri === expectedSkillsUri) {
-                            await this.update();
+                            this.scheduleUpdate();
                             return;
                         }
                     }
@@ -81,7 +83,7 @@ export class DefaultSkillService implements SkillService {
                 if (change.type === FileChangeType.DELETED) {
                     const changeUri = change.resource.toString();
                     if (this.watchedDirectories.has(changeUri)) {
-                        await this.update();
+                        this.scheduleUpdate();
                         return;
                     }
                 }
@@ -101,7 +103,7 @@ export class DefaultSkillService implements SkillService {
                 return isSkillFile || isDirectoryChange;
             });
             if (isRelevantChange) {
-                await this.update();
+                this.scheduleUpdate();
             }
         });
 
@@ -118,12 +120,12 @@ export class DefaultSkillService implements SkillService {
                             return;
                         }
                         this.lastSkillDirectoriesValue = currentValue;
-                        this.update();
+                        this.scheduleUpdate();
                     }
                 });
 
                 this.workspaceService.onWorkspaceChanged(() => {
-                    this.update();
+                    this.scheduleUpdate();
                 });
             });
         });
@@ -137,7 +139,21 @@ export class DefaultSkillService implements SkillService {
         return this.skills.get(name);
     }
 
+    protected scheduleUpdate(): void {
+        if (this.updateDebounceTimeout) {
+            clearTimeout(this.updateDebounceTimeout);
+        }
+        this.updateDebounceTimeout = setTimeout(() => {
+            this.updateDebounceTimeout = undefined;
+            this.update();
+        }, 50); // 50ms debounce - enough to coalesce rapid FS events
+    }
+
     protected async update(): Promise<void> {
+        if (this.updateDebounceTimeout) {
+            clearTimeout(this.updateDebounceTimeout);
+            this.updateDebounceTimeout = undefined;
+        }
         this.toDispose.dispose();
         const newDisposables = new DisposableCollection();
         const newSkills = new Map<string, Skill>();
@@ -152,7 +168,7 @@ export class DefaultSkillService implements SkillService {
         const defaultSkillsDir = await this.getDefaultSkillsDirectoryPath();
 
         const newWatchedDirectories = new Set<string>();
-        const newParentWatchers = new Map<string, { parentUri: string; skillsPath: string; isWorkspace: boolean }>();
+        const newParentWatchers = new Map<string, string>();
 
         if (workspaceSkillsDir) {
             await this.processSkillDirectoryWithParentWatching(
@@ -160,8 +176,7 @@ export class DefaultSkillService implements SkillService {
                 newSkills,
                 newDisposables,
                 newWatchedDirectories,
-                newParentWatchers,
-                true // isWorkspace
+                newParentWatchers
             );
         }
 
@@ -179,12 +194,11 @@ export class DefaultSkillService implements SkillService {
                 newSkills,
                 newDisposables,
                 newWatchedDirectories,
-                newParentWatchers,
-                false // not workspace
+                newParentWatchers
             );
         }
 
-        if (newSkills.size > 0 || newSkills.size !== this.skills.size) {
+        if (newSkills.size > 0 && newSkills.size !== this.skills.size) {
             this.logger.info(`Loaded ${newSkills.size} skills`);
         }
 
@@ -216,8 +230,7 @@ export class DefaultSkillService implements SkillService {
         skills: Map<string, Skill>,
         disposables: DisposableCollection,
         watchedDirectories: Set<string>,
-        parentWatchers: Map<string, { parentUri: string; skillsPath: string; isWorkspace: boolean }>,
-        isWorkspace: boolean
+        parentWatchers: Map<string, string>
     ): Promise<void> {
         const dirURI = URI.fromFilePath(directoryPath);
 
@@ -232,11 +245,12 @@ export class DefaultSkillService implements SkillService {
                 const parentExists = await this.fileService.exists(parentURI);
 
                 if (parentExists) {
+                    const parentUriString = parentURI.toString();
                     disposables.push(this.fileService.watch(parentURI, { recursive: false, excludes: [] }));
-                    parentWatchers.set(parentURI.toString(), { parentUri: parentURI.toString(), skillsPath: directoryPath, isWorkspace });
+                    parentWatchers.set(parentUriString, directoryPath);
                     this.logger.info(`Watching parent directory '${parentPath}' for skills folder creation`);
                 } else {
-                    this.logger.warn(`Cannot watch ${isWorkspace ? 'workspace' : 'default'} skills directory '${directoryPath}': parent directory does not exist`);
+                    this.logger.warn(`Cannot watch skills directory '${directoryPath}': parent directory does not exist`);
                 }
             }
         } catch (error) {

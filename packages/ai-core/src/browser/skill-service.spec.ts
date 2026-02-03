@@ -381,7 +381,7 @@ description: Skill with no content
 
             // Verify warning is logged about parent not existing
             expect(loggerWarnSpy.calledWith(
-                sinon.match(/Cannot watch default skills directory.*parent directory does not exist/)
+                sinon.match(/Cannot watch skills directory.*parent directory does not exist/)
             )).to.be.true;
         });
 
@@ -470,7 +470,7 @@ Test skill content`
             } as unknown as FileChangesEvent);
 
             // Wait for async operations to complete
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             // Verify skill was loaded
             const skills = service.getSkills();
