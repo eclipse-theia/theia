@@ -131,6 +131,18 @@ export interface ToolRequest<TContext extends ToolInvocationContext = ToolInvoca
      * Use for tools with broad system access (shell execution, file deletion, etc.)
      */
     confirmAlwaysAllow?: boolean | string;
+
+    /**
+     * Optional hook to determine if this tool invocation should be auto-approved
+     * when the tool's confirmation mode is CONFIRM.
+     *
+     * @param argString - The JSON argument string passed to the tool
+     * @returns true if the invocation should be auto-approved, false otherwise
+     *
+     * Use this for tools that can make intelligent decisions about which invocations
+     * are safe (e.g., shellExecute checking against a whitelist of allowed commands).
+     */
+    shouldAutoApprove?: (argString: string) => boolean;
 }
 
 /**

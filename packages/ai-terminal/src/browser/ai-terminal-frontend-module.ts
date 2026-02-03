@@ -25,6 +25,7 @@ import { AiTerminalCommandContribution } from './ai-terminal-contribution';
 import { ShellExecutionTool } from './shell-execution-tool';
 import { ShellExecutionToolRenderer } from './shell-execution-tool-renderer';
 import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execution-server';
+import { ShellCommandWhitelistService } from './shell-command-whitelist-service';
 
 import '../../src/browser/style/ai-terminal.css';
 import '../../src/browser/style/shell-execution-tool.css';
@@ -46,4 +47,6 @@ export default new ContainerModule(bind => {
     }).inSingletonScope();
 
     bind(ChatResponsePartRenderer).to(ShellExecutionToolRenderer).inSingletonScope();
+
+    bind(ShellCommandWhitelistService).toSelf().inSingletonScope();
 });

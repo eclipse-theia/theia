@@ -20,7 +20,8 @@ import * as React from '@theia/core/shared/react';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { nls, PreferenceService } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
-import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { ShellCommandWhitelistService } from '@theia/ai-terminal/lib/browser/shell-command-whitelist-service';
+import { SHELL_COMMAND_WHITELIST_PREFERENCE, ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { AITableConfigurationWidget, TableColumn } from './base/ai-table-configuration-widget';
 
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
@@ -47,8 +48,13 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
+    @inject(ShellCommandWhitelistService)
+    protected readonly shellCommandWhitelistService: ShellCommandWhitelistService;
+
     protected toolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     protected defaultState: ToolConfirmationMode;
+    protected whitelistPatterns: string[] = [];
+    protected newPatternInput: string = '';
 
     @postConstruct()
     protected init(): void {
@@ -65,6 +71,10 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                     this.toolConfirmationModes = await this.loadToolConfigurationModes();
                     this.update();
                 }
+                if (e.preferenceName === SHELL_COMMAND_WHITELIST_PREFERENCE) {
+                    this.whitelistPatterns = this.shellCommandWhitelistService.getPatterns();
+                    this.update();
+                }
             }),
             this.toolInvocationRegistry.onDidChange(async () => {
                 await this.loadItems();
@@ -77,6 +87,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         await this.loadItems();
         this.defaultState = await this.loadDefaultConfirmation();
         this.toolConfirmationModes = await this.loadToolConfigurationModes();
+        this.whitelistPatterns = this.shellCommandWhitelistService.getPatterns();
     }
 
     protected async loadItems(): Promise<void> {
@@ -236,5 +247,81 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         const effectiveState = this.getEffectiveState(item.name);
         const isDefault = effectiveState === this.defaultState;
         return isDefault ? 'default-mode' : 'custom-mode';
+    }
+
+    protected handlePatternInputChange(value: string): void {
+        this.newPatternInput = value;
+        this.update();
+    }
+
+    protected handleAddPattern(): void {
+        const trimmed = this.newPatternInput.trim();
+        if (trimmed.length === 0) {
+            return;
+        }
+        try {
+            this.shellCommandWhitelistService.addPattern(trimmed);
+            this.newPatternInput = '';
+        } catch (error) {
+            // Pattern validation failed - input already cleared or error logged
+        }
+    }
+
+    protected handleRemovePattern(pattern: string): void {
+        this.shellCommandWhitelistService.removePattern(pattern);
+    }
+
+    protected override renderFooter(): React.ReactNode {
+        return (
+            <div className="ai-shell-whitelist-section">
+                <div className="settings-section-title settings-section-category-title">
+                    {nls.localize('theia/ai/ide/toolsConfiguration/shellWhitelist/title', 'Shell Command Whitelist')}
+                </div>
+                <p className="ai-shell-whitelist-description">
+                    {nls.localize(
+                        'theia/ai/ide/toolsConfiguration/shellWhitelist/description',
+                        'Commands matching these patterns will be automatically allowed without confirmation. ' +
+                        'Each pattern is matched as a prefix (e.g., "git log" matches "git log --oneline").'
+                    )}
+                </p>
+                <div className="ai-shell-whitelist-input-row">
+                    <input
+                        type="text"
+                        className="theia-input"
+                        placeholder={nls.localize(
+                            'theia/ai/ide/toolsConfiguration/shellWhitelist/placeholder',
+                            'Enter command pattern (e.g., git log)'
+                        )}
+                        value={this.newPatternInput}
+                        onChange={e => this.handlePatternInputChange(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && this.handleAddPattern()}
+                    />
+                    <button className="theia-button main" onClick={() => this.handleAddPattern()}>
+                        {nls.localizeByDefault('Add')}
+                    </button>
+                </div>
+                <ul className="ai-shell-whitelist-patterns">
+                    {this.whitelistPatterns.map(pattern => (
+                        <li key={pattern} className="ai-shell-whitelist-pattern-item">
+                            <code>{pattern}</code>
+                            <button
+                                className="theia-button secondary"
+                                onClick={() => this.handleRemovePattern(pattern)}
+                            >
+                                {nls.localizeByDefault('Remove')}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+                {this.whitelistPatterns.length === 0 && (
+                    <p className="ai-shell-whitelist-empty">
+                        {nls.localize(
+                            'theia/ai/ide/toolsConfiguration/shellWhitelist/empty',
+                            'No patterns configured. All shell commands will require confirmation.'
+                        )}
+                    </p>
+                )}
+            </div>
+        );
     }
 }

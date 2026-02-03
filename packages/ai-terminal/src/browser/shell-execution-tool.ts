@@ -16,6 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ShellCommandWhitelistService } from './shell-command-whitelist-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
@@ -34,6 +35,9 @@ export class ShellExecutionTool implements ToolProvider {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(ShellCommandWhitelistService)
+    protected readonly shellCommandWhitelistService: ShellCommandWhitelistService;
 
     protected readonly runningExecutions = new Map<string, string>();
 
@@ -111,7 +115,15 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                 },
                 required: ['command']
             },
-            handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx)
+            handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
+            shouldAutoApprove: (argString: string) => {
+                try {
+                    const args = JSON.parse(argString);
+                    return this.shellCommandWhitelistService.isCommandAllowed(args.command);
+                } catch {
+                    return false;
+                }
+            }
         };
     }
 

@@ -63,6 +63,12 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     case ToolConfirmationMode.CONFIRM:
                     default: {
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
+
+                        // Auto-approve if tool provides shouldAutoApprove and it returns true
+                        if (toolRequest.shouldAutoApprove?.(arg_string)) {
+                            toolCallContent.confirm();
+                        }
+
                         const confirmed = await toolCallContent.confirmed;
 
                         if (confirmed) {
