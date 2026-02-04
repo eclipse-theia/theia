@@ -70,6 +70,12 @@
   overflow-y: auto;
 }
 
+/* Preserve multiple consecutive spaces in dialog content */
+.lm-Widget.dialogOverlay .dialogContent li,
+.lm-Widget.dialogOverlay .dialogContent div {
+  white-space: pre-wrap;
+}
+
 .lm-Widget.dialogOverlay .dialogControl {
   padding: calc(var(--theia-ui-padding) * 2);
   display: flex;
@@ -118,7 +124,7 @@
 .theia-dialog-node-segment {
   flex-grow: 0;
   user-select: none;
-  white-space: nowrap;
+  white-space: pre;
 }
 
 .theia-dialog-icon {

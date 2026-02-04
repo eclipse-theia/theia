@@ -148,7 +148,7 @@
   align-items: center;
   flex-grow: 0;
   user-select: none;
-  white-space: nowrap;
+  white-space: pre;
 }
 
 .theia-TreeNodeSegment.flex {
@@ -159,7 +159,7 @@
   flex-grow: 1 !important;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: pre;
 }
 
 .theia-TreeNodeTail {

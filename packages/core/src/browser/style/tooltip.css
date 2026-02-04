@@ -19,6 +19,7 @@
   background: var(--theia-editorHoverWidget-background) !important;
   border: 1px solid !important;
   border-color: var(--theia-editorHoverWidget-border) !important;
+  white-space: pre-wrap !important;
 }
 
 /* Hide tooltip arrow */
