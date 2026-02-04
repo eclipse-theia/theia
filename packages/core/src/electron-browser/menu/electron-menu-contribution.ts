@@ -164,6 +164,10 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                 if (!currentValueActive) {
                     this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
                 }
+                // Enable the change flag after initialization is complete.
+                // This ensures that user-initiated changes will trigger a restart,
+                // while the synchronization change above (if any) is ignored.
+                this.titleBarStyleChangeFlag = true;
             });
         });
 
@@ -178,7 +182,6 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                     window.electronTheiaCore.setTitleBarStyle(newTitleBarStyle);
                     this.handleRequiredRestart();
                 }
-                this.titleBarStyleChangeFlag = true;
             }
         });
     }
