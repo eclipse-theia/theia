@@ -31,30 +31,12 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
         languageModel: LanguageModel,
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
-        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-
-        const ids = languageModel.id.split('/');
-        const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], languageModelRequest.agentId);
-        if (matchingSetting?.requestSettings) {
-            // Merge the settings, with user request taking precedence
-            languageModelRequest.settings = {
-                ...matchingSetting.requestSettings,
-                ...languageModelRequest.settings
-            };
-        }
-        if (matchingSetting?.clientSettings) {
-            // Merge the clientSettings, with user request taking precedence
-            languageModelRequest.clientSettings = {
-                ...matchingSetting.clientSettings,
-                ...languageModelRequest.clientSettings
-            };
-        }
-
+        applyRequestSettings(languageModelRequest, languageModel.id, languageModelRequest.agentId, this.preferenceService);
         return super.sendRequest(languageModel, languageModelRequest);
     }
 }
 
-export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId: string, providerId: string, agentId?: string): RequestSetting => {
+const mergeRequestSettings = (requestSettings: RequestSetting[], modelId: string, providerId: string, agentId?: string): RequestSetting => {
     const prioritizedSettings = Prioritizeable.prioritizeAllSync(requestSettings,
         setting => getRequestSettingSpecificity(setting, {
             modelId,
@@ -64,4 +46,32 @@ export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId:
     // merge all settings from lowest to highest, identical priorities will be overwritten by the following
     const matchingSetting = prioritizedSettings.reduceRight((acc, cur) => ({ ...acc, ...cur.value }), {} as RequestSetting);
     return matchingSetting;
+};
+
+/**
+ * Apply request settings from preferences to a user request.
+ * Merges settings based on model ID, provider ID, and agent ID specificity.
+ */
+export const applyRequestSettings = (
+    request: UserRequest,
+    languageModelId: string,
+    agentId: string | undefined,
+    preferenceService: PreferenceService
+): void => {
+    const requestSettings = preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+    const ids = languageModelId.split('/');
+    const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], agentId);
+
+    if (matchingSetting?.requestSettings) {
+        request.settings = {
+            ...matchingSetting.requestSettings,
+            ...request.settings
+        };
+    }
+    if (matchingSetting?.clientSettings) {
+        request.clientSettings = {
+            ...matchingSetting.clientSettings,
+            ...request.clientSettings
+        };
+    }
 };

@@ -238,7 +238,20 @@ export interface LanguageModelRequest {
     tools?: ToolRequest[];
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
-    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean }
+    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
+    /**
+     * If true, the model should return after the first LLM response
+     * without executing tool calls. The caller handles tool execution
+     * and continuation.
+     *
+     * Models that don't support this property ignore it and handle
+     * the tool loop internally (current behavior). This allows gradual
+     * migration - once all models support it, the old tool loop code
+     * can be removed.
+     *
+     * Default: false (model handles tool loop internally).
+     */
+    singleRoundTrip?: boolean;
 }
 export interface ResponseFormatJsonSchema {
     type: 'json_schema';
@@ -293,6 +306,10 @@ export const isLanguageModelStreamResponsePart = (part: unknown): part is Langua
 export interface UsageResponsePart {
     input_tokens: number;
     output_tokens: number;
+    /** Input tokens written to cache (Anthropic-specific) */
+    cache_creation_input_tokens?: number;
+    /** Input tokens read from cache (Anthropic-specific) */
+    cache_read_input_tokens?: number;
 }
 export const isUsageResponsePart = (part: unknown): part is UsageResponsePart =>
     !!(part && typeof part === 'object' &&

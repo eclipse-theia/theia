@@ -26,7 +26,6 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageParams,
     TokenUsageService,
     ToolCallResult,
     ToolInvocationContext,
@@ -265,7 +264,6 @@ export class AnthropicModel implements LanguageModel {
 
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
-
                 const toolCalls: ToolCallback[] = [];
                 let toolCall: ToolCallback | undefined;
                 const currentMessages: Message[] = [];
@@ -315,25 +313,40 @@ export class AnthropicModel implements LanguageModel {
                     } else if (event.type === 'message_start') {
                         currentMessages.push(event.message);
                         currentMessage = event.message;
+                        // Yield initial usage data (input tokens known, output tokens = 0)
+                        if (event.message.usage) {
+                            yield {
+                                input_tokens: event.message.usage.input_tokens,
+                                output_tokens: 0,
+                                cache_creation_input_tokens: event.message.usage.cache_creation_input_tokens ?? undefined,
+                                cache_read_input_tokens: event.message.usage.cache_read_input_tokens ?? undefined
+                            };
+                        }
                     } else if (event.type === 'message_stop') {
                         if (currentMessage) {
-                            yield { input_tokens: currentMessage.usage.input_tokens, output_tokens: currentMessage.usage.output_tokens };
-                            // Record token usage if token usage service is available
-                            if (that.tokenUsageService && currentMessage.usage) {
-                                const tokenUsageParams: TokenUsageParams = {
-                                    inputTokens: currentMessage.usage.input_tokens,
-                                    outputTokens: currentMessage.usage.output_tokens,
-                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens || undefined,
-                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens || undefined,
-                                    requestId: request.requestId
-                                };
-                                await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
-                            }
+                            // Yield final output tokens only (input/cached tokens already yielded at message_start)
+                            yield {
+                                input_tokens: 0,
+                                output_tokens: currentMessage.usage.output_tokens
+                            };
                         }
-
                     }
                 }
                 if (toolCalls.length > 0) {
+                    // singleRoundTrip mode: Return tool calls to caller without executing them.
+                    // This allows external tool loop management (e.g., for budget-aware summarization).
+                    // When enabled, we yield the tool_calls and return immediately; the caller
+                    // handles tool execution and decides whether to continue the conversation.
+                    if (request.singleRoundTrip) {
+                        const pendingCalls = toolCalls.map(tc => ({
+                            finished: true,
+                            id: tc.id,
+                            function: { name: tc.name, arguments: tc.args.length === 0 ? '{}' : tc.args }
+                        }));
+                        yield { tool_calls: pendingCalls };
+                        return;
+                    }
+
                     const toolResult = await Promise.all(toolCalls.map(async tc => {
                         const tool = request.tools?.find(t => t.name === tc.name);
                         const argsObject = tc.args.length === 0 ? '{}' : tc.args;
@@ -414,16 +427,6 @@ export class AnthropicModel implements LanguageModel {
         try {
             const response = await anthropic.messages.create(params);
             const textContent = response.content[0];
-
-            // Record token usage if token usage service is available
-            if (this.tokenUsageService && response.usage) {
-                const tokenUsageParams: TokenUsageParams = {
-                    inputTokens: response.usage.input_tokens,
-                    outputTokens: response.usage.output_tokens,
-                    requestId: request.requestId
-                };
-                await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
-            }
 
             if (textContent?.type === 'text') {
                 return { text: textContent.text };

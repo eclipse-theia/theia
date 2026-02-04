@@ -20,6 +20,7 @@ import { isObject, nls, PreferenceSchema } from '@theia/core';
 export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
 export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
 export const BYPASS_MODEL_REQUIREMENT_PREF = 'ai-features.chat.bypassModelRequirement';
+export const BUDGET_AWARE_TOOL_LOOP_PREF = 'ai-features.chat.experimentalBudgetAwareToolLoop';
 export const PERSISTED_SESSION_LIMIT_PREF = 'ai-features.chat.persistedSessionLimit';
 export const SESSION_STORAGE_PREF = 'ai-features.chat.sessionStorage';
 
@@ -137,6 +138,15 @@ export const aiChatPreferences: PreferenceSchema = {
             type: 'boolean',
             description: nls.localize('theia/ai/chat/bypassModelRequirement/description',
                 'Bypass the language model requirement check. Enable this if you are using external agents (e.g., Claude Code) that do not require Theia language models.'),
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [BUDGET_AWARE_TOOL_LOOP_PREF]: {
+            type: 'boolean',
+            description: nls.localize('theia/ai/chat/budgetAwareToolLoop/description',
+                'Experimental: Enable budget-aware tool loop. When enabled, the chat agent can trigger summarization mid-turn \
+if the token budget is exceeded during tool call loops. This prevents API errors from context overflow. \
+Requires language model support (currently only Anthropic models).'),
             default: false,
             title: AI_CORE_PREFERENCES_TITLE,
         },

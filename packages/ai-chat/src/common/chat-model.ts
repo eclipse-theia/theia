@@ -254,6 +254,8 @@ export interface ChangeSetDecoration {
     readonly additionalInfoSuffixIcon?: string[];
 }
 
+export type ChatRequestKind = 'user' | 'summary' | 'continuation';
+
 export interface ChatRequest {
     readonly text: string;
     readonly displayText?: string;
@@ -265,6 +267,10 @@ export interface ChatRequest {
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
     readonly modeId?: string;
+    /**
+     * The type of request. Defaults to 'user' if not specified.
+     */
+    readonly kind?: ChatRequestKind;
 }
 
 export interface ChatContext {
@@ -280,6 +286,8 @@ export interface ChatRequestModel {
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
+    /** Indicates this request has been summarized and should be excluded from prompt construction */
+    readonly isStale?: boolean;
     toSerializable(): SerializableChatRequestData;
 }
 
@@ -436,6 +444,10 @@ export interface ProgressContentData {
     message: string;
 }
 
+export interface SummaryContentData {
+    content: string;
+}
+
 export interface ErrorContentData {
     message: string;
     stack?: string;
@@ -518,6 +530,17 @@ export interface ProgressChatResponseContent
     extends Required<ChatResponseContent> {
     kind: 'progress';
     message: string;
+}
+
+/**
+ * A summary chat response content represents a condensed summary of previous chat messages.
+ * It is used when chat history exceeds token limits and older messages need to be summarized.
+ * The summary is displayed collapsed by default and is read-only.
+ */
+export interface SummaryChatResponseContent extends ChatResponseContent {
+    kind: 'summary';
+    /** The summary text content */
+    content: string;
 }
 
 export interface Location {
@@ -744,6 +767,17 @@ export namespace ProgressChatResponseContent {
     }
 }
 
+export namespace SummaryChatResponseContent {
+    export function is(obj: unknown): obj is SummaryChatResponseContent {
+        return (
+            ChatResponseContent.is(obj) &&
+            obj.kind === 'summary' &&
+            'content' in obj &&
+            typeof (obj as { content: unknown }).content === 'string'
+        );
+    }
+}
+
 export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
@@ -930,6 +964,12 @@ export class MutableChatModel implements ChatModel, Disposable {
                 reqData,
                 respData
             );
+            // Subscribe to request changes and forward to model emitter (same as addRequest)
+            requestModel.onDidChange(event => {
+                if (!ChatChangeEvent.isChangeSetEvent(event)) {
+                    this._onDidChangeEmitter.fire(event);
+                }
+            }, this, this.toDispose);
             requestMap.set(requestModel.id, requestModel);
         }
 
@@ -1008,6 +1048,67 @@ export class MutableChatModel implements ChatModel, Disposable {
             request: requestModel,
         });
         return requestModel;
+    }
+
+    /**
+     * Insert a summary into the model.
+     * Handles stale marking for older requests.
+     *
+     * Note: Only 'end' position is currently supported. The 'beforeLast' mode was removed
+     * because reordering breaks the hierarchy structure - the summary gets added as a
+     * continuation of the trigger request, and removing the trigger loses the branch connection.
+     *
+     * @param summaryCallback - Callback that creates the summary request via ChatService.sendRequest()
+     *                          and returns the requestId and summaryText, or undefined on failure.
+     * @param position - Currently only 'end' is supported (appends summary at end)
+     * @returns The summary text on success, or undefined on failure
+     */
+    async insertSummary(
+        summaryCallback: () => Promise<{ requestId: string; summaryText: string } | undefined>,
+        position: 'end'
+    ): Promise<string | undefined> {
+        const allRequests = this.getRequests();
+
+        // Need at least 2 requests to summarize
+        if (allRequests.length < 2) {
+            return undefined;
+        }
+
+        // For 'end' position (between-turn), all existing requests are summarized and should be marked stale
+        // For other positions, preserve the most recent exchange
+        const requestToPreserve = position === 'end' ? undefined : allRequests[allRequests.length - 1];
+
+        // Identify which requests will be marked stale after successful summarization
+        const requestsToMarkStale = allRequests.filter(r => !r.isStale && r !== requestToPreserve);
+
+        // Call the callback to create the summary request and invoke the agent
+        // NOTE: Stale marking happens AFTER the callback so the summary agent can see all messages
+        let result: { requestId: string; summaryText: string } | undefined;
+        try {
+            result = await summaryCallback();
+        } catch (error) {
+            result = undefined;
+        }
+
+        if (!result) {
+            return undefined;
+        }
+
+        const { requestId, summaryText } = result;
+
+        // Find the created summary request using findRequest (handles hierarchy search)
+        const summaryRequest = this._hierarchy.findRequest(requestId);
+        if (!summaryRequest) {
+            // Request not found - treat as failure
+            return undefined;
+        }
+
+        // Mark older requests as stale
+        for (const request of requestsToMarkStale) {
+            request.isStale = true;
+        }
+
+        return summaryText;
     }
 
     protected getTargetForRequestAddition(request: ParsedChatRequest): (addendum: MutableChatRequestModel) => void {
@@ -1308,7 +1409,7 @@ export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRe
     }
 
     activeBranches(): ChatHierarchyBranch<TRequest>[] {
-        return Array.from(this.iterateBranches());
+        return Array.from(this.iterateBranches()).filter(b => b.items.length > 0);
     }
 
     protected *iterateBranches(): Generator<ChatHierarchyBranch<TRequest>> {
@@ -1422,6 +1523,9 @@ export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> i
     }
 
     get(): TRequest {
+        if (this.items.length === 0 || this._activeIndex < 0) {
+            throw new Error('Cannot get request from empty branch');
+        }
         return this.items[this.activeBranchIndex].element;
     }
 
@@ -1438,8 +1542,12 @@ export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> i
         const index = this.items.findIndex(version => version.element.id === requestId);
         if (index !== -1) {
             this.items.splice(index, 1);
-            if (this.activeBranchIndex >= index) {
-                this.activeBranchIndex--;
+            if (this.items.length === 0) {
+                // Branch is now empty - set directly without firing event
+                this._activeIndex = -1;
+            } else if (this._activeIndex >= index) {
+                // Branch still has items - use setter to fire change event
+                this.activeBranchIndex = Math.max(0, this._activeIndex - 1);
             }
         }
     }
@@ -1499,7 +1607,8 @@ export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> i
     }
 
     dispose(): void {
-        if (Disposable.is(this.get())) {
+        // Dispose all items if they are disposable (check first item, not get() which throws on empty)
+        if (this.items.length > 0 && Disposable.is(this.items[0].element)) {
             this.items.forEach(({ element }) => Disposable.is(element) && element.dispose());
         }
         this.items.length = 0;
@@ -1581,6 +1690,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _data: { [key: string]: unknown };
     protected _isEditing = false;
     protected _message: ParsedChatRequest;
+    protected _isStale = false;
 
     protected readonly toDispose = new DisposableCollection();
     readonly editContextManager: ChatContextManagerImpl;
@@ -1636,9 +1746,14 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         respData?: SerializableChatResponseData
     ): void {
         this._id = reqData.id;
-        this._request = { text: reqData.text };
+        this._request = {
+            text: reqData.text,
+            kind: reqData.kind  // undefined for old sessions = default 'user' behavior
+        };
         this._agentId = reqData.agentId;
         this._data = {};
+        // Restore isStale flag, defaulting to false for backward compatibility
+        this._isStale = reqData.isStale ?? false;
         this._context = { variables: [] };
 
         if (reqData.parsedRequest) {
@@ -1840,6 +1955,14 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         return this._agentId;
     }
 
+    get isStale(): boolean {
+        return this._isStale;
+    }
+
+    set isStale(value: boolean) {
+        this._isStale = value;
+    }
+
     cancelEdit(): void {
         if (this.isEditing) {
             this._isEditing = false;
@@ -1869,16 +1992,23 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     }
 
     toSerializable(): SerializableChatRequestData {
-        return {
+        const result: SerializableChatRequestData = {
             id: this.id,
             text: this.request.text,
             agentId: this.agentId,
+            // Only include kind when not default to minimize payload
+            kind: this.request.kind !== 'user' ? this.request.kind : undefined,
             changeSet: this._changeSet ? {
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
             } : undefined,
             parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined
         };
+        // Only include isStale when true to minimize payload
+        if (this._isStale) {
+            result.isStale = true;
+        }
+        return result;
     }
 
     dispose(): void {
@@ -2887,6 +3017,47 @@ export class ProgressChatResponseContentImpl implements ProgressChatResponseCont
         return {
             kind: 'progress',
             data: { message: this._message }
+        };
+    }
+}
+
+/**
+ * Implementation of SummaryChatResponseContent.
+ * Represents a summary of previous chat messages that exceeded token limits.
+ * The summary content is included in prompts to maintain conversation context.
+ */
+export class SummaryChatResponseContentImpl implements SummaryChatResponseContent {
+    readonly kind = 'summary';
+    protected _content: string;
+
+    constructor(content: string) {
+        this._content = content;
+    }
+
+    get content(): string {
+        return this._content;
+    }
+
+    asString(): string {
+        return this._content;
+    }
+
+    asDisplayString(): string | undefined {
+        return this._content;
+    }
+
+    toLanguageModelMessage(): TextMessage {
+        return {
+            actor: 'ai',
+            type: 'text',
+            text: `[Summary of previous conversation]\n${this._content}`
+        };
+    }
+
+    toSerializable(): SerializableChatResponseContentData<SummaryContentData> {
+        return {
+            kind: 'summary',
+            data: { content: this._content }
         };
     }
 }

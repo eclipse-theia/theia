@@ -41,7 +41,7 @@ import {
 import { ChatRequestParser } from './chat-request-parser';
 import { ChatSessionNamingService } from './chat-session-naming-service';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
-import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
+import { ChatModelWithMetadata, ChatSessionIndex, ChatSessionStore } from './chat-session-store';
 import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
 import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
 import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization';
@@ -85,6 +85,8 @@ export function isActiveSessionChangedEvent(obj: unknown): obj is ActiveSessionC
 export interface SessionCreatedEvent {
     type: 'created';
     sessionId: string;
+    tokenCount?: number;
+    branchTokens?: { [branchId: string]: number };
 }
 
 export function isSessionCreatedEvent(obj: unknown): obj is SessionCreatedEvent {
@@ -282,7 +284,11 @@ export class ChatServiceImpl implements ChatService {
             return undefined;
         }
 
-        this.cancelIncompleteRequests(session);
+        // Don't cancel incomplete requests for summary requests - they run concurrently
+        // with the active request during mid-turn summarization
+        if (request.kind !== 'summary') {
+            this.cancelIncompleteRequests(session);
+        }
 
         const resolutionContext: ChatSessionContext = { model: session.model };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
@@ -323,7 +329,11 @@ export class ChatServiceImpl implements ChatService {
             }
         });
 
-        agent.invoke(requestModel).catch(error => requestModel.response.error(error));
+        // Don't invoke agent for continuation requests - they are containers for moved tool results
+        // The tool loop handles completing the response externally
+        if (request.kind !== 'continuation') {
+            agent.invoke(requestModel).catch(error => requestModel.response.error(error));
+        }
 
         return invocation;
     }
@@ -337,6 +347,9 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected updateSessionMetadata(session: ChatSessionInternal, request: MutableChatRequestModel): void {
+        if (request.request.kind === 'summary') {
+            return;
+        }
         session.lastInteraction = new Date();
         if (session.title) {
             return;
@@ -458,9 +471,12 @@ export class ChatServiceImpl implements ChatService {
         }
 
         // Store session with title and pinned agent info
-        this.sessionStore.storeSessions(
-            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id }
-        ).catch(error => {
+        const sessionData: ChatModelWithMetadata = {
+            model: session.model,
+            title: session.title,
+            pinnedAgentId: session.pinnedAgent?.id
+        };
+        this.sessionStore.storeSessions(sessionData).catch(error => {
             this.logger.error('Failed to store chat sessions', error);
         });
     }
@@ -521,7 +537,12 @@ export class ChatServiceImpl implements ChatService {
         };
         this._sessions.push(session);
         this.setupAutoSaveForSession(session);
-        this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });
+        this.onSessionEventEmitter.fire({
+            type: 'created',
+            sessionId: session.id,
+            tokenCount: serialized.lastInputTokens,
+            branchTokens: serialized.branchTokens
+        });
 
         this.logger.debug('Session successfully restored and registered', { sessionId, title: session.title });
 

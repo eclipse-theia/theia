@@ -161,7 +161,7 @@ export class OpenAiModel implements LanguageModel {
             });
         }
 
-        return { stream: new StreamingAsyncIterator(runner, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
+        return { stream: new StreamingAsyncIterator(runner, request.requestId, request.sessionId, cancellationToken, this.tokenUsageService, this.id) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -173,18 +173,6 @@ export class OpenAiModel implements LanguageModel {
         });
 
         const message = response.choices[0].message;
-
-        // Record token usage if token usage service is available
-        if (this.tokenUsageService && response.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: response.usage.prompt_tokens,
-                    outputTokens: response.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
 
         return {
             text: message.content ?? ''
@@ -207,18 +195,6 @@ export class OpenAiModel implements LanguageModel {
         const message = result.choices[0].message;
         if (message.refusal || message.parsed === undefined) {
             console.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
-        }
-
-        // Record token usage if token usage service is available
-        if (this.tokenUsageService && result.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.prompt_tokens,
-                    outputTokens: result.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
         }
 
         return {

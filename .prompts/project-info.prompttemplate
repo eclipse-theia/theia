@@ -59,6 +59,19 @@ Tests are located in the same directory as the components under test.
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
 done for a final validation.
 
+
+### Building and Running the Demo App
+
+The main example applications are in `/examples/`:
+
+| Command (from root) | Purpose |
+|---------------------|---------|
+| `npm ci` | Install dependencies (required first) |
+| `npm run build:browser` | Build all packages + browser app |
+| `npm run start:browser` | Start browser example at localhost:3000 |
+| `npm run start:electron` | Start Electron desktop app |
+| `npm run watch` | Watch mode for development |
+
 ### Preferences
 
 Theia uses a preferences system for user/workspace settings. To add new preferences:

@@ -96,7 +96,7 @@ export class OpenAiResponseApiUtils {
                     input,
                     ...settings
                 });
-                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, modelId, tokenUsageService, cancellationToken) };
+                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, request.sessionId, modelId, tokenUsageService, cancellationToken) };
             } else {
                 const response = await openai.responses.create({
                     model: model as ResponsesModel,
@@ -104,18 +104,6 @@ export class OpenAiResponseApiUtils {
                     input,
                     ...settings
                 });
-
-                // Record token usage if available
-                if (tokenUsageService && response.usage) {
-                    await tokenUsageService.recordTokenUsage(
-                        modelId,
-                        {
-                            inputTokens: response.usage.input_tokens,
-                            outputTokens: response.usage.output_tokens,
-                            requestId: request.requestId
-                        }
-                    );
-                }
 
                 return { text: response.output_text || '' };
             }
@@ -169,6 +157,7 @@ export class OpenAiResponseApiUtils {
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         requestId: string,
+        sessionId: string,
         modelId: string,
         tokenUsageService?: TokenUsageService,
         cancellationToken?: CancellationToken
@@ -186,15 +175,12 @@ export class OpenAiResponseApiUtils {
                                 content: event.delta
                             };
                         } else if (event.type === 'response.completed') {
-                            if (tokenUsageService && event.response?.usage) {
-                                await tokenUsageService.recordTokenUsage(
-                                    modelId,
-                                    {
-                                        inputTokens: event.response.usage.input_tokens,
-                                        outputTokens: event.response.usage.output_tokens,
-                                        requestId
-                                    }
-                                );
+                            // Yield usage data when response completes
+                            if (event.response?.usage) {
+                                yield {
+                                    input_tokens: event.response.usage.input_tokens,
+                                    output_tokens: event.response.usage.output_tokens
+                                };
                             }
                         } else if (event.type === 'error') {
                             console.error('Response API error:', event.message);
@@ -321,8 +307,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     // Current iteration state
     protected currentInput: ResponseInputItem[];
     protected currentToolCalls = new Map<string, ToolCall>();
-    protected totalInputTokens = 0;
-    protected totalOutputTokens = 0;
     protected iteration = 0;
     protected readonly maxIterations: number;
     protected readonly tools: FunctionTool[] | undefined;
@@ -447,12 +431,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             ...this.settings
         });
 
-        // Record token usage
-        if (response.usage) {
-            this.totalInputTokens += response.usage.input_tokens;
-            this.totalOutputTokens += response.usage.output_tokens;
-        }
-
         // First, yield any text content from the response
         this.currentResponseText = response.output_text || '';
         if (this.currentResponseText) {
@@ -518,9 +496,12 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 break;
 
             case 'response.completed':
+                // Yield usage data when response completes
                 if (event.response?.usage) {
-                    this.totalInputTokens += event.response.usage.input_tokens;
-                    this.totalOutputTokens += event.response.usage.output_tokens;
+                    this.handleIncoming({
+                        input_tokens: event.response.usage.input_tokens,
+                        output_tokens: event.response.usage.output_tokens
+                    });
                 }
                 break;
 
@@ -735,22 +716,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
     protected async finalize(): Promise<void> {
         this.done = true;
-
-        // Record final token usage
-        if (this.tokenUsageService && (this.totalInputTokens > 0 || this.totalOutputTokens > 0)) {
-            try {
-                await this.tokenUsageService.recordTokenUsage(
-                    this.modelId,
-                    {
-                        inputTokens: this.totalInputTokens,
-                        outputTokens: this.totalOutputTokens,
-                        requestId: this.request.requestId
-                    }
-                );
-            } catch (error) {
-                console.error('Error recording token usage:', error);
-            }
-        }
 
         // Resolve any outstanding requests
         if (this.terminalError) {

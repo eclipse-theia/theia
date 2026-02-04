@@ -42,6 +42,7 @@ import {
     TextMessage,
     ToolCall,
     ToolRequest,
+    UsageResponsePart,
 } from '@theia/ai-core';
 import {
     Agent,
@@ -51,7 +52,7 @@ import {
     LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
 import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
@@ -96,6 +97,39 @@ export namespace SystemMessageDescription {
             isPromptVariantEdited
         };
     }
+}
+
+/**
+ * Symbol for optional injection of the ChatSummarizationService.
+ * This allows browser implementations to provide summarization support.
+ */
+export const ChatSessionSummarizationServiceSymbol = Symbol('ChatSessionSummarizationService');
+
+/**
+ * Minimal interface for chat summarization service.
+ * Used by AbstractChatAgent to optionally trigger summarization.
+ */
+export interface ChatSummarizationService {
+    /**
+     * Update token tracking during streaming.
+     * Called when usage data is received in the stream, before the response completes.
+     */
+    updateTokens(
+        sessionId: string,
+        usage: UsageResponsePart
+    ): void;
+
+    /**
+     * Check and handle summarization after response completes.
+     * Called after the stream ends with the final accumulated usage.
+     * Usage may be undefined if the stream ended early (e.g., due to budget-exceeded split).
+     */
+    checkAndHandleSummarization(
+        sessionId: string,
+        agent: ChatAgent,
+        request: MutableChatRequestModel,
+        usage: UsageResponsePart | undefined
+    ): Promise<boolean>;
 }
 
 export interface ChatSessionContext extends AIVariableContext {
@@ -172,6 +206,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
 
+    @inject(ChatSessionSummarizationServiceSymbol) @optional()
+    protected summarizationService?: ChatSummarizationService;
+
     readonly abstract id: string;
     readonly abstract name: string;
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
@@ -233,8 +270,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
             ];
             const languageModelResponse = await this.sendLlmRequest(request, messages, tools, languageModel);
 
-            await this.addContentsToResponse(languageModelResponse, request);
-            await this.onResponseComplete(request);
+            const usage = await this.addContentsToResponse(languageModelResponse, request);
+            const summarizationHandled = await this.checkSummarization(request, usage);
+            if (!summarizationHandled) {
+                await this.onResponseComplete(request);
+            }
 
         } catch (e) {
             this.handleError(request, e);
@@ -293,7 +333,13 @@ export abstract class AbstractChatAgent implements ChatAgent {
         model: ChatModel, includeResponseInProgress = false
     ): Promise<LanguageModelMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
+            // Skip stale requests entirely - their content is replaced by summary nodes
+            if (request.isStale === true) {
+                return [];
+            }
+
             const messages: LanguageModelMessage[] = [];
+
             const text = request.message.parts.map(part => part.promptText).join('');
             if (text.length > 0) {
                 messages.push({
@@ -316,7 +362,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 }));
             messages.push(...imageMessages);
 
-            if (request.response.isComplete || includeResponseInProgress) {
+            if (request.response.isComplete || includeResponseInProgress || request.request.kind === 'continuation') {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content
                     .filter(c => {
                         // we do not send errors or informational content
@@ -401,6 +447,30 @@ export abstract class AbstractChatAgent implements ChatAgent {
     }
 
     /**
+     * Hook called after addContentsToResponse() to check if summarization is needed.
+     * Returns true if summarization was triggered (response handling is complete).
+     * Returns false if no summarization needed (caller should call onResponseComplete).
+     *
+     * Uses the injected ChatSummarizationService if available (browser context).
+     * Returns false in non-browser contexts where the service is not injected.
+     * Returns false if no usage data is available (LLM doesn't report usage).
+     *
+     * @param request The chat request model
+     * @param usage Usage data from the response stream for synchronous token tracking
+     */
+    protected async checkSummarization(request: MutableChatRequestModel, usage: UsageResponsePart | undefined): Promise<boolean> {
+        if (this.summarizationService) {
+            return this.summarizationService.checkAndHandleSummarization(
+                request.session.id,
+                this,
+                request,
+                usage
+            );
+        }
+        return false;
+    }
+
+    /**
      * Invoked after the response by the LLM completed successfully.
      *
      * The default implementation sets the state of the response to `complete`.
@@ -410,17 +480,18 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return request.response.complete();
     }
 
-    protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void>;
+    protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<UsageResponsePart | undefined>;
 }
 
 @injectable()
 export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractChatAgent {
 
-    protected async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
+    protected async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<UsageResponsePart | undefined> {
         const responseAsText = await getTextOfResponse(languageModelResponse);
         const parsedCommand = await this.parseTextResponse(responseAsText);
         const content = this.createResponseContent(parsedCommand, request);
         request.response.response.addContent(content);
+        return undefined; // Text responses don't have usage data in the same way
     }
 
     protected abstract parseTextResponse(text: string): Promise<T>;
@@ -461,15 +532,14 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     @inject(ToolCallChatResponseContentFactory)
     protected toolCallResponseContentFactory: ToolCallChatResponseContentFactory;
 
-    protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
+    protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<UsageResponsePart | undefined> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
             const contents = this.parseContents(languageModelResponse.text, request);
             request.response.response.addContents(contents);
-            return;
+            return undefined;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
-            await this.addStreamResponse(languageModelResponse, request);
-            return;
+            return this.addStreamResponse(languageModelResponse, request);
         }
         this.logger.error(
             'Received unknown response in agent. Return response as text'
@@ -479,16 +549,41 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 JSON.stringify(languageModelResponse)
             )
         );
+        return undefined;
     }
 
-    protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
+    protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<UsageResponsePart | undefined> {
         let completeTextBuffer = '';
         let startIndex = request.response.response.content.length;
+        // Accumulate usage data across multiple usage parts (some providers yield input/output separately)
+        let accumulatedUsage: UsageResponsePart | undefined;
         for await (const token of languageModelResponse.stream) {
             // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
             if (!isLanguageModelStreamResponsePart(token)) {
                 console.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
                 continue;
+            }
+            // Accumulate usage data (some providers yield input/output separately)
+            if (isUsageResponsePart(token)) {
+                if (!accumulatedUsage) {
+                    accumulatedUsage = { ...token };
+                } else {
+                    // Accumulate non-zero values (providers may yield input and output in separate parts)
+                    if (token.input_tokens > 0) {
+                        accumulatedUsage.input_tokens = token.input_tokens;
+                    }
+                    if (token.output_tokens > 0) {
+                        accumulatedUsage.output_tokens = token.output_tokens;
+                    }
+                    if (token.cache_creation_input_tokens !== undefined) {
+                        accumulatedUsage.cache_creation_input_tokens = token.cache_creation_input_tokens;
+                    }
+                    if (token.cache_read_input_tokens !== undefined) {
+                        accumulatedUsage.cache_read_input_tokens = token.cache_read_input_tokens;
+                    }
+                }
+                // Update token tracking in real-time during streaming
+                this.summarizationService?.updateTokens(request.session.id, accumulatedUsage);
             }
             const newContent = this.parse(token, request);
             if (!isTextResponsePart(token)) {
@@ -502,8 +597,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 startIndex = request.response.response.content.length;
                 completeTextBuffer = '';
             } else {
-                // parse the entire text so far (since beginning of the stream or last non-text token)
-                // and replace the entire content with the currently parsed content parts
+                // Parse accumulated text and replace with parsed content parts
                 completeTextBuffer += token.content;
 
                 const parsedContents = this.parseContents(completeTextBuffer, request);
@@ -516,6 +610,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                 request.response.response.addContents(parsedContents);
             }
         }
+        return accumulatedUsage;
     }
 
     protected parse(token: LanguageModelStreamResponsePart, request: MutableChatRequestModel): ChatResponseContent | ChatResponseContent[] {

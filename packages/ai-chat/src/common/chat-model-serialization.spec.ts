@@ -37,6 +37,71 @@ describe('ChatModel Serialization and Restoration', () => {
         };
     }
 
+    describe('isStale property serialization', () => {
+        it('should not include isStale when false (default)', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            model.addRequest(createParsedRequest('Hello'));
+
+            const serialized = model.toSerializable();
+
+            expect(serialized.requests[0].isStale).to.be.undefined;
+        });
+
+        it('should include isStale when true', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const req = model.addRequest(createParsedRequest('Hello'));
+            req.isStale = true;
+
+            const serialized = model.toSerializable();
+
+            expect(serialized.requests[0].isStale).to.be.true;
+        });
+
+        it('should restore isStale flag correctly', () => {
+            const model1 = new MutableChatModel(ChatAgentLocation.Panel);
+            const req = model1.addRequest(createParsedRequest('Hello'));
+            req.isStale = true;
+
+            const serialized = model1.toSerializable();
+            const model2 = new MutableChatModel(serialized);
+
+            expect(model2.getRequests()[0].isStale).to.be.true;
+        });
+
+        it('should default isStale to false when missing in serialized data', () => {
+            const serializedData = {
+                sessionId: 'test-session',
+                location: ChatAgentLocation.Panel,
+                hierarchy: {
+                    rootBranchId: 'branch-root',
+                    branches: {
+                        'branch-root': {
+                            id: 'branch-root',
+                            items: [{ requestId: 'request-1' }],
+                            activeBranchIndex: 0
+                        }
+                    }
+                },
+                requests: [{
+                    id: 'request-1',
+                    text: 'Hello'
+                    // isStale is intentionally omitted
+                }],
+                responses: [{
+                    id: 'response-1',
+                    requestId: 'request-1',
+                    isComplete: true,
+                    isError: false,
+                    content: []
+                }]
+            };
+
+            const model = new MutableChatModel(serializedData);
+
+            expect(model.getRequests()[0].isStale).to.be.false;
+        });
+    });
+
     describe('Simple tree serialization', () => {
         it('should serialize a chat with a single request', () => {
             const model = new MutableChatModel(ChatAgentLocation.Panel);

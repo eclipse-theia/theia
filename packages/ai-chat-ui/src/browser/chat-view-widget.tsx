@@ -15,6 +15,8 @@
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
+import { ChatSessionTokenTracker } from '@theia/ai-chat/lib/browser';
+import { BUDGET_AWARE_TOOL_LOOP_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -25,6 +27,9 @@ import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
+import { ChatTokenUsageIndicator } from './chat-token-usage-indicator';
+import * as React from '@theia/core/shared/react';
+import { Root, createRoot } from '@theia/core/shared/react-dom/client';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -63,10 +68,16 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
+    @inject(ChatSessionTokenTracker)
+    protected readonly tokenTracker: ChatSessionTokenTracker;
+
     @inject(ChatWelcomeMessageProvider) @optional()
     protected readonly welcomeProvider?: ChatWelcomeMessageProvider;
 
     protected chatSession: ChatSession;
+
+    protected tokenIndicatorContainer: HTMLDivElement;
+    protected tokenIndicatorRoot: Root;
 
     protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
@@ -107,7 +118,16 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         layout.addWidget(this.treeWidget);
         this.inputWidget.node.classList.add('chat-input-widget');
         layout.addWidget(this.inputWidget);
+
+        // Add token indicator container after inputWidget is added to the layout
+        // so insertAdjacentElement can properly place it in the DOM
+        this.tokenIndicatorContainer = document.createElement('div');
+        this.tokenIndicatorContainer.classList.add('chat-token-usage-container');
+        this.inputWidget.node.insertAdjacentElement('beforebegin', this.tokenIndicatorContainer);
         this.chatSession = this.chatService.createSession();
+
+        this.tokenIndicatorRoot = createRoot(this.tokenIndicatorContainer);
+        this.renderTokenIndicator();
 
         this.inputWidget.onQuery = this.onQuery.bind(this);
         this.inputWidget.onUnpin = this.onUnpin.bind(this);
@@ -177,6 +197,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
                     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+                    this.renderTokenIndicator();
                 } else {
                     console.warn(`Session with ${event.sessionId} not found.`);
                 }
@@ -298,5 +319,21 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     getSettings(): { [key: string]: unknown } | undefined {
         return this.chatSession.model.settings;
+    }
+
+    protected renderTokenIndicator(): void {
+        const budgetAwareEnabled = this.preferenceService.get<boolean>(BUDGET_AWARE_TOOL_LOOP_PREF, false);
+        this.tokenIndicatorRoot.render(
+            React.createElement(ChatTokenUsageIndicator, {
+                sessionId: this.chatSession.id,
+                tokenTracker: this.tokenTracker,
+                budgetAwareEnabled
+            })
+        );
+    }
+
+    override dispose(): void {
+        this.tokenIndicatorRoot.unmount();
+        super.dispose();
     }
 }
