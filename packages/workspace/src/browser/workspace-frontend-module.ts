@@ -57,6 +57,8 @@ import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
 import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
 import { CanonicalUriService } from './canonical-uri-service';
+import { WorkspaceMetadataStorageService, WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './metadata-storage';
+import { WorkspaceMetadataStoreImpl } from './metadata-storage/workspace-metadata-store';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -100,6 +102,11 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceStorageService).toSelf().inSingletonScope();
     rebind(StorageService).toService(WorkspaceStorageService);
+
+    bind(WorkspaceMetadataStoreImpl).toSelf();
+    bind(WorkspaceMetadataStoreFactory).toFactory(ctx => () => ctx.container.get(WorkspaceMetadataStoreImpl));
+    bind(WorkspaceMetadataStorageServiceImpl).toSelf().inSingletonScope();
+    bind(WorkspaceMetadataStorageService).toService(WorkspaceMetadataStorageServiceImpl);
 
     bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
     bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
