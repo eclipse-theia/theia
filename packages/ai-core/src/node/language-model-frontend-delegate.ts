@@ -80,7 +80,7 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
             );
         }
         request.tools?.forEach(tool => {
-            tool.handler = async args_string => this.frontendDelegateClient.toolCall(requestId, tool.id, args_string);
+            tool.handler = async (args_string, ctx) => this.frontendDelegateClient.toolCall(requestId, tool.id, args_string, ctx?.toolCallId);
         });
         if (cancellationToken) {
             const tokenSource = new CancellationTokenSource();
