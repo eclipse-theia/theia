@@ -16,21 +16,21 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceMetadataStorageService, WorkspaceMetadataStore } from '@theia/workspace/lib/browser';
 import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
-import { Disposable, URI } from '@theia/core';
+import { DisposableCollection, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ChatModel } from '../common/chat-model';
 import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store';
 import {
     PERSISTED_SESSION_LIMIT_PREF,
     SESSION_STORAGE_PREF,
-    SessionStorageValue
+    SessionStorageScope
 } from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
-import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 
 const INDEX_FILE = 'index.json';
 
@@ -42,8 +42,11 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(SessionStorageDefaultsProvider)
-    protected readonly defaultsProvider: SessionStorageDefaultsProvider;
+    @inject(WorkspaceMetadataStorageService)
+    protected readonly metadataStorageService: WorkspaceMetadataStorageService;
+
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
@@ -58,70 +61,29 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     protected storageInitialized = false;
     protected indexCache?: ChatSessionIndex;
     protected storePromise: Promise<void> = Promise.resolve();
-    protected workspaceChangeListener?: Disposable;
+    protected readonly toDispose = new DisposableCollection();
+    protected workspaceMetadataStore?: WorkspaceMetadataStore;
 
     @postConstruct()
     protected init(): void {
-        this.preferenceService.onPreferenceChanged(async event => {
-            if (event.preferenceName === SESSION_STORAGE_PREF) {
-                this.logger.debug('Session storage preference changed: invalidating cache.', { preference: event.preferenceName });
-                this.invalidateStorageCache();
-                // Update workspace listener based on new scope
-                await this.updateWorkspaceListener();
-            }
-        });
-
-        // Set up workspace listener only if scope is 'workspace'
-        this.updateWorkspaceListener();
-    }
-
-    /**
-     * Sets up or tears down the workspace change listener based on the current storage scope.
-     * When scope is 'workspace', we need to listen for changing out of the first root to
-     * invalidate the cache.
-     * When scope is 'global', no workspace listener is needed at all.
-     */
-    protected async updateWorkspaceListener(): Promise<void> {
-        const storageConfig = await this.getStorageConfig();
-
-        if (storageConfig.scope === 'workspace') {
-            // Need workspace listener - set it up if not already active
-            if (!this.workspaceChangeListener) {
-                this.workspaceChangeListener = this.workspaceService.onWorkspaceChanged(async () => {
-                    // Compare cached storage root with newly resolved one (without logging)
-                    const currentConfig = await this.getStorageConfig();
-                    // Safety check in case scope changed between events
-                    if (currentConfig.scope !== 'workspace') {
-                        return;
-                    }
-
-                    const newRoot = await this.resolveStorageRootFromConfig(currentConfig);
-                    if (this.storageRoot && newRoot && this.storageRoot.toString() !== newRoot.toString()) {
-                        this.logger.debug('Workspace storage root changed: invalidating cache.',
-                            { oldRoot: this.storageRoot.toString(), newRoot: newRoot.toString() });
-                        this.invalidateStorageCache();
-                    } else if (!this.storageRoot && newRoot) {
-                        // Transitioning from no storage to having storage
-                        this.invalidateStorageCache();
-                    } else if (this.storageRoot && !newRoot) {
-                        // Transitioning from having storage to no storage
-                        this.invalidateStorageCache();
-                    }
-                });
-            }
-        } else {
-            // Don't need workspace listener - dispose if active
-            if (this.workspaceChangeListener) {
-                this.workspaceChangeListener.dispose();
-                this.workspaceChangeListener = undefined;
-            }
-        }
+        this.toDispose.push(
+            this.preferenceService.onPreferenceChanged(async event => {
+                if (event.preferenceName === SESSION_STORAGE_PREF) {
+                    this.logger.debug('Session storage preference changed: invalidating cache.', { preference: event.preferenceName });
+                    this.invalidateStorageCache();
+                }
+            })
+        );
     }
 
     protected invalidateStorageCache(): void {
         this.storageRoot = undefined;
         this.storageInitialized = false;
         this.indexCache = undefined;
+        // Clear workspace metadata store reference so it will be recreated
+        if (this.workspaceMetadataStore) {
+            this.workspaceMetadataStore = undefined;
+        }
     }
 
     async storeSessions(...sessions: Array<ChatModel | ChatModelWithMetadata>): Promise<void> {
@@ -318,64 +280,52 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
     }
 
-    protected async getStorageConfig(): Promise<SessionStorageValue> {
+    protected async getStorageScope(): Promise<SessionStorageScope> {
         // Wait for preferences to be ready before reading storage configuration
         await this.preferenceService.ready;
-        await this.defaultsProvider.initialize();
-
-        const storagePref = this.preferenceService.get<Partial<SessionStorageValue>>(SESSION_STORAGE_PREF);
-        return this.defaultsProvider.mergeWithDefaults(storagePref);
+        return this.preferenceService.get<SessionStorageScope>(SESSION_STORAGE_PREF, 'workspace');
     }
 
-    protected async getGlobalStorageRoot(): Promise<URI | undefined> {
-        const storageConfig = await this.getStorageConfig();
-        // globalPath will always have a value from the dynamic default
-        return new URI(storageConfig.globalPath).withScheme('file');
+    protected async getGlobalStorageRoot(): Promise<URI> {
+        const configDirUri = await this.envServer.getConfigDirUri();
+        return new URI(configDirUri).resolve('chatSessions');
     }
 
     protected async resolveStorageRoot(): Promise<URI | undefined> {
-        const storageConfig = await this.getStorageConfig();
-        return this.resolveStorageRootFromConfig(storageConfig, true);
-    }
+        const scope = await this.getStorageScope();
 
-    /**
-     * Resolves the storage root URI based on configuration.
-     * @param storageConfig The storage configuration to use
-     * @param log Whether to log debug messages (defaults to not log)
-     */
-    protected async resolveStorageRootFromConfig(storageConfig: SessionStorageValue, log = false): Promise<URI | undefined> {
-        if (storageConfig.scope === 'workspace') {
-            const workspaceRoot = this.getWorkspaceRoot();
-            if (workspaceRoot) {
-                const resolvedPath = workspaceRoot.resolve(storageConfig.workspacePath);
-                if (log) {
-                    this.logger.debug('Using workspace storage', { workspaceRoot: workspaceRoot.toString(), path: resolvedPath.toString() });
-                }
-                return resolvedPath;
-            }
-
-            if (log) {
+        if (scope === 'workspace') {
+            if (this.workspaceService.tryGetRoots().length === 0) {
                 this.logger.debug('No workspace open: falling back to global storage.');
+                return this.getGlobalStorageRoot();
+            }
+
+            try {
+                // Reuse existing store or get/create one from the service
+                if (!this.workspaceMetadataStore) {
+                    this.workspaceMetadataStore = await this.metadataStorageService.getOrCreateStore('chatSessions');
+                    // Set up location change listener
+                    this.toDispose.push(
+                        this.workspaceMetadataStore.onDidChangeLocation(newLocation => {
+                            this.logger.debug('Workspace metadata store location changed: invalidating cache.',
+                                { oldRoot: this.storageRoot?.toString(), newRoot: newLocation.toString() });
+                            this.invalidateStorageCache();
+                        })
+                    );
+                    this.toDispose.push(this.workspaceMetadataStore);
+                }
+                this.logger.debug('Using workspace metadata storage', { location: this.workspaceMetadataStore.location.toString() });
+                return this.workspaceMetadataStore.location;
+            } catch (error) {
+                this.logger.error('Failed to create workspace metadata store, falling back to global storage', error);
+                return this.getGlobalStorageRoot();
             }
         }
 
-        // Global storage mode (or fallback)
-        // Use the configured global path - it will always have a value from the dynamic default
-        const globalPath = new URI(storageConfig.globalPath).withScheme('file');
-        if (log) {
-            this.logger.debug('Using global storage path', { path: globalPath.toString() });
-        }
+        // Global storage mode
+        const globalPath = await this.getGlobalStorageRoot();
+        this.logger.debug('Using global storage path', { path: globalPath.toString() });
         return globalPath;
-    }
-
-    protected getWorkspaceRoot(): URI | undefined {
-        const roots = this.workspaceService.tryGetRoots();
-        if (roots.length > 0) {
-            return roots[0].resource;
-        }
-        // It's OK if we got nothing because we'll just try again when
-        // the roots do come in and we get another event
-        return undefined;
     }
 
     protected async updateIndex(sessions: ((ChatModelWithMetadata & { saveDate: number })[])): Promise<void> {
@@ -581,9 +531,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     protected async hasGlobalSessions(): Promise<boolean> {
         const globalRoot = await this.getGlobalStorageRoot();
-        if (!globalRoot) {
-            return false;
-        }
 
         try {
             const indexFile = globalRoot.resolve(INDEX_FILE);
@@ -598,5 +545,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         } catch (e) {
             return false;
         }
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 }
