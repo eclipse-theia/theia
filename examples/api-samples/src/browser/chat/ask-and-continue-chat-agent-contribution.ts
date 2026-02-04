@@ -109,8 +109,8 @@ Do not ask further questions once the text contains 5 or more "Question/Answer" 
  */
 @injectable()
 export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
-    id = 'AskAndContinue';
-    name = 'AskAndContinue';
+    id = 'AskAndContinueSample';
+    name = 'AskAndContinueSample';
     override description = 'This chat will ask questions related to the input and continues after that.';
     protected defaultLanguageModelPurpose = 'chat';
     override languageModelRequirements = [
