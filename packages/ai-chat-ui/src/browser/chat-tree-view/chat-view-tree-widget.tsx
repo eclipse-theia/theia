@@ -54,7 +54,6 @@ import {
     inject,
     injectable,
     named,
-    optional,
     postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -97,6 +96,8 @@ export interface ChatWelcomeMessageProvider {
     readonly modelRequirementBypassed?: boolean;
     readonly defaultAgent?: string;
     readonly onStateChanged?: Event<void>;
+    /** Optional priority for rendering order. Higher values render first. Default: 0 */
+    readonly priority?: number;
 }
 
 @injectable()
@@ -126,8 +127,8 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(HoverService)
     protected hoverService: HoverService;
 
-    @inject(ChatWelcomeMessageProvider) @optional()
-    protected welcomeMessageProvider?: ChatWelcomeMessageProvider;
+    @inject(ContributionProvider) @named(ChatWelcomeMessageProvider)
+    protected readonly welcomeMessageProviders: ContributionProvider<ChatWelcomeMessageProvider>;
 
     @inject(AIChatTreeInputFactory)
     protected inputWidgetFactory: AIChatTreeInputFactory;
@@ -229,12 +230,14 @@ export class ChatViewTreeWidget extends TreeWidget {
             })
         ]);
 
-        if (this.welcomeMessageProvider?.onStateChanged) {
-            this.toDispose.push(
-                this.welcomeMessageProvider.onStateChanged(() => {
-                    this.update();
-                })
-            );
+        for (const provider of this.welcomeMessageProviders.getContributions()) {
+            if (provider.onStateChanged) {
+                this.toDispose.push(
+                    provider.onStateChanged(() => {
+                        this.update();
+                    })
+                );
+            }
         }
 
         // Initialize lastScrollTop with current scroll position
@@ -396,12 +399,39 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.update();
     }
 
+    /**
+     * Returns providers sorted by priority (highest first).
+     */
+    protected getSortedWelcomeMessageProviders(): ChatWelcomeMessageProvider[] {
+        return this.welcomeMessageProviders.getContributions()
+            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    }
+
+    /**
+     * Returns the highest-priority provider for backward-compatible property access.
+     */
+    protected get welcomeMessageProvider(): ChatWelcomeMessageProvider | undefined {
+        return this.getSortedWelcomeMessageProviders()[0];
+    }
+
     protected renderDisabledMessage(): React.ReactNode {
-        return this.welcomeMessageProvider?.renderDisabledMessage?.() ?? <></>;
+        const providers = this.getSortedWelcomeMessageProviders();
+        const nodes = providers
+            .map(p => p.renderDisabledMessage?.())
+            .filter((node): node is React.ReactNode => node !== undefined);
+        return nodes.length > 0
+            ? <div className="theia-WelcomeMessage-Container">{nodes}</div>
+            : <></>;
     }
 
     protected renderWelcomeMessage(): React.ReactNode {
-        return this.welcomeMessageProvider?.renderWelcomeMessage?.() ?? <></>;
+        const providers = this.getSortedWelcomeMessageProviders();
+        const nodes = providers
+            .map(p => p.renderWelcomeMessage?.())
+            .filter((node): node is React.ReactNode => node !== undefined);
+        return nodes.length > 0
+            ? <div className="theia-WelcomeMessage-Container">{nodes}</div>
+            : <></>;
     }
 
     protected mapRequestToNode(branch: ChatHierarchyBranch): RequestNode {

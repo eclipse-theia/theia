@@ -784,12 +784,23 @@
   padding: calc(var(--theia-ui-padding) * 2);
 }
 
+/* Welcome message container */
+.theia-WelcomeMessage-Container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  height: 100%;
+}
+
 .theia-WelcomeMessage {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  height: 100%;
+}
+
+.theia-WelcomeMessage-Main {
+  padding-top: calc(var(--theia-ui-padding) * 8);
 }
 
 .theia-WelcomeMessage-Content {
@@ -1331,4 +1342,48 @@
 .todo-tool-empty {
   color: var(--theia-descriptionForeground);
   font-style: italic;
+}
+
+/* Session Cards Styles */
+.theia-WelcomeMessage-SessionsSection {
+  padding-top: calc(var(--theia-ui-padding) * 2);
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.theia-WelcomeMessage-SessionsSection::before {
+  content: '';
+  display: block;
+  width: 80vw;
+  max-width: 500px;
+  height: 1px;
+  background-color: var(--theia-panelTitle-activeBorder);
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+}
+
+
+.theia-WelcomeMessage-SessionCards {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+  width: 100%;
+  max-width: 320px;
+}
+
+.theia-WelcomeMessage-BrowseAllLink {
+  margin-top: calc(var(--theia-ui-padding) * 2);
+  text-align: center;
+}
+
+.theia-WelcomeMessage-BrowseAllLink a {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-WelcomeMessage-BrowseAllLink a:hover {
+  text-decoration: underline;
 }

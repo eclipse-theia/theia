@@ -53,3 +53,4 @@ export * from './widget-status-bar-service';
 export * from './badges';
 export * from './markdown-rendering/markdown-renderer';
 export * from './markdown-rendering/markdown';
+export * from './components';
