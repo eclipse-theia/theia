@@ -27,7 +27,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { URI } from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { FileStat, FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
+import { FileContent, FileStat, FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '../workspace-service';
 import { WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './workspace-metadata-storage-service';
@@ -196,7 +196,7 @@ describe('WorkspaceMetadataStorageService', () => {
             fileService.readFile.resolves({
                 resource: new URI(`file://${configDir}/workspace-metadata/index.json`),
                 value: BinaryBuffer.fromString(indexContent)
-            } as any);
+            } as FileContent);
 
             const store = await service.getOrCreateStore('my-feature');
 
@@ -279,7 +279,7 @@ describe('WorkspaceMetadataStorageService', () => {
             fileService.readFile.resolves({
                 resource: new URI(`file://${configDir}/workspace-metadata/index.json`),
                 value: BinaryBuffer.fromString('{ invalid json')
-            } as any);
+            } as FileContent);
 
             const store = await service.getOrCreateStore('feature');
 
@@ -328,6 +328,7 @@ describe('WorkspaceMetadataStorageService', () => {
             });
 
             // Trigger workspace change via the protected emitter
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (workspaceService as any)['onWorkspaceChangeEmitter'].fire([]);
 
             // Wait for async updates

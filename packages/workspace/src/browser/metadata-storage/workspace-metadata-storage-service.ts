@@ -159,7 +159,7 @@ export class WorkspaceMetadataStorageServiceImpl implements WorkspaceMetadataSto
 
         await this.saveIndex(index);
 
-        this.logger.debug(`Generated new UUID for workspace`, {
+        this.logger.debug('Generated new UUID for workspace', {
             workspacePath,
             uuid: newUuid
         });
@@ -193,7 +193,7 @@ export class WorkspaceMetadataStorageServiceImpl implements WorkspaceMetadataSto
             await this.fileService.createFolder(metadataRootUri);
 
             // Write index file
-            const content = JSON.stringify(index, null, 2);
+            const content = JSON.stringify(index, undefined, 2);
             await this.fileService.writeFile(
                 indexFileUri,
                 BinaryBuffer.fromString(content)
