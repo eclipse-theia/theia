@@ -24,6 +24,9 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
 import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile } from '../common/skill';
 
+/** Debounce delay for coalescing rapid file system events */
+const UPDATE_DEBOUNCE_MS = 50;
+
 export const SkillService = Symbol('SkillService');
 export interface SkillService {
     /** Get all discovered skills */
@@ -146,7 +149,7 @@ export class DefaultSkillService implements SkillService {
         this.updateDebounceTimeout = setTimeout(() => {
             this.updateDebounceTimeout = undefined;
             this.update();
-        }, 50); // 50ms debounce - enough to coalesce rapid FS events
+        }, UPDATE_DEBOUNCE_MS);
     }
 
     protected async update(): Promise<void> {
