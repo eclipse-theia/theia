@@ -19,6 +19,30 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MutableChatRequestModel, MutableChatResponseModel } from './chat-model';
 
 /**
+ * Checks if the given arguments string represents empty tool arguments.
+ * Handles different representations: '', undefined, '{}', '{ }', etc.
+ */
+export function isEmptyToolArgs(args: string | undefined): boolean {
+    if (!args) {
+        return true;
+    }
+    try {
+        const parsed = JSON.parse(args);
+        return typeof parsed === 'object' && !!parsed && !Array.isArray(parsed) && Object.keys(parsed).length === 0;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Normalizes tool arguments for comparison purposes.
+ * Empty arguments (undefined, '', '{}') are normalized to '' for consistent comparison.
+ */
+export function normalizeToolArgs(args: string | undefined): string {
+    return isEmptyToolArgs(args) ? '' : args!;
+}
+
+/**
  * Context object passed to tool handlers when invoked within a chat session.
  * Extends ToolInvocationContext to include chat-specific information.
  */
