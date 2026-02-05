@@ -17,8 +17,9 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ShellCommandWhitelistService } from './shell-command-whitelist-service';
-import { SHELL_COMMAND_WHITELIST_PREFERENCE } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { SHELL_COMMAND_WHITELIST_PREFERENCE } from '../common/shell-command-preferences';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
+import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
 describe('ShellCommandWhitelistService', () => {
     let service: ShellCommandWhitelistService;
@@ -43,6 +44,7 @@ describe('ShellCommandWhitelistService', () => {
 
         service = new ShellCommandWhitelistService();
         (service as unknown as { preferenceService: PreferenceService }).preferenceService = preferenceServiceMock;
+        (service as unknown as { shellCommandAnalyzer: ShellCommandAnalyzer }).shellCommandAnalyzer = new DefaultShellCommandAnalyzer();
     });
 
     describe('isCommandAllowed', () => {

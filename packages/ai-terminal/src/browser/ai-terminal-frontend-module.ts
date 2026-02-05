@@ -17,7 +17,7 @@
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { Agent } from '@theia/ai-core/lib/common';
 import { bindToolProvider } from '@theia/ai-core/lib/common/tool-invocation-registry';
-import { CommandContribution, MenuContribution } from '@theia/core';
+import { CommandContribution, MenuContribution, PreferenceContribution } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { AiTerminalAgent } from './ai-terminal-agent';
@@ -26,6 +26,8 @@ import { ShellExecutionTool } from './shell-execution-tool';
 import { ShellExecutionToolRenderer } from './shell-execution-tool-renderer';
 import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execution-server';
 import { ShellCommandWhitelistService } from './shell-command-whitelist-service';
+import { shellCommandPreferences } from '../common/shell-command-preferences';
+import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
 import '../../src/browser/style/ai-terminal.css';
 import '../../src/browser/style/shell-execution-tool.css';
@@ -49,4 +51,8 @@ export default new ContainerModule(bind => {
     bind(ChatResponsePartRenderer).to(ShellExecutionToolRenderer).inSingletonScope();
 
     bind(ShellCommandWhitelistService).toSelf().inSingletonScope();
+
+    bind(PreferenceContribution).toConstantValue({ schema: shellCommandPreferences });
+
+    bind(ShellCommandAnalyzer).to(DefaultShellCommandAnalyzer).inSingletonScope();
 });

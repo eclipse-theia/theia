@@ -54,7 +54,6 @@ export enum ToolConfirmationMode {
 }
 
 export const TOOL_CONFIRMATION_PREFERENCE = 'ai-features.chat.toolConfirmation';
-export const SHELL_COMMAND_WHITELIST_PREFERENCE = 'ai-features.chat.shellCommandWhitelist';
 
 export const chatToolPreferences: PreferenceSchema = {
     properties: {
@@ -74,20 +73,10 @@ export const chatToolPreferences: PreferenceSchema = {
                 'Configure confirmation behavior for different tools. Key is the tool ID, value is the confirmation mode. ' +
                 'Use "*" as the key to set a global default for all tools.'),
             title: AI_CORE_PREFERENCES_TITLE,
-        },
-        [SHELL_COMMAND_WHITELIST_PREFERENCE]: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'List of shell command patterns that are automatically allowed without confirmation. ' +
-                'Each pattern is matched as a prefix (e.g., "git log" matches "git log --oneline"). ' +
-                'Commands with dangerous patterns like $() or backticks are never auto-allowed.',
-            title: AI_CORE_PREFERENCES_TITLE,
         }
     }
 };
 
 export interface ChatToolConfiguration {
     [TOOL_CONFIRMATION_PREFERENCE]: { [toolId: string]: ToolConfirmationMode };
-    [SHELL_COMMAND_WHITELIST_PREFERENCE]: string[];
 }

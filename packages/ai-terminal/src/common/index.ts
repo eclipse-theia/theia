@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export * from './shell-command-analyzer';
+export * from './shell-command-preferences';

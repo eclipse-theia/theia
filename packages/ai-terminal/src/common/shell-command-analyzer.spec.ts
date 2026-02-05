@@ -15,66 +15,96 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseCommand, containsDangerousPatterns } from './shell-command-analyzer';
+import { DefaultShellCommandAnalyzer } from './shell-command-analyzer';
 
 describe('shell-command-analyzer', () => {
+    let analyzer: DefaultShellCommandAnalyzer;
+
+    beforeEach(() => {
+        analyzer = new DefaultShellCommandAnalyzer();
+    });
+
     describe('parseCommand', () => {
         it('should parse a single command', () => {
-            expect(parseCommand('git log')).to.deep.equal(['git log']);
+            expect(analyzer.parseCommand('git log')).to.deep.equal(['git log']);
         });
 
         it('should split on AND operator (&&)', () => {
-            expect(parseCommand('git status && git log')).to.deep.equal(['git status', 'git log']);
+            expect(analyzer.parseCommand('git status && git log')).to.deep.equal(['git status', 'git log']);
         });
 
         it('should split on OR operator (||)', () => {
-            expect(parseCommand('cmd1 || cmd2')).to.deep.equal(['cmd1', 'cmd2']);
+            expect(analyzer.parseCommand('cmd1 || cmd2')).to.deep.equal(['cmd1', 'cmd2']);
         });
 
         it('should split on semicolon (;)', () => {
-            expect(parseCommand('cmd1 ; cmd2')).to.deep.equal(['cmd1', 'cmd2']);
+            expect(analyzer.parseCommand('cmd1 ; cmd2')).to.deep.equal(['cmd1', 'cmd2']);
         });
 
         it('should split on pipe (|)', () => {
-            expect(parseCommand('cat file | grep pattern')).to.deep.equal(['cat file', 'grep pattern']);
+            expect(analyzer.parseCommand('cat file | grep pattern')).to.deep.equal(['cat file', 'grep pattern']);
         });
 
         it('should handle mixed operators', () => {
-            expect(parseCommand('cmd1 && cmd2 | cmd3 ; cmd4')).to.deep.equal(['cmd1', 'cmd2', 'cmd3', 'cmd4']);
+            expect(analyzer.parseCommand('cmd1 && cmd2 | cmd3 ; cmd4')).to.deep.equal(['cmd1', 'cmd2', 'cmd3', 'cmd4']);
         });
 
         it('should trim whitespace from sub-commands', () => {
-            expect(parseCommand('  git log  &&  git status  ')).to.deep.equal(['git log', 'git status']);
+            expect(analyzer.parseCommand('  git log  &&  git status  ')).to.deep.equal(['git log', 'git status']);
         });
 
         it('should return empty array for empty command', () => {
-            expect(parseCommand('')).to.deep.equal([]);
+            expect(analyzer.parseCommand('')).to.deep.equal([]);
         });
 
         it('should return empty array for only operators', () => {
-            expect(parseCommand('&& || ;')).to.deep.equal([]);
+            expect(analyzer.parseCommand('&& || ;')).to.deep.equal([]);
         });
     });
 
     describe('containsDangerousPatterns', () => {
         it('should return false for safe commands', () => {
-            expect(containsDangerousPatterns('git log')).to.be.false;
+            expect(analyzer.containsDangerousPatterns('git log')).to.be.false;
         });
 
         it('should return true for command substitution with $(', () => {
-            expect(containsDangerousPatterns('echo $(whoami)')).to.be.true;
+            expect(analyzer.containsDangerousPatterns('echo $(whoami)')).to.be.true;
         });
 
         it('should return true for backticks', () => {
-            expect(containsDangerousPatterns('echo `whoami`')).to.be.true;
+            expect(analyzer.containsDangerousPatterns('echo `whoami`')).to.be.true;
         });
 
         it('should return true when dangerous pattern is nested in argument', () => {
-            expect(containsDangerousPatterns('git log $(malicious)')).to.be.true;
+            expect(analyzer.containsDangerousPatterns('git log $(malicious)')).to.be.true;
         });
 
         it('should return false for safe dollar sign (variable)', () => {
-            expect(containsDangerousPatterns('echo $HOME')).to.be.false;
+            expect(analyzer.containsDangerousPatterns('echo $HOME')).to.be.false;
+        });
+
+        it('should return true for process substitution with <(', () => {
+            expect(analyzer.containsDangerousPatterns('cat <(ls)')).to.be.true;
+            expect(analyzer.containsDangerousPatterns('diff <(ls dir1) <(ls dir2)')).to.be.true;
+        });
+
+        it('should return true for process substitution with >(', () => {
+            expect(analyzer.containsDangerousPatterns('tee >(grep foo)')).to.be.true;
+        });
+
+        it('should return true for parameter expansion with ${', () => {
+            expect(analyzer.containsDangerousPatterns('echo ${PATH}')).to.be.true;
+            expect(analyzer.containsDangerousPatterns('echo ${var:-default}')).to.be.true;
+        });
+
+        it('should return true for subshell at command start', () => {
+            expect(analyzer.containsDangerousPatterns('(cd /tmp && ls)')).to.be.true;
+            expect(analyzer.containsDangerousPatterns('  (cd /tmp && ls)')).to.be.true; // with leading whitespace
+        });
+
+        it('should return false for safe parentheses in arguments', () => {
+            expect(analyzer.containsDangerousPatterns("grep '(pattern)' file")).to.be.false;
+            expect(analyzer.containsDangerousPatterns('echo "(hello)"')).to.be.false;
         });
     });
 });

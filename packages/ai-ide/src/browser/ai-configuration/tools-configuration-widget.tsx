@@ -21,7 +21,8 @@ import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { nls, PreferenceService } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ShellCommandWhitelistService } from '@theia/ai-terminal/lib/browser/shell-command-whitelist-service';
-import { SHELL_COMMAND_WHITELIST_PREFERENCE, ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { SHELL_COMMAND_WHITELIST_PREFERENCE } from '@theia/ai-terminal/lib/common/shell-command-preferences';
 import { AITableConfigurationWidget, TableColumn } from './base/ai-table-configuration-widget';
 
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
@@ -54,7 +55,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     protected toolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     protected defaultState: ToolConfirmationMode;
     protected whitelistPatterns: string[] = [];
-    protected newPatternInput: string = '';
+    protected patternInputRef = React.createRef<HTMLInputElement>();
 
     @postConstruct()
     protected init(): void {
@@ -249,21 +250,24 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         return isDefault ? 'default-mode' : 'custom-mode';
     }
 
-    protected handlePatternInputChange(value: string): void {
-        this.newPatternInput = value;
-        this.update();
-    }
-
     protected handleAddPattern(): void {
-        const trimmed = this.newPatternInput.trim();
+        const input = this.patternInputRef.current;
+        if (!input) {
+            return;
+        }
+
+        const trimmed = input.value.trim();
         if (trimmed.length === 0) {
             return;
         }
+
         try {
             this.shellCommandWhitelistService.addPattern(trimmed);
-            this.newPatternInput = '';
+            input.value = ''; // Clear the input after adding
+            this.whitelistPatterns = this.shellCommandWhitelistService.getPatterns();
+            this.update();
         } catch (error) {
-            // Pattern validation failed - input already cleared or error logged
+            // Pattern validation failed - error logged by service
         }
     }
 
@@ -286,14 +290,13 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                 </p>
                 <div className="ai-shell-whitelist-input-row">
                     <input
+                        ref={this.patternInputRef}
                         type="text"
                         className="theia-input"
                         placeholder={nls.localize(
                             'theia/ai/ide/toolsConfiguration/shellWhitelist/placeholder',
                             'Enter command pattern (e.g., git log)'
                         )}
-                        value={this.newPatternInput}
-                        onChange={e => this.handlePatternInputChange(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && this.handleAddPattern()}
                     />
                     <button className="theia-button main" onClick={() => this.handleAddPattern()}>

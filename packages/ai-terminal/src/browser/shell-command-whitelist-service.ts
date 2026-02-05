@@ -16,8 +16,8 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/common';
-import { SHELL_COMMAND_WHITELIST_PREFERENCE } from '@theia/ai-chat/lib/common/chat-tool-preferences';
-import { containsDangerousPatterns, parseCommand } from '../common/shell-command-analyzer';
+import { SHELL_COMMAND_WHITELIST_PREFERENCE } from '../common/shell-command-preferences';
+import { ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
 @injectable()
 export class ShellCommandWhitelistService {
@@ -25,13 +25,16 @@ export class ShellCommandWhitelistService {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ShellCommandAnalyzer)
+    protected readonly shellCommandAnalyzer: ShellCommandAnalyzer;
+
     /**
      * Checks if a command is allowed based on the whitelist patterns.
      * Returns false if the command contains dangerous patterns or if the whitelist is empty.
      * Returns true only if ALL sub-commands match at least one whitelist pattern.
      */
     isCommandAllowed(command: string): boolean {
-        if (containsDangerousPatterns(command)) {
+        if (this.shellCommandAnalyzer.containsDangerousPatterns(command)) {
             return false;
         }
 
@@ -40,7 +43,7 @@ export class ShellCommandWhitelistService {
             return false;
         }
 
-        const subCommands = parseCommand(command);
+        const subCommands = this.shellCommandAnalyzer.parseCommand(command);
         if (subCommands.length === 0) {
             return false;
         }
