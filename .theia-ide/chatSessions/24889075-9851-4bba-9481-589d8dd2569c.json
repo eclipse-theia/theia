@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "title": "HAProxy ingress controller support added",
+  "pinnedAgentId": "Architect",
+  "saveDate": 1769419947308,
+  "model": {
+    "sessionId": "24889075-9851-4bba-9481-589d8dd2569c",
+    "location": "panel",
+    "hierarchy": {
+      "rootBranchId": "4e3d3241-f1fa-43ad-9eb4-37ac720123c7",
+      "branches": {
+        "a15727a2-f114-4f7d-b69c-08c827f21c19": {
+          "id": "a15727a2-f114-4f7d-b69c-08c827f21c19",
+          "items": [
+            {
+              "requestId": "2f0e84ed-1159-43a1-9f11-d01470d55633"
+            }
+          ],
+          "activeBranchIndex": 0
+        },
+        "d506fdb4-2d70-46dc-a5be-88b989186c76": {
+          "id": "d506fdb4-2d70-46dc-a5be-88b989186c76",
+          "items": [
+            {
+              "requestId": "6b3c4b17-9e29-4231-9321-9c186541f299",
+              "nextBranchId": "a15727a2-f114-4f7d-b69c-08c827f21c19"
+            }
+          ],
+          "activeBranchIndex": 0
+        },
+        "4e3d3241-f1fa-43ad-9eb4-37ac720123c7": {
+          "id": "4e3d3241-f1fa-43ad-9eb4-37ac720123c7",
+          "items": [
+            {
+              "requestId": "3c731e6c-96c7-4134-add8-a0f8725b4595",
+              "nextBranchId": "d506fdb4-2d70-46dc-a5be-88b989186c76"
+            }
+          ],
+          "activeBranchIndex": 0
+        }
+      }
+    },
+    "requests": [
+      {
+        "id": "3c731e6c-96c7-4134-add8-a0f8725b4595",
+        "text": "@Architect Please see this patch on the helm repo\n\n```\ndiff --git a/.prompts/project-info.prompttemplate b/.prompts/project-info.prompttemplate\nnew file mode 100644\nindex 0000000..8b5001a\n--- /dev/null\n+++ b/.prompts/project-info.prompttemplate\n@@ -0,0 +1,36 @@\n+# Theia Cloud Helm - Project Info\n+\n+## Overview\n+Helm charts for deploying Theia Cloud on Kubernetes. Contains three interdependent charts that install cluster resources, CRDs, and the main application components.\n+\n+## Repository Structure\n+\n+### Charts (`charts/`)\n+- `theia-cloud-base/` - Cluster-wide resources (ClusterIssuers, ClusterRoles) shared across installations\n+- `theia-cloud-crds/` - Custom Resource Definitions (AppDefinition, Session, Workspace) with conversion webhook\n+- `theia-cloud/` - Main chart deploying operator, service, landing page, and ingresses; depends on base and crds charts\n+\n+### Chart Dependencies\n+Install order matters: Install `theia-cloud-crds` and `theia-cloud-base` before `theia-cloud`\n+\n+### Cluster Prerequisites\n+- **cert-manager.io** - Certificate management (required)\n+- **Ingress Controller** - Either ingress-nginx (requires `allow-snippet-annotations: \"true\"` since v1.10) or HAProxy\n+- **Keycloak** - Optional; required only when authentication is enabled (`keycloak.enable: true`)\n+\n+## Versioning\n+\n+### Chart Versions\n+- Chart `version` increments on every change (only for modified charts)\n+- Pre-releases: `X.Y.Z-next.N` where N increments per commit/PR\n+- `appVersion` points to `<version>-next` tag (images may change until release)\n+\n+## Documentation Generation\n+\n+Chart READMEs are auto-generated from `README.md.gotmpl` templates using helm-docs:\n+```bash\n+docker run --rm -v \"$(pwd)/charts:/helm-docs\" -u $(id -u) jnorwood/helm-docs:latest\n+```\n+Or use the `Rebuild READMEs` VS Code task.\n+\n+**Important**: After modifying `Chart.yaml` or `values.yaml` in any chart, always regenerate the corresponding README with the task.\ndiff --git a/CHANGELOG.md b/CHANGELOG.md\nindex f4f6640..1223365 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -2,6 +2,12 @@\n \n ## [1.2.0] - estimated between 2025-11 and 2026-05\n \n+- [theia-cloud] Add HAProxy ingress controller support alongside existing nginx support [#104](https://github.com/eclipse-theia/theia-cloud-helm/pull/104)\n+\n+### Breaking Changes in 1.2.0\n+\n+- [theia-cloud] The nginx ingress path regex pattern changed from `($|(/.*))` to `(/|$)(.*)` and the rewrite-target annotation now uses `$1$2` instead of `$1`. This maintains the same functionality but users with custom nginx configurations relying on the capture group numbering may need to adjust. [#104](https://github.com/eclipse-theia/theia-cloud-helm/pull/104)\n+\n ## [1.1.2] - 2025-09-26\n \n - [theia-cloud] Use ingress path type ImplementationSpecific instead of Prefix [#99](https://github.com/eclipse-theia/theia-cloud-helm/pull/99)\ndiff --git a/charts/theia-cloud/Chart.yaml b/charts/theia-cloud/Chart.yaml\nindex 7b6dc4d..9fd0cef 100644\n--- a/charts/theia-cloud/Chart.yaml\n+++ b/charts/theia-cloud/Chart.yaml\n@@ -15,7 +15,7 @@\n # This is the chart version. This version number should be incremented each time you make changes\n # to the chart and its templates, including the app version.\n # Versions are expected to follow Semantic Versioning (https://semver.org/)\n-version: 1.2.0-next.3\n+version: 1.2.0-next.4\n \n # This is the version number of the application being deployed. This version number should be\n # incremented each time you make changes to the application. Versions are not expected to\ndiff --git a/charts/theia-cloud/README.md b/charts/theia-cloud/README.md\nindex 7752220..be26968 100644\n--- a/charts/theia-cloud/README.md\n+++ b/charts/theia-cloud/README.md\n@@ -1,6 +1,6 @@\n # theia-cloud\n \n-![Version: 1.2.0-next.3](https://img.shields.io/badge/Version-1.2.0--next.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0-next](https://img.shields.io/badge/AppVersion-1.2.0--next-informational?style=flat-square)\n+![Version: 1.2.0-next.4](https://img.shields.io/badge/Version-1.2.0--next.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0-next](https://img.shields.io/badge/AppVersion-1.2.0--next-informational?style=flat-square)\n \n A Helm chart for Theia Cloud\n \n@@ -38,7 +38,7 @@\n | ingress.addTLSSecretName | bool | `true` | whether the default Theia Cloud tls secret names should be used. If false no tls secret name will be set on the ingress only needed when ingress.tls == true |\n | ingress.certManagerAnnotations | bool | `true` | When set to true the cert-manager.io annotations will be set. Only used when ingress.addTLSSecretName === true When false certificate management is handled outside of Theia Cloud. |\n | ingress.clusterIssuer | string | `\"letsencrypt-prod\"` | The cluster issuer to use Only needed when ingress.certManagerAnnotations is true |\n-| ingress.controller | string | `\"nginx\"` | The ingress controller to use. Currently supported: \"nginx\" or null Determines controller-specific default annotations and ingress class name to use. Using null or an unknown value results in only explicitly specified annotations being used. |\n+| ingress.controller | string | `\"nginx\"` | The ingress controller to use. Currently supported: \"nginx\", \"haproxy\", or null Determines controller-specific default annotations and ingress class name to use. Using null or an unknown value results in only explicitly specified annotations being used. |\n | ingress.ingressClassName | string | `\"\"` | Optional: Override the ingressClassName. If empty, defaults based on ingress.controller |\n | ingress.instances | object | (see details below) | Values to influence the instances ingress |\n | ingress.instances.allWildcardSecretNames | object | `{}` | All additional wildcard hostnames and the respective TLS secret names. Use this for wildcard hostnames that should use a TLS certificate with a `secretName` different from the default one. Only accepts wildcard hostnames that are configured in `hosts.allWildcardInstances`. |\n@@ -48,7 +48,7 @@\n | ingress.instances.proxyBodySize | string | `\"1m\"` | Sets the maximum allowed size of the client request body inside the application (e.g. file uploads in Theia). Defaults to 1m. Setting size to 0 disables checking of client request body size. |\n | ingress.landingPage | object | (see details below) | Values to influence the landing page ingress |\n | ingress.landingPage.annotations | object | `{}` | Optional: Custom annotations for landing page ingress. If empty, defaults based on ingress.controller |\n-| ingress.service | object | (see details below)  | Values to influence the service ingress |\n+| ingress.service | object | (see details below) | Values to influence the service ingress |\n | ingress.service.annotations | object | `{}` | Optional: Custom annotations for service ingress. If empty, defaults based on ingress.controller |\n | ingress.theiaCloudCommonName | bool | `false` | When set to true the cert-manager.io/common-name annotation will be set. This is only required when the issued certificate by the cert-manager misses a common-name Only needed when ingress.certManagerAnnotations is true |\n | ingress.tls | bool | `true` | Does Theia Cloud expect TLS connections (true) or is TLS terminated outside of Theia Cloud (e.g. via a Load Balancer) (false) |\ndiff --git a/charts/theia-cloud/templates/_helpers.tpl b/charts/theia-cloud/templates/_helpers.tpl\nindex 0d1689e..7bcee10 100644\n--- a/charts/theia-cloud/templates/_helpers.tpl\n+++ b/charts/theia-cloud/templates/_helpers.tpl\n@@ -1,4 +1,24 @@\n {{/*\n+Return the ingress path suffix based on controller\n+For nginx: (/|$)(.*) - regex pattern for capture group rewrite-target\n+For haproxy: empty - HAProxy uses prefix matching and config-backend for rewrites\n+*/}}\n+{{- define \"theiacloud.ingress.pathSuffix\" -}}\n+{{- if eq .Values.ingress.controller \"haproxy\" -}}\n+{{- /* empty for haproxy - uses prefix matching */ -}}\n+{{- else -}}\n+(/|$)(.*)\n+{{- end -}}\n+{{- end -}}\n+\n+{{/*\n+Return the ingress pathType - always ImplementationSpecific for regex support\n+*/}}\n+{{- define \"theiacloud.ingress.pathType\" -}}\n+ImplementationSpecific\n+{{- end -}}\n+\n+{{/*\n Return the ingress class name\n */}}\n {{- define \"theiacloud.ingress.className\" -}}\n@@ -6,6 +26,8 @@\n {{ .Values.ingress.ingressClassName }}\n {{- else if eq .Values.ingress.controller \"nginx\" -}}\n nginx\n+{{- else if eq .Values.ingress.controller \"haproxy\" -}}\n+haproxy\n {{- else -}}\n {{ .Values.ingress.controller }}\n {{- end -}}\n@@ -21,6 +43,8 @@\n {{- else -}}\n {{- if eq .Values.ingress.controller \"nginx\" -}}\n {{- $annotations = include \"theiacloud.ingress.nginx.instances.defaultAnnotations\" . | fromYaml | default (dict) -}}\n+{{- else if eq .Values.ingress.controller \"haproxy\" -}}\n+{{- $annotations = include \"theiacloud.ingress.haproxy.instances.defaultAnnotations\" . | fromYaml | default (dict) -}}\n {{- end -}}\n {{- end -}}\n {{- $certAnnotations := include \"theiacloud.ingress.certManagerAnnotations\" . | fromYaml | default (dict) -}}\n@@ -38,6 +62,8 @@\n {{- else -}}\n {{- if eq .Values.ingress.controller \"nginx\" -}}\n {{- $annotations = include \"theiacloud.ingress.nginx.landingPage.defaultAnnotations\" . | fromYaml | default (dict) -}}\n+{{- else if eq .Values.ingress.controller \"haproxy\" -}}\n+{{- $annotations = include \"theiacloud.ingress.haproxy.landingPage.defaultAnnotations\" . | fromYaml | default (dict) -}}\n {{- end -}}\n {{- end -}}\n {{- $certAnnotations := include \"theiacloud.ingress.certManagerAnnotations\" (dict \"root\" . \"includeHttp01\" false) | fromYaml | default (dict) -}}\n@@ -55,6 +81,8 @@\n {{- else -}}\n {{- if eq .Values.ingress.controller \"nginx\" -}}\n {{- $annotations = include \"theiacloud.ingress.nginx.service.defaultAnnotations\" . | fromYaml | default (dict) -}}\n+{{- else if eq .Values.ingress.controller \"haproxy\" -}}\n+{{- $annotations = include \"theiacloud.ingress.haproxy.service.defaultAnnotations\" . | fromYaml | default (dict) -}}\n {{- end -}}\n {{- end -}}\n {{- $certAnnotations := include \"theiacloud.ingress.certManagerAnnotations\" . | fromYaml | default (dict) -}}\n@@ -106,7 +134,76 @@\n {{- if not .Values.ingress.tls }}\n nginx.ingress.kubernetes.io/ssl-redirect: \"false\"\n {{- end }}\n-nginx.ingress.kubernetes.io/rewrite-target: /service$1\n+nginx.ingress.kubernetes.io/rewrite-target: /service$1$2\n+{{- end -}}\n+\n+{{/*\n+Return default haproxy annotations for instances ingress\n+For path-based: rewrites /instances/<session-id>/path -> /path\n+For subdomain-based: rewrites /<session-id>/path -> /path\n+*/}}\n+{{- define \"theiacloud.ingress.haproxy.instances.defaultAnnotations\" -}}\n+{{- if not .Values.ingress.tls }}\n+haproxy-ingress.github.io/ssl-redirect: \"false\"\n+{{- end }}\n+haproxy-ingress.github.io/proxy-body-size: {{ tpl (.Values.ingress.instances.proxyBodySize | toString) . }}\n+haproxy-ingress.github.io/timeout-tunnel: \"1h\"\n+{{- if .Values.hosts.usePaths }}\n+{{- $instancesPath := tpl (.Values.hosts.configuration.instance | toString) . }}\n+haproxy-ingress.github.io/path-type: prefix\n+haproxy-ingress.github.io/config-backend: |\n+  http-request set-header X-Forwarded-Uri %[path]%[query]\n+  http-request replace-path ^/{{ $instancesPath }}/([^/]+)(/.*)?$ \\2\n+  http-request replace-path ^$ /\n+{{- else }}\n+haproxy-ingress.github.io/path-type: prefix\n+haproxy-ingress.github.io/config-backend: |\n+  http-request set-header X-Forwarded-Uri %[path]%[query]\n+  http-request replace-path ^/([^/]+)(/.*)?$ \\2\n+  http-request replace-path ^$ /\n+{{- end }}\n+{{- end -}}\n+\n+{{/*\n+Return default haproxy annotations for landing page ingress (path-based)\n+Rewrites /trynow/path -> /path (when landing page path is \"trynow\")\n+*/}}\n+{{- define \"theiacloud.ingress.haproxy.landingPage.defaultAnnotations\" -}}\n+{{- if not .Values.ingress.tls }}\n+haproxy-ingress.github.io/ssl-redirect: \"false\"\n+{{- end }}\n+{{- if .Values.hosts.usePaths }}\n+{{- if .Values.hosts.configuration.landing }}\n+{{- $landingPath := tpl (.Values.hosts.configuration.landing | toString) . }}\n+haproxy-ingress.github.io/path-type: prefix\n+haproxy-ingress.github.io/config-backend: |\n+  http-request redirect code 302 location %[path]/ if { path_reg ^/{{ $landingPath }}$ }\n+  http-request replace-path ^/{{ $landingPath }}(/.*)?$ \\1\n+  http-request replace-path ^$ /\n+{{- end }}\n+{{- end }}\n+{{- end -}}\n+\n+{{/*\n+Return default haproxy annotations for service ingress\n+For path-based: rewrites /servicex/service/path -> /service/path (when service path is \"servicex\")\n+For subdomain-based: rewrites /service/path -> /service/path (no change needed, but normalize)\n+*/}}\n+{{- define \"theiacloud.ingress.haproxy.service.defaultAnnotations\" -}}\n+{{- if not .Values.ingress.tls }}\n+haproxy-ingress.github.io/ssl-redirect: \"false\"\n+{{- end }}\n+{{- if .Values.hosts.usePaths }}\n+{{- $servicePath := tpl (.Values.hosts.configuration.service | toString) . }}\n+haproxy-ingress.github.io/path-type: prefix\n+haproxy-ingress.github.io/config-backend: |\n+  http-request replace-path ^/{{ $servicePath }}/service(/.*)?$ /service\\1\n+  http-request replace-path ^/service$ /service/\n+{{- else }}\n+haproxy-ingress.github.io/path-type: prefix\n+haproxy-ingress.github.io/config-backend: |\n+  http-request replace-path ^/service$ /service/\n+{{- end }}\n {{- end -}}\n \n {{/*\ndiff --git a/charts/theia-cloud/templates/landing-page-ingress-path-based.yaml b/charts/theia-cloud/templates/landing-page-ingress-path-based.yaml\nindex fd341a8..9a8c38a 100644\n--- a/charts/theia-cloud/templates/landing-page-ingress-path-based.yaml\n+++ b/charts/theia-cloud/templates/landing-page-ingress-path-based.yaml\n@@ -26,7 +26,7 @@\n             name: landing-page-service\n             port:\n               number: 80\n-        path: /{{ if .Values.hosts.configuration.landing }}{{ tpl (.Values.hosts.configuration.landing | toString) . }}(/|$)(.*){{ end }}\n-        pathType: ImplementationSpecific\n+        path: /{{ if .Values.hosts.configuration.landing }}{{ tpl (.Values.hosts.configuration.landing | toString) . }}{{ include \"theiacloud.ingress.pathSuffix\" . }}{{ end }}\n+        pathType: {{ include \"theiacloud.ingress.pathType\" . }}\n {{- end }}\n-{{- end }}\n\\ No newline at end of file\n+{{- end }}\ndiff --git a/charts/theia-cloud/templates/operator.yaml b/charts/theia-cloud/templates/operator.yaml\nindex 6dc9fb8..03f1c44 100644\n--- a/charts/theia-cloud/templates/operator.yaml\n+++ b/charts/theia-cloud/templates/operator.yaml\n@@ -90,6 +90,8 @@\n           {{- if .Values.operator.continueOnException }}\n           - \"--continueOnException\"\n           {{- end }}\n+          - \"--ingressPathSuffix\"\n+          - \"{{ include \"theiacloud.ingress.pathSuffix\" . }}\"\n         {{- if .Values.operator.logging.override }}\n         volumeMounts:\n           - name: operator-logging-config\ndiff --git a/charts/theia-cloud/templates/service-ingress-path-based.yaml b/charts/theia-cloud/templates/service-ingress-path-based.yaml\nindex a841e72..ccaabce 100644\n--- a/charts/theia-cloud/templates/service-ingress-path-based.yaml\n+++ b/charts/theia-cloud/templates/service-ingress-path-based.yaml\n@@ -25,6 +25,6 @@\n             name: service-service\n             port:\n               number: {{ tpl (.Values.service.port | toString) . }}\n-        path: /{{ tpl (.Values.hosts.configuration.service | toString) . }}/service($|(/.*))\n-        pathType: ImplementationSpecific\n-{{- end }}\n\\ No newline at end of file\n+        path: /{{ tpl (.Values.hosts.configuration.service | toString) . }}/service{{ include \"theiacloud.ingress.pathSuffix\" . }}\n+        pathType: {{ include \"theiacloud.ingress.pathType\" . }}\n+{{- end }}\ndiff --git a/charts/theia-cloud/templates/service-ingress.yaml b/charts/theia-cloud/templates/service-ingress.yaml\nindex 6c46957..f349cfd 100644\n--- a/charts/theia-cloud/templates/service-ingress.yaml\n+++ b/charts/theia-cloud/templates/service-ingress.yaml\n@@ -25,6 +25,6 @@\n             name: service-service\n             port:\n               number: {{ tpl (.Values.service.port | toString) . }}\n-        path: /service($|(/.*))\n-        pathType: ImplementationSpecific\n-{{- end }}\n\\ No newline at end of file\n+        path: /service{{ include \"theiacloud.ingress.pathSuffix\" . }}\n+        pathType: {{ include \"theiacloud.ingress.pathType\" . }}\n+{{- end }}\ndiff --git a/charts/theia-cloud/values.yaml b/charts/theia-cloud/values.yaml\nindex 0b19cb9..a386118 100644\n--- a/charts/theia-cloud/values.yaml\n+++ b/charts/theia-cloud/values.yaml\n@@ -318,7 +318,7 @@\n # -- Values to influence the ingresses\n # @default -- (see details below)\n ingress:\n-  # -- The ingress controller to use. Currently supported: \"nginx\" or null\n+  # -- The ingress controller to use. Currently supported: \"nginx\", \"haproxy\", or null\n   # Determines controller-specific default annotations and ingress class name to use.\n   # Using null or an unknown value results in only explicitly specified annotations being used.\n   controller: nginx\n@@ -364,7 +364,7 @@\n     annotations: {}\n \n   # -- Values to influence the service ingress\n-  # @default -- (see details below) \n+  # @default -- (see details below)\n   service:\n     # -- Optional: Custom annotations for service ingress. If empty, defaults based on ingress.controller\n     annotations: {}\n\n```\n\nI'll open a PR for this. \n\nCan you analyse the changes and tell me what changes for nginx ingress controller?",
+        "agentId": "Architect"
+      },
+      {
+        "id": "6b3c4b17-9e29-4231-9321-9c186541f299",
+        "text": "Can you imagine why this change was made",
+        "agentId": "Architect"
+      },
+      {
+        "id": "2f0e84ed-1159-43a1-9f11-d01470d55633",
+        "text": "Does this make sense as a comment on the PR explaining this?\n\n\nOne remark: the `($|(/.*))` to `(/|$)(.*)` change in the nginx pattern matches the delimiator and the path as own groups. \nThis was an initial attempt to reuse this regexp also for HAProxy, but in the end this is working differently there. \nI still think this matching makes more sense, so I kept it in.",
+        "agentId": "Architect"
+      }
+    ],
+    "responses": [
+      {
+        "id": "d2c57d5d-670a-42b6-b07c-c1da60a6b9bb",
+        "requestId": "3c731e6c-96c7-4134-add8-a0f8725b4595",
+        "isComplete": true,
+        "isError": false,
+        "promptVariantId": "architect-system-default",
+        "isPromptVariantEdited": false,
+        "content": [
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "I'll analyze the patch to identify what changes specifically affect the nginx ingress controller.\n\n## Changes for nginx Ingress Controller\n\n### 1. **Path Regex Pattern Changed**\n\n**Before:**\n"
+            },
+            "fallbackMessage": "I'll analyze the patch to identify what changes specifically affect the nginx ingress controller.\n\n## Changes for nginx Ingress Controller\n\n### 1. **Path Regex Pattern Changed**\n\n**Before:**\n"
+          },
+          {
+            "kind": "code",
+            "data": {
+              "code": "```\npath: /service($|(/.*))",
+              "language": ""
+            },
+            "fallbackMessage": "```\n```\npath: /service($|(/.*))\n```"
+          },
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "\n\n**After:**\n"
+            },
+            "fallbackMessage": "\n\n**After:**\n"
+          },
+          {
+            "kind": "code",
+            "data": {
+              "code": "```\npath: /service(/|$)(.*)",
+              "language": ""
+            },
+            "fallbackMessage": "```\n```\npath: /service(/|$)(.*)\n```"
+          },
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "\n\nThe regex pattern changed from `($|(/.*))` to `(/|$)(.*)`. Both patterns match the same URLs, but the capture groups are numbered differently:\n- **Old pattern**: `$1` captures the entire suffix (either empty or `/...`)\n- **New pattern**: `$1` captures just `/` or empty, `$2` captures the rest of the path\n\n### 2. **Rewrite Target Annotation Updated**\n\nIn `charts/theia-cloud/templates/_helpers.tpl`, the service rewrite target changed:\n\n**Before:**\n"
+            },
+            "fallbackMessage": "\n\nThe regex pattern changed from `($|(/.*))` to `(/|$)(.*)`. Both patterns match the same URLs, but the capture groups are numbered differently:\n- **Old pattern**: `$1` captures the entire suffix (either empty or `/...`)\n- **New pattern**: `$1` captures just `/` or empty, `$2` captures the rest of the path\n\n### 2. **Rewrite Target Annotation Updated**\n\nIn `charts/theia-cloud/templates/_helpers.tpl`, the service rewrite target changed:\n\n**Before:**\n"
+          },
+          {
+            "kind": "code",
+            "data": {
+              "code": "nginx.ingress.kubernetes.io/rewrite-target: /service$1",
+              "language": "yaml"
+            },
+            "fallbackMessage": "```yaml\nnginx.ingress.kubernetes.io/rewrite-target: /service$1\n```"
+          },
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "\n\n**After:**\n"
+            },
+            "fallbackMessage": "\n\n**After:**\n"
+          },
+          {
+            "kind": "code",
+            "data": {
+              "code": "nginx.ingress.kubernetes.io/rewrite-target: /service$1$2",
+              "language": "yaml"
+            },
+            "fallbackMessage": "```yaml\nnginx.ingress.kubernetes.io/rewrite-target: /service$1$2\n```"
+          },
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "\n\nThis compensates for the new capture group structure - `$1$2` together produce the same result as the old `$1`.\n\n### 3. **New Operator Argument**\n\nThe operator deployment (`charts/theia-cloud/templates/operator.yaml`) now receives a new argument:\n\n"
+            },
+            "fallbackMessage": "\n\nThis compensates for the new capture group structure - `$1$2` together produce the same result as the old `$1`.\n\n### 3. **New Operator Argument**\n\nThe operator deployment (`charts/theia-cloud/templates/operator.yaml`) now receives a new argument:\n\n"
+          },
+          {
+            "kind": "code",
+            "data": {
+              "code": "- \"--ingressPathSuffix\"\n- \"{{ include \"theiacloud.ingress.pathSuffix\" . }}\"",
+              "language": "yaml"
+            },
+            "fallbackMessage": "```yaml\n- \"--ingressPathSuffix\"\n- \"{{ include \"theiacloud.ingress.pathSuffix\" . }}\"\n```"
+          },
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "\n\nFor nginx, this will pass `(/|$)(.*)` to the operator, which likely uses it when dynamically creating ingress resources for sessions.\n\n### 4. **Path Suffix Now Templated**\n\nInstead of hardcoding the regex in each ingress template, it's now generated via the helper `theiacloud.ingress.pathSuffix`. For nginx, this helper returns:\n"
+            },
+            "fallbackMessage": "\n\nFor nginx, this will pass `(/|$)(.*)` to the operator, which likely uses it when dynamically creating ingress resources for sessions.\n\n### 4. **Path Suffix Now Templated**\n\nInstead of hardcoding the regex in each ingress template, it's now generated via the helper `theiacloud.ingress.pathSuffix`. For nginx, this helper returns:\n"
+          },
+          {
+            "kind": "code",
+            "data": {
+              "code": "```\n(/|$)(.*)",
+              "language": ""
+            },
+            "fallbackMessage": "```\n```\n(/|$)(.*)\n```"
+          },
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "\n\nThis affects these ingress templates:\n- `service-ingress.yaml`\n- `service-ingress-path-based.yaml`\n- `landing-page-ingress-path-based.yaml`\n\n---\n\n## Summary of Functional Impact for nginx Users\n\n**The actual routing behavior remains identical** - the same URLs will match and be rewritten to the same targets. However, as noted in the CHANGELOG breaking changes section:\n\n> Users with custom nginx configurations relying on the capture group numbering may need to adjust.\n\nIf you have custom configurations that reference `$1` expecting it to contain the full path suffix, you'll need to update them to use `$1$2` instead."
+            },
+            "fallbackMessage": "\n\nThis affects these ingress templates:\n- `service-ingress.yaml`\n- `service-ingress-path-based.yaml`\n- `landing-page-ingress-path-based.yaml`\n\n---\n\n## Summary of Functional Impact for nginx Users\n\n**The actual routing behavior remains identical** - the same URLs will match and be rewritten to the same targets. However, as noted in the CHANGELOG breaking changes section:\n\n> Users with custom nginx configurations relying on the capture group numbering may need to adjust.\n\nIf you have custom configurations that reference `$1` expecting it to contain the full path suffix, you'll need to update them to use `$1$2` instead."
+          }
+        ]
+      },
+      {
+        "id": "870824c7-d1a1-4e6b-9fea-6bad2db72b50",
+        "requestId": "6b3c4b17-9e29-4231-9321-9c186541f299",
+        "isComplete": true,
+        "isError": false,
+        "promptVariantId": "architect-system-default",
+        "isPromptVariantEdited": false,
+        "content": [
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "Based on analyzing the patch, the change was made to **support HAProxy ingress controller alongside nginx**.\n\n## The Key Insight\n\nLooking at the new `theiacloud.ingress.pathSuffix` helper in `_helpers.tpl`:\n\n"
+            },
+            "fallbackMessage": "Based on analyzing the patch, the change was made to **support HAProxy ingress controller alongside nginx**.\n\n## The Key Insight\n\nLooking at the new `theiacloud.ingress.pathSuffix` helper in `_helpers.tpl`:\n\n"
+          },
+          {
+            "kind": "code",
+            "data": {
+              "code": "{{- define \"theiacloud.ingress.pathSuffix\" -}}\n{{- if eq .Values.ingress.controller \"haproxy\" -}}\n{{- /* empty for haproxy - uses prefix matching */ -}}\n{{- else -}}\n(/|$)(.*)\n{{- end -}}\n{{- end -}}",
+              "language": "yaml"
+            },
+            "fallbackMessage": "```yaml\n{{- define \"theiacloud.ingress.pathSuffix\" -}}\n{{- if eq .Values.ingress.controller \"haproxy\" -}}\n{{- /* empty for haproxy - uses prefix matching */ -}}\n{{- else -}}\n(/|$)(.*)\n{{- end -}}\n{{- end -}}\n```"
+          },
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "\n\n- **For nginx**: Returns `(/|$)(.*)` (regex pattern for capture group rewriting)\n- **For HAProxy**: Returns **empty string** (HAProxy uses prefix matching and `config-backend` for rewrites instead)\n\n## Why the Regex Pattern Changed\n\nThe old pattern `($|(/.*))` wouldn't work well for this abstraction because:\n\n1. **Old pattern `($|(/.*)))`**: The nested group made `$1` contain the full suffix, with `$2` being a subset\n2. **New pattern `(/|$)(.*)`**: Cleaner separation where `$1` is the delimiter and `$2` is the remaining path\n\nThe new pattern allows:\n- **Consistent templating**: The suffix can be appended directly to paths (e.g., `/service{{ include \"theiacloud.ingress.pathSuffix\" . }}`)\n- **Clean empty case for HAProxy**: When the suffix is empty, you just get `/service` which works with HAProxy's prefix matching\n- **Operator compatibility**: The `--ingressPathSuffix` argument can pass the appropriate pattern (or empty) to the operator for dynamically created session ingresses\n\n## In Summary\n\nThe nginx regex change is a **side effect of making the ingress configuration controller-agnostic**. The refactoring enables the same templates to work for both nginx (which needs regex capture groups) and HAProxy (which uses a completely different rewrite mechanism via `config-backend` annotations)."
+            },
+            "fallbackMessage": "\n\n- **For nginx**: Returns `(/|$)(.*)` (regex pattern for capture group rewriting)\n- **For HAProxy**: Returns **empty string** (HAProxy uses prefix matching and `config-backend` for rewrites instead)\n\n## Why the Regex Pattern Changed\n\nThe old pattern `($|(/.*))` wouldn't work well for this abstraction because:\n\n1. **Old pattern `($|(/.*)))`**: The nested group made `$1` contain the full suffix, with `$2` being a subset\n2. **New pattern `(/|$)(.*)`**: Cleaner separation where `$1` is the delimiter and `$2` is the remaining path\n\nThe new pattern allows:\n- **Consistent templating**: The suffix can be appended directly to paths (e.g., `/service{{ include \"theiacloud.ingress.pathSuffix\" . }}`)\n- **Clean empty case for HAProxy**: When the suffix is empty, you just get `/service` which works with HAProxy's prefix matching\n- **Operator compatibility**: The `--ingressPathSuffix` argument can pass the appropriate pattern (or empty) to the operator for dynamically created session ingresses\n\n## In Summary\n\nThe nginx regex change is a **side effect of making the ingress configuration controller-agnostic**. The refactoring enables the same templates to work for both nginx (which needs regex capture groups) and HAProxy (which uses a completely different rewrite mechanism via `config-backend` annotations)."
+          }
+        ]
+      },
+      {
+        "id": "1c05589c-88c8-42f3-b451-647ce4f82e7e",
+        "requestId": "2f0e84ed-1159-43a1-9f11-d01470d55633",
+        "isComplete": true,
+        "isError": false,
+        "promptVariantId": "architect-system-default",
+        "isPromptVariantEdited": false,
+        "content": [
+          {
+            "kind": "markdownContent",
+            "data": {
+              "content": "Yes, that comment makes perfect sense and provides valuable context for reviewers.\n\nIt honestly explains:\n\n1. **The original motivation** - an attempt to reuse the regex for HAProxy\n2. **Why it didn't pan out** - HAProxy works differently (using `config-backend` with `http-request replace-path` instead of capture group rewriting)\n3. **Why it was kept anyway** - the new pattern is cleaner/more logical with its explicit separation of delimiter (`$1`) and path (`$2`)\n\nThis is helpful because without that context, a reviewer might wonder why the nginx regex changed at all when the old one worked fine. Your comment preempts that question and shows the thought process behind the decision."
+            },
+            "fallbackMessage": "Yes, that comment makes perfect sense and provides valuable context for reviewers.\n\nIt honestly explains:\n\n1. **The original motivation** - an attempt to reuse the regex for HAProxy\n2. **Why it didn't pan out** - HAProxy works differently (using `config-backend` with `http-request replace-path` instead of capture group rewriting)\n3. **Why it was kept anyway** - the new pattern is cleaner/more logical with its explicit separation of delimiter (`$1`) and path (`$2`)\n\nThis is helpful because without that context, a reviewer might wonder why the nginx regex changed at all when the old one worked fine. Your comment preempts that question and shows the thought process behind the decision."
+          }
+        ]
+      }
+    ]
+  }
+}

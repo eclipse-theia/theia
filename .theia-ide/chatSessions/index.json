@@ -1,0 +1,177 @@
+{
+  "5be25c5c-14b4-4e3e-a8e6-b1b880c7dde5": {
+    "sessionId": "5be25c5c-14b4-4e3e-a8e6-b1b880c7dde5",
+    "location": "panel",
+    "title": "Command Tree Debugging for \"Expand Subtree\"",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769614397228
+  },
+  "8e89175a-9114-4c46-931c-9fca3f1bb14d": {
+    "sessionId": "8e89175a-9114-4c46-931c-9fca3f1bb14d",
+    "location": "panel",
+    "title": "Remove JF Debug Logs from Command Tree",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769614397298
+  },
+  "41c89eef-69d4-4d64-9ab6-3bbc3a016372": {
+    "sessionId": "41c89eef-69d4-4d64-9ab6-3bbc3a016372",
+    "location": "panel",
+    "title": "Command Tree Diagnostic Logging for Race Condition",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769614397394
+  },
+  "4bce9cc5-6ae7-4703-903c-bfe44c765ad2": {
+    "sessionId": "4bce9cc5-6ae7-4703-903c-bfe44c765ad2",
+    "location": "panel",
+    "title": "Debugging Command Tree Jump-to-Handler Issues",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769675352459
+  },
+  "f14fcc8d-0901-4d3e-8249-d15294a89e89": {
+    "sessionId": "f14fcc8d-0901-4d3e-8249-d15294a89e89",
+    "location": "panel",
+    "title": "Fix for Command Tree Asynchronous Node Loading Race Condition",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769675397094
+  },
+  "bfc43d0c-b953-403b-a255-f7dae4402eb7": {
+    "sessionId": "bfc43d0c-b953-403b-a255-f7dae4402eb7",
+    "location": "panel",
+    "title": "Fix for Command Tree Lazy Loading Race Condition",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769675525022
+  },
+  "60b6627f-7ebe-473d-91e9-77b461ea30b4": {
+    "sessionId": "60b6627f-7ebe-473d-91e9-77b461ea30b4",
+    "location": "panel",
+    "title": "Reviewing lazy load utils enhancement",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769676349152
+  },
+  "09a93553-9800-4ffb-b4c8-75126aa15de1": {
+    "sessionId": "09a93553-9800-4ffb-b4c8-75126aa15de1",
+    "location": "panel",
+    "title": "Helm v4.1.0 Update",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769679703979
+  },
+  "b279bf61-c253-4ee6-a344-16a0ec4fd027": {
+    "sessionId": "b279bf61-c253-4ee6-a344-16a0ec4fd027",
+    "location": "panel",
+    "title": "Upgrading Helm Download Script to v4.1.0",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769679719727
+  },
+  "d9892c57-020b-4c4a-ae9c-ef974512d252": {
+    "sessionId": "d9892c57-020b-4c4a-ae9c-ef974512d252",
+    "location": "panel",
+    "title": "DeepL translation workflow forbidden errors",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769695155401
+  },
+  "c6f0c28e-d8ed-4aee-a49e-66c03f7fccdd": {
+    "sessionId": "c6f0c28e-d8ed-4aee-a49e-66c03f7fccdd",
+    "location": "panel",
+    "title": "AI Assistant Chat",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769776745256
+  },
+  "44db73f6-345c-45da-b531-ef0cfc7a4b65": {
+    "sessionId": "44db73f6-345c-45da-b531-ef0cfc7a4b65",
+    "location": "panel",
+    "title": "Windows Code Signing via SSH Tunnel Implementation",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769775438568
+  },
+  "ce814bc1-2591-43b8-92c1-2689f4729447": {
+    "sessionId": "ce814bc1-2591-43b8-92c1-2689f4729447",
+    "location": "panel",
+    "title": "Windows Code Signing Implementation Plan",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769777871748
+  },
+  "529ef376-d190-49ff-97bb-d177ff2ef7da": {
+    "sessionId": "529ef376-d190-49ff-97bb-d177ff2ef7da",
+    "location": "panel",
+    "title": "Ripgrep Asar Compatibility Fix",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769777926565
+  },
+  "b6a97d9c-7ce0-46d4-a291-db0b947a3c32": {
+    "sessionId": "b6a97d9c-7ce0-46d4-a291-db0b947a3c32",
+    "location": "panel",
+    "title": "Windows Executable Signing Issue",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769782833653
+  },
+  "b3683a91-3b9b-44b3-a86c-ef19bc9c6430": {
+    "sessionId": "b3683a91-3b9b-44b3-a86c-ef19bc9c6430",
+    "location": "panel",
+    "title": "Windows Code Signing Fix with Custom Sign Hook",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769783871988
+  },
+  "18ff31b4-42cf-41b7-9adf-38cd54ea1bf0": {
+    "sessionId": "18ff31b4-42cf-41b7-9adf-38cd54ea1bf0",
+    "location": "panel",
+    "title": "Electron-builder Windows Signing Configuration Fix",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769783871968
+  },
+  "e755c37d-33b6-48a1-94ae-6675d4997f8c": {
+    "sessionId": "e755c37d-33b6-48a1-94ae-6675d4997f8c",
+    "location": "panel",
+    "title": "Windows application signing troubleshooting",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769955755641
+  },
+  "1e087a57-2d41-4977-9f74-2cb5d2da0dca": {
+    "sessionId": "1e087a57-2d41-4977-9f74-2cb5d2da0dca",
+    "location": "panel",
+    "title": "Windows code signing enhancement",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769951000374
+  },
+  "67805389-0921-402c-ab66-a1886a1d83dd": {
+    "sessionId": "67805389-0921-402c-ab66-a1886a1d83dd",
+    "location": "panel",
+    "title": "Windows Signing Script Enhancement",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769951000429
+  },
+  "c872d30d-189c-4527-94c9-53d404f4fcc5": {
+    "sessionId": "c872d30d-189c-4527-94c9-53d404f4fcc5",
+    "location": "panel",
+    "title": "NodeJS Windows Signing Implementation",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769951577748
+  },
+  "3773274f-15c4-425c-af86-d42552e3d671": {
+    "sessionId": "3773274f-15c4-425c-af86-d42552e3d671",
+    "location": "panel",
+    "title": "Windows Authenticode Signing Implementation",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1769951765557
+  },
+  "481c9439-bbe3-4a36-950d-98291a3be5fc": {
+    "sessionId": "481c9439-bbe3-4a36-950d-98291a3be5fc",
+    "location": "panel",
+    "title": "Windows Signing Implementation Plan",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769951612330
+  },
+  "741edad6-e100-4f06-b937-b36cbc68b923": {
+    "sessionId": "741edad6-e100-4f06-b937-b36cbc68b923",
+    "location": "panel",
+    "title": "Windows Signing Logging Enhancement",
+    "pinnedAgentId": "Coder",
+    "saveDate": 1769951816325
+  },
+  "4ce1ccd5-e876-445e-a752-6b47452e5566": {
+    "sessionId": "4ce1ccd5-e876-445e-a752-6b47452e5566",
+    "location": "panel",
+    "title": "License Comparison: EPL vs. GPL with Classpath Exception",
+    "pinnedAgentId": "Architect",
+    "saveDate": 1770202005332
+  }
+}
