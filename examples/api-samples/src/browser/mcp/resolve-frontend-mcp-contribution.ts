@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { MCPFrontendService, RemoteMCPServerDescription } from '@theia/ai-mcp';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, QuickInputService } from '@theia/core/lib/browser';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 @injectable()
 export class ResolveMcpFrontendContribution
@@ -28,12 +29,15 @@ export class ResolveMcpFrontendContribution
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    @inject(ILogger) @named('api-samples')
+    protected readonly logger: ILogger;
+
     async onStart(): Promise<void> {
         const githubServer: RemoteMCPServerDescription = {
             name: 'github',
             serverUrl: 'https://api.githubcopilot.com/mcp/',
             resolve: async serverDescription => {
-                console.log('Resolving GitHub MCP server description');
+                this.logger.debug('Resolving GitHub MCP server description');
 
                 // Prompt user for authentication token
                 const authToken = await this.quickInputService.input({

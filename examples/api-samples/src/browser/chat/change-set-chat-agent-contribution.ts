@@ -40,8 +40,8 @@ export function bindChangeSetChatAgentContribution(bind: interfaces.Bind): void 
  */
 @injectable()
 export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
-    readonly id = 'ChangeSet';
-    readonly name = 'ChangeSet';
+    readonly id = 'ChangeSetSample';
+    readonly name = 'ChangeSetSample';
     readonly defaultLanguageModelPurpose = 'chat';
     override readonly description = 'This chat will create and modify a change set.';
     override languageModelRequirements: LanguageModelRequirement[] = [];
