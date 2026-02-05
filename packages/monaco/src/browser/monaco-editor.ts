@@ -631,11 +631,25 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
                 text: param.text
             };
         });
+        // If the editor doesn't have a model set (e.g., widget not visible),
+        // apply edits directly to the document's underlying model.
+        // This ensures text replacements work even when the editor widget is not attached to the shell.
+        if (!this.editor.getModel()) {
+            this.document.textEditorModel.applyEdits(edits);
+            return true;
+        }
         return this.editor.executeEdits(params.source, edits);
     }
 
     executeEdits(edits: TextEdit[]): boolean {
-        return this.editor.executeEdits('MonacoEditor', this.p2m.asTextEdits(edits) as monaco.editor.IIdentifiedSingleEditOperation[]);
+        const monacoEdits = this.p2m.asTextEdits(edits) as monaco.editor.IIdentifiedSingleEditOperation[];
+        // If the editor doesn't have a model set (e.g., widget not visible),
+        // apply edits directly to the document's underlying model.
+        if (!this.editor.getModel()) {
+            this.document.textEditorModel.applyEdits(monacoEdits);
+            return true;
+        }
+        return this.editor.executeEdits('MonacoEditor', monacoEdits);
     }
 
     storeViewState(): object {
