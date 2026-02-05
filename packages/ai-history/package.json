@@ -1,14 +1,14 @@
 {
   "name": "@theia/ai-history",
-  "version": "1.68.1",
+  "version": "1.68.2",
   "description": "Theia - AI communication history",
   "dependencies": {
-    "@theia/ai-core": "1.68.1",
-    "@theia/ai-chat-ui": "1.68.1",
-    "@theia/core": "1.68.1",
-    "@theia/filesystem": "1.68.1",
-    "@theia/output": "1.68.1",
-    "@theia/workspace": "1.68.1",
+    "@theia/ai-core": "1.68.2",
+    "@theia/ai-chat-ui": "1.68.2",
+    "@theia/core": "1.68.2",
+    "@theia/filesystem": "1.68.2",
+    "@theia/output": "1.68.2",
+    "@theia/workspace": "1.68.2",
     "tslib": "^2.6.2"
   },
   "main": "lib/common",
@@ -45,7 +45,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.68.1"
+    "@theia/ext-scripts": "1.68.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
