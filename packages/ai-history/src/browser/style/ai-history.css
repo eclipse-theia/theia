@@ -113,13 +113,9 @@
 }
 
 .request-prompt-variant.customized {
+  color: var(--theia-editorWarning-foreground);
   background-color: var(--theia-inputValidation-warningBackground);
-  border: 1px solid var(--theia-inputValidation-warningBorder);
-}
-
-.request-prompt-variant .customized-prefix {
-  font-weight: bold;
-  color: var(--theia-notificationsWarningIcon-foreground);
+  border: 1px solid var(--theia-editorWarning-foreground);
 }
 
 .request-content-container {
