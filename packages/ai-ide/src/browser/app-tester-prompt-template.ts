@@ -45,7 +45,7 @@ export const REQUIRED_MCP_SERVERS_NEXT: MCPServerDescription[] = [
   {
     name: 'chrome-devtools',
     command: 'npx',
-    args: ['-y', 'chrome-devtools-mcp@latest', '--cdp-endpoint', 'http://127.0.0.1:9222'],
+    args: ['-y', 'chrome-devtools-mcp@latest', '--cdp-endpoint', 'http://127.0.0.1:9222', '--no-usage-statistics'],
     autostart: false,
     env: {},
   }
