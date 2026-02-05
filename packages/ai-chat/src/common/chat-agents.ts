@@ -200,6 +200,17 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     async invoke(request: MutableChatRequestModel): Promise<void> {
         try {
+            // Check if the current request has any meaningful content (text or images)
+            const currentRequestText = request.message.parts.map(part => part.promptText).join('').trim();
+            const hasImageContent = request.context.variables.some(v => ImageContextVariable.isResolvedImageContext(v));
+            if (currentRequestText.length === 0 && !hasImageContent) {
+                request.response.response.addContent(new MarkdownChatResponseContentImpl(
+                    nls.localize('theia/ai/chat/emptyRequest', 'Please provide a message or question.')
+                ));
+                request.response.complete();
+                return;
+            }
+
             const languageModel = await this.getLanguageModel(this.defaultLanguageModelPurpose);
             if (!languageModel) {
                 throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));

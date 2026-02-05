@@ -105,6 +105,15 @@ export class CodexChatAgent implements ChatAgent {
                 prompt = prompt.replace(agentAddress, '').trim();
             }
 
+            // Check if prompt is empty after removing agent address
+            if (prompt.length === 0) {
+                request.response.response.addContent(
+                    new MarkdownChatResponseContentImpl(nls.localize('theia/ai/chat/emptyRequest', 'Please provide a message or question.'))
+                );
+                request.response.complete();
+                return;
+            }
+
             const sessionId = request.session.id;
             const sandboxMode = this.extractSandboxMode(request.request.modeId);
             const streamResult = await this.codexService.send(
