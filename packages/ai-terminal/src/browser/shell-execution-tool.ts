@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolProvider, ToolRequest, AutoActionResult } from '@theia/ai-core';
 import { ShellCommandWhitelistService } from './shell-command-whitelist-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
@@ -116,12 +116,24 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                 required: ['command']
             },
             handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
-            shouldAutoApprove: (argString: string) => {
+            checkAutoAction: (argString: string): AutoActionResult | undefined => {
                 try {
                     const args = JSON.parse(argString);
-                    return this.shellCommandWhitelistService.isCommandAllowed(args.command);
+                    const result = this.shellCommandWhitelistService.checkCommand(args.command);
+
+                    if (result.reason === 'blacklisted') {
+                        return {
+                            action: 'deny',
+                            reason: `Command blacklisted: ${result.matchedPattern}`,
+                            matchedPattern: result.matchedPattern
+                        };
+                    }
+                    if (result.allowed) {
+                        return { action: 'allow' };
+                    }
+                    return undefined; // Show confirmation UI
                 } catch {
-                    return false;
+                    return undefined; // Show confirmation UI
                 }
             }
         };

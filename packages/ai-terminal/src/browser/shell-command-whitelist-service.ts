@@ -16,8 +16,14 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/common';
-import { SHELL_COMMAND_WHITELIST_PREFERENCE } from '../common/shell-command-preferences';
+import { SHELL_COMMAND_WHITELIST_PREFERENCE, SHELL_COMMAND_BLACKLIST_PREFERENCE } from '../common/shell-command-preferences';
 import { ShellCommandAnalyzer } from '../common/shell-command-analyzer';
+
+export interface CommandCheckResult {
+    allowed: boolean;
+    reason?: 'blacklisted' | 'dangerous' | 'not-whitelisted';
+    matchedPattern?: string;
+}
 
 @injectable()
 export class ShellCommandWhitelistService {
@@ -30,11 +36,15 @@ export class ShellCommandWhitelistService {
 
     /**
      * Checks if a command is allowed based on the whitelist patterns.
-     * Returns false if the command contains dangerous patterns or if the whitelist is empty.
+     * Returns false if the command contains dangerous patterns, is blacklisted, or if the whitelist is empty.
      * Returns true only if ALL sub-commands match at least one whitelist pattern.
      */
     isCommandAllowed(command: string): boolean {
         if (this.shellCommandAnalyzer.containsDangerousPatterns(command)) {
+            return false;
+        }
+
+        if (this.isCommandBlacklisted(command)) {
             return false;
         }
 
@@ -51,6 +61,66 @@ export class ShellCommandWhitelistService {
         return subCommands.every(subCommand =>
             patterns.some(pattern => this.matchesPattern(subCommand, pattern))
         );
+    }
+
+    /**
+     * Checks if a command is blacklisted.
+     * Returns true if ANY sub-command matches ANY blacklist pattern.
+     */
+    isCommandBlacklisted(command: string): boolean {
+        const blacklistPatterns = this.getBlacklistPatterns();
+        if (blacklistPatterns.length === 0) {
+            return false;
+        }
+
+        const subCommands = this.shellCommandAnalyzer.parseCommand(command);
+        if (subCommands.length === 0) {
+            return false;
+        }
+
+        return subCommands.some(subCommand =>
+            blacklistPatterns.some(pattern => this.matchesPattern(subCommand, pattern))
+        );
+    }
+
+    /**
+     * Checks a command and returns detailed result with precedence:
+     * 1. Dangerous patterns → { allowed: false, reason: 'dangerous' }
+     * 2. Blacklisted → { allowed: false, reason: 'blacklisted', matchedPattern }
+     * 3. Whitelisted → { allowed: true }
+     * 4. Otherwise → { allowed: false, reason: 'not-whitelisted' }
+     */
+    checkCommand(command: string): CommandCheckResult {
+        // 1. Check for dangerous patterns first
+        if (this.shellCommandAnalyzer.containsDangerousPatterns(command)) {
+            return { allowed: false, reason: 'dangerous' };
+        }
+
+        // 2. Check blacklist
+        const blacklistPatterns = this.getBlacklistPatterns();
+        const subCommands = this.shellCommandAnalyzer.parseCommand(command);
+
+        for (const subCommand of subCommands) {
+            for (const pattern of blacklistPatterns) {
+                if (this.matchesPattern(subCommand, pattern)) {
+                    return { allowed: false, reason: 'blacklisted', matchedPattern: pattern };
+                }
+            }
+        }
+
+        // 3. Check whitelist
+        const whitelistPatterns = this.getPatterns();
+        if (whitelistPatterns.length > 0 && subCommands.length > 0) {
+            const allWhitelisted = subCommands.every(subCommand =>
+                whitelistPatterns.some(pattern => this.matchesPattern(subCommand, pattern))
+            );
+            if (allWhitelisted) {
+                return { allowed: true };
+            }
+        }
+
+        // 4. Not whitelisted
+        return { allowed: false, reason: 'not-whitelisted' };
     }
 
     /**
@@ -98,19 +168,7 @@ export class ShellCommandWhitelistService {
      * Trims the pattern before adding and avoids duplicates.
      */
     addPattern(pattern: string): void {
-        const trimmed = pattern.trim();
-        if (!trimmed) {
-            throw new Error('Pattern cannot be empty or whitespace-only');
-        }
-        if (trimmed === '*') {
-            throw new Error('Pattern "*" is too permissive - it would match all commands');
-        }
-        // Check for * not preceded by space (unless at position 0)
-        // This regex finds * that is NOT at start AND NOT preceded by space
-        if (/(?<!^)(?<! )\*/.test(trimmed)) {
-            throw new Error('Wildcard * must be preceded by a space (e.g., "git log *" not "git log*")');
-        }
-
+        const trimmed = this.validatePattern(pattern);
         const currentPatterns = this.getPatterns();
         if (!currentPatterns.includes(trimmed)) {
             this.preferenceService.updateValue(
@@ -132,5 +190,61 @@ export class ShellCommandWhitelistService {
                 filtered
             );
         }
+    }
+
+    /**
+     * Returns the current blacklist patterns from preferences.
+     */
+    getBlacklistPatterns(): string[] {
+        return this.preferenceService.get<string[]>(SHELL_COMMAND_BLACKLIST_PREFERENCE, []);
+    }
+
+    /**
+     * Adds a pattern to the blacklist.
+     * Uses the same validation as whitelist patterns.
+     */
+    addBlacklistPattern(pattern: string): void {
+        const trimmed = this.validatePattern(pattern);
+        const currentPatterns = this.getBlacklistPatterns();
+        if (!currentPatterns.includes(trimmed)) {
+            this.preferenceService.updateValue(
+                SHELL_COMMAND_BLACKLIST_PREFERENCE,
+                [...currentPatterns, trimmed]
+            );
+        }
+    }
+
+    /**
+     * Removes a pattern from the blacklist.
+     */
+    removeBlacklistPattern(pattern: string): void {
+        const currentPatterns = this.getBlacklistPatterns();
+        const filtered = currentPatterns.filter(p => p !== pattern);
+        if (filtered.length !== currentPatterns.length) {
+            this.preferenceService.updateValue(
+                SHELL_COMMAND_BLACKLIST_PREFERENCE,
+                filtered
+            );
+        }
+    }
+
+    /**
+     * Validates a pattern and returns the trimmed version.
+     * Throws an error if the pattern is invalid.
+     */
+    protected validatePattern(pattern: string): string {
+        const trimmed = pattern.trim();
+        if (!trimmed) {
+            throw new Error('Pattern cannot be empty or whitespace-only');
+        }
+        if (trimmed === '*') {
+            throw new Error('Pattern "*" is too permissive - it would match all commands');
+        }
+        // Check for * not preceded by space (unless at position 0)
+        // This regex finds * that is NOT at start AND NOT preceded by space
+        if (/(?<!^)(?<! )\*/.test(trimmed)) {
+            throw new Error('Wildcard * must be preceded by a space (e.g., "git log *" not "git log*")');
+        }
+        return trimmed;
     }
 }

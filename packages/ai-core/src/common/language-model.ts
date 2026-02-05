@@ -93,6 +93,12 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
         typeof (obj as { query: unknown }).query === 'string'
     );
 
+export interface AutoActionResult {
+    action: 'allow' | 'deny';
+    reason?: string;  // Explanation for deny
+    matchedPattern?: string;  // Which pattern matched (for debugging)
+}
+
 export interface ToolRequestParameterProperty {
     type?: | 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
     anyOf?: ToolRequestParameterProperty[];
@@ -133,16 +139,14 @@ export interface ToolRequest<TContext extends ToolInvocationContext = ToolInvoca
     confirmAlwaysAllow?: boolean | string;
 
     /**
-     * Optional hook to determine if this tool invocation should be auto-approved
-     * when the tool's confirmation mode is CONFIRM.
-     *
+     * Optional hook to determine automatic action for this tool invocation.
      * @param argString - The JSON argument string passed to the tool
-     * @returns true if the invocation should be auto-approved, false otherwise
-     *
-     * Use this for tools that can make intelligent decisions about which invocations
-     * are safe (e.g., shellExecute checking against a whitelist of allowed commands).
+     * @returns
+     *   - { action: 'allow' } - Auto-approve without confirmation
+     *   - { action: 'deny', reason } - Auto-deny without confirmation
+     *   - undefined - Show confirmation UI (default behavior)
      */
-    shouldAutoApprove?: (argString: string) => boolean;
+    checkAutoAction?: (argString: string) => AutoActionResult | undefined;
 }
 
 /**

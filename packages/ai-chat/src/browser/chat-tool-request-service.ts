@@ -64,10 +64,16 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     default: {
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
 
-                        // Auto-approve if tool provides shouldAutoApprove and it returns true
-                        if (toolRequest.shouldAutoApprove?.(arg_string)) {
+                        // Check for auto-action hook
+                        const autoAction = toolRequest.checkAutoAction?.(arg_string);
+
+                        if (autoAction?.action === 'allow') {
                             toolCallContent.confirm();
+                        } else if (autoAction?.action === 'deny') {
+                            toolCallContent.deny(autoAction.reason);
+                            return toolCallContent.result;
                         }
+                        // else: undefined or no hook - show confirmation UI (fall through to existing flow)
 
                         const confirmed = await toolCallContent.confirmed;
 

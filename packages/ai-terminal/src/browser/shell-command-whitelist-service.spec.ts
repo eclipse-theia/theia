@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ShellCommandWhitelistService } from './shell-command-whitelist-service';
-import { SHELL_COMMAND_WHITELIST_PREFERENCE } from '../common/shell-command-preferences';
+import { SHELL_COMMAND_WHITELIST_PREFERENCE, SHELL_COMMAND_BLACKLIST_PREFERENCE } from '../common/shell-command-preferences';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer';
 
@@ -25,19 +25,28 @@ describe('ShellCommandWhitelistService', () => {
     let service: ShellCommandWhitelistService;
     let preferenceServiceMock: sinon.SinonStubbedInstance<PreferenceService>;
     let storedPatterns: string[];
+    let storedBlacklistPatterns: string[];
 
     beforeEach(() => {
         storedPatterns = [];
+        storedBlacklistPatterns = [];
 
         preferenceServiceMock = {
             get: sinon.stub().callsFake((key: string, defaultValue: string[]) => {
                 if (key === SHELL_COMMAND_WHITELIST_PREFERENCE) {
                     return storedPatterns;
                 }
+                if (key === SHELL_COMMAND_BLACKLIST_PREFERENCE) {
+                    return storedBlacklistPatterns;
+                }
                 return defaultValue;
             }),
-            updateValue: sinon.stub().callsFake((_key: string, value: string[]) => {
-                storedPatterns = value;
+            updateValue: sinon.stub().callsFake((key: string, value: string[]) => {
+                if (key === SHELL_COMMAND_WHITELIST_PREFERENCE) {
+                    storedPatterns = value;
+                } else if (key === SHELL_COMMAND_BLACKLIST_PREFERENCE) {
+                    storedBlacklistPatterns = value;
+                }
                 return Promise.resolve();
             })
         } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
@@ -411,6 +420,120 @@ describe('ShellCommandWhitelistService', () => {
             storedPatterns = ['git log'];
             service.removePattern('npm test');
             expect(preferenceServiceMock.updateValue.called).to.be.false;
+        });
+    });
+
+    describe('blacklist functionality', () => {
+        describe('isCommandBlacklisted', () => {
+            it('returns false when blacklist is empty', () => {
+                storedBlacklistPatterns = [];
+                expect(service.isCommandBlacklisted('git push')).to.be.false;
+            });
+
+            it('returns true for exact match', () => {
+                storedBlacklistPatterns = ['git push'];
+                expect(service.isCommandBlacklisted('git push')).to.be.true;
+                expect(service.isCommandBlacklisted('git push origin')).to.be.false;
+            });
+
+            it('returns true for wildcard match', () => {
+                storedBlacklistPatterns = ['git push *'];
+                expect(service.isCommandBlacklisted('git push')).to.be.true;
+                expect(service.isCommandBlacklisted('git push origin main')).to.be.true;
+                expect(service.isCommandBlacklisted('git pull')).to.be.false;
+            });
+
+            it('checks all sub-commands for blacklist - returns true if ANY matches', () => {
+                storedBlacklistPatterns = ['rm -rf *'];
+                expect(service.isCommandBlacklisted('ls && rm -rf /')).to.be.true;
+            });
+        });
+
+        describe('blacklist precedence over whitelist', () => {
+            it('denies command that matches both blacklist and whitelist', () => {
+                storedPatterns = ['git *'];
+                storedBlacklistPatterns = ['git push *'];
+                expect(service.isCommandAllowed('git log')).to.be.true;
+                expect(service.isCommandAllowed('git push origin')).to.be.false;
+            });
+        });
+
+        describe('getBlacklistPatterns', () => {
+            it('returns empty array when no patterns', () => {
+                storedBlacklistPatterns = [];
+                expect(service.getBlacklistPatterns()).to.deep.equal([]);
+            });
+
+            it('returns stored patterns', () => {
+                storedBlacklistPatterns = ['git push *', 'rm -rf *'];
+                expect(service.getBlacklistPatterns()).to.deep.equal(['git push *', 'rm -rf *']);
+            });
+        });
+
+        describe('addBlacklistPattern', () => {
+            it('adds valid pattern', () => {
+                service.addBlacklistPattern('git push *');
+                expect(storedBlacklistPatterns).to.deep.equal(['git push *']);
+            });
+
+            it('rejects empty pattern', () => {
+                expect(() => service.addBlacklistPattern('')).to.throw('Pattern cannot be empty or whitespace-only');
+            });
+
+            it('rejects * alone', () => {
+                expect(() => service.addBlacklistPattern('*')).to.throw(/too permissive/);
+            });
+
+            it('rejects invalid wildcard position (git push*)', () => {
+                expect(() => service.addBlacklistPattern('git push*')).to.throw(/must be preceded by a space/);
+            });
+        });
+
+        describe('removeBlacklistPattern', () => {
+            it('removes existing pattern', () => {
+                storedBlacklistPatterns = ['git push *', 'rm -rf *'];
+                service.removeBlacklistPattern('git push *');
+                expect(storedBlacklistPatterns).to.deep.equal(['rm -rf *']);
+            });
+        });
+    });
+
+    describe('checkCommand', () => {
+        it('returns dangerous reason for dangerous commands', () => {
+            const result = service.checkCommand('echo $(whoami)');
+            expect(result.allowed).to.be.false;
+            expect(result.reason).to.equal('dangerous');
+        });
+
+        it('returns blacklisted reason with matched pattern', () => {
+            storedBlacklistPatterns = ['git push *'];
+            const result = service.checkCommand('git push origin');
+            expect(result.allowed).to.be.false;
+            expect(result.reason).to.equal('blacklisted');
+            expect(result.matchedPattern).to.equal('git push *');
+        });
+
+        it('returns allowed for whitelisted commands', () => {
+            storedPatterns = ['git log *'];
+            const result = service.checkCommand('git log --oneline');
+            expect(result.allowed).to.be.true;
+            expect(result.reason).to.be.undefined;
+        });
+
+        it('returns not-whitelisted for unmatched commands', () => {
+            storedPatterns = [];
+            const result = service.checkCommand('some-command');
+            expect(result.allowed).to.be.false;
+            expect(result.reason).to.equal('not-whitelisted');
+        });
+
+        it('returns blacklisted before whitelisted (precedence)', () => {
+            storedPatterns = ['git *'];
+            storedBlacklistPatterns = ['git push *'];
+            const result = service.checkCommand('git push origin');
+            expect(result.allowed).to.be.false;
+            expect(result.reason).to.equal('blacklisted');
+            expect(result.matchedPattern).to.equal('git push *');
         });
     });
 });

@@ -16,7 +16,7 @@
 
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
+import { ChatResponseContent, ToolCallChatResponseContent, ToolCallChatResponseContent as ToolCallNS } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
@@ -246,6 +246,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
             ) : confirmationState === 'denied' ? (
                 <span className='theia-toolCall-denied'>
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                    {ToolCallNS.isDenialResult(response.result) && response.result.reason ? <span> — {response.result.reason}</span> : undefined}
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>

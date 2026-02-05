@@ -19,6 +19,7 @@ import { PreferenceSchema } from '@theia/core/lib/common/preferences';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
 
 export const SHELL_COMMAND_WHITELIST_PREFERENCE = 'ai-features.terminal.shellCommandWhitelist';
+export const SHELL_COMMAND_BLACKLIST_PREFERENCE = 'ai-features.terminal.shellCommandBlacklist';
 
 export const shellCommandPreferences: PreferenceSchema = {
     properties: {
@@ -31,6 +32,17 @@ export const shellCommandPreferences: PreferenceSchema = {
                 'List of shell command patterns. Use * as wildcard: "git log" (exact match), ' +
                 '"git log *" (with optional arguments), "* --version" (any command ending with --version). ' +
                 'Wildcard must be preceded by space. Commands with dangerous patterns ($, backticks) are never auto-allowed.'
+            ),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [SHELL_COMMAND_BLACKLIST_PREFERENCE]: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: nls.localize(
+                'theia/ai-terminal/shellCommandBlacklist/description',
+                'List of shell command patterns that should always be denied. Commands matching these patterns will be auto-rejected without confirmation. ' +
+                'Uses Claude Code pattern syntax: "git push" (exact match) or "git push *" (with any arguments).'
             ),
             title: AI_CORE_PREFERENCES_TITLE,
         }
