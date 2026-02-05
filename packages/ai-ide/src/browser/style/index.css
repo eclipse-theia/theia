@@ -1381,3 +1381,9 @@
   color: var(--theia-descriptionForeground);
   font-style: italic;
 }
+
+.ai-shell-whitelist-error {
+  color: var(--theia-errorForeground);
+  margin-top: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: var(--theia-ui-padding);
+}

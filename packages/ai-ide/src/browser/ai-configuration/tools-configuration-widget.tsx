@@ -56,6 +56,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     protected defaultState: ToolConfirmationMode;
     protected whitelistPatterns: string[] = [];
     protected patternInputRef = React.createRef<HTMLInputElement>();
+    protected patternError: string | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -264,10 +265,13 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         try {
             this.shellCommandWhitelistService.addPattern(trimmed);
             input.value = ''; // Clear the input after adding
+            this.patternError = undefined; // Clear any previous error
             this.whitelistPatterns = this.shellCommandWhitelistService.getPatterns();
             this.update();
         } catch (error) {
-            // Pattern validation failed - error logged by service
+            // Show error to user
+            this.patternError = error instanceof Error ? error.message : 'Invalid pattern';
+            this.update();
         }
     }
 
@@ -285,7 +289,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                     {nls.localize(
                         'theia/ai/ide/toolsConfiguration/shellWhitelist/description',
                         'Commands matching these patterns will be automatically allowed without confirmation. ' +
-                        'Each pattern is matched as a prefix (e.g., "git log" matches "git log --oneline").'
+                        'Use * as wildcard: "git log" (exact match), "git log *" (with any arguments). ' +
+                        'Wildcard must be preceded by a space.'
                     )}
                 </p>
                 <div className="ai-shell-whitelist-input-row">
@@ -294,8 +299,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                         type="text"
                         className="theia-input"
                         placeholder={nls.localize(
-                            'theia/ai/ide/toolsConfiguration/shellWhitelist/placeholder',
-                            'Enter command pattern (e.g., git log)'
+                            'theia/ai/ide/shellWhitelist/placeholder',
+                            'e.g., "git log" (exact) or "git log *" (with args)'
                         )}
                         onKeyDown={e => e.key === 'Enter' && this.handleAddPattern()}
                     />
@@ -303,6 +308,11 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                         {nls.localizeByDefault('Add')}
                     </button>
                 </div>
+                {this.patternError && (
+                    <p className="ai-shell-whitelist-error">
+                        {this.patternError}
+                    </p>
+                )}
                 <ul className="ai-shell-whitelist-patterns">
                     {this.whitelistPatterns.map(pattern => (
                         <li key={pattern} className="ai-shell-whitelist-pattern-item">

@@ -28,9 +28,9 @@ export const shellCommandPreferences: PreferenceSchema = {
             default: [],
             description: nls.localize(
                 'theia/ai-terminal/shellCommandWhitelist/description',
-                'List of shell command patterns that are automatically allowed without confirmation. ' +
-                'Each pattern is matched as a prefix (e.g., "git log" matches "git log --oneline"). ' +
-                'Commands with dangerous patterns like $() or backticks are never auto-allowed.'
+                'List of shell command patterns. Use * as wildcard: "git log" (exact match), ' +
+                '"git log *" (with optional arguments), "* --version" (any command ending with --version). ' +
+                'Wildcard must be preceded by space. Commands with dangerous patterns ($, backticks) are never auto-allowed.'
             ),
             title: AI_CORE_PREFERENCES_TITLE,
         }

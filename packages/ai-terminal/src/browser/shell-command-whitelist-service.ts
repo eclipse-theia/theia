@@ -54,11 +54,35 @@ export class ShellCommandWhitelistService {
     }
 
     /**
-     * Checks if a sub-command matches a whitelist pattern using word-boundary prefix matching.
-     * Pattern must match the start of the command and end at a word boundary.
+     * Checks if a sub-command matches a whitelist pattern using Claude Code compatible syntax.
+     * Supports * wildcards: trailing (optional args), leading (suffix match), middle (required match).
      */
     matchesPattern(subCommand: string, pattern: string): boolean {
-        return subCommand === pattern || subCommand.startsWith(pattern + ' ');
+        let regexStr = '';
+        let i = 0;
+
+        while (i < pattern.length) {
+            const char = pattern[i];
+
+            if (char === '*') {
+                // Check if this is a trailing wildcard (at end, preceded by space)
+                if (i === pattern.length - 1 && i > 0 && pattern[i - 1] === ' ') {
+                    // Trailing " *" -> optional args: remove the space we added, add ( .*)?
+                    regexStr = regexStr.slice(0, -1) + '( .*)?';
+                } else {
+                    // Leading or middle wildcard -> required match
+                    regexStr += '.*';
+                }
+            } else if ('.+?^${}()|[]\\'.includes(char)) {
+                // Escape regex special char
+                regexStr += '\\' + char;
+            } else {
+                regexStr += char;
+            }
+            i++;
+        }
+
+        return new RegExp(`^${regexStr}$`).test(subCommand);
     }
 
     /**
@@ -70,13 +94,21 @@ export class ShellCommandWhitelistService {
 
     /**
      * Adds a pattern to the whitelist.
-     * Rejects empty or whitespace-only patterns.
+     * Rejects empty or whitespace-only patterns, "*" alone, and invalid wildcard positions.
      * Trims the pattern before adding and avoids duplicates.
      */
     addPattern(pattern: string): void {
         const trimmed = pattern.trim();
-        if (trimmed.length === 0) {
+        if (!trimmed) {
             throw new Error('Pattern cannot be empty or whitespace-only');
+        }
+        if (trimmed === '*') {
+            throw new Error('Pattern "*" is too permissive - it would match all commands');
+        }
+        // Check for * not preceded by space (unless at position 0)
+        // This regex finds * that is NOT at start AND NOT preceded by space
+        if (/(?<!^)(?<! )\*/.test(trimmed)) {
+            throw new Error('Wildcard * must be preceded by a space (e.g., "git log *" not "git log*")');
         }
 
         const currentPatterns = this.getPatterns();
