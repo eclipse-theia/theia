@@ -65,6 +65,38 @@ export interface SanitizationRule {
      * The replacement string. Can include capture group references like $1, $2, etc.
      */
     replacement: string;
+
+    /**
+     * Optional quick check function that returns true if the message might contain
+     * sensitive data matching this rule. Used as a fast early-exit optimization
+     * to avoid running expensive regex operations on messages that definitely
+     * don't contain sensitive data.
+     *
+     * If not provided, the regex pattern will always be executed.
+     */
+    precheck?: (message: string) => boolean;
+}
+
+/**
+ * Checks if message might contain a URL with credentials.
+ * First checks for :// (required for any URL), then checks for @ (required for credentials).
+ * Short-circuits to avoid unnecessary string scanning.
+ */
+function mightContainUrlCredentials(message: string): boolean {
+    if (!message.includes('://')) {
+        return false;
+    }
+    return message.includes('@');
+}
+
+/**
+ * Checks if message might contain API key or auth token patterns.
+ * Uses lowercase comparison for case-insensitive matching.
+ */
+function mightContainApiKeyOrToken(message: string): boolean {
+    const lower = message.toLowerCase();
+    return (lower.includes('api') && lower.includes('key')) ||
+        (lower.includes('auth') && lower.includes('token'));
 }
 
 /**
@@ -78,7 +110,8 @@ export const DefaultSanitizationRules: SanitizationRule[] = [
          * Capture groups: $1=protocol, $2=username, $3=password, $4=host (with optional port)
          */
         pattern: /([a-z][a-z0-9+.-]*:\/\/)([^:/@]+):([^:/@]+)@([^/:@\s]+(?::\d+)?)/giu,
-        replacement: '$1****:****@$4'
+        replacement: '$1****:****@$4',
+        precheck: mightContainUrlCredentials
     },
     {
         /**
@@ -88,7 +121,8 @@ export const DefaultSanitizationRules: SanitizationRule[] = [
          * Capture groups: $1=key with opening quote of value, $2=closing quote of value
          */
         pattern: /(\\?["'][\w.-]*(?:api[_-]?key|auth[_-]?token)\\?["']\s*:\s*\\?["'])[^"'\\]+(\\?["'])/gi,
-        replacement: '$1****$2'
+        replacement: '$1****$2',
+        precheck: mightContainApiKeyOrToken
     }
 ];
 
@@ -101,9 +135,14 @@ export class DefaultLoggerSanitizer implements LoggerSanitizer {
     protected rules: SanitizationRule[] = DefaultSanitizationRules;
 
     sanitize(message: string): string {
+        if (!message) {
+            return message;
+        }
         let result = message;
         for (const rule of this.rules) {
-            result = result.replace(rule.pattern, rule.replacement);
+            if (!rule.precheck || rule.precheck(result)) {
+                result = result.replace(rule.pattern, rule.replacement);
+            }
         }
         return result;
     }
