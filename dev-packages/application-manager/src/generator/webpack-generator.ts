@@ -95,6 +95,12 @@ const plugins = [
                 from: path.join(resolvePackagePath('@theia/plugin-ext-vscode', __dirname), '..', 'lib', 'node', 'context', 'plugin-vscode-init-fe.js'),
                 to: path.resolve(__dirname, 'lib', 'frontend', 'context', 'plugin-vscode-init-fe.js')
             }`)}
+            ${this.ifPackage('@theia/terminal', `,
+            {
+                // copy shell integration scripts
+                from: path.join(resolvePackagePath('@theia/terminal', __dirname), '..', 'src', 'node', 'shell-integrations'),
+                to: path.resolve(__dirname, 'lib', 'backend', 'shell-integrations')
+            }`)}
         ]
     }),
     new webpack.ProvidePlugin({
