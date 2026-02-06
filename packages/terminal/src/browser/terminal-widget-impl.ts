@@ -326,6 +326,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             if (this._currentTerminalOutput.length > 0) {
                 const terminalOutput = this._currentTerminalOutput.join('');
                 this._currentTerminalOutput = [];
+                this.logger.debug(`Terminal output being emitted: ${terminalOutput}`);
+                this.logger.debug(`Terminal buffer state before onOutput event: ${this.buffer.getLines(0, this.buffer.length).join('\n')}`);
                 this.onOutputEmitter.fire(terminalOutput);
             }
         }));
