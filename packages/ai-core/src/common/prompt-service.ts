@@ -91,6 +91,16 @@ export function isCustomizedPromptFragment(fragment: PromptFragment): fragment i
 }
 
 /**
+ * Contains the effective variant ID and customization state for a prompt fragment
+ */
+export interface PromptVariantInfo {
+    /** The effective variant ID for the prompt fragment */
+    variantId: string;
+    /** Whether this variant has been customized by the user */
+    isCustomized: boolean;
+}
+
+/**
  * Map of prompt fragment IDs to prompt fragments
  */
 export interface PromptMap { [id: string]: PromptFragment }
@@ -403,6 +413,14 @@ export interface PromptService {
     getEffectiveVariantId(promptVariantSetId: string): string | undefined;
 
     /**
+     * Gets the effective variant ID and customization state for a prompt fragment.
+     * This is a convenience method that combines getEffectiveVariantId and customization check.
+     * @param fragmentId The prompt fragment ID or variant set ID
+     * @returns The variant info or undefined if no valid variant exists
+     */
+    getPromptVariantInfo(fragmentId: string): PromptVariantInfo | undefined;
+
+    /**
      * Gets the default variant ID of the given set
      * @param promptVariantSetId The prompt variant set id
      * @returns The default variant ID or undefined if no default is set
@@ -655,6 +673,16 @@ export class PromptServiceImpl implements PromptService {
             this.logger.error(`No valid selected or default variant found for prompt set '${variantSetId}'.`);
         }
         return undefined;
+    }
+
+    getPromptVariantInfo(fragmentId: string): PromptVariantInfo | undefined {
+        const variantId = this.getEffectiveVariantId(fragmentId) ?? fragmentId;
+        const rawFragment = this.getRawPromptFragment(variantId);
+        if (!rawFragment) {
+            return undefined;
+        }
+        const isCustomized = isCustomizedPromptFragment(rawFragment);
+        return { variantId, isCustomized };
     }
 
     protected resolvePotentialSystemPrompt(promptFragmentId: string): PromptFragment | undefined {

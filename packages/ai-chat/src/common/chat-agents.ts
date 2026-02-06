@@ -24,7 +24,6 @@ import {
     AIVariableContext,
     AIVariableResolutionRequest,
     getTextOfResponse,
-    isCustomizedPromptFragment,
     isLanguageModelStreamResponsePart,
     isTextResponsePart,
     isThinkingResponsePart,
@@ -81,19 +80,19 @@ export interface SystemMessageDescription {
     /** The prompt variant ID used */
     promptVariantId?: string;
     /** Whether the prompt variant is customized */
-    isPromptVariantEdited?: boolean;
+    isPromptVariantCustomized?: boolean;
 }
 export namespace SystemMessageDescription {
     export function fromResolvedPromptFragment(
         resolvedPrompt: ResolvedPromptFragment,
         promptVariantId?: string,
-        isPromptVariantEdited?: boolean
+        isPromptVariantCustomized?: boolean
     ): SystemMessageDescription {
         return {
             text: resolvedPrompt.text,
             functionDescriptions: resolvedPrompt.functionDescriptions,
             promptVariantId,
-            isPromptVariantEdited
+            isPromptVariantCustomized
         };
     }
 }
@@ -209,7 +208,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             if (systemMessageDescription?.promptVariantId) {
                 request.response.setPromptVariantInfo(
                     systemMessageDescription.promptVariantId,
-                    systemMessageDescription.isPromptVariantEdited ?? false
+                    systemMessageDescription.isPromptVariantCustomized ?? false
                 );
             }
 
@@ -231,7 +230,14 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
-            const languageModelResponse = await this.sendLlmRequest(request, messages, tools, languageModel);
+            const languageModelResponse = await this.sendLlmRequest(
+                request,
+                messages,
+                tools,
+                languageModel,
+                systemMessageDescription?.promptVariantId,
+                systemMessageDescription?.isPromptVariantCustomized
+            );
 
             await this.addContentsToResponse(languageModelResponse, request);
             await this.onResponseComplete(request);
@@ -277,16 +283,10 @@ export abstract class AbstractChatAgent implements ChatAgent {
             return undefined;
         }
 
-        const effectiveVariantId = this.promptService.getEffectiveVariantId(this.systemPromptId) ?? this.systemPromptId;
-        const isEdited = this.isPromptVariantCustomized(effectiveVariantId);
+        const variantInfo = this.promptService.getPromptVariantInfo(this.systemPromptId);
 
         const resolvedPrompt = await this.promptService.getResolvedPromptFragment(this.systemPromptId, undefined, context);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, effectiveVariantId, isEdited) : undefined;
-    }
-
-    protected isPromptVariantCustomized(fragmentId: string): boolean {
-        const fragment = this.promptService.getRawPromptFragment(fragmentId);
-        return fragment ? isCustomizedPromptFragment(fragment) : false;
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, variantInfo?.variantId, variantInfo?.isCustomized) : undefined;
     }
 
     protected async getMessages(
@@ -373,7 +373,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
         toolRequests: ToolRequest[],
-        languageModel: LanguageModel
+        languageModel: LanguageModel,
+        promptVariantId?: string,
+        isPromptVariantCustomized?: boolean
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
         const settings = { ...agentSettings, ...request.session.settings };
@@ -388,7 +390,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
-                cancellationToken: request.response.cancellationToken
+                cancellationToken: request.response.cancellationToken,
+                promptVariantId,
+                isPromptVariantCustomized
             }
         );
     }

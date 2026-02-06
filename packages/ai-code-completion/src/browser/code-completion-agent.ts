@@ -78,6 +78,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 this.logger.error('No prompt found for code-completion-agent');
                 return undefined;
             }
+
+            const variantInfo = this.promptService.getPromptVariantInfo('code-completion-system');
+
             // since we do not actually hold complete conversions, the request/response pair is considered a session
             const sessionId = generateUuid();
             const requestId = generateUuid();
@@ -89,7 +92,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 agentId: this.id,
                 sessionId,
                 requestId,
-                cancellationToken: token
+                cancellationToken: token,
+                promptVariantId: variantInfo?.variantId,
+                isPromptVariantCustomized: variantInfo?.isCustomized
             };
             if (token.isCancellationRequested) {
                 return undefined;
