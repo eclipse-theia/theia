@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 .theia-caption-prefix {
-  white-space: nowrap;
+  white-space: pre;
   padding-right: 2px;
 }
 
 .theia-caption-suffix {
-  white-space: nowrap;
+  white-space: pre;
   padding: 0px 2px 0px 2px;
 }
 
