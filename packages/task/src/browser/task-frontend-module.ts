@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
-import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution, bindContributionProvider, nls } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { QuickOpenTask, TaskTerminateQuickOpen, TaskRestartRunningQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
@@ -43,6 +43,7 @@ import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 import { TaskContextKeyService } from './task-context-key-service';
+import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -85,4 +86,12 @@ export default new ContainerModule(bind => {
 
     bindProcessTaskModule(bind);
     bindTaskPreferences(bind);
+
+    bind(WorkspaceRestrictionContribution).toConstantValue({
+        getRestrictions(): WorkspaceRestriction[] {
+            return [{
+                label: nls.localize('theia/task/taskRestricted', 'Task execution is disabled in Restricted Mode')
+            }];
+        }
+    });
 });
