@@ -156,10 +156,30 @@ export class CopyToClipboardButtonAction implements CodePartRendererAction {
 
 const CopyToClipboardButton = (props: { code: string, clipboardService: ClipboardService }) => {
     const { code, clipboardService } = props;
+    const [copied, setCopied] = React.useState(false);
+    const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    React.useEffect(() => () => {
+        if (timeoutRef.current !== undefined) {
+            clearTimeout(timeoutRef.current);
+        }
+    }, []);
+
     const copyCodeToClipboard = React.useCallback(() => {
         clipboardService.writeText(code);
+        setCopied(true);
+        if (timeoutRef.current !== undefined) {
+            clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => {
+            setCopied(false);
+            timeoutRef.current = undefined;
+        }, 2000);
     }, [code, clipboardService]);
-    return <div className='button codicon codicon-copy' title={nls.localizeByDefault('Copy')} role='button' onClick={copyCodeToClipboard}></div>;
+
+    const iconClass = copied ? 'codicon-check' : 'codicon-copy';
+    const title = copied ? nls.localize('theia/ai/chat-ui/code-part-renderer/copied', 'Copied') : nls.localizeByDefault('Copy');
+    return <div className={`button codicon ${iconClass}`} title={title} role='button' onClick={copyCodeToClipboard}></div>;
 };
 
 @injectable()
