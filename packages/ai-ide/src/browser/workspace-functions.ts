@@ -297,6 +297,18 @@ export class FileContentFunction implements ToolProvider {
                 const file = this.parseArg(arg_string);
                 return this.getFileContent(file, ctx?.cancellationToken);
             },
+            providerName: undefined,
+            getArgumentsShortLabel: (args: string): { label: string; hasMore: boolean } | undefined => {
+                try {
+                    const parsed = JSON.parse(args);
+                    if (parsed && typeof parsed === 'object' && 'file' in parsed) {
+                        return { label: String(parsed.file), hasMore: false };
+                    }
+                } catch {
+                    // ignore parse errors
+                }
+                return undefined;
+            },
         };
     }
 
@@ -638,6 +650,19 @@ export class FindFilesByPattern implements ToolProvider {
             handler: (arg_string: string, ctx?: ToolInvocationContext) => {
                 const args = JSON.parse(arg_string);
                 return this.findFiles(args.pattern, args.exclude, ctx?.cancellationToken);
+            },
+            providerName: undefined,
+            getArgumentsShortLabel: (args: string): { label: string; hasMore: boolean } | undefined => {
+                try {
+                    const parsed = JSON.parse(args);
+                    if (parsed && typeof parsed === 'object' && 'pattern' in parsed) {
+                        const keys = Object.keys(parsed);
+                        return { label: String(parsed.pattern), hasMore: keys.length > 1 };
+                    }
+                } catch {
+                    // ignore parse errors
+                }
+                return undefined;
             },
         };
     }
