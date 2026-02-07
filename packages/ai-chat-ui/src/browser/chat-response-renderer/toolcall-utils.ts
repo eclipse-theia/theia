@@ -14,60 +14,37 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/**
- * Condenses JSON tool call arguments into a readable preview string.
- * @param args - JSON string of tool call arguments
- * @returns A condensed string representation, or undefined for empty args
- */
 export function condenseArguments(args: string): string | undefined {
     if (!args || !args.trim() || args.trim() === '{}') {
         return undefined;
     }
-
-    const MAX_TOTAL_LENGTH = 80;
-
     let parsed: unknown;
     try {
         parsed = JSON.parse(args);
     } catch {
-        return '...';
+        return args.length > 80 ? args.substring(0, 80) + '\u2026' : args;
     }
-
-    // Handle non-object parsed results (arrays, strings, numbers, null, etc.)
-    // Note: JSON.parse('null') returns null, so we need to handle it separately
-    // eslint-disable-next-line no-null/no-null
-    if (typeof parsed !== 'object' || parsed === undefined || parsed === null || Array.isArray(parsed)) {
-        const stringified = JSON.stringify(parsed);
-        if (stringified.length > MAX_TOTAL_LENGTH) {
-            return stringified.substring(0, MAX_TOTAL_LENGTH - 3) + '...';
-        }
-        return stringified;
+    if (typeof parsed !== 'object' || !parsed || Array.isArray(parsed)) {
+        const str = JSON.stringify(parsed);
+        return str.length > 80 ? str.substring(0, 80) + '\u2026' : str;
     }
-
     const entries = Object.entries(parsed as Record<string, unknown>);
-
-    // Multiple params: just show '...'
-    if (entries.length > 1) {
-        return '...';
+    if (entries.length === 0) {
+        return undefined;
     }
-
-    // Single param: show the value without key name
-    const [, value] = entries[0];
-    let valueStr: string;
-    if (typeof value === 'string') {
-        valueStr = `'${value}'`;
-    } else if (Array.isArray(value)) {
-        valueStr = '[...]';
-        // eslint-disable-next-line no-null/no-null
-    } else if (typeof value === 'object' && value !== undefined && value !== null) {
-        valueStr = '{...}';
-    } else {
-        valueStr = String(value);
-    }
-
-    // Apply total length limit
-    if (valueStr.length > MAX_TOTAL_LENGTH) {
-        return valueStr.substring(0, MAX_TOTAL_LENGTH - 3) + '...';
-    }
-    return valueStr;
+    const parts = entries.map(([key, value]) => {
+        let display: string;
+        if (typeof value === 'string') {
+            display = value.length > 30 ? value.substring(0, 30) + '\u2026' : value;
+        } else if (Array.isArray(value)) {
+            display = '[\u2026]';
+        } else if (typeof value === 'object' && !!value) {
+            display = '{\u2026}';
+        } else {
+            display = String(value);
+        }
+        return `${key}: ${display}`;
+    });
+    const joined = parts.join(', ');
+    return joined.length > 80 ? joined.substring(0, 80) + '\u2026' : joined;
 }

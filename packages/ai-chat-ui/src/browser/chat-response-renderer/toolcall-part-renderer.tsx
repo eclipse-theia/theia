@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
@@ -27,6 +27,7 @@ import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
 import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { condenseArguments } from './toolcall-utils';
 
 @injectable()
@@ -40,6 +41,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 
     @inject(ToolInvocationRegistry)
     protected toolInvocationRegistry: ToolInvocationRegistry;
+
+    @inject(HoverService)
+    protected hoverService: HoverService;
 
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
@@ -61,7 +65,8 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             toolConfirmationManager={this.toolConfirmationManager}
             toolRequest={toolRequest}
             chatId={chatId}
-            renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
+            getArgumentsLabel={this.getArgumentsLabel.bind(this)}
+            showArgsTooltip={this.showArgsTooltip.bind(this)}
             responseRenderer={this.renderResult.bind(this)}
             requestCanceled={parentNode.response.isCanceled}
             contextMenuRenderer={this.contextMenuRenderer} />;
@@ -116,20 +121,35 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         return this.toolConfirmationManager.getConfirmationMode(responseId, chatId, toolRequest);
     }
 
-    protected renderCollapsibleArguments(args: string | undefined): ReactNode {
-        const condensedPreview = condenseArguments(args ?? '');
-        if (!condensedPreview) {
-            return undefined;
+    protected getArgumentsLabel(toolName: string | undefined, args: string | undefined): string {
+        if (!args || !args.trim() || args.trim() === '{}') {
+            return '';
         }
+        try {
+            const toolRequest = toolName ? this.toolInvocationRegistry.getFunction(toolName) : undefined;
+            if (toolRequest?.getArgumentsShortLabel) {
+                const result = toolRequest.getArgumentsShortLabel(args);
+                if (result) {
+                    return result.hasMore ? `${result.label} \u2026` : result.label;
+                }
+            }
+        } catch {
+            // tool not found in registry, fall through to generic condensed rendering
+        }
+        return condenseArguments(args) ?? '\u2026';
+    }
 
-        return (
-            <details className="collapsible-arguments">
-                <summary className="collapsible-arguments-summary">
-                    <span className="collapsible-arguments-preview">{condensedPreview}</span>
-                </summary>
-                <span>{this.prettyPrintArgs(args ?? '')}</span>
-            </details>
-        );
+    protected showArgsTooltip(response: ToolCallChatResponseContent, target: HTMLElement | undefined): void {
+        if (!target || !response.arguments || !response.arguments.trim() || response.arguments.trim() === '{}') {
+            return;
+        }
+        const prettyArgs = this.prettyPrintArgs(response.arguments);
+        const markdownString = new MarkdownStringImpl(`**${response.name}**\n\`\`\`json\n${prettyArgs}\n\`\`\``);
+        this.hoverService.requestHover({
+            content: markdownString,
+            target,
+            position: 'right'
+        });
     }
 
     private prettyPrintArgs(args: string): string {
@@ -152,7 +172,8 @@ interface ToolCallContentProps {
     toolConfirmationManager: ToolConfirmationManager;
     toolRequest?: ToolRequest;
     chatId: string;
-    renderCollapsibleArguments: (args: string | undefined) => ReactNode;
+    getArgumentsLabel: (toolName: string | undefined, args: string | undefined) => string;
+    showArgsTooltip: (response: ToolCallChatResponseContent, target: HTMLElement | undefined) => void;
     responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
@@ -168,12 +189,15 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     toolRequest,
     chatId,
     responseRenderer,
-    renderCollapsibleArguments,
+    getArgumentsLabel,
     requestCanceled,
+    showArgsTooltip,
     contextMenuRenderer
 }) => {
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
     const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
+    // eslint-disable-next-line no-null/no-null
+    const summaryRef = React.useRef<HTMLElement>(null);
 
     const formatReason = (reason: unknown): string => {
         if (!reason) {
@@ -253,9 +277,12 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>
-                    <summary>
+                    <summary
+                        ref={summaryRef}
+                        onMouseEnter={() => showArgsTooltip(response, summaryRef.current ?? undefined)}
+                    >
                         {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                        ({renderCollapsibleArguments(response.arguments)})
+                        (<span className='theia-toolCall-args-label'>{getArgumentsLabel(response.name, response.arguments)}</span>)
                     </summary>
                     <div className='theia-toolCall-response-result'>
                         {responseRenderer(response)}

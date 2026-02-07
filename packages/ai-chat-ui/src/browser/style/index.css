@@ -1028,34 +1028,9 @@ div:last-child > .theia-ChatNode {
   text-wrap: auto;
 }
 
-.collapsible-arguments {
-  display: inline-block;
-}
-
-.collapsible-arguments .collapsible-arguments-summary {
-  display: inline-block;
-  white-space: nowrap;
-  text-decoration: underline;
-}
-
-details[open].collapsible-arguments,
-details[open].collapsible-arguments .collapsible-arguments-summary {
-  display: unset;
-}
-
-.collapsible-arguments-preview {
+.theia-toolCall-args-label {
+  font-weight: normal;
   color: var(--theia-descriptionForeground);
-}
-
-/* When arguments are expanded: hide preview, show ▲ to collapse */
-details[open].collapsible-arguments .collapsible-arguments-preview {
-  display: none;
-}
-
-details[open].collapsible-arguments .collapsible-arguments-summary::after {
-  content: '▲';
-  color: var(--theia-descriptionForeground);
-  cursor: pointer;
 }
 
 .theia-ResponseNode-ProgressMessage {

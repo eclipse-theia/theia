@@ -26,7 +26,8 @@ import {
     FileContentFunction,
     GetWorkspaceFileList,
     FileDiagnosticProvider,
-    WorkspaceFunctionScope
+    WorkspaceFunctionScope,
+    FindFilesByPattern
 } from './workspace-functions';
 import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
@@ -126,6 +127,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         container.bind(FileContentFunction).toSelf();
         container.bind(GetWorkspaceFileList).toSelf();
         container.bind(FileDiagnosticProvider).toSelf();
+        container.bind(FindFilesByPattern).toSelf();
     });
 
     afterEach(() => {
@@ -193,5 +195,136 @@ describe('Workspace Functions Cancellation Tests', () => {
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+});
+
+describe('FileContentFunction.getArgumentsShortLabel', () => {
+    let container: Container;
+    let getArgumentsShortLabel: (args: string) => { label: string; hasMore: boolean } | undefined;
+
+    let disableJSDOMInner: () => void;
+    before(() => {
+        disableJSDOMInner = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOMInner();
+    });
+
+    beforeEach(() => {
+        container = new Container();
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async () => ({
+                isDirectory: true,
+                children: [],
+                resource: new URI('file:///workspace')
+            }),
+            read: async () => ({ value: { toString: () => 'test content' } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const mockMonacoWorkspace = {
+            // eslint-disable-next-line no-null/no-null
+            getTextDocument: () => null
+        } as unknown as MonacoWorkspace;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+
+        const fileContentFunction = container.get(FileContentFunction);
+        const tool = fileContentFunction.getTool();
+        getArgumentsShortLabel = tool.getArgumentsShortLabel!;
+    });
+
+    it('returns label for valid file argument', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ file: 'src/index.ts' }));
+        expect(result).to.deep.equal({ label: 'src/index.ts', hasMore: false });
+    });
+
+    it('returns undefined for invalid JSON', () => {
+        const result = getArgumentsShortLabel('not valid json');
+        expect(result).to.be.undefined;
+    });
+
+    it('returns undefined when file key is missing', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ path: 'src/index.ts' }));
+        expect(result).to.be.undefined;
+    });
+});
+
+describe('FindFilesByPattern.getArgumentsShortLabel', () => {
+    let container: Container;
+    let getArgumentsShortLabel: (args: string) => { label: string; hasMore: boolean } | undefined;
+
+    let disableJSDOMInner: () => void;
+    before(() => {
+        disableJSDOMInner = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOMInner();
+    });
+
+    beforeEach(() => {
+        container = new Container();
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async () => ({
+                isDirectory: true,
+                children: [],
+                resource: new URI('file:///workspace')
+            }),
+            read: async () => ({ value: { toString: () => 'test content' } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FindFilesByPattern).toSelf();
+
+        const findFilesByPattern = container.get(FindFilesByPattern);
+        const tool = findFilesByPattern.getTool();
+        getArgumentsShortLabel = tool.getArgumentsShortLabel!;
+    });
+
+    it('returns label for valid pattern argument', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ pattern: '**/*.ts' }));
+        expect(result).to.deep.equal({ label: '**/*.ts', hasMore: false });
+    });
+
+    it('returns hasMore true when additional arguments exist', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ pattern: '**/*.ts', exclude: ['node_modules'] }));
+        expect(result).to.deep.equal({ label: '**/*.ts', hasMore: true });
+    });
+
+    it('returns undefined for invalid JSON', () => {
+        const result = getArgumentsShortLabel('not valid json');
+        expect(result).to.be.undefined;
+    });
+
+    it('returns undefined when pattern key is missing', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ glob: '**/*.ts' }));
+        expect(result).to.be.undefined;
     });
 });

@@ -31,82 +31,79 @@ describe('condenseArguments', () => {
         expect(condenseArguments('')).to.be.undefined;
     });
 
-    it('returns "..." for invalid JSON', () => {
-        expect(condenseArguments('not valid json')).to.equal('...');
-        expect(condenseArguments('{invalid}')).to.equal('...');
+    it('returns the raw string (possibly truncated) for invalid JSON', () => {
+        expect(condenseArguments('not valid json')).to.equal('not valid json');
+        expect(condenseArguments('{invalid}')).to.equal('{invalid}');
     });
 
-    it('condenses single string parameter without key name', () => {
+    it('condenses single string parameter as key: value', () => {
         const result = condenseArguments('{"query": "search term"}');
-        // Single param shows just the quoted value, no key name
-        expect(result).to.equal("'search term'");
+        expect(result).to.equal('query: search term');
     });
 
-    it('shows ... for multiple parameters', () => {
+    it('shows all key-value pairs for multiple parameters', () => {
         const result = condenseArguments('{"query": "search term", "limit": 10}');
-        expect(result).to.equal('...');
+        expect(result).to.equal('query: search term, limit: 10');
     });
 
-    it('shows full path for single parameter', () => {
+    it('truncates long path value at 30 chars', () => {
         const longPath = '/very/long/file/path/to/something.ts';
         const result = condenseArguments(`{"path": "${longPath}"}`);
-        // Single parameter shows quoted value without key name
-        expect(result).to.equal("'/very/long/file/path/to/something.ts'");
+        expect(result).to.equal('path: /very/long/file/path/to/someth\u2026');
     });
 
-    it('shows ... for multiple parameters', () => {
+    it('shows all key-value pairs for multiple parameters', () => {
         const result = condenseArguments('{"path": "/some/path", "mode": "read"}');
-        // Multiple params: just show ...
-        expect(result).to.equal('...');
+        expect(result).to.equal('path: /some/path, mode: read');
     });
 
-    it('shows {...} for single nested object param', () => {
+    it('shows {\u2026} for single nested object param', () => {
         const result = condenseArguments('{"config": {"nested": true}}');
-        // Single param, no key name
-        expect(result).to.equal('{...}');
+        expect(result).to.equal('config: {\u2026}');
     });
 
-    it('shows [...] for single array param', () => {
+    it('shows [\u2026] for single array param', () => {
         const result = condenseArguments('{"items": [1, 2, 3]}');
-        // Single param, no key name
-        expect(result).to.equal('[...]');
+        expect(result).to.equal('items: [\u2026]');
     });
 
-    it('shows number value as-is for single param', () => {
+    it('shows number value as key: value for single param', () => {
         const result = condenseArguments('{"count": 42}');
-        // Single param, no key name
-        expect(result).to.equal('42');
+        expect(result).to.equal('count: 42');
     });
 
-    it('shows boolean value as-is for single param', () => {
+    it('shows boolean value as key: value for single param', () => {
         const result = condenseArguments('{"enabled": true}');
-        // Single param, no key name
-        expect(result).to.equal('true');
+        expect(result).to.equal('enabled: true');
     });
 
-    it('shows null value as-is for single param', () => {
+    it('shows null value as key: value for single param', () => {
         const result = condenseArguments('{"value": null}');
-        // Single param, no key name
-        expect(result).to.equal('null');
+        expect(result).to.equal('value: null');
     });
 
-    it('shows ... for multiple mixed parameters', () => {
+    it('shows all key-value pairs for multiple mixed parameters', () => {
         const result = condenseArguments('{"config": {"nested": true}, "debug": true}');
-        // Multiple params: just show ...
-        expect(result).to.equal('...');
+        expect(result).to.equal('config: {\u2026}, debug: true');
     });
 
-    it('shows ... for multiple parameters regardless of length', () => {
+    it('shows all key-value pairs for multiple short parameters', () => {
         const result = condenseArguments('{"a": "1", "b": "2"}');
-        expect(result).to.equal('...');
+        expect(result).to.equal('a: 1, b: 2');
     });
 
-    it('truncates single param value exceeding 80 chars', () => {
+    it('truncates total output exceeding 80 chars with \u2026', () => {
         const veryLongPath = '/this/is/a/very/long/path/that/exceeds/eighty/characters/total/length/somefile.ts';
         const result = condenseArguments(`{"path": "${veryLongPath}"}`);
         expect(result).to.not.be.undefined;
-        expect(result!.length).to.be.at.most(80);
-        expect(result!.endsWith('...')).to.be.true;
+        expect(result!.length).to.be.at.most(81);
+        expect(result!.endsWith('\u2026')).to.be.true;
+    });
+
+    it('truncates string values longer than 30 chars', () => {
+        const longValue = 'abcdefghijklmnopqrstuvwxyz12345678';
+        const result = condenseArguments(`{"key": "${longValue}"}`);
+        expect(result).to.equal('key: abcdefghijklmnopqrstuvwxyz1234\u2026');
     });
 
     it('handles top-level array', () => {
@@ -128,8 +125,8 @@ describe('condenseArguments', () => {
         const longArray = JSON.stringify(Array(50).fill('item'));
         const result = condenseArguments(longArray);
         expect(result).to.not.be.undefined;
-        expect(result!.length).to.be.at.most(80);
-        expect(result!.endsWith('...')).to.be.true;
+        expect(result!.length).to.be.at.most(81);
+        expect(result!.endsWith('\u2026')).to.be.true;
     });
 
 });
