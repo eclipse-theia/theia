@@ -159,7 +159,16 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
             const wpPath = decodeURI(window.location.hash.substring(1));
-            const workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            let workspaceUri: URI;
+            if (wpPath.startsWith('//')) {
+                const unc = wpPath.slice(2);
+                const firstSlash = unc.indexOf('/');
+                const authority = firstSlash >= 0 ? unc.slice(0, firstSlash) : unc;
+                const path = firstSlash >= 0 ? unc.slice(firstSlash) : '/';
+                workspaceUri = new URI().withPath(path).withAuthority(authority).withScheme('file');
+            } else {
+                workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            }
             let workspaceStat: FileStat | undefined;
             try {
                 workspaceStat = await this.fileService.resolve(workspaceUri);
@@ -181,6 +190,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      */
     protected setURLFragment(workspacePath: string): void {
         window.location.hash = encodeURI(workspacePath);
+    }
+
+    protected getWorkspacePath(resource: URI): string {
+        return resource.authority
+            ? `//${resource.authority}${resource.path.toString()}`
+            : resource.path.toString();
     }
 
     get roots(): Promise<FileStat[]> {
@@ -220,7 +235,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 this.toDisposeOnWorkspace.push(this.fileService.watch(uri));
                 this.onWorkspaceLocationChangedEmitter.fire(this._workspace);
             }
-            this.setURLFragment(uri.path.toString());
+            this.setURLFragment(this.getWorkspacePath(uri));
         } else {
             this.setURLFragment('');
         }
@@ -523,7 +538,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected openWindow(uri: FileStat, options?: WorkspaceInput): void {
-        const workspacePath = uri.resource.path.toString();
+        const workspacePath = this.getWorkspacePath(uri.resource);
 
         if (this.shouldPreserveWindow(options)) {
             this.reloadWindow(workspacePath, options);
