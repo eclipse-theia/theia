@@ -644,8 +644,10 @@ export class TabBarRenderer extends TabBar.Renderer {
         } else if (title.caption) {
             const position = this.tabBar.orientation === 'horizontal' ? 'bottom' : 'right';
             const tooltip = ArrayUtils.coalesce([title.caption, ...this.getDecorationData(title, 'tooltip')]).join(' - ');
+            // Preserve multiple consecutive spaces by replacing with non-breaking spaces
+            const preservedTooltip = tooltip.replace(/ {2,}/g, match => '\u00A0'.repeat(match.length));
             this.hoverService.requestHover({
-                content: tooltip,
+                content: preservedTooltip,
                 target: event.currentTarget,
                 position
             });
