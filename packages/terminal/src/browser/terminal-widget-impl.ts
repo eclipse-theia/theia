@@ -256,6 +256,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.needsResize = true;
             this.update();
         }));
+        this.updateCommandHistoryHandlers();
 
         this.toDispose.push(this.themeService.onDidChange(() => {
             this.term.options.theme = this.themeService.theme;
@@ -292,6 +293,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.toDisposeOnConnect);
         this.toDispose.push(this.commandSeparatorDecorations);
+        this.toDispose.push(this.toDisposeOnCommandHistory)
         this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
             const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
                 disposable.dispose();
