@@ -99,7 +99,9 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     private sanitizeCommandOutput(output: string): string {
         // remove prompt from the end of the output
         const indexOfPrompt = output.lastIndexOf('\u001b]133;prompt_started');
-        output = output.slice(0, indexOfPrompt);
+        if (indexOfPrompt !== -1) {
+            output = output.slice(0, indexOfPrompt);
+        }
         // remove Operation System Command Blocks (OSC) sequences
         output = output.replace(/\u001b\].*?(?:\u0007|\u001b\\)/gs, '');
         // remove control sequence introducer (CSI) sequences
