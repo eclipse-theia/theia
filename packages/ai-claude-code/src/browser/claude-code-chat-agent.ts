@@ -20,6 +20,7 @@ import {
     ChatAgentService,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
+    MutableChatModel,
     MutableChatRequestModel,
     QuestionResponseContentImpl,
     ThinkingChatResponseContentImpl,
@@ -58,9 +59,11 @@ export const CLAUDE_PENDING_APPROVALS_KEY = 'claudePendingApprovals';
 export const CLAUDE_APPROVAL_TOOL_INPUTS_KEY = 'claudeApprovalToolInputs';
 export const CLAUDE_MODEL_NAME_KEY = 'claudeModelName';
 export const CLAUDE_COST_KEY = 'claudeCost';
+export const CLAUDE_SESSION_APPROVED_TOOLS_KEY = 'claudeSessionApprovedTools';
 
 const APPROVAL_OPTIONS = [
     { text: nls.localizeByDefault('Allow'), value: 'allow' },
+    { text: nls.localize('theia/ai/claude-code/allowSession', 'Allow for this session'), value: 'allow-session' },
     { text: nls.localizeByDefault('Deny'), value: 'deny' }
 ];
 
@@ -319,17 +322,58 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         return toolInputs;
     }
 
+    protected getSessionApprovedTools(request: MutableChatRequestModel): Set<string> {
+        let approvedTools = request.session.settings?.[CLAUDE_SESSION_APPROVED_TOOLS_KEY] as Set<string> | undefined;
+        if (!approvedTools) {
+            approvedTools = new Set<string>();
+            this.setSessionApprovedTools(request, approvedTools);
+        }
+        return approvedTools;
+    }
+
+    protected setSessionApprovedTools(request: MutableChatRequestModel, approvedTools: Set<string>): void {
+        const currentSettings = request.session.settings || {};
+        (request.session as MutableChatModel).setSettings({
+            ...currentSettings,
+            [CLAUDE_SESSION_APPROVED_TOOLS_KEY]: approvedTools
+        });
+    }
+
+    protected isToolApprovedForSession(request: MutableChatRequestModel, toolName: string): boolean {
+        return this.getSessionApprovedTools(request).has(toolName);
+    }
+
+    protected approveToolForSession(request: MutableChatRequestModel, toolName: string): void {
+        const approvedTools = this.getSessionApprovedTools(request);
+        approvedTools.add(toolName);
+        this.setSessionApprovedTools(request, approvedTools);
+    }
+
     protected handleToolApprovalRequest(
         approvalRequest: ToolApprovalRequestMessage,
         request: MutableChatRequestModel
     ): void {
+        // Check if tool is already approved for this session
+        if (this.isToolApprovedForSession(request, approvalRequest.toolName)) {
+            // Auto-approve without prompting user
+            const response: ToolApprovalResponseMessage = {
+                type: 'tool-approval-response',
+                requestId: approvalRequest.requestId,
+                approved: true,
+                updatedInput: approvalRequest.toolInput
+            };
+            this.claudeCode.sendApprovalResponse(response);
+            return;
+        }
+
+        // If not approved for session, prompt user
         const question = nls.localize('theia/ai/claude-code/toolApprovalRequest', 'Claude Code wants to use the "{0}" tool. Do you want to allow this?', approvalRequest.toolName);
 
         const questionContent = new QuestionResponseContentImpl(
             question,
             APPROVAL_OPTIONS,
             request,
-            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, request)
+            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request)
         );
 
         // Store references for this specific approval request
@@ -343,6 +387,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     protected handleApprovalResponse(
         selectedOption: { text: string; value?: string },
         requestId: string,
+        toolName: string,
         request: MutableChatRequestModel
     ): void {
         const pendingApprovals = this.getPendingApprovals(request);
@@ -359,7 +404,13 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         pendingApprovals.delete(requestId);
         toolInputs.delete(requestId);
 
-        const approved = selectedOption.value === 'allow';
+        const approved = selectedOption.value === 'allow' || selectedOption.value === 'allow-session';
+
+        // If "Allow for this session" was selected, track it
+        if (selectedOption.value === 'allow-session') {
+            this.approveToolForSession(request, toolName);
+        }
+
         const response: ToolApprovalResponseMessage = {
             type: 'tool-approval-response',
             requestId,
