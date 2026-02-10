@@ -293,7 +293,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.toDisposeOnConnect);
         this.toDispose.push(this.commandSeparatorDecorations);
-        this.toDispose.push(this.toDisposeOnCommandHistory)
+        this.toDispose.push(this.toDisposeOnCommandHistory);
         this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
             const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
                 disposable.dispose();
@@ -443,7 +443,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             })
         );
     }
-
 
     private addCommandSeparator(): void {
         const marker = this.term.registerMarker(0);
