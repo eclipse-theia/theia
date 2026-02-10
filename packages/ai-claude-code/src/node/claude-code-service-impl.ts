@@ -267,6 +267,17 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
     }
 
     protected async requestToolApproval(streamId: string, toolName: string, toolInput: unknown): Promise<{ behavior: 'allow' | 'deny', message?: string, updatedInput?: unknown }> {
+        // Tools that don't require approval - they are safe and non-intrusive
+        const TOOLS_WITHOUT_APPROVAL = new Set(['AskUserQuestion']);
+
+        if (TOOLS_WITHOUT_APPROVAL.has(toolName)) {
+            // Ensure updatedInput is a valid object (Zod expects a record, not undefined)
+            const validInput = (typeof toolInput === 'object' && toolInput !== null) ? toolInput : {};
+            const result = { behavior: 'allow' as const, updatedInput: validInput };
+            this.logger.info('Auto-approving tool without user confirmation:', toolName, 'with input:', validInput, 'returning:', result);
+            return result;
+        }
+
         this.logger.info('Requesting tool approval:', toolName, toolInput);
 
         const requestId = generateUuid();
