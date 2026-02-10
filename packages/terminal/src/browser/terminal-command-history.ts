@@ -112,6 +112,8 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     }
 
     dispose(): void {
+        this._commandHistory = [];
+        this._commandOutputChunks = [];
         this.toDispose.dispose();
     }
 
