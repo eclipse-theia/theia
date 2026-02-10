@@ -20,7 +20,9 @@ import * as React from '@theia/core/shared/react';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { nls, PreferenceService } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { ShellCommandWhitelistService } from '@theia/ai-terminal/lib/browser/shell-command-whitelist-service';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { SHELL_COMMAND_WHITELIST_PREFERENCE, SHELL_COMMAND_BLACKLIST_PREFERENCE } from '@theia/ai-terminal/lib/common/shell-command-preferences';
 import { AITableConfigurationWidget, TableColumn } from './base/ai-table-configuration-widget';
 
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
@@ -47,8 +49,17 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
+    @inject(ShellCommandWhitelistService)
+    protected readonly shellCommandWhitelistService: ShellCommandWhitelistService;
+
     protected toolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     protected defaultState: ToolConfirmationMode;
+    protected whitelistPatterns: string[] = [];
+    protected patternInputRef = React.createRef<HTMLInputElement>();
+    protected patternError: string | undefined;
+    protected blacklistPatterns: string[] = [];
+    protected blacklistInputRef = React.createRef<HTMLInputElement>();
+    protected blacklistError: string | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -65,6 +76,14 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                     this.toolConfirmationModes = await this.loadToolConfigurationModes();
                     this.update();
                 }
+                if (e.preferenceName === SHELL_COMMAND_WHITELIST_PREFERENCE) {
+                    this.whitelistPatterns = this.shellCommandWhitelistService.getPatterns();
+                    this.update();
+                }
+                if (e.preferenceName === SHELL_COMMAND_BLACKLIST_PREFERENCE) {
+                    this.blacklistPatterns = this.shellCommandWhitelistService.getBlacklistPatterns();
+                    this.update();
+                }
             }),
             this.toolInvocationRegistry.onDidChange(async () => {
                 await this.loadItems();
@@ -77,6 +96,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         await this.loadItems();
         this.defaultState = await this.loadDefaultConfirmation();
         this.toolConfirmationModes = await this.loadToolConfigurationModes();
+        this.whitelistPatterns = this.shellCommandWhitelistService.getPatterns();
+        this.blacklistPatterns = this.shellCommandWhitelistService.getBlacklistPatterns();
     }
 
     protected async loadItems(): Promise<void> {
@@ -236,5 +257,187 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         const effectiveState = this.getEffectiveState(item.name);
         const isDefault = effectiveState === this.defaultState;
         return isDefault ? 'default-mode' : 'custom-mode';
+    }
+
+    protected handleAddPattern(): void {
+        const input = this.patternInputRef.current;
+        if (!input) {
+            return;
+        }
+
+        const trimmed = input.value.trim();
+        if (trimmed.length === 0) {
+            return;
+        }
+
+        try {
+            this.shellCommandWhitelistService.addPattern(trimmed);
+            input.value = ''; // Clear the input after adding
+            this.patternError = undefined; // Clear any previous error
+            this.whitelistPatterns = this.shellCommandWhitelistService.getPatterns();
+            this.update();
+        } catch (error) {
+            // Show error to user
+            this.patternError = error instanceof Error ? error.message : 'Invalid pattern';
+            this.update();
+        }
+    }
+
+    protected handleRemovePattern(pattern: string): void {
+        this.shellCommandWhitelistService.removePattern(pattern);
+    }
+
+    protected handleAddBlacklistPattern(): void {
+        const input = this.blacklistInputRef.current;
+        if (!input) {
+            return;
+        }
+
+        const trimmed = input.value.trim();
+        if (trimmed.length === 0) {
+            return;
+        }
+
+        try {
+            this.shellCommandWhitelistService.addBlacklistPattern(trimmed);
+            input.value = ''; // Clear the input after adding
+            this.blacklistError = undefined; // Clear any previous error
+            this.blacklistPatterns = this.shellCommandWhitelistService.getBlacklistPatterns();
+            this.update();
+        } catch (error) {
+            // Show error to user
+            this.blacklistError = error instanceof Error ? error.message : 'Invalid pattern';
+            this.update();
+        }
+    }
+
+    protected handleRemoveBlacklistPattern(pattern: string): void {
+        this.shellCommandWhitelistService.removeBlacklistPattern(pattern);
+    }
+
+    protected override renderFooter(): React.ReactNode {
+        return (
+            <div className="ai-shell-whitelist-section">
+                <div className="settings-section-title settings-section-category-title">
+                    {nls.localize('theia/ai/ide/toolsConfiguration/shellWhitelist/title', 'Shell Command Whitelist')}
+                </div>
+                <p className="ai-shell-whitelist-description">
+                    {nls.localize(
+                        'theia/ai/ide/toolsConfiguration/shellWhitelist/description',
+                        'Commands matching these patterns will be automatically allowed without confirmation. ' +
+                        'Use * as wildcard: "git log" (exact match), "git log *" (with any arguments). ' +
+                        'Wildcard must be preceded by a space.'
+                    )}
+                </p>
+                <div className="ai-shell-whitelist-input-row">
+                    <input
+                        ref={this.patternInputRef}
+                        type="text"
+                        className="theia-input"
+                        placeholder={nls.localize(
+                            'theia/ai/ide/shellWhitelist/placeholder',
+                            'e.g., "git log" (exact) or "git log *" (with args)'
+                        )}
+                        onKeyDown={e => e.key === 'Enter' && this.handleAddPattern()}
+                    />
+                    <button className="theia-button main" onClick={() => this.handleAddPattern()}>
+                        {nls.localizeByDefault('Add')}
+                    </button>
+                </div>
+                {this.patternError && (
+                    <p className="ai-shell-whitelist-error">
+                        {this.patternError}
+                    </p>
+                )}
+                <ul className="ai-shell-whitelist-patterns">
+                    {this.whitelistPatterns.map(pattern => (
+                        <li key={pattern} className="ai-shell-whitelist-pattern-item">
+                            <code>{pattern}</code>
+                            <button
+                                className="theia-button secondary"
+                                onClick={() => this.handleRemovePattern(pattern)}
+                            >
+                                {nls.localizeByDefault('Remove')}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+                {this.whitelistPatterns.length === 0 && (
+                    <p className="ai-shell-whitelist-empty">
+                        {nls.localize(
+                            'theia/ai/ide/toolsConfiguration/shellWhitelist/empty',
+                            'No patterns configured. All shell commands will require confirmation.'
+                        )}
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    protected renderBlacklistSection(): React.ReactNode {
+        return (
+            <div className="ai-shell-whitelist-section">
+                <div className="settings-section-title settings-section-category-title">
+                    {nls.localize('theia/ai/ide/toolsConfiguration/shellBlacklist/title', 'Shell Command Blacklist')}
+                </div>
+                <p className="ai-shell-whitelist-description">
+                    {nls.localize(
+                        'theia/ai/ide/toolsConfiguration/shellBlacklist/description',
+                        'Commands matching these patterns will be automatically denied without confirmation. ' +
+                        "Use this to block dangerous commands like 'git push *' or 'rm -rf *'."
+                    )}
+                </p>
+                <div className="ai-shell-whitelist-input-row">
+                    <input
+                        ref={this.blacklistInputRef}
+                        type="text"
+                        className="theia-input"
+                        placeholder={nls.localize(
+                            'theia/ai/ide/shellBlacklist/placeholder',
+                            'e.g., "git push *" or "rm -rf *"'
+                        )}
+                        onKeyDown={e => e.key === 'Enter' && this.handleAddBlacklistPattern()}
+                    />
+                    <button className="theia-button main" onClick={() => this.handleAddBlacklistPattern()}>
+                        {nls.localizeByDefault('Add')}
+                    </button>
+                </div>
+                {this.blacklistError && (
+                    <p className="ai-shell-whitelist-error">
+                        {this.blacklistError}
+                    </p>
+                )}
+                <ul className="ai-shell-whitelist-patterns">
+                    {this.blacklistPatterns.map(pattern => (
+                        <li key={pattern} className="ai-shell-whitelist-pattern-item">
+                            <code>{pattern}</code>
+                            <button
+                                className="theia-button secondary"
+                                onClick={() => this.handleRemoveBlacklistPattern(pattern)}
+                            >
+                                {nls.localizeByDefault('Remove')}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+                {this.blacklistPatterns.length === 0 && (
+                    <p className="ai-shell-whitelist-empty">
+                        {nls.localize(
+                            'theia/ai/ide/toolsConfiguration/shellBlacklist/empty',
+                            'No patterns configured. No shell commands will be automatically denied.'
+                        )}
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    protected override renderContent(): React.ReactNode {
+        return (
+            <>
+                {super.renderContent()}
+                {this.renderBlacklistSection()}
+            </>
+        );
     }
 }
