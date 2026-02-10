@@ -160,7 +160,13 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     variables = [];
     prompts = [{ id: systemPromptAppendixTemplate.id, defaultVariant: systemPromptAppendixTemplate }];
     languageModelRequirements = [];
-    agentSpecificVariables = [];
+    agentSpecificVariables = [
+        {
+            name: 'activeEditor',
+            description: nls.localize('theia/ai/claude-code/vars/activeEditor/description', 'The URI of the currently active editor.'),
+            usedInPrompt: true
+        }
+    ];
     functions = [];
 
     @inject(PromptService)
