@@ -20,6 +20,75 @@ import * as filenamify from 'filenamify';
 import { FileUri } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
+import { PluginIdentifiers, PluginPackage } from '@theia/plugin-ext/lib/common/plugin-protocol';
+
+/**
+ * Represents the identity of an extension extracted from its package.json.
+ */
+export interface ExtensionIdentity {
+    /** The publisher of the extension (may be undefined for unpublished extensions) */
+    publisher?: string;
+    /** The name of the extension */
+    name: string;
+    /** The version of the extension */
+    version: string;
+    /** The unversioned ID in the format `publisher.name` */
+    unversionedId: PluginIdentifiers.UnversionedId;
+    /** The versioned ID in the format `publisher.name@version` */
+    versionedId: PluginIdentifiers.VersionedId;
+}
+
+/**
+ * Extracts extension identity from a VSIX file by reading its package.json.
+ *
+ * VSIX files are ZIP archives with the extension content in an `extension/` subdirectory.
+ * This function extracts only the `extension/package.json` file to read the extension metadata.
+ *
+ * @param vsixPath Path to the VSIX file
+ * @returns The extension identity, or undefined if the package.json cannot be read or is invalid
+ */
+export async function extractExtensionIdentityFromVsix(vsixPath: string): Promise<ExtensionIdentity | undefined> {
+    try {
+        // Extract only the package.json file from the VSIX
+        const files = await decompress(vsixPath, {
+            filter: file => file.path === 'extension/package.json'
+        });
+
+        if (files.length === 0) {
+            console.warn(`[${vsixPath}]: No extension/package.json found in VSIX`);
+            return undefined;
+        }
+
+        const packageJsonContent = files[0].data.toString('utf8');
+        const packageJson: Partial<PluginPackage> = JSON.parse(packageJsonContent);
+
+        // Validate required fields
+        if (!packageJson.name || !packageJson.version) {
+            console.warn(`[${vsixPath}]: Invalid package.json - missing name or version`);
+            return undefined;
+        }
+
+        // Use UNPUBLISHED as the default publisher for extensions without one
+        const publisher = packageJson.publisher ?? PluginIdentifiers.UNPUBLISHED;
+
+        const components: PluginIdentifiers.Components = {
+            publisher,
+            name: packageJson.name,
+            version: packageJson.version
+        };
+
+        return {
+            publisher: packageJson.publisher,
+            name: packageJson.name,
+            version: packageJson.version,
+            unversionedId: PluginIdentifiers.componentsToUnversionedId(components),
+            versionedId: PluginIdentifiers.componentsToVersionedId(components)
+        };
+    } catch (error) {
+        console.error(`[${vsixPath}]: Failed to extract extension identity from VSIX`, error);
+        return undefined;
+    }
+}
 
 export async function decompressExtension(sourcePath: string, destPath: string): Promise<boolean> {
     try {
