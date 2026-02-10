@@ -333,6 +333,7 @@
   color: var(--theia-foreground);
   text-align: left;
   padding-right: var(--theia-ui-padding);
+  line-height: 1.4;
 }
 
 .ai-configuration-value-row-value {
@@ -340,8 +341,28 @@
   word-break: break-word;
 }
 
+.ai-configuration-select {
+  max-width: 400px;
+}
+
 .ai-configuration-value-row-value.ai-alias-evaluates-to-unresolved {
   color: var(--theia-descriptionForeground);
+}
+
+.ai-configuration-description {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  margin-top: calc(var(--theia-ui-padding) * 1.5);
+}
+
+.ai-configuration-description a {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ai-configuration-description a:hover {
+  text-decoration: underline;
 }
 
 .settings-section-subcategory-title {
@@ -378,8 +399,17 @@
 .variable-references,
 .function-references {
   list-style: none;
-  padding: 0;
+  padding: calc(var(--theia-ui-padding) * 1.5) 0;
   margin: 0;
+  border-top: var(--theia-border-width) solid var(--theia-widget-border);
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+/* Agent-specific variables already have per-item borders, remove the list-level ones */
+.variable-references:has(.ai-agent-specific-variable-item) {
+  border-top: none;
+  border-bottom: none;
+  padding: 0;
 }
 
 .variable-reference,

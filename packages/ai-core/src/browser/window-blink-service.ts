@@ -14,8 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { environment, nls } from '@theia/core';
+import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
+import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 
 /**
  * Result of a window blink attempt
@@ -27,13 +29,24 @@ export interface WindowBlinkResult {
     error?: string;
 }
 
+/** Element ID used for the custom titlebar in Electron. Matches the ID set in electron-menu-contribution.ts. */
+const CUSTOM_TITLE_ELEMENT_ID = 'theia-custom-title';
+
 /**
  * Service for blinking/flashing the application window to get user attention.
  */
 @injectable()
 export class WindowBlinkService {
 
+    @inject(WindowTitleService) @optional()
+    protected readonly windowTitleService?: WindowTitleService;
+
+    @inject(SecondaryWindowService) @optional()
+    protected readonly secondaryWindowService?: SecondaryWindowService;
+
     private isElectron: boolean;
+    private activeBlinkInterval?: ReturnType<typeof setInterval>;
+    private originalSecondaryTitles: Map<Window, string> = new Map();
 
     constructor() {
         this.isElectron = environment.electron.is();
@@ -71,19 +84,6 @@ export class WindowBlinkService {
 
     private async blinkElectronWindow(agentName?: string): Promise<void> {
         await this.blinkDocumentTitle(agentName);
-
-        if (document.hidden) {
-            try {
-                const theiaCoreAPI = (window as unknown as { electronTheiaCore?: { focusWindow?: () => void } }).electronTheiaCore;
-                if (theiaCoreAPI?.focusWindow) {
-                    theiaCoreAPI.focusWindow();
-                } else {
-                    window.focus();
-                }
-            } catch (error) {
-                console.debug('Could not focus hidden window:', error);
-            }
-        }
     }
 
     private async blinkBrowserWindow(agentName?: string): Promise<void> {
@@ -95,24 +95,79 @@ export class WindowBlinkService {
     }
 
     private async blinkDocumentTitle(agentName?: string): Promise<void> {
-        const originalTitle = document.title;
+        // Clear any existing blink interval to prevent concurrent title animations
+        if (this.activeBlinkInterval) {
+            clearInterval(this.activeBlinkInterval);
+            this.activeBlinkInterval = undefined;
+        }
+
+        const originalTitle = this.windowTitleService?.title ?? document.title;
         const alertTitle = '🔔 ' + (agentName
             ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', 'Theia - Agent "{0}" Completed', agentName)
             : nls.localize('theia/ai/core/blinkTitle/agentCompleted', 'Theia - Agent Completed'));
 
+        // Save original titles of secondary windows
+        this.originalSecondaryTitles.clear();
+        const secondaryWindows = this.secondaryWindowService?.getWindows() ?? [];
+        for (const win of secondaryWindows) {
+            if (!win.closed) {
+                this.originalSecondaryTitles.set(win, win.document.title);
+            }
+        }
+
         let blinkCount = 0;
         const maxBlinks = 6;
 
-        const blinkInterval = setInterval(() => {
+        this.activeBlinkInterval = setInterval(() => {
             if (blinkCount >= maxBlinks) {
-                clearInterval(blinkInterval);
-                document.title = originalTitle;
+                clearInterval(this.activeBlinkInterval);
+                this.activeBlinkInterval = undefined;
+                this.setTitle(originalTitle);
+                this.restoreSecondaryWindowTitles();
                 return;
             }
 
-            document.title = blinkCount % 2 === 0 ? alertTitle : originalTitle;
+            const title = blinkCount % 2 === 0 ? alertTitle : originalTitle;
+            this.setTitle(title);
+            this.setSecondaryWindowTitles(blinkCount % 2 === 0 ? alertTitle : undefined);
             blinkCount++;
         }, 500);
+    }
+
+    /**
+     * Set the window title directly on document.title and the custom titlebar element.
+     * This bypasses WindowTitleService to avoid corrupting the title template state.
+     */
+    private setTitle(title: string): void {
+        document.title = title;
+        // Also update the custom titlebar element directly if it exists
+        const customTitleElement = document.getElementById(CUSTOM_TITLE_ELEMENT_ID);
+        if (customTitleElement) {
+            customTitleElement.textContent = title;
+        }
+    }
+
+    /**
+     * Set the alert title on all secondary windows, or restore their original titles.
+     */
+    private setSecondaryWindowTitles(alertTitle: string | undefined): void {
+        for (const [win, originalTitle] of this.originalSecondaryTitles) {
+            if (!win.closed) {
+                win.document.title = alertTitle ?? originalTitle;
+            }
+        }
+    }
+
+    /**
+     * Restore original titles on all secondary windows.
+     */
+    private restoreSecondaryWindowTitles(): void {
+        for (const [win, originalTitle] of this.originalSecondaryTitles) {
+            if (!win.closed) {
+                win.document.title = originalTitle;
+            }
+        }
+        this.originalSecondaryTitles.clear();
     }
 
     private blinkWithVisibilityAPI(): void {
@@ -143,53 +198,4 @@ export class WindowBlinkService {
         }
     }
 
-    /**
-     * Check if window blinking is supported in the current environment.
-     */
-    isBlinkSupported(): boolean {
-        if (this.isElectron) {
-            const theiaCoreAPI = (window as unknown as { electronTheiaCore?: { focusWindow?: () => void } }).electronTheiaCore;
-            return !!(theiaCoreAPI?.focusWindow);
-        }
-
-        // In browser, we can always provide some form of attention-getting behavior
-        return true;
-    }
-
-    /**
-     * Get information about the blinking capabilities.
-     */
-    getBlinkCapabilities(): {
-        supported: boolean;
-        method: 'electron' | 'browser' | 'none';
-        features: string[];
-    } {
-        const features: string[] = [];
-        let method: 'electron' | 'browser' | 'none' = 'none';
-
-        if (this.isElectron) {
-            method = 'electron';
-            const theiaCoreAPI = (window as unknown as { electronTheiaCore?: { focusWindow?: () => void } }).electronTheiaCore;
-
-            if (theiaCoreAPI?.focusWindow) {
-                features.push('electronTheiaCore.focusWindow');
-                features.push('document.title blinking');
-                features.push('window.focus');
-            }
-        } else {
-            method = 'browser';
-            features.push('document.title');
-            features.push('window.focus');
-
-            if (typeof document.hidden !== 'undefined') {
-                features.push('Page Visibility API');
-            }
-        }
-
-        return {
-            supported: features.length > 0,
-            method,
-            features
-        };
-    }
 }
