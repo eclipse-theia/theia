@@ -33,7 +33,6 @@ import {
     TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
     TerminalLocation,
     TerminalBuffer,
-    TerminalBlock,
     TerminalCommandHistoryState
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -54,6 +53,7 @@ import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/brows
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { guessShellTypeFromExecutable } from '../common/shell-type';
+import { TerminalCommandHistoryStateImpl } from './terminal-command-history';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -92,104 +92,6 @@ class TerminalBufferImpl implements TerminalBuffer {
         }
 
         return result;
-    }
-
-}
-
-class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Disposable {
-    private _commandHistory: TerminalBlock[] = [];
-    get commandHistory(): TerminalBlock[] { return this._commandHistory; }
-
-    private _currentCommand: string = '';
-    get currentCommand(): string { return this._currentCommand; }
-
-    private _commandOutputChunks: string[] = [];
-    get commandOutputChunks(): string[] { return this._commandOutputChunks; }
-
-    private readonly toDispose = new DisposableCollection();
-    private readonly onCommandStartEmitter = new Emitter<void>();
-    private readonly onPromptShownEmitter = new Emitter<void>();
-    readonly onTerminalCommandStart: Event<void> = this.onCommandStartEmitter.event;
-    readonly onTerminalPromptShown: Event<void> = this.onPromptShownEmitter.event;
-
-    enableCommandHistory: boolean = false;
-    enableCommandSeparator: boolean = false;
-
-    constructor(
-        protected readonly logger: ILogger,
-        protected readonly preferences: TerminalPreferences
-    ) {
-        this.toDispose.push(this.onCommandStartEmitter);
-        this.toDispose.push(this.onPromptShownEmitter);
-
-        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
-        this.enableCommandSeparator = this.enableCommandHistory
-            ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
-            : false;
-    }
-
-    clearCommandCollectionState(): void {
-        this._currentCommand = '';
-        this._commandOutputChunks = [];
-    }
-
-    clearCommandOutputBuffer(): void {
-        this._commandOutputChunks = [];
-    }
-
-    accumulateCommandOutput(data: string): void {
-        this._commandOutputChunks.push(data);
-    }
-
-    startCommand(encodedCommand: string): void {
-        this._currentCommand = this.decodeHexString(encodedCommand);
-        this.onCommandStartEmitter.fire();
-    }
-
-    finishCommand(): void {
-        if (!this._currentCommand) {
-            return;
-        }
-
-        const terminalBlock: TerminalBlock = {
-            command: this._currentCommand,
-            output: this.sanitizeCommandOutput(this._commandOutputChunks.join(''))
-        };
-        this.logger.debug('Current command history:', this.commandHistory);
-        this.logger.debug('Terminal command result captured:', terminalBlock);
-        this._commandHistory.push(terminalBlock);
-        this.clearCommandCollectionState();
-        this.onPromptShownEmitter.fire();
-    }
-
-    // Decodes a hex-encoded string to UTF-8 with browser compatible APIs
-    private decodeHexString(hexString: string): string {
-        if (!hexString) {
-            return '';
-        }
-        const hexBytes = new Uint8Array(
-            (hexString.match(/.{1,2}/g) || []).map(byte => parseInt(byte, 16))
-        );
-        return new TextDecoder('utf-8').decode(hexBytes);
-    }
-
-    private sanitizeCommandOutput(output: string): string {
-        // remove prompt from the end of the output
-        const indexOfPrompt = output.lastIndexOf('\u001b]133;prompt_started');
-        output = output.slice(0, indexOfPrompt);
-        // remove Operation System Command Blocks (OSC) sequences
-        output = output.replace(/\u001b\].*?(?:\u0007|\u001b\\)/gs, '');
-        // remove control sequence introducer (CSI) sequences
-        output = output.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/gu, '');
-        // remove single-character escape sequences
-        output = output.replace(/\u001b[>=]/g, '');
-        // trim trailing whitespace
-        output = output.replace(/\r/g, '');
-        return output.trimEnd();
-    }
-
-    dispose(): void {
-        this.toDispose.dispose();
     }
 
 }
@@ -279,6 +181,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly commandSeparatorDecorations = new DisposableCollection();
 
+    protected readonly toDisposeOnCommandHistory = new DisposableCollection();
+
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
         return this._buffer;
@@ -344,14 +248,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.initializeLinkHover();
 
-        if (this.commandHistoryState.enableCommandHistory) {
-            this.initializeOSC133Support();
-        }
-
         this.toDispose.push(commandHistoryStateImpl);
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
+            this.updateCommandHistoryHandlers();
             this.needsResize = true;
             this.update();
         }));
@@ -468,17 +369,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.searchBox = this.terminalSearchBoxFactory(this.term);
         this.toDispose.push(this.searchBox);
-
-        this.term.onKey(({ domEvent }) => {
-            if (domEvent.key === 'Enter') {
-                // when a command is running, Enter key should not clear the command output buffer
-                if (this.commandHistoryState.currentCommand) {
-                    return;
-                }
-                this.commandHistoryState.clearCommandOutputBuffer();
-            }
-        });
-
     }
 
     get kind(): 'user' | string {
@@ -502,6 +392,75 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.commandHistoryState.enableCommandSeparator = this.commandHistoryState.enableCommandHistory
             ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
             : false;
+    }
+
+    protected updateCommandHistoryHandlers(): void {
+        this.toDisposeOnCommandHistory.dispose();
+        if (!this.commandHistoryState.enableCommandHistory) {
+            return;
+        }
+        this.toDisposeOnCommandHistory.push(this.term.onKey(({ domEvent }) => {
+            // clear the output on command execution to prevent tracking of previously typed input
+            if (domEvent.key === 'Enter') {
+                // when a command is running, command buffer should not be cleared
+                if (this.commandHistoryState.currentCommand) {
+                    return;
+                }
+                this.commandHistoryState.clearCommandOutputBuffer();
+            }
+        }));
+
+        /*
+        * Initialize support for OSC 133 sequences used to track command history and optionally show command separators.
+        *
+        * OSC 133 is an iTerm2 escape-sequence family marking events such as command start and prompt display
+        * (see https://iterm2.com/documentation-escape-codes.html). We use a customized subset of these sequences
+        * to record command lifecycle events in the terminal:
+        *
+        *   - prompt_started: emitted when the prompt is shown
+        *   - command_started;<hex-encoded-command>: emitted when a command begins
+        *
+        * These sequences are only emitted when the user's shell is configured to do so. The required integration
+        * scripts are provided in packages/terminal/src/node/shell-integrations and injected during terminal creation.
+        */
+        this.toDisposeOnCommandHistory.push(
+            this.term.parser.registerOscHandler(133, (oscPayload: string) => {
+                if (oscPayload === 'prompt_started') {
+                    if (this.commandHistoryState.enableCommandSeparator) {
+                        this.addCommandSeparator();
+                    }
+                    if (!this.commandHistoryState.currentCommand) {
+                        return true;
+                    }
+                    this.commandHistoryState.finishCommand();
+                } else if (oscPayload.startsWith('command_started')) {
+                    const encodedCommand = oscPayload.split(';')[1];
+                    this.commandHistoryState.startCommand(encodedCommand);
+                }
+                return true;
+            })
+        );
+    }
+
+
+    private addCommandSeparator(): void {
+        const marker = this.term.registerMarker(0);
+        if (!marker) {
+            return;
+        }
+
+        const deco = this.term.registerDecoration({ marker });
+        if (!deco) {
+            marker.dispose();
+            return;
+        }
+
+        deco.onRender(e => {
+            e.classList.add('terminal-command-separator');
+        });
+
+        this.commandSeparatorDecorations.push(marker);
+        this.commandSeparatorDecorations.push(deco);
     }
 
     protected setIconClass(): void {
@@ -1174,54 +1133,4 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.enhancedPreviewNode;
     }
 
-    /*
-    * Initialize support for OSC 133 sequences used to track command history and optionally show command separators.
-    *
-    * OSC 133 is an iTerm2 escape-sequence family marking events such as command start and prompt display
-    * (see https://iterm2.com/documentation-escape-codes.html). We use a customized subset of these sequences
-    * to record command lifecycle events in the terminal:
-    *
-    *   - prompt_started: emitted when the prompt is shown
-    *   - command_started;<hex-encoded-command>: emitted when a command begins
-    *
-    * These sequences are only emitted when the user's shell is configured to do so. The required integration
-    * scripts are provided in packages/terminal/src/node/shell-integrations and injected during terminal creation.
-    */
-    protected initializeOSC133Support(): void {
-        this.toDispose.push(this.term.parser.registerOscHandler(133, (oscPayload: string) => {
-            if (oscPayload === 'prompt_started') {
-                if (this.commandHistoryState.enableCommandSeparator) {
-                    this.addCommandSeparator();
-                }
-                if (!this.commandHistoryState.currentCommand) {
-                    return true;
-                }
-                this.commandHistoryState.finishCommand();
-            } else if (oscPayload.includes('command_started')) {
-                const encodedCommand = oscPayload.split(';')[1];
-                this.commandHistoryState.startCommand(encodedCommand);
-            }
-            return true;
-        }));
-    }
-
-    private addCommandSeparator(): void {
-        const marker = this.term.registerMarker(0);
-        if (!marker) {
-            return;
-        }
-
-        const deco = this.term.registerDecoration({ marker });
-        if (!deco) {
-            marker.dispose();
-            return;
-        }
-
-        deco.onRender(e => {
-            e.classList.add('terminal-command-separator');
-        });
-
-        this.commandSeparatorDecorations.push(marker);
-        this.commandSeparatorDecorations.push(deco);
-    }
 }
