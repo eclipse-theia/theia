@@ -166,7 +166,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                 className={
                     `agent-status-indicator ${enabled ? `agent-enabled ${codicon('circle-filled')}` : `agent-disabled ${codicon('circle')}`}`
                 }
-                title={enabled ? 'Enabled' : 'Disabled'}
+                title={enabled ? nls.localizeByDefault('Enabled') : nls.localizeByDefault('Disabled')}
             >
             </span>
         );
@@ -239,7 +239,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
         const agentNameWithTags = <>
             {agent.name}
-            {agent.tags?.length && <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span>}
+            {agent.tags && agent.tags.length > 0 && <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span>}
         </>;
 
         return <div key={agent.id}>
