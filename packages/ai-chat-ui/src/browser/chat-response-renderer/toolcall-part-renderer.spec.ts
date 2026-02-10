@@ -36,9 +36,9 @@ describe('condenseArguments', () => {
         expect(condenseArguments('{invalid}')).to.equal('{invalid}');
     });
 
-    it('condenses single string parameter as key: value', () => {
+    it('condenses single string parameter as value only', () => {
         const result = condenseArguments('{"query": "search term"}');
-        expect(result).to.equal('query: search term');
+        expect(result).to.equal('search term');
     });
 
     it('shows all key-value pairs for multiple parameters', () => {
@@ -49,7 +49,7 @@ describe('condenseArguments', () => {
     it('truncates long path value at 30 chars', () => {
         const longPath = '/very/long/file/path/to/something.ts';
         const result = condenseArguments(`{"path": "${longPath}"}`);
-        expect(result).to.equal('path: /very/long/file/path/to/someth\u2026');
+        expect(result).to.equal('/very/long/file/path/to/someth\u2026');
     });
 
     it('shows all key-value pairs for multiple parameters', () => {
@@ -59,27 +59,27 @@ describe('condenseArguments', () => {
 
     it('shows {\u2026} for single nested object param', () => {
         const result = condenseArguments('{"config": {"nested": true}}');
-        expect(result).to.equal('config: {\u2026}');
+        expect(result).to.equal('{\u2026}');
     });
 
     it('shows [\u2026] for single array param', () => {
         const result = condenseArguments('{"items": [1, 2, 3]}');
-        expect(result).to.equal('items: [\u2026]');
+        expect(result).to.equal('[\u2026]');
     });
 
-    it('shows number value as key: value for single param', () => {
+    it('shows number value only for single param', () => {
         const result = condenseArguments('{"count": 42}');
-        expect(result).to.equal('count: 42');
+        expect(result).to.equal('42');
     });
 
-    it('shows boolean value as key: value for single param', () => {
+    it('shows boolean value only for single param', () => {
         const result = condenseArguments('{"enabled": true}');
-        expect(result).to.equal('enabled: true');
+        expect(result).to.equal('true');
     });
 
-    it('shows null value as key: value for single param', () => {
+    it('shows null value only for single param', () => {
         const result = condenseArguments('{"value": null}');
-        expect(result).to.equal('value: null');
+        expect(result).to.equal('null');
     });
 
     it('shows all key-value pairs for multiple mixed parameters', () => {
@@ -103,7 +103,7 @@ describe('condenseArguments', () => {
     it('truncates string values longer than 30 chars', () => {
         const longValue = 'abcdefghijklmnopqrstuvwxyz12345678';
         const result = condenseArguments(`{"key": "${longValue}"}`);
-        expect(result).to.equal('key: abcdefghijklmnopqrstuvwxyz1234\u2026');
+        expect(result).to.equal('abcdefghijklmnopqrstuvwxyz1234\u2026');
     });
 
     it('handles top-level array', () => {

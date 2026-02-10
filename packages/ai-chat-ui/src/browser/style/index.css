@@ -1335,3 +1335,8 @@ div:last-child > .theia-ChatNode {
   font-family: var(--theia-code-font-family);
   white-space: pre-wrap;
 }
+
+/* Preserve JSON indentation in hover tooltips */
+.theia-hover div.rendered-markdown {
+  white-space: pre;
+}

@@ -144,7 +144,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             return;
         }
         const prettyArgs = this.prettyPrintArgs(response.arguments);
-        const markdownString = new MarkdownStringImpl(`**${response.name}**\n\`\`\`json\n${prettyArgs}\n\`\`\``);
+        const markdownString = new MarkdownStringImpl(`**${response.name}**\n`).appendCodeblock('json', prettyArgs);
         this.hoverService.requestHover({
             content: markdownString,
             target,

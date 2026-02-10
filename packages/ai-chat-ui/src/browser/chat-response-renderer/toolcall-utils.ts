@@ -32,19 +32,22 @@ export function condenseArguments(args: string): string | undefined {
     if (entries.length === 0) {
         return undefined;
     }
-    const parts = entries.map(([key, value]) => {
-        let display: string;
+    const formatValue = (value: unknown): string => {
         if (typeof value === 'string') {
-            display = value.length > 30 ? value.substring(0, 30) + '\u2026' : value;
+            return value.length > 30 ? value.substring(0, 30) + '\u2026' : value;
         } else if (Array.isArray(value)) {
-            display = '[\u2026]';
+            return '[\u2026]';
         } else if (typeof value === 'object' && !!value) {
-            display = '{\u2026}';
+            return '{\u2026}';
         } else {
-            display = String(value);
+            return String(value);
         }
-        return `${key}: ${display}`;
-    });
+    };
+    if (entries.length === 1) {
+        const result = formatValue(entries[0][1]);
+        return result.length > 80 ? result.substring(0, 80) + '\u2026' : result;
+    }
+    const parts = entries.map(([key, value]) => `${key}: ${formatValue(value)}`);
     const joined = parts.join(', ');
     return joined.length > 80 ? joined.substring(0, 80) + '\u2026' : joined;
 }
