@@ -54,8 +54,9 @@ export interface TerminalBuffer {
     /**
      * @param start zero based index of the first line to return
      * @param length the max number or lines to return
+     * @param trimRight if true, removes trailing whitespaces used for terminal grid alignment 
      */
-    getLines(start: number, length: number): string[];
+    getLines(start: number, length: number, trimRight?: boolean): string[];
 }
 
 /**
