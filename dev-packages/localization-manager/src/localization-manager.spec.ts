@@ -88,4 +88,17 @@ describe('localization-manager#translateLanguage', () => {
             key: '[{1} {0}]'
         });
     });
+
+    it('should pass context to the localization function', async () => {
+        let receivedContext: string | undefined;
+        const contextCapture = new LocalizationManager(async (parameters: DeeplParameters) => {
+            receivedContext = parameters.context;
+            return mockLocalization(parameters);
+        });
+        const input = { key: 'value' };
+        const target = {};
+        await contextCapture.translateLanguage(input, target, 'EN', defaultOptions);
+        assert.ok(receivedContext, 'context should be defined');
+        assert.ok(receivedContext!.includes('IDE'), 'context should mention IDE');
+    });
 });
