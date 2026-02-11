@@ -118,16 +118,6 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         return plugins;
     }
 
-    /**
-     * Returns all deployed plugins with their full metadata including contributions.
-     * This is useful for scanning plugin manifests without activating extensions.
-     */
-    get deployedPlugins(): DeployedPlugin[] {
-        const plugins: DeployedPlugin[] = [];
-        this.contributions.forEach(contributions => plugins.push(contributions.plugin));
-        return plugins;
-    }
-
     getPlugin(id: PluginIdentifiers.UnversionedId): DeployedPlugin | undefined {
         const contributions = this.contributions.get(id);
         return contributions && contributions.plugin;
