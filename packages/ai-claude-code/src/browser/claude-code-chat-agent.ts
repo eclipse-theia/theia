@@ -20,7 +20,6 @@ import {
     ChatAgentService,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
-    MutableChatModel,
     MutableChatRequestModel,
     QuestionResponseContentImpl,
     ThinkingChatResponseContentImpl,
@@ -323,19 +322,15 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     }
 
     protected getSessionApprovedTools(request: MutableChatRequestModel): Set<string> {
-        let approvedTools = request.session.settings?.[CLAUDE_SESSION_APPROVED_TOOLS_KEY] as Set<string> | undefined;
-        if (!approvedTools) {
-            approvedTools = new Set<string>();
-            this.setSessionApprovedTools(request, approvedTools);
-        }
-        return approvedTools;
+        let approvedTools = request.session.settings?.[CLAUDE_SESSION_APPROVED_TOOLS_KEY] as string[] | undefined;
+        return new Set(approvedTools ?? []);
     }
 
     protected setSessionApprovedTools(request: MutableChatRequestModel, approvedTools: Set<string>): void {
         const currentSettings = request.session.settings || {};
-        (request.session as MutableChatModel).setSettings({
+        request.session.setSettings({
             ...currentSettings,
-            [CLAUDE_SESSION_APPROVED_TOOLS_KEY]: approvedTools
+            [CLAUDE_SESSION_APPROVED_TOOLS_KEY]: Array.from(approvedTools)
         });
     }
 
@@ -353,9 +348,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         approvalRequest: ToolApprovalRequestMessage,
         request: MutableChatRequestModel
     ): void {
-        // Check if tool is already approved for this session
         if (this.isToolApprovedForSession(request, approvalRequest.toolName)) {
-            // Auto-approve without prompting user
             const response: ToolApprovalResponseMessage = {
                 type: 'tool-approval-response',
                 requestId: approvalRequest.requestId,
@@ -406,7 +399,6 @@ export class ClaudeCodeChatAgent implements ChatAgent {
 
         const approved = selectedOption.value === 'allow' || selectedOption.value === 'allow-session';
 
-        // If "Allow for this session" was selected, track it
         if (selectedOption.value === 'allow-session') {
             this.approveToolForSession(request, toolName);
         }
