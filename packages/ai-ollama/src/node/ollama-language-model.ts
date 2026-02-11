@@ -162,8 +162,14 @@ export class OllamaModel implements LanguageModel {
                             tool_calls: toolCalls
                         });
 
-                        const toolCallsForResponse = await that.processToolCalls(toolCalls, chatRequest, lastUpdated);
+                        // Create tool call message parts and yield them. 
+                        // This is required because when calling a tool, Theia AI expects the corresponding message part to exist.
+                        const toolCallsForResponse = that.createToolCalls(toolCalls, lastUpdated);
                         yield { tool_calls: toolCallsForResponse };
+
+                        // Now handle the tool calls
+                        const processedToolCallsForResponse = await that.processToolCalls(toolCallsForResponse, chatRequest);
+                        yield { tool_calls: processedToolCallsForResponse };
 
                         // Continue the conversation with tool results
                         const continuedResponse = await that.handleStreamingRequest(
@@ -267,7 +273,8 @@ export class OllamaModel implements LanguageModel {
                     tool_calls: toolCalls
                 });
 
-                await this.processToolCalls(toolCalls, chatRequest, lastUpdated);
+                const preparedToolCalls = this.createToolCalls(toolCalls, lastUpdated);
+                await this.processToolCalls(preparedToolCalls, chatRequest);
                 if (cancellation?.isCancellationRequested) {
                     return { text: '' };
                 }
@@ -284,15 +291,32 @@ export class OllamaModel implements LanguageModel {
         }
     }
 
-    private async processToolCalls(toolCalls: OllamaToolCall[], chatRequest: ExtendedChatRequest, lastUpdated: Date): Promise<ToolCall[]> {
-        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+    private createToolCalls(toolCalls: OllamaToolCall[], lastUpdated: Date): ToolCall[] {
         const toolCallsForResponse: ToolCall[] = [];
         for (const [idx, toolCall] of toolCalls.entries()) {
-            const functionToCall = tools.find(tool => tool.function.name === toolCall.function.name);
             const args = JSON.stringify(toolCall.function?.arguments);
+            toolCallsForResponse.push({
+                id: `ollama_${lastUpdated}_${idx}`,
+                function: {
+                    name: toolCall.function.name,
+                    arguments: args
+                },
+                finished: false
+            });
+        }
+        return toolCallsForResponse;
+    }
+
+    private async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest): Promise<ToolCall[]> {
+        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+        const toolCallsForResponse: ToolCall[] = [];
+
+        for (const call of toolCalls) {
+            const functionToCall = tools.find(tool => tool.function.name === call.function!.name);
             let funcResult: string;
+
             if (functionToCall) {
-                const rawResult = await functionToCall.handler(args);
+                const rawResult = await functionToCall.handler(call.function!.arguments!);
                 funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
             } else {
                 funcResult = 'error: Tool not found';
@@ -300,14 +324,12 @@ export class OllamaModel implements LanguageModel {
 
             chatRequest.messages.push({
                 role: 'tool',
-                content: `Tool call ${toolCall.function.name} returned: ${String(funcResult)}`,
+                content: `Tool call ${call.function!.name} returned: ${String(funcResult)}`,
             });
+
+            // update tool call message
             toolCallsForResponse.push({
-                id: `ollama_${lastUpdated}_${idx}`,
-                function: {
-                    name: toolCall.function.name,
-                    arguments: args
-                },
+                ...call,
                 result: String(funcResult),
                 finished: true
             });
