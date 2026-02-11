@@ -77,7 +77,9 @@ class TerminalBufferImpl implements TerminalBuffer {
         const activeBuffer = this.term.buffer.active;
 
         const startLine = activeBuffer.length - 1 - start;
-        if (startLine < 0) return [];
+        if (startLine < 0) {
+            return [];
+        }
 
         for (let i = startLine; i > startLine - length && i >= 0; i--) {
             const line = activeBuffer.getLine(i);
@@ -86,7 +88,6 @@ class TerminalBufferImpl implements TerminalBuffer {
             }
             result.push(line.translateToString(trimRight));
         }
-        console.log(result);
         return result;
     }
 
