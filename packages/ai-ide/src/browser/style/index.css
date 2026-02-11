@@ -200,6 +200,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: calc(var(--theia-ui-padding) * 2);
+  padding-bottom: calc(var(--theia-ui-padding) * 2);
 }
 
 .ai-id-label {
@@ -221,6 +222,12 @@
   cursor: pointer;
   user-select: none;
   flex-shrink: 0;
+}
+
+.agent-enable-toggle.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: default;
 }
 
 .toggle-label {
