@@ -47,7 +47,6 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
     // Tools that don't require approval - they are safe and non-intrusive
     protected readonly autoApprovedTools = new Set(['AskUserQuestion']);
 
-
     setClient(client: ClaudeCodeClient): void {
         this.client = client;
     }

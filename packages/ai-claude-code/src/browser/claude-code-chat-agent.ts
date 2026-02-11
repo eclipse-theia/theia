@@ -322,7 +322,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     }
 
     protected getSessionApprovedTools(request: MutableChatRequestModel): Set<string> {
-        let approvedTools = request.session.settings?.[CLAUDE_SESSION_APPROVED_TOOLS_KEY] as string[] | undefined;
+        const approvedTools = request.session.settings?.[CLAUDE_SESSION_APPROVED_TOOLS_KEY] as string[] | undefined;
         return new Set(approvedTools ?? []);
     }
 
