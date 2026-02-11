@@ -100,24 +100,20 @@ export class DocumentLineRangeMap {
 
     /**
      * @param lineNumber 0-based line number in the original text document
+     * @return the corresponding line number in the modified text document if the line is unchanged,
+     *  or the line range mapping for the affecting change otherwise
      */
-    projectLine(lineNumber: number): LineRangeMapping {
+    projectLine(lineNumber: number): number | LineRangeMapping {
         const lastBefore = ArrayUtils.findLast(this.lineRangeMappings, m => m.originalRange.startLineNumber <= lineNumber);
         if (!lastBefore) {
-            return new LineRangeMapping(
-                new LineRange(lineNumber, 1),
-                new LineRange(lineNumber, 1)
-            );
+            return lineNumber;
         }
 
         if (lastBefore.originalRange.containsLine(lineNumber)) {
             return lastBefore;
         }
 
-        return new LineRangeMapping(
-            new LineRange(lineNumber, 1),
-            new LineRange(lineNumber + lastBefore.modifiedRange.endLineNumberExclusive - lastBefore.originalRange.endLineNumberExclusive, 1)
-        );
+        return lineNumber + lastBefore.modifiedRange.endLineNumberExclusive - lastBefore.originalRange.endLineNumberExclusive;
     }
 
     reverse(): DocumentLineRangeMap {
