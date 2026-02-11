@@ -1263,7 +1263,7 @@
 }
 
 .ai-configuration-warning-text {
-  color: var(--theia-warningForeground);
+  color: var(--theia-editorWarning-foreground);
 }
 
 .ai-agent-description {
