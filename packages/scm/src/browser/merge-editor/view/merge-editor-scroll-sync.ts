@@ -94,16 +94,16 @@ export class MergeEditorScrollSync implements Disposable {
     }
 
     storeScrollState(): unknown {
-        return this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
+        return ScrollState.get(this.mergeEditor.resultPane.editor);
     }
 
     restoreScrollState(state: unknown): void {
-        if (typeof state === 'number') {
-            const scrollTop = this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
-            if (state !== scrollTop) {
-                this.mergeEditor.side1Pane.editor.getControl().setScrollTop(state);
-            } else {
+        if (state instanceof ScrollState) {
+            const { editor } = this.mergeEditor.resultPane;
+            if (state.isEqual(ScrollState.get(editor))) {
                 this.update();
+            } else {
+                state.restore(editor);
             }
         }
     }
@@ -114,8 +114,8 @@ export class MergeEditorScrollSync implements Disposable {
         }
         this.isSyncing = true;
         try {
-            const scrollTop = this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
-            this.handleSide1ScrollTopChanged(scrollTop);
+            const scrollTop = this.mergeEditor.resultPane.editor.getControl().getScrollTop();
+            this.handleResultScrollTopChanged(scrollTop);
         } finally {
             this.isSyncing = false;
         }
@@ -275,4 +275,37 @@ export class MergeEditorScrollSync implements Disposable {
 
         return targetScrollTop;
     }
+}
+
+class ScrollState {
+
+    static get(editor: MonacoEditor): ScrollState {
+        const visibleRanges = editor.getVisibleRanges();
+        if (visibleRanges.length === 0) {
+            return new ScrollState(0, 0);
+        }
+        const scrollTop = editor.getControl().getScrollTop();
+        let topLineNumber = visibleRanges[0].start.line;
+        if (topLineNumber > 0 && scrollTop < editor.getControl().getTopForLineNumber(topLineNumber + 1, true)) {
+            --topLineNumber;
+        }
+        return new ScrollState(scrollTop, topLineNumber);
+    }
+
+    restore(editor: MonacoEditor): void {
+        editor.getControl().setScrollTop(this.scrollTop);
+        if (this.topLineNumber !== ScrollState.get(editor).topLineNumber) { // this.scrollTop no longer corresponds to this.topLineNumber e.g. due to view zones having been changed
+            // make sure that the top line position is restored, even if not precisely
+            editor.getControl().setScrollTop(editor.getControl().getTopForLineNumber(this.topLineNumber + 1));
+        }
+    }
+
+    isEqual(other: ScrollState): boolean {
+        return this.scrollTop === other.scrollTop && this.topLineNumber === other.topLineNumber;
+    }
+
+    private constructor(
+        private readonly scrollTop: number,
+        private readonly topLineNumber: number
+    ) { }
 }
