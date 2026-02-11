@@ -56,8 +56,9 @@ Tests are located in the same directory as the components under test.
 
 ### Compile and Test
 
+This projects uses npm.
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
-done for a final validation.
+done for a final validation. There are usually pre-defined tasks for all these operations, prefer to use these instead of npm directly.
 
 ### Preferences
 
