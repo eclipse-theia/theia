@@ -325,7 +325,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
     protected observeTerminal(observerId: string, terminal: TerminalWidget, observerData: TerminalObserverData): void {
         const doMatch = debounce(() => {
             const lineCount = Math.min(observerData.nrOfLinesToMatch, terminal.buffer.length);
-            const lines = terminal.buffer.getLines(terminal.buffer.length - lineCount, lineCount);
+            const lines = terminal.buffer.getLines(0, lineCount);
             const result = lines.join('\n').match(observerData.outputMatcherRegex);
             if (result) {
                 this.extProxy.$reportOutputMatch(observerId, result.map(value => value));
