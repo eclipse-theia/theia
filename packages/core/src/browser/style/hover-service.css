@@ -29,6 +29,7 @@
   border: 1px solid var(--theia-editorHoverWidget-border);
   padding: var(--theia-ui-padding);
   max-width: var(--theia-hover-max-width);
+  user-select: text;
 }
 
 /* overwrite potentially different default user agent styles */
