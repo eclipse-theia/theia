@@ -529,7 +529,9 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
             <span className="ai-configuration-value-row-value">{variableId}</span>
         </div>
         {undeclared ? (
-            <div className="ai-configuration-value-row">
+            <div className="ai-configuration-value-row"
+                title={nls.localize('theia/ai/core/agentConfiguration/undeclaredTooltip',
+                    'This variable is used in the prompt but has no description declared by the agent.')}>
                 <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                 <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                     {nls.localize('theia/ai/core/agentConfiguration/undeclared', 'Undeclared')}
@@ -542,7 +544,9 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
                     <span className="ai-configuration-value-row-value">{agentDefinedVariable.description}</span>
                 </div>
                 {notUsed && (
-                    <div className="ai-configuration-value-row">
+                    <div className="ai-configuration-value-row"
+                        title={nls.localize('theia/ai/core/agentConfiguration/notUsedInPromptTooltip',
+                            'This variable is declared by the agent but not referenced in the current prompt template.')}>
                         <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                         <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                             {nls.localize('theia/ai/core/agentConfiguration/notUsedInPrompt', 'Not used in prompt')}
