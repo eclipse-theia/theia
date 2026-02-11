@@ -47,16 +47,16 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         if (!identity) {
             // Fallback to filename-based ID if package.json cannot be read
             // This maintains backward compatibility for edge cases
-            const extensionId = path.basename(localPath, LocalVSIXFilePluginDeployerResolver.FILE_EXTENSION);
-            console.warn(`[${pluginResolverContext.getOriginId()}]: Could not read extension identity from VSIX, falling back to filename: ${extensionId}`);
+            const fallbackId = path.basename(localPath, LocalVSIXFilePluginDeployerResolver.FILE_EXTENSION);
+            console.warn(`[${pluginResolverContext.getOriginId()}]: Could not read extension identity from VSIX, falling back to filename: ${fallbackId}`);
 
-            if (await existsInDeploymentDir(this.environment, extensionId)) {
+            if (await existsInDeploymentDir(this.environment, fallbackId)) {
                 console.log(`[${pluginResolverContext.getOriginId()}]: Target dir already exists in plugin deployment dir`);
                 return;
             }
 
-            const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, extensionId);
-            pluginResolverContext.addPlugin(extensionId, extensionDeploymentDir);
+            const fallbackDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, fallbackId);
+            pluginResolverContext.addPlugin(fallbackId, fallbackDeploymentDir);
             return;
         }
 
