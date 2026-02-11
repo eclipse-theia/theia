@@ -473,7 +473,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 questionText,
                 options,
                 request,
-                (selectedOption) => {
+                selectedOption => {
                     answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
                     answeredCount++;
 
