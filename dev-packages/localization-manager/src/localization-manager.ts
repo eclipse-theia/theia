@@ -99,7 +99,9 @@ export class LocalizationManager {
                     source_lang: options.sourceLanguage?.toUpperCase() as DeeplLanguage,
                     text: map.text.map(e => this.addIgnoreTags(e)),
                     tag_handling: ['xml'],
-                    ignore_tags: ['x']
+                    ignore_tags: ['x'],
+                    context: 'User interface labels and messages for an IDE (Integrated Development Environment) software application similar to Visual Studio Code. '
+                        + "Terms like 'disabled' mean 'deactivated/turned off', 'terminal' means 'command-line terminal', 'host' means 'computer/server host'."
                 });
                 translationResponse.translations.forEach(({ text }, i) => {
                     map.localize(i, this.removeIgnoreTags(text));

@@ -178,6 +178,7 @@ export interface DeeplParameters {
     outline_detection?: string
     splitting_tags?: string[]
     ignore_tags?: string[]
+    context?: string
 }
 
 export interface DeeplResponse {
