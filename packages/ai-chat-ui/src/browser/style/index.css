@@ -1028,19 +1028,9 @@ div:last-child > .theia-ChatNode {
   text-wrap: auto;
 }
 
-.collapsible-arguments {
-  display: inline-block;
-}
-
-.collapsible-arguments .collapsible-arguments-summary {
-  display: inline-block;
-  white-space: nowrap;
-  text-decoration: underline;
-}
-
-details[open].collapsible-arguments,
-details[open].collapsible-arguments .collapsible-arguments-summary {
-  display: unset;
+.theia-toolCall-args-label {
+  font-weight: normal;
+  color: var(--theia-descriptionForeground);
 }
 
 .theia-ResponseNode-ProgressMessage {
@@ -1344,4 +1334,9 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   color: var(--theia-foreground);
   font-family: var(--theia-code-font-family);
   white-space: pre-wrap;
+}
+
+/* Preserve JSON indentation in hover tooltips */
+.theia-hover div.rendered-markdown {
+  white-space: pre;
 }

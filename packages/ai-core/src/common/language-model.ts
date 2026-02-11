@@ -131,6 +131,20 @@ export interface ToolRequest<TContext extends ToolInvocationContext = ToolInvoca
      * Use for tools with broad system access (shell execution, file deletion, etc.)
      */
     confirmAlwaysAllow?: boolean | string;
+
+    /**
+     * Optional method that returns a short, human-readable label for the tool's arguments
+     * to display in the chat UI summary.
+     *
+     * @param args - The raw arguments JSON string passed to the tool.
+     * @returns An object with:
+     *  - `label`: A short text to display (e.g. the most important argument value).
+     *  - `hasMore`: Whether there are additional arguments not shown in the label (renders as `...` suffix).
+     *  Returns `undefined` if no short label can be determined.
+     *  If this method is not provided, a generic condensed rendering of the arguments JSON is used as fallback.
+     */
+    getArgumentsShortLabel?(args: string): { label: string; hasMore: boolean } | undefined;
+
 }
 
 /**
