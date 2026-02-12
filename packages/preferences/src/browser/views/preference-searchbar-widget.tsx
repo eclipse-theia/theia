@@ -99,6 +99,8 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
         return this.searchTermExists() ?
             (<span
                 className="results-found"
+                role="status"
+                aria-live="polite"
                 title={resultsFound}>
                 {resultsFound}
             </span>)

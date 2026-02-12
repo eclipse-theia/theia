@@ -59,6 +59,11 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected lastUserSelection = '';
     protected isAtScrollTop = true;
     protected firstVisibleChildID = '';
+    /**
+     * Tracks the node ID of the preference row the user last focused.
+     * Used to scroll back to that preference when the search filter is cleared.
+     */
+    protected lastFocusedRendererNodeId = '';
     protected renderers = new Map<string, GeneralPreferenceNodeRenderer>();
     protected preferenceDataKeys = new Map<string, string>();
     // The commonly used section will duplicate preference ID's, so we'll keep a separate list of them.
@@ -98,6 +103,16 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         innerWrapper.classList.add('settings-main-scroll-container');
         this.scrollContainer = innerWrapper;
         innerWrapper.addEventListener('scroll', this.onScroll, { passive: true });
+        innerWrapper.addEventListener('focusin', e => {
+            const target = e.target;
+            if (target instanceof HTMLElement) {
+                const prefRow = target.closest('.single-pref');
+                const nodeId = prefRow?.getAttribute('data-node-id');
+                if (nodeId) {
+                    this.lastFocusedRendererNodeId = nodeId;
+                }
+            }
+        });
         this.node.appendChild(innerWrapper);
         const noLeavesMessage = document.createElement('div');
         noLeavesMessage.classList.add('settings-no-results-announcement');
@@ -121,6 +136,23 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         const leavesAreVisible = this.areLeavesVisible();
         if (e.source === PreferenceFilterChangeSource.Search) {
             this.handleSearchChange(isFiltered, leavesAreVisible);
+            // If search was cleared and the user had focused a preference during this search, scroll to it instead of resetting to top.
+            if (!isFiltered && this.lastFocusedRendererNodeId) {
+                const { id, collection } = this.analyzeIDAndGetRendererGroup(this.lastFocusedRendererNodeId);
+                const renderer = collection.get(id);
+                const scrollTop = this.scrollContainer.scrollTop;
+                const viewportBottom = scrollTop + this.scrollContainer.clientHeight;
+                const elementTop = renderer?.node.offsetTop ?? 0;
+                const elementBottom = elementTop + (renderer?.node.offsetHeight ?? 0);
+                const isInViewport = renderer?.visible && elementTop < viewportBottom && elementBottom > scrollTop;
+                if (isInViewport) {
+                    this.showInTree(this.lastFocusedRendererNodeId);
+                    this.resetScroll(this.lastFocusedRendererNodeId);
+                    return;
+                }
+            }
+            // Reset so that a future clear without any focus during the next search falls through to default behavior.
+            this.lastFocusedRendererNodeId = '';
         } else if (e.source === PreferenceFilterChangeSource.Scope) {
             this.handleScopeChange(isFiltered);
             this.showInTree(currentFirstVisible);
