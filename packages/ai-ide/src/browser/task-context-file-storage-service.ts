@@ -38,7 +38,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     readonly onDidChange = this.onDidChangeEmitter.event;
 
     protected sanitizeLabel(label: string): string {
-        return label.replace(/^[^\p{L}\p{N}]+/vg, '');
+        return label.replace(/^[^\p{L}\p{N}]+/ug, '');
     }
 
     protected getStorageLocation(): URI | undefined {
@@ -134,9 +134,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             summary: body,
             label: this.sanitizeLabel(rawLabel),
             uri,
-            id: frontmatter?.sessionId || uri.path.base
+            id: frontmatter?.id || frontmatter?.sessionId || uri.path.base
         };
-        const existingSummary = summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
+        const existingSummary = !frontmatter?.id && summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
         if (existingSummary) {
             summary.id = existingSummary.id;
         }
@@ -149,11 +149,12 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         const storageLocation = this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
+                id: summary.id,
                 sessionId: summary.sessionId,
                 date: new Date().toISOString(),
                 label,
             };
-            const derivedName = label.trim().replace(/[^\p{L}\p{N}]/vg, '-').replace(/^-+|-+$/g, '');
+            const derivedName = label.trim().replace(/[^\p{L}\p{N}]/ug, '-').replace(/^-+|-+$/g, '');
             const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
             const content = yaml.dump(frontmatter).trim() + `${EOL}---${EOL}` + summary.summary;
             const uri = storageLocation.resolve(filename);
@@ -168,8 +169,21 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         return this.inMemoryStorage.getAll();
     }
 
-    get(identifier: string): Summary | undefined {
-        return this.inMemoryStorage.get(identifier);
+    async get(identifier: string): Promise<Summary | undefined> {
+        const cached = this.inMemoryStorage.get(identifier);
+        if (!cached?.uri) {
+            return cached;
+        }
+        // Read fresh content from disk
+        const content = await this.fileService.read(cached.uri).then(read => read.value).catch(reason => {
+            this.logger.error(`Failed to read file ${cached.uri}: ${reason}`);
+            return undefined;
+        });
+        if (content === undefined) {
+            return cached; // Fall back to cache if read fails
+        }
+        const { body } = this.maybeReadFrontmatter(content);
+        return { ...cached, summary: body };
     }
 
     async delete(identifier: string): Promise<boolean> {
@@ -202,7 +216,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async open(identifier: string): Promise<void> {
-        const summary = this.get(identifier);
+        const summary = await this.get(identifier);
         if (!summary) {
             throw new Error('Unable to open requested task context: none found with specified identifier.');
         }

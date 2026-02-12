@@ -26,6 +26,7 @@ import { ChangeSetFileElementFactory } from './change-set-file-element';
 import * as yaml from 'js-yaml';
 
 export interface SummaryMetadata {
+    id?: string;
     label: string;
     uri?: URI;
     sessionId?: string;
@@ -41,7 +42,7 @@ export interface TaskContextStorageService {
     onDidChange: Event<void>;
     store(summary: Summary): MaybePromise<void>;
     getAll(): Summary[];
-    get(identifier: string): Summary | undefined;
+    get(identifier: string): MaybePromise<Summary | undefined>;
     delete(identifier: string): MaybePromise<boolean>;
     open(identifier: string): Promise<void>;
 }
@@ -69,7 +70,7 @@ export class TaskContextService {
     }
 
     async getSummary(sessionIdOrFilePath: string): Promise<string> {
-        const existing = this.storageService.get(sessionIdOrFilePath);
+        const existing = await this.storageService.get(sessionIdOrFilePath);
         if (existing) { return existing.summary; }
         const pending = this.pendingSummaries.get(sessionIdOrFilePath);
         if (pending) {
@@ -247,7 +248,8 @@ export class TaskContextService {
     }
 
     getLabel(id: string): string | undefined {
-        return this.storageService.get(id)?.label;
+        // Labels are metadata that don't need fresh file reads
+        return this.storageService.getAll().find(s => s.id === id)?.label;
     }
 
     open(id: string): Promise<void> {

@@ -15,109 +15,46 @@
  ********************************************************************************/
 
 :root {
-  --theia-search-box-padding: 3px;
   --theia-search-box-radius: 2px;
-  --theia-search-box-spacing: 4px;
   --theia-search-box-max-width: 500px;
 }
 
-.theia-search-box {
+.theia-search-box-widget {
   position: absolute;
-  display: flex;
-  top: var(--theia-search-box-spacing);
-  right: var(--theia-search-box-spacing);
-  box-shadow: var(--theia-border-width) var(--theia-border-width)
-    var(--theia-widget-shadow);
-  background-color: var(--theia-listFilterWidget-background);
+  top: 0;
+  right: var(--theia-scrollbar-width);
+  background-color: var(--theia-sideBar-background);
   z-index: calc(var(--theia-tabbar-toolbar-z-index) + 1);
   border-radius: var(--theia-search-box-radius);
-  padding: var(--theia-search-box-padding);
-  border: var(--theia-border-width) solid rgba(0, 0, 0, 0);
 }
 
-.theia-search-box.no-match {
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-errorBorder);
+.theia-search-box-widget .theia-search-box {
+  display: flex;
+  padding: calc(var(--theia-ui-padding) / 2);
+  border: var(--theia-border-width) solid var(--theia-widget-border, var(--theia-list-hoverBackground));
 }
 
-.theia-search-input {
+.theia-search-box-widget .theia-search-box.no-match {
+  border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+}
+
+.theia-search-box-widget .theia-search-input {
   flex-grow: 1;
   user-select: none;
+  background-color: var(--theia-input-background);
+  padding: calc(var(--theia-ui-padding) / 2);
 }
 
-.theia-search-box > .theia-search-buttons-wrapper {
-  max-width: 0px;
-  transition: max-width 0.2s ease-out;
+.theia-search-box-widget .theia-search-box>.theia-search-buttons-wrapper {
+  max-width: var(--theia-search-box-max-width);
   display: flex;
-  box-sizing: border-box;
   align-items: center;
 }
 
-.theia-search-box:hover > .theia-search-buttons-wrapper {
-  max-width: var(--theia-search-box-max-width);
-  transition: max-width 0.2s ease-in;
+.theia-search-box-widget .theia-search-button {
+  padding: 2px;
 }
 
-.theia-search-button {
-  min-width: 1rem;
-  text-align: center;
-  flex-grow: 0;
-  font-family: FontAwesome;
-  font-size: calc(var(--theia-content-font-size) * 0.8);
-  color: var(--theia-editorWidget-foreground);
-}
-
-.theia-search-button.codicon.codicon-filter {
-  color: var(--theia-editorWidget-foreground);
-  align-self: flex-end;
-  margin-left: var(--theia-search-box-spacing);
-}
-
-.theia-search-button.codicon-filter:not(.filter-active):before {
-  content: "\eb85";
-}
-
-.theia-search-button.codicon-filter.filter-active:before {
-  content: "\eb83";
-}
-
-.theia-search-button-next:before {
-  content: "\f107";
-}
-
-.theia-search-button-next:hover,
-.theia-search-button-previous:hover,
-.theia-search-button-close:hover,
-.theia-search-button.codicon-filter:hover {
-  cursor: pointer;
-}
-
-.theia-search-button-next:hover:before {
-  content: "\f107";
-}
-
-.theia-search-button-previous:before {
-  content: "\f106";
-}
-
-.theia-search-button-previous:hover:before {
-  content: "\f106";
-}
-
-.theia-search-button-close:before {
-  content: "\f00d";
-}
-
-.theia-search-button-close:hover:before {
-  content: "\f00d";
-}
-
-.theia-non-selectable {
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -o-user-select: none;
-  user-select: none;
-  cursor: default;
+.theia-search-box-widget .theia-search-button.no-match {
+  opacity: var(--theia-mod-disabled-opacity);
 }

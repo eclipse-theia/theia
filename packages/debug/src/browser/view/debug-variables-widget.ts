@@ -25,6 +25,9 @@ import { SelectableTreeNode, TreeNode, TreeSelection } from '@theia/core/lib/bro
 import { DebugVariable } from '../console/debug-console-items';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DataBreakpoint, DataBreakpointSource, DataBreakpointSourceType } from '../breakpoint/breakpoint-marker';
+import { DebugSessionManager } from '../debug-session-manager';
+import { DebugSession } from '../debug-session';
+import { DebugStackFrame } from '../model/debug-stack-frame';
 
 @injectable()
 export class DebugVariablesWidget extends SourceTreeWidget {
@@ -64,6 +67,12 @@ export class DebugVariablesWidget extends SourceTreeWidget {
     @inject(BreakpointManager)
     protected readonly breakpointManager: BreakpointManager;
 
+    @inject(DebugSessionManager)
+    protected readonly sessionManager: DebugSessionManager;
+
+    protected stackFrame: DebugStackFrame | undefined;
+    protected readonly statePerSession = new Map<string, DebugVariablesWidgetSessionState>();
+
     @postConstruct()
     protected override init(): void {
         super.init();
@@ -71,6 +80,44 @@ export class DebugVariablesWidget extends SourceTreeWidget {
         this.title.label = nls.localizeByDefault('Variables');
         this.toDispose.push(this.variables);
         this.source = this.variables;
+        this.toDispose.push(this.sessionManager.onDidFocusStackFrame(stackFrame => this.handleDidFocusStackFrame(stackFrame)));
+        this.toDispose.push(this.sessionManager.onDidDestroyDebugSession(session => this.handleDidDestroyDebugSession(session)));
+    }
+
+    protected handleDidFocusStackFrame(stackFrame: DebugStackFrame | undefined): void {
+        if (this.stackFrame !== stackFrame) {
+            if (this.stackFrame) {
+                const sessionState = this.getOrCreateSessionState(this.stackFrame.session);
+                sessionState.setStateForStackFrame(this.stackFrame, this.superStoreState());
+            }
+            if (stackFrame) {
+                const sessionState = this.statePerSession.get(stackFrame.session.id);
+                if (sessionState) {
+                    const state = sessionState.getStateForStackFrame(stackFrame);
+                    if (state) {
+                        this.superRestoreState(state);
+                    }
+                }
+            }
+            this.stackFrame = stackFrame;
+        }
+    }
+
+    protected getOrCreateSessionState(session: DebugSession): DebugVariablesWidgetSessionState {
+        let sessionState = this.statePerSession.get(session.id);
+        if (!sessionState) {
+            sessionState = this.newSessionState();
+            this.statePerSession.set(session.id, sessionState);
+        }
+        return sessionState;
+    }
+
+    protected newSessionState(): DebugVariablesWidgetSessionState {
+        return new DebugVariablesWidgetSessionState();
+    }
+
+    protected handleDidDestroyDebugSession(session: DebugSession): void {
+        this.statePerSession.delete(session.id);
     }
 
     protected override handleContextMenuEvent(node: TreeNode | undefined, event: MouseEvent<HTMLElement>): void {
@@ -154,5 +201,17 @@ export class DebugVariablesWidget extends SourceTreeWidget {
             }),
             this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-write:${currentSession.id}:${name}`, order: 'b' }),
         );
+    }
+}
+
+export class DebugVariablesWidgetSessionState {
+    protected readonly statePerStackFrame = new Map<string, object>();
+
+    setStateForStackFrame(stackFrame: DebugStackFrame, state: object): void {
+        this.statePerStackFrame.set(stackFrame.id, state);
+    }
+
+    getStateForStackFrame(stackFrame: DebugStackFrame): object | undefined {
+        return this.statePerStackFrame.get(stackFrame.id);
     }
 }

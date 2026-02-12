@@ -31,16 +31,18 @@ export const VercelAiPreferencesSchema: PreferenceSchema = {
             markdownDescription: nls.localize('theia/ai/vercelai/openaiApiKey/mdDescription',
                 'Enter an API Key for OpenAI models used by the Vercel AI SDK. \
                 **Please note:** By using this preference the API key will be stored in clear text \
-on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.'),
+        on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.'),
             title: AI_CORE_PREFERENCES_TITLE,
+            tags: ['experimental']
         },
         [ANTHROPIC_API_KEY_PREF]: {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/vercelai/anthropicApiKey/mdDescription',
                 'Enter an API Key for Anthropic models used by the Vercel AI SDK. \
                 **Please note:** By using this preference the API key will be stored in clear text \
-on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.'),
+        on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.'),
             title: AI_CORE_PREFERENCES_TITLE,
+            tags: ['experimental']
         },
         [MODELS_PREF]: {
             type: 'array',
@@ -71,11 +73,12 @@ on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` t
                     provider: {
                         type: 'string',
                         enum: ['openai', 'anthropic'],
-                        title: nls.localize('theia/ai/vercelai/models/provider/title', 'Provider')
+                        title: nls.localizeByDefault('Provider')
                     }
                 },
                 required: ['id', 'model', 'provider']
-            }
+            },
+            tags: ['experimental']
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',
@@ -113,7 +116,7 @@ on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` t
                     provider: {
                         type: 'string',
                         enum: ['openai', 'anthropic'],
-                        title: nls.localize('theia/ai/vercelai/customEndpoints/provider/title', 'Provider')
+                        title: nls.localizeByDefault('Provider')
                     },
                     apiKey: {
                         type: ['string', 'boolean'],
@@ -131,7 +134,8 @@ on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` t
                             'Indicates whether the streaming API shall be used. `true` by default.'),
                     }
                 }
-            }
+            },
+            tags: ['experimental']
         }
     }
 };

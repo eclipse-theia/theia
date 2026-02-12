@@ -29,6 +29,7 @@ export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.pro
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
 export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
+export const PREFERENCE_NAME_SKILL_DIRECTORIES = 'ai-features.skills.skillDirectories';
 
 export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
 
@@ -137,6 +138,16 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             enum: [...NOTIFICATION_TYPES],
             default: NOTIFICATION_TYPE_OFF
         },
+        [PREFERENCE_NAME_SKILL_DIRECTORIES]: {
+            description: nls.localize('theia/ai/core/skillDirectories/description',
+                'Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. ' +
+                'The default skills directory in your product\'s configuration folder is always included.'),
+            type: 'array',
+            items: {
+                type: 'string'
+            },
+            default: []
+        },
         [LANGUAGE_MODEL_ALIASES_PREFERENCE]: {
             title: nls.localize('theia/ai/core/preference/languageModelAliases/title', 'Language Model Aliases'),
             markdownDescription: nls.localize('theia/ai/core/preference/languageModelAliases/description', 'Configure models for each language model alias in the \
@@ -169,6 +180,7 @@ export interface AICoreConfiguration {
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
     [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
+    [PREFERENCE_NAME_SKILL_DIRECTORIES]: string[] | undefined;
 }
 
 export interface RequestSetting {

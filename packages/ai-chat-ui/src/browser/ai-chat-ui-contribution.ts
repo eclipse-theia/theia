@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { CommandRegistry, Emitter, isOSX, MessageService, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Widget } from '@theia/core/lib/browser';
 import {
@@ -38,6 +38,7 @@ import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution
 import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
+import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -60,6 +61,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly activationService: AIActivationService;
     @inject(ILogger) @named('AIChatContribution')
     protected readonly logger: ILogger;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     /**
      * Store whether there are persisted sessions to make this information available in
@@ -103,13 +106,19 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             }
         });
 
+        // Re-check persisted sessions when storage preferences change
+        this.preferenceService.onPreferenceChanged(event => {
+            if (event.preferenceName === SESSION_STORAGE_PREF) {
+                this.checkPersistedSessions();
+            }
+        });
+
         this.checkPersistedSessions();
     }
 
     protected async checkPersistedSessions(): Promise<void> {
         try {
-            const index = await this.chatService.getPersistedSessions();
-            this.hasPersistedSessions = Object.keys(index).length > 0;
+            this.hasPersistedSessions = await this.chatService.hasPersistedSessions();
         } catch (e) {
             this.logger.error('Failed to check persisted AI sessions', e);
             this.hasPersistedSessions = false;
@@ -198,15 +207,18 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             isEnabled: () => this.activationService.isActive
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
-            execute: () => this.selectChat(),
-            isEnabled: widget => {
-                if (!this.activationService.isActive || !this.withWidget(widget)) {
+            execute: async () => {
+                await this.openView();
+                return this.selectChat();
+            },
+            isEnabled: () => {
+                if (!this.activationService.isActive) {
                     return false;
                 }
                 // Enable if there are active sessions with titles OR persisted sessions
                 return this.chatService.getSessions().some(session => !!session.title) || this.hasPersistedSessions;
             },
-            isVisible: widget => this.activationService.isActive && this.withWidget(widget)
+            isVisible: () => this.activationService.isActive
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -398,6 +410,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     }
                 });
             } else if (context.button === AIChatContribution.REMOVE_CHAT_BUTTON) {
+                const activeSession = this.chatService.getActiveSession();
+
                 // Wait for deletion to complete before refreshing the list
                 this.chatService.deleteSession(context.item.id!).then(() => getItems()).then(items => {
                     quickPick.items = items;
@@ -406,6 +420,13 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     }
                     // Update persisted sessions flag after deletion
                     this.checkPersistedSessions();
+
+                    if (activeSession && activeSession.id === context.item.id) {
+                        this.chatService.createSession(ChatAgentLocation.Panel, {
+                            // Auto-focus only when the quick pick is no longer visible
+                            focus: items.length === 0
+                        });
+                    }
                 }).catch(error => {
                     this.logger.error('Failed to delete chat session', error);
                     this.messageService.error(nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session'));

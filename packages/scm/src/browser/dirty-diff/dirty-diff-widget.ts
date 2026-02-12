@@ -293,9 +293,17 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
             this.toDispose.push(diffEditor);
             super.create();
             return new Promise(resolve => {
-                // setTimeout is needed here because the non-side-by-side diff editor might still not have created the view zones;
+                // The diff computation is asynchronous and may complete before or after we register the listener.
+                // This can happen when the file is already open in another editor, causing the model to be cached
+                // and the diff to compute almost instantly. To handle this race condition, we check if the diff
+                // is already available before waiting for onDidUpdateDiff.
+                // setTimeout is needed because the non-side-by-side diff editor might still not have created the view zones;
                 // otherwise, the first change shown might not be properly revealed in the diff editor.
-                // see also https://github.com/microsoft/vscode/blob/b30900b56c4b3ca6c65d7ab92032651f4cb23f15/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L248
+                // See also https://github.com/microsoft/vscode/blob/b30900b56c4b3ca6c65d7ab92032651f4cb23f15/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L248
+                if (diffEditor.diffEditor.getLineChanges()) {
+                    setTimeout(() => resolve(diffEditor));
+                    return;
+                }
                 const disposable = diffEditor.diffEditor.onDidUpdateDiff(() => setTimeout(() => {
                     resolve(diffEditor);
                     disposable.dispose();

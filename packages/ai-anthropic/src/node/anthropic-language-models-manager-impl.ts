@@ -125,7 +125,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         }
         return effectiveApiKey
             ? { status: 'ready' }
-            : { status: 'unavailable', message: 'No API key set' };
+            : { status: 'unavailable', message: 'No Anthropic API key set' };
     }
 }
 

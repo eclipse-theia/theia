@@ -13,32 +13,50 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { webcrypto as crypto } from 'node:crypto';
 import {
+    createToolCallError,
+    ImageContent,
     LanguageModel,
-    LanguageModelRequest,
     LanguageModelMessage,
+    LanguageModelRequest,
     LanguageModelResponse,
+    LanguageModelStatus,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
     TokenUsageService,
-    UserRequest,
-    ImageContent,
     ToolCallResult,
-    LanguageModelStatus
+    ToolInvocationContext,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig } from '@google/genai';
 import { wait } from '@theia/core/lib/common/promise-util';
 import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 
 interface ToolCallback {
     readonly name: string;
     readonly id: string;
-    readonly index: number;
     args: string;
 }
+/**
+ * Converts a tool call result to the Gemini FunctionResponse format.
+ * Gemini requires response to be an object, not an array or primitive.
+ */
+function toFunctionResponse(content: ToolCallResult): FunctionResponse['response'] {
+    if (content === undefined) {
+        return {};
+    }
+    if (Array.isArray(content)) {
+        return { result: content };
+    }
+    if (typeof content === 'object') {
+        return content as FunctionResponse['response'];
+    }
+    return { result: content };
+}
+
 const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined => {
     if (LanguageModelMessage.isTextMessage(message) && message.text.length > 0) {
         return [{ text: message.text }];
@@ -46,13 +64,13 @@ const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined
         return [{
             functionCall: {
                 id: message.id, name: message.name, args: message.input as Record<string, unknown>
-            }
+            },
+            thoughtSignature: message.data?.thoughtSignature,
         }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
-        return [{ functionResponse: { id: message.tool_use_id, name: message.name, response: { output: message.content } } }];
-
+        return [{ functionResponse: { name: message.name, response: toFunctionResponse(message.content) } }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
-        return [{ thought: true }, { text: message.thinking }];
+        return [{ thought: true, text: message.thinking }];
     } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
         return [{ inlineData: { data: message.image.base64data, mimeType: message.image.mimeType } }];
     }
@@ -184,6 +202,10 @@ export class GoogleModel implements LanguageModel {
                             functionDeclarations
                         }]
                     }),
+                    thinkingConfig: {
+                        // https://ai.google.dev/gemini-api/docs/thinking#summaries
+                        includeThoughts: true,
+                    },
                     temperature: 1,
                     ...settings
                 },
@@ -195,7 +217,7 @@ export class GoogleModel implements LanguageModel {
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 const toolCallMap: { [key: string]: ToolCallback } = {};
-                let currentContent: Content | undefined = undefined;
+                const collectedParts: Part[] = [];
                 try {
                     for await (const chunk of stream) {
                         if (cancellationToken?.isCancellationRequested) {
@@ -203,61 +225,90 @@ export class GoogleModel implements LanguageModel {
                         }
                         const finishReason = chunk.candidates?.[0].finishReason;
                         if (finishReason) {
-                            currentContent = chunk.candidates?.[0].content;
                             switch (finishReason) {
                                 // 'STOP' is the only valid (non-error) finishReason
                                 // "Natural stop point of the model or provided stop sequence."
                                 case 'STOP':
                                     break;
+                                // MALFORMED_FUNCTION_CALL: The model produced a malformed function call.
+                                // Log warning but continue - there might still be usable text content.
+                                case 'MALFORMED_FUNCTION_CALL':
+                                    console.warn('Gemini returned MALFORMED_FUNCTION_CALL finish reason.', {
+                                        finishReason,
+                                        candidate: chunk.candidates?.[0],
+                                        content: chunk.candidates?.[0]?.content,
+                                        parts: chunk.candidates?.[0]?.content?.parts,
+                                        text: chunk.text,
+                                        usageMetadata: chunk.usageMetadata
+                                    });
+                                    break;
                                 // All other reasons are error-cases. Throw an Error.
-                                // e.g. MALFORMED_FUNCTION_CALL, SAFETY, MAX_TOKENS, ...
+                                // e.g. SAFETY, MAX_TOKENS, RECITATION, LANGUAGE, ...
                                 // https://ai.google.dev/api/generate-content#FinishReason
                                 default:
-                                    throw new Error('Unexpected finish reason: ' + finishReason);
+                                    console.error('Gemini streaming ended with unexpected finish reason:', {
+                                        finishReason,
+                                        candidate: chunk.candidates?.[0],
+                                        content: chunk.candidates?.[0]?.content,
+                                        parts: chunk.candidates?.[0]?.content?.parts,
+                                        safetyRatings: chunk.candidates?.[0]?.safetyRatings,
+                                        text: chunk.text,
+                                        usageMetadata: chunk.usageMetadata
+                                    });
+                                    throw new Error(`Unexpected finish reason: ${finishReason}`);
                             }
                         }
-                        // Handle text content
-                        if (chunk.text) {
-                            yield { content: chunk.text };
-                        }
+                        // Handle thinking, text content, and function calls from parts
+                        if (chunk.candidates?.[0]?.content?.parts) {
+                            for (const part of chunk.candidates[0].content.parts) {
+                                collectedParts.push(part);
+                                if (part.text) {
+                                    if (part.thought) {
+                                        yield { thought: part.text, signature: part.thoughtSignature ?? '' };
+                                    } else {
+                                        yield { content: part.text };
+                                    }
+                                } else if (part.functionCall) {
+                                    const functionCall = part.functionCall;
+                                    // Gemini does not always provide a function call ID (unlike Anthropic/OpenAI).
+                                    // We need a stable ID to track calls in toolCallMap and correlate results.
+                                    const callId = functionCall.id ?? UUID.uuid4().replace(/-/g, '');
+                                    let toolCall = toolCallMap[callId];
+                                    if (toolCall === undefined) {
+                                        toolCall = {
+                                            name: functionCall.name ?? '',
+                                            args: functionCall.args ? JSON.stringify(functionCall.args) : '{}',
+                                            id: callId,
+                                        };
+                                        toolCallMap[callId] = toolCall;
 
-                        // Handle function calls from Gemini
-                        if (chunk.functionCalls && chunk.functionCalls.length > 0) {
-                            let functionIndex = 0;
-                            for (const functionCall of chunk.functionCalls) {
-                                const callId = functionCall.id ?? crypto.randomUUID().replace(/-/g, '');
-                                let toolCall = toolCallMap[callId];
-                                if (toolCall === undefined) {
-                                    toolCall = {
-                                        name: functionCall.name ?? '',
-                                        args: functionCall.args ? JSON.stringify(functionCall.args) : '{}',
-                                        id: callId,
-                                        index: functionIndex++
-                                    };
-                                    toolCallMap[callId] = toolCall;
-
-                                    yield {
-                                        tool_calls: [{
-                                            finished: false,
-                                            id: toolCall.id,
-                                            function: {
-                                                name: toolCall.name,
-                                                arguments: toolCall.args
-                                            }
-                                        }]
-                                    };
-                                } else {
-                                    // Update to existing tool call
-                                    toolCall.args = functionCall.args ? JSON.stringify(functionCall.args) : '{}';
-                                    yield {
-                                        tool_calls: [{
-                                            function: {
-                                                arguments: toolCall.args
-                                            }
-                                        }]
-                                    };
+                                        yield {
+                                            tool_calls: [{
+                                                finished: false,
+                                                id: toolCall.id,
+                                                function: {
+                                                    name: toolCall.name,
+                                                    arguments: toolCall.args
+                                                },
+                                                data: part.thoughtSignature ? { thoughtSignature: part.thoughtSignature } : undefined
+                                            }]
+                                        };
+                                    } else {
+                                        // Update to existing tool call
+                                        toolCall.args = functionCall.args ? JSON.stringify(functionCall.args) : '{}';
+                                        yield {
+                                            tool_calls: [{
+                                                function: {
+                                                    arguments: toolCall.args
+                                                },
+                                                data: part.thoughtSignature ? { thoughtSignature: part.thoughtSignature } : undefined
+                                            }]
+                                        };
+                                    }
                                 }
                             }
+                        } else if (chunk.text) {
+                            yield { content: chunk.text };
                         }
 
                         // Report token usage if available
@@ -274,29 +325,28 @@ export class GoogleModel implements LanguageModel {
                         }
                     }
 
-                    // Mark tool call as finished if it exists
-                    const toolCalls = Object.values(toolCallMap);
-                    for (const toolCall of toolCalls) {
-                        yield { tool_calls: [{ finished: true, id: toolCall.id }] };
-                    }
-
                     // Process tool calls if any exist
+                    const toolCalls = Object.values(toolCallMap);
                     if (toolCalls.length > 0) {
                         // Collect tool results
                         const toolResult = await Promise.all(toolCalls.map(async tc => {
                             const tool = request.tools?.find(t => t.name === tc.name);
                             let result;
-                            try {
-                                result = await tool?.handler(tc.args);
-                            } catch (e) {
-                                console.error(`Error executing tool ${tc.name}:`, e);
-                                result = { error: e.message || 'Tool execution failed' };
+                            if (!tool) {
+                                result = createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
+                            } else {
+                                try {
+                                    result = await tool.handler(tc.args, ToolInvocationContext.create(tc.id));
+                                } catch (e) {
+                                    console.error(`Error executing tool ${tc.name}:`, e);
+                                    result = createToolCallError(e.message || 'Tool execution failed');
+                                }
                             }
                             return {
                                 name: tc.name,
                                 result: result,
                                 id: tc.id,
-                                arguments: tc.args
+                                arguments: tc.args,
                             };
                         }));
 
@@ -305,25 +355,27 @@ export class GoogleModel implements LanguageModel {
                             finished: true,
                             id: tr.id,
                             result: tr.result,
-                            function: { name: tr.name, arguments: tr.arguments }
+                            function: { name: tr.name, arguments: tr.arguments },
                         }));
                         yield { tool_calls: calls };
 
                         // Format tool responses for Gemini
+                        // According to Gemini docs, functionResponse needs name and response
                         const toolResponses: Part[] = toolResult.map(call => ({
                             functionResponse: {
-                                id: call.id,
                                 name: call.name,
-                                response: that.formatToolCallResult(call.result)
+                                response: toFunctionResponse(call.result)
                             }
                         }));
                         const responseMessage: Content = { role: 'user', parts: toolResponses };
 
-                        const messages = [...(toolMessages ?? [])];
-                        if (currentContent) {
-                            messages.push(currentContent);
-                        }
-                        messages.push(responseMessage);
+                        // Build the model's response content from collected parts
+                        // Exclude thinking parts as they should not be included in the conversation history sent back to the model
+                        const modelResponseParts = collectedParts.filter(p => !p.thought);
+                        const modelContent: Content = { role: 'model', parts: modelResponseParts };
+
+                        const messages = [...(toolMessages ?? []), modelContent, responseMessage];
+
                         // Continue the conversation with tool results
                         const continuedResponse = await that.handleStreamingRequest(
                             genAI,
@@ -345,13 +397,6 @@ export class GoogleModel implements LanguageModel {
         };
 
         return { stream: asyncIterator };
-    }
-
-    protected formatToolCallResult(result: ToolCallResult): FunctionResponse['response'] {
-        // If "output" and "error" keys are not specified, then whole "response" is treated as function output.
-        // There is no particular support for different types of output such as images so we use the structure provided by the tool call.
-        // Using the format that is used for image messages does not seem to yield any different results.
-        return { output: result };
     }
 
     private createFunctionDeclarations(request: LanguageModelRequest): FunctionDeclaration[] {
@@ -393,7 +438,17 @@ export class GoogleModel implements LanguageModel {
         }));
 
         try {
-            const responseText = model.text;
+            let responseText = '';
+            // For non streaming requests we are always only interested in text parts
+            if (model.candidates?.[0]?.content?.parts) {
+                for (const part of model.candidates[0].content.parts) {
+                    if (part.text) {
+                        responseText += part.text;
+                    }
+                }
+            } else {
+                responseText = model.text ?? '';
+            }
 
             // Record token usage if available
             if (model.usageMetadata && this.tokenUsageService) {
@@ -407,8 +462,7 @@ export class GoogleModel implements LanguageModel {
                     });
                 }
             }
-
-            return { text: responseText ?? '' };
+            return { text: responseText };
         } catch (error) {
             throw new Error(`Failed to get response from Gemini API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }

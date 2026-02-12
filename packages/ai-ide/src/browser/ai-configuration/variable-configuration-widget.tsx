@@ -15,15 +15,16 @@
 // *****************************************************************************
 
 import { Agent, AgentService, AIVariable, AIVariableService } from '@theia/ai-core/lib/common';
-import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { nls } from '@theia/core';
+import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
 
 @injectable()
-export class AIVariableConfigurationWidget extends ReactWidget {
+export class AIVariableConfigurationWidget extends AIListDetailConfigurationWidget<AIVariable> {
 
     static readonly ID = 'ai-variable-configuration-container-widget';
     static readonly LABEL = nls.localizeByDefault('Variables');
@@ -42,60 +43,109 @@ export class AIVariableConfigurationWidget extends ReactWidget {
         this.id = AIVariableConfigurationWidget.ID;
         this.title.label = AIVariableConfigurationWidget.LABEL;
         this.title.closable = false;
-        this.update();
-        this.toDispose.push(this.variableService.onDidChangeVariables(() => this.update()));
+        this.addClass('ai-configuration-widget');
+
+        this.loadItems().then(() => this.update());
+        this.toDispose.push(this.variableService.onDidChangeVariables(async () => {
+            await this.loadItems();
+            this.update();
+        }));
     }
 
-    protected render(): React.ReactNode {
-        return <div className='configuration-variables-list'>
-            <ul>
-                {this.variableService.getVariables().map(variable =>
-                    <li key={variable.id} className='variable-item' >
-                        <div className='settings-section-title settings-section-category-title' style={{ paddingLeft: 0, paddingBottom: 10 }}>{variable.name}</div>
-                        <small>{variable.id}</small>
-                        <small>{variable.description}</small>
-                        {this.renderReferencedVariables(variable)}
-                        {this.renderArgs(variable)}
-                    </li>
+    protected async loadItems(): Promise<void> {
+        this.items = this.variableService.getVariables();
+        if (this.items.length > 0 && !this.selectedItem) {
+            this.selectedItem = this.items[0];
+        }
+    }
+
+    protected getItemId(variable: AIVariable): string {
+        return variable.id;
+    }
+
+    protected getItemLabel(variable: AIVariable): string {
+        return variable.name;
+    }
+
+    protected override getEmptySelectionMessage(): string {
+        return nls.localize('theia/ai/ide/variableConfiguration/selectVariable', 'Please select a Variable.');
+    }
+
+    protected renderItemDetail(variable: AIVariable): React.ReactNode {
+        return (
+            <div>
+                <div className="settings-section-title settings-section-category-title">
+                    {variable.name}
+                    <pre className='ai-id-label'>Id: {variable.id}</pre>
+                </div>
+
+                {variable.description && (
+                    <div style={{
+                        marginBottom: 'calc(var(--theia-ui-padding) * 2)',
+                        color: 'var(--theia-descriptionForeground)',
+                        lineHeight: '1.5'
+                    }}>
+                        {variable.description}
+                    </div>
                 )}
-            </ul>
-        </div>;
+
+                {this.renderArgs(variable)}
+                {this.renderReferencedVariables(variable)}
+            </div>
+        );
+    }
+
+    protected renderArgs(variable: AIVariable): React.ReactNode | undefined {
+        if (variable.args === undefined || variable.args.length === 0) {
+            return undefined;
+        }
+
+        return (
+            <>
+                <div className="settings-section-subcategory-title">
+                    {nls.localize('theia/ai/ide/variableConfiguration/variableArgs', 'Arguments')}
+                </div>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr',
+                    gap: 'calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding)',
+                    alignItems: 'start',
+                    marginBottom: 'calc(var(--theia-ui-padding) * 2)'
+                }}>
+                    {variable.args.map(arg => (
+                        <React.Fragment key={arg.name}>
+                            <span style={{ fontWeight: 500 }}>{arg.name}:</span>
+                            <span style={{ color: 'var(--theia-descriptionForeground)' }}>
+                                {arg.description}
+                            </span>
+                        </React.Fragment>
+                    ))}
+                </div>
+            </>
+        );
     }
 
     protected renderReferencedVariables(variable: AIVariable): React.ReactNode | undefined {
         const agents = this.getAgentsForVariable(variable);
         if (agents.length === 0) {
-            return;
+            return undefined;
         }
 
-        return <div>
-            <h3>{nls.localize('theia/ai/ide/variableConfiguration/agents', 'Agents')}</h3>
-            <ul className='variable-references'>
-                {agents.map(agent => <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
-                    <div onClick={() => { this.showAgentConfiguration(agent); }} className='variable-reference'>
-                        <span>{agent.name}</span>
-                        <i className={codicon('chevron-right')}></i>
-                    </div></li>)}
-            </ul>
-        </div>;
-    }
-
-    protected renderArgs(variable: AIVariable): React.ReactNode | undefined {
-        if (variable.args === undefined || variable.args.length === 0) {
-            return;
-        }
-
-        return <div className='variable-args-container'>
-            <h3>{nls.localize('theia/ai/ide/variableConfiguration/variableArgs', 'Variable Arguments')}</h3>
-            <div className='variable-args'>
-                {variable.args.map(arg =>
-                    <React.Fragment key={arg.name}>
-                        <span>{arg.name}</span>
-                        <small>{arg.description}</small>
-                    </React.Fragment>
-                )}
-            </div>
-        </div>;
+        return (
+            <>
+                <div className="settings-section-subcategory-title">
+                    {nls.localize('theia/ai/ide/variableConfiguration/usedByAgents', 'Used by Agents')}
+                </div>
+                <ul className="variable-agent-list">
+                    {agents.map(agent => (
+                        <li key={agent.id} className="variable-agent-item" onClick={() => this.showAgentConfiguration(agent)}>
+                            <span>{agent.name}</span>
+                            <i className={codicon('chevron-right')}></i>
+                        </li>
+                    ))}
+                </ul>
+            </>
+        );
     }
 
     protected showAgentConfiguration(agent: Agent): void {

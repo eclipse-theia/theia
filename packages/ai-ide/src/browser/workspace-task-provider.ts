@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
+import { CancellationToken } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { MutableChatRequestModel } from '@theia/ai-chat';
-import { CancellationToken } from '@theia/core';
 import { LIST_TASKS_FUNCTION_ID, RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
 
 @injectable()
@@ -32,19 +31,25 @@ export class TaskListProvider implements ToolProvider {
         return {
             id: LIST_TASKS_FUNCTION_ID,
             name: LIST_TASKS_FUNCTION_ID,
-            description: 'Lists available tool tasks in the workspace, such as build, run, test. Tasks can be filtered by name.',
+            description: 'Lists available tasks in the workspace that can be executed with runTask. Returns an array ' +
+                'of task labels (strings). Common task types include npm scripts, shell tasks, and build tasks. ' +
+                'Use the filter parameter with an empty string "" to retrieve all tasks, or provide a substring ' +
+                'to filter (e.g., "test" returns tasks containing "test" in the name). ' +
+                'Example return: ["npm: build", "npm: test", "npm: lint"]. ' +
+                'Always call this before runTask to discover exact task names.',
             parameters: {
                 type: 'object',
                 properties: {
                     filter: {
                         type: 'string',
-                        description: 'Filter to apply on task names (empty string to retrieve all tasks).'
+                        description: 'Substring filter for task names. Use "" (empty string) to retrieve all tasks, ' +
+                            'or a keyword like "build", "test", "lint" to filter results.'
                     }
                 },
                 required: ['filter']
             },
-            handler: async (argString: string, ctx: MutableChatRequestModel) => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (argString: string, ctx?: ToolInvocationContext) => {
+                if (ctx?.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 const filterArgs: { filter: string } = JSON.parse(argString);
@@ -75,18 +80,24 @@ export class TaskRunnerProvider implements ToolProvider {
         return {
             id: RUN_TASK_FUNCTION_ID,
             name: RUN_TASK_FUNCTION_ID,
-            description: 'Executes a specified task.',
+            description: 'Executes a specified task by name and waits for completion. Returns the terminal output ' +
+                '(first and last 50 lines if output exceeds this limit). The task must exist in the workspace ' +
+                '(use listTasks to discover available tasks). Common task types include: build tasks ' +
+                '(e.g., "npm: build"), test tasks (e.g., "npm: test"), and lint tasks (e.g., "npm: lint"). ' +
+                'If the task fails, the error output is included in the response. Tasks may take significant ' +
+                'time to complete (builds can take minutes). The operation can be cancelled by the user. ' +
+                'Do NOT use this for tasks you haven\'t discovered via listTasks first.',
             parameters: {
                 type: 'object',
                 properties: {
                     taskName: {
                         type: 'string',
-                        description: 'The name of the task to execute.'
+                        description: 'The exact name/label of the task to execute, as returned by listTasks.'
                     }
                 },
                 required: ['taskName']
             },
-            handler: async (argString: string, ctx: MutableChatRequestModel) => this.handleRunTask(argString, ctx?.response?.cancellationToken)
+            handler: async (argString: string, ctx?: ToolInvocationContext) => this.handleRunTask(argString, ctx?.cancellationToken)
 
         };
     }

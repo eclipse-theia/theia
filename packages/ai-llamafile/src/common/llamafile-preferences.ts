@@ -51,7 +51,8 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
                         description: nls.localize('theia/ai/llamaFile/prefs/port/description', 'The port to use to start the server.')
                     }
                 }
-            }
+            },
+            tags: ['experimental']
         }
     }
 };

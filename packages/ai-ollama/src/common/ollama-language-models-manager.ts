@@ -30,7 +30,7 @@ export interface OllamaModelDescription {
 
 export interface OllamaLanguageModelsManager {
     host: string | undefined;
-    setHost(host: string | undefined): void;
+    setHost(host: string | undefined): Promise<void>;
     createOrUpdateLanguageModels(...models: OllamaModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;
 }

@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { JSONExt, JSONValue } from '@lumino/coreutils';
+import { JSONValue } from '@lumino/coreutils';
 import { inject, injectable, postConstruct } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event, deepFreeze, unreachable } from '../../common';
 import { Deferred } from '../../common/promise-util';
@@ -31,7 +31,7 @@ import { PreferenceConfigurations } from './preference-configurations';
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
  * This means that the value from a more general scope will be used.
  */
-export interface PreferenceChange extends PreferenceProviderDataChange {
+export interface PreferenceChange extends Omit<PreferenceProviderDataChange, 'newValue' | 'oldValue'> {
     /**
      * Tests wether the given resource is affected by the preference change.
      * @param resourceUri the uri of the resource to test.
@@ -47,12 +47,6 @@ export class PreferenceChangeImpl implements PreferenceChange {
 
     get preferenceName(): string {
         return this.change.preferenceName;
-    }
-    get newValue(): JSONValue | undefined {
-        return this.change.newValue;
-    }
-    get oldValue(): JSONValue | undefined {
-        return this.change.oldValue;
     }
     get scope(): PreferenceScope {
         return this.change.scope;
@@ -538,14 +532,18 @@ export class PreferenceServiceImpl implements PreferenceService {
         if (inspection) {
             const scopesToChange = this.getScopesToChange(inspection, value);
             const isDeletion = value === undefined
-                || (scopesToChange.length === 1 && scopesToChange[0] === PreferenceScope.User && JSONExt.deepEqual(value, inspection.defaultValue));
+                || (
+                    scopesToChange.length === 1
+                    && scopesToChange[0] === PreferenceScope.User
+                    && PreferenceUtils.deepEqual(value, inspection.defaultValue)
+                );
             const effectiveValue = isDeletion ? undefined : value;
             await Promise.all(scopesToChange.map(scope => this.set(preferenceName, effectiveValue, scope, resourceUri)));
         }
     }
 
     protected getScopesToChange(inspection: PreferenceInspection<any>, intendedValue: any): PreferenceScope[] {
-        if (JSONExt.deepEqual(inspection.value, intendedValue)) {
+        if (PreferenceUtils.deepEqual(inspection.value, intendedValue)) {
             return [];
         }
 

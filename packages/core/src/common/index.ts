@@ -26,6 +26,7 @@ export * from './event';
 export * from './inversify-utils';
 export * from './listener';
 export * from './logger';
+export * from './logger-sanitizer';
 export * from './lsp-types';
 export * from './menu';
 export * from './message-rpc';

@@ -77,7 +77,7 @@ export class GitDiffWidget extends BaseWidget implements StatefulWidget {
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
         this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'scm.defaultViewMode') {
-                this.updateViewMode(e.newValue);
+                this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
             }
         }));
     }

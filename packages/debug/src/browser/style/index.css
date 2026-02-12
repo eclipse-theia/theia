@@ -69,14 +69,13 @@
   font-size: var(--theia-ui-font-size0);
   line-height: calc(var(--theia-private-horizontal-tab-height) / 2);
   border-radius: 2px;
+  margin-left: calc(var(--theia-ui-padding) / 2);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .theia-data-breakpoint .theia-access-type {
-    margin-left: var(--theia-ui-padding);
-}
-
-.theia-source-breakpoint > .theia-input {
-  min-height: auto;
+  margin-left: var(--theia-ui-padding);
 }
 
 .theia-debug-session .status,
@@ -187,6 +186,7 @@
 }
 
 .theia-debug-console-variable {
+  display: flex;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -212,6 +212,22 @@
   color: var(--theia-variable-name-color);
 }
 
+.theia-debug-console-variable .lazy-button {
+  margin-left: 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  align-self: center;
+  color: var(--theia-icon-foreground);
+}
+
+.theia-debug-console-variable .lazy-button:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-debug-console-variable .value {
+  margin-left: 6px;
+}
+
 .theia-TreeNode:not(:hover) .theia-debug-console-variable .action-label {
   visibility: hidden;
 }
@@ -232,6 +248,15 @@
 
 .theia-debug-watch-expression {
   display: flex;
+}
+
+.theia-debug-breakpoint-actions {
+  display: none;
+}
+
+.theia-source-breakpoint:hover .theia-debug-breakpoint-actions {
+  display: flex;
+  align-items: center;
 }
 
 /** Editor **/

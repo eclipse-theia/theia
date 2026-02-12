@@ -25,8 +25,27 @@ export class UntitledWorkspaceService {
     @inject(WorkspaceFileService)
     protected readonly workspaceFileService: WorkspaceFileService;
 
-    isUntitledWorkspace(candidate?: URI): boolean {
-        return !!candidate && this.workspaceFileService.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
+    /**
+     * Check if a URI is an untitled workspace.
+     * @param candidate The URI to check
+     * @param configDirUri Optional config directory URI. If provided, also verifies
+     *                     that the candidate is under the expected workspaces directory.
+     *                     This is the secure check and should be used when possible.
+     */
+    isUntitledWorkspace(candidate?: URI, configDirUri?: URI): boolean {
+        if (!candidate || !this.workspaceFileService.isWorkspaceFile(candidate)) {
+            return false;
+        }
+        if (!candidate.path.base.startsWith('Untitled')) {
+            return false;
+        }
+        // If configDirUri is provided, verify the candidate is in the expected location
+        if (configDirUri) {
+            const expectedParentDir = configDirUri.resolve('workspaces');
+            return expectedParentDir.isEqualOrParent(candidate);
+        }
+        // Without configDirUri, fall back to name-only check (less secure)
+        return true;
     }
 
     async getUntitledWorkspaceUri(configDirUri: URI, isAcceptable: (candidate: URI) => MaybePromise<boolean>, warnOnHits?: () => unknown): Promise<URI> {

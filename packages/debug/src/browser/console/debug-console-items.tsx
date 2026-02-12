@@ -16,12 +16,12 @@
 
 import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
-import { SingleTextInputDialog } from '@theia/core/lib/browser';
+import { codicon, SingleTextInputDialog } from '@theia/core/lib/browser';
 import { ConsoleItem, CompositeConsoleItem } from '@theia/console/lib/browser/console-session';
 import { DebugSession, formatMessage } from '../debug-session';
 import { Severity } from '@theia/core/lib/common/severity';
 import * as monaco from '@theia/monaco-editor-core';
-import { nls } from '@theia/core';
+import { generateUuid, nls } from '@theia/core';
 
 export type DebugSessionProvider = () => DebugSession | undefined;
 
@@ -34,17 +34,24 @@ export class ExpressionContainer implements CompositeConsoleItem {
         return this.sessionProvider();
     }
 
+    readonly id: string | number;
     protected variablesReference: number;
     protected namedVariables: number | undefined;
     protected indexedVariables: number | undefined;
+    protected presentationHint: DebugProtocol.VariablePresentationHint | undefined;
     protected readonly startOfVariables: number;
 
     constructor(options: ExpressionContainer.Options) {
         this.sessionProvider = options.session;
+        this.id = options.id ?? generateUuid();
         this.variablesReference = options.variablesReference || 0;
         this.namedVariables = options.namedVariables;
         this.indexedVariables = options.indexedVariables;
         this.startOfVariables = options.startOfVariables || 0;
+        this.presentationHint = options.presentationHint;
+        if (this.lazy) {
+            (this as CompositeConsoleItem).expandByDefault = () => !this.lazy && !this.session?.autoExpandLazyVariables;
+        }
     }
 
     render(): React.ReactNode {
@@ -56,7 +63,31 @@ export class ExpressionContainer implements CompositeConsoleItem {
     }
 
     get hasElements(): boolean {
-        return this.variablesReference !== undefined;
+        return !!this.variablesReference && !this.lazy;
+    }
+
+    get lazy(): boolean {
+        return !!this.presentationHint?.lazy;
+    }
+
+    async resolveLazy(): Promise<void> {
+        const { session, variablesReference, lazy } = this;
+        if (!session || !variablesReference || !lazy) {
+            return;
+        }
+        const response = await session.sendRequest('variables', { variablesReference });
+        const { variables } = response.body;
+        if (variables.length !== 1) {
+            return;
+        }
+        this.handleResolvedLazy(variables[0]);
+    }
+
+    protected handleResolvedLazy(resolved: DebugProtocol.Variable): void {
+        this.variablesReference = resolved.variablesReference;
+        this.namedVariables = resolved.namedVariables;
+        this.indexedVariables = resolved.indexedVariables;
+        this.presentationHint = resolved.presentationHint;
     }
 
     protected elements: Promise<ExpressionContainer[]> | undefined;
@@ -85,13 +116,15 @@ export class ExpressionContainer implements CompositeConsoleItem {
                     const start = this.startOfVariables + i * chunkSize;
                     const count = Math.min(chunkSize, this.indexedVariables - i * chunkSize);
                     const { variablesReference } = this;
+                    const name = `[${start}..${start + count - 1}]`;
                     result.push(new DebugVirtualVariable({
                         session: this.sessionProvider,
+                        id: `${this.id}:${name}`,
                         variablesReference,
                         namedVariables: 0,
                         indexedVariables: count,
                         startOfVariables: start,
-                        name: `[${start}..${start + count - 1}]`
+                        name
                     }));
                 }
                 return result;
@@ -105,14 +138,23 @@ export class ExpressionContainer implements CompositeConsoleItem {
     protected fetch(result: ConsoleItem[], filter: 'indexed', start: number, count?: number): Promise<void>;
     protected async fetch(result: ConsoleItem[], filter: 'indexed' | 'named', start?: number, count?: number): Promise<void> {
         try {
-            const { variablesReference } = this;
-            const response = await this.session!.sendRequest('variables', { variablesReference, filter, start, count });
-            const { variables } = response.body;
-            const names = new Set<string>();
-            for (const variable of variables) {
-                if (!names.has(variable.name)) {
-                    result.push(new DebugVariable(this.sessionProvider, variable, this));
-                    names.add(variable.name);
+            const { session } = this;
+            if (session) {
+                const { variablesReference } = this;
+                const response = await session.sendRequest('variables', { variablesReference, filter, start, count });
+                const { variables } = response.body;
+                const names = new Set<string>();
+                const debugVariables: DebugVariable[] = [];
+                for (const variable of variables) {
+                    if (!names.has(variable.name)) {
+                        const v = new DebugVariable(this.sessionProvider, variable, this);
+                        debugVariables.push(v);
+                        result.push(v);
+                        names.add(variable.name);
+                    }
+                }
+                if (session.autoExpandLazyVariables) {
+                    await Promise.all(debugVariables.map(v => v.lazy && v.resolveLazy()));
                 }
             }
         } catch (e) {
@@ -128,10 +170,12 @@ export class ExpressionContainer implements CompositeConsoleItem {
 export namespace ExpressionContainer {
     export interface Options {
         session: DebugSessionProvider,
+        id?: string | number,
         variablesReference?: number
         namedVariables?: number
         indexedVariables?: number
         startOfVariables?: number
+        presentationHint?: DebugProtocol.VariablePresentationHint
     }
 }
 
@@ -147,9 +191,11 @@ export class DebugVariable extends ExpressionContainer {
     ) {
         super({
             session,
+            id: `${parent.id}:${variable.name}`,
             variablesReference: variable.variablesReference,
             namedVariables: variable.namedVariables,
-            indexedVariables: variable.indexedVariables
+            indexedVariables: variable.indexedVariables,
+            presentationHint: variable.presentationHint
         });
     }
 
@@ -169,16 +215,19 @@ export class DebugVariable extends ExpressionContainer {
     }
 
     get readOnly(): boolean {
-        return this.variable.presentationHint?.attributes?.includes('readOnly') ?? false;
+        return this.presentationHint?.attributes?.includes('readOnly') || this.lazy;
     }
 
     override render(): React.ReactNode {
-        const { type, value, name } = this;
+        const { type, value, name, lazy } = this;
         return <div className={this.variableClassName}>
-            <span title={type || name} className='name' ref={this.setNameRef}>{name}{!!value && ': '}</span>
-            <span title={value} ref={this.setValueRef}>{value}</span>
+            <span title={type || name} className='name' ref={this.setNameRef}>{name}{(value || lazy) && ': '}</span>
+            {lazy && <span title={nls.localizeByDefault('Click to expand')} className={codicon('eye') + ' lazy-button'} onClick={this.handleLazyButtonClick} />}
+            <span title={value} className='value' ref={this.setValueRef}>{value}</span>
         </div>;
     }
+
+    private readonly handleLazyButtonClick = () => this.resolveLazy();
 
     protected get variableClassName(): string {
         const { type, value } = this;
@@ -193,6 +242,13 @@ export class DebugVariable extends ExpressionContainer {
             classNames.push('string');
         }
         return classNames.join(' ');
+    }
+
+    protected override handleResolvedLazy(resolved: DebugProtocol.Variable): void {
+        this._value = resolved.value;
+        this._type = resolved.type || this._type;
+        super.handleResolvedLazy(resolved);
+        this.session?.['onDidResolveLazyVariableEmitter'].fire(this);
     }
 
     get supportSetVariable(): boolean {
@@ -312,9 +368,10 @@ export class ExpressionItem extends ExpressionContainer {
 
     constructor(
         protected _expression: string,
-        session: DebugSessionProvider
+        session: DebugSessionProvider,
+        id?: string | number
     ) {
-        super({ session });
+        super({ session, id });
     }
 
     get expression(): string {
@@ -333,7 +390,7 @@ export class ExpressionItem extends ExpressionContainer {
         </div>;
     }
 
-    async evaluate(context: string = 'repl'): Promise<void> {
+    async evaluate(context: string = 'repl', resolveLazy = true): Promise<void> {
         const session = this.session;
         if (!session?.currentFrame) {
             this.setResult(undefined, ExpressionItem.notAvailable);
@@ -343,6 +400,9 @@ export class ExpressionItem extends ExpressionContainer {
         try {
             const body = await session.evaluate(this._expression, context);
             this.setResult(body);
+            if (this.lazy && resolveLazy) {
+                await this.resolveLazy();
+            }
         } catch (err) {
             this.setResult(undefined, err.message);
         }
@@ -356,6 +416,7 @@ export class ExpressionItem extends ExpressionContainer {
             this.variablesReference = body.variablesReference;
             this.namedVariables = body.namedVariables;
             this.indexedVariables = body.indexedVariables;
+            this.presentationHint = body.presentationHint;
             this.severity = Severity.Log;
         } else {
             this._value = error;
@@ -364,21 +425,29 @@ export class ExpressionItem extends ExpressionContainer {
             this.variablesReference = 0;
             this.namedVariables = undefined;
             this.indexedVariables = undefined;
+            this.presentationHint = undefined;
             this.severity = Severity.Error;
         }
         this.elements = undefined;
     }
 
+    protected override handleResolvedLazy(resolved: DebugProtocol.Variable): void {
+        this._value = resolved.value;
+        this._type = resolved.type || this._type;
+        super.handleResolvedLazy(resolved);
+    }
 }
 
 export class DebugScope extends ExpressionContainer {
 
     constructor(
         protected readonly raw: DebugProtocol.Scope,
-        session: DebugSessionProvider
+        session: DebugSessionProvider,
+        id: number
     ) {
         super({
             session,
+            id: `${raw.name}:${id}`,
             variablesReference: raw.variablesReference,
             namedVariables: raw.namedVariables,
             indexedVariables: raw.indexedVariables

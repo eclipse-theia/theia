@@ -148,7 +148,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.experimental.treeSitterTelemetry": {
         "type": "boolean",
         "default": false,
-        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `editor.experimental.preferTreeSitter` for specific languages will take precedence."),
+        "markdownDescription": nls.localizeByDefault('Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `#editor.experimental.preferTreeSitter#` for specific languages will take precedence.'),
         "tags": [
             "experimental",
             "onExP"
@@ -156,6 +156,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": PreferenceScope.Folder
 
     },
+    // @monaco-uplift GH-16401 - update to separate preferences instead of array
     "editor.experimental.preferTreeSitter": {
         "type": "array",
         "items": {
@@ -165,7 +166,8 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             ]
         },
         "default": [],
-        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
+        "markdownDescription":
+            nls.localize('theia/editor/editor.experimental.preferTreeSitter', "Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
         "tags": [
             "experimental"
         ],
@@ -831,7 +833,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
 
     },
     "editor.experimentalEditContextEnabled": {
-        "description": nls.localizeByDefault("Sets whether the new experimental edit context should be used instead of the text area."),
+        "description": nls.localizeByDefault('Controls whether the workbench window should be focused when the debugger breaks.'),
         "included": true,
         "type": "boolean",
         "default": false,
@@ -1327,7 +1329,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "type": "integer",
         "minimum": 0,
         "default": 300,
-        "description": nls.localizeByDefault("Controls the delay in milliseconds after which the hover is hidden. Requires `editor.hover.sticky` to be enabled."),
+        "description": nls.localizeByDefault('Controls the delay in milliseconds after which the hover is hidden. Requires `#editor.hover.sticky#` to be enabled.'),
         "scope": PreferenceScope.Folder
 
     },

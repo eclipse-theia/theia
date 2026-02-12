@@ -15,20 +15,22 @@
 // *****************************************************************************
 
 import {
+    createToolCallError,
+    ImageContent,
+    ImageMimeType,
     LanguageModel,
-    LanguageModelRequest,
     LanguageModelMessage,
+    LanguageModelRequest,
     LanguageModelResponse,
+    LanguageModelStatus,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageService,
     TokenUsageParams,
-    UserRequest,
-    ImageContent,
+    TokenUsageService,
     ToolCallResult,
-    ImageMimeType,
-    LanguageModelStatus
+    ToolInvocationContext,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -336,8 +338,11 @@ export class AnthropicModel implements LanguageModel {
                     const toolResult = await Promise.all(toolCalls.map(async tc => {
                         const tool = request.tools?.find(t => t.name === tc.name);
                         const argsObject = tc.args.length === 0 ? '{}' : tc.args;
+                        const handlerResult = tool
+                            ? await tool.handler(argsObject, ToolInvocationContext.create(tc.id))
+                            : createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
 
-                        return { name: tc.name, result: (await tool?.handler(argsObject)), id: tc.id, arguments: argsObject };
+                        return { name: tc.name, result: handlerResult, id: tc.id, arguments: argsObject };
 
                     }));
 

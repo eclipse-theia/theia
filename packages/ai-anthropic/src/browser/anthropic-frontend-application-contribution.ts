@@ -70,14 +70,14 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue as string);
+                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(event.newValue as string[]);
+                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(event.newValue as string);
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-                    this.handleCustomModelChanges(event.newValue as Partial<AnthropicModelDescription>[]);
+                    this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
                 }
             });
 

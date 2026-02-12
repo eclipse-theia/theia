@@ -70,7 +70,7 @@ export class PortForwardingWidget extends ReactWidget {
                 </thead>
                 <tbody>
                     {this.portForwardingService.forwardedPorts.map(port => (
-                        <tr key={`${port.address}:${port.localPort}` ?? 'editing'}>
+                        <tr key={port.address && port.localPort ? `${port.address}:${port.localPort}` : 'editing'}>
                             {this.renderPortColumn(port)}
                             {this.renderAddressColumn(port)}
                             <td></td>

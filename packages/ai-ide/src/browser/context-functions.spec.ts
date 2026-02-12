@@ -20,7 +20,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
 import { CancellationTokenSource } from '@theia/core';
-import { ChatContextManager, MutableChatModel, MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
+import { ChatContextManager, ChatToolContext, MutableChatModel, MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
 import { fail } from 'assert';
 import { AIVariableResolutionRequest, ResolvedAIContextVariable } from '@theia/ai-core';
 import { ContextFileValidationService, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
@@ -28,7 +28,7 @@ disableJSDOM();
 
 describe('Context Functions Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
-    let mockCtx: Partial<MutableChatRequestModel>;
+    let mockCtx: ChatToolContext;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -42,12 +42,9 @@ describe('Context Functions Cancellation Tests', () => {
         cancellationTokenSource = new CancellationTokenSource();
         const context: Partial<ChatContextManager> = {
             addVariables: () => { },
-            getVariables: () => mockCtx.context?.variables as ResolvedAIContextVariable[]
+            getVariables: () => mockCtx.request.context?.variables as ResolvedAIContextVariable[]
         };
-        mockCtx = {
-            response: {
-                cancellationToken: cancellationTokenSource.token
-            } as MutableChatResponseModel,
+        const mockRequest = {
             context: {
                 variables: [{
                     variable: { id: 'file1', name: 'File' },
@@ -58,6 +55,11 @@ describe('Context Functions Cancellation Tests', () => {
             session: {
                 context
             } as MutableChatModel
+        } as unknown as MutableChatRequestModel;
+        mockCtx = {
+            cancellationToken: cancellationTokenSource.token,
+            request: mockRequest,
+            response: {} as MutableChatResponseModel
         };
     });
 
@@ -103,7 +105,7 @@ describe('Context Functions Cancellation Tests', () => {
 });
 
 describe('AddFileToChatContext Validation Tests', () => {
-    let mockCtx: Partial<MutableChatRequestModel>;
+    let mockCtx: ChatToolContext;
     let addedFiles: AIVariableResolutionRequest[];
 
     before(() => {
@@ -121,16 +123,18 @@ describe('AddFileToChatContext Validation Tests', () => {
             },
             getVariables: () => []
         };
-        mockCtx = {
-            response: {
-                cancellationToken: new CancellationTokenSource().token
-            } as MutableChatResponseModel,
+        const mockRequest = {
             context: {
                 variables: []
             },
             session: {
                 context
             } as MutableChatModel
+        } as unknown as MutableChatRequestModel;
+        mockCtx = {
+            cancellationToken: new CancellationTokenSource().token,
+            request: mockRequest,
+            response: {} as MutableChatResponseModel
         };
     });
 

@@ -50,7 +50,7 @@ export class EditorPreviewManager extends EditorManager {
         });
 
         this.preferences.onPreferenceChanged(change => {
-            if (change.preferenceName === 'editor.enablePreview' && !change.newValue) {
+            if (change.preferenceName === 'editor.enablePreview' && !this.preferences['editor.enablePreview']) {
                 this.all.forEach((editor: EditorPreviewWidget) => {
                     if (editor.isPreview) {
                         editor.convertToNonPreview();

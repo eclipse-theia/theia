@@ -1,6 +1,7 @@
 {
   "ai-chat-ui.show-settings": "AI Ayarlarını Göster",
   "ai-chat:summarize-session-as-task-for-coder": "Kodlayıcı için Görev Olarak Oturumu Özetleme",
+  "ai.executePlanWithCoder": "Coder ile Mevcut Planı Yürüt",
   "ai.updateTaskContext": "Geçerli Görev Bağlamını Güncelle",
   "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
   "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
@@ -13,6 +14,7 @@
   "aiHistory:toggleRenderNewlines": "Yapay Zeka Geçmişi: Yeni satırları yorumlama",
   "debug.breakpoint.editCondition": "Düzenleme Durumu...",
   "debug.breakpoint.removeSelected": "Seçili Kesme Noktalarını Kaldır",
+  "debug.breakpoint.toggleEnabled": "Kesme Noktalarını Etkinleştir",
   "notebook.cell.changeToCode": "Hücreyi Kod Olarak Değiştir",
   "notebook.cell.changeToMarkdown": "Hücreyi Markdown Olarak Değiştirme",
   "notebook.cell.insertMarkdownCellAbove": "Markdown Hücresini Yukarıya Ekleme",
@@ -32,8 +34,7 @@
         },
         "languageModelRequirements": {
           "identifier": {
-            "mdDescription": "Kullanılacak dil modelinin tanımlayıcısı.",
-            "title": "Tanımlama"
+            "mdDescription": "Kullanılacak dil modelinin tanımlayıcısı."
           },
           "mdDescription": "Bu aracı için kullanılan dil modellerini belirtir.",
           "purpose": {
@@ -58,7 +59,15 @@
         }
       },
       "chat": {
+        "agent": {
+          "architect": "Mimar",
+          "coder": "kodlayıcı",
+          "universal": "Universal"
+        },
         "applySuggestion": "Öneri uygulayın",
+        "bypassModelRequirement": {
+          "description": "Dil modeli gereksinimi kontrolünü atla. Theia dil modellerini gerektirmeyen harici ajanlar (ör. Claude Code) kullanıyorsanız bunu etkinleştirin."
+        },
         "changeSetDefaultTitle": "Önerilen Değişiklikler",
         "changeSetFileDiffUriLabel": "Yapay zeka değişiklikleri: {0}",
         "chatAgentsVariable": {
@@ -116,6 +125,19 @@
         },
         "revertSuggestion": "Öneriyi geri al",
         "selectImageFile": "Bir görüntü dosyası seçin",
+        "sessionStorage": {
+          "description": "Sohbet oturumlarının nerede saklanacağını yapılandırın.",
+          "globalPath": "Küresel Yol",
+          "pathNotUsedForScope": "{0} depolama kapsamı ile kullanılmaz.",
+          "pathRequired": "Yol boş olamaz",
+          "pathSettings": "Yol Ayarları",
+          "resetToDefault": "Varsayılana sıfırla",
+          "scope": {
+            "global": "Sohbet oturumlarını genel yapılandırma klasöründe saklayın.",
+            "workspace": "Sohbet oturumlarını çalışma alanı klasöründe saklayın."
+          },
+          "workspacePath": "Çalışma Alanı Yolu"
+        },
         "taskContextService": {
           "summarizeProgressMessage": "Özetle: {0}",
           "updatingProgressMessage": "Güncelleniyor: {0}"
@@ -141,19 +163,17 @@
         "aiDisabled": "Yapay zeka özellikleri devre dışı",
         "applyAll": "Tümünü Uygula",
         "applyAllTitle": "Bekleyen tüm değişiklikleri uygulayın",
+        "askQuestion": "Soru sor",
         "attachToContext": "Öğeleri bağlama ekleme",
         "cancel": "İptal (Esc)",
         "chat-view-tree-widget": {
           "ai": "YAPAY ZEKA",
-          "aiConfigurationView": "AI Yapılandırma Görünümü",
           "aiFeatureHeader": "🚀 Yapay Zeka Özellikleri Mevcut (Alfa Sürümü)!",
-          "aiFeaturesEnable": "Ai-özellikleri: Etkinleştir",
-          "aiHistoryView": "AI Geçmiş Görünümü",
           "featuresDisabled": "Şu anda tüm Yapay Zeka Özellikleri devre dışıdır!",
+          "generating": "Oluşturma",
           "howToEnable": "Yapay Zeka Özellikleri Nasıl Etkinleştirilir?",
           "noRenderer": "Hata: Oluşturucu bulunamadı",
           "scrollToBottom": "Son mesaja atla",
-          "settingsMenu": "ayarlar menüsü",
           "waitingForInput": "Girdi için bekliyorum",
           "you": "Sen"
         },
@@ -163,9 +183,12 @@
           "nextPrompt": "Sonraki İstem",
           "previousPrompt": "Önceki İstem"
         },
+        "chatInputAriaLabel": "Mesajınızı buraya yazın",
+        "chatResponses": "Sohbet yanıtları",
         "code-part-renderer": {
           "generatedCode": "Oluşturulan Kod"
         },
+        "collapseChangeSet": "Değişiklik Setini Daralt",
         "command-part-renderer": {
           "commandNotExecutable": "Komut \"{0}\" kimliğine sahiptir ancak Sohbet penceresinden çalıştırılamaz."
         },
@@ -181,7 +204,6 @@
           "starting": "Başlangıç delegasyonu...",
           "status": {
             "canceled": "iptal edildi",
-            "completed": "tamamlandı",
             "error": "hata",
             "generating": "üretiyor.",
             "starting": "başlıyoruz."
@@ -189,20 +211,18 @@
         },
         "deleteChangeSet": "Değişiklik Setini Sil",
         "editRequest": "Düzenle",
+        "edited": "düzenlenmiş",
+        "editedTooltipHint": "Bu komut varyantı düzenlenmiştir. AI Yapılandırma görünümünde sıfırlayabilirsiniz.",
         "enterChatName": "Sohbet adını girin",
         "errorChatInvocation": "Sohbet hizmeti çağrısı sırasında bir hata oluştu.",
+        "expandChangeSet": "Değişiklik Setini Genişlet",
         "failedToDeleteSession": "Sohbet oturumu silinemedi",
         "failedToLoadChats": "Sohbet oturumları yüklenemedi",
         "failedToRestoreSession": "Sohbet oturumu geri yüklenemedi",
         "failedToRetry": "Yeniden deneme başarısız mesajı",
+        "focusInput": "Odak Sohbet Girişi",
+        "focusResponse": "Odak Sohbet Yanıtı",
         "noChatAgentsAvailable": "Sohbet temsilcileri mevcut değil.",
-        "node": {
-          "toolbar": {
-            "cancel": "İptal",
-            "edit": "Düzenle",
-            "retry": "Yeniden Dene"
-          }
-        },
         "openDiff": "Açık Fark",
         "openOriginalFile": "Orijinal Dosyayı Aç",
         "performThisTask": "Bu görevi gerçekleştirin.",
@@ -210,6 +230,7 @@
         "removeChat": "Sohbeti Kaldır",
         "renameChat": "Sohbeti Yeniden Adlandır",
         "requestNotFoundForRetry": "Yeniden deneme için istek bulunamadı",
+        "responseFrom": "{0}'ın yanıtı",
         "selectAgentQuickPickPlaceholder": "Yeni oturum için bir temsilci seçin",
         "selectChat": "Sohbet seçin",
         "selectContextVariableQuickPickPlaceholder": "Mesaja eklenecek bir bağlam değişkeni seçin",
@@ -232,38 +253,36 @@
           "rejected": "Yürütme iptal edildi"
         },
         "toolconfirmation": {
-          "allow": "İzin ver",
-          "allow-forever": "Her Zaman İzin Ver",
-          "allow-forever-tooltip": "Bu araca her zaman izin verin",
           "allow-options-dropdown-tooltip": "Daha Fazla İzin Verme Seçeneği",
           "allow-session": "Bu Sohbete İzin Verin",
-          "allow-session-tooltip": "Bu sohbet oturumu için bu aracın tüm çağrılarına izin ver",
-          "allow-tooltip": "Bu aracın bir kez çağrılmasına izin verin",
           "allowed": "Araç yürütmeye izin verildi",
+          "alwaysAllowConfirm": "Anlıyorum, otomatik onayı etkinleştir",
+          "alwaysAllowTitle": "\"{0}\" için Otomatik Onay'ı etkinleştirin?",
+          "canceled": "Araç çalıştırma iptal edildi",
           "denied": "Araç yürütme reddedildi",
-          "deny": "Reddet",
           "deny-forever": "Her Zaman Reddet",
-          "deny-forever-tooltip": "Bu aracı her zaman reddedin",
           "deny-options-dropdown-tooltip": "Daha Fazla Reddetme Seçeneği",
+          "deny-reason-placeholder": "Reddedilme nedenini girin...",
           "deny-session": "Bu Sohbet için Reddet",
-          "deny-session-tooltip": "Bu sohbet oturumu için bu aracın tüm çağrılarını reddet",
-          "deny-tooltip": "Bu araç çağrısını bir kez reddedin",
-          "header": "Araç Yürütmeyi Onayla",
-          "tool": "Alet"
+          "deny-with-reason": "Sebep göstererek reddetmek...",
+          "executionDenied": "Araç yürütme reddedildi",
+          "header": "Araç Yürütmeyi Onayla"
         },
         "unableToSummarizeCurrentSession": "Geçerli oturum özetlenemiyor. Lütfen özet aracısının devre dışı bırakılmadığını doğrulayın.",
         "unknown-part-renderer": {
           "contentNotRestoreable": "Bu içerik ('{0}' türü) tam olarak geri yüklenemedi. Artık mevcut olmayan bir uzantıya ait olabilir."
         },
-        "unpinAgent": "Unpin Ajan"
+        "unpinAgent": "Unpin Ajan",
+        "variantTooltip": "Hızlı varyant: {0}",
+        "yourMessage": "Mesajınız"
       },
       "claude-code": {
         "agentDescription": "Anthropic'in kodlama ajanı",
+        "askBeforeEdit": "Düzenlemeden önce sorun",
         "changeSetTitle": "Claude Koduna Göre Değişiklikler",
         "clearCommand": {
           "description": "Yeni bir oturum oluşturun"
         },
-        "commandDetail": "Claude komuta ediyor: {0}",
         "compactCommand": {
           "description": "İsteğe bağlı odaklanma talimatları ile kompakt konuşma"
         },
@@ -272,10 +291,10 @@
           "description": "Açık Claude Kodu Yapılandırması"
         },
         "currentDirectory": "geçerli dizin",
-        "deny": "Reddet",
         "differentAgentRequestWarning": "Önceki sohbet isteği farklı bir temsilci tarafından ele alındı. Claude Code bu diğer mesajları görmez.",
         "directory": "Rehber",
         "domain": "Etki Alanı",
+        "editAutomatically": "Otomatik olarak düzenle",
         "editNumber": "Düzenle {0}",
         "editing": "Düzenleme",
         "editsCount": "{0} DÜZENLEMELER",
@@ -341,6 +360,7 @@
         "optionsCount": "{0} seçenekler",
         "partial": "Kısmi",
         "pattern": "Desen",
+        "plan": "Plan modu",
         "project": "proje",
         "projectRoot": "proje kökü",
         "readMode": "Okuma Modu",
@@ -367,12 +387,26 @@
         },
         "toolApprovalRequest": "Claude Code \"{0}\" aracını kullanmak istiyor. Buna izin vermek istiyor musunuz?",
         "totalEdits": "Toplam Düzenleme",
-        "url": "URL",
         "webFetch": "Web Getirme",
         "writing": "Yazma"
       },
       "code-completion": {
         "progressText": "Yapay zeka kod tamamlama hesaplanıyor..."
+      },
+      "codex": {
+        "agentDescription": "Codex tarafından desteklenen OpenAI'nin kodlama asistanı",
+        "completedCount": "{0}/{1} tamamlandı",
+        "exitCode": "Çıkış kodu: {0}",
+        "fileChangeFailed": "Codex aşağıdaki değişiklikleri uygulamada başarısız oldu: {0}",
+        "fileChangeFailedGeneric": "Codex dosya değişikliklerini uygulayamadı.",
+        "itemCount": "{0} ürünler",
+        "noItems": "Hiçbir öğe yok",
+        "oneItem": "1 ürün",
+        "running": "Koşuyor...",
+        "searched": "Aranan",
+        "searching": "Arama",
+        "todoList": "Tüm Liste",
+        "webSearch": "Web Arama"
       },
       "completion": {
         "agent": {
@@ -428,19 +462,59 @@
           "description": "Geçerli imleç konumundan sonraki kod. Yalnızca kod tamamlama bağlamında kullanılabilir."
         }
       },
+      "configuration": {
+        "selectItem": "Lütfen bir öğe seçin."
+      },
+      "copilot": {
+        "auth": {
+          "aiConfiguration": "AI Yapılandırması",
+          "authorize": "Yetki verdim",
+          "copied": "Kopyalandı!",
+          "copyCode": "Kodu kopyala",
+          "expired": "Yetki süresi doldu veya reddedildi. Lütfen tekrar deneyin.",
+          "hint": "Kodu girip yetkilendirdikten sonra, aşağıdaki \"Yetkilendirdim\" seçeneğine tıklayın.",
+          "initiating": "Kimlik doğrulama başlatılıyor...",
+          "instructions": "Theia'nın GitHub Copilot'u kullanmasına izin vermek için aşağıdaki URL'yi ziyaret edin ve kodu girin:",
+          "openGitHub": "GitHub'ı aç",
+          "success": "GitHub Copilot'a başarıyla giriş yaptınız!",
+          "successHint": "GitHub hesabınız Copilot'a erişime sahipse, artık Copilot dil modellerini ",
+          "title": "GitHub Copilot'a giriş yapın",
+          "tos": "Giriş yaparak, aşağıdakileri kabul etmiş olursunuz: ",
+          "tosLink": "GitHub Hizmet Şartları",
+          "verifying": "Yetki doğrulama..."
+        },
+        "category": "Copilot",
+        "commands": {
+          "signIn": "GitHub Copilot'a giriş yapın",
+          "signOut": "GitHub Copilot'tan çıkış yapın"
+        },
+        "enterpriseUrl": {
+          "mdDescription": "Copilot API için GitHub Enterprise etki alanı (ör. `github.mycompany.com`). GitHub.com için boş bırakın."
+        },
+        "models": {
+          "description": "Kullanılacak GitHub Copilot modelleri. Kullanılabilir modeller, Copilot aboneliğinize bağlıdır."
+        },
+        "statusBar": {
+          "signedIn": "{0} olarak GitHub Copilot'a giriş yaptınız. Çıkmak için tıklayın.",
+          "signedOut": "GitHub Copilot'a giriş yapmadınız. Giriş yapmak için tıklayın."
+        }
+      },
       "core": {
         "agentConfiguration": {
+          "actions": "Eylemler",
           "addCustomAgent": "Özel Temsilci Ekleme",
-          "description": "Açıklama:",
           "enableAgent": "Temsilciyi Etkinleştir",
           "label": "Ajanlar",
-          "loading": "Yükleniyor...",
-          "name": "İsim:",
-          "noDefaultTemplate": "Varsayılan şablon mevcut değil",
+          "llmRequirements": "LLM Gereksinimleri",
           "notUsedInPrompt": "Bilgi isteminde kullanılmaz",
           "promptTemplates": "İstem Şablonları",
           "selectAgentMessage": "Lütfen önce bir Acente seçin!",
-          "undeclared": "Beyan edilmemiş"
+          "templateName": "Şablon",
+          "undeclared": "Beyan edilmemiş",
+          "usedAgentSpecificVariables": "Kullanılan Ajan Özel Değişkenleri",
+          "usedFunctions": "Kullanılan İşlevler",
+          "usedGlobalVariables": "Kullanılan Global Değişkenler",
+          "variant": "Varyant"
         },
         "agentsVariable": {
           "description": "Sistemde bulunan aracıların listesini döndürür"
@@ -513,6 +587,7 @@
           "noAgents": "Hiçbir temsilci bu takma adı kullanmaz.",
           "noModelReadyTooltip": "Hazır model yok",
           "noResolvedModel": "Bu takma ad için hazır model yok.",
+          "priorityList": "Öncelik Listesi",
           "selectAlias": "Lütfen bir Model Takma Adı seçin.",
           "selectedModelId": "Seçilen Model",
           "unavailableModel": "Seçilen model artık mevcut değil"
@@ -535,14 +610,10 @@
           "title": "✨ Yapay Zeka Özellikleri [Alfa]"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationLabel": "Aktif",
           "activeCustomizationTitle": "Aktif özelleştirme",
-          "builtInLabel": "Yerleşik",
-          "cancelButton": "İptal",
           "createCustomizationTitle": "Özelleştirme Oluştur",
           "customization": "özelleşti̇rme",
           "customizationLabel": "Özelleştirme",
-          "defaultVariantLabel": "Varsayılan",
           "defaultVariantTitle": "Varsayılan varyant",
           "deleteCustomizationTitle": "Özelleştirmeyi Sil",
           "editTemplateTitle": "Şablonu düzenle",
@@ -552,7 +623,6 @@
           "otherPromptFragmentsHeader": "Diğer İstem Parçaları",
           "promptTemplateText": "İstem Şablonu Metni",
           "promptVariantsHeader": "İstem Varyant Setleri",
-          "removeButton": "Kaldırmak",
           "removeCustomizationDialogMsg": "\"{1}\" istem parçası için {0} özelleştirmesini kaldırmak istediğinizden emin misiniz?",
           "removeCustomizationDialogTitle": "Özelleştirmeyi Kaldır",
           "removeCustomizationWithDescDialogMsg": "\"{1}\" ({2}) istem parçası için {0} özelleştirmesini kaldırmak istediğinizden emin misiniz?",
@@ -561,7 +631,6 @@
           "resetAllCustomizationsDialogTitle": "Tüm Özelleştirmeleri Sıfırla",
           "resetAllCustomizationsTitle": "Tüm özelleştirmeleri sıfırla",
           "resetAllPromptFragments": "Tüm istem parçalarını sıfırla",
-          "resetButton": "Sıfırla",
           "resetToBuiltInDialogMsg": "\"{0}\" istem parçasını yerleşik sürümüne sıfırlamak istediğinizden emin misiniz? Bu, tüm özelleştirmeleri kaldıracaktır.",
           "resetToBuiltInDialogTitle": "Yerleşik'e Sıfırla",
           "resetToBuiltInTitle": "Bu yerleşik değere sıfırlayın",
@@ -619,11 +688,14 @@
           },
           "title": "Özel İstek Ayarları"
         },
+        "skillsVariable": {
+          "description": "AI ajanları tarafından kullanılabilecek mevcut becerilerin listesini döndürür."
+        },
         "taskContextSummary": {
           "description": "Oturum bağlamında bulunan tüm görev bağlamı öğelerini çözer."
         },
         "templateSettings": {
-          "selectVariant": "Varyantı seçin:",
+          "edited": "düzenlenmiş",
           "unavailableVariant": "Seçilen varyant artık mevcut değil"
         },
         "todayVariable": {
@@ -654,8 +726,7 @@
           "title": "Yapay zeka ile açıklayın"
         },
         "fixWithAI": {
-          "prompt": "Bu hatayı düzeltmek için yardım",
-          "title": "Yapay zeka ile düzeltme"
+          "prompt": "Bu hatayı düzeltmek için yardım"
         }
       },
       "google": {
@@ -681,7 +752,6 @@
         },
         "exchange-card": {
           "agentId": "Ajan",
-          "exchangeId": "KIMLIK",
           "timestamp": "Başladı"
         },
         "open-history-tooltip": "Yapay zeka tarihini açın...",
@@ -723,7 +793,7 @@
           "mdDescription": "Hugging Face Hesabınız için bir API Anahtarı girin. **Lütfen dikkat:** Bu tercihi kullanarak Hugging Face API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `HUGGINGFACE_API_KEY` ortam değişkenini kullanın."
         },
         "models": {
-          "description": "Kullanılacak Sarılan Yüz modelleri"
+          "mdDescription": "Kullanılacak Hugging Face modelleri. **Lütfen dikkat:** Şu anda yalnızca sohbet tamamlama API'sini destekleyen modeller (`*-Instruct` gibi talimat ayarlı modeller) desteklenmektedir. Bazı modeller için Hugging Face web sitesinde lisans koşullarını kabul etmeniz gerekebilir."
         }
       },
       "ide": {
@@ -734,26 +804,50 @@
             "openExistingFile": "Mevcut dosyayı aç",
             "placeholder": "Özel bir aracı dosyasının nerede oluşturulacağını veya açılacağını seçin",
             "title": "Özel Temsilciler Dosyası için Konum Seçin"
-          }
+          },
+          "noDescription": "Açıklama mevcut değil"
         },
         "app-tester": {
+          "errorCheckingDevToolsServerStatus": "DevTools MCP sunucu durumunu kontrol ederken hata oluştu: {0}",
           "errorCheckingPlaywrightServerStatus": "Playwright MCP sunucu durumu kontrol edilirken hata oluştu: {0}",
+          "startChromeDevToolsMcpServers": {
+            "canceled": "Lütfen Chrome DevTools MCP sunucusunu kurun.",
+            "error": "Chrome DevTools MCP sunucusu başlatılamadı: {0}",
+            "progress": "Chrome DevTools MCP sunucusunu başlatıyor.",
+            "question": "Chrome DevTools MCP sunucusu çalışmıyor. Şimdi başlatmak ister misiniz? Bu, Chrome DevTools MCP sunucusunu yükleyebilir."
+          },
+          "startMcpServers": {
+            "no": "Hayır, iptal et",
+            "yes": "Evet, sunucuları başlatın."
+          },
           "startPlaywrightServers": {
             "canceled": "Lütfen MCP sunucularını kurun.",
             "error": "Playwright MCP sunucusu başlatılamadı: {0}",
-            "no": "Hayır, iptal et",
             "progress": "Playwright MCP sunucularını başlatma.",
-            "question": "Playwright MCP sunucuları çalışmıyor. Onları şimdi başlatmak ister misiniz? Bu, Playwright MCP sunucularını yükleyebilir.",
-            "yes": "Evet, sunucuları başlatın"
+            "question": "Playwright MCP sunucuları çalışmıyor. Onları şimdi başlatmak ister misiniz? Bu, Playwright MCP sunucularını yükleyebilir."
           }
         },
         "architectAgent": {
+          "mode": {
+            "default": "Varsayılan Mod",
+            "plan": "Modaya uygun plan",
+            "simple": "Basit Mod"
+          },
           "suggestion": {
+            "executePlanWithCoder": "Coder ile \"{0}\" komutunu çalıştırın.",
             "summarizeSessionAsTaskForCoder": "Bu oturumu Kodlayıcı için bir görev olarak özetleyin",
             "updateTaskContext": "Geçerli görev bağlamını güncelle"
           }
         },
+        "bypassHint": "Claude Code gibi bazı ajanlar Theia Dil Modellerine ihtiyaç duymazlar.",
+        "chatDisabledMessage": {
+          "featuresTitle": "Şu anda desteklenen görünümler ve özellikler:"
+        },
         "coderAgent": {
+          "mode": {
+            "agentNext": "Ajan Modu (Sonraki)",
+            "edit": "Düzenleme Modu"
+          },
           "suggestion": {
             "fixProblems": {
               "content": "Geçerli dosyada [Sorunları düzeltin]({0}).",
@@ -776,6 +870,15 @@
             "commandIds": {
               "description": "Theia'daki mevcut komutların listesi."
             }
+          }
+        },
+        "configureAgent": {
+          "header": "Varsayılan aracıyı yapılandırın"
+        },
+        "continueAnyway": "Yine de devam et",
+        "createSkillAgent": {
+          "mode": {
+            "edit": "Varsayılan Mod"
           }
         },
         "enableAI": {
@@ -801,6 +904,12 @@
           "description": "Geçerli GitHub deposunun adı (örneğin, \"eclipse-theia/theia\")"
         },
         "model-selection-description": "AI Yapılandırma Görünümü]({0})'nde her bir YZ aracısı tarafından hangi Büyük Dil Modellerinin (LLM'ler) kullanılacağını seçin.",
+        "moreAgentsAvailable": {
+          "header": "Daha fazla ajan mevcuttur"
+        },
+        "noRecommendedAgents": "Önerilen ajanlar mevcut değildir.",
+        "openSettings": "AI Ayarlarını Aç",
+        "or": "veya",
         "orchestrator": {
           "error": {
             "noAgents": "İstekle ilgilenecek sohbet temsilcisi yok. Lütfen yapılandırmanızın etkin olup olmadığını kontrol edin."
@@ -811,12 +920,24 @@
           }
         },
         "prompt-template-description": "AI Yapılandırma Görünümü]({0})'nde AI temsilcileri için istem varyantlarını seçin ve istem şablonlarını özelleştirin.",
+        "recommendedAgents": "Önerilen ajanlar:",
+        "skillsConfiguration": {
+          "label": "Beceri",
+          "location": {
+            "label": "Konum"
+          }
+        },
         "toolsConfiguration": {
+          "confirmAlwaysAllow": {
+            "confirm": "Anlıyorum, otomatik onayı etkinleştir",
+            "title": "\"{0}\" için Otomatik Onay'ı etkinleştirin?"
+          },
+          "confirmationMode": {
+            "label": "Onay Modu"
+          },
           "default": {
             "label": "Varsayılan Araç Onay Modu:"
           },
-          "label": "Araçlar",
-          "loading": "Araçlar yükleniyor...",
           "resetAll": "Tümünü Sıfırla",
           "resetAllConfirmDialog": {
             "msg": "Tüm araç onay modlarını varsayılana sıfırlamak istediğinizden emin misiniz? Bu, tüm özel ayarları kaldıracaktır.",
@@ -824,19 +945,14 @@
           },
           "resetAllTooltip": "Tüm araçları varsayılana sıfırla",
           "toolOptions": {
-            "alwaysAllow": {
-              "label": "Her Zaman İzin Ver"
-            },
             "confirm": {
               "label": "Onaylayın"
             }
-          },
-          "tools": {
-            "label": "Araçlar"
           }
         },
         "variableConfiguration": {
-          "agents": "Ajanlar",
+          "selectVariable": "Lütfen bir Değişken seçin.",
+          "usedByAgents": "Acenteler tarafından kullanılır",
           "variableArgs": "Değişken Bağımsız Değişkenler"
         }
       },
@@ -921,8 +1037,8 @@
       "mcpConfiguration": {
         "arguments": "Argümanlar: ",
         "autostart": "Otomatik başlatma: ",
-        "command": "Emredin: ",
         "connectServer": "Connnect",
+        "connectingServer": "Bağlanıyor...",
         "copiedAllList": "Tüm araçları panoya kopyalama (tüm araçların listesi)",
         "copiedAllSingle": "Tüm araçları panoya kopyaladı (tüm araçlarla birlikte tek istem parçası)",
         "copiedForPromptTemplate": "Bilgi istemi şablonu için tüm araçları panoya kopyaladı (tüm araçları içeren tek bilgi istemi parçası)",
@@ -930,20 +1046,13 @@
         "copyAllSingle": "Sohbet için tümünü kopyala (tüm araçlarla tek istem parçası)",
         "copyForPrompt": "Kopyalama aracı (sohbet veya istem şablonu için)",
         "copyForPromptTemplate": "Bilgi istemi şablonu için tümünü kopyala (tüm araçlarla tek bilgi istemi parçası)",
-        "disabled": "Engelli",
-        "disconnectServer": "Bağlantıyı Kes",
-        "enabled": "Etkin",
         "environmentVariables": "Ortam Değişkenleri: ",
         "headers": "Başlıklar: ",
         "noServers": "Yapılandırılmış MCP sunucusu yok",
         "serverAuthToken": "Kimlik Doğrulama Simgesi: ",
         "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı: ",
-        "serverConfigurations": "MCP Sunucu Yapılandırmaları",
         "serverUrl": "Sunucu URL'si: ",
-        "startServer": "Sunucu Başlat",
-        "stopServer": "Sunucuyu Durdur",
-        "tools": "Aletler: ",
-        "widgetLabel": "MCP Sunucuları"
+        "tools": "Aletler: "
       },
       "openai": {
         "apiKey": {
@@ -1068,13 +1177,11 @@
         "label": "Jeton Kullanımı",
         "lastUsed": "Son Kullanılan",
         "model": "Model",
-        "never": "Asla",
         "noData": "Henüz token kullanım verisi mevcut değil.",
         "note": "Token kullanımı uygulamanın başlangıcından itibaren izlenir ve kalıcı değildir.",
         "outputTokens": "Çıktı Belirteçleri",
         "readCachedInputTokens": "Önbellekten Okunan Giriş Belirteçleri",
         "readCachedInputTokensTooltip": "Ek olarak 'Input Token'a kadar izlenir. Genellikle önbelleğe alınmamasından çok daha ucuzdur. Genellikle hız sınırlarına dahil değildir.",
-        "title": "AI Model Token Kullanımı",
         "total": "Toplam",
         "totalTokens": "Toplam jeton",
         "totalTokensTooltip": "'Girdi Belirteçleri' + 'Çıktı Belirteçleri'"
@@ -1097,9 +1204,6 @@
           "modelId": {
             "title": "Model Kimliği"
           },
-          "provider": {
-            "title": "Sağlayıcı"
-          },
           "supportsStructuredOutput": {
             "title": "Modelin yapılandırılmış çıktıyı destekleyip desteklemediğini belirtir. Varsayılan olarak `true`."
           },
@@ -1114,9 +1218,6 @@
           },
           "model": {
             "title": "Model Adı"
-          },
-          "provider": {
-            "title": "Sağlayıcı"
           }
         },
         "openaiApiKey": {
@@ -1154,6 +1255,7 @@
       "scroll-lock": "Kaydırmayı Kilitle",
       "scroll-unlock": "Parşömen Kilidini Aç",
       "session-settings": "Oturum Ayarlarını Ayarlama",
+      "showChats": "Sohbetleri göster...",
       "summarize-current-session": "Mevcut Oturumu Özetleyin"
     },
     "ai-claude-code": {
@@ -1170,7 +1272,45 @@
       "sendToChat": "Yapay Zeka Sohbetine Gönder"
     },
     "ai-ide": {
-      "open-agent-settings-tooltip": "Ajan ayarlarını açın..."
+      "addressGhReviewCommand": {
+        "argumentHint": "<pr-number/>",
+        "description": "GitHub çekme isteğindeki adres inceleme yorumları"
+      },
+      "fixGhTicketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "GitHub biletini analiz edin ve çözümü uygulayın"
+      },
+      "open-agent-settings-tooltip": "Ajan ayarlarını açın...",
+      "rememberCommand": {
+        "argumentHint": "[konu ipucu]",
+        "description": "Konuşmalardan konuları çıkarın ve proje bilgilerini güncelleyin"
+      },
+      "ticketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "GitHub biletini analiz edin ve uygulama planı oluşturun"
+      },
+      "todoTool": {
+        "noTasks": "Görev yok"
+      },
+      "withAppTesterCommand": {
+        "description": "Testleri AppTester aracısına devretme (aracı modu gerektirir)"
+      }
+    },
+    "ai-mcp": {
+      "blockedServersLabel": "MCP Sunucuları (otomatik başlatma engellendi)"
+    },
+    "ai-terminal": {
+      "cancelExecution": "Komutun yürütülmesini iptal et",
+      "canceling": "İptal ediliyor...",
+      "confirmExecution": "Shell Komutunu Onayla",
+      "denialReason": "Sebep",
+      "executionCanceled": "İptal edildi",
+      "executionDenied": "Reddedildi",
+      "executionDeniedWithReason": "Sebep gösterilerek reddedildi",
+      "noOutput": "Çıktı yok",
+      "partialOutput": "Kısmi Çıktı",
+      "timeout": "Zaman aşımı",
+      "workingDirectory": "Çalışma dizini"
     },
     "callhierarchy": {
       "noCallers": "Herhangi bir arayan tespit edilmedi.",
@@ -1285,7 +1425,9 @@
       "searchbox": {
         "close": "Kapat (Kaçış)",
         "next": "Sonraki (Aşağı)",
-        "previous": "Önceki (Yukarı)"
+        "previous": "Önceki (Yukarı)",
+        "showAll": "Tüm öğeleri göster",
+        "showOnlyMatching": "Yalnızca eşleşen öğeleri göster"
       },
       "secondaryWindow": {
         "alwaysOnTop": "Etkinleştirildiğinde, ikincil pencere farklı uygulamalarınkiler de dahil olmak üzere diğer tüm pencerelerin üzerinde kalır.",
@@ -1295,9 +1437,7 @@
         "originalSize": "Çıkarılan widget'ın konumu ve boyutu orijinal widget ile aynı olacaktır."
       },
       "severity": {
-        "errors": "Hatalar",
-        "log": "Günlük",
-        "warnings": "Uyarılar"
+        "log": "Günlük"
       },
       "silentNotifications": "Bildirim açılır pencerelerinin bastırılıp bastırılmayacağını denetler.",
       "tabDefaultSize": "Sekmeler için varsayılan boyutu belirtir.",
@@ -1310,7 +1450,8 @@
           "end": "Kapat simgesini etiketin sonuna yerleştirin. Soldan sağa dillerde bu, sekmenin sağ tarafıdır.",
           "start": "Kapat simgesini etiketin başlangıcına yerleştirin. Soldan sağa dillerde bu, sekmenin sol tarafıdır."
         }
-      }
+      },
+      "window.menuBarVisibility": "Menü, kenar çubuğunda kompakt bir düğme olarak görüntülenir. Bu değer,  {0}olduğunda yok {1}sayılır."
     },
     "debug": {
       "TheiaIDE": "Theia IDE",
@@ -1322,6 +1463,10 @@
       "conditionalBreakpointsNotSupported": "Koşullu kesme noktaları bu hata ayıklama türü tarafından desteklenmez",
       "confirmRunToShiftedPosition_msg": "Hedef konum Ln {0}, Col {1} konumuna kaydırılacaktır. Yine de çalıştıralım mı?",
       "confirmRunToShiftedPosition_title": "Geçerli iş parçacığı tam olarak belirtilen konuma çalıştırılamıyor",
+      "consoleFilter": "Filtre (ör. metin, !hariç tut)",
+      "consoleFilterAriaLabel": "Hata ayıklama konsolu çıktısını filtrele",
+      "consoleSessionSelectorTooltip": "Hata ayıklama oturumları arasında geçiş yapın. Her hata ayıklama oturumunun kendi konsol çıktısı vardır.",
+      "consoleSeverityTooltip": "Konsol çıktısını önem düzeyine göre filtreleyin. Yalnızca seçilen önem düzeyine sahip mesajlar gösterilecektir.",
       "continueAll": "Tümü Devam Ediyor",
       "copyExpressionValue": "İfade Değerini Kopyala",
       "couldNotRunTask": "'{0}' görevi çalıştırılamadı.",
@@ -1362,6 +1507,7 @@
       "editor.bracketPairColorization.enabled": "Ayraç çifti renklendirmesinin etkin olup olmadığını kontrol eder. Ayraç vurgu renklerini geçersiz kılmak için `#workbench.colorCustomizations#` kullanın.",
       "editor.codeActions.triggerOnFocusChange": "##files.autoSave#` öğesi `afterDelay` olarak ayarlandığında `#editor.codeActionsOnSave#` öğesinin tetiklenmesini etkinleştirin. Kod Eylemlerinin pencere ve odak değişikliklerinde tetiklenmesi için `her zaman` olarak ayarlanması gerekir.",
       "editor.detectIndentation": "Dosya içeriğine bağlı olarak bir dosya açıldığında `#editor.tabSize#` ve `#editor.insertSpaces#` öğelerinin otomatik olarak algılanıp algılanmayacağını kontrol eder.",
+      "editor.experimental.preferTreeSitter": "Belirli diller için ağaç oturtucu ayrıştırmanın etkinleştirilip etkinleştirilmeyeceğini kontrol eder. Bu, belirtilen diller için `editor.experimental.treeSitterTelemetry` ayarından öncelikli olacaktır.",
       "editor.inlayHints.enabled1": "Kakma ipuçları varsayılan olarak gösterilir ve Ctrl+Alt tuşları basılı tutulduğunda gizlenir",
       "editor.inlayHints.enabled2": "Kakma ipuçları varsayılan olarak gizlidir ve Ctrl+Alt tuşları basılı tutulduğunda gösterilir",
       "editor.inlayHints.fontFamily": "Düzenleyicideki yerleşik ipuçlarının yazı tipi ailesini kontrol eder. Boş olarak ayarlandığında, `#editor.fontFamily#` kullanılır.",
@@ -1402,7 +1548,6 @@
       "dialog": {
         "initialLocation": "İlk Konuma Git",
         "multipleItemMessage": "Yalnızca bir öğe seçebilirsiniz",
-        "name": "İsim:",
         "navigateBack": "Geri Git",
         "navigateForward": "İleriye Yönelin",
         "navigateUp": "Bir Dizinde Gezinme"
@@ -1426,6 +1571,10 @@
       "uploadedOutOf": "{0} adresinden yüklendi {1}"
     },
     "getting-started": {
+      "ai": {
+        "header": "Theia IDE'de AI Desteği kullanılabilir (Beta Sürümü)!",
+        "openAIChatView": "Şimdi AI Sohbet Görünümünü açarak nasıl başlayacağınızı öğrenin!"
+      },
       "apiComparator": "{0} API Uyumluluğu",
       "newExtension": "Yeni Bir Uzantı İnşa Etmek",
       "newPlugin": "Yeni Bir Eklenti Oluşturma",
@@ -1595,6 +1744,7 @@
       "autoReveal": "Otomatik Gösterge",
       "clipboardWarn": "Panoya erişim reddedildi. Tarayıcınızın izinlerini kontrol edin.",
       "clipboardWarnFirefox": "Pano API'si mevcut değildir. '{1}' sayfasındaki '{0}' tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. FireFox'un sistem panosuna tam erişim sağlamasına izin vereceğini unutmayın.",
+      "openWithSystemEditor": "Sistem Düzenleyicisi ile Aç",
       "refresh": "Explorer'da Yenile",
       "reveal": "Explorer'da Göster",
       "systemEditor": "Sistem Editörü",
@@ -1634,7 +1784,6 @@
       "preventedNewTab": "Tarayıcınız yeni bir sekme açılmasını engelledi",
       "restartInstance": "Örneği Yeniden Başlat",
       "running": "Barındırılan örnek şu adreste çalışıyor:",
-      "select": "Seçiniz",
       "selectPath": "Yol Seçin",
       "startInstance": "Örneği Başlat",
       "starting": "Barındırılan örnek sunucusu başlatılıyor ...",
@@ -1644,7 +1793,8 @@
     },
     "plugin-ext": {
       "authentication-main": {
-        "loginTitle": "Giriş"
+        "loginTitle": "Giriş",
+        "signedOut": "Oturum başarıyla kapatıldı."
       },
       "plugins": "Eklentiler",
       "webviewTrace": "Web görünümleri ile iletişim izlemeyi kontrol eder.",
@@ -1707,7 +1857,6 @@
       },
       "history": "Tarih",
       "mergeEditor": {
-        "resetConfirmationMessage": "Bu işlem geri alınamaz.",
         "resetConfirmationTitle": "Bu düzenleyicide birleştirme sonucunu gerçekten sıfırlamak istiyor musunuz?"
       },
       "noRepositoryFound": "Depo bulunamadı",
@@ -1781,6 +1930,28 @@
       "shellOsx": "Terminalin macOS üzerinde kullandığı kabuğun yolu (varsayılan: '{0}'}).",
       "shellWindows": "Terminalin Windows üzerinde kullandığı kabuğun yolu. (varsayılan: '{0}')."
     },
+    "terminal-manager": {
+      "addTerminalToGroup": "Gruba terminal ekle",
+      "closeDialog": {
+        "message": "Terminal Yöneticisi kapatıldığında, düzeni geri yüklenemez. Terminal Yöneticisini kapatmak istediğinizden emin misiniz?",
+        "title": "Terminal yöneticisini kapatmak istiyor musunuz?"
+      },
+      "closeTerminalManager": "Terminal Yöneticisini Kapat",
+      "createNewTerminalGroup": "Yeni Terminal Grubu Oluştur",
+      "createNewTerminalPage": "Yeni Terminal Sayfası Oluştur",
+      "deleteGroup": "Grubu Sil",
+      "deletePage": "Sayfayı Sil",
+      "deleteTerminal": "Terminali Sil",
+      "group": "Grup",
+      "label": "Terminaller",
+      "maximizeBottomPanel": "Alt Paneli Maksimize Et",
+      "minimizeBottomPanel": "Alt Paneli Küçült",
+      "openTerminalManager": "Terminal Yöneticisini Aç",
+      "page": "Sayfa",
+      "rename": "Yeniden adlandır",
+      "resetTerminalManagerLayout": "Terminal Yöneticisi Düzenini Sıfırla",
+      "toggleTreeView": "Ağaç Görünümünü Aç/Kapat"
+    },
     "test": {
       "cancelAllTestRuns": "Tüm Test Çalışmalarını İptal Et",
       "stackFrameAt": "at",
@@ -1839,6 +2010,8 @@
       "messageWarning": "            {0} uç noktasının ana bilgisayar kalıbı `{1}` olarak değiştirildi; kalıbın değiştirilmesi güvenlik açıklarına yol açabilir.             Daha fazla bilgi için `{2}` adresine bakın."
     },
     "workspace": {
+      "bothAreDirectories": "Her iki kaynak da dizinlerdir.",
+      "clickToManageTrust": "Güven ayarlarını yönetmek için tıklayın.",
       "compareWithEachOther": "Birbirleriyle Karşılaştırın",
       "confirmDeletePermanently.description": "Çöp Kutusu kullanılarak \"{0}\" silinemedi. Bunun yerine kalıcı olarak silmek mi istiyorsunuz?",
       "confirmDeletePermanently.solution": "Tercihlerde Çöp Kutusu kullanımını devre dışı bırakabilirsiniz.",
@@ -1848,21 +2021,71 @@
       "confirmMessage.dirtySingle": "Kaydedilmemiş değişikliklerle {0} adresini gerçekten silmek istiyor musunuz?",
       "confirmMessage.uriMultiple": "Gerçekten tüm {0} seçili dosyaları silmek istiyor musunuz?",
       "confirmMessage.uriSingle": "{0} adresini gerçekten silmek istiyor musunuz?",
+      "directoriesCannotBeCompared": "Dizinler karşılaştırılamaz. {0}",
       "duplicate": "Yinelenen",
       "failSaveAs": "Geçerli widget için \"{0}\" çalıştırılamıyor.",
+      "isDirectory": "{0}'' bir dizindir.",
+      "manageTrustPlaceholder": "Bu çalışma alanı için güven durumunu seçin",
       "newFilePlaceholder": "Dosya Adı",
       "newFolderPlaceholder": "Klasör adı",
       "noErasure": "Not: Diskten hiçbir şey silinmeyecektir",
+      "notWorkspaceFile": "Geçerli bir çalışma alanı dosyası değil: {0}",
       "openRecentPlaceholder": "Açmak istediğiniz çalışma alanının adını yazın",
       "openRecentWorkspace": "Son Çalışma Alanını Aç...",
       "preserveWindow": "Geçerli pencerede çalışma alanlarını açmayı etkinleştirir.",
       "removeFolder": "Aşağıdaki klasörü çalışma alanından kaldırmak istediğinizden emin misiniz?",
       "removeFolders": "Aşağıdaki klasörleri çalışma alanından kaldırmak istediğinizden emin misiniz?",
+      "restrictedModeDescription": "Bu çalışma alanı güvenilir olmadığı için bazı özellikler devre dışı bırakılmıştır.",
+      "restrictedModeNote": "*Lütfen dikkat: Çalışma alanı güven özelliği şu anda Theia'da geliştirme aşamasındadır; henüz tüm özellikler çalışma alanı güveniyle entegre edilmemiştir.*",
+      "schema": {
+        "folders": {
+          "description": "Çalışma alanındaki kök klasörler"
+        },
+        "title": "Çalışma Alanı Dosyası"
+      },
       "trashTitle": "{0} adresini Çöp Kutusuna Taşı",
       "trustEmptyWindow": "Varsayılan olarak boş çalışma alanına güvenilip güvenilmeyeceğini denetler.",
       "trustEnabled": "Çalışma alanı güveninin etkin olup olmadığını denetler. Devre dışı bırakılırsa, tüm çalışma alanlarına güvenilir.",
-      "trustRequest": "Bir uzantı çalışma alanı güveni talep ediyor ancak ilgili API henüz tam olarak desteklenmiyor. Bu çalışma alanına güvenmek istiyor musunuz?",
+      "trustTrustedFolders": "Sorgulama yapılmadan güvenilen klasör URI'lerinin listesi.",
       "untitled-cleanup": "Çok sayıda başlıksız çalışma alanı dosyası var gibi görünüyor. Lütfen {0} adresini kontrol edin ve kullanılmayan dosyaları kaldırın.",
+      "variables": {
+        "cwd": {
+          "description": "Görev çalıştırıcısının başlangıçtaki geçerli çalışma dizini"
+        },
+        "file": {
+          "description": "Şu anda açık olan dosyanın yolu"
+        },
+        "fileBasename": {
+          "description": "Şu anda açık olan dosyanın temel adı"
+        },
+        "fileBasenameNoExtension": {
+          "description": "Uzantısı olmayan, şu anda açık olan dosyanın adı"
+        },
+        "fileDirname": {
+          "description": "Şu anda açık olan dosyanın bulunduğu dizinin adı"
+        },
+        "fileExtname": {
+          "description": "Şu anda açık olan dosyanın uzantısı"
+        },
+        "relativeFile": {
+          "description": "Çalışma alanı kök dizinine göre şu anda açık olan dosyanın yolu"
+        },
+        "relativeFileDirname": {
+          "description": "Açık dosyanın ${workspaceFolder} göreli dizin adı"
+        },
+        "workspaceFolder": {
+          "description": "Çalışma alanı kök klasörünün yolu"
+        },
+        "workspaceFolderBasename": {
+          "description": "Çalışma alanı kök klasörünün adı"
+        },
+        "workspaceRoot": {
+          "description": "Çalışma alanı kök klasörünün yolu"
+        },
+        "workspaceRootFolderName": {
+          "description": "Çalışma alanı kök klasörünün adı"
+        }
+      },
       "workspaceFolderAdded": "Birden fazla kökü olan bir çalışma alanı oluşturuldu. Çalışma alanı yapılandırmanızı bir dosya olarak kaydetmek istiyor musunuz?",
       "workspaceFolderAddedTitle": "Çalışma Alanına eklenen klasör"
     }

@@ -24,11 +24,12 @@ import * as mime from 'mime';
 import { JSONExt } from '@theia/core/shared/@lumino/coreutils';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
-import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, Message, codicon } from '@theia/core/lib/browser/widgets/widget';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { WebviewPanelViewState } from '../../../common/plugin-api-rpc';
+import { WebviewPanelViewState, ThemeIcon as ThemeIconDTO } from '../../../common/plugin-api-rpc';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 import { IconUrl } from '../../../common/plugin-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WebviewEnvironment } from './webview-environment';
@@ -418,16 +419,18 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.doUpdateContent();
     }
 
-    protected iconUrl: IconUrl | undefined;
+    protected iconUrl: IconUrl | ThemeIconDTO | undefined;
     protected readonly toDisposeOnIcon = new DisposableCollection();
-    setIconUrl(iconUrl: IconUrl | undefined): void {
-        if ((this.iconUrl && iconUrl && JSONExt.deepEqual(this.iconUrl, iconUrl)) || (this.iconUrl === iconUrl)) {
+    setIconUrl(iconUrl: IconUrl | ThemeIconDTO | undefined): void {
+        if (this.iconUrl === iconUrl || (this.iconUrl && iconUrl && JSON.stringify(this.iconUrl) === JSON.stringify(iconUrl))) {
             return;
         }
         this.toDisposeOnIcon.dispose();
         this.toDispose.push(this.toDisposeOnIcon);
         this.iconUrl = iconUrl;
-        if (iconUrl) {
+        if (ThemeIcon.isThemeIcon(iconUrl)) {
+            this.title.iconClass = codicon(iconUrl.id);
+        } else if (iconUrl) {
             const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
             const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
             const iconClass = `webview-${this.identifier.id}-file-icon`;
@@ -678,7 +681,7 @@ export namespace WebviewWidget {
     export interface State {
         viewType: string
         title: string
-        iconUrl?: IconUrl
+        iconUrl?: IconUrl | ThemeIconDTO
         options: WebviewPanelOptions
         contentOptions: WebviewContentOptions
         state?: string

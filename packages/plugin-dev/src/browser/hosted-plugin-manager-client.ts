@@ -287,7 +287,7 @@ export class HostedPluginManagerClient {
 
         const result = await this.fileDialogService.showOpenDialog({
             title: HostedPluginCommands.SELECT_PATH.label!,
-            openLabel: nls.localize('theia/plugin-dev/select', 'Select'),
+            openLabel: nls.localizeByDefault('Select'),
             canSelectFiles: false,
             canSelectFolders: true,
             canSelectMany: false

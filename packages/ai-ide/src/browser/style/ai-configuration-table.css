@@ -1,0 +1,85 @@
+/********************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Table pattern for displaying tabular data */
+
+.ai-table-configuration-main {
+  padding: var(--theia-ui-padding);
+  overflow: auto;
+}
+
+.ai-configuration-table-container {
+  overflow-x: auto;
+}
+
+.ai-configuration-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--theia-editor-background);
+}
+
+.ai-configuration-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ai-configuration-table th {
+  text-align: left;
+  padding: var(--theia-ui-padding) var(--theia-ui-padding);
+  font-weight: 600;
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+  color: var(--theia-foreground);
+}
+
+.ai-configuration-table td {
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+  color: var(--theia-foreground);
+  vertical-align: top;
+}
+
+.ai-configuration-table .skill-description-column,
+.ai-configuration-table .skill-location-column {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 40em;
+}
+
+.ai-configuration-table .skill-location-column {
+  font-family: var(--theia-code-font-family);
+}
+
+.ai-configuration-table tbody tr:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-configuration-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Responsive: horizontal scroll on small screens */
+@media (max-width: 600px) {
+  .ai-table-configuration-main {
+    padding: calc(var(--theia-ui-padding) / 2);
+  }
+
+  .ai-configuration-table th,
+  .ai-configuration-table td {
+    padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) / 2);
+    font-size: 0.9em;
+  }
+}

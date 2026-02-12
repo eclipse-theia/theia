@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
-import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
@@ -44,7 +44,7 @@ import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-req
 import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
 import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
 import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
-import { SerializableChangeSetElement, SerializedChatModel } from './chat-model-serialization';
+import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 export interface ChatRequestInvocation {
@@ -154,9 +154,14 @@ export interface ChatService {
      */
     getOrRestoreSession(sessionId: string): Promise<ChatSession | undefined>;
     /**
-     * Get all persisted session metadata
+     * Get all persisted session metadata.
+     * Note: This may trigger storage initialization if not already initialized.
      */
     getPersistedSessions(): Promise<ChatSessionIndex>;
+    /**
+     * Check if there are persisted sessions available.
+     */
+    hasPersistedSessions(): Promise<boolean>;
 }
 
 interface ChatSessionInternal extends ChatSession {
@@ -200,6 +205,9 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(ChangeSetElementDeserializerRegistry)
     protected changeSetElementDeserializerRegistry: ChangeSetElementDeserializerRegistry;
+
+    @inject(ToolInvocationRegistry)
+    protected toolInvocationRegistry: ToolInvocationRegistry;
 
     protected _sessions: ChatSessionInternal[] = [];
 
@@ -283,7 +291,9 @@ export class ChatServiceImpl implements ChatService {
         session.pinnedAgent = agent;
 
         if (agent === undefined) {
-            const error = 'No ChatAgents available to handle request!';
+            const error = 'No agent was found to handle this request. ' +
+                'Please ensure you have configured a default agent in the preferences and that the agent is enabled in the AI Configuration view. ' +
+                'Alternatively, mention a specific agent with @AgentName.';
             this.logger.error(error);
             const chatResponseModel = new ErrorChatResponseModel(generateUuid(), new Error(error));
             return {
@@ -407,18 +417,13 @@ export class ChatServiceImpl implements ChatService {
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);
         }
-        let chatAgent = undefined;
         if (this.defaultChatAgentId) {
-            chatAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
+            return this.chatAgentService.getAgent(this.defaultChatAgentId.id);
         }
-        if (!chatAgent && this.fallbackChatAgentId) {
-            chatAgent = this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
+        if (this.fallbackChatAgentId) {
+            return this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
         }
-        if (chatAgent) {
-            return chatAgent;
-        }
-        this.logger.warn('Neither the default chat agent nor the fallback chat agent are configured or available. Falling back to the first registered agent');
-        return this.chatAgentService.getAgents()[0] ?? undefined;
+        return undefined;
     }
 
     protected getMentionedAgent(parsedRequest: ParsedChatRequest): ParsedChatRequestAgentPart | undefined {
@@ -530,6 +535,13 @@ export class ChatServiceImpl implements ChatService {
         return this.sessionStore.getSessionIndex();
     }
 
+    async hasPersistedSessions(): Promise<boolean> {
+        if (!this.sessionStore) {
+            return false;
+        }
+        return this.sessionStore.hasPersistedSessions();
+    }
+
     /**
      * Deserialize response content and restore changesets.
      * Called after basic chat model structure was created.
@@ -542,6 +554,14 @@ export class ChatServiceImpl implements ChatService {
         const requests = model.getAllRequests();
         for (let i = 0; i < requests.length; i++) {
             const requestModel = requests[i];
+
+            this.logger.debug('Restore request content', { requestId: requestModel.id, index: i });
+            const reqData = data.requests.find(r => r.id === requestModel.id);
+            if (reqData?.parsedRequest) {
+                const toolRequests = this.restoreToolRequests(reqData.parsedRequest);
+                requestModel.restoreToolRequests(toolRequests);
+                this.logger.debug('Restored tool requests', { requestId: requestModel.id, toolRequests: Array.from(toolRequests.keys()) });
+            }
 
             this.logger.debug('Restore response content', { requestId: requestModel.id, index: i });
 
@@ -580,6 +600,37 @@ export class ChatServiceImpl implements ChatService {
         }
 
         this.logger.debug('Restoring dynamic session data complete', { sessionId: data.sessionId });
+    }
+
+    /**
+     * Extracts and resolves tool requests from serialized data.
+     * Looks up actual ToolRequest objects from the registry, or creates fallbacks if not found.
+     */
+    protected restoreToolRequests(data: SerializableParsedRequest): Map<string, ToolRequest> {
+        const toolRequests = new Map<string, ToolRequest>();
+        for (const toolData of data.toolRequests) {
+            toolRequests.set(toolData.id, this.loadToolRequestOrFallback(toolData.id));
+        }
+        return toolRequests;
+    }
+
+    /**
+     * Loads a tool request from the registry or creates a fallback if not found.
+     */
+    protected loadToolRequestOrFallback(toolId: string): ToolRequest {
+        const actualTool = this.toolInvocationRegistry.getFunction(toolId);
+        if (actualTool) {
+            return actualTool;
+        }
+        this.logger.warn(`Could not restore tool request with id '${toolId}' because it was not found in the registry.`);
+        return {
+            id: toolId,
+            name: toolId,
+            parameters: { type: 'object' as const, properties: {} },
+            handler: async () => {
+                throw new Error('Tool request handler not available because tool could not be found.');
+            }
+        };
     }
 
     protected async restoreChangeSetElements(

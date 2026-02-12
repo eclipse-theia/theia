@@ -1,6 +1,6 @@
 {
   "name": "@theia/ai-ide",
-  "version": "1.66.0",
+  "version": "1.68.0",
   "description": "AI IDE Agents Extension",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
@@ -15,23 +15,23 @@
     "theia-extension"
   ],
   "dependencies": {
-    "@theia/ai-chat": "1.66.0",
-    "@theia/ai-chat-ui": "1.66.0",
-    "@theia/ai-core": "1.66.0",
-    "@theia/ai-mcp": "1.66.0",
-    "@theia/core": "1.66.0",
-    "@theia/debug": "1.66.0",
-    "@theia/editor": "1.66.0",
-    "@theia/filesystem": "1.66.0",
-    "@theia/markers": "1.66.0",
-    "@theia/monaco": "1.66.0",
-    "@theia/navigator": "1.66.0",
-    "@theia/preferences": "1.66.0",
-    "@theia/scm": "1.66.0",
-    "@theia/search-in-workspace": "1.66.0",
-    "@theia/task": "1.66.0",
-    "@theia/terminal": "1.66.0",
-    "@theia/workspace": "1.66.0",
+    "@theia/ai-chat": "1.68.0",
+    "@theia/ai-chat-ui": "1.68.0",
+    "@theia/ai-core": "1.68.0",
+    "@theia/ai-mcp": "1.68.0",
+    "@theia/core": "1.68.0",
+    "@theia/debug": "1.68.0",
+    "@theia/editor": "1.68.0",
+    "@theia/filesystem": "1.68.0",
+    "@theia/markers": "1.68.0",
+    "@theia/monaco": "1.68.0",
+    "@theia/navigator": "1.68.0",
+    "@theia/preferences": "1.68.0",
+    "@theia/scm": "1.68.0",
+    "@theia/search-in-workspace": "1.68.0",
+    "@theia/task": "1.68.0",
+    "@theia/terminal": "1.68.0",
+    "@theia/workspace": "1.68.0",
     "date-fns": "^4.1.0",
     "ignore": "^6.0.0",
     "js-yaml": "^4.1.0",
@@ -43,8 +43,8 @@
     "access": "public"
   },
   "devDependencies": {
-    "@theia/cli": "1.66.0",
-    "@theia/test": "1.66.0"
+    "@theia/cli": "1.68.0",
+    "@theia/test": "1.68.0"
   },
   "theiaExtensions": [
     {

@@ -91,6 +91,22 @@ div:last-child > .theia-ChatNode {
   font-weight: 600;
 }
 
+.theia-PromptVariantBadge {
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-badge-foreground);
+  background-color: var(--theia-badge-background);
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.theia-PromptVariantBadge.edited {
+  color: var(--theia-editorWarning-foreground);
+  background-color: var(--theia-inputValidation-warningBackground);
+  border: 1px solid var(--theia-editorWarning-foreground);
+}
+
 .theia-ChatNode .theia-ChatNodeToolbar {
   margin-left: auto;
   line-height: 18px;
@@ -140,13 +156,36 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-RequestNode .theia-RequestNode-AgentLabel,
-.theia-RequestNode .theia-RequestNode-VariableLabel {
+.theia-RequestNode .theia-RequestNode-VariableLabel,
+.theia-RequestNode .theia-RequestNode-FunctionLabel {
   padding: calc(var(--theia-ui-padding) * 2 / 3);
   padding-top: 0px;
   padding-bottom: 0px;
   border-radius: calc(var(--theia-ui-padding) * 2 / 3);
   background: var(--theia-badge-background);
   color: var(--theia-badge-foreground);
+}
+
+.theia-RequestNode-Images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.theia-RequestNode-ImagePreview {
+  position: relative;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 100px;
+  width: 120px;
+}
+
+.theia-RequestNode-ImagePreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .theia-RequestNode-Footer {
@@ -329,6 +368,29 @@ div:last-child > .theia-ChatNode {
   margin: 4px;
 }
 
+.theia-ChatInput-ChangeSet-Header-Title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.theia-ChatInput-ChangeSet-Toggle {
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theia-ChatInput-ChangeSet-Toggle:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ChangeSet-Toggle:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
 .theia-ChatInput-ChangeSet-Box h3 {
   font-size: 12px;
   color: var(--theia-disabledForeground);
@@ -343,6 +405,22 @@ div:last-child > .theia-ChatNode {
   padding: 2px 4px;
   min-width: 40px;
   margin: 0;
+}
+
+.theia-ChatInput-ChangeSet-List {
+  overflow: hidden;
+  transition: max-height 0.1s ease-in-out, opacity 0.1s ease-in-out;
+}
+
+.theia-ChatInput-ChangeSet-List.expanded {
+  max-height: 150px;
+  opacity: 1;
+  overflow-y: auto;
+}
+
+.theia-ChatInput-ChangeSet-List.collapsed {
+  max-height: 0;
+  opacity: 0;
 }
 
 .theia-ChatInput-ChangeSet-List ul {
@@ -368,11 +446,6 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-Actions {
   display: none;
-}
-
-.theia-ChatInput-ChangeSet-List ul {
-  max-height: 150px;
-  overflow-y: auto;
 }
 
 .theia-ChatInput-ChangeSet-List ul li {
@@ -587,6 +660,10 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions .theia-ChatInputOptions-left,
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   display: flex;
+}
+
+.theia-ChatInputOptions .theia-ChatInputOptions-left {
+  order: -1;
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
@@ -809,29 +886,28 @@ div:last-child > .theia-ChatNode {
   justify-content: center !important;
 }
 
-.theia-tool-confirmation-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 10;
-  min-width: 180px;
-  background: var(--theia-menu-background);
-  border: 1px solid var(--theia-menu-border);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Split buttons have no margin between them, so the default outline-offset: 1px
+   causes focus outlines to overlap with the adjacent button. Use inset outline instead. */
+.theia-tool-confirmation-main-btn:focus,
+.theia-tool-confirmation-chevron-btn:focus {
+  outline-offset: -2px;
 }
 
-.theia-tool-confirmation-dropdown-item {
-  padding: 6px 16px;
-  cursor: pointer;
-  white-space: nowrap;
+.theia-tool-confirmation-deny-reason {
+  display: flex;
+  flex-direction: column;
+  gap: var(--theia-ui-padding);
 }
 
-.theia-tool-confirmation-dropdown-item:hover {
-  background: var(--theia-list-hoverBackground, #e5e5e5);
+.theia-tool-confirmation-deny-reason-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.theia-tool-confirmation-deny-reason-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--theia-ui-padding);
 }
 
 .theia-tool-confirmation-status {
@@ -902,6 +978,8 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-toolCall-denied,
+.theia-toolCall-rejected,
+.theia-toolCall-unavailable,
 .theia-toolCall-finished summary,
 .theia-toolCall-allowed,
 .theia-toolCall-waiting {
@@ -916,8 +994,15 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-descriptionForeground);
 }
 
-.theia-toolCall-denied {
+.theia-toolCall-denied,
+.theia-toolCall-rejected {
   color: var(--theia-errorForeground);
+  cursor: default;
+}
+
+.theia-toolCall-unavailable {
+  color: var(--theia-editorWarning-foreground);
+  cursor: default;
 }
 
 .theia-toolCall-response-result {
@@ -943,19 +1028,9 @@ div:last-child > .theia-ChatNode {
   text-wrap: auto;
 }
 
-.collapsible-arguments {
-  display: inline-block;
-}
-
-.collapsible-arguments .collapsible-arguments-summary {
-  display: inline-block;
-  white-space: nowrap;
-  text-decoration: underline;
-}
-
-details[open].collapsible-arguments,
-details[open].collapsible-arguments .collapsible-arguments-summary {
-  display: unset;
+.theia-toolCall-args-label {
+  font-weight: normal;
+  color: var(--theia-descriptionForeground);
 }
 
 .theia-ResponseNode-ProgressMessage {
@@ -1259,4 +1334,9 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   color: var(--theia-foreground);
   font-family: var(--theia-code-font-family);
   white-space: pre-wrap;
+}
+
+/* Preserve JSON indentation in hover tooltips */
+.theia-hover div.rendered-markdown {
+  white-space: pre;
 }

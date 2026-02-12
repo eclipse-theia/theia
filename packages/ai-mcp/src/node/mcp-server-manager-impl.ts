@@ -39,7 +39,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     async getRunningServers(): Promise<string[]> {
         const runningServers: string[] = [];
         for (const [name, server] of this.servers.entries()) {
-            if (server.isRunnning()) {
+            if (server.isRunning()) {
                 runningServers.push(name);
             }
         }

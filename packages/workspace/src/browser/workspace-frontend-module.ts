@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '../../src/browser/style/index.css';
+
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
@@ -48,13 +50,15 @@ import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-stor
 import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contribution';
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
-import { WorkspaceTrustService } from './workspace-trust-service';
+import { WorkspaceTrustService, WorkspaceRestrictionContribution } from './workspace-trust-service';
 import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
 import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
 import { CanonicalUriService } from './canonical-uri-service';
+import { WorkspaceMetadataStorageService, WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './metadata-storage';
+import { WorkspaceMetadataStoreImpl } from './metadata-storage/workspace-metadata-store';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -99,6 +103,11 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(WorkspaceStorageService).toSelf().inSingletonScope();
     rebind(StorageService).toService(WorkspaceStorageService);
 
+    bind(WorkspaceMetadataStoreImpl).toSelf();
+    bind(WorkspaceMetadataStoreFactory).toFactory(ctx => () => ctx.container.get(WorkspaceMetadataStoreImpl));
+    bind(WorkspaceMetadataStorageServiceImpl).toSelf().inSingletonScope();
+    bind(WorkspaceMetadataStorageService).toService(WorkspaceMetadataStorageServiceImpl);
+
     bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
     bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     bind(VariableContribution).toService(WorkspaceVariableContribution);
@@ -113,6 +122,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 
+    bindContributionProvider(bind, WorkspaceRestrictionContribution);
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 

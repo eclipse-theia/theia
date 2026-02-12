@@ -25,3 +25,8 @@ export const AI_UPDATE_TASK_CONTEXT_COMMAND = Command.toLocalizedCommand({
     id: 'ai.updateTaskContext',
     label: 'Update Current Task Context'
 });
+
+export const AI_EXECUTE_PLAN_WITH_CODER = Command.toLocalizedCommand({
+    id: 'ai.executePlanWithCoder',
+    label: 'Execute Current Plan with Coder'
+});

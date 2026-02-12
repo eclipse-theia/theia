@@ -53,16 +53,11 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         tooltip: string | MarkdownString | true | undefined,
         command: string | undefined,
         accessibilityInformation: types.AccessibilityInformation,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: any[] | undefined): Promise<void> {
-        const ariaLabel = accessibilityInformation?.label;
-        const role = accessibilityInformation?.role;
+        args: unknown[] | undefined): Promise<void> {
 
-        const entry = {
+        const entry: StatusBarEntry = {
             name,
             text: text || '',
-            ariaLabel,
-            role,
             priority,
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
             color: color && (this.colorRegistry.getCurrentColor(color) || color),
@@ -72,7 +67,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             tooltip: tooltip === true ? (token: CancellationToken) => this.proxy.$getMessage(id, token) : tooltip,
             command,
             accessibilityInformation,
-            args
+            arguments: args
         };
 
         const isNewEntry = !this.entries.has(id);

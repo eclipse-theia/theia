@@ -23,13 +23,15 @@ import {
     ChatService,
     EditableChatRequestModel,
     ParsedChatRequestAgentPart,
+    ParsedChatRequestFunctionPart,
     ParsedChatRequestVariablePart,
     type ChatRequest,
     type ChatHierarchyBranch,
 } from '@theia/ai-chat';
+import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -46,6 +48,7 @@ import {
     Widget,
     type ReactWidget
 } from '@theia/core/lib/browser';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
@@ -60,6 +63,7 @@ import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
+import { PromptVariantBadge } from './prompt-variant-badge';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
@@ -89,6 +93,10 @@ export const ChatWelcomeMessageProvider = Symbol('ChatWelcomeMessageProvider');
 export interface ChatWelcomeMessageProvider {
     renderWelcomeMessage?(): React.ReactNode;
     renderDisabledMessage?(): React.ReactNode;
+    readonly hasReadyModels?: boolean;
+    readonly modelRequirementBypassed?: boolean;
+    readonly defaultAgent?: string;
+    readonly onStateChanged?: Event<void>;
 }
 
 @injectable()
@@ -129,6 +137,11 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    protected chatResponseFocusKey: ContextKey<boolean>;
 
     protected readonly onDidSubmitEditEmitter = new Emitter<ChatRequest>();
     onDidSubmitEdit = this.onDidSubmitEditEmitter.event;
@@ -197,6 +210,12 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.id = ChatViewTreeWidget.ID + '-treeContainer';
         this.addClass('treeContainer');
 
+        this.chatResponseFocusKey = this.contextKeyService.createKey<boolean>('chatResponseFocus', false);
+        this.node.setAttribute('tabindex', '0');
+        this.node.setAttribute('aria-label', nls.localize('theia/ai/chat-ui/chatResponses', 'Chat responses'));
+        this.addEventListener(this.node, 'focusin', () => this.chatResponseFocusKey.set(true));
+        this.addEventListener(this.node, 'focusout', () => this.chatResponseFocusKey.set(false));
+
         this.toDispose.pushAll([
             this.toDisposeOnChatModelChange,
             this.activationService.onDidChangeActiveStatus(change => {
@@ -209,6 +228,14 @@ export class ChatViewTreeWidget extends TreeWidget {
                 this.handleScrollEvent(scrollEvent);
             })
         ]);
+
+        if (this.welcomeMessageProvider?.onStateChanged) {
+            this.toDispose.push(
+                this.welcomeMessageProvider.onStateChanged(() => {
+                    this.update();
+                })
+            );
+        }
 
         // Initialize lastScrollTop with current scroll position
         this.lastScrollTop = this.getCurrentScrollTop(undefined);
@@ -491,8 +518,16 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!(isRequestNode(node) || isResponseNode(node))) {
             return super.renderNode(node, props);
         }
+        const ariaLabel = isRequestNode(node)
+            ? nls.localize('theia/ai/chat-ui/yourMessage', 'Your message')
+            : nls.localize('theia/ai/chat-ui/responseFrom', 'Response from {0}', this.getAgentLabel(node));
         return <React.Fragment key={node.id}>
-            <div className='theia-ChatNode' onContextMenu={e => this.handleContextMenu(node, e)}>
+            <div
+                className='theia-ChatNode'
+                role='article'
+                aria-label={ariaLabel}
+                onContextMenu={e => this.handleContextMenu(node, e)}
+            >
                 {this.renderAgent(node)}
                 {this.renderDetail(node)}
             </div>
@@ -510,6 +545,10 @@ export class ChatViewTreeWidget extends TreeWidget {
             : [];
         const agentLabel = React.createRef<HTMLHeadingElement>();
         const agentDescription = this.getAgent(node)?.description;
+
+        const promptVariantId = isResponseNode(node) ? node.response.promptVariantId : undefined;
+        const isPromptVariantEdited = isResponseNode(node) ? !!node.response.isPromptVariantEdited : false;
+
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
                 <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
@@ -526,9 +565,21 @@ export class ChatViewTreeWidget extends TreeWidget {
                     }}>
                     {this.getAgentLabel(node)}
                 </h3>
-                {inProgress && !waitingForInput && <span className='theia-ChatContentInProgress'>{nls.localizeByDefault('Generating')}</span>}
-                {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>{
-                    nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}</span>}
+                {promptVariantId && (
+                    <PromptVariantBadge
+                        variantId={promptVariantId}
+                        isEdited={isPromptVariantEdited}
+                        hoverService={this.hoverService}
+                    />
+                )}
+                {inProgress && !waitingForInput &&
+                    <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/generating', 'Generating')}
+                    </span>}
+                {inProgress && waitingForInput &&
+                    <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                    </span>}
                 <div className='theia-ChatNodeToolbar'>
                     {!inProgress &&
                         toolbarContributions.length > 0 &&
@@ -537,6 +588,8 @@ export class ChatViewTreeWidget extends TreeWidget {
                                 key={action.commandId}
                                 className={`theia-ChatNodeToolbarAction ${action.icon}`}
                                 title={action.tooltip}
+                                aria-label={action.tooltip}
+                                tabIndex={0}
                                 onClick={e => {
                                     e.stopPropagation();
                                     this.commandRegistry.executeCommand(action.commandId, node);
@@ -777,11 +830,36 @@ const ChatRequestRender = (
         );
     };
 
+    // Extract image variables from the request context
+    const imageVariables = node.request.context.variables
+        .filter(ImageContextVariable.isResolvedImageContext)
+        .map(resolved => ImageContextVariable.parseResolved(resolved))
+        .filter((img): img is NonNullable<typeof img> => img !== undefined);
+
+    const renderImages = () => {
+        if (imageVariables.length === 0) {
+            return undefined;
+        }
+        return (
+            <div className="theia-RequestNode-Images">
+                {imageVariables.map((img, index) => (
+                    <div key={index} className="theia-RequestNode-ImagePreview">
+                        <img
+                            src={`data:${img.mimeType};base64,${img.data}`}
+                            alt={img.name ?? img.wsRelativePath ?? 'Image'}
+                            title={img.name ?? img.wsRelativePath ?? 'Image'}
+                        />
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="theia-RequestNode">
             <p>
                 {parts.map((part, index) => {
-                    if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
+                    if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart || part instanceof ParsedChatRequestFunctionPart) {
                         let description = undefined;
                         let className = '';
                         if (part instanceof ParsedChatRequestAgentPart) {
@@ -790,6 +868,9 @@ const ChatRequestRender = (
                         } else if (part instanceof ParsedChatRequestVariablePart) {
                             description = variableService.getVariable(part.variableName)?.description;
                             className = 'theia-RequestNode-VariableLabel';
+                        } else if (part instanceof ParsedChatRequestFunctionPart) {
+                            description = part.toolRequest?.description;
+                            className = 'theia-RequestNode-FunctionLabel';
                         }
                         return (
                             <HoverableLabel
@@ -814,6 +895,7 @@ const ChatRequestRender = (
                     }
                 })}
             </p>
+            {renderImages()}
             {renderFooter()}
         </div>
     );

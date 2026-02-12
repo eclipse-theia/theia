@@ -13,17 +13,30 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
+import {
+    ChatMode, ChatRequestModel, ChatService, ChatSession,
+    MutableChatModel, MutableChatRequestModel
+} from '@theia/ai-chat/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CODER_SYSTEM_PROMPT_ID, getCoderAgentModePromptTemplate, getCoderPromptTemplateEdit, getCoderPromptTemplateEditNext, getCoderPromptTemplateSimpleEdit }
-    from '../common/coder-replace-prompt-template';
+import {
+    CODER_SYSTEM_PROMPT_ID,
+    CODER_EDIT_TEMPLATE_ID,
+    CODER_AGENT_MODE_TEMPLATE_ID,
+    CODER_AGENT_MODE_NEXT_TEMPLATE_ID,
+    getCoderAgentModePromptTemplate,
+    getCoderAgentModeNextPromptTemplate,
+    getCoderPromptTemplateEdit,
+    getCoderPromptTemplateEditNext,
+    getCoderPromptTemplateSimpleEdit
+} from '../common/coder-replace-prompt-template';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
+import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
 
 @injectable()
-export class CoderAgent extends AbstractStreamParsingChatAgent {
+export class CoderAgent extends AbstractModeAwareChatAgent {
     @inject(ChatService) protected readonly chatService: ChatService;
     id: string = 'Coder';
     name = 'Coder';
@@ -37,10 +50,26 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
         and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
         tasks involving file changes.');
+
+    protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
+        {
+            id: CODER_EDIT_TEMPLATE_ID,
+            name: nls.localize('theia/ai/ide/coderAgent/mode/edit', 'Edit Mode')
+        },
+        {
+            id: CODER_AGENT_MODE_TEMPLATE_ID,
+            name: nls.localizeByDefault('Agent Mode')
+        },
+        {
+            id: CODER_AGENT_MODE_NEXT_TEMPLATE_ID,
+            name: nls.localize('theia/ai/ide/coderAgent/mode/agentNext', 'Agent Mode (Next)')
+        },
+    ];
+
     override prompts: PromptVariantSet[] = [{
         id: CODER_SYSTEM_PROMPT_ID,
         defaultVariant: getCoderPromptTemplateEdit(),
-        variants: [getCoderPromptTemplateSimpleEdit(), getCoderAgentModePromptTemplate(), getCoderPromptTemplateEditNext()]
+        variants: [getCoderPromptTemplateSimpleEdit(), getCoderAgentModePromptTemplate(), getCoderAgentModeNextPromptTemplate(), getCoderPromptTemplateEditNext()]
     }];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
     override async invoke(request: MutableChatRequestModel): Promise<void> {

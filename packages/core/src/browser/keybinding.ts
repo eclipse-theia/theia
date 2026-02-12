@@ -28,6 +28,7 @@ import { ContextKeyService } from './context-key-service';
 import { CorePreferences } from '../common/core-preferences';
 import * as common from '../common/keybinding';
 import { nls } from '../common/nls';
+import { TernarySearchTree } from '../common/ternary-search-tree';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -103,6 +104,12 @@ export class KeybindingRegistry {
     protected readonly contexts: { [id: string]: KeybindingContext } = {};
     protected readonly keymaps: ScopedKeybinding[][] = [...Array(KeybindingScope.length)].map(() => []);
 
+    /**
+     * Ternary search tree for efficient keybinding lookup.
+     * Maps resolved key sequences to arrays of bindings sorted by scope (highest first).
+     */
+    protected keybindingTree: TernarySearchTree<KeySequence, ScopedKeybinding[]> | undefined;
+
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
 
@@ -131,6 +138,7 @@ export class KeybindingRegistry {
         await this.keyboardLayoutService.initialize();
         this.keyboardLayoutService.onKeyboardLayoutChanged(newLayout => {
             this.clearResolvedKeybindings();
+            this.invalidateKeybindingTree();
             this.keybindingsChanged.fire(undefined);
         });
         this.registerContext(KeybindingContexts.NOOP_CONTEXT);
@@ -213,11 +221,16 @@ export class KeybindingRegistry {
             : ({ keybinding }: common.Keybinding) => Keybinding.is(arg)
                 ? keybinding === arg.keybinding
                 : keybinding === arg;
+        let removed = false;
         for (const binding of keymap.filter(filter)) {
             const idx = keymap.indexOf(binding);
             if (idx !== -1) {
                 keymap.splice(idx, 1);
+                removed = true;
             }
+        }
+        if (removed) {
+            this.invalidateKeybindingTree();
         }
     }
 
@@ -234,10 +247,12 @@ export class KeybindingRegistry {
             this.resolveKeybinding(binding);
             const scoped = Object.assign(binding, { scope });
             this.insertBindingIntoScope(scoped, scope);
+            this.invalidateKeybindingTree();
             return Disposable.create(() => {
                 const index = this.keymaps[scope].indexOf(scoped);
                 if (index !== -1) {
                     this.keymaps[scope].splice(index, 1);
+                    this.invalidateKeybindingTree();
                 }
             });
         } catch (error) {
@@ -285,6 +300,56 @@ export class KeybindingRegistry {
                 binding.resolved = undefined;
             }
         }
+    }
+
+    /**
+     * Invalidates the keybinding tree, causing it to be rebuilt on next access.
+     */
+    protected invalidateKeybindingTree(): void {
+        this.keybindingTree = undefined;
+    }
+
+    /**
+     * Gets or builds the keybinding tree for efficient lookup.
+     * The tree maps resolved key sequences to arrays of bindings sorted by scope (highest first).
+     */
+    protected getKeybindingTree(): TernarySearchTree<KeySequence, ScopedKeybinding[]> {
+        if (!this.keybindingTree) {
+            this.keybindingTree = this.buildKeybindingTree();
+        }
+        return this.keybindingTree;
+    }
+
+    /**
+     * Builds a ternary search tree from all registered keybindings for efficient lookup.
+     * Bindings are indexed by their resolved key sequence.
+     * Bindings are stored in the order they should be checked: highest scope first,
+     * and within the same scope, in the order they appear in keymaps (later-registered first).
+     */
+    protected buildKeybindingTree(): TernarySearchTree<KeySequence, ScopedKeybinding[]> {
+        const tree = TernarySearchTree.forKeySequences<ScopedKeybinding[]>();
+
+        // Process scopes from highest to lowest priority (WORKSPACE > USER > DEFAULT)
+        // Within each scope, maintain the keymaps order (later-registered bindings are at the front)
+        for (let scope = KeybindingScope.END - 1; scope >= KeybindingScope.DEFAULT; scope--) {
+            for (const binding of this.keymaps[scope]) {
+                try {
+                    const resolved = this.resolveKeybinding(binding);
+                    const existing = tree.get(resolved);
+                    if (existing) {
+                        // Append to maintain correct order: higher scopes first, then keymaps order within scope
+                        existing.push(binding);
+                    } else {
+                        tree.set(resolved, [binding]);
+                    }
+                } catch (error) {
+                    // Skip bindings that can't be resolved
+                    this.logger.warn(`Could not resolve keybinding for tree: ${common.Keybinding.stringify(binding)}`);
+                }
+            }
+        }
+
+        return tree;
     }
 
     /**
@@ -614,10 +679,11 @@ export class KeybindingRegistry {
      * Match first binding in the current context.
      * Keybindings ordered by a scope and by a registration order within the scope.
      *
-     * FIXME:
-     * This method should run very fast since it happens on each keystroke. We should reconsider how keybindings are stored.
-     * It should be possible to look up full and partial keybinding for given key sequence for constant time using some kind of tree.
-     * Such tree should not contain disabled keybindings and be invalidated whenever the registry is changed.
+     * Uses a ternary search tree for efficient O(log n) lookup instead of O(n) iteration.
+     * The tree is lazily built and invalidated when keybindings change.
+     *
+     * When multiple bindings match, bindings that use context keys local to the focused
+     * element are given priority over bindings that only use global context keys.
      */
     matchKeybinding(keySequence: KeySequence, event?: KeyboardEvent): KeybindingRegistry.Match {
         let disabled: Set<string> | undefined;
@@ -634,19 +700,90 @@ export class KeybindingRegistry {
             return !disabled?.has(JSON.stringify({ command, context, when, keybinding }));
         };
 
-        for (let scope = KeybindingScope.END; --scope >= KeybindingScope.DEFAULT;) {
-            for (const binding of this.keymaps[scope]) {
-                const resolved = this.resolveKeybinding(binding);
-                const compareResult = KeySequence.compare(keySequence, resolved);
-                if (compareResult === KeySequence.CompareResult.FULL && isEnabled(binding)) {
-                    return { kind: 'full', binding };
-                }
-                if (compareResult === KeySequence.CompareResult.PARTIAL && isEnabled(binding)) {
-                    return { kind: 'partial', binding };
+        const tree = this.getKeybindingTree();
+
+        // Check for exact (FULL) matches first
+        const fullMatches = tree.get(keySequence);
+        if (fullMatches) {
+            // Collect all enabled bindings
+            const enabledBindings = fullMatches.filter(isEnabled);
+
+            if (enabledBindings.length > 0) {
+                // If we have multiple enabled bindings, prioritize those using local context keys
+                const selectedBinding = this.selectBindingByLocalContext(enabledBindings, event);
+                return { kind: 'full', binding: selectedBinding };
+            }
+        }
+
+        // Check for PARTIAL matches (bindings that start with keySequence but are longer)
+        const partialIterator = tree.findSuperstr(keySequence);
+        if (partialIterator) {
+            // Collect all partial match bindings and sort by scope
+            const partialBindings: ScopedKeybinding[] = [];
+            let result = partialIterator.next();
+            while (!result.done) {
+                partialBindings.push(...result.value);
+                result = partialIterator.next();
+            }
+            // Sort by scope descending (highest scope first)
+            partialBindings.sort((a, b) => b.scope - a.scope);
+
+            // Collect all enabled bindings
+            const enabledBindings = partialBindings.filter(isEnabled);
+
+            if (enabledBindings.length > 0) {
+                // If we have multiple enabled bindings, prioritize those using local context keys
+                const selectedBinding = this.selectBindingByLocalContext(enabledBindings, event);
+                return { kind: 'partial', binding: selectedBinding };
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Selects the most appropriate binding from a list of enabled bindings.
+     * Prioritizes bindings whose `when` clause uses context keys that are locally
+     * defined at the focused element, as these are more specific to the user's
+     * current focus context.
+     *
+     * @param enabledBindings Array of enabled bindings to choose from (must not be empty)
+     * @param event Optional keyboard event to get the focused element from
+     * @returns The selected binding
+     */
+    protected selectBindingByLocalContext(enabledBindings: ScopedKeybinding[], event?: KeyboardEvent): ScopedKeybinding {
+        if (enabledBindings.length === 1 || !event) {
+            return enabledBindings[0];
+        }
+
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return enabledBindings[0];
+        }
+
+        // Get context keys that are locally defined at the focused element
+        const localKeys = this.whenContextService.getLocalContextKeys(target);
+        if (localKeys.size === 0) {
+            return enabledBindings[0];
+        }
+
+        // Find bindings whose 'when' clause uses any local context key
+        // These are considered more specific to the focused element
+        for (const binding of enabledBindings) {
+            if (binding.when) {
+                const usedKeys = this.whenContextService.parseKeys(binding.when);
+                if (usedKeys) {
+                    for (const key of usedKeys) {
+                        if (localKeys.has(key)) {
+                            return binding;
+                        }
+                    }
                 }
             }
         }
-        return undefined;
+
+        // No binding uses local context keys, fall back to first enabled binding
+        return enabledBindings[0];
     }
 
     /**
@@ -684,6 +821,7 @@ export class KeybindingRegistry {
     setKeymap(scope: KeybindingScope, bindings: common.Keybinding[]): void {
         this.resetKeybindingsForScope(scope);
         this.toResetKeymap.set(scope, this.doRegisterKeybindings(bindings, scope));
+        this.invalidateKeybindingTree();
         this.keybindingsChanged.fire(undefined);
     }
 
@@ -707,6 +845,7 @@ export class KeybindingRegistry {
         for (let i = KeybindingScope.DEFAULT + 1; i < KeybindingScope.END; i++) {
             this.keymaps[i] = [];
         }
+        this.invalidateKeybindingTree();
     }
 
     /**

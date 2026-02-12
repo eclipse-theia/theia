@@ -80,6 +80,8 @@ import {
     SignatureHelp,
     SignatureHelpTriggerKind,
     Hover,
+    VerboseHover,
+    HoverVerbosityAction,
     EvaluatableExpression,
     InlineValueEvaluatableExpression,
     InlineValueText,
@@ -894,6 +896,9 @@ export function createAPIFactory(
             get onDidGrantWorkspaceTrust(): theia.Event<void> {
                 return workspaceExt.onDidGrantWorkspaceTrust;
             },
+            get onDidChangeWorkspaceTrust(): theia.Event<boolean> {
+                return workspaceExt.onDidChangeWorkspaceTrust;
+            },
             registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider) {
                 return workspaceExt.$registerEditSessionIdentityProvider(scheme, provider);
             },
@@ -1461,6 +1466,8 @@ export function createAPIFactory(
             SignatureHelp,
             SignatureHelpTriggerKind,
             Hover,
+            VerboseHover,
+            HoverVerbosityAction,
             EvaluatableExpression,
             InlineValueEvaluatableExpression,
             InlineValueText,

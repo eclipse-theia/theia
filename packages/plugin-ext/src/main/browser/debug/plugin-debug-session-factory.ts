@@ -34,6 +34,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginChannel } from '../../../common/connection';
 import { TestService } from '@theia/test/lib/browser/test-service';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
+import { CommandService } from '@theia/core';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
@@ -52,10 +53,12 @@ export class PluginDebugSession extends DebugSession {
         protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
-        protected override readonly workspaceService: WorkspaceService) {
+        protected override readonly workspaceService: WorkspaceService,
+        debugPreferences: DebugPreferences,
+        protected override readonly commandService: CommandService) {
         super(id, options, parentSession, testService, testRun, sessionManager, connection, terminalServer, editorManager, breakpoints,
             labelProvider, messages, fileService, debugContributionProvider,
-            workspaceService);
+            workspaceService, debugPreferences, commandService);
     }
 
     protected override async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
@@ -83,6 +86,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
         protected override readonly testService: TestService,
         protected override readonly workspaceService: WorkspaceService,
+        protected override readonly commandService: CommandService,
     ) {
         super();
     }
@@ -110,6 +114,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             this.terminalOptionsExt,
             this.debugContributionProvider,
             this.workspaceService,
+            this.debugPreferences,
+            this.commandService
         );
     }
 }

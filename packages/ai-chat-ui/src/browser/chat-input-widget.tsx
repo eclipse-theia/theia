@@ -242,7 +242,21 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 });
                 this.update();
-            } else if (event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
+            } else if (event.kind === 'addRequest') {
+                // Only clear image context variables, preserve other context (e.g., attached files)
+                // Never clear on parse failure.
+                const variables = chatModel.context.getVariables();
+                const imageIndices = variables
+                    .map((v, i) => {
+                        const origin = ImageContextVariable.getOriginSafe(v);
+                        return origin === 'temporary' ? i : -1;
+                    })
+                    .filter(i => i !== -1);
+                if (imageIndices.length > 0) {
+                    chatModel.context.deleteVariables(...imageIndices);
+                }
+                this.update();
+            } else if (event.kind === 'removeVariable' || event.kind === 'changeHierarchyBranch') {
                 this.update();
             }
         }));
@@ -364,9 +378,12 @@ export class AIChatInputWidget extends ReactWidget {
                 // Only update and re-render when the agent changes
                 if (agent && agentId !== previousAgentId) {
                     const modes = agent.modes ?? [];
+                    const defaultMode = modes.find(m => m.isDefault);
+                    const initialModeId = defaultMode?.id;
                     this.receivingAgent = {
                         agentId: agentId,
-                        modes
+                        modes,
+                        currentModeId: initialModeId
                     };
                     this.chatInputHasModesKey.set(modes.length > 1);
                     this.update();
@@ -494,6 +511,7 @@ export class AIChatInputWidget extends ReactWidget {
                     this.editorRef = editor;
                     this.setupEditorEventListeners();
                     this.editorReady.resolve();
+                    this.scheduleUpdateReceivingAgent();
                 }}
                 showContext={this.configuration?.showContext}
                 showPinnedAgent={this.configuration?.showPinnedAgent}
@@ -727,7 +745,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
             : shouldUseTaskPlaceholder
                 ? taskPlaceholder
-                : nls.localizeByDefault('Ask a question') + (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
+                // eslint-disable-next-line max-len
+                : nls.localize('theia/ai/chat-ui/askQuestion', 'Ask a question') + (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
         setPlaceholderText(newPlaceholderText);
     }, [props.isEnabled, shouldUseTaskPlaceholder, taskPlaceholder, props.hasPromptHistory, isInputFocused]);
 
@@ -784,6 +803,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 bracketPairColorization: { enabled: false },
                 wrappingStrategy: 'advanced',
                 stickyScroll: { enabled: false },
+                ariaLabel: nls.localize('theia/ai/chat-ui/chatInputAriaLabel', 'Type your message here'),
             });
 
             if (editorContainerRef.current) {
@@ -951,6 +971,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         setValue('');
         if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
+            editorRef.current.focus();
         }
     }, [props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
 
@@ -1131,14 +1152,47 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     isEnabled,
     modeSelectorProps
 }) => (
+    // Right options are rendered first in DOM for tab order (send button first when enabled)
+    // CSS order property positions them visually (left on left, right on right)
     <div className="theia-ChatInputOptions">
+        <div className="theia-ChatInputOptions-right">
+            {rightOptions.map((option, index) => (
+                <span
+                    key={index}
+                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                    title={option.title}
+                    aria-label={option.title}
+                    role='button'
+                    tabIndex={option.disabled ? -1 : 0}
+                    onClick={option.handler}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            option.handler();
+                        }
+                    }}
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`} />
+                </span>
+            ))}
+        </div>
         <div className="theia-ChatInputOptions-left">
             {leftOptions.map((option, index) => (
                 <span
                     key={index}
                     className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
                     title={option.title}
+                    aria-label={option.title}
+                    role='button'
+                    tabIndex={option.disabled ? -1 : 0}
                     onClick={option.handler}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            option.handler();
+                        }
+                    }}
                 >
                     <span>{option.text?.content}</span>
                     <span className={`codicon ${option.className}`} />
@@ -1152,19 +1206,6 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                     disabled={!isEnabled}
                 />
             )}
-        </div>
-        <div className="theia-ChatInputOptions-right">
-            {rightOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    onClick={option.handler}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
         </div>
     </div>
 );
@@ -1238,22 +1279,68 @@ interface ChangeSetUI {
 }
 
 /** Memo because the parent element rerenders on every key press in the chat widget. */
-const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo(({ changeSet: { changeSet, title, deleteChangeSet, elements, actions } }) => (
-    <div className='theia-ChatInput-ChangeSet-Box'>
-        <div className='theia-ChatInput-ChangeSet-Header'>
-            <h3>{title}</h3>
-            <div className='theia-ChatInput-ChangeSet-Header-Actions'>
-                {actions.map(action => <div key={action.id} className='theia-changeSet-Action'>{action.render(changeSet)}</div>)}
-                <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => deleteChangeSet()} />
+const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo(({ changeSet: { changeSet, title, deleteChangeSet, elements, actions } }) => {
+    const [isCollapsed, setIsCollapsed] = React.useState(false);
+
+    const toggleCollapse = React.useCallback(() => {
+        setIsCollapsed(prev => !prev);
+    }, []);
+
+    const handleToggleKeyDown = React.useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleCollapse();
+            }
+        },
+        [toggleCollapse]
+    );
+
+    return (
+        <div className='theia-ChatInput-ChangeSet-Box'>
+            <div className='theia-ChatInput-ChangeSet-Header'>
+                <div className='theia-ChatInput-ChangeSet-Header-Title'>
+                    <span
+                        className={`codicon ${isCollapsed ? 'codicon-chevron-right' : 'codicon-chevron-down'} theia-ChatInput-ChangeSet-Toggle`}
+                        onClick={toggleCollapse}
+                        onKeyDown={handleToggleKeyDown}
+                        role='button'
+                        tabIndex={0}
+                        aria-expanded={!isCollapsed}
+                        aria-label={
+                            isCollapsed
+                                ? nls.localize('theia/ai/chat-ui/expandChangeSet', 'Expand Change Set')
+                                : nls.localize('theia/ai/chat-ui/collapseChangeSet', 'Collapse Change Set')
+                        }
+                        title={
+                            isCollapsed
+                                ? nls.localize('theia/ai/chat-ui/expandChangeSet', 'Expand Change Set')
+                                : nls.localize('theia/ai/chat-ui/collapseChangeSet', 'Collapse Change Set')
+                        }
+                    />
+                    <h3>{title}</h3>
+                </div>
+                <div className='theia-ChatInput-ChangeSet-Header-Actions'>
+                    {actions.map(action => (
+                        <div key={action.id} className='theia-changeSet-Action'>
+                            {action.render(changeSet)}
+                        </div>
+                    ))}
+                    <span
+                        className='codicon codicon-close action'
+                        title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')}
+                        onClick={() => deleteChangeSet()}
+                    />
+                </div>
+            </div>
+            <div className={`theia-ChatInput-ChangeSet-List ${isCollapsed ? 'collapsed' : 'expanded'}`}>
+                <ul>
+                    {elements.map(element => ChangeSetElement(element))}
+                </ul>
             </div>
         </div>
-        <div className='theia-ChatInput-ChangeSet-List'>
-            <ul>
-                {elements.map(element => ChangeSetElement(element))}
-            </ul>
-        </div>
-    </div>
-));
+    );
+});
 
 function toUiElement(element: ChangeSetElement,
     onDeleteChangeSetElement: (uri: URI) => void,
@@ -1388,14 +1475,23 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
         <ul>
             {context.map((element, index) => {
                 if (ImageContextVariable.isImageContextRequest(element.variable)) {
-                    const variable = ImageContextVariable.parseRequest(element.variable)!;
+                    let variable: ImageContextVariable | undefined;
+                    try {
+                        variable = ImageContextVariable.parseRequest(element.variable);
+                    } catch {
+                        variable = undefined;
+                    }
+
+                    const title = variable?.name ?? variable?.wsRelativePath ?? element.details ?? element.name;
+                    const label = variable?.name ?? variable?.wsRelativePath?.split('/').pop() ?? element.name;
+
                     return <li key={index} className="theia-ChatInput-ChatContext-Element theia-ChatInput-ImageContext-Element"
-                        title={variable.name ?? variable.wsRelativePath} onClick={() => element.open?.()}>
+                        title={title} onClick={() => element.open?.()}>
                         <div className="theia-ChatInput-ChatContext-Row">
                             <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
                             <div className="theia-ChatInput-ChatContext-labelParts">
                                 <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
-                                    {variable.name ?? variable.wsRelativePath?.split('/').pop()}
+                                    {label}
                                 </span>
                                 <span className='theia-ChatInput-ChatContext-additionalInfo'>
                                     {element.additionalInfo}
@@ -1403,11 +1499,11 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                             </div>
                             <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
                         </div>
-                        <div className="theia-ChatInput-ChatContext-ImageRow">
+                        {variable && <div className="theia-ChatInput-ChatContext-ImageRow">
                             <div className='theia-ChatInput-ImagePreview-Item'>
-                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name} />
+                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name ?? label} />
                             </div>
-                        </div>
+                        </div>}
                     </li>;
                 }
                 const isWarning = element.className === 'warning-file';

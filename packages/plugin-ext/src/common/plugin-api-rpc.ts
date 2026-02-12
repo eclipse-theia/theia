@@ -91,7 +91,8 @@ import {
     DataTransferDTO,
     DocumentDropEditProviderMetadata,
     DebugStackFrameDTO,
-    DebugThreadDTO
+    DebugThreadDTO,
+    HoverContext
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -671,11 +672,13 @@ export interface TransferQuickPickItem {
     picked?: boolean;
     alwaysShow?: boolean;
     buttons?: readonly TransferQuickInputButton[];
+    resourceUri?: UriComponents;
 }
 
 export interface TransferQuickPickOptions<T extends TransferQuickPickItem> {
     title?: string;
     placeHolder?: string;
+    prompt?: string;
     matchOnDescription?: boolean;
     matchOnDetail?: boolean;
     matchOnLabel?: boolean;
@@ -708,6 +711,7 @@ export interface TransferQuickPick extends BaseTransferQuickInput {
     type?: 'quickPick';
     value?: string;
     placeholder?: string;
+    prompt?: string;
     buttons?: TransferQuickInputButton[];
     items?: TransferQuickPickItem[];
     activeItems?: ReadonlyArray<theia.QuickPickItem>;
@@ -1045,6 +1049,8 @@ export interface ScmMain {
     $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
     $setInputBoxVisible(sourceControlHandle: number, visible: boolean): void;
     $setInputBoxEnabled(sourceControlHandle: number, enabled: boolean): void;
+
+    $setActionButton(sourceControlHandle: number, actionButton: ScmActionButton | undefined): void;
 }
 
 export interface SourceControlProviderFeatures {
@@ -1138,6 +1144,13 @@ export interface SourceControlResourceDecorations {
      * The icon path for a specific source control resource state.
      */
     readonly iconPath?: string;
+}
+
+export interface ScmActionButton {
+    command: Command;
+    secondaryCommands?: Command[][];
+    enabled?: boolean;
+    description?: string;
 }
 
 export interface NotificationMain {
@@ -1681,6 +1694,10 @@ export interface PluginInfo {
     displayName?: string;
 }
 
+export interface HoverWithId extends Hover {
+    id: number;
+}
+
 export interface LanguageStatus {
     readonly id: string;
     readonly name: string;
@@ -1708,7 +1725,8 @@ export interface LanguagesExt {
         handle: number, resource: UriComponents, position: Position, context: SignatureHelpContext, token: CancellationToken
     ): Promise<SignatureHelp | undefined>;
     $releaseSignatureHelp(handle: number, id: number): void;
-    $provideHover(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Hover | undefined>;
+    $provideHover(handle: number, resource: UriComponents, position: Position, context: HoverContext<{ id: number }> | undefined, token: CancellationToken): Promise<HoverWithId | undefined>;
+    $releaseHover(handle: number, id: number): void;
     $provideEvaluatableExpression(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<EvaluatableExpression | undefined>;
     $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: CancellationToken): Promise<InlineValue[] | undefined>;
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;
@@ -1871,7 +1889,7 @@ export interface WebviewsMain {
     $disposeWebview(handle: string): void;
     $reveal(handle: string, showOptions: theia.WebviewPanelShowOptions): void;
     $setTitle(handle: string, value: string): void;
-    $setIconPath(handle: string, value: IconUrl | undefined): void;
+    $setIconPath(handle: string, value: IconUrl | ThemeIcon | undefined): void;
     $setHtml(handle: string, value: string): void;
     $setOptions(handle: string, options: theia.WebviewOptions): void;
     $postMessage(handle: string, value: any): Thenable<boolean>;

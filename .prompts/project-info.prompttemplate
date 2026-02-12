@@ -43,6 +43,7 @@ Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-v
 - Use constants for values that never get reassigned
 - The use of `null` is forbidden. Use `undefined` instead for representing absent or uninitialized values.
 - Use single quotes (`'`) for string literals instead of double quotes (`"`).
+- Use Theia's Event/Emitter/Disposable for handling event listener patterns
 
 ### Test File References
 
@@ -55,8 +56,41 @@ Tests are located in the same directory as the components under test.
 
 ### Compile and Test
 
+This projects uses npm.
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
-done for a final validation.
+done for a final validation. There are usually pre-defined tasks for all these operations, prefer to use these instead of npm directly.
+
+### Preferences
+
+Theia uses a preferences system for user/workspace settings. To add new preferences:
+
+1. Define a `PreferenceSchema` with property definitions (type, default, description)
+2. Create a `PreferenceContribution` symbol and bind it
+3. Use `PreferenceProxy` for type-safe access to preference values
+
+**Example:** `packages/workspace/src/common/workspace-trust-preferences.ts`
+
+### Plugin API Extensions
+
+To extend the plugin API (VS Code compatible API):
+
+1. **Type definitions:** Add to `packages/plugin/src/theia.d.ts`
+2. **Plugin-side implementation:** `packages/plugin-ext/src/plugin/` (e.g., `workspace.ts`)
+3. **Main-side implementation:** `packages/plugin-ext/src/main/browser/` (e.g., `workspace-main.ts`)
+4. **RPC protocol:** Define in `packages/plugin-ext/src/common/plugin-api-rpc.ts`
+5. **Expose to plugins:** `packages/plugin-ext/src/plugin/plugin-context.ts`
+
+Events flow: Main side service → `workspace-main.ts` → RPC → `workspace.ts` → plugin context
+
+#### Proposed APIs
+
+For APIs that are not yet stable, Theia follows VS Code's proposed API pattern:
+
+1. **Define proposed types:** Create `packages/plugin/src/theia.proposed.<feature>.d.ts`
+2. **Enable via package.json:** Extensions must declare `enabledApiProposals` in their package.json
+3. **Implementation:** Same as stable APIs, but types come from the proposed file
+
+Note: Some VS Code APIs that were previously "proposed" are now stable (e.g., workspace trust). Check VS Code's current API status before creating proposed API files.
 
 ### Styling
 
@@ -66,3 +100,18 @@ module-level CSS file.
 - **Color variable contribution example**: `packages/core/src/browser/common-frontend-contribution.ts`
 - **Package-level CSS example**: `packages/ai-ide/src/browser/style/index.css`
 - **Module-specific CSS example**: `packages/core/src/browser/style/tabs.css`
+
+### FileService and Filesystem Access (Browser Mode)
+
+The `FileService` in browser mode communicates with the backend via RPC and has **restricted filesystem access**:
+
+- **Accessible paths:** Files within the current workspace directory or the Theia user config directory (e.g., `~/.theia/`)
+- **Inaccessible paths:** Arbitrary filesystem paths outside these boundaries (e.g., `/tmp/`, `/etc/`)
+
+When implementing browser-side services that need to read files from user-configured directories:
+1. Use `FileService` from `@theia/filesystem/lib/browser/file-service`
+2. Convert paths to URIs using `URI.fromFilePath(path)`
+3. Expect `fileService.exists()` to return `false` for paths outside allowed boundaries
+4. Document that users should configure paths within their workspace or config directory
+
+**Reference implementation:** `packages/ai-core/src/browser/skill-service.ts` and `packages/ai-core/src/browser/frontend-prompt-customization-service.ts`

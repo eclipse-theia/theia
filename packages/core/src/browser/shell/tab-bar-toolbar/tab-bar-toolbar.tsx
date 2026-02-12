@@ -71,13 +71,18 @@ export class TabBarToolbar extends ReactWidget {
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()));
-
-        this.toDispose.push(this.contextKeyService.onDidChange(e => {
-            if (e.affects(this.keybindingContextKeys)) {
-                this.maybeUpdate();
-            }
-        }));
+        this.toDispose.pushAll([
+            this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()),
+            this.contextKeyService.onDidChange(e => {
+                if (e.affects(this.keybindingContextKeys)) {
+                    this.maybeUpdate();
+                }
+            }),
+            Disposable.create(() => {
+                this.toDisposeOnUpdateItems.dispose();
+                this.toDisposeOnSetCurrent.dispose();
+            })
+        ]);
     }
 
     updateItems(items: Array<TabBarToolbarItem>, current: Widget | undefined): void {
@@ -178,6 +183,7 @@ export class TabBarToolbar extends ReactWidget {
             anchor,
             context: this.current?.node || this.node,
             contextKeyService: this.contextKeyService,
+            includeAnchorArg: false,
             onHide: () => toDisposeOnHide.dispose()
         });
     }

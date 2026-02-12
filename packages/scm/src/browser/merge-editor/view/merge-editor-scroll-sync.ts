@@ -94,16 +94,16 @@ export class MergeEditorScrollSync implements Disposable {
     }
 
     storeScrollState(): unknown {
-        return this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
+        return ScrollState.get(this.mergeEditor.resultPane.editor);
     }
 
     restoreScrollState(state: unknown): void {
-        if (typeof state === 'number') {
-            const scrollTop = this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
-            if (state !== scrollTop) {
-                this.mergeEditor.side1Pane.editor.getControl().setScrollTop(state);
-            } else {
+        if (state instanceof ScrollState) {
+            const { editor } = this.mergeEditor.resultPane;
+            if (state.isEqual(ScrollState.get(editor))) {
                 this.update();
+            } else {
+                state.restore(editor);
             }
         }
     }
@@ -114,8 +114,8 @@ export class MergeEditorScrollSync implements Disposable {
         }
         this.isSyncing = true;
         try {
-            const scrollTop = this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
-            this.handleSide1ScrollTopChanged(scrollTop);
+            const scrollTop = this.mergeEditor.resultPane.editor.getControl().getScrollTop();
+            this.handleResultScrollTopChanged(scrollTop);
         } finally {
             this.isSyncing = false;
         }
@@ -168,7 +168,11 @@ export class MergeEditorScrollSync implements Disposable {
             side1Pane.editor.getControl().setScrollTop(scrollTop);
             side2Pane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            const targetScrollTop = this.computeTargetScrollTop(resultPane.editor, side1Pane.editor, model.resultToSide1LineRangeMap);
+            const targetScrollTop = Math.min(
+                this.computeTargetScrollTop(resultPane.editor, side1Pane.editor, model.resultToSide1LineRangeMap),
+                this.computeTargetScrollTop(resultPane.editor, side2Pane.editor, model.resultToSide2LineRangeMap),
+                shouldAlignBase ? this.computeTargetScrollTop(resultPane.editor, basePane.editor, model.resultToBaseLineRangeMap) : +Infinity
+            );
             side1Pane.editor.getControl().setScrollTop(targetScrollTop);
             side2Pane.editor.getControl().setScrollTop(targetScrollTop);
             if (shouldAlignBase) {
@@ -189,7 +193,11 @@ export class MergeEditorScrollSync implements Disposable {
             side1Pane.editor.getControl().setScrollTop(scrollTop);
             side2Pane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            const targetScrollTop = this.computeTargetScrollTop(basePane.editor, side1Pane.editor, model.baseToSide1LineRangeMap);
+            const targetScrollTop = Math.min(
+                this.computeTargetScrollTop(basePane.editor, side1Pane.editor, model.baseToSide1LineRangeMap),
+                this.computeTargetScrollTop(basePane.editor, side2Pane.editor, model.baseToSide2LineRangeMap),
+                shouldAlignResult ? this.computeTargetScrollTop(basePane.editor, resultPane.editor, model.baseToResultLineRangeMap) : +Infinity
+            );
             side1Pane.editor.getControl().setScrollTop(targetScrollTop);
             side2Pane.editor.getControl().setScrollTop(targetScrollTop);
             if (shouldAlignResult) {
@@ -204,38 +212,100 @@ export class MergeEditorScrollSync implements Disposable {
     }
 
     protected computeTargetScrollTop(sourceEditor: MonacoEditor, targetEditor: MonacoEditor, lineRangeMap: DocumentLineRangeMap): number {
+
+        // The implementation ensures that, when the top or bottom of a line that is unchanged according to the given lineRangeMap
+        // is displayed at the top of the source editor viewport, the top or bottom (respectively) of the corresponding line
+        // according to the given lineRangeMap will be displayed at the top of the target editor viewport.
+        // The implementation does its best to align all the other scrollTop positions proportionally.
+
         const visibleRanges = sourceEditor.getVisibleRanges();
         if (visibleRanges.length === 0) {
             return 0;
         }
 
-        const topLineNumber = visibleRanges[0].start.line;
+        let topLineNumber = visibleRanges[0].start.line;
         const scrollTop = sourceEditor.getControl().getScrollTop();
+        if (topLineNumber > 0 && scrollTop < sourceEditor.getControl().getTopForLineNumber(topLineNumber + 1)) {
+            --topLineNumber;
+        }
 
-        let sourceStartTopPx: number;
+        let sourceStartPx: number;
         let sourceEndPx: number;
-        let targetStartTopPx: number;
+        let targetStartPx: number;
         let targetEndPx: number;
 
         if (topLineNumber === 0 && scrollTop <= sourceEditor.getControl().getTopForLineNumber(1)) { // special case: scrollTop is before or at the top of the first line
-            sourceStartTopPx = 0;
+            sourceStartPx = 0;
             sourceEndPx = sourceEditor.getControl().getTopForLineNumber(1);
 
-            targetStartTopPx = 0;
+            targetStartPx = 0;
             targetEndPx = targetEditor.getControl().getTopForLineNumber(1);
         } else {
-            const { originalRange: sourceRange, modifiedRange: targetRange } = lineRangeMap.projectLine(Math.max(topLineNumber - 1, 0));
+            const projectionResult = lineRangeMap.projectLine(topLineNumber);
 
-            sourceStartTopPx = sourceEditor.getControl().getTopForLineNumber(sourceRange.startLineNumber + 1);
-            sourceEndPx = sourceEditor.getControl().getTopForLineNumber(sourceRange.endLineNumberExclusive + 1);
+            if (typeof projectionResult === 'number') { // the line is unchanged
+                const targetLineNumber = projectionResult;
 
-            targetStartTopPx = targetEditor.getControl().getTopForLineNumber(targetRange.startLineNumber + 1);
-            targetEndPx = targetEditor.getControl().getTopForLineNumber(targetRange.endLineNumberExclusive + 1);
+                sourceStartPx = sourceEditor.getControl().getTopForLineNumber(topLineNumber + 1);
+                sourceEndPx = sourceEditor.getControl().getBottomForLineNumber(topLineNumber + 1);
+
+                targetStartPx = targetEditor.getControl().getTopForLineNumber(targetLineNumber + 1);
+                targetEndPx = targetEditor.getControl().getBottomForLineNumber(targetLineNumber + 1);
+
+                if (scrollTop > sourceEndPx) { // scrollTop is in a view zone directly after the line
+                    sourceStartPx = sourceEndPx;
+                    sourceEndPx = sourceEditor.getControl().getTopForLineNumber(topLineNumber + 2);
+
+                    targetStartPx = targetEndPx;
+                    targetEndPx = targetEditor.getControl().getTopForLineNumber(targetLineNumber + 2);
+                }
+            } else {
+                const { originalRange: sourceRange, modifiedRange: targetRange } = projectionResult;
+
+                sourceStartPx = sourceEditor.getControl().getTopForLineNumber(sourceRange.startLineNumber + 1);
+                sourceEndPx = sourceEditor.getControl().getTopForLineNumber(sourceRange.endLineNumberExclusive + 1);
+
+                targetStartPx = targetEditor.getControl().getTopForLineNumber(targetRange.startLineNumber + 1);
+                targetEndPx = targetEditor.getControl().getTopForLineNumber(targetRange.endLineNumberExclusive + 1);
+            }
         }
 
-        const factor = Math.min(sourceEndPx === sourceStartTopPx ? 0 : (scrollTop - sourceStartTopPx) / (sourceEndPx - sourceStartTopPx), 1);
-        const targetScrollTop = targetStartTopPx + (targetEndPx - targetStartTopPx) * factor;
+        const factor = Math.min(sourceEndPx === sourceStartPx ? 0 : (scrollTop - sourceStartPx) / (sourceEndPx - sourceStartPx), 1);
+        const targetScrollTop = targetStartPx + (targetEndPx - targetStartPx) * factor;
 
         return targetScrollTop;
     }
+}
+
+class ScrollState {
+
+    static get(editor: MonacoEditor): ScrollState {
+        const visibleRanges = editor.getVisibleRanges();
+        if (visibleRanges.length === 0) {
+            return new ScrollState(0, 0);
+        }
+        const scrollTop = editor.getControl().getScrollTop();
+        let topLineNumber = visibleRanges[0].start.line;
+        if (topLineNumber > 0 && scrollTop < editor.getControl().getTopForLineNumber(topLineNumber + 1, true)) {
+            --topLineNumber;
+        }
+        return new ScrollState(scrollTop, topLineNumber);
+    }
+
+    restore(editor: MonacoEditor): void {
+        editor.getControl().setScrollTop(this.scrollTop);
+        if (this.topLineNumber !== ScrollState.get(editor).topLineNumber) { // this.scrollTop no longer corresponds to this.topLineNumber e.g. due to view zones having been changed
+            // make sure that the top line position is restored, even if not precisely
+            editor.getControl().setScrollTop(editor.getControl().getTopForLineNumber(this.topLineNumber + 1));
+        }
+    }
+
+    isEqual(other: ScrollState): boolean {
+        return this.scrollTop === other.scrollTop && this.topLineNumber === other.topLineNumber;
+    }
+
+    private constructor(
+        private readonly scrollTop: number,
+        private readonly topLineNumber: number
+    ) { }
 }

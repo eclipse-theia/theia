@@ -377,7 +377,7 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
     removeSession(sessionId: string): Thenable<void> {
         return this.proxy.$removeSession(this.id, sessionId)
             .then(() => {
-                this.messageService.info(nls.localizeByDefault('Successfully signed out.'));
+                this.messageService.info(nls.localize('theia/plugin-ext/authentication-main/signedOut', 'Successfully signed out.'));
             });
     }
 }

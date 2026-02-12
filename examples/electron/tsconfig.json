@@ -30,6 +30,9 @@
       "path": "../../packages/ai-codex"
     },
     {
+      "path": "../../packages/ai-copilot"
+    },
+    {
       "path": "../../packages/ai-core"
     },
     {
@@ -196,6 +199,9 @@
     },
     {
       "path": "../../packages/terminal"
+    },
+    {
+      "path": "../../packages/terminal-manager"
     },
     {
       "path": "../../packages/timeline"

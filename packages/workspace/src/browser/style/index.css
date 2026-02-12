@@ -1,0 +1,75 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Workspace Trust Dialog Styles */
+
+.workspace-trust-content {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 3);
+    padding: calc(var(--theia-ui-padding) * 2);
+}
+
+.workspace-trust-header {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2);
+}
+
+.workspace-trust-header i {
+    font-size: calc(var(--theia-ui-font-size3) * 2.5) !important;
+    color: var(--theia-button-background);
+}
+
+.workspace-trust-title {
+    font-size: var(--theia-ui-font-size2);
+    font-weight: 600;
+    line-height: var(--theia-content-line-height);
+}
+
+.workspace-trust-description,
+.workspace-trust-folder {
+    margin-left: calc(var(--theia-ui-font-size3) * 2.5 + var(--theia-ui-padding) * 2);
+}
+
+.workspace-trust-dialog .dialogControl {
+    margin-left: calc(var(--theia-ui-font-size3) * 2.5 + var(--theia-ui-padding) * 4);
+    padding-bottom: calc(var(--theia-ui-padding) * 4) !important;
+    justify-content: flex-start !important;
+}
+
+.workspace-trust-description {
+    color: var(--theia-descriptionForeground);
+    line-height: var(--theia-content-line-height);
+}
+
+.workspace-trust-folder-list {
+    padding-inline-start: 15px;
+    margin-block: 0;
+}
+
+.workspace-trust-folder {
+    font-family: var(--theia-code-font-family);
+    font-size: var(--theia-code-font-size);
+    color: var(--theia-foreground);
+    background-color: var(--theia-editor-background);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+    border-radius: 4px;
+}
+
+.workspace-trust-dialog .dialogControl .theia-button.secondary {
+    margin-left: 0;
+}

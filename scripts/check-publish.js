@@ -29,9 +29,13 @@ checkPublish(distTag).catch(error => {
 
 async function checkPublish(distTag) {
     const workspaces = JSON.parse(cp.execSync('npx lerna ls --json --loglevel=silent').toString());
+    const lernaPath = path.resolve('lerna.json');
+    const newVersion = JSON.parse(await fs.promises.readFile(lernaPath, 'utf8')).version;
+
     await Promise.all(workspaces.map(async workspace => {
         const packagePath = path.resolve(workspace.location, 'package.json');
         const pck = JSON.parse(await fs.promises.readFile(packagePath, 'utf8'));
+
         if (!pck.private) {
             let pckName;
             let npmViewOutput;
@@ -53,7 +57,7 @@ async function checkPublish(distTag) {
                     )
                 );
             } else {
-                pckName = `${pck.name}@${pck.version}`
+                pckName = `${pck.name}@${newVersion}`
                 npmViewOutput = await new Promise(
                     resolve => cp.exec(`npm view ${pckName} version`,
                         (error, stdout, stderr) => {
