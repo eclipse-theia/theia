@@ -25,6 +25,7 @@ import { AuthenticationExt, AuthenticationMain, MAIN_RPC_CONTEXT } from '../../c
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ConfirmDialog, Dialog, StorageService } from '@theia/core/lib/browser';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import {
     AuthenticationProvider,
@@ -69,6 +70,8 @@ export class AuthenticationMainImpl implements AuthenticationMain {
 
     async $unregisterAuthenticationProvider(id: string): Promise<void> {
         this.authenticationService.unregisterAuthenticationProvider(id);
+        const provider = this.providers.get(id);
+        provider?.dispose();
         this.providers.delete(id);
     }
 
@@ -255,6 +258,8 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         const provider = this.providers.get(providerId);
         if (provider) {
             provider.fireSessionsChanged(event);
+        } else {
+            console.warn(`No authentication provider found for id '${providerId}' when firing session change event.`);
         }
     }
 }
@@ -291,7 +296,7 @@ interface AccountUsage {
     lastUsed: number;
 }
 
-export class AuthenticationProviderImpl implements AuthenticationProvider {
+export class AuthenticationProviderImpl implements AuthenticationProvider, Disposable {
     /** map from account name to session ids */
     private accounts = new Map<string, string[]>();
     /** map from session id to account name */
@@ -308,6 +313,10 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         private readonly storageService: StorageService,
         private readonly messageService: MessageService
     ) { }
+
+    dispose(): void {
+        this.onDidChangeSessionsEmitter.dispose();
+    }
 
     fireSessionsChanged(event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): void {
         this.onDidChangeSessionsEmitter.fire(event);
