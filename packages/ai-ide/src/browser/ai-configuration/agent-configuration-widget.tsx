@@ -131,7 +131,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
     }
 
     protected async loadItems(): Promise<void> {
-        this.items = this.agentService.getAllAgents();
+        this.items = this.agentService.getAllAgents().sort((a, b) => a.name.localeCompare(b.name));
         const activeAgent = this.aiConfigurationSelectionService.getActiveAgent();
         if (activeAgent) {
             this.selectedItem = activeAgent;
