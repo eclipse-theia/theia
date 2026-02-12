@@ -17,9 +17,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { PromptService, parseCapabilitiesFromTemplate, ParsedCapability } from '@theia/ai-core';
-import { ChatAgentService, ChatAgent } from '@theia/ai-chat';
-
-export const ChatCapabilitiesService = Symbol('ChatCapabilitiesService');
+import { ChatAgentService, ChatAgent, ChatService, isSessionDeletedEvent } from '@theia/ai-chat';
 
 /**
  * Service to manage capability state for chat sessions.
@@ -33,6 +31,9 @@ export class ChatCapabilitiesServiceImpl {
 
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
 
     /**
      * Map of session ID -> Map of fragmentId -> enabled state (override)
@@ -51,6 +52,12 @@ export class ChatCapabilitiesServiceImpl {
         // Listen for prompt fragment changes and forward them as capability changes
         this.promptService.onPromptsChange(() => {
             this.onDidChangeCapabilitiesEmitter.fire();
+        });
+        // Clean up session overrides when sessions are deleted
+        this.chatService.onSessionEvent(event => {
+            if (isSessionDeletedEvent(event)) {
+                this.sessionOverrides.delete(event.sessionId);
+            }
         });
     }
 

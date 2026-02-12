@@ -25,11 +25,11 @@ export interface ParsedCapability {
 }
 
 /**
- * Regular expressions for matching capability variables in prompt templates.
+ * Single regex for matching capability variables in prompt templates.
  * Supports both double brace {{capability:...}} and triple brace {{{capability:...}}} syntax.
+ * The triple brace is matched first via an optional third brace to avoid double-matching.
  */
-const CAPABILITY_TWO_BRACES_REGEX = /\{\{\s*capability:([^\s}]+)\s+default\s+(on|off)\s*\}\}/gi;
-const CAPABILITY_THREE_BRACES_REGEX = /\{\{\{\s*capability:([^\s}]+)\s+default\s+(on|off)\s*\}\}\}/gi;
+const CAPABILITY_REGEX = /\{{2,3}\s*capability:([^\s}]+)\s+default\s+(on|off)\s*\}{2,3}/gi;
 
 /**
  * Parses capability variables from a prompt template string.
@@ -43,48 +43,39 @@ const CAPABILITY_THREE_BRACES_REGEX = /\{\{\{\s*capability:([^\s}]+)\s+default\s
  */
 export function parseCapabilitiesFromTemplate(template: string): ParsedCapability[] {
     const seenFragmentIds = new Set<string>();
-
-    // Process both two-brace and three-brace patterns
-    // We need to find all matches first, then sort by their position in the template
-    const allMatches: { index: number; fragmentId: string; defaultEnabled: boolean }[] = [];
-
-    // Collect all matches with their positions
-    CAPABILITY_TWO_BRACES_REGEX.lastIndex = 0;
-    let match = CAPABILITY_TWO_BRACES_REGEX.exec(template);
-    while (match) {
-        allMatches.push({
-            index: match.index,
-            fragmentId: match[1],
-            defaultEnabled: match[2].toLowerCase() === 'on'
-        });
-        match = CAPABILITY_TWO_BRACES_REGEX.exec(template);
-    }
-
-    CAPABILITY_THREE_BRACES_REGEX.lastIndex = 0;
-    match = CAPABILITY_THREE_BRACES_REGEX.exec(template);
-    while (match) {
-        allMatches.push({
-            index: match.index,
-            fragmentId: match[1],
-            defaultEnabled: match[2].toLowerCase() === 'on'
-        });
-        match = CAPABILITY_THREE_BRACES_REGEX.exec(template);
-    }
-
-    // Sort by position in template
-    allMatches.sort((a, b) => a.index - b.index);
-
-    // Add unique capabilities in order
     const capabilities: ParsedCapability[] = [];
-    for (const m of allMatches) {
-        if (!seenFragmentIds.has(m.fragmentId)) {
-            seenFragmentIds.add(m.fragmentId);
+
+    CAPABILITY_REGEX.lastIndex = 0;
+    let match = CAPABILITY_REGEX.exec(template);
+    while (match) {
+        const fragmentId = match[1];
+        if (!seenFragmentIds.has(fragmentId)) {
+            seenFragmentIds.add(fragmentId);
             capabilities.push({
-                fragmentId: m.fragmentId,
-                defaultEnabled: m.defaultEnabled
+                fragmentId,
+                defaultEnabled: match[2].toLowerCase() === 'on'
             });
         }
+        match = CAPABILITY_REGEX.exec(template);
     }
 
     return capabilities;
+}
+
+/**
+ * Parses a capability argument string.
+ * Expected format: "fragment-id default on" or "fragment-id default off"
+ * @param arg The argument string to parse
+ * @returns Object with fragmentId and defaultEnabled, or undefined if parsing failed
+ */
+export function parseCapabilityArgument(arg: string): { fragmentId: string; defaultEnabled: boolean } | undefined {
+    const match = arg.trim().match(/^(.+?)\s+default\s+(on|off)$/i);
+    if (!match) {
+        return undefined;
+    }
+
+    return {
+        fragmentId: match[1].trim(),
+        defaultEnabled: match[2].toLowerCase() === 'on'
+    };
 }

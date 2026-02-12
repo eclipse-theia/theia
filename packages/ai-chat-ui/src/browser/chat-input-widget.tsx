@@ -173,8 +173,9 @@ export class AIChatInputWidget extends ReactWidget {
     };
 
     protected handleCapabilityChange = (fragmentId: string, enabled: boolean): void => {
-        this.capabilityOverrides.set(fragmentId, enabled);
-        this.capabilityOverridesVersion++;
+        const newOverrides = new Map(this.capabilityOverrides);
+        newOverrides.set(fragmentId, enabled);
+        this.capabilityOverrides = newOverrides;
         this.update();
     };
 
@@ -182,12 +183,11 @@ export class AIChatInputWidget extends ReactWidget {
         const capabilities = await this.capabilitiesService.getCapabilitiesForAgent(agentId, modeId);
         this.capabilities = capabilities;
         // Initialize overrides with default values from capabilities
-        this.capabilityOverrides.clear();
+        const newOverrides = new Map<string, boolean>();
         for (const capability of capabilities) {
-            this.capabilityOverrides.set(capability.fragmentId, capability.defaultEnabled);
+            newOverrides.set(capability.fragmentId, capability.defaultEnabled);
         }
-        this.capabilityOverridesVersion++;
-        // Trigger re-render after capabilities are loaded
+        this.capabilityOverrides = newOverrides;
         this.update();
     }
 
@@ -218,7 +218,6 @@ export class AIChatInputWidget extends ReactWidget {
     } | undefined;
     protected capabilities: ParsedCapability[] = [];
     protected capabilityOverrides: Map<string, boolean> = new Map();
-    protected capabilityOverridesVersion = 0;
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -433,7 +432,7 @@ export class AIChatInputWidget extends ReactWidget {
                 } else if (!agent && this.receivingAgent !== undefined) {
                     this.receivingAgent = undefined;
                     this.capabilities = [];
-                    this.capabilityOverrides.clear();
+                    this.capabilityOverrides = new Map();
                     this.chatInputHasModesKey.set(false);
                     this.update();
                 }
@@ -587,7 +586,6 @@ export class AIChatInputWidget extends ReactWidget {
                 capabilitiesProps={{
                     capabilities: this.capabilities,
                     overrides: this.capabilityOverrides,
-                    overridesVersion: this.capabilityOverridesVersion,
                     onCapabilityChange: this.handleCapabilityChange,
                 }}
             />
@@ -862,7 +860,6 @@ interface ChatInputProperties {
     capabilitiesProps: {
         capabilities: ParsedCapability[];
         overrides: Map<string, boolean>;
-        overridesVersion: number;
         onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
     };
 }
@@ -1322,7 +1319,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 <ChatCapabilitiesPanel
                     capabilities={props.capabilitiesProps.capabilities}
                     overrides={props.capabilitiesProps.overrides}
-                    overridesVersion={props.capabilitiesProps.overridesVersion}
                     onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
                     isOpen={capabilitiesPanelOpen}
                     disabled={!props.isEnabled}

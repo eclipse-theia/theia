@@ -267,8 +267,7 @@ export interface ChatRequest {
     readonly modeId?: string;
     /**
      * Capability overrides for this request.
-     * Maps capability fragment IDs to enabled/disabled state.
-     * Only includes capabilities that differ from their default value.
+     * Maps capability fragment IDs to their enabled/disabled state.
      */
     readonly capabilityOverrides?: Record<string, boolean>;
 }
