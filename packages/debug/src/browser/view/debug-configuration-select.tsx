@@ -66,7 +66,9 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         // synchronize the currentValue with the selectComponent value
         const currentValue = this.currentValue;
         if (this.state.currentValue !== currentValue) {
-            this.selectRef.current!.value = currentValue;
+            if (this.selectRef.current) {
+                this.selectRef.current.value = currentValue;
+            }
             this.setState({ currentValue });
         }
     }
@@ -135,12 +137,6 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     }
 
     /**
-     * Fetches the actual debug configurations for a specific provider type.
-     * This is called lazily when the user selects a provider type from the dropdown,
-     * triggering extension activation and provideDebugConfigurations call only for the
-     * specified type, rather than activating all extensions.
-     */
-    /**
      * Fetches the actual debug configurations for a provider (which may have multiple types).
      * This is called lazily when the user selects a provider from the dropdown,
      * triggering extension activation and provideDebugConfigurations call only for the
@@ -204,7 +200,9 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     protected refreshDebugConfigurations = () => {
         const providers = this.manager.getDynamicDebugConfigurationProviders();
         const value = this.currentValue;
-        this.selectRef.current!.value = value;
+        if (this.selectRef.current) {
+            this.selectRef.current.value = value;
+        }
         this.setState({ providers, currentValue: value });
     };
 
