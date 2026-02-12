@@ -17,12 +17,11 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
-import { nls } from '@theia/core';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
 
 @injectable()
-export class WithAppTesterCommandContribution implements FrontendApplicationContribution {
+export class WithAppTesterContribution implements FrontendApplicationContribution {
 
     @inject(PromptService)
     protected readonly promptService: PromptService;
@@ -36,14 +35,7 @@ export class WithAppTesterCommandContribution implements FrontendApplicationCont
 
         this.promptService.addBuiltInPromptFragment({
             id: 'with-apptester',
-            template: commandTemplate,
-            isCommand: true,
-            commandName: 'with-apptester',
-            commandDescription: nls.localize(
-                'theia/ai-ide/withAppTesterCommand/description',
-                'Delegate testing to the AppTester agent (requires agent mode)'
-            ),
-            commandAgents: ['Coder']
+            template: commandTemplate
         });
     }
 

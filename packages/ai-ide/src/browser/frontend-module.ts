@@ -111,7 +111,7 @@ import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunct
 import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
 import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
 import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
-import { WithAppTesterCommandContribution } from './with-apptester-command-contribution';
+import { WithAppTesterContribution } from './with-apptester-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -313,5 +313,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(FixGitHubTicketCommandContribution);
     bind(FrontendApplicationContribution).to(AddressGhReviewCommandContribution);
     bind(FrontendApplicationContribution).to(AnalyzesGhTicketCommandContribution);
-    bind(FrontendApplicationContribution).to(WithAppTesterCommandContribution);
+    bind(FrontendApplicationContribution).to(WithAppTesterContribution);
 });
