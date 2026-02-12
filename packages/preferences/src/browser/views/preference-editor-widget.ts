@@ -25,7 +25,10 @@ import {
     TopDownTreeIterator,
     ExpandableTreeNode,
 } from '@theia/core/lib/browser';
-import { Disposable, DisposableCollection, PreferenceProviderDataChanges, PreferenceProviderProvider, PreferenceSchemaService, PreferenceService, unreachable } from '@theia/core';
+import {
+    Disposable, DisposableCollection, nls, PreferenceProviderDataChanges,
+    PreferenceProviderProvider, PreferenceSchemaService, PreferenceService, unreachable
+} from '@theia/core';
 import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widgets/widget';
 import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
 import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
@@ -41,7 +44,7 @@ export interface PreferencesEditorState {
 @injectable()
 export class PreferencesEditorWidget extends BaseWidget implements StatefulWidget {
     static readonly ID = 'settings.editor';
-    static readonly LABEL = 'Settings Editor';
+    static readonly LABEL = nls.localizeByDefault('Settings Editor');
 
     override scrollOptions = DEFAULT_SCROLL_OPTIONS;
 
@@ -98,7 +101,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         this.node.appendChild(innerWrapper);
         const noLeavesMessage = document.createElement('div');
         noLeavesMessage.classList.add('settings-no-results-announcement');
-        noLeavesMessage.textContent = 'That search query has returned no results.';
+        noLeavesMessage.textContent = nls.localize('theia/preferences/noResults', 'That search query has returned no results.');
         this.node.appendChild(noLeavesMessage);
     }
 

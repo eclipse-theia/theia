@@ -66,7 +66,7 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
      * Clears the search input and all search results.
      * @param e on-click mouse event.
      */
-    protected clearSearchResults = async (e: React.MouseEvent): Promise<void> => {
+    protected clearSearchResults = async (e: React.SyntheticEvent): Promise<void> => {
         const search = document.getElementById(PreferencesSearchbarWidget.SEARCHBAR_ID) as HTMLInputElement;
         if (search) {
             search.value = '';
@@ -109,11 +109,16 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
      * Renders a clear all button.
      */
     protected renderClearAllOption(): React.ReactNode {
-        return <span
-            className={`${codicon('clear-all')} option ${(this.searchTermExists() ? 'enabled' : '')}`}
+        const enabled = this.searchTermExists();
+        return <button
+            className={`option ${enabled ? 'enabled' : ''}`}
+            aria-label={nls.localizeByDefault('Clear Search Results')}
             title={nls.localizeByDefault('Clear Search Results')}
+            disabled={!enabled}
             onClick={this.clearSearchResults}
-        />;
+        >
+            <i className={codicon('clear-all')} />
+        </button>;
     }
 
     /**
