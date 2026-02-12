@@ -1,6 +1,6 @@
 ## Theia Project Information
 
-This section contains informations specific about the Theia Project and code base, which the user is currenty working on.
+This section contains information specific about the Theia Project and code base, which the user is currently working on.
 
 ### Architecture overview
 
@@ -44,6 +44,7 @@ Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-v
 - The use of `null` is forbidden. Use `undefined` instead for representing absent or uninitialized values.
 - Use single quotes (`'`) for string literals instead of double quotes (`"`).
 - Use Theia's Event/Emitter/Disposable for handling event listener patterns
+- For localization, use `nls.localizeByDefault(defaultValue)` when the string exists in VS Code's language packs. ESLint will flag `nls.localize` with a custom key if a matching default string is available. Only use `nls.localize('theia/<package>/<id>', 'text')` for strings that do not exist in VS Code translations.
 
 ### Test File References
 
