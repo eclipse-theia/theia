@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024, 2025 EclipseSource GmbH.
+// Copyright (C) 2024 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,7 +19,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
-export const CUSTOM_ENDPOINTS_PREF = 'ai-features.AnthropicCustom.customAnthropicModels';
+export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -42,7 +42,7 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: nls.localize('theia/ai/anthropic/useResponseApi/mdDescription',
+            markdownDescription: nls.localize('theia/ai/anthropic/customEndpoints/mdDescription',
                 'Integrate custom models compatible with the Anthropic API. The required attributes are `model` and `url`.\
             \n\
             Optionally, you can\

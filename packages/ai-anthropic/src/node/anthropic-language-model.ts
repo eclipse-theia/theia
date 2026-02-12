@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024, 2025 EclipseSource GmbH.
+// Copyright (C) 2024 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -433,9 +433,12 @@ export class AnthropicModel implements LanguageModel {
 
     protected initializeAnthropic(): Anthropic {
         const apiKey = this.apiKey();
-        if (!apiKey) {
+        if (!apiKey && !(this.url)) {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
+
+        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
+        const key = apiKey ?? 'no-key';
 
         let fo;
         if (this.proxy) {
@@ -445,6 +448,6 @@ export class AnthropicModel implements LanguageModel {
             };
         }
 
-        return new Anthropic({ apiKey, baseURL: this.url, fetchOptions: fo });
+        return new Anthropic({ apiKey: key, baseURL: this.url, fetchOptions: fo });
     }
 }
