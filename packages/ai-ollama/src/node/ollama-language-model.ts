@@ -162,7 +162,7 @@ export class OllamaModel implements LanguageModel {
                             tool_calls: toolCalls
                         });
 
-                        // Create tool call message parts and yield them. 
+                        // Create tool call message parts and yield them.
                         // This is required because when calling a tool, Theia AI expects the corresponding message part to exist.
                         const toolCallsForResponse = that.createToolCalls(toolCalls, lastUpdated);
                         yield { tool_calls: toolCallsForResponse };
