@@ -62,7 +62,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     }
 
     protected async loadServers(): Promise<void> {
-        const serverNames = await this.mcpFrontendService.getServerNames();
+        const serverNames = (await this.mcpFrontendService.getServerNames()).sort((a, b) => a.localeCompare(b));
         const descriptions = await Promise.all(serverNames.map(name => this.mcpFrontendService.getServerDescription(name)));
         this.servers = descriptions.filter((desc): desc is MCPServerDescription => desc !== undefined);
         this.update();
