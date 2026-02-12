@@ -203,7 +203,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
             if (!languageModel) {
                 throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
-            const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
+            const systemMessageDescription = await this.getSystemMessageDescription({
+                model: request.session,
+                request,
+                capabilityOverrides: request.request.capabilityOverrides
+            } satisfies ChatSessionContext);
 
             if (systemMessageDescription?.promptVariantId) {
                 request.response.setPromptVariantInfo(

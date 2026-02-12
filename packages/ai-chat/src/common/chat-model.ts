@@ -265,10 +265,17 @@ export interface ChatRequest {
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
     readonly modeId?: string;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     * Only includes capabilities that differ from their default value.
+     */
+    readonly capabilityOverrides?: Record<string, boolean>;
 }
 
 export interface ChatContext {
     variables: ResolvedAIContextVariable[];
+    [key: string]: unknown;
 }
 
 export interface ChatRequestModel {

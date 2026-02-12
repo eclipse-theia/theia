@@ -72,7 +72,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
             if (arg) {
                 const parseResult = this.parseCapabilityArgument(arg);
                 if (!parseResult) {
-                    this.logger.debug(`Could not parse capability argument '${arg}'. Expected format: 'fragment-id default on' or 'fragment-id default off'.`);
+                    this.logger.warn(`Could not parse capability argument '${arg}'. Expected format: 'fragment-id default on' or 'fragment-id default off'.`);
                     return {
                         variable: request.variable,
                         value: '',
@@ -80,10 +80,16 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
                     };
                 }
 
-                const { fragmentId, isEnabled } = parseResult;
+                const { fragmentId, isEnabled: defaultEnabled } = parseResult;
+
+                // Get the enabled state from context overrides, or fall back to the default from the prompt
+                const isEnabled = context.capabilityOverrides?.[fragmentId] ?? defaultEnabled;
+
+                this.logger.debug(`Capability '${fragmentId}': enabled=${isEnabled} (override=${context.capabilityOverrides?.[fragmentId]}, default=${defaultEnabled})`);
 
                 // If capability is disabled, return empty string
                 if (!isEnabled) {
+                    this.logger.debug(`Capability '${fragmentId}' is disabled, returning empty string`);
                     return {
                         variable: request.variable,
                         value: '',
@@ -94,7 +100,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
                 // Resolve the prompt fragment
                 const fragment = this.promptService.getRawPromptFragment(fragmentId);
                 if (!fragment) {
-                    this.logger.debug(`Could not find prompt fragment '${fragmentId}' for capability variable.`);
+                    this.logger.warn(`Could not find prompt fragment '${fragmentId}' for capability variable.`);
                     return {
                         variable: request.variable,
                         value: '',
@@ -111,6 +117,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
                 );
 
                 if (resolvedPrompt) {
+                    this.logger.debug(`Capability '${fragmentId}' resolved to ${resolvedPrompt.text.length} chars`);
                     return {
                         variable: request.variable,
                         value: resolvedPrompt.text,
@@ -119,7 +126,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
                 }
             }
         }
-        this.logger.debug(`Could not resolve capability variable '${request.variable.name}' with arg '${request.arg}'. Returning empty string.`);
+        this.logger.warn(`Could not resolve capability variable '${request.variable.name}' with arg '${request.arg}'. Returning empty string.`);
         return {
             variable: request.variable,
             value: '',
