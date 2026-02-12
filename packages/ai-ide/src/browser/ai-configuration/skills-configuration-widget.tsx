@@ -47,7 +47,7 @@ export class AISkillsConfigurationWidget extends AITableConfigurationWidget<Skil
     }
 
     protected async loadItems(): Promise<void> {
-        this.items = this.skillService.getSkills();
+        this.items = this.skillService.getSkills().sort((a, b) => a.name.localeCompare(b.name));
     }
 
     protected getItemId(item: Skill): string {
