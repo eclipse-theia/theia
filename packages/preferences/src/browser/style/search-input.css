@@ -59,6 +59,17 @@
   border: var(--theia-border-width) solid transparent;
   opacity: 0.7;
   cursor: pointer;
+  /* Reset default button styles when using <button> */
+  appearance: none;
+  background-color: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.theia-settings-container .settings-search-container .option:disabled {
+  cursor: default;
+  opacity: 0.4;
 }
 
 .theia-settings-container .settings-search-container .enabled {
