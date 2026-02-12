@@ -41,11 +41,13 @@ export const IMAGE_CONTEXT_VARIABLE: AIVariable = {
         },
         {
             name: 'data',
-            description: nls.localize('theia/ai/chat/imageContextVariable/args/data/description', 'The image data in base64.')
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/data/description', 'The image data in base64.'),
+            isOptional: true
         },
         {
             name: 'mimeType',
-            description: nls.localize('theia/ai/chat/imageContextVariable/args/mimeType/description', 'The mimetype of the image.')
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/mimeType/description', 'The mimetype of the image.'),
+            isOptional: true
         }
     ]
 };
@@ -167,7 +169,7 @@ export namespace ImageContextVariable {
     export function createPathBasedRequest(path: string, imageName?: string): ImageContextVariableRequest {
         return {
             variable: IMAGE_CONTEXT_VARIABLE,
-            arg: JSON.stringify({ wsRelativePath: path, name: imageName })
+            arg: createArgString({ wsRelativePath: path, name: imageName })
         };
     }
 }

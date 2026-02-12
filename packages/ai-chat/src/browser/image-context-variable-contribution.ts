@@ -28,6 +28,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable, ImageContextVariableRequest, ResolvedImageContextVariable } from '../common/image-context-variable';
 import { ChatSessionContext } from '../common/chat-agents';
 import { PendingImageRegistry } from './pending-image-registry';
+import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils';
 
 @injectable()
 export class ImageContextVariableContribution implements AIVariableContribution, AIVariableResolver, AIVariableOpener, LabelProviderContribution {
@@ -172,12 +173,12 @@ export class ImageContextVariableContribution implements AIVariableContribution,
                 return undefined;
             }
 
-            const data = await this.fileToBase64(uri);
+            const data = await fileToBase64(uri, this.fileService, this.logger);
             if (!data) {
                 return undefined;
             }
 
-            const mimeType = this.getMimeTypeFromExtension(variable.wsRelativePath);
+            const mimeType = getMimeTypeFromExtension(variable.wsRelativePath);
 
             return {
                 name: variable.name,
@@ -189,35 +190,6 @@ export class ImageContextVariableContribution implements AIVariableContribution,
             this.logger.error(`Failed to resolve image from path: ${variable.wsRelativePath}`, error);
             return undefined;
         }
-    }
-
-    protected async fileToBase64(uri: URI): Promise<string> {
-        try {
-            const fileContent = await this.fileService.readFile(uri);
-            const uint8Array = new Uint8Array(fileContent.value.buffer);
-            let binary = '';
-            for (let i = 0; i < uint8Array.length; i++) {
-                binary += String.fromCharCode(uint8Array[i]);
-            }
-            return btoa(binary);
-        } catch (error) {
-            this.logger.error('Error reading file content:', error);
-            return '';
-        }
-    }
-
-    protected getMimeTypeFromExtension(filePath: string): string {
-        const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
-        const mimeTypes: { [key: string]: string } = {
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.bmp': 'image/bmp',
-            '.svg': 'image/svg+xml',
-            '.webp': 'image/webp'
-        };
-        return mimeTypes[extension] || 'application/octet-stream';
     }
 
     async canOpen(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<number> {

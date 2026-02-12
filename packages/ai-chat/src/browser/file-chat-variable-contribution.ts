@@ -17,7 +17,7 @@
 import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
 import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
-import { CancellationToken, ILogger, nls, QuickInputService, URI } from '@theia/core';
+import { CancellationToken, ILogger, nls, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
@@ -25,6 +25,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable } from '../common/image-context-variable';
+import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils';
 import { ApplicationShell } from '@theia/core/lib/browser';
 
 @injectable()
@@ -129,8 +130,8 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                     quickPick.dispose();
                     const filePath = await this.wsService.getWorkspaceRelativePath(selectedItem.uri);
                     const fileName = selectedItem.uri.displayName;
-                    const base64Data = await this.fileToBase64(selectedItem.uri);
-                    const mimeType = this.getMimeTypeFromExtension(selectedItem.uri.path.toString());
+                    const base64Data = await fileToBase64(selectedItem.uri, this.fileService, this.logger);
+                    const mimeType = getMimeTypeFromExtension(selectedItem.uri.path.toString());
 
                     // Create the argument string in the required format
                     const imageVarArgs: ImageContextVariable = {
@@ -235,41 +236,6 @@ export class FileChatVariableContribution implements FrontendVariableContributio
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'];
         const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
         return imageExtensions.includes(extension);
-    }
-
-    /**
-     * Determines the MIME type based on file extension.
-     */
-    protected getMimeTypeFromExtension(filePath: string): string {
-        const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
-        const mimeTypes: { [key: string]: string } = {
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.bmp': 'image/bmp',
-            '.svg': 'image/svg+xml',
-            '.webp': 'image/webp'
-        };
-        return mimeTypes[extension] || 'application/octet-stream';
-    }
-
-    /**
-     * Converts a file to base64 data URL.
-     */
-    protected async fileToBase64(uri: URI): Promise<string> {
-        try {
-            const fileContent = await this.fileService.readFile(uri);
-            const uint8Array = new Uint8Array(fileContent.value.buffer);
-            let binary = '';
-            for (let i = 0; i < uint8Array.length; i++) {
-                binary += String.fromCharCode(uint8Array[i]);
-            }
-            return btoa(binary);
-        } catch (error) {
-            this.logger.error('Error reading file content:', error);
-            return '';
-        }
     }
 
     protected async handleDrop(event: DragEvent, _: AIVariableContext): Promise<AIVariableDropResult | undefined> {

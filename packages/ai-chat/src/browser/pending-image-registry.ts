@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -196,12 +196,6 @@ export class DefaultPendingImageRegistry implements PendingImageRegistry {
         return this.registry.get(scopeUri)?.get(shortId);
     }
 
-    /**
-     * Get pending image data by short ID only (global fallback).
-     * Use this when scope is not available (e.g., during variable resolution in parser).
-     * @param shortId The short ID of the image
-     * @returns The image data if found, undefined otherwise
-     */
     getByShortId(shortId: string): PendingImageData | undefined {
         return this.globalShortIdMap.get(shortId);
     }
