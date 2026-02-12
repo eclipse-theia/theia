@@ -549,6 +549,12 @@ div:last-child > .theia-ChatNode {
   overflow: hidden;
 }
 
+/* When capabilities panel is expanded */
+.theia-ChatInput.capabilities-expanded .theia-ChatInput-Editor-Box {
+  margin-bottom: 0;
+  border-radius: 4px 4px 0 0;
+}
+
 .theia-ChatInput-Editor-Box:has(.monaco-editor.focused) {
   border-color: var(--theia-focusBorder);
 }
@@ -1351,4 +1357,115 @@ div:last-child > .theia-ChatNode {
   border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
   border-bottom: 0;
   margin: var(--theia-ui-padding) 0;
+}
+
+/* Capabilities Panel Styles */
+.theia-ChatInput-Capabilities-Panel {
+  margin: 0 16px 16px 16px;
+  overflow: hidden;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  background-color: var(--theia-editor-background);
+  transition: max-height 0.15s ease-in-out, opacity 0.15s ease-in-out;
+}
+
+.theia-ChatInput-Capabilities-Panel.expanded {
+  max-height: 200px;
+  opacity: 1;
+}
+
+.theia-ChatInput-Capabilities-Panel.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin: 0 16px;
+  border-width: 0;
+}
+
+.theia-ChatInput-Capabilities-Content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 8px 10px;
+  overflow-y: auto;
+  max-height: 150px;
+}
+
+.theia-ChatInput-Capabilities-Item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-foreground);
+}
+
+.theia-ChatInput-Capabilities-Item:hover {
+  color: var(--theia-textLink-foreground);
+}
+
+.theia-ChatInput-Capabilities-Item input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--theia-button-background);
+}
+
+.theia-ChatInput-Capabilities-Item input[type="checkbox"]:disabled {
+  cursor: default;
+  opacity: var(--theia-mod-disabled-opacity);
+}
+
+.theia-ChatInput-Capabilities-Label {
+  white-space: nowrap;
+}
+
+/* Capabilities Toggle Button - styled to match mode selector */
+.theia-ChatInput-Capabilities-Toggle {
+  margin-left: 4px;
+  min-width: 21px;
+  height: 21px;
+  padding: 2px 6px;
+  border: none;
+  background: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  font-size: 13px;
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.theia-ChatInput-Capabilities-Toggle:hover:not(:disabled) {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-Capabilities-Toggle:disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+}
+
+.theia-ChatInput-Capabilities-Toggle:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.theia-ChatInput-Capabilities-Toggle.active {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-Capabilities-Toggle-Label {
+  white-space: nowrap;
+}
+
+.theia-ChatInput-Capabilities-Toggle .codicon {
+  font-size: 12px;
+}
+
+.theia-ChatInputOptions .option.active {
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
 }

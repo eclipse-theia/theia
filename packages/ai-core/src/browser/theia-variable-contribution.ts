@@ -136,18 +136,18 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
         return `\${${variableId}${request.arg ? ':' + request.arg : ''}}`;
     }
 
-    async canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<number> {
+    async canResolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<number> {
         if (!request.variable.id.startsWith(TheiaVariableContribution.THEIA_PREFIX)) {
             return 0;
         }
         // some variables are not resolvable without providing a specific context
         // this may be expensive but was not a problem for Theia's built-in variables
-        const resolved = await this.variableResolverService.resolve(this.toTheiaVariable(request), context);
+        const resolved = await this.variableResolverService.resolve(this.toTheiaVariable(request));
         return !resolved ? 0 : 1;
     }
 
-    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        const resolved = await this.variableResolverService.resolve(this.toTheiaVariable(request), context);
+    async resolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
+        const resolved = await this.variableResolverService.resolve(this.toTheiaVariable(request));
         return resolved ? { value: resolved, variable: request.variable } : undefined;
     }
 }

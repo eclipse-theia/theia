@@ -130,6 +130,17 @@ export namespace AIVariableResolutionRequest {
 }
 
 export interface AIVariableContext {
+    /**
+     * Capability overrides from the chat request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     */
+    capabilityOverrides?: Record<string, boolean>;
+
+    /**
+     * Allow additional properties to be passed in the context.
+     * This enables extending interfaces and passing extra context-specific data.
+     */
+    [key: string]: unknown;
 }
 
 export type AIVariableArg = string | { variable: string, arg?: string } | AIVariableResolutionRequest;

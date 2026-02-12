@@ -20,7 +20,7 @@ import {
 } from '@theia/ai-chat';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { AIVariableResolutionRequest, ParsedCapability } from '@theia/ai-core';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
@@ -41,8 +41,10 @@ import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/con
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
+import { ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
+import { ChatCapabilitiesPanel, CapabilitiesButton } from './chat-capabilities-panel';
 
-type Query = (query: string, mode?: string) => Promise<void>;
+type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>) => Promise<void>;
 type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
@@ -114,6 +116,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(PendingImageRegistry)
     protected readonly pendingImageRegistry: PendingImageRegistry;
 
+    @inject(ChatCapabilitiesServiceImpl)
+    protected readonly capabilitiesService: ChatCapabilitiesServiceImpl;
+
     protected fileValidationState = new Map<string, FileValidationResult>();
 
     @inject(ContextKeyService)
@@ -159,12 +164,42 @@ export class AIChatInputWidget extends ReactWidget {
         this.update();
     }
 
-    protected handleModeChange = (mode: string): void => {
+    protected handleModeChange = async (mode: string): Promise<void> => {
         if (this.receivingAgent) {
             this.receivingAgent = { ...this.receivingAgent, currentModeId: mode };
+            await this.updateCapabilitiesForAgent(this.receivingAgent.agentId, mode);
             this.update();
         }
     };
+
+    protected handleCapabilityChange = (fragmentId: string, enabled: boolean): void => {
+        this.capabilityOverrides.set(fragmentId, enabled);
+        this.capabilityOverridesVersion++;
+        this.update();
+    };
+
+    protected async updateCapabilitiesForAgent(agentId: string, modeId?: string): Promise<void> {
+        const capabilities = await this.capabilitiesService.getCapabilitiesForAgent(agentId, modeId);
+        this.capabilities = capabilities;
+        // Initialize overrides with default values from capabilities
+        this.capabilityOverrides.clear();
+        for (const capability of capabilities) {
+            this.capabilityOverrides.set(capability.fragmentId, capability.defaultEnabled);
+        }
+        this.capabilityOverridesVersion++;
+        // Trigger re-render after capabilities are loaded
+        this.update();
+    }
+
+    /**
+     * Refreshes capabilities for the current receiving agent.
+     * Called when prompt fragments change to ensure capabilities reflect the latest template.
+     */
+    protected async refreshCapabilities(): Promise<void> {
+        if (this.receivingAgent) {
+            await this.updateCapabilitiesForAgent(this.receivingAgent.agentId, this.receivingAgent.currentModeId);
+        }
+    }
 
     protected chatInputFocusKey: ContextKey<boolean>;
     protected chatInputFirstLineKey: ContextKey<boolean>;
@@ -181,6 +216,9 @@ export class AIChatInputWidget extends ReactWidget {
         modes: ChatMode[];
         currentModeId?: string;
     } | undefined;
+    protected capabilities: ParsedCapability[] = [];
+    protected capabilityOverrides: Map<string, boolean> = new Map();
+    protected capabilityOverridesVersion = 0;
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -192,12 +230,12 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected _onQuery: Query;
     set onQuery(query: Query) {
-        this._onQuery = (prompt: string, mode?: string) => {
+        this._onQuery = (prompt: string, mode?: string, capabilityOverrides?: Record<string, boolean>) => {
             if (this.configuration?.enablePromptHistory !== false && prompt.trim()) {
                 this.historyService.addToHistory(prompt);
                 this.navigationState.stopNavigation();
             }
-            return query(prompt, mode);
+            return query(prompt, mode, capabilityOverrides);
         };
     }
     protected _onUnpin: Unpin;
@@ -294,6 +332,10 @@ export class AIChatInputWidget extends ReactWidget {
             this.navigationState = new ChatInputNavigationState(this.historyService);
         });
         this.initializeContextKeys();
+        // Listen for prompt fragment changes to refresh capabilities
+        this.toDispose.push(this.capabilitiesService.onDidChangeCapabilities(() => {
+            this.refreshCapabilities();
+        }));
         this.update();
     }
 
@@ -386,9 +428,12 @@ export class AIChatInputWidget extends ReactWidget {
                         currentModeId: initialModeId
                     };
                     this.chatInputHasModesKey.set(modes.length > 1);
+                    await this.updateCapabilitiesForAgent(agentId, initialModeId);
                     this.update();
                 } else if (!agent && this.receivingAgent !== undefined) {
                     this.receivingAgent = undefined;
+                    this.capabilities = [];
+                    this.capabilityOverrides.clear();
                     this.chatInputHasModesKey.set(false);
                     this.update();
                 }
@@ -538,6 +583,12 @@ export class AIChatInputWidget extends ReactWidget {
                     receivingAgentModes: this.receivingAgent?.modes,
                     currentMode: this.receivingAgent?.currentModeId,
                     onModeChange: this.handleModeChange,
+                }}
+                capabilitiesProps={{
+                    capabilities: this.capabilities,
+                    overrides: this.capabilityOverrides,
+                    overridesVersion: this.capabilityOverridesVersion,
+                    onCapabilityChange: this.handleCapabilityChange,
                 }}
             />
         );
@@ -765,7 +816,7 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     branch?: ChatHierarchyBranch;
     onCancel: (requestModel: ChatRequestModel) => void;
-    onQuery: (query: string, mode?: string) => void;
+    onQuery: (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>) => void;
     onUnpin: () => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
@@ -807,7 +858,13 @@ interface ChatInputProperties {
         receivingAgentModes?: ChatMode[];
         currentMode?: string;
         onModeChange: (mode: string) => void;
-    }
+    };
+    capabilitiesProps: {
+        capabilities: ParsedCapability[];
+        overrides: Map<string, boolean>;
+        overridesVersion: number;
+        onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
+    };
 }
 
 // Utility to check if we have task context in the chat model
@@ -822,6 +879,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const [isInputEmpty, setIsInputEmpty] = React.useState(true);
     const [isInputFocused, setIsInputFocused] = React.useState(false);
     const [placeholderText, setPlaceholderText] = React.useState('');
+    const [capabilitiesPanelOpen, setCapabilitiesPanelOpen] = React.useState(false);
     const [changeSetUI, setChangeSetUI] = React.useState(
         () => buildChangeSetUI(
             props.chatModel.changeSet,
@@ -1065,6 +1123,18 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     }, [editorRef]);
 
+    // Convert capability overrides map to a plain record - always send all capability states
+    const getCapabilityOverridesRecord = React.useCallback((): Record<string, boolean> | undefined => {
+        if (props.capabilitiesProps.overrides.size === 0) {
+            return undefined;
+        }
+        const record: Record<string, boolean> = {};
+        for (const [key, value] of props.capabilitiesProps.overrides) {
+            record[key] = value;
+        }
+        return record;
+    }, [props.capabilitiesProps.overrides]);
+
     // Without user input, if we can default to "Perform this task.", do so
     const submit = React.useCallback(function submit(value: string): void {
         let effectiveValue = value;
@@ -1074,13 +1144,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         if (!effectiveValue || effectiveValue.trim().length === 0) {
             return;
         }
-        props.onQuery(effectiveValue, props.modeSelectorProps.currentMode);
+        const capabilityOverrides = getCapabilityOverridesRecord();
+        props.onQuery(effectiveValue, props.modeSelectorProps.currentMode, capabilityOverrides);
         setValue('');
         if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
             editorRef.current.focus();
         }
-    }, [props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
+    }, [props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue, shouldUseTaskPlaceholder, taskPlaceholder, getCapabilityOverridesRecord]);
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (!props.isEnabled) {
@@ -1140,6 +1211,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             editorRef.current.getControl().getAction('editor.action.triggerSuggest')?.run();
         }
     };
+
+    // Show capabilities button if there are any capabilities
+    const hasCapabilities = props.capabilitiesProps.capabilities.length > 0;
 
     const leftOptions = [
         ...(props.showContext
@@ -1212,8 +1286,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Show mode selector if agent has multiple modes
     const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
 
+    const containerClassName = `theia-ChatInput${hasCapabilities && capabilitiesPanelOpen ? ' capabilities-expanded' : ''}`;
+
     return (
-        <div className='theia-ChatInput' data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
+        <div className={containerClassName} data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
             {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
             {props.showChangeSet && changeSetUI?.elements &&
                 <ChangeSetBox changeSet={changeSetUI} />
@@ -1235,8 +1311,23 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         currentMode: props.modeSelectorProps.currentMode,
                         onModeChange: props.modeSelectorProps.onModeChange,
                     }}
+                    capabilitiesProps={{
+                        hasCapabilities,
+                        isOpen: capabilitiesPanelOpen,
+                        onToggle: () => setCapabilitiesPanelOpen(!capabilitiesPanelOpen),
+                    }}
                 />
             </div>
+            {hasCapabilities && (
+                <ChatCapabilitiesPanel
+                    capabilities={props.capabilitiesProps.capabilities}
+                    overrides={props.capabilitiesProps.overrides}
+                    overridesVersion={props.capabilitiesProps.overridesVersion}
+                    onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
+                    isOpen={capabilitiesPanelOpen}
+                    disabled={!props.isEnabled}
+                />
+            )}
         </div>
     );
 };
@@ -1251,13 +1342,19 @@ interface ChatInputOptionsProps {
         currentMode?: string;
         onModeChange: (mode: string) => void;
     };
+    capabilitiesProps: {
+        hasCapabilities: boolean;
+        isOpen: boolean;
+        onToggle: () => void;
+    };
 }
 
 const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     leftOptions,
     rightOptions,
     isEnabled,
-    modeSelectorProps
+    modeSelectorProps,
+    capabilitiesProps
 }) => (
     // Right options are rendered first in DOM for tab order (send button first when enabled)
     // CSS order property positions them visually (left on left, right on right)
@@ -1311,6 +1408,14 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                     currentMode={modeSelectorProps.currentMode}
                     onModeChange={modeSelectorProps.onModeChange}
                     disabled={!isEnabled}
+                />
+            )}
+            {capabilitiesProps.hasCapabilities && (
+                <CapabilitiesButton
+                    hasCapabilities={capabilitiesProps.hasCapabilities}
+                    isOpen={capabilitiesProps.isOpen}
+                    disabled={!isEnabled}
+                    onClick={capabilitiesProps.onToggle}
                 />
             )}
         </div>
