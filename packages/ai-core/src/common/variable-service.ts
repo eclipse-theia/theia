@@ -138,7 +138,8 @@ export interface AIVariableContext {
 
     /**
      * Allow additional properties to be passed in the context.
-     * This enables extending interfaces and passing extra context-specific data.
+     * This enables extending interfaces like ChatSessionContext to pass
+     * extra context-specific data (e.g. model, session, type).
      */
     [key: string]: unknown;
 }

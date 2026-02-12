@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseCapabilitiesFromTemplate } from './capability-utils';
+import { parseCapabilitiesFromTemplate, parseCapabilityArgument } from './capability-utils';
 
 describe('capability-utils', () => {
     describe('parseCapabilitiesFromTemplate', () => {
@@ -171,6 +171,47 @@ describe('capability-utils', () => {
             expect(result[0].fragmentId).to.equal('zeta');
             expect(result[1].fragmentId).to.equal('alpha');
             expect(result[2].fragmentId).to.equal('omega');
+        });
+    });
+
+    describe('parseCapabilityArgument', () => {
+        it('should parse a valid argument with default on', () => {
+            const result = parseCapabilityArgument('feature-one default on');
+            expect(result).to.deep.equal({ fragmentId: 'feature-one', defaultEnabled: true });
+        });
+
+        it('should parse a valid argument with default off', () => {
+            const result = parseCapabilityArgument('feature-two default off');
+            expect(result).to.deep.equal({ fragmentId: 'feature-two', defaultEnabled: false });
+        });
+
+        it('should handle case-insensitive on/off', () => {
+            expect(parseCapabilityArgument('feat default ON')?.defaultEnabled).to.be.true;
+            expect(parseCapabilityArgument('feat default OFF')?.defaultEnabled).to.be.false;
+            expect(parseCapabilityArgument('feat default On')?.defaultEnabled).to.be.true;
+        });
+
+        it('should handle whitespace in arguments', () => {
+            const result = parseCapabilityArgument('  test-capability   default   on  ');
+            expect(result).to.not.be.undefined;
+            expect(result!.fragmentId).to.equal('test-capability');
+            expect(result!.defaultEnabled).to.be.true;
+        });
+
+        it('should return undefined for missing default keyword', () => {
+            expect(parseCapabilityArgument('test-capability on')).to.be.undefined;
+        });
+
+        it('should return undefined for missing on/off value', () => {
+            expect(parseCapabilityArgument('test-capability default')).to.be.undefined;
+        });
+
+        it('should return undefined for invalid on/off value', () => {
+            expect(parseCapabilityArgument('test-capability default yes')).to.be.undefined;
+        });
+
+        it('should return undefined for empty string', () => {
+            expect(parseCapabilityArgument('')).to.be.undefined;
         });
     });
 });

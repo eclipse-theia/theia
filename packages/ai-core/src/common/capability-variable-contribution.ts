@@ -28,6 +28,7 @@ import {
 } from './variable-service';
 import { isCustomizedPromptFragment, PromptService } from './prompt-service';
 import { PromptText } from './prompt-text';
+import { parseCapabilityArgument } from './capability-utils';
 
 export const CAPABILITY_VARIABLE: AIVariable = {
     id: 'capability-provider',
@@ -70,7 +71,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
         if (request.variable.name === CAPABILITY_VARIABLE.name) {
             const arg = request.arg?.trim();
             if (arg) {
-                const parseResult = this.parseCapabilityArgument(arg);
+                const parseResult = parseCapabilityArgument(arg);
                 if (!parseResult) {
                     this.logger.warn(`Could not parse capability argument '${arg}'. Expected format: 'fragment-id default on' or 'fragment-id default off'.`);
                     return {
@@ -80,7 +81,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
                     };
                 }
 
-                const { fragmentId, isEnabled: defaultEnabled } = parseResult;
+                const { fragmentId, defaultEnabled } = parseResult;
 
                 // Get the enabled state from context overrides, or fall back to the default from the prompt
                 const isEnabled = context.capabilityOverrides?.[fragmentId] ?? defaultEnabled;
@@ -131,28 +132,6 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
             variable: request.variable,
             value: '',
             allResolvedDependencies: []
-        };
-    }
-
-    /**
-     * Parses the capability argument string.
-     * Expected format: "fragment-id default on" or "fragment-id default off"
-     * @param arg The argument string to parse
-     * @returns Object with fragmentId and isEnabled, or undefined if parsing failed
-     */
-    protected parseCapabilityArgument(arg: string): { fragmentId: string; isEnabled: boolean } | undefined {
-        // Match pattern: <fragment-id> default on|off
-        const match = arg.match(/^(.+?)\s+default\s+(on|off)$/i);
-        if (!match) {
-            return undefined;
-        }
-
-        const fragmentId = match[1].trim();
-        const defaultValue = match[2].toLowerCase();
-
-        return {
-            fragmentId,
-            isEnabled: defaultValue === 'on'
         };
     }
 

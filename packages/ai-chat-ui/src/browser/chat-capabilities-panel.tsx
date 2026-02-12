@@ -21,8 +21,6 @@ import { nls } from '@theia/core';
 export interface ChatCapabilitiesPanelProps {
     capabilities: ParsedCapability[];
     overrides: Map<string, boolean>;
-    /** Version counter to trigger re-renders when overrides change (since Map reference stays the same) */
-    overridesVersion: number;
     onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
     isOpen: boolean;
     disabled?: boolean;
@@ -35,7 +33,6 @@ export interface ChatCapabilitiesPanelProps {
 export const ChatCapabilitiesPanel: React.FunctionComponent<ChatCapabilitiesPanelProps> = ({
     capabilities,
     overrides,
-    overridesVersion: _overridesVersion, // Used to trigger re-renders
     onCapabilityChange,
     isOpen,
     disabled
