@@ -17,120 +17,162 @@
 import * as React from '@theia/core/shared/react';
 import { ParsedCapability } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { HoverService } from '@theia/core/lib/browser';
 
-export interface ChatCapabilitiesPanelProps {
+export interface CapabilityChipsRowProps {
     capabilities: ParsedCapability[];
     overrides: Map<string, boolean>;
     onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
-    isOpen: boolean;
     disabled?: boolean;
+    hoverService: HoverService;
 }
 
 /**
- * A collapsible panel that displays checkboxes for each capability variable
- * found in the current agent's prompt.
+ * A row of toggle chips rendered inline inside the editor box.
+ *
+ * Keyboard navigation: roving tabindex — Tab enters the group on the
+ * currently focused chip, Arrow Left/Right moves between chips,
+ * Space/Enter toggles, Tab leaves the group.
+ *
+ * Accessibility: container has role="group" with aria-label,
+ * each chip uses role="switch" with aria-checked and a descriptive
+ * title tooltip.
  */
-export const ChatCapabilitiesPanel: React.FunctionComponent<ChatCapabilitiesPanelProps> = ({
+export const CapabilityChipsRow: React.FunctionComponent<CapabilityChipsRowProps> = ({
     capabilities,
     overrides,
     onCapabilityChange,
-    isOpen,
-    disabled
+    disabled,
+    hoverService
 }) => {
+    const [focusIndex, setFocusIndex] = React.useState(0);
+    // eslint-disable-next-line no-null/no-null
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
     if (capabilities.length === 0) {
         return undefined;
     }
 
-    return (
-        <div className={`theia-ChatInput-Capabilities-Panel ${isOpen ? 'expanded' : 'collapsed'}`}>
-            <div className="theia-ChatInput-Capabilities-Content">
-                {capabilities.map(capability => {
-                    // Overrides should always have the value (initialized with defaults)
-                    // Fall back to defaultEnabled only if somehow missing
-                    const isChecked = overrides.get(capability.fragmentId) ?? capability.defaultEnabled;
-                    const id = `capability-${capability.fragmentId}`;
-
-                    return (
-                        <label
-                            key={capability.fragmentId}
-                            className="theia-ChatInput-Capabilities-Item"
-                            htmlFor={id}
-                        >
-                            <input
-                                type="checkbox"
-                                id={id}
-                                checked={isChecked}
-                                disabled={disabled}
-                                onChange={e => onCapabilityChange(capability.fragmentId, e.target.checked)}
-                            />
-                            <span className="theia-ChatInput-Capabilities-Label">
-                                {formatCapabilityLabel(capability.fragmentId)}
-                            </span>
-                        </label>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
-ChatCapabilitiesPanel.displayName = 'ChatCapabilitiesPanel';
-
-/**
- * Formats a capability fragment ID into a human-readable label.
- * Converts kebab-case to Title Case with spaces.
- */
-function formatCapabilityLabel(fragmentId: string): string {
-    // Convert kebab-case to words
-    return fragmentId
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-}
-
-export interface CapabilitiesButtonProps {
-    hasCapabilities: boolean;
-    isOpen: boolean;
-    disabled?: boolean;
-    onClick: () => void;
-}
-
-/**
- * Button component to toggle the capabilities panel visibility.
- * Styled to match the mode selector dropdown appearance.
- */
-export const CapabilitiesButton = React.memo<CapabilitiesButtonProps>(function CapabilitiesButton({
-    hasCapabilities,
-    isOpen,
-    disabled,
-    onClick
-}): React.JSX.Element | undefined {
-    if (!hasCapabilities) {
-        return undefined;
-    }
-
     const handleKeyDown = (e: React.KeyboardEvent): void => {
-        if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault();
-            onClick();
+        if (disabled) {
+            return;
+        }
+        let newIndex = focusIndex;
+        if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
+            if (focusIndex < capabilities.length - 1) {
+                e.preventDefault();
+                newIndex = focusIndex + 1;
+            }
+        } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
+            if (focusIndex > 0) {
+                e.preventDefault();
+                newIndex = focusIndex - 1;
+            }
+        }
+        if (newIndex !== focusIndex) {
+            setFocusIndex(newIndex);
+            const chips = containerRef.current?.querySelectorAll<HTMLElement>('[role="switch"]');
+            chips?.[newIndex]?.focus();
         }
     };
 
     return (
-        <button
-            type="button"
-            className={`theia-ChatInput-Capabilities-Toggle${isOpen ? ' active' : ''}`}
-            title={nls.localizeByDefault('Capabilities')}
+        <div
+            ref={containerRef}
+            className="theia-ChatInput-CapabilityChips"
+            role="group"
             aria-label={nls.localizeByDefault('Capabilities')}
-            aria-expanded={isOpen}
-            disabled={disabled}
-            onClick={onClick}
             onKeyDown={handleKeyDown}
         >
-            <span className="theia-ChatInput-Capabilities-Toggle-Label">
-                {nls.localizeByDefault('Capabilities')}
-            </span>
-            <span className={`codicon ${isOpen ? 'codicon-chevron-up' : 'codicon-chevron-down'}`} />
-        </button>
+            {capabilities.map((capability, index) => {
+                const isChecked = overrides.get(capability.fragmentId) ?? capability.defaultEnabled;
+                return (
+                    <CapabilityChip
+                        key={capability.fragmentId}
+                        fragmentId={capability.fragmentId}
+                        checked={isChecked}
+                        disabled={disabled}
+                        tabIndex={index === focusIndex ? 0 : -1}
+                        onToggle={onCapabilityChange}
+                        onFocus={() => setFocusIndex(index)}
+                        hoverService={hoverService}
+                    />
+                );
+            })}
+        </div>
+    );
+};
+
+interface CapabilityChipProps {
+    fragmentId: string;
+    description?: string;
+    checked: boolean;
+    disabled?: boolean;
+    tabIndex: number;
+    onToggle: (fragmentId: string, enabled: boolean) => void;
+    onFocus: () => void;
+    hoverService: HoverService;
+}
+
+/**
+ * Individual capability toggle chip, styled like the search widget
+ * option buttons (match case, regex). Uses inputOption theme colors
+ * when enabled, transparent when disabled.
+ */
+const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChip({
+    fragmentId,
+    description,
+    checked,
+    disabled,
+    tabIndex,
+    onToggle,
+    onFocus,
+    hoverService
+}: CapabilityChipProps): React.JSX.Element {
+    // eslint-disable-next-line no-null/no-null
+    const chipRef = React.useRef<HTMLSpanElement>(null);
+
+    const handleClick = (): void => {
+        if (!disabled) {
+            onToggle(fragmentId, !checked);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent): void => {
+        if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onToggle(fragmentId, !checked);
+        }
+    };
+
+    const label = fragmentId; // TODO: should be a dedicated display label of the prompt fragment
+
+    const handleMouseEnter = (): void => {
+        if (chipRef.current) {
+            const content = description ? `${label}: ${description}` : label;
+            hoverService.requestHover({
+                content,
+                target: chipRef.current,
+                position: 'top'
+            });
+        }
+    };
+
+    return (
+        <span
+            ref={chipRef}
+            className={`theia-ChatInput-CapabilityChip${checked ? ' checked' : ''}${disabled ? ' chip-disabled' : ''}`}
+            role="switch"
+            aria-checked={checked}
+            aria-label={label}
+            tabIndex={tabIndex}
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            onFocus={onFocus}
+            onMouseEnter={handleMouseEnter}
+        >
+            {checked && <span className="codicon codicon-check theia-ChatInput-CapabilityChip-icon" />}
+            {label}
+        </span>
     );
 });
