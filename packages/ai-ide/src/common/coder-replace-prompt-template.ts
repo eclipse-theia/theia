@@ -373,6 +373,8 @@ You are an autonomous AI agent. Do not stop until:
 - New tests are created if needed
 - No security vulnerabilities are introduced
 - No further action is required
+
+{{capability:with-apptester default off}}
 `,
         ...({ variantOf: CODER_AGENT_MODE_TEMPLATE_ID }),
     };
