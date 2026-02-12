@@ -23,7 +23,8 @@ import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-va
 import { AIVariableResolutionRequest, ParsedCapability } from '@theia/ai-core';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
-import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -43,7 +44,7 @@ import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
 import { ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
-import { ChatCapabilitiesPanel, CapabilitiesButton } from './chat-capabilities-panel';
+import { CapabilityChipsRow } from './chat-capabilities-panel';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>) => Promise<void>;
 type Unpin = () => void;
@@ -128,6 +129,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
 
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
+
     protected navigationState: ChatInputNavigationState;
 
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
@@ -155,6 +159,11 @@ export class AIChatInputWidget extends ReactWidget {
         return this.navigationState.getNextPrompt();
     }
 
+    toggleCapabilities(): void {
+        this.capabilitiesOpen = !this.capabilitiesOpen;
+        this.update();
+    }
+
     protected getKeybindingHint(commandId: string): string | undefined {
         const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
         if (bindings.length > 0) {
@@ -162,6 +171,10 @@ export class AIChatInputWidget extends ReactWidget {
             return parts.join(' ');
         }
         return undefined;
+    }
+
+    protected getCapabilitiesKeybindingHint(): string | undefined {
+        return this.getKeybindingHint('chat-input:toggle-capabilities');
     }
 
     protected getModeKeybindingHint(): string | undefined {
@@ -196,6 +209,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected async updateCapabilitiesForAgent(agentId: string, modeId?: string): Promise<void> {
         const capabilities = await this.capabilitiesService.getCapabilitiesForAgent(agentId, modeId);
         this.capabilities = capabilities;
+        this.chatInputHasCapabilitiesKey.set(capabilities.length > 0);
         // Initialize overrides with default values from capabilities
         const newOverrides = new Map<string, boolean>();
         for (const capability of capabilities) {
@@ -220,6 +234,9 @@ export class AIChatInputWidget extends ReactWidget {
     protected chatInputLastLineKey: ContextKey<boolean>;
     protected chatInputReceivingAgentKey: ContextKey<string>;
     protected chatInputHasModesKey: ContextKey<boolean>;
+    protected chatInputHasCapabilitiesKey: ContextKey<boolean>;
+
+    protected capabilitiesOpen = true;
 
     protected isEnabled = false;
     protected heightInLines = 12;
@@ -358,6 +375,7 @@ export class AIChatInputWidget extends ReactWidget {
         this.chatInputLastLineKey = this.contextKeyService.createKey<boolean>('chatInputLastLine', false);
         this.chatInputReceivingAgentKey = this.contextKeyService.createKey<string>('chatInputReceivingAgent', '');
         this.chatInputHasModesKey = this.contextKeyService.createKey<boolean>('chatInputHasModes', false);
+        this.chatInputHasCapabilitiesKey = this.contextKeyService.createKey<boolean>('chatInputHasCapabilities', false);
     }
 
     updateCursorPositionKeys(): void {
@@ -448,11 +466,13 @@ export class AIChatInputWidget extends ReactWidget {
                     this.capabilities = [];
                     this.capabilityOverrides = new Map();
                     this.chatInputHasModesKey.set(false);
+                    this.chatInputHasCapabilitiesKey.set(false);
                     this.update();
                 }
             } else if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
+                this.chatInputHasCapabilitiesKey.set(false);
                 this.receivingAgent = undefined;
                 this.update();
             }
@@ -461,6 +481,7 @@ export class AIChatInputWidget extends ReactWidget {
             if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
+                this.chatInputHasCapabilitiesKey.set(false);
                 this.receivingAgent = undefined;
                 this.update();
             }
@@ -602,6 +623,10 @@ export class AIChatInputWidget extends ReactWidget {
                     capabilities: this.capabilities,
                     overrides: this.capabilityOverrides,
                     onCapabilityChange: this.handleCapabilityChange,
+                    isOpen: this.capabilitiesOpen,
+                    onToggle: () => this.toggleCapabilities(),
+                    keybindingHint: this.getCapabilitiesKeybindingHint(),
+                    hoverService: this.hoverService,
                 }}
             />
         );
@@ -877,6 +902,10 @@ interface ChatInputProperties {
         capabilities: ParsedCapability[];
         overrides: Map<string, boolean>;
         onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
+        isOpen: boolean;
+        onToggle: () => void;
+        keybindingHint?: string;
+        hoverService: HoverService;
     };
 }
 
@@ -892,7 +921,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const [isInputEmpty, setIsInputEmpty] = React.useState(true);
     const [isInputFocused, setIsInputFocused] = React.useState(false);
     const [placeholderText, setPlaceholderText] = React.useState('');
-    const [capabilitiesPanelOpen, setCapabilitiesPanelOpen] = React.useState(false);
     const [changeSetUI, setChangeSetUI] = React.useState(
         () => buildChangeSetUI(
             props.chatModel.changeSet,
@@ -1225,9 +1253,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
-    // Show capabilities button if there are any capabilities
-    const hasCapabilities = props.capabilitiesProps.capabilities.length > 0;
-
     const leftOptions = [
         ...(props.showContext
             ? [{
@@ -1299,10 +1324,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Show mode selector if agent has multiple modes
     const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
 
-    const containerClassName = `theia-ChatInput${hasCapabilities && capabilitiesPanelOpen ? ' capabilities-expanded' : ''}`;
-
     return (
-        <div className={containerClassName} data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
+        <div className="theia-ChatInput" data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
             {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
             {props.showChangeSet && changeSetUI?.elements &&
                 <ChangeSetBox changeSet={changeSetUI} />
@@ -1325,22 +1348,23 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         onModeChange: props.modeSelectorProps.onModeChange,
                         keybindingHint: props.modeSelectorProps.keybindingHint,
                     }}
-                    capabilitiesProps={{
-                        hasCapabilities,
-                        isOpen: capabilitiesPanelOpen,
-                        onToggle: () => setCapabilitiesPanelOpen(!capabilitiesPanelOpen),
+                    capabilitiesToggle={{
+                        hasCapabilities: props.capabilitiesProps.capabilities.length > 0,
+                        isOpen: props.capabilitiesProps.isOpen,
+                        onToggle: props.capabilitiesProps.onToggle,
+                        keybindingHint: props.capabilitiesProps.keybindingHint,
                     }}
                 />
+                {props.capabilitiesProps.isOpen && (
+                    <CapabilityChipsRow
+                        capabilities={props.capabilitiesProps.capabilities}
+                        overrides={props.capabilitiesProps.overrides}
+                        onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
+                        disabled={!props.isEnabled}
+                        hoverService={props.capabilitiesProps.hoverService}
+                    />
+                )}
             </div>
-            {hasCapabilities && (
-                <ChatCapabilitiesPanel
-                    capabilities={props.capabilitiesProps.capabilities}
-                    overrides={props.capabilitiesProps.overrides}
-                    onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
-                    isOpen={capabilitiesPanelOpen}
-                    disabled={!props.isEnabled}
-                />
-            )}
         </div>
     );
 };
@@ -1356,10 +1380,11 @@ interface ChatInputOptionsProps {
         onModeChange: (mode: string) => void;
         keybindingHint?: string;
     };
-    capabilitiesProps: {
+    capabilitiesToggle: {
         hasCapabilities: boolean;
         isOpen: boolean;
         onToggle: () => void;
+        keybindingHint?: string;
     };
 }
 
@@ -1368,74 +1393,92 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     rightOptions,
     isEnabled,
     modeSelectorProps,
-    capabilitiesProps
-}) => (
-    // Right options are rendered first in DOM for tab order (send button first when enabled)
-    // CSS order property positions them visually (left on left, right on right)
-    <div className="theia-ChatInputOptions">
-        <div className="theia-ChatInputOptions-right">
-            {rightOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    aria-label={option.title}
-                    role='button'
-                    tabIndex={option.disabled ? -1 : 0}
-                    onClick={option.handler}
-                    onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            option.handler();
-                        }
-                    }}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
+    capabilitiesToggle
+}) => {
+    const capabilitiesLabel = nls.localize('theia/ai/chat-ui/toggleCapabilitiesConfig', 'Toggle Capabilities Configuration');
+    const capabilitiesTitle = capabilitiesToggle.keybindingHint
+        ? `${capabilitiesLabel} (${capabilitiesToggle.keybindingHint})`
+        : capabilitiesLabel;
+
+    return (
+        // Right options are rendered first in DOM for tab order (send button first when enabled)
+        // CSS order property positions them visually (left on left, right on right)
+        <div className="theia-ChatInputOptions">
+            <div className="theia-ChatInputOptions-right">
+                {rightOptions.map((option, index) => (
+                    <span
+                        key={index}
+                        className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                        title={option.title}
+                        aria-label={option.title}
+                        role='button'
+                        tabIndex={option.disabled ? -1 : 0}
+                        onClick={option.handler}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                option.handler();
+                            }
+                        }}
+                    >
+                        <span>{option.text?.content}</span>
+                        <span className={`codicon ${option.className}`} />
+                    </span>
+                ))}
+            </div>
+            <div className="theia-ChatInputOptions-left">
+                {leftOptions.map((option, index) => (
+                    <span
+                        key={index}
+                        className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                        title={option.title}
+                        aria-label={option.title}
+                        role='button'
+                        tabIndex={option.disabled ? -1 : 0}
+                        onClick={option.handler}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                option.handler();
+                            }
+                        }}
+                    >
+                        <span>{option.text?.content}</span>
+                        <span className={`codicon ${option.className}`} />
+                    </span>
+                ))}
+                {modeSelectorProps.show && modeSelectorProps.modes && (
+                    <ChatModeSelector
+                        modes={modeSelectorProps.modes}
+                        currentMode={modeSelectorProps.currentMode}
+                        onModeChange={modeSelectorProps.onModeChange}
+                        disabled={!isEnabled}
+                        keybindingHint={modeSelectorProps.keybindingHint}
+                    />
+                )}
+                {capabilitiesToggle.hasCapabilities && (
+                    <span
+                        className={`option theia-ChatInput-CapabilitiesToggle${capabilitiesToggle.isOpen ? ' active' : ''}`}
+                        title={capabilitiesTitle}
+                        aria-label={capabilitiesLabel}
+                        aria-expanded={capabilitiesToggle.isOpen}
+                        role='button'
+                        tabIndex={0}
+                        onClick={capabilitiesToggle.onToggle}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                capabilitiesToggle.onToggle();
+                            }
+                        }}
+                    >
+                        <span className="codicon codicon-settings-gear" />
+                    </span>
+                )}
+            </div>
         </div>
-        <div className="theia-ChatInputOptions-left">
-            {leftOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    aria-label={option.title}
-                    role='button'
-                    tabIndex={option.disabled ? -1 : 0}
-                    onClick={option.handler}
-                    onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            option.handler();
-                        }
-                    }}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
-            {modeSelectorProps.show && modeSelectorProps.modes && (
-                <ChatModeSelector
-                    modes={modeSelectorProps.modes}
-                    currentMode={modeSelectorProps.currentMode}
-                    onModeChange={modeSelectorProps.onModeChange}
-                    disabled={!isEnabled}
-                    keybindingHint={modeSelectorProps.keybindingHint}
-                />
-            )}
-            {capabilitiesProps.hasCapabilities && (
-                <CapabilitiesButton
-                    hasCapabilities={capabilitiesProps.hasCapabilities}
-                    isOpen={capabilitiesProps.isOpen}
-                    disabled={!isEnabled}
-                    onClick={capabilitiesProps.onToggle}
-                />
-            )}
-        </div>
-    </div>
-);
+    );
+};
 
 interface ChatModeSelectorProps {
     modes: ChatMode[];
