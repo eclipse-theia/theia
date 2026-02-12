@@ -17,6 +17,7 @@
 .theia-settings-container .settings-search-container {
   display: flex;
   align-items: center;
+  padding: 1px /* Enough for the search bar's outline to show up. */
 }
 
 .theia-settings-container .settings-search-container .settings-search-input {
@@ -34,10 +35,6 @@
   z-index: 999;
   right: 5px;
   display: flex;
-}
-
-.theia-settings-container .settings-search-container .clear-all {
-  background: var(--theia-icon-clear);
 }
 
 .theia-settings-container .settings-search-container .results-found {
