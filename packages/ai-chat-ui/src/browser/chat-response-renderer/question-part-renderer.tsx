@@ -33,15 +33,16 @@ export class QuestionPartRenderer
 
     render(question: QuestionResponseContent, node: ResponseNode): ReactNode {
         const isDisabled = question.isReadOnly || question.selectedOption !== undefined || !node.response.isWaitingForInput;
+        const hasDescriptions = question.options.some(option => option.description);
 
         return (
             <div className="theia-QuestionPartRenderer-root">
                 <div className="theia-QuestionPartRenderer-question">{question.question}</div>
-                <div className="theia-QuestionPartRenderer-options">
+                <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
                     {
                         question.options.map((option, index) => (
                             <button
-                                className={`theia-button theia-QuestionPartRenderer-option ${question.selectedOption?.text === option.text ? 'selected' : ''}`}
+                                className={`theia-QuestionPartRenderer-option ${question.selectedOption?.text === option.text ? 'selected' : ''}`}
                                 onClick={() => {
                                     if (!question.isReadOnly && question.handler) {
                                         question.selectedOption = option;
@@ -52,7 +53,10 @@ export class QuestionPartRenderer
                                 key={index}
                                 title={option.description}
                             >
-                                {option.text}
+                                <span className="theia-QuestionPartRenderer-option-label">{option.text}</span>
+                                {option.description && (
+                                    <span className="theia-QuestionPartRenderer-option-description">{option.description}</span>
+                                )}
                             </button>
                         ))
                     }
