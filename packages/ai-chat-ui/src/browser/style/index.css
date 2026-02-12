@@ -644,6 +644,7 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions .theia-ChatInputOptions-left,
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   display: flex;
+  align-items: center;
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-left {
@@ -669,6 +670,12 @@ div:last-child > .theia-ChatNode {
   border-radius: 5px;
   border: var(--theia-border-width) solid transparent;
   cursor: pointer;
+  outline: none;
+}
+
+.theia-ChatInputOptions .option:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
 }
 
 .theia-ChatInputOptions .option.disabled {
@@ -686,38 +693,35 @@ div:last-child > .theia-ChatNode {
   flex-direction: row-reverse;
 }
 
-.theia-ChatInput-ModeSelector {
-  margin-left: 4px;
-  min-width: 21px;
+/* Mode selector - compact SelectComponent inside toolbar */
+.theia-ChatInput-ModeSelector.theia-select-component {
+  margin-left: calc(var(--theia-ui-padding) * 2 / 3);
+  min-width: unset;
+  min-height: unset;
   height: 21px;
-  padding: 2px;
-  border: none;
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  border: var(--theia-border-width) solid transparent;
+  box-sizing: border-box;
   background: var(--theia-editor-background);
-  color: var(--theia-foreground);
-  font-size: 13px;
+  font-size: var(--theia-content-font-size);
   border-radius: 5px;
-  outline: none;
-  cursor: pointer;
   max-width: 150px;
+  outline: none;
 }
 
-.theia-ChatInput-ModeSelector:hover:not(:disabled) {
+.theia-ChatInput-ModeSelector.theia-select-component:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.theia-ChatInput-ModeSelector:disabled {
-  opacity: var(--theia-mod-disabled-opacity);
-  cursor: default;
-}
-
-.theia-ChatInput-ModeSelector:focus {
+.theia-ChatInput-ModeSelector.theia-select-component:focus-visible {
   outline: 1px solid var(--theia-focusBorder);
   outline-offset: -1px;
 }
 
-.theia-ChatInput-ModeSelector option {
-  background: var(--theia-dropdown-background);
-  color: var(--theia-dropdown-foreground);
+.theia-ChatInput-ModeSelector.disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  pointer-events: none;
 }
 
 .theia-CodePartRenderer-root {

@@ -25,6 +25,7 @@ import { AgentCompletionNotificationService, FrontendVariableService, AIActivati
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -124,6 +125,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
+
     protected navigationState: ChatInputNavigationState;
 
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
@@ -151,17 +155,27 @@ export class AIChatInputWidget extends ReactWidget {
         return this.navigationState.getNextPrompt();
     }
 
+    protected getKeybindingHint(commandId: string): string | undefined {
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+        if (bindings.length > 0) {
+            const parts = this.keybindingRegistry.acceleratorFor(bindings[0], '+');
+            return parts.join(' ');
+        }
+        return undefined;
+    }
+
+    protected getModeKeybindingHint(): string | undefined {
+        return this.getKeybindingHint('chat-input:cycle-mode');
+    }
+
     cycleMode(): void {
         if (!this.receivingAgent || !this.receivingAgent.modes || this.receivingAgent.modes.length <= 1) {
             return;
         }
         const currentIndex = this.receivingAgent.modes.findIndex(mode => mode.id === this.receivingAgent!.currentModeId);
         const nextIndex = currentIndex === -1 ? 1 : (currentIndex + 1) % this.receivingAgent.modes.length;
-        this.receivingAgent = {
-            ...this.receivingAgent,
-            currentModeId: this.receivingAgent.modes[nextIndex].id
-        };
-        this.update();
+        const nextModeId = this.receivingAgent.modes[nextIndex].id;
+        this.handleModeChange(nextModeId);
     }
 
     protected handleModeChange = async (mode: string): Promise<void> => {
@@ -582,6 +596,7 @@ export class AIChatInputWidget extends ReactWidget {
                     receivingAgentModes: this.receivingAgent?.modes,
                     currentMode: this.receivingAgent?.currentModeId,
                     onModeChange: this.handleModeChange,
+                    keybindingHint: this.getModeKeybindingHint(),
                 }}
                 capabilitiesProps={{
                     capabilities: this.capabilities,
@@ -856,6 +871,7 @@ interface ChatInputProperties {
         receivingAgentModes?: ChatMode[];
         currentMode?: string;
         onModeChange: (mode: string) => void;
+        keybindingHint?: string;
     };
     capabilitiesProps: {
         capabilities: ParsedCapability[];
@@ -1307,6 +1323,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         modes: props.modeSelectorProps.receivingAgentModes,
                         currentMode: props.modeSelectorProps.currentMode,
                         onModeChange: props.modeSelectorProps.onModeChange,
+                        keybindingHint: props.modeSelectorProps.keybindingHint,
                     }}
                     capabilitiesProps={{
                         hasCapabilities,
@@ -1337,6 +1354,7 @@ interface ChatInputOptionsProps {
         modes?: ChatMode[];
         currentMode?: string;
         onModeChange: (mode: string) => void;
+        keybindingHint?: string;
     };
     capabilitiesProps: {
         hasCapabilities: boolean;
@@ -1404,6 +1422,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                     currentMode={modeSelectorProps.currentMode}
                     onModeChange={modeSelectorProps.onModeChange}
                     disabled={!isEnabled}
+                    keybindingHint={modeSelectorProps.keybindingHint}
                 />
             )}
             {capabilitiesProps.hasCapabilities && (
@@ -1423,23 +1442,38 @@ interface ChatModeSelectorProps {
     currentMode?: string;
     onModeChange: (mode: string) => void;
     disabled?: boolean;
+    keybindingHint?: string;
 }
 
-const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.memo(({ modes, currentMode, onModeChange, disabled }) => (
-    <select
-        className="theia-ChatInput-ModeSelector"
-        value={currentMode ?? modes[0]?.id ?? ''}
-        onChange={e => onModeChange(e.target.value)}
-        disabled={disabled}
-        title={modes.find(m => m.id === (currentMode ?? modes[0]?.id))?.name}
-    >
-        {modes.map(mode => (
-            <option key={mode.id} value={mode.id} title={mode.name}>
-                {mode.name}
-            </option>
-        ))}
-    </select>
-));
+const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.memo(({ modes, currentMode, onModeChange, disabled, keybindingHint }) => {
+    const options: SelectOption[] = React.useMemo(
+        () => modes.map(mode => ({ value: mode.id, label: mode.name })),
+        [modes]
+    );
+
+    const handleChange = React.useCallback(
+        (option: SelectOption) => {
+            if (option.value) {
+                onModeChange(option.value);
+            }
+        },
+        [onModeChange]
+    );
+
+    const label = nls.localize('theia/ai/chat-ui/switchAgentMode', 'Switch Agent Mode');
+    const title = keybindingHint ? `${label} (${keybindingHint})` : label;
+
+    return (
+        <span title={title}>
+            <SelectComponent
+                className={`theia-ChatInput-ModeSelector${disabled ? ' disabled' : ''}`}
+                options={options}
+                defaultValue={currentMode ?? modes[0]?.id ?? ''}
+                onChange={handleChange}
+            />
+        </span>
+    );
+});
 
 const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
     handler();
