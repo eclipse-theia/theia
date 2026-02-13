@@ -166,7 +166,7 @@ export class DebugEditorModel implements Disposable {
 
     protected createFrameDecorations(): monaco.editor.IModelDeltaDecoration[] {
         const { currentFrame, topFrame } = this.sessions;
-        if (!currentFrame) {
+        if (!currentFrame || !topFrame) {
             return [];
         }
 
@@ -174,15 +174,14 @@ export class DebugEditorModel implements Disposable {
             return [];
         }
 
-        if (!this.sessions.isCurrentEditorFrame(this.uri)) {
-            return [];
-        }
-
         const decorations: monaco.editor.IModelDeltaDecoration[] = [];
-        const columnUntilEOLRange = new monaco.Range(currentFrame.raw.line, currentFrame.raw.column, currentFrame.raw.line, 1 << 30);
-        const range = new monaco.Range(currentFrame.raw.line, currentFrame.raw.column, currentFrame.raw.line, currentFrame.raw.column + 1);
+        const isTopFrameInEditor = topFrame.source && new URI(topFrame.source.uri.toString()).isEqual(this.uri);
+        const isCurrentFrameInEditor = currentFrame.source && new URI(currentFrame.source.uri.toString()).isEqual(this.uri);
 
-        if (topFrame === currentFrame) {
+        if (isTopFrameInEditor) {
+            const columnUntilEOLRange = new monaco.Range(topFrame.raw.line, topFrame.raw.column, topFrame.raw.line, 1 << 30);
+            const range = new monaco.Range(topFrame.raw.line, topFrame.raw.column, topFrame.raw.line, topFrame.raw.column + 1);
+
             decorations.push({
                 options: DebugEditorModel.TOP_STACK_FRAME_MARGIN,
                 range
@@ -191,14 +190,19 @@ export class DebugEditorModel implements Disposable {
                 options: DebugEditorModel.TOP_STACK_FRAME_DECORATION,
                 range: columnUntilEOLRange
             });
-            const firstNonWhitespaceColumn = this.editor.document.textEditorModel.getLineFirstNonWhitespaceColumn(currentFrame.raw.line);
-            if (firstNonWhitespaceColumn !== 0 && currentFrame.raw.column > firstNonWhitespaceColumn) {
+            const firstNonWhitespaceColumn = this.editor.document.textEditorModel.getLineFirstNonWhitespaceColumn(topFrame.raw.line);
+            if (firstNonWhitespaceColumn !== 0 && topFrame.raw.column > firstNonWhitespaceColumn) {
                 decorations.push({
                     options: DebugEditorModel.TOP_STACK_FRAME_INLINE_DECORATION,
                     range: columnUntilEOLRange
                 });
             }
-        } else {
+        }
+
+        if (isCurrentFrameInEditor && topFrame !== currentFrame) {
+            const columnUntilEOLRange = new monaco.Range(currentFrame.raw.line, currentFrame.raw.column, currentFrame.raw.line, 1 << 30);
+            const range = new monaco.Range(currentFrame.raw.line, currentFrame.raw.column, currentFrame.raw.line, currentFrame.raw.column + 1);
+
             decorations.push({
                 options: DebugEditorModel.FOCUSED_STACK_FRAME_MARGIN,
                 range
