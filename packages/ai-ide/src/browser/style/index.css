@@ -805,7 +805,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 100%;
+  width: 100%;
 }
 
 .theia-WelcomeMessage-Main {
@@ -982,6 +982,40 @@
   color: var(--theia-descriptionForeground);
   margin: calc(var(--theia-ui-padding) * 1.3) 0 calc(var(--theia-ui-padding) * 2) 0;
   font-weight: 500;
+}
+
+.theia-WelcomeMessage-SessionsSection {
+  padding-left: calc(var(--theia-ui-padding) * 3);
+  padding-right: calc(var(--theia-ui-padding) * 3);
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.theia-WelcomeMessage-SessionCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 320px));
+  justify-content: center;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+  width: 100%;
+}
+
+.theia-WelcomeMessage-BrowseAllLink {
+  margin-top: calc(var(--theia-ui-padding) * 2);
+  padding-bottom: calc(var(--theia-ui-padding) * 2);
+  text-align: center;
+}
+
+.theia-WelcomeMessage-BrowseAllLink a {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-WelcomeMessage-BrowseAllLink a:hover {
+  text-decoration: underline;
 }
 
 /*

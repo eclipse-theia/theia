@@ -31,8 +31,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
-import { formatDistance } from 'date-fns';
-import * as locales from 'date-fns/locale';
+import { formatTimeAgo } from './chat-date-utils';
 import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
 import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
@@ -371,7 +370,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
                 return <QuickPickItem>({
                     label,
-                    description: formatDistance(new Date(session.lastDate), new Date(), { addSuffix: false, locale: getDateFnsLocale() }),
+                    description: formatTimeAgo(session.lastDate, false),
                     detail: session.firstRequestText || (session.isActive ? undefined : nls.localize('theia/ai/chat-ui/persistedSession', 'Persisted session (click to restore)')),
                     id: session.id,
                     buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]
@@ -592,9 +591,4 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
         return { openedIds: openedContextIds, activeId: activeContextId };
     }
-}
-
-function getDateFnsLocale(): locales.Locale {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return nls.locale ? (locales as any)[nls.locale] ?? locales.enUS : locales.enUS;
 }
