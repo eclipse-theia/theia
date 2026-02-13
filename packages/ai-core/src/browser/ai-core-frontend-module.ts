@@ -74,6 +74,7 @@ import { DefaultSkillService, SkillService } from './skill-service';
 import { SkillPromptCoordinator } from './skill-prompt-coordinator';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from '../common/prompt-variable-contribution';
+import { CapabilityVariableContribution } from '../common/capability-variable-contribution';
 import { LanguageModelService } from '../common/language-model-service';
 import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
@@ -146,6 +147,7 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(OpenEditorsVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(SkillsVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(CapabilityVariableContribution).inSingletonScope();
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 

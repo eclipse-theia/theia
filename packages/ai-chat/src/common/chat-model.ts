@@ -265,10 +265,22 @@ export interface ChatRequest {
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
     readonly modeId?: string;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to their enabled/disabled state.
+     */
+    readonly capabilityOverrides?: Record<string, boolean>;
 }
 
 export interface ChatContext {
     variables: ResolvedAIContextVariable[];
+    /**
+     * Index signature needed because ChatContext is passed as AIVariableContext
+     * in the chat request parser for inline variable resolution.
+     * TODO: Refactor ChatRequestParser to accept a separate AIVariableContext
+     * for variable resolution instead of reusing ChatContext.
+     */
+    [key: string]: unknown;
 }
 
 export interface ChatRequestModel {

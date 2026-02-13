@@ -284,7 +284,10 @@ export class ChatServiceImpl implements ChatService {
 
         this.cancelIncompleteRequests(session);
 
-        const resolutionContext: ChatSessionContext = { model: session.model };
+        const resolutionContext: ChatSessionContext = {
+            model: session.model,
+            capabilityOverrides: request.capabilityOverrides
+        };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
