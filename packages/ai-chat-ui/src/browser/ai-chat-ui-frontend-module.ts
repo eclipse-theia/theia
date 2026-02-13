@@ -47,7 +47,7 @@ import {
     TypeDocSymbolSelectionResolver,
 } from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
-import { createChatViewTreeWidget } from './chat-tree-view';
+import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
@@ -81,6 +81,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(KeybindingContribution).toService(ChatFocusContribution);
 
     bindContributionProvider(bind, ChatResponsePartRenderer);
+    bindContributionProvider(bind, ChatWelcomeMessageProvider);
 
     bindChatViewWidget(bind);
 
