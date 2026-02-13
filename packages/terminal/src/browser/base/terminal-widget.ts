@@ -58,6 +58,11 @@ export interface TerminalBuffer {
     getLines(start: number, length: number): string[];
 }
 
+export interface TerminalBlock {
+    readonly command: string;
+    readonly output: string;
+}
+
 /**
  * Terminal UI widget.
  */
@@ -181,6 +186,76 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract setTitle(title: string): void;
 
     abstract waitOnExit(waitOnExit?: boolean | string): void;
+
+    abstract commandHistoryState: TerminalCommandHistoryState;
+
+}
+
+/**
+ * State of command history in terminal.
+ */
+export interface TerminalCommandHistoryState {
+
+    /**
+     * Array of executed commands and their output in the terminal.
+     */
+    commandHistory: TerminalBlock[];
+
+    /**
+     * The current command being executed in the terminal.
+     */
+    currentCommand: string;
+
+    /**
+     * The current output being collected for the command in the terminal.
+     */
+    commandOutputBuffer: string;
+
+    /**
+     * Clears the current command and output collection state to avoid pollution of terminal history between commands.
+     */
+    clearCommandCollectionState(): void;
+
+    /**
+     * Clears the current command output buffer.
+     */
+    clearCommandOutputBuffer(): void;
+
+    /**
+     * Method to be called when a terminal command starts executing.
+     */
+    startCommand(encodedCommand: string): void;
+
+    /**
+     * Method to accumulate command output as it is received.
+     */
+    accumulateCommandOutput(data: string): void;
+
+    /**
+     * Method to be called when a terminal command finishes executing.
+     */
+    finishCommand(): void;
+
+    /**
+     * Event which fires when terminal command starts executing.
+     */
+    onTerminalCommandStart: Event<void>;
+
+    /**
+     * Event which fires when terminal prompt is shown.
+     */
+    onTerminalPromptShown: Event<void>;
+
+    /**
+     * Whether to enable command history in terminal.
+     */
+    enableCommandHistory: boolean;
+
+    /**
+     * Whether to show command separator in terminal command history.
+     */
+    enableCommandSeparator: boolean;
+
 }
 
 /**
