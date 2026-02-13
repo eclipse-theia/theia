@@ -613,6 +613,7 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 }}
                 onResize={() => this.onDidResizeEmitter.fire()}
+                hoverService={this.hoverService}
                 modeSelectorProps={{
                     receivingAgentModes: this.receivingAgent?.modes,
                     currentMode: this.receivingAgent?.currentModeId,
@@ -626,7 +627,6 @@ export class AIChatInputWidget extends ReactWidget {
                     isOpen: this.capabilitiesOpen,
                     onToggle: () => this.toggleCapabilities(),
                     keybindingHint: this.getCapabilitiesKeybindingHint(),
-                    hoverService: this.hoverService,
                 }}
             />
         );
@@ -892,6 +892,7 @@ interface ChatInputProperties {
     heightInLines?: number;
     onResponseChanged: () => void;
     onResize: () => void;
+    hoverService: HoverService;
     modeSelectorProps: {
         receivingAgentModes?: ChatMode[];
         currentMode?: string;
@@ -905,7 +906,6 @@ interface ChatInputProperties {
         isOpen: boolean;
         onToggle: () => void;
         keybindingHint?: string;
-        hoverService: HoverService;
     };
 }
 
@@ -1258,7 +1258,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? [{
                 title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
                 handler: () => props.onAddContextElement(),
-                className: 'codicon-add',
+                className: 'codicon-attach',
                 disabled: !props.isEnabled
             }]
             : []),
@@ -1266,7 +1266,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? [{
                 title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/agent', 'Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
-                className: 'at-icon',
+                className: 'codicon-mention',
                 disabled: !props.isEnabled,
                 text: {
                     align: 'right',
@@ -1341,6 +1341,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     leftOptions={leftOptions}
                     rightOptions={rightOptions}
                     isEnabled={props.isEnabled}
+                    hoverService={props.hoverService}
                     modeSelectorProps={{
                         show: showModeSelector,
                         modes: props.modeSelectorProps.receivingAgentModes,
@@ -1361,7 +1362,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         overrides={props.capabilitiesProps.overrides}
                         onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
                         disabled={!props.isEnabled}
-                        hoverService={props.capabilitiesProps.hoverService}
+                        hoverService={props.hoverService}
                     />
                 )}
             </div>
@@ -1369,10 +1370,24 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     );
 };
 
+/**
+ * Returns an onMouseEnter handler that shows a hover tooltip via HoverService.
+ */
+function hoverHandler(hoverService: HoverService, content: string): (e: React.MouseEvent) => void {
+    return (e: React.MouseEvent) => {
+        hoverService.requestHover({
+            content,
+            target: e.currentTarget as HTMLElement,
+            position: 'bottom'
+        });
+    };
+}
+
 interface ChatInputOptionsProps {
     leftOptions: Option[];
     rightOptions: Option[];
     isEnabled?: boolean;
+    hoverService: HoverService;
     modeSelectorProps: {
         show: boolean;
         modes?: ChatMode[];
@@ -1392,6 +1407,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     leftOptions,
     rightOptions,
     isEnabled,
+    hoverService,
     modeSelectorProps,
     capabilitiesToggle
 }) => {
@@ -1409,11 +1425,11 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                     <span
                         key={index}
                         className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                        title={option.title}
                         aria-label={option.title}
                         role='button'
                         tabIndex={option.disabled ? -1 : 0}
                         onClick={option.handler}
+                        onMouseEnter={hoverHandler(hoverService, option.title)}
                         onKeyDown={e => {
                             if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
@@ -1427,15 +1443,34 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                 ))}
             </div>
             <div className="theia-ChatInputOptions-left">
+                {capabilitiesToggle.hasCapabilities && (
+                    <span
+                        className="option theia-ChatInput-CapabilitiesToggle"
+                        aria-label={capabilitiesLabel}
+                        aria-expanded={capabilitiesToggle.isOpen}
+                        role='button'
+                        tabIndex={0}
+                        onClick={capabilitiesToggle.onToggle}
+                        onMouseEnter={hoverHandler(hoverService, capabilitiesTitle)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                capabilitiesToggle.onToggle();
+                            }
+                        }}
+                    >
+                        <span className={`codicon ${capabilitiesToggle.isOpen ? 'codicon-chevron-down' : 'codicon-chevron-right'}`} />
+                    </span>
+                )}
                 {leftOptions.map((option, index) => (
                     <span
                         key={index}
                         className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                        title={option.title}
                         aria-label={option.title}
                         role='button'
                         tabIndex={option.disabled ? -1 : 0}
                         onClick={option.handler}
+                        onMouseEnter={hoverHandler(hoverService, option.title)}
                         onKeyDown={e => {
                             if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
@@ -1454,26 +1489,8 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                         onModeChange={modeSelectorProps.onModeChange}
                         disabled={!isEnabled}
                         keybindingHint={modeSelectorProps.keybindingHint}
+                        hoverService={hoverService}
                     />
-                )}
-                {capabilitiesToggle.hasCapabilities && (
-                    <span
-                        className={`option theia-ChatInput-CapabilitiesToggle${capabilitiesToggle.isOpen ? ' active' : ''}`}
-                        title={capabilitiesTitle}
-                        aria-label={capabilitiesLabel}
-                        aria-expanded={capabilitiesToggle.isOpen}
-                        role='button'
-                        tabIndex={0}
-                        onClick={capabilitiesToggle.onToggle}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                capabilitiesToggle.onToggle();
-                            }
-                        }}
-                    >
-                        <span className="codicon codicon-settings-gear" />
-                    </span>
                 )}
             </div>
         </div>
@@ -1486,9 +1503,10 @@ interface ChatModeSelectorProps {
     onModeChange: (mode: string) => void;
     disabled?: boolean;
     keybindingHint?: string;
+    hoverService: HoverService;
 }
 
-const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.memo(({ modes, currentMode, onModeChange, disabled, keybindingHint }) => {
+const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.memo(({ modes, currentMode, onModeChange, disabled, keybindingHint, hoverService }) => {
     const options: SelectOption[] = React.useMemo(
         () => modes.map(mode => ({ value: mode.id, label: mode.name })),
         [modes]
@@ -1507,7 +1525,7 @@ const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.m
     const title = keybindingHint ? `${label} (${keybindingHint})` : label;
 
     return (
-        <span title={title}>
+        <span onMouseEnter={hoverHandler(hoverService, title)}>
             <SelectComponent
                 className={`theia-ChatInput-ModeSelector${disabled ? ' disabled' : ''}`}
                 options={options}
