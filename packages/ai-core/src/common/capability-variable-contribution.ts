@@ -98,17 +98,6 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
                     };
                 }
 
-                // Resolve the prompt fragment
-                const fragment = this.promptService.getRawPromptFragment(fragmentId);
-                if (!fragment) {
-                    this.logger.warn(`Could not find prompt fragment '${fragmentId}' for capability variable.`);
-                    return {
-                        variable: request.variable,
-                        value: '',
-                        allResolvedDependencies: []
-                    };
-                }
-
                 // Resolve the prompt fragment content (this handles {{variables}} within the fragment)
                 const resolvedPrompt = await this.promptService.getResolvedPromptFragmentWithoutFunctions(
                     fragmentId,
@@ -125,6 +114,8 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
                         allResolvedDependencies: resolvedPrompt.variables
                     };
                 }
+
+                this.logger.warn(`Could not find prompt fragment '${fragmentId}' for capability variable.`);
             }
         }
         this.logger.warn(`Could not resolve capability variable '${request.variable.name}' with arg '${request.arg}'. Returning empty string.`);

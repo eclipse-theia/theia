@@ -137,9 +137,10 @@ export interface AIVariableContext {
     capabilityOverrides?: Record<string, boolean>;
 
     /**
-     * Allow additional properties to be passed in the context.
-     * This enables extending interfaces like ChatSessionContext to pass
-     * extra context-specific data (e.g. model, session, type).
+     * Index signature needed because AIVariableContext is the base type for all variable
+     * resolution contexts (ChatSessionContext, CodeCompletionVariableContext, etc.).
+     * Some context types don't explicitly extend this interface but are structurally
+     * compatible and passed where AIVariableContext is expected.
      */
     [key: string]: unknown;
 }

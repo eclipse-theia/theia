@@ -274,6 +274,12 @@ export interface ChatRequest {
 
 export interface ChatContext {
     variables: ResolvedAIContextVariable[];
+    /**
+     * Index signature needed because ChatContext is passed as AIVariableContext
+     * in the chat request parser for inline variable resolution.
+     * TODO: Refactor ChatRequestParser to accept a separate AIVariableContext
+     * for variable resolution instead of reusing ChatContext.
+     */
     [key: string]: unknown;
 }
 

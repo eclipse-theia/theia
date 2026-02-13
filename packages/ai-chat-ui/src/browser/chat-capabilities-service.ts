@@ -17,49 +17,19 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { PromptService, parseCapabilitiesFromTemplate, ParsedCapability } from '@theia/ai-core';
-import { ChatAgentService, ChatAgent, ChatService, isSessionDeletedEvent } from '@theia/ai-chat';
+import { ChatAgentService, ChatAgent } from '@theia/ai-chat';
+
+export const ChatCapabilitiesService = Symbol('ChatCapabilitiesService');
 
 /**
- * Service to manage capability state for chat sessions.
- * Parses capability variables from agent prompts and tracks user overrides.
+ * Service to retrieve capability information for chat agents.
+ * Parses capability variables from agent prompt templates.
  */
-@injectable()
-export class ChatCapabilitiesServiceImpl {
-
-    @inject(PromptService)
-    protected readonly promptService: PromptService;
-
-    @inject(ChatAgentService)
-    protected readonly chatAgentService: ChatAgentService;
-
-    @inject(ChatService)
-    protected readonly chatService: ChatService;
-
-    /**
-     * Map of session ID -> Map of fragmentId -> enabled state (override)
-     */
-    protected readonly sessionOverrides = new Map<string, Map<string, boolean>>();
-
-    protected readonly onDidChangeCapabilitiesEmitter = new Emitter<void>();
-
+export interface ChatCapabilitiesService {
     /**
      * Event fired when prompt fragments change, indicating that capabilities may need to be refreshed.
      */
-    readonly onDidChangeCapabilities: Event<void> = this.onDidChangeCapabilitiesEmitter.event;
-
-    @postConstruct()
-    protected init(): void {
-        // Listen for prompt fragment changes and forward them as capability changes
-        this.promptService.onPromptsChange(() => {
-            this.onDidChangeCapabilitiesEmitter.fire();
-        });
-        // Clean up session overrides when sessions are deleted
-        this.chatService.onSessionEvent(event => {
-            if (isSessionDeletedEvent(event)) {
-                this.sessionOverrides.delete(event.sessionId);
-            }
-        });
-    }
+    readonly onDidChangeCapabilities: Event<void>;
 
     /**
      * Gets capabilities for a specific agent, optionally with a specific mode.
@@ -69,6 +39,29 @@ export class ChatCapabilitiesServiceImpl {
      * @param modeId Optional mode ID to use instead of the default
      * @returns Array of parsed capabilities in order they appear in the template
      */
+    getCapabilitiesForAgent(agentId: string, modeId?: string): Promise<ParsedCapability[]>;
+}
+
+@injectable()
+export class ChatCapabilitiesServiceImpl implements ChatCapabilitiesService {
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
+
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
+
+    protected readonly onDidChangeCapabilitiesEmitter = new Emitter<void>();
+
+    readonly onDidChangeCapabilities: Event<void> = this.onDidChangeCapabilitiesEmitter.event;
+
+    @postConstruct()
+    protected init(): void {
+        this.promptService.onPromptsChange(() => {
+            this.onDidChangeCapabilitiesEmitter.fire();
+        });
+    }
+
     async getCapabilitiesForAgent(agentId: string, modeId?: string): Promise<ParsedCapability[]> {
         const agent = this.chatAgentService.getAgent(agentId);
         if (!agent) {
@@ -113,72 +106,5 @@ export class ChatCapabilitiesServiceImpl {
         }
 
         return undefined;
-    }
-
-    /**
-     * Gets the current capability overrides for a session.
-     *
-     * @param sessionId The session ID
-     * @returns Map of fragmentId -> enabled state for overridden capabilities
-     */
-    getCapabilityOverrides(sessionId: string): Map<string, boolean> {
-        return this.sessionOverrides.get(sessionId) ?? new Map();
-    }
-
-    /**
-     * Sets an override for a capability in a session.
-     *
-     * @param sessionId The session ID
-     * @param fragmentId The capability fragment ID
-     * @param enabled Whether the capability should be enabled
-     */
-    setCapabilityOverride(sessionId: string, fragmentId: string, enabled: boolean): void {
-        let overrides = this.sessionOverrides.get(sessionId);
-        if (!overrides) {
-            overrides = new Map();
-            this.sessionOverrides.set(sessionId, overrides);
-        }
-        overrides.set(fragmentId, enabled);
-    }
-
-    /**
-     * Clears an override for a capability, reverting to the default value.
-     *
-     * @param sessionId The session ID
-     * @param fragmentId The capability fragment ID
-     */
-    clearCapabilityOverride(sessionId: string, fragmentId: string): void {
-        const overrides = this.sessionOverrides.get(sessionId);
-        if (overrides) {
-            overrides.delete(fragmentId);
-            if (overrides.size === 0) {
-                this.sessionOverrides.delete(sessionId);
-            }
-        }
-    }
-
-    /**
-     * Clears all overrides for a session.
-     *
-     * @param sessionId The session ID
-     */
-    clearAllOverrides(sessionId: string): void {
-        this.sessionOverrides.delete(sessionId);
-    }
-
-    /**
-     * Converts the capability overrides for a session to a plain object
-     * suitable for passing to the chat request.
-     *
-     * @param sessionId The session ID
-     * @returns Record of fragmentId -> enabled state
-     */
-    getOverridesAsRecord(sessionId: string): Record<string, boolean> {
-        const overrides = this.getCapabilityOverrides(sessionId);
-        const record: Record<string, boolean> = {};
-        for (const [key, value] of overrides) {
-            record[key] = value;
-        }
-        return record;
     }
 }

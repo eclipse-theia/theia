@@ -43,7 +43,7 @@ import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/con
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
-import { ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
+import { ChatCapabilitiesService } from './chat-capabilities-service';
 import { CapabilityChipsRow } from './chat-capabilities-panel';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>) => Promise<void>;
@@ -118,8 +118,8 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(PendingImageRegistry)
     protected readonly pendingImageRegistry: PendingImageRegistry;
 
-    @inject(ChatCapabilitiesServiceImpl)
-    protected readonly capabilitiesService: ChatCapabilitiesServiceImpl;
+    @inject(ChatCapabilitiesService)
+    protected readonly capabilitiesService: ChatCapabilitiesService;
 
     protected fileValidationState = new Map<string, FileValidationResult>();
 
@@ -195,7 +195,6 @@ export class AIChatInputWidget extends ReactWidget {
         if (this.receivingAgent) {
             this.receivingAgent = { ...this.receivingAgent, currentModeId: mode };
             await this.updateCapabilitiesForAgent(this.receivingAgent.agentId, mode);
-            this.update();
         }
     };
 
@@ -460,7 +459,6 @@ export class AIChatInputWidget extends ReactWidget {
                     };
                     this.chatInputHasModesKey.set(modes.length > 1);
                     await this.updateCapabilitiesForAgent(agentId, initialModeId);
-                    this.update();
                 } else if (!agent && this.receivingAgent !== undefined) {
                     this.receivingAgent = undefined;
                     this.capabilities = [];

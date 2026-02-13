@@ -208,6 +208,64 @@ describe('CapabilityVariableContribution', () => {
         });
     });
 
+    describe('Capability Overrides', () => {
+        it('override disables a default-on capability', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'test-capability',
+                template: 'Capability content'
+            });
+
+            const result = await contribution.resolve(
+                { variable: CAPABILITY_VARIABLE, arg: 'test-capability default on' },
+                { capabilityOverrides: { 'test-capability': false } }
+            );
+
+            expect(result?.value).to.equal('');
+        });
+
+        it('override enables a default-off capability', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'test-capability',
+                template: 'Capability content'
+            });
+
+            const result = await contribution.resolve(
+                { variable: CAPABILITY_VARIABLE, arg: 'test-capability default off' },
+                { capabilityOverrides: { 'test-capability': true } }
+            );
+
+            expect(result?.value).to.equal('Capability content');
+        });
+
+        it('falls back to default when no override is present for the fragment', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'test-capability',
+                template: 'Capability content'
+            });
+
+            const result = await contribution.resolve(
+                { variable: CAPABILITY_VARIABLE, arg: 'test-capability default on' },
+                { capabilityOverrides: { 'other-capability': false } }
+            );
+
+            expect(result?.value).to.equal('Capability content');
+        });
+
+        it('falls back to default when capabilityOverrides is undefined', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'test-capability',
+                template: 'Capability content'
+            });
+
+            const result = await contribution.resolve(
+                { variable: CAPABILITY_VARIABLE, arg: 'test-capability default on' },
+                { capabilityOverrides: undefined }
+            );
+
+            expect(result?.value).to.equal('Capability content');
+        });
+    });
+
     describe('canResolve', () => {
         it('returns 1 for capability variable', () => {
             const result = contribution.canResolve(
