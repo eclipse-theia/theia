@@ -203,6 +203,7 @@ export class AnthropicModel implements LanguageModel {
         public enableStreaming: boolean,
         public useCaching: boolean,
         public apiKey: () => string | undefined,
+        public url: string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService,
@@ -437,9 +438,12 @@ export class AnthropicModel implements LanguageModel {
 
     protected initializeAnthropic(): Anthropic {
         const apiKey = this.apiKey();
-        if (!apiKey) {
+        if (!apiKey && !(this.url)) {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
+
+        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
+        const key = apiKey ?? 'no-key';
 
         let fo;
         if (this.proxy) {
@@ -449,6 +453,6 @@ export class AnthropicModel implements LanguageModel {
             };
         }
 
-        return new Anthropic({ apiKey, fetchOptions: fo });
+        return new Anthropic({ apiKey: key, baseURL: this.url, fetchOptions: fo });
     }
 }

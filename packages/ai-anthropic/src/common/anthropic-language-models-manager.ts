@@ -25,6 +25,10 @@ export interface AnthropicModelDescription {
      */
     model: string;
     /**
+     * The Anthropic API compatible endpoint where the model is hosted. If not provided the default Anthropic endpoint will be used.
+     */
+    url?: string;
+    /**
      * The key for the model. If 'true' is provided the global Anthropic API key will be used.
      */
     apiKey: string | true | undefined;
