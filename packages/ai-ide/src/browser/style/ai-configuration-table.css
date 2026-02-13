@@ -83,3 +83,56 @@
     font-size: 0.9em;
   }
 }
+
+/* Skills Configuration Widget Styles */
+.ai-skills-configuration-container {
+  padding: calc(var(--theia-ui-padding) * 2);
+  max-width: 1200px;
+}
+
+.ai-skills-section,
+.ai-slash-commands-section {
+  margin-bottom: calc(var(--theia-ui-padding) * 3);
+}
+
+.ai-slash-commands-section .slash-command-name-column {
+  font-family: var(--theia-code-font-family);
+  white-space: nowrap;
+}
+
+.ai-slash-commands-section .slash-command-prefix {
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-slash-commands-section .slash-command-description-column {
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-slash-commands-section .slash-command-agents-column {
+  white-space: nowrap;
+}
+
+.ai-slash-commands-section .slash-command-all-agents {
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+.ai-slash-commands-section .slash-command-agent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-slash-commands-section .agent-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--theia-charts-blue);
+  color: var(--theia-editor-background);
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) / 1.5);
+  border-radius: 1em;
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+  white-space: nowrap;
+}

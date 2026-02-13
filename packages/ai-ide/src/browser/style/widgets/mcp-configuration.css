@@ -259,3 +259,71 @@
 .mcp-copy-tool-button:hover {
   opacity: 1;
 }
+
+/* Header Actions */
+.mcp-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+}
+
+.mcp-header-actions .theia-button {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+/* Delete Button */
+.mcp-server-header .mcp-action-button.mcp-delete-button {
+  color: var(--theia-errorForeground);
+}
+
+.mcp-server-header .mcp-action-button.mcp-delete-button:hover {
+  background-color: var(--theia-errorBackground);
+}
+
+/* Dialog Form Styles */
+.mcp-dialog-form {
+  min-width: 400px;
+}
+
+.mcp-dialog-form .mcp-form-field {
+  margin-bottom: calc(var(--theia-ui-padding) * 1.5);
+}
+
+.mcp-dialog-form .mcp-form-field label {
+  display: block;
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
+  font-weight: 500;
+  color: var(--theia-foreground);
+}
+
+.mcp-dialog-form .mcp-form-field .theia-input,
+.mcp-dialog-form .mcp-form-field .theia-select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mcp-dialog-form .mcp-form-field textarea.theia-input {
+  resize: vertical;
+  min-height: 60px;
+  font-family: var(--monaco-monospace-font);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.mcp-dialog-form .mcp-form-checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.mcp-dialog-form .mcp-form-checkbox label {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.mcp-dialog-form .mcp-form-checkbox input[type="checkbox"] {
+  margin: 0;
+}
