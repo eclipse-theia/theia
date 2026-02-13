@@ -784,12 +784,32 @@
   padding: calc(var(--theia-ui-padding) * 2);
 }
 
+/* Welcome message container */
+.theia-WelcomeMessage-Container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.theia-WelcomeMessage-Divider {
+  align-self: stretch;
+  height: 0;
+  border-top: 1px solid var(--theia-panelTitle-activeBorder);
+  margin: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 3);
+}
+
 .theia-WelcomeMessage {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  height: 100%;
+  max-width: 100%;
+}
+
+.theia-WelcomeMessage-Main {
+  padding-top: calc(var(--theia-ui-padding) * 8);
 }
 
 .theia-WelcomeMessage-Content {
