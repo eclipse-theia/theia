@@ -1,3 +1,4 @@
+
 // *****************************************************************************
 // Copyright (C) 2018 Red Hat, Inc. and others.
 //
@@ -13,6 +14,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
+
 
 import '../../../src/main/style/status-bar.css';
 import '../../../src/main/browser/style/index.css';
@@ -101,6 +104,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         child.bind(RPCProtocol).toConstantValue(rpc);
         return child.get(LanguagesMainImpl);
     });
+
+    
 
     bind(OutputChannelRegistryMainImpl).toSelf().inTransientScope();
     bind(OutputChannelRegistryFactory).toFactory(context => () => {
