@@ -40,6 +40,7 @@ import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/c
 import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
+import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
 
 type Query = (query: string, mode?: string) => Promise<void>;
 type Unpin = () => void;
@@ -109,6 +110,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextFileValidationService) @optional()
     protected readonly validationService: ContextFileValidationService | undefined;
+
+    @inject(PendingImageRegistry)
+    protected readonly pendingImageRegistry: PendingImageRegistry;
 
     protected fileValidationState = new Map<string, FileValidationResult>();
 
@@ -220,9 +224,19 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected onDisposeForChatModel = new DisposableCollection();
     protected _chatModel: ChatModel;
+
+    /**
+     * Disposables for pending image registrations, keyed by short ID.
+     * These are cleared after the message is sent.
+     */
+    protected pendingImageDisposables = new Map<string, Disposable>();
     set chatModel(chatModel: ChatModel) {
         this.onDisposeForChatModel.dispose();
         this.onDisposeForChatModel = new DisposableCollection();
+        // Register mapping from editor URI to model ID for hover provider lookups
+        this.onDisposeForChatModel.push(
+            this.pendingImageRegistry.registerEditorMapping(this.getResourceUri().toString(), chatModel.id)
+        );
         this.onDisposeForChatModel.push(chatModel.onDidChange(event => {
             if (event.kind === 'addVariable') {
                 // Validate files added via any path (including LLM tool calls)
@@ -242,21 +256,7 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 });
                 this.update();
-            } else if (event.kind === 'addRequest') {
-                // Only clear image context variables, preserve other context (e.g., attached files)
-                // Never clear on parse failure.
-                const variables = chatModel.context.getVariables();
-                const imageIndices = variables
-                    .map((v, i) => {
-                        const origin = ImageContextVariable.getOriginSafe(v);
-                        return origin === 'temporary' ? i : -1;
-                    })
-                    .filter(i => i !== -1);
-                if (imageIndices.length > 0) {
-                    chatModel.context.deleteVariables(...imageIndices);
-                }
-                this.update();
-            } else if (event.kind === 'removeVariable' || event.kind === 'changeHierarchyBranch') {
+            } else if (event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
                 this.update();
             }
         }));
@@ -561,9 +561,27 @@ export class AIChatInputWidget extends ReactWidget {
         const dataTransferText = event.dataTransfer?.getData('text/plain');
         const position = this.editorRef?.getControl().getTargetAtClientPoint(event.clientX, event.clientY)?.position;
         this.variableService.getDropResult(event.nativeEvent, { type: 'ai-chat-input-widget' }).then(result => {
-            result.variables.forEach(variable => this.addContext(variable));
-            const text = result.text ?? dataTransferText;
-            if (position && text) {
+            const textsToInsert: string[] = [];
+
+            result.variables.forEach(variable => {
+                if (ImageContextVariable.isImageContextRequest(variable)) {
+                    // Register with short ID and insert short reference at drop position
+                    const shortId = this.registerPendingImage(variable);
+                    textsToInsert.push(`#${variable.variable.name}:${shortId}`);
+                } else {
+                    this.addContext(variable);
+                }
+            });
+
+            // Add any text from drop result or data transfer
+            if (result.text) {
+                textsToInsert.push(result.text);
+            } else if (dataTransferText && textsToInsert.length === 0) {
+                // Only use dataTransferText if we have nothing else to insert
+                textsToInsert.push(dataTransferText);
+            }
+
+            if (position && textsToInsert.length > 0) {
                 this.editorRef?.getControl().executeEdits('drag-and-drop', [{
                     range: {
                         startLineNumber: position.lineNumber,
@@ -571,7 +589,7 @@ export class AIChatInputWidget extends ReactWidget {
                         endLineNumber: position.lineNumber,
                         endColumn: position.column
                     },
-                    text
+                    text: textsToInsert.join(' ')
                 }]);
             }
         });
@@ -579,20 +597,35 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected onPaste(event: ClipboardEvent): void {
         this.variableService.getPasteResult(event, { type: 'ai-chat-input-widget' }).then(result => {
-            result.variables.forEach(variable => this.addContext(variable));
-            if (result.text) {
-                const position = this.editorRef?.getControl().getPosition();
-                if (position && result.text) {
-                    this.editorRef?.getControl().executeEdits('paste', [{
-                        range: {
-                            startLineNumber: position.lineNumber,
-                            startColumn: position.column,
-                            endLineNumber: position.lineNumber,
-                            endColumn: position.column
-                        },
-                        text: result.text
-                    }]);
+            const position = this.editorRef?.getControl().getPosition();
+            const textsToInsert: string[] = [];
+
+            result.variables.forEach(variable => {
+                if (ImageContextVariable.isImageContextRequest(variable)) {
+                    // Register with short ID and insert short reference at cursor position
+                    const shortId = this.registerPendingImage(variable);
+                    textsToInsert.push(`#${variable.variable.name}:${shortId}`);
+                } else {
+                    this.addContext(variable);
                 }
+            });
+
+            // Insert any text from the paste result
+            if (result.text) {
+                textsToInsert.push(result.text);
+            }
+
+            // Insert all collected text at cursor position
+            if (position && textsToInsert.length > 0) {
+                this.editorRef?.getControl().executeEdits('paste', [{
+                    range: {
+                        startLineNumber: position.lineNumber,
+                        startColumn: position.column,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column
+                    },
+                    text: textsToInsert.join(' ')
+                }]);
             }
         });
     }
@@ -631,10 +664,6 @@ export class AIChatInputWidget extends ReactWidget {
         });
     }
 
-    protected deleteContextElement(index: number): void {
-        this._chatModel.context.deleteVariables(index);
-    }
-
     protected handleContextMenu(event: IMouseEvent): void {
         this.contextMenuRenderer.render({
             menuPath: AIChatInputWidget.CONTEXT_MENU,
@@ -650,8 +679,86 @@ export class AIChatInputWidget extends ReactWidget {
         this._chatModel.context.addVariables(variable);
     }
 
+    /**
+     * Get the scope URI used for registering pending images.
+     * Uses the chat model ID for scoping, not the editor URI.
+     */
+    protected getScopeUri(): string {
+        const modelId = this._chatModel?.id ?? 'default';
+        return this.pendingImageRegistry.getScopeUriForModel(modelId);
+    }
+
+    /**
+     * Register a pending image attachment with a short ID.
+     * @returns The short ID that can be used in the text.
+     */
+    registerPendingImage(variable: AIVariableResolutionRequest): string {
+        const parsed = ImageContextVariable.parseRequest(variable);
+        if (!parsed || !variable.arg) {
+            throw new Error('Invalid image context variable');
+        }
+
+        const scopeUri = this.getScopeUri();
+        const baseName = this.getImageBaseName(parsed);
+        const shortId = this.pendingImageRegistry.generateShortId(baseName, scopeUri);
+
+        const disposable = this.pendingImageRegistry.register(
+            scopeUri,
+            shortId,
+            parsed,
+            variable.arg
+        );
+        this.pendingImageDisposables.set(shortId, disposable);
+
+        return shortId;
+    }
+
+    /**
+     * Clear all pending image attachments. Called after a message is sent.
+     */
+    clearPendingImageAttachments(): void {
+        // Dispose all registrations
+        for (const disposable of this.pendingImageDisposables.values()) {
+            disposable.dispose();
+        }
+        this.pendingImageDisposables.clear();
+
+        // Also clear the scope in the registry (belt and suspenders)
+        this.pendingImageRegistry.clearScope(this.getScopeUri());
+    }
+
+    /**
+     * Get a meaningful base name for an image variable.
+     * For dropped files (with wsRelativePath), use the workspace-relative path (like file variables).
+     * For pasted images, use "pasted_image".
+     */
+    protected getImageBaseName(imageVariable: ImageContextVariable): string {
+        // For file-based images, use the workspace-relative path (consistent with #file: variables)
+        if (imageVariable.wsRelativePath) {
+            return imageVariable.wsRelativePath;
+        }
+
+        // For pasted images, use a generic name
+        return 'pasted_image';
+    }
+
+    /**
+     * Get all variables to be sent with the request.
+     * Note: Image variables in text use short IDs that get resolved via the pending image registry.
+     */
+    getAllVariablesForRequest(): AIVariableResolutionRequest[] {
+        return [...this._chatModel.context.getVariables()];
+    }
+
     protected getContext(): readonly AIVariableResolutionRequest[] {
         return this._chatModel.context.getVariables();
+    }
+
+    /**
+     * Delete a context element by index.
+     */
+    protected deleteContextElement(index: number): void {
+        this._chatModel.context.deleteVariables(index);
     }
 }
 
@@ -776,10 +883,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
             const editor = await props.editorProvider.createSimpleInline(uri, editorContainerRef.current!, {
                 language: CHAT_VIEW_LANGUAGE_EXTENSION,
-                // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
+                // Disable code lens and inlay hints to avoid console errors from other contributions
                 codeLens: false,
                 inlayHints: { enabled: 'off' },
-                hover: { enabled: false },
+                hover: { enabled: true },
                 autoSizing: false, // we handle the sizing ourselves
                 scrollBeyondLastLine: false,
                 scrollBeyondLastColumn: 0,
@@ -1475,15 +1582,11 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
         <ul>
             {context.map((element, index) => {
                 if (ImageContextVariable.isImageContextRequest(element.variable)) {
-                    let variable: ImageContextVariable | undefined;
-                    try {
-                        variable = ImageContextVariable.parseRequest(element.variable);
-                    } catch {
-                        variable = undefined;
-                    }
-
+                    const variable = ImageContextVariable.parseRequest(element.variable);
+                    const displayName = variable?.name ?? variable?.wsRelativePath?.split('/').pop() ?? element.name;
                     const title = variable?.name ?? variable?.wsRelativePath ?? element.details ?? element.name;
-                    const label = variable?.name ?? variable?.wsRelativePath?.split('/').pop() ?? element.name;
+                    // Check if we have the actual image data (pre-processed) or just a path reference
+                    const hasImageData = variable && ImageContextVariable.isResolved(variable);
 
                     return <li key={index} className="theia-ChatInput-ChatContext-Element theia-ChatInput-ImageContext-Element"
                         title={title} onClick={() => element.open?.()}>
@@ -1491,7 +1594,7 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                             <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
                             <div className="theia-ChatInput-ChatContext-labelParts">
                                 <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
-                                    {label}
+                                    {displayName}
                                 </span>
                                 <span className='theia-ChatInput-ChatContext-additionalInfo'>
                                     {element.additionalInfo}
@@ -1499,9 +1602,9 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                             </div>
                             <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
                         </div>
-                        {variable && <div className="theia-ChatInput-ChatContext-ImageRow">
+                        {hasImageData && <div className="theia-ChatInput-ChatContext-ImageRow">
                             <div className='theia-ChatInput-ImagePreview-Item'>
-                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name ?? label} />
+                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name ?? displayName} />
                             </div>
                         </div>}
                     </li>;
