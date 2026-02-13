@@ -27,8 +27,7 @@ import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
 import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
-import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
-import { condenseArguments } from './toolcall-utils';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -143,22 +142,14 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (!target || !response.arguments || !response.arguments.trim() || response.arguments.trim() === '{}') {
             return;
         }
-        const prettyArgs = this.prettyPrintArgs(response.arguments);
-        const markdownString = new MarkdownStringImpl(`**${response.name}**\n`).appendCodeblock('json', prettyArgs);
+        const markdownString = formatArgsForTooltip(response.arguments);
         this.hoverService.requestHover({
             content: markdownString,
             target,
-            position: 'right'
+            position: 'right',
+            interactive: true,
+            cssClasses: ['toolcall-args-hover']
         });
-    }
-
-    private prettyPrintArgs(args: string): string {
-        try {
-            return JSON.stringify(JSON.parse(args), undefined, 2);
-        } catch (e) {
-            // fall through
-            return args;
-        }
     }
 }
 
@@ -197,7 +188,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
     const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
     // eslint-disable-next-line no-null/no-null
-    const summaryRef = React.useRef<HTMLElement>(null);
+    const argsLabelRef = React.useRef<HTMLSpanElement>(null);
 
     const formatReason = (reason: unknown): string => {
         if (!reason) {
@@ -277,12 +268,13 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>
-                    <summary
-                        ref={summaryRef}
-                        onMouseEnter={() => showArgsTooltip(response, summaryRef.current ?? undefined)}
-                    >
+                    <summary>
                         {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                        (<span className='theia-toolCall-args-label'>{getArgumentsLabel(response.name, response.arguments)}</span>)
+                        (<span
+                            className='theia-toolCall-args-label'
+                            ref={argsLabelRef}
+                            onMouseEnter={() => showArgsTooltip(response, argsLabelRef.current ?? undefined)}
+                        >{getArgumentsLabel(response.name, response.arguments)}</span>)
                     </summary>
                     <div className='theia-toolCall-response-result'>
                         {responseRenderer(response)}

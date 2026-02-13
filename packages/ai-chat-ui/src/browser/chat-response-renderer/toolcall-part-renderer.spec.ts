@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { condenseArguments } from './toolcall-utils';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 describe('condenseArguments', () => {
 
@@ -127,6 +127,70 @@ describe('condenseArguments', () => {
         expect(result).to.not.be.undefined;
         expect(result!.length).to.be.at.most(81);
         expect(result!.endsWith('\u2026')).to.be.true;
+    });
+
+});
+
+describe('formatArgsForTooltip', () => {
+
+    it('renders short-only args as plain text lines', () => {
+        const longPath = 'src/components/MyComponent.tsx';
+        const args = JSON.stringify({ path: longPath });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**path:**');
+        expect(result.value).to.not.contain('```');
+    });
+
+    it('renders mixed args with short as text and long as code block', () => {
+        const longContent = 'a'.repeat(100);
+        const args = JSON.stringify({ path: 'test.ts', content: longContent });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**path:** test.ts');
+        expect(result.value).to.contain('**content:**');
+        expect(result.value).to.contain('```\n');
+        expect(result.value).to.not.match(/```[a-z]/);
+        expect(result.value).to.contain(longContent);
+    });
+
+    it('falls back to raw code block for unparseable JSON', () => {
+        const longInvalidJson = 'not json but this is long enough to exceed thirty characters';
+        const result = formatArgsForTooltip(longInvalidJson);
+        expect(result.value).to.contain('```');
+        expect(result.value).to.contain(longInvalidJson);
+    });
+
+    it('renders non-string large value as code block', () => {
+        const bigArray = Array.from({ length: 20 }, (_, i) => i);
+        const args = JSON.stringify({ data: bigArray });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**data:**');
+        expect(result.value).to.contain('```');
+    });
+
+    it('renders null value as code block', () => {
+        const args = '{"value": null, "extra": "pad it out"}';
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**value:**');
+        expect(result.value).to.contain('```');
+        expect(result.value).to.contain('null');
+    });
+
+    it('renders non-string values as code blocks', () => {
+        const args = JSON.stringify({ count: 42, enabled: true, label: 'test' });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**count:**');
+        expect(result.value).to.contain('42');
+        expect(result.value).to.contain('**enabled:**');
+        expect(result.value).to.contain('true');
+        expect(result.value).to.contain('**label:** test');
+        expect(result.value).to.contain('```');
+    });
+
+    it('handles top-level non-object parsed value', () => {
+        const longString = '"a string that is longer than thirty characters total"';
+        expect(longString.length).to.be.greaterThan(30);
+        const result = formatArgsForTooltip(longString);
+        expect(result.value).to.contain('```');
     });
 
 });

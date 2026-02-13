@@ -1318,3 +1318,9 @@ div:last-child > .theia-ChatNode {
 .theia-hover div.rendered-markdown {
   white-space: pre;
 }
+
+/* Scrollable hover for large tool call arguments */
+.theia-hover.toolcall-args-hover div.rendered-markdown {
+  max-height: 300px;
+  overflow-y: auto;
+}
