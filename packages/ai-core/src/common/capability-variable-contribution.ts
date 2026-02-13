@@ -36,8 +36,9 @@ export const CAPABILITY_VARIABLE: AIVariable = {
     name: 'capability',
     args: [
         {
-            name: 'fragment-id default on/off',
-            description: nls.localize('theia/ai/core/capabilityVariable/argDescription', 'The prompt fragment id followed by "default on" or "default off"')
+            name: 'fragment-id [default on/off]',
+            description: nls.localize('theia/ai/core/capabilityVariable/argDescription',
+                'The prompt fragment id, optionally followed by "default on" or "default off" (defaults to off)')
         }
     ]
 };
@@ -73,7 +74,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
             if (arg) {
                 const parseResult = parseCapabilityArgument(arg);
                 if (!parseResult) {
-                    this.logger.warn(`Could not parse capability argument '${arg}'. Expected format: 'fragment-id default on' or 'fragment-id default off'.`);
+                    this.logger.warn(`Could not parse capability argument '${arg}'. Expected format: 'fragment-id' or 'fragment-id default on/off'.`);
                     return {
                         variable: request.variable,
                         value: '',
