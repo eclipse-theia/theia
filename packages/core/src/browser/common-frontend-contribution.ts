@@ -291,8 +291,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     onStart(): void {
+        this.setupHtmlLanguageAttributes(document.documentElement);
         this.storageService.getData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent: [] })
             .then(tasks => this.commandRegistry.recent = tasks.recent);
+    }
+
+    protected setupHtmlLanguageAttributes(element: HTMLElement): void {
+        nls.setHtmlLang(element);
+        nls.setHtmlNoTranslate(element);
     }
 
     onStop(): void {
