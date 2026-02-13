@@ -25,13 +25,6 @@ export interface ParsedCapability {
 }
 
 /**
- * Single regex for matching capability variables in prompt templates.
- * Supports both double brace {{capability:...}} and triple brace {{{capability:...}}} syntax.
- * The triple brace is matched first via an optional third brace to avoid double-matching.
- */
-const CAPABILITY_REGEX = /\{{2,3}\s*capability:([^\s}]+)\s+default\s+(on|off)\s*\}{2,3}/gi;
-
-/**
  * Parses capability variables from a prompt template string.
  *
  * Capability variables have the format:
@@ -45,8 +38,8 @@ export function parseCapabilitiesFromTemplate(template: string): ParsedCapabilit
     const seenFragmentIds = new Set<string>();
     const capabilities: ParsedCapability[] = [];
 
-    CAPABILITY_REGEX.lastIndex = 0;
-    let match = CAPABILITY_REGEX.exec(template);
+    const regex = /\{{2,3}\s*capability:([^\s}]+)\s+default\s+(on|off)\s*\}{2,3}/gi;
+    let match = regex.exec(template);
     while (match) {
         const fragmentId = match[1];
         if (!seenFragmentIds.has(fragmentId)) {
@@ -56,7 +49,7 @@ export function parseCapabilitiesFromTemplate(template: string): ParsedCapabilit
                 defaultEnabled: match[2].toLowerCase() === 'on'
             });
         }
-        match = CAPABILITY_REGEX.exec(template);
+        match = regex.exec(template);
     }
 
     return capabilities;
