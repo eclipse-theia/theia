@@ -112,27 +112,27 @@ describe('CapabilityVariableContribution', () => {
             expect(result?.value).to.equal('');
         });
 
-        it('returns empty string for invalid argument format', async () => {
+        it('returns empty string for malformed arguments (no matching fragment)', async () => {
             promptService.addBuiltInPromptFragment({
                 id: 'test-capability',
                 template: 'This is the capability content'
             });
 
-            // Missing "default" keyword
+            // Incomplete default clause — parsed as fragment ID "test-capability on" which doesn't exist
             const result1 = await contribution.resolve(
                 { variable: CAPABILITY_VARIABLE, arg: 'test-capability on' },
                 {}
             );
             expect(result1?.value).to.equal('');
 
-            // Missing on/off value
+            // Incomplete default clause — parsed as fragment ID "test-capability default"
             const result2 = await contribution.resolve(
                 { variable: CAPABILITY_VARIABLE, arg: 'test-capability default' },
                 {}
             );
             expect(result2?.value).to.equal('');
 
-            // Invalid on/off value
+            // Invalid on/off value — parsed as fragment ID "test-capability default yes"
             const result3 = await contribution.resolve(
                 { variable: CAPABILITY_VARIABLE, arg: 'test-capability default yes' },
                 {}
@@ -172,6 +172,34 @@ describe('CapabilityVariableContribution', () => {
             const result = await contribution.resolve(
                 { variable: CAPABILITY_VARIABLE, arg: '  test-capability   default   on  ' },
                 {}
+            );
+
+            expect(result?.value).to.equal('Capability content');
+        });
+
+        it('defaults to off when default on/off is omitted', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'test-capability',
+                template: 'Capability content'
+            });
+
+            const result = await contribution.resolve(
+                { variable: CAPABILITY_VARIABLE, arg: 'test-capability' },
+                {}
+            );
+
+            expect(result?.value).to.equal('');
+        });
+
+        it('resolves content when override enables a capability without explicit default', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'test-capability',
+                template: 'Capability content'
+            });
+
+            const result = await contribution.resolve(
+                { variable: CAPABILITY_VARIABLE, arg: 'test-capability' },
+                { capabilityOverrides: { 'test-capability': true } }
             );
 
             expect(result?.value).to.equal('Capability content');

@@ -143,6 +143,42 @@ describe('capability-utils', () => {
             expect(result[0].fragmentId).to.equal('my_feature_name');
         });
 
+        it('should default to off when default on/off is omitted', () => {
+            const template = '{{capability:implicit-off}}';
+            const result = parseCapabilitiesFromTemplate(template);
+
+            expect(result).to.have.lengthOf(1);
+            expect(result[0]).to.deep.equal({
+                fragmentId: 'implicit-off',
+                defaultEnabled: false
+            });
+        });
+
+        it('should handle mixed explicit and implicit defaults', () => {
+            const template = `
+                {{capability:explicit-on default on}}
+                {{capability:implicit-off-feature}}
+                {{capability:explicit-off default off}}
+            `;
+            const result = parseCapabilitiesFromTemplate(template);
+
+            expect(result).to.have.lengthOf(3);
+            expect(result[0]).to.deep.equal({ fragmentId: 'explicit-on', defaultEnabled: true });
+            expect(result[1]).to.deep.equal({ fragmentId: 'implicit-off-feature', defaultEnabled: false });
+            expect(result[2]).to.deep.equal({ fragmentId: 'explicit-off', defaultEnabled: false });
+        });
+
+        it('should handle triple brace syntax without default', () => {
+            const template = '{{{capability:triple-implicit}}}';
+            const result = parseCapabilitiesFromTemplate(template);
+
+            expect(result).to.have.lengthOf(1);
+            expect(result[0]).to.deep.equal({
+                fragmentId: 'triple-implicit',
+                defaultEnabled: false
+            });
+        });
+
         it('should preserve order of first occurrence for duplicates', () => {
             const template = `
                 {{capability:first default on}}
@@ -198,20 +234,32 @@ describe('capability-utils', () => {
             expect(result!.defaultEnabled).to.be.true;
         });
 
-        it('should return undefined for missing default keyword', () => {
-            expect(parseCapabilityArgument('test-capability on')).to.be.undefined;
+        it('should default to off when default on/off is omitted', () => {
+            const result = parseCapabilityArgument('feature-only');
+            expect(result).to.deep.equal({ fragmentId: 'feature-only', defaultEnabled: false });
         });
 
-        it('should return undefined for missing on/off value', () => {
-            expect(parseCapabilityArgument('test-capability default')).to.be.undefined;
+        it('should default to off for fragment IDs with hyphens and no default', () => {
+            const result = parseCapabilityArgument('my-complex-feature');
+            expect(result).to.deep.equal({ fragmentId: 'my-complex-feature', defaultEnabled: false });
         });
 
-        it('should return undefined for invalid on/off value', () => {
-            expect(parseCapabilityArgument('test-capability default yes')).to.be.undefined;
+        it('should treat incomplete default clause as part of fragment ID', () => {
+            // "default" without on/off is not a valid default clause,
+            // so the whole string becomes the fragment ID
+            const result1 = parseCapabilityArgument('test-capability default');
+            expect(result1).to.deep.equal({ fragmentId: 'test-capability default', defaultEnabled: false });
+
+            const result2 = parseCapabilityArgument('test-capability default yes');
+            expect(result2).to.deep.equal({ fragmentId: 'test-capability default yes', defaultEnabled: false });
         });
 
         it('should return undefined for empty string', () => {
             expect(parseCapabilityArgument('')).to.be.undefined;
+        });
+
+        it('should return undefined for whitespace-only string', () => {
+            expect(parseCapabilityArgument('   ')).to.be.undefined;
         });
     });
 });
