@@ -80,7 +80,17 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     }
 
     protected async loadItems(): Promise<void> {
-        const toolNames = this.toolInvocationRegistry.getAllFunctions().map(func => func.name);
+        const toolNames = this.toolInvocationRegistry.getAllFunctions()
+            .map(func => func.name)
+            .sort((a, b) => {
+                const aIsMcp = a.startsWith('mcp_');
+                const bIsMcp = b.startsWith('mcp_');
+                if (aIsMcp !== bIsMcp) {
+                    // Place names starting with "mcp_" after non-mcp names
+                    return aIsMcp ? 1 : -1;
+                }
+                return a.localeCompare(b);
+            });
         this.items = toolNames.map(name => ({ name }));
     }
 

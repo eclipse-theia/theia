@@ -376,14 +376,14 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
 
                 <div className="prompt-variants-container">
                     <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/promptVariantsHeader', 'Prompt Variant Sets')}</h3>
-                    {Array.from(this.promptVariantsMap.entries()).map(([promptVariantSetId, variantIds]) =>
+                    {Array.from(this.promptVariantsMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([promptVariantSetId, variantIds]) =>
                         this.renderPromptVariantSet(promptVariantSetId, variantIds)
                     )}
                 </div>
 
                 {nonSystemPromptFragments.size > 0 && <div className="prompt-fragments-container">
                     <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/otherPromptFragmentsHeader', 'Other Prompt Fragments')}</h3>
-                    {Array.from(nonSystemPromptFragments.entries()).map(([promptFragmentId, fragments]) =>
+                    {Array.from(nonSystemPromptFragments.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([promptFragmentId, fragments]) =>
                         this.renderPromptFragment(promptFragmentId, fragments)
                     )}
                 </div>}
