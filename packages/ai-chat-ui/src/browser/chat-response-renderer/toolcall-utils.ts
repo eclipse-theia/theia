@@ -34,16 +34,12 @@ export function formatArgsForTooltip(args: string): MarkdownStringImpl {
     }
     const entries = Object.entries(parsed as Record<string, unknown>);
     for (const [key, value] of entries) {
-        if (typeof value === 'string') {
-            if (value.length <= SHORT_VALUE_THRESHOLD) {
-                md.appendMarkdown(`**${key}:** ${escapeMarkdown(value)}\n\n`);
-            } else {
-                md.appendMarkdown(`**${key}:**\n`);
-                md.appendCodeblock('', value);
-            }
+        const serialized = typeof value === 'string' ? value : JSON.stringify(value, undefined, 2);
+        if (serialized.length <= SHORT_VALUE_THRESHOLD) {
+            md.appendMarkdown(`**${key}:** ${escapeMarkdown(serialized)}\n\n`);
         } else {
             md.appendMarkdown(`**${key}:**\n`);
-            md.appendCodeblock('', JSON.stringify(value, undefined, 2));
+            md.appendCodeblock('', serialized);
         }
     }
     return md;
