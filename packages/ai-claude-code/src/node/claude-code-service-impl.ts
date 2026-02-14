@@ -45,7 +45,7 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
     private pendingApprovals = new Map<string, (result: ToolApprovalResult) => void>();
 
     // Tools that don't require approval - they are safe and non-intrusive
-    protected readonly autoApprovedTools = new Set(['AskUserQuestion']);
+    protected readonly autoApprovedTools = new Set<string>();
 
     setClient(client: ClaudeCodeClient): void {
         this.client = client;

@@ -33,6 +33,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
+    AskUserQuestionInput,
     ContentBlock,
     EditInput,
     MultiEditInput,
@@ -59,6 +60,8 @@ export const CLAUDE_APPROVAL_TOOL_INPUTS_KEY = 'claudeApprovalToolInputs';
 export const CLAUDE_MODEL_NAME_KEY = 'claudeModelName';
 export const CLAUDE_COST_KEY = 'claudeCost';
 export const CLAUDE_SESSION_APPROVED_TOOLS_KEY = 'claudeSessionApprovedTools';
+export const CLAUDE_ASK_USER_QUESTION_IDS_KEY = 'claudeAskUserQuestionIds';
+export const CLAUDE_PENDING_ASK_USER_QUESTIONS_KEY = 'claudePendingAskUserQuestions';
 
 const APPROVAL_OPTIONS = [
     { text: nls.localizeByDefault('Allow'), value: 'allow' },
@@ -354,6 +357,11 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         approvalRequest: ToolApprovalRequestMessage,
         request: MutableChatRequestModel
     ): void {
+        if (approvalRequest.toolName === 'AskUserQuestion') {
+            this.handleAskUserQuestion(approvalRequest, request);
+            return;
+        }
+
         if (this.isToolApprovedForSession(request, approvalRequest.toolName)) {
             const response: ToolApprovalResponseMessage = {
                 type: 'tool-approval-response',
@@ -421,10 +429,101 @@ export class ClaudeCodeChatAgent implements ChatAgent {
 
         this.claudeCode.sendApprovalResponse(response);
 
-        // Only stop waiting for input if there are no more pending approvals
-        if (pendingApprovals.size === 0) {
+        // Only stop waiting for input if there are no more pending approvals or questions
+        if (pendingApprovals.size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
             request.response.stopWaitingForInput();
         }
+    }
+
+    protected handleAskUserQuestion(
+        approvalRequest: ToolApprovalRequestMessage,
+        request: MutableChatRequestModel
+    ): void {
+        const toolInput = approvalRequest.toolInput;
+        if (!AskUserQuestionInput.is(toolInput)) {
+            const response: ToolApprovalResponseMessage = {
+                type: 'tool-approval-response',
+                requestId: approvalRequest.requestId,
+                approved: false,
+                message: 'Invalid AskUserQuestion input format'
+            };
+            this.claudeCode.sendApprovalResponse(response);
+            return;
+        }
+
+        const questions = toolInput.questions;
+        const answers: Record<string, string> = {};
+        let answeredCount = 0;
+        const totalQuestions = questions.length;
+
+        this.getPendingAskUserQuestions(request).add(approvalRequest.requestId);
+
+        for (const questionItem of questions) {
+            const options = questionItem.options.map(opt => ({
+                text: opt.label,
+                value: opt.label,
+                description: opt.description
+            }));
+
+            const questionText = questionItem.header
+                ? `**${questionItem.header}:** ${questionItem.question}`
+                : questionItem.question;
+
+            const questionContent = new QuestionResponseContentImpl(
+                questionText,
+                options,
+                request,
+                selectedOption => {
+                    // Key by question text to match the Claude Code SDK's expected answers format
+                    answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
+                    answeredCount++;
+
+                    if (answeredCount === totalQuestions) {
+                        this.getPendingAskUserQuestions(request).delete(approvalRequest.requestId);
+
+                        const updatedInput: AskUserQuestionInput = {
+                            ...toolInput,
+                            answers
+                        };
+
+                        const response: ToolApprovalResponseMessage = {
+                            type: 'tool-approval-response',
+                            requestId: approvalRequest.requestId,
+                            approved: true,
+                            updatedInput
+                        };
+
+                        this.claudeCode.sendApprovalResponse(response);
+
+                        if (this.getPendingApprovals(request).size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
+                            request.response.stopWaitingForInput();
+                        }
+                    }
+                }
+            );
+
+            request.response.response.addContent(questionContent);
+        }
+
+        request.response.waitForInput();
+    }
+
+    protected getPendingAskUserQuestions(request: MutableChatRequestModel): Set<string> {
+        let ids = request.getDataByKey(CLAUDE_PENDING_ASK_USER_QUESTIONS_KEY) as Set<string> | undefined;
+        if (!ids) {
+            ids = new Set<string>();
+            request.addData(CLAUDE_PENDING_ASK_USER_QUESTIONS_KEY, ids);
+        }
+        return ids;
+    }
+
+    protected getAskUserQuestionToolUseIds(request: MutableChatRequestModel): Set<string> {
+        let ids = request.getDataByKey(CLAUDE_ASK_USER_QUESTION_IDS_KEY) as Set<string> | undefined;
+        if (!ids) {
+            ids = new Set<string>();
+            request.addData(CLAUDE_ASK_USER_QUESTION_IDS_KEY, ids);
+        }
+        return ids;
     }
 
     protected getEditToolUses(request: MutableChatRequestModel): Map<string, ToolUseBlock> | undefined {
@@ -577,6 +676,12 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                         break;
                     case 'tool_use':
                     case 'server_tool_use':
+                        // Suppress AskUserQuestion - already shown as interactive questions via the approval flow
+                        if (block.name === 'AskUserQuestion') {
+                            this.getAskUserQuestionToolUseIds(request).add(block.id);
+                            break;
+                        }
+
                         if (block.name === 'Task' && TaskInput.is(block.input)) {
                             request.response.response.addContent(new MarkdownChatResponseContentImpl(`\n\n### Task: ${block.input.description}\n\n${block.input.prompt}`));
                         }
@@ -594,6 +699,11 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                         request.response.response.addContent(new ClaudeCodeToolCallChatResponseContent(block.id, block.name, JSON.stringify(block.input)));
                         break;
                     case 'tool_result':
+                        // Suppress AskUserQuestion tool results
+                        if (this.getAskUserQuestionToolUseIds(request).has(block.tool_use_id)) {
+                            break;
+                        }
+
                         if (this.getEditToolUses(request)?.has(block.tool_use_id)) {
                             const toolUse = this.getEditToolUses(request)?.get(block.tool_use_id);
                             if (toolUse) {
