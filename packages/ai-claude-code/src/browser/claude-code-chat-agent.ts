@@ -474,6 +474,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 options,
                 request,
                 selectedOption => {
+                    // Key by question text to match the Claude Code SDK's expected answers format
                     answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
                     answeredCount++;
 

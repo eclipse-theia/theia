@@ -313,7 +313,7 @@ export namespace WriteInput {
 
 export interface AskUserQuestionOption {
     label: string;
-    description: string;
+    description?: string;
 }
 
 export interface AskUserQuestionItem {
