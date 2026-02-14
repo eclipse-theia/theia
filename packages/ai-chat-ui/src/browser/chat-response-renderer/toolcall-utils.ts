@@ -14,6 +14,41 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
+
+const SHORT_VALUE_THRESHOLD = 30;
+
+export function formatArgsForTooltip(args: string): MarkdownStringImpl {
+    const md = new MarkdownStringImpl();
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(args);
+    } catch {
+        md.appendCodeblock('', args);
+        return md;
+    }
+    if (typeof parsed !== 'object' || !parsed || Array.isArray(parsed)) {
+        const serialized = JSON.stringify(parsed, undefined, 2);
+        md.appendCodeblock('', serialized);
+        return md;
+    }
+    const entries = Object.entries(parsed as Record<string, unknown>);
+    for (const [key, value] of entries) {
+        const serialized = typeof value === 'string' ? value : JSON.stringify(value, undefined, 2);
+        if (serialized.length <= SHORT_VALUE_THRESHOLD) {
+            md.appendMarkdown(`**${key}:** ${escapeMarkdown(serialized)}\n\n`);
+        } else {
+            md.appendMarkdown(`**${key}:**\n`);
+            md.appendCodeblock('', serialized);
+        }
+    }
+    return md;
+}
+
+function escapeMarkdown(value: string): string {
+    return value.replace(/[\\`*_{}[\]()#+\-!|>~]/g, '\\$&');
+}
+
 export function condenseArguments(args: string): string | undefined {
     if (!args || !args.trim() || args.trim() === '{}') {
         return undefined;
