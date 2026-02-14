@@ -167,22 +167,22 @@ describe('formatArgsForTooltip', () => {
         expect(result.value).to.contain('```');
     });
 
-    it('renders null value as code block', () => {
+    it('renders null value as plain text', () => {
         const args = '{"value": null, "extra": "pad it out"}';
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**value:**');
-        expect(result.value).to.contain('```');
-        expect(result.value).to.contain('null');
+        expect(result.value).to.contain('**value:** null');
+        expect(result.value).to.contain('**extra:** pad it out');
+        expect(result.value).to.not.contain('```');
     });
 
-    it('renders non-string values as code blocks', () => {
-        const args = JSON.stringify({ count: 42, enabled: true, label: 'test' });
+    it('renders short non-string values as plain text and large ones as code blocks', () => {
+        const bigArray = Array.from({ length: 20 }, (_, i) => i);
+        const args = JSON.stringify({ count: 42, enabled: true, label: 'test', data: bigArray });
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**count:**');
-        expect(result.value).to.contain('42');
-        expect(result.value).to.contain('**enabled:**');
-        expect(result.value).to.contain('true');
+        expect(result.value).to.contain('**count:** 42');
+        expect(result.value).to.contain('**enabled:** true');
         expect(result.value).to.contain('**label:** test');
+        expect(result.value).to.contain('**data:**');
         expect(result.value).to.contain('```');
     });
 
