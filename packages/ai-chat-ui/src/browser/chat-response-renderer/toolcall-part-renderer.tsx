@@ -187,8 +187,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
 }) => {
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
     const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
-    // eslint-disable-next-line no-null/no-null
-    const argsLabelRef = React.useRef<HTMLSpanElement>(null);
+    const argsLabelRef = React.useRef<HTMLSpanElement | undefined>(undefined);
 
     const formatReason = (reason: unknown): string => {
         if (!reason) {
@@ -268,12 +267,13 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>
-                    <summary>
+                    <summary
+                        onMouseEnter={() => showArgsTooltip(response, argsLabelRef.current)}
+                    >
                         {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
                         (<span
                             className='theia-toolCall-args-label'
-                            ref={argsLabelRef}
-                            onMouseEnter={() => showArgsTooltip(response, argsLabelRef.current ?? undefined)}
+                            ref={(el: HTMLSpanElement | null) => { argsLabelRef.current = el ?? undefined; }}
                         >{getArgumentsLabel(response.name, response.arguments)}</span>)
                     </summary>
                     <div className='theia-toolCall-response-result'>

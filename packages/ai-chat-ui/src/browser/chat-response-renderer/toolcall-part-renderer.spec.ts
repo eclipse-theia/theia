@@ -133,63 +133,87 @@ describe('condenseArguments', () => {
 
 describe('formatArgsForTooltip', () => {
 
-    it('renders short-only args as plain text lines', () => {
-        const longPath = 'src/components/MyComponent.tsx';
-        const args = JSON.stringify({ path: longPath });
+    it('renders short single-line args as plain text', () => {
+        const args = JSON.stringify({ path: 'test.ts' });
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**path:**');
+        expect(result.value).to.contain('**path:** test.ts');
         expect(result.value).to.not.contain('```');
     });
 
-    it('renders mixed args with short as text and long as code block', () => {
-        const longContent = 'a'.repeat(100);
-        const args = JSON.stringify({ path: 'test.ts', content: longContent });
+    it('renders long single-line string as plain text (no newlines)', () => {
+        const longPath = 'src/browser/chat-response-renderer/toolcall-utils.ts';
+        const args = JSON.stringify({ path: longPath });
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**path:** test.ts');
+        expect(result.value).to.contain(`**path:** ${longPath.replace(/[\\\`*_{}[\]()#+\-!|>~]/g, '\\$&')}`);
+        expect(result.value).to.not.contain('```');
+    });
+
+    it('renders multi-line string as code block', () => {
+        const multiLine = 'line one\nline two\nline three';
+        const args = JSON.stringify({ content: multiLine });
+        const result = formatArgsForTooltip(args);
         expect(result.value).to.contain('**content:**');
         expect(result.value).to.contain('```\n');
-        expect(result.value).to.not.match(/```[a-z]/);
-        expect(result.value).to.contain(longContent);
+        expect(result.value).to.contain(multiLine);
     });
 
-    it('falls back to raw code block for unparseable JSON', () => {
-        const longInvalidJson = 'not json but this is long enough to exceed thirty characters';
-        const result = formatArgsForTooltip(longInvalidJson);
+    it('renders JSON object value as code block (serialization produces newlines)', () => {
+        const args = JSON.stringify({ config: { nested: true, key: 'value' } });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**config:**');
         expect(result.value).to.contain('```');
-        expect(result.value).to.contain(longInvalidJson);
     });
 
-    it('renders non-string large value as code block', () => {
-        const bigArray = Array.from({ length: 20 }, (_, i) => i);
+    it('renders array value as code block (serialization produces newlines)', () => {
+        const bigArray = Array.from({ length: 5 }, (_, i) => i);
         const args = JSON.stringify({ data: bigArray });
         const result = formatArgsForTooltip(args);
         expect(result.value).to.contain('**data:**');
         expect(result.value).to.contain('```');
     });
 
-    it('renders null value as plain text', () => {
-        const args = '{"value": null, "extra": "pad it out"}';
-        const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**value:** null');
-        expect(result.value).to.contain('**extra:** pad it out');
-        expect(result.value).to.not.contain('```');
-    });
-
-    it('renders short non-string values as plain text and large ones as code blocks', () => {
-        const bigArray = Array.from({ length: 20 }, (_, i) => i);
-        const args = JSON.stringify({ count: 42, enabled: true, label: 'test', data: bigArray });
+    it('renders simple non-string values as plain text (no newlines)', () => {
+        const args = '{"count": 42, "enabled": true, "value": null}';
         const result = formatArgsForTooltip(args);
         expect(result.value).to.contain('**count:** 42');
         expect(result.value).to.contain('**enabled:** true');
-        expect(result.value).to.contain('**label:** test');
-        expect(result.value).to.contain('**data:**');
+        expect(result.value).to.contain('**value:** null');
+        expect(result.value).to.not.contain('```');
+    });
+
+    it('renders mixed single-line and multi-line values correctly', () => {
+        const args = JSON.stringify({ path: 'test.ts', content: 'line1\nline2' });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**path:** test.ts');
+        expect(result.value).to.contain('**content:**');
         expect(result.value).to.contain('```');
     });
 
-    it('handles top-level non-object parsed value', () => {
+    it('falls back to plain text for short unparseable JSON', () => {
+        const invalidJson = 'not json at all';
+        const result = formatArgsForTooltip(invalidJson);
+        expect(result.value).to.not.contain('```');
+        expect(result.value).to.contain('not json at all');
+    });
+
+    it('falls back to code block for multi-line unparseable JSON', () => {
+        const invalidJson = 'not json\nat all';
+        const result = formatArgsForTooltip(invalidJson);
+        expect(result.value).to.contain('```');
+        expect(result.value).to.contain(invalidJson);
+    });
+
+    it('handles top-level non-object parsed value as plain text (no newlines)', () => {
         const longString = '"a string that is longer than thirty characters total"';
         expect(longString.length).to.be.greaterThan(30);
         const result = formatArgsForTooltip(longString);
+        expect(result.value).to.not.contain('```');
+        expect(result.value).to.contain('a string that is longer than thirty characters total');
+    });
+
+    it('handles top-level array as code block (serialization produces newlines)', () => {
+        const args = JSON.stringify([1, 2, 3]);
+        const result = formatArgsForTooltip(args);
         expect(result.value).to.contain('```');
     });
 
