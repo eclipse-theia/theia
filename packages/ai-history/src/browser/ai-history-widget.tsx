@@ -88,10 +88,10 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     }
 
     /**
-     * Get all enabled agents plus disabled agents that have exchanges in the history, 
+     * Get all enabled agents plus disabled agents that have exchanges in the history,
      * to ensure that users can always see the history of all agents, even if they are later disabled
      */
-    protected getRelevantAgents() {
+    protected getRelevantAgents(): Agent[] {
         return this.agentService.getAllAgents().filter(agent => this.agentService.isEnabled(agent.id) || this.getExchangesByAgent(agent.id).length > 0);
     }
 
