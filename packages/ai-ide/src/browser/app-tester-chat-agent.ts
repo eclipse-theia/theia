@@ -70,8 +70,8 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
                         { text: nls.localize('theia/ai/ide/app-tester/startMcpServers/no', 'No, cancel'), value: 'no' }
                     ],
                     request,
-                    async selectedOption => {
-                        if (selectedOption.value === 'yes') {
+                    async selectedOptions => {
+                        if (selectedOptions[0]?.value === 'yes') {
                             const progress = request.response.addProgressMessage({
                                 content: isNextVariant
                                     ? nls.localize('theia/ai/ide/app-tester/startChromeDevToolsMcpServers/progress', 'Starting Chrome DevTools MCP server.')
