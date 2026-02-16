@@ -2498,15 +2498,20 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
         return false;
     }
     toSerializable(): SerializableChatResponseContentData<QuestionContentData> {
+        const data: QuestionContentData = {
+            question: this.question,
+            options: this.options,
+            selectedOptions: this._selectedOptions
+        };
+        if (this.header !== undefined) {
+            data.header = this.header;
+        }
+        if (this.multiSelect !== undefined) {
+            data.multiSelect = this.multiSelect;
+        }
         return {
             kind: 'question',
-            data: {
-                question: this.question,
-                header: this.header,
-                options: this.options,
-                multiSelect: this.multiSelect,
-                selectedOptions: this._selectedOptions
-            }
+            data
         };
     }
 }
