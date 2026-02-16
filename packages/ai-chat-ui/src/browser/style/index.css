@@ -751,6 +751,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-QuestionPartRenderer-root {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -758,6 +759,25 @@ div:last-child > .theia-ChatNode {
   padding: 12px;
   border-radius: 8px;
   margin: 0 0 8px 0;
+}
+
+.theia-QuestionPartRenderer-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--theia-descriptionForeground);
+  font-size: 14px;
+  padding: 2px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.theia-QuestionPartRenderer-dismiss:hover {
+  color: var(--theia-foreground);
+  background-color: var(--theia-toolbar-hoverBackground);
 }
 
 .theia-QuestionPartRenderer-header {

@@ -15,6 +15,7 @@
 // *****************************************************************************
 import { ChatResponseContent, QuestionResponseContent } from '@theia/ai-chat';
 import { nls } from '@theia/core';
+import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
@@ -41,17 +42,41 @@ export class QuestionPartRenderer
 
 }
 
+function isResolved(question: QuestionResponseContent): boolean {
+    return question.selectedOptions !== undefined;
+}
+
+function skipQuestion(question: QuestionResponseContent): void {
+    if (!question.isReadOnly && question.handler) {
+        question.selectedOptions = [];
+        question.handler([]);
+    }
+}
+
 function isOptionSelected(question: QuestionResponseContent, option: { text: string }): boolean {
     return question.selectedOptions?.some(s => s.text === option.text) === true;
 }
 
+function DismissButton({ question, disabled }: { question: QuestionResponseContent, disabled: boolean }): React.JSX.Element | null {
+    if (disabled) {
+        return null;
+    }
+    return (
+        <button
+            className={`theia-QuestionPartRenderer-dismiss ${codicon('close')}`}
+            onClick={() => skipQuestion(question)}
+            title={nls.localizeByDefault('Dismiss')}
+        />
+    );
+}
+
 function SingleSelectQuestion({ question, node }: { question: QuestionResponseContent, node: ResponseNode }): React.JSX.Element {
-    const hasSelection = question.selectedOptions !== undefined && question.selectedOptions.length > 0;
-    const isDisabled = question.isReadOnly || hasSelection || !node.response.isWaitingForInput;
+    const isDisabled = question.isReadOnly || isResolved(question) || !node.response.isWaitingForInput;
     const hasDescriptions = question.options.some(option => option.description);
 
     return (
         <div className="theia-QuestionPartRenderer-root">
+            <DismissButton question={question} disabled={isDisabled} />
             {question.header && <div className="theia-QuestionPartRenderer-header">{question.header}</div>}
             <div className="theia-QuestionPartRenderer-question">{question.question}</div>
             <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
@@ -97,7 +122,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
     }, []);
 
     const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(restoredIndices);
-    const [confirmed, setConfirmed] = React.useState(restoredIndices.size > 0);
+    const [confirmed, setConfirmed] = React.useState(isResolved(question));
     const isDisabled = question.isReadOnly || confirmed || !node.response.isWaitingForInput;
     const hasDescriptions = question.options.some(option => option.description);
 
@@ -132,6 +157,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
 
     return (
         <div className="theia-QuestionPartRenderer-root">
+            <DismissButton question={question} disabled={isDisabled} />
             {question.header && <div className="theia-QuestionPartRenderer-header">{question.header}</div>}
             <div className="theia-QuestionPartRenderer-question">{question.question}</div>
             <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
