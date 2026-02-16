@@ -45,7 +45,8 @@ You are an example agent. Be nice and helpful to the user.
 ## Current Context
 Some files and other pieces of data may have been added by the user to the context of the chat. If any have, the details can be found below.
 {{contextDetails}}`,
-    defaultLLM: 'openai/gpt-4o'
+    defaultLLM: 'openai/gpt-4o',
+    showInChat: true
 };
 
 export enum CustomizationSource {
