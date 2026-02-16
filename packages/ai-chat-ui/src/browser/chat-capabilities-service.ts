@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { PromptService, parseCapabilitiesFromTemplate, ParsedCapability } from '@theia/ai-core';
-import { ChatAgentService, ChatAgent } from '@theia/ai-chat';
+import { ChatAgentService } from '@theia/ai-chat';
 
 export const ChatCapabilitiesService = Symbol('ChatCapabilitiesService');
 
@@ -64,47 +64,15 @@ export class ChatCapabilitiesServiceImpl implements ChatCapabilitiesService {
 
     async getCapabilitiesForAgent(agentId: string, modeId?: string): Promise<ParsedCapability[]> {
         const agent = this.chatAgentService.getAgent(agentId);
-        if (!agent) {
+        if (!agent?.prompts || agent.prompts.length === 0) {
             return [];
         }
 
-        const promptTemplate = await this.getEffectivePromptTemplate(agent, modeId);
-        if (!promptTemplate) {
-            return [];
-        }
+        const variantInfo = this.promptService.getPromptVariantInfo(agent.prompts[0].id, modeId);
+        const template = variantInfo
+            ? this.promptService.getRawPromptFragment(variantInfo.variantId)?.template
+            : undefined;
 
-        return parseCapabilitiesFromTemplate(promptTemplate);
-    }
-
-    /**
-     * Gets the effective prompt template for an agent, considering mode selection.
-     */
-    protected async getEffectivePromptTemplate(agent: ChatAgent, modeId?: string): Promise<string | undefined> {
-        // Check if agent has a prompts array with variant sets
-        if (agent.prompts && agent.prompts.length > 0) {
-            const variantSet = agent.prompts[0]; // Main system prompt variant set
-
-            // If a mode ID is provided, use it directly as the variant ID
-            let effectiveVariantId: string | undefined;
-            if (modeId) {
-                // Validate that modeId is a valid variant
-                const variantIds = this.promptService.getVariantIds(variantSet.id);
-                if (variantIds.includes(modeId)) {
-                    effectiveVariantId = modeId;
-                }
-            }
-
-            // Fall back to the settings-based effective variant
-            if (!effectiveVariantId) {
-                effectiveVariantId = this.promptService.getEffectiveVariantId(variantSet.id);
-            }
-
-            if (effectiveVariantId) {
-                const fragment = this.promptService.getRawPromptFragment(effectiveVariantId);
-                return fragment?.template;
-            }
-        }
-
-        return undefined;
+        return template ? parseCapabilitiesFromTemplate(template) : [];
     }
 }
