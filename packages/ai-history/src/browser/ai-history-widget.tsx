@@ -83,7 +83,8 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     protected init(): void {
         this.update();
         this.toDispose.push(this.languageModelService.onSessionChanged((event: SessionEvent) => this.historyContentUpdated(event)));
-        this.selectAgent(this.agentService.getAllAgents()[0]);
+        this.toDispose.push(this.agentService.onDidChangeAgents(() => this.update()));
+        this.selectAgent(this.agentService.getAgents()[0]);
     }
 
     protected selectAgent(agent: Agent | undefined): void {
@@ -96,9 +97,9 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
 
     render(): React.ReactNode {
         const selectionChange = (value: SelectOption) => {
-            this.selectAgent(this.agentService.getAllAgents().find(agent => agent.id === value.value));
+            this.selectAgent(this.agentService.getAgents().find(agent => agent.id === value.value));
         };
-        const agents = this.agentService.getAllAgents().sort((a, b) => a.name.localeCompare(b.name));
+        const agents = this.agentService.getAgents();
         if (agents.length === 0) {
             return (
                 <div className='agent-history-widget'>
@@ -130,7 +131,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
         const exchanges = this.getExchangesByAgent(this.state.selectedAgentId);
 
         if (exchanges.length === 0) {
-            const selectedAgent = this.agentService.getAllAgents().find(agent => agent.id === this.state.selectedAgentId);
+            const selectedAgent = this.agentService.getAgents().find(agent => agent.id === this.state.selectedAgentId);
             return <div className='theia-card no-content'>
                 {nls.localize('theia/ai/history/view/noHistoryForAgent', 'No history available for the selected agent \'{0}\'', selectedAgent?.name || this.state.selectedAgentId)}
             </div>;
