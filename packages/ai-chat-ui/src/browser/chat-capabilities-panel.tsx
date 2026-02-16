@@ -19,63 +19,6 @@ import { ParsedCapability } from '@theia/ai-core';
 import { nls } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
 
-export interface CollapsibleSectionProps {
-    label: string;
-    tooltip?: string;
-    defaultExpanded?: boolean;
-    hoverService: HoverService;
-    children: React.ReactNode;
-}
-
-/**
- * A subtle collapsible section for use inside the chat input
- * configuration area. Renders a muted label with a separator line
- * that toggles the content below.
- *
- * Accessibility: uses a native `<button>` with `aria-expanded`.
- */
-export const CollapsibleSection: React.FunctionComponent<CollapsibleSectionProps> = ({
-    label,
-    tooltip,
-    defaultExpanded = true,
-    hoverService,
-    children
-}) => {
-    const [expanded, setExpanded] = React.useState(defaultExpanded);
-
-    const toggle = React.useCallback(() => {
-        setExpanded(prev => !prev);
-    }, []);
-
-    const handleMouseEnter = React.useCallback((e: React.MouseEvent) => {
-        hoverService.requestHover({
-            content: tooltip ?? label,
-            target: e.currentTarget as HTMLElement,
-            position: 'top'
-        });
-    }, [hoverService, tooltip, label]);
-
-    return (
-        <div className="theia-ChatInput-CollapsibleSection">
-            <button
-                className={`theia-ChatInput-CollapsibleSection-header${expanded ? '' : ' collapsed'}`}
-                type="button"
-                aria-expanded={expanded}
-                onClick={toggle}
-            >
-                <span className={`codicon codicon-chevron-${expanded ? 'down' : 'right'} theia-ChatInput-CollapsibleSection-chevron`} />
-                <span
-                    className="theia-ChatInput-CollapsibleSection-label"
-                    onMouseEnter={handleMouseEnter}
-                >
-                    {label}
-                </span>
-            </button>
-            {expanded && children}
-        </div>
-    );
-};
-
 export interface CapabilityChipsRowProps {
     capabilities: ParsedCapability[];
     overrides: Map<string, boolean>;
@@ -135,11 +78,10 @@ export const CapabilityChipsRow: React.FunctionComponent<CapabilityChipsRowProps
     };
 
     return (
-        <CollapsibleSection
-            label={nls.localizeByDefault('Capabilities')}
-            tooltip={nls.localize('theia/ai/chat-ui/toggleCapabilities', 'Toggle Capabilities')}
-            hoverService={hoverService}
-        >
+        <div className="theia-ChatInput-CapabilitiesSection">
+            <div className="theia-ChatInput-CapabilitiesSection-heading">
+                {nls.localizeByDefault('Capabilities')}
+            </div>
             <div
                 ref={containerRef}
                 className="theia-ChatInput-CapabilityChips"
@@ -163,7 +105,7 @@ export const CapabilityChipsRow: React.FunctionComponent<CapabilityChipsRowProps
                     );
                 })}
             </div>
-        </CollapsibleSection>
+        </div>
     );
 };
 

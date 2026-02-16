@@ -1358,46 +1358,18 @@ div:last-child>.theia-ChatNode {
 }
 
 /* Collapsible Section — subtle separator-label for config area sections */
-.theia-ChatInput-CollapsibleSection {
+.theia-ChatInput-CapabilitiesSection {
   border-top: 1px solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
   margin-top: var(--theia-ui-padding);
   padding-top: calc(var(--theia-ui-padding) / 3);
 }
 
-.theia-ChatInput-CollapsibleSection-chevron {
-  font-size: var(--theia-ui-font-size0);
-  opacity: 0.7;
-}
-
-.theia-ChatInput-CollapsibleSection-header {
-  display: flex;
-  align-items: center;
-  gap: var(--theia-ui-padding);
-  padding: calc(var(--theia-ui-padding) / 3) var(--theia-ui-padding);
-  margin: 0;
-  border: none;
-  background: none;
+.theia-ChatInput-CapabilitiesSection-heading {
+  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) * 4 / 3);
   color: var(--theia-descriptionForeground);
   font-size: var(--theia-ui-font-size1);
   font-family: var(--theia-ui-font-family);
-  cursor: pointer;
   user-select: none;
-  width: 100%;
-  text-align: left;
-  outline: none;
-}
-
-.theia-ChatInput-CollapsibleSection-header:hover {
-  color: var(--theia-foreground);
-}
-
-.theia-ChatInput-CollapsibleSection-header:focus {
-  outline: none;
-}
-
-.theia-ChatInput-CollapsibleSection-header:focus-visible {
-  outline: 1px solid var(--theia-focusBorder);
-  outline-offset: -1px;
 }
 
 
@@ -1424,11 +1396,9 @@ div:last-child>.theia-ChatNode {
   user-select: none;
   outline: none;
   white-space: nowrap;
-  opacity: 0.7;
 }
 
 .theia-ChatInput-CapabilityChip.checked {
-  color: var(--theia-inputOption-activeForeground);
   border-color: var(--theia-inputOption-activeBorder);
   background-color: var(--theia-inputOption-activeBackground);
 }
@@ -1440,10 +1410,6 @@ div:last-child>.theia-ChatNode {
 
 .theia-ChatInput-CapabilityChip:hover:not(.chip-disabled):not(.checked) {
   background-color: var(--theia-toolbar-hoverBackground);
-}
-
-.theia-ChatInput-CapabilityChip:focus {
-  opacity: 0.7;
 }
 
 .theia-ChatInput-CapabilityChip:focus-visible {
