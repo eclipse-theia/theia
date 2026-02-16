@@ -751,7 +751,7 @@ export type QuestionResponseHandler = (
 export interface QuestionResponseContent extends ChatResponseContent {
     kind: 'question';
     question: string;
-    options: { text: string, value?: string }[];
+    options: { text: string, value?: string, description?: string }[];
     selectedOption?: { text: string, value?: string };
     handler?: QuestionResponseHandler;
     request?: MutableChatRequestModel;
@@ -2460,7 +2460,7 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
 
     constructor(
         public question: string,
-        public options: { text: string, value?: string }[],
+        public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
         public handler: QuestionResponseHandler | undefined,
         selectedOption?: { text: string; value?: string }
