@@ -760,8 +760,15 @@ div:last-child > .theia-ChatNode {
   margin: 0 0 8px 0;
 }
 
+.theia-QuestionPartRenderer-header {
+  font-weight: 700;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--theia-descriptionForeground);
+}
+
 .theia-QuestionPartRenderer-question {
-  font-weight: 600;
   margin-bottom: 4px;
 }
 
@@ -819,6 +826,11 @@ div:last-child > .theia-ChatNode {
   font-size: 0.85em;
   opacity: 0.8;
   margin-top: 2px;
+}
+
+.theia-QuestionPartRenderer-confirm {
+  align-self: flex-end;
+  margin-top: 4px;
 }
 
 .theia-toolCall,

@@ -321,7 +321,11 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
                     data.options,
                     undefined,
                     undefined,
-                    data.selectedOption
+                    data.selectedOption,
+                    data.multiSelect,
+                    undefined,
+                    data.selectedOptions,
+                    data.header
                 )
         });
     }

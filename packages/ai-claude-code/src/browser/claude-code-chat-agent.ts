@@ -465,42 +465,61 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 description: opt.description
             }));
 
-            const questionText = questionItem.header
-                ? `**${questionItem.header}:** ${questionItem.question}`
-                : questionItem.question;
+            const onAnswered = (): void => {
+                answeredCount++;
+                if (answeredCount === totalQuestions) {
+                    this.getPendingAskUserQuestions(request).delete(approvalRequest.requestId);
 
-            const questionContent = new QuestionResponseContentImpl(
-                questionText,
-                options,
-                request,
-                selectedOption => {
-                    // Key by question text to match the Claude Code SDK's expected answers format
-                    answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
-                    answeredCount++;
+                    const updatedInput: AskUserQuestionInput = {
+                        ...toolInput,
+                        answers
+                    };
 
-                    if (answeredCount === totalQuestions) {
-                        this.getPendingAskUserQuestions(request).delete(approvalRequest.requestId);
+                    const response: ToolApprovalResponseMessage = {
+                        type: 'tool-approval-response',
+                        requestId: approvalRequest.requestId,
+                        approved: true,
+                        updatedInput
+                    };
 
-                        const updatedInput: AskUserQuestionInput = {
-                            ...toolInput,
-                            answers
-                        };
+                    this.claudeCode.sendApprovalResponse(response);
 
-                        const response: ToolApprovalResponseMessage = {
-                            type: 'tool-approval-response',
-                            requestId: approvalRequest.requestId,
-                            approved: true,
-                            updatedInput
-                        };
-
-                        this.claudeCode.sendApprovalResponse(response);
-
-                        if (this.getPendingApprovals(request).size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
-                            request.response.stopWaitingForInput();
-                        }
+                    if (this.getPendingApprovals(request).size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
+                        request.response.stopWaitingForInput();
                     }
                 }
-            );
+            };
+
+            const questionContent = questionItem.multiSelect
+                ? new QuestionResponseContentImpl(
+                    questionItem.question,
+                    options,
+                    request,
+                    undefined,
+                    undefined,
+                    true,
+                    selectedOptions => {
+                        answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
+                        onAnswered();
+                    },
+                    undefined,
+                    questionItem.header
+                )
+                : new QuestionResponseContentImpl(
+                    questionItem.question,
+                    options,
+                    request,
+                    selectedOption => {
+                        // Key by question text to match the Claude Code SDK's expected answers format
+                        answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
+                        onAnswered();
+                    },
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    questionItem.header
+                );
 
             request.response.response.addContent(questionContent);
         }

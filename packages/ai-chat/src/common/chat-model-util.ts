@@ -40,5 +40,9 @@ export function unansweredQuestions(request: ChatRequestModel): QuestionResponse
 
 function unansweredQuestionsOfResponse(response: ChatResponseModel | undefined): QuestionResponseContent[] {
     if (!response || !response.response) { return []; }
-    return response.response.content.filter((c): c is QuestionResponseContent => QuestionResponseContent.is(c) && c.selectedOption === undefined);
+    return response.response.content.filter((c): c is QuestionResponseContent =>
+        QuestionResponseContent.is(c) &&
+        c.selectedOption === undefined &&
+        (c.selectedOptions === undefined || c.selectedOptions.length === 0)
+    );
 }

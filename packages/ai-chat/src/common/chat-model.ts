@@ -447,8 +447,11 @@ export interface ErrorContentData {
  */
 export interface QuestionContentData {
     question: string;
+    header?: string;
     options: { text: string; value?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
 }
 
 export interface TextChatResponseContent
@@ -748,12 +751,20 @@ export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
 
+export type MultiSelectQuestionResponseHandler = (
+    selectedOptions: { text: string, value?: string }[],
+) => void;
+
 export interface QuestionResponseContent extends ChatResponseContent {
     kind: 'question';
     question: string;
+    header?: string;
     options: { text: string, value?: string, description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string, value?: string };
+    selectedOptions?: { text: string, value?: string }[];
     handler?: QuestionResponseHandler;
+    multiSelectHandler?: MultiSelectQuestionResponseHandler;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -2457,18 +2468,27 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
 export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
     protected _selectedOption: { text: string; value?: string } | undefined;
+    protected _selectedOptions: { text: string; value?: string }[] | undefined;
 
     constructor(
         public question: string,
         public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
         public handler: QuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string }
+        selectedOption?: { text: string; value?: string },
+        public multiSelect?: boolean,
+        public multiSelectHandler?: MultiSelectQuestionResponseHandler,
+        selectedOptions?: { text: string; value?: string }[],
+        public header?: string
     ) {
         this._selectedOption = selectedOption;
+        this._selectedOptions = selectedOptions;
     }
 
     get isReadOnly(): boolean {
+        if (this.multiSelect) {
+            return !this.multiSelectHandler || !this.request;
+        }
         return !this.handler || !this.request;
     }
 
@@ -2482,7 +2502,24 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
     get selectedOption(): { text: string; value?: string; } | undefined {
         return this._selectedOption;
     }
+
+    set selectedOptions(options: { text: string; value?: string }[] | undefined) {
+        this._selectedOptions = options;
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
+    }
+    get selectedOptions(): { text: string; value?: string }[] | undefined {
+        return this._selectedOptions;
+    }
+
     asString?(): string | undefined {
+        if (this.multiSelect) {
+            const answer = this._selectedOptions && this._selectedOptions.length > 0
+                ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
+                : 'No answer';
+            return `Question: ${this.question}\n${answer}`;
+        }
         return `Question: ${this.question}
 ${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
     }
@@ -2494,8 +2531,11 @@ ${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
             kind: 'question',
             data: {
                 question: this.question,
+                header: this.header,
                 options: this.options,
-                selectedOption: this._selectedOption
+                multiSelect: this.multiSelect,
+                selectedOption: this._selectedOption,
+                selectedOptions: this._selectedOptions
             }
         };
     }
