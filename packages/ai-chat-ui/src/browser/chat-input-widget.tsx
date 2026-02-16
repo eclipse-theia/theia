@@ -199,22 +199,27 @@ export class AIChatInputWidget extends ReactWidget {
     };
 
     protected handleCapabilityChange = (fragmentId: string, enabled: boolean): void => {
-        const newOverrides = new Map(this.capabilityOverrides);
-        newOverrides.set(fragmentId, enabled);
-        this.capabilityOverrides = newOverrides;
+        const defaultCapability = this.capabilityDefaults.find(c => c.fragmentId === fragmentId);
+        const sessionOverrides = new Map(this.userCapabilityOverrides);
+
+        if (enabled === defaultCapability?.defaultEnabled) {
+            // User set it back to default, remove the override
+            sessionOverrides.delete(fragmentId);
+        } else {
+            // User explicitly changed from default, add as override
+            sessionOverrides.set(fragmentId, enabled);
+        }
+
+        this.userCapabilityOverrides = sessionOverrides;
         this.update();
     };
 
     protected async updateCapabilitiesForAgent(agentId: string, modeId?: string): Promise<void> {
         const capabilities = await this.capabilitiesService.getCapabilitiesForAgent(agentId, modeId);
-        this.capabilities = capabilities;
+        this.capabilityDefaults = capabilities;
         this.chatInputHasCapabilitiesKey.set(capabilities.length > 0);
-        // Initialize overrides with default values from capabilities
-        const newOverrides = new Map<string, boolean>();
-        for (const capability of capabilities) {
-            newOverrides.set(capability.fragmentId, capability.defaultEnabled);
-        }
-        this.capabilityOverrides = newOverrides;
+        // Start fresh with no overrides when agent/mode changes
+        this.userCapabilityOverrides = new Map<string, boolean>;
         this.update();
     }
 
@@ -246,8 +251,18 @@ export class AIChatInputWidget extends ReactWidget {
         modes: ChatMode[];
         currentModeId?: string;
     } | undefined;
-    protected capabilities: ParsedCapability[] = [];
-    protected capabilityOverrides: Map<string, boolean> = new Map();
+    /**
+     * Tracks the default enabled state for each capability.
+     * This is initialized from the agent's capabilities and used to display the initial chip state.
+     */
+    protected capabilityDefaults: ParsedCapability[] = [];
+    /**
+     * Tracks user's explicit capability overrides for the current chat input session.
+     * Only contains capabilities the user has explicitly changed from their defaults.
+     * These overrides are not persisted but reset when the receiving agent changes or a new chat is started.
+     * Or restored when an existing chat session can provide a previous capability override from the last request.
+     */
+    protected userCapabilityOverrides: Map<string, boolean> = new Map();
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -461,8 +476,8 @@ export class AIChatInputWidget extends ReactWidget {
                     await this.updateCapabilitiesForAgent(agentId, initialModeId);
                 } else if (!agent && this.receivingAgent !== undefined) {
                     this.receivingAgent = undefined;
-                    this.capabilities = [];
-                    this.capabilityOverrides = new Map();
+                    this.capabilityDefaults = [];
+                    this.userCapabilityOverrides = new Map();
                     this.chatInputHasModesKey.set(false);
                     this.chatInputHasCapabilitiesKey.set(false);
                     this.update();
@@ -619,8 +634,8 @@ export class AIChatInputWidget extends ReactWidget {
                     keybindingHint: this.getModeKeybindingHint(),
                 }}
                 capabilitiesProps={{
-                    capabilities: this.capabilities,
-                    overrides: this.capabilityOverrides,
+                    capabilities: this.capabilityDefaults,
+                    overrides: this.userCapabilityOverrides,
                     onCapabilityChange: this.handleCapabilityChange,
                     isOpen: this.capabilitiesOpen,
                     onToggle: () => this.toggleCapabilities(),
