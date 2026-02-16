@@ -42,7 +42,6 @@ function unansweredQuestionsOfResponse(response: ChatResponseModel | undefined):
     if (!response || !response.response) { return []; }
     return response.response.content.filter((c): c is QuestionResponseContent =>
         QuestionResponseContent.is(c) &&
-        c.selectedOption === undefined &&
         (c.selectedOptions === undefined || c.selectedOptions.length === 0)
     );
 }

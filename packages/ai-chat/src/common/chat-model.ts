@@ -450,7 +450,6 @@ export interface QuestionContentData {
     header?: string;
     options: { text: string; value?: string }[];
     multiSelect?: boolean;
-    selectedOption?: { text: string; value?: string };
     selectedOptions?: { text: string; value?: string }[];
 }
 
@@ -748,10 +747,6 @@ export namespace ProgressChatResponseContent {
 }
 
 export type QuestionResponseHandler = (
-    selectedOption: { text: string, value?: string },
-) => void;
-
-export type MultiSelectQuestionResponseHandler = (
     selectedOptions: { text: string, value?: string }[],
 ) => void;
 
@@ -761,10 +756,8 @@ export interface QuestionResponseContent extends ChatResponseContent {
     header?: string;
     options: { text: string, value?: string, description?: string }[];
     multiSelect?: boolean;
-    selectedOption?: { text: string, value?: string };
     selectedOptions?: { text: string, value?: string }[];
     handler?: QuestionResponseHandler;
-    multiSelectHandler?: MultiSelectQuestionResponseHandler;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -2467,7 +2460,6 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
  */
 export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
-    protected _selectedOption: { text: string; value?: string } | undefined;
     protected _selectedOptions: { text: string; value?: string }[] | undefined;
 
     constructor(
@@ -2475,32 +2467,15 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
         public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
         public handler: QuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string },
-        public multiSelect?: boolean,
-        public multiSelectHandler?: MultiSelectQuestionResponseHandler,
         selectedOptions?: { text: string; value?: string }[],
+        public multiSelect?: boolean,
         public header?: string
     ) {
-        this._selectedOption = selectedOption;
         this._selectedOptions = selectedOptions;
     }
 
     get isReadOnly(): boolean {
-        if (this.multiSelect) {
-            return !this.multiSelectHandler || !this.request;
-        }
         return !this.handler || !this.request;
-    }
-
-    set selectedOption(option: { text: string; value?: string; } | undefined) {
-        this._selectedOption = option;
-        // Only trigger change notification if request is available (not in read-only mode)
-        if (this.request) {
-            this.request.response.response.responseContentChanged();
-        }
-    }
-    get selectedOption(): { text: string; value?: string; } | undefined {
-        return this._selectedOption;
     }
 
     set selectedOptions(options: { text: string; value?: string }[] | undefined) {
@@ -2514,14 +2489,10 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
     }
 
     asString?(): string | undefined {
-        if (this.multiSelect) {
-            const answer = this._selectedOptions && this._selectedOptions.length > 0
-                ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
-                : 'No answer';
-            return `Question: ${this.question}\n${answer}`;
-        }
-        return `Question: ${this.question}
-${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
+        const answer = this._selectedOptions && this._selectedOptions.length > 0
+            ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
+            : 'No answer';
+        return `Question: ${this.question}\n${answer}`;
     }
     merge?(): boolean {
         return false;
@@ -2534,7 +2505,6 @@ ${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
                 header: this.header,
                 options: this.options,
                 multiSelect: this.multiSelect,
-                selectedOption: this._selectedOption,
                 selectedOptions: this._selectedOptions
             }
         };

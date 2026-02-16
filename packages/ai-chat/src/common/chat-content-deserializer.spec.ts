@@ -293,7 +293,7 @@ describe('Chat Content Serialization', () => {
                 options,
                 undefined, // request
                 undefined, // handler
-                { text: 'Blue' } // selectedOption
+                [{ text: 'Blue' }] // selectedOptions
             );
             const serialized = original.toSerializable?.();
 
@@ -302,7 +302,7 @@ describe('Chat Content Serialization', () => {
             expect(serialized!.data).to.deep.equal({
                 question: 'Which color do you find most calming?',
                 options: options,
-                selectedOption: { text: 'Blue' }
+                selectedOptions: [{ text: 'Blue' }]
             });
 
             // Simulate caller populating fallbackMessage

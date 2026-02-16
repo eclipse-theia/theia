@@ -41,8 +41,13 @@ export class QuestionPartRenderer
 
 }
 
+function isOptionSelected(question: QuestionResponseContent, option: { text: string }): boolean {
+    return question.selectedOptions?.some(s => s.text === option.text) === true;
+}
+
 function SingleSelectQuestion({ question, node }: { question: QuestionResponseContent, node: ResponseNode }): React.JSX.Element {
-    const isDisabled = question.isReadOnly || question.selectedOption !== undefined || !node.response.isWaitingForInput;
+    const hasSelection = question.selectedOptions !== undefined && question.selectedOptions.length > 0;
+    const isDisabled = question.isReadOnly || hasSelection || !node.response.isWaitingForInput;
     const hasDescriptions = question.options.some(option => option.description);
 
     return (
@@ -53,11 +58,11 @@ function SingleSelectQuestion({ question, node }: { question: QuestionResponseCo
                 {
                     question.options.map((option, index) => (
                         <button
-                            className={`theia-QuestionPartRenderer-option ${question.selectedOption?.text === option.text ? 'selected' : ''}`}
+                            className={`theia-QuestionPartRenderer-option ${isOptionSelected(question, option) ? 'selected' : ''}`}
                             onClick={() => {
                                 if (!question.isReadOnly && question.handler) {
-                                    question.selectedOption = option;
-                                    question.handler(option);
+                                    question.selectedOptions = [option];
+                                    question.handler([option]);
                                 }
                             }}
                             disabled={isDisabled}
@@ -120,8 +125,8 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
             .map(i => question.options[i]);
         question.selectedOptions = selectedOpts;
         setConfirmed(true);
-        if (question.multiSelectHandler) {
-            question.multiSelectHandler(selectedOpts);
+        if (question.handler) {
+            question.handler(selectedOpts);
         }
     };
 

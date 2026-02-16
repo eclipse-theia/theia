@@ -380,7 +380,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             question,
             APPROVAL_OPTIONS,
             request,
-            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request)
+            selectedOptions => this.handleApprovalResponse(selectedOptions[0], approvalRequest.requestId, approvalRequest.toolName, request)
         );
 
         // Store references for this specific approval request
@@ -405,7 +405,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         const originalToolInput = toolInputs.get(requestId);
 
         if (questionContent) {
-            questionContent.selectedOption = selectedOption;
+            questionContent.selectedOptions = [selectedOption];
         }
 
         pendingApprovals.delete(requestId);
@@ -490,36 +490,18 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 }
             };
 
-            const questionContent = questionItem.multiSelect
-                ? new QuestionResponseContentImpl(
-                    questionItem.question,
-                    options,
-                    request,
-                    undefined,
-                    undefined,
-                    true,
-                    selectedOptions => {
-                        answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
-                        onAnswered();
-                    },
-                    undefined,
-                    questionItem.header
-                )
-                : new QuestionResponseContentImpl(
-                    questionItem.question,
-                    options,
-                    request,
-                    selectedOption => {
-                        // Key by question text to match the Claude Code SDK's expected answers format
-                        answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
-                        onAnswered();
-                    },
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    questionItem.header
-                );
+            const questionContent = new QuestionResponseContentImpl(
+                questionItem.question,
+                options,
+                request,
+                selectedOptions => {
+                    answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
+                    onAnswered();
+                },
+                undefined,
+                questionItem.multiSelect || undefined,
+                questionItem.header
+            );
 
             request.response.response.addContent(questionContent);
         }
