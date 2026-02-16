@@ -57,9 +57,9 @@ function isOptionSelected(question: QuestionResponseContent, option: { text: str
     return question.selectedOptions?.some(s => s.text === option.text) === true;
 }
 
-function DismissButton({ question, disabled }: { question: QuestionResponseContent, disabled: boolean }): React.JSX.Element | null {
+function DismissButton({ question, disabled }: { question: QuestionResponseContent, disabled: boolean }): React.JSX.Element | undefined {
     if (disabled) {
-        return null;
+        return undefined;
     }
     return (
         <button
@@ -181,7 +181,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
                     onClick={handleConfirm}
                     disabled={selectedIndices.size === 0}
                 >
-                    {nls.localizeByDefault('Confirm')}
+                    {nls.localize('theia/ai-chat-ui/confirm', 'Confirm')}
                 </button>
             )}
         </div>
