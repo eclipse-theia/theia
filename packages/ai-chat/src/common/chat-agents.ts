@@ -23,6 +23,7 @@ import {
     AgentSpecificVariables,
     AIVariableContext,
     AIVariableResolutionRequest,
+    CapabilityAwareContext,
     getTextOfResponse,
     isLanguageModelStreamResponsePart,
     isTextResponsePart,
@@ -97,7 +98,7 @@ export namespace SystemMessageDescription {
     }
 }
 
-export interface ChatSessionContext extends AIVariableContext {
+export interface ChatSessionContext extends CapabilityAwareContext {
     request?: ChatRequestModel;
     model: ChatModel;
 }

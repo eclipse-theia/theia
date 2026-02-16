@@ -21,14 +21,14 @@ import {
     AIVariableContribution,
     AIVariableService,
     AIVariableResolutionRequest,
-    AIVariableContext,
     ResolvedAIVariable,
     AIVariableResolverWithVariableDependencies,
-    AIVariableArg
+    AIVariableArg,
+    AIVariableContext
 } from './variable-service';
 import { isCustomizedPromptFragment, PromptService } from './prompt-service';
 import { PromptText } from './prompt-text';
-import { parseCapabilityArgument } from './capability-utils';
+import { CapabilityAwareContext, parseCapabilityArgument } from './capability-utils';
 
 export const CAPABILITY_VARIABLE: AIVariable = {
     id: 'capability-provider',
@@ -66,7 +66,7 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
 
     async resolve(
         request: AIVariableResolutionRequest,
-        context: AIVariableContext,
+        context: CapabilityAwareContext,
         resolveDependency?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
     ): Promise<ResolvedAIVariable | undefined> {
         if (request.variable.name === CAPABILITY_VARIABLE.name) {

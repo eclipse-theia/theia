@@ -13,6 +13,24 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { AIVariableContext } from './variable-service';
+
+/**
+ * An extended variable resolution context that includes capability override information.
+ *
+ * This context is used during prompt template resolution to determine which capability
+ * fragments should be enabled or disabled, allowing dynamic customization of agent behavior.
+ */
+export interface CapabilityAwareContext extends AIVariableContext {
+    /**
+     * Optional mapping of capability fragment IDs to their enabled/disabled state.
+     *
+     * When resolving capability variables in prompt templates, this map is consulted
+     * to determine whether a capability should be enabled. If a fragment ID is not
+     * present in this map, the capability's default state is used.
+     */
+    capabilityOverrides?: Record<string, boolean>;
+}
 
 /**
  * Represents a parsed capability variable from a prompt template.

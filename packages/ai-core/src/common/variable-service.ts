@@ -130,19 +130,6 @@ export namespace AIVariableResolutionRequest {
 }
 
 export interface AIVariableContext {
-    /**
-     * Capability overrides from the chat request.
-     * Maps capability fragment IDs to enabled/disabled state.
-     */
-    capabilityOverrides?: Record<string, boolean>;
-
-    /**
-     * Index signature needed because AIVariableContext is the base type for all variable
-     * resolution contexts (ChatSessionContext, CodeCompletionVariableContext, etc.).
-     * Some context types don't explicitly extend this interface but are structurally
-     * compatible and passed where AIVariableContext is expected.
-     */
-    [key: string]: unknown;
 }
 
 export type AIVariableArg = string | { variable: string, arg?: string } | AIVariableResolutionRequest;

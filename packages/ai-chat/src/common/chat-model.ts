@@ -267,20 +267,14 @@ export interface ChatRequest {
     readonly modeId?: string;
     /**
      * Capability overrides for this request.
-     * Maps capability fragment IDs to their enabled/disabled state.
+     * Maps capability fragment IDs to enabled/disabled state.
+     * Only includes capabilities that differ from their default value.
      */
     readonly capabilityOverrides?: Record<string, boolean>;
 }
 
 export interface ChatContext {
     variables: ResolvedAIContextVariable[];
-    /**
-     * Index signature needed because ChatContext is passed as AIVariableContext
-     * in the chat request parser for inline variable resolution.
-     * TODO: Refactor ChatRequestParser to accept a separate AIVariableContext
-     * for variable resolution instead of reusing ChatContext.
-     */
-    [key: string]: unknown;
 }
 
 export interface ChatRequestModel {
