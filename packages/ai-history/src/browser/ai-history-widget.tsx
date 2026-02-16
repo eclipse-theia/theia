@@ -98,7 +98,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
         const selectionChange = (value: SelectOption) => {
             this.selectAgent(this.agentService.getAllAgents().find(agent => agent.id === value.value));
         };
-        const agents = this.agentService.getAllAgents();
+        const agents = this.agentService.getAllAgents().sort((a, b) => a.name.localeCompare(b.name));
         if (agents.length === 0) {
             return (
                 <div className='agent-history-widget'>
