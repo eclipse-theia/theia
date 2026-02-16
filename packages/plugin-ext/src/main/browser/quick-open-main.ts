@@ -209,19 +209,29 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
             inputBox.totalSteps = options.totalSteps;
             inputBox.buttons = options.buttons ? this.convertToQuickInputButtons(options.buttons) : [];
             inputBox.validationMessage = options.validationMessage;
+            if (options.validationMessage) {
+                inputBox.severity = options.severity ?? 3 /* Error */;
+            }
             if (validateInput) {
-                options.validateInput = (val: string) => {
-                    this.proxy.$validateInput(val);
-                };
+                options.validateInput = (val: string) => this.proxy.$validateInput(val);
             }
 
             toDispose.push(inputBox.onDidAccept(() => {
                 this.proxy.$acceptOnDidAccept(sessionId);
                 resolve(inputBox.value);
             }));
-            toDispose.push(inputBox.onDidChangeValue((value: string) => {
+            toDispose.push(inputBox.onDidChangeValue(async (value: string) => {
                 this.proxy.$acceptDidChangeValue(sessionId, value);
-                inputBox.validationMessage = options.validateInput(value);
+                if (options.validateInput) {
+                    const result = await options.validateInput(value);
+                    if (!result || typeof result === 'string') {
+                        inputBox.validationMessage = result || undefined;
+                        inputBox.severity = result ? 3 /* Error */ : 0 /* Ignore */;
+                    } else {
+                        inputBox.validationMessage = result.content;
+                        inputBox.severity = result.severity;
+                    }
+                }
             }));
             toDispose.push(inputBox.onDidTriggerButton((button: any) => {
                 this.proxy.$acceptOnDidTriggerButton(sessionId, button);

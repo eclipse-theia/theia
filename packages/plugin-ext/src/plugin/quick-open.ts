@@ -30,7 +30,6 @@ import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { Severity } from '@theia/core/lib/common/severity';
 import { PluginIconPath } from './plugin-icon-path';
 
 const canceledName = 'Canceled';
@@ -138,7 +137,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return this.proxy.$showInputBox(options, typeof this.validateInputHandler === 'function');
     }
 
-    async $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> {
+    async $validateInput(input: string): Promise<string | { content: string; severity: number; } | null | undefined> {
         if (!this.validateInputHandler) {
             return;
         }
@@ -148,25 +147,11 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             return result;
         }
 
-        let severity: Severity;
-        switch (result.severity) {
-            case InputBoxValidationSeverity.Info:
-                severity = Severity.Info;
-                break;
-            case InputBoxValidationSeverity.Warning:
-                severity = Severity.Warning;
-                break;
-            case InputBoxValidationSeverity.Error:
-                severity = Severity.Error;
-                break;
-            default:
-                severity = result.message ? Severity.Error : Severity.Ignore;
-                break;
-        }
-
+        // InputBoxValidationSeverity values (Info=1, Warning=2, Error=3)
+        // match Monaco Severity values directly, so we can pass them through
         return {
             content: result.message,
-            severity
+            severity: result.severity ?? InputBoxValidationSeverity.Error
         };
     }
 
@@ -517,7 +502,7 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
 
     private _password: boolean;
     private _valueSelection: readonly [number, number] | undefined;
-    private _validationMessage: string | undefined;
+    private _validationMessage: string | theia.InputBoxValidationMessage | undefined;
 
     constructor(
         override readonly quickOpen: QuickOpenExtImpl,
@@ -550,14 +535,21 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
         this.update({ valueSelection });
     }
 
-    get validationMessage(): string | undefined {
+    get validationMessage(): string | theia.InputBoxValidationMessage | undefined {
         return this._validationMessage;
     }
 
-    set validationMessage(validationMessage: string | undefined) {
+    set validationMessage(validationMessage: string | theia.InputBoxValidationMessage | undefined) {
         if (this._validationMessage !== validationMessage) {
             this._validationMessage = validationMessage;
-            this.update({ validationMessage });
+            if (typeof validationMessage === 'object' && validationMessage) {
+                // InputBoxValidationSeverity values (Info=1, Warning=2, Error=3)
+                // match Monaco Severity values directly
+                this.update({ validationMessage: validationMessage.message, severity: validationMessage.severity });
+            } else {
+                // Plain string defaults to Error severity (3), undefined/null clears validation
+                this.update({ validationMessage, severity: validationMessage ? InputBoxValidationSeverity.Error : 0 });
+            }
         }
     }
 }

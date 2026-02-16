@@ -146,6 +146,7 @@ export interface InputBox extends QuickInput {
     readonly onDidTriggerButton: Event<QuickInputButton>;
     prompt: string | undefined;
     validationMessage: string | undefined;
+    severity: number;
 }
 
 export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInput {

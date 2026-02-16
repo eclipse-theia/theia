@@ -528,7 +528,7 @@ export interface StatusBarMessageRegistryExt {
 
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
-    $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined>;
+    $validateInput(input: string): Promise<string | { content: string; severity: number; } | null | undefined>;
 
     $acceptOnDidAccept(sessionId: number): Promise<void>;
     $acceptDidChangeValue(sessionId: number, changedValue: string): Promise<void>;
@@ -731,6 +731,7 @@ export interface TransferInputBox extends BaseTransferQuickInput {
     buttons?: TransferQuickInputButton[];
     prompt?: string;
     validationMessage?: string;
+    severity?: number;
 }
 
 export interface IInputBoxOptions {
