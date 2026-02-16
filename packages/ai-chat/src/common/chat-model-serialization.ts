@@ -99,6 +99,11 @@ export interface SerializableChatRequestData {
         elements: SerializableChangeSetElement[];
     };
     parsedRequest?: SerializableParsedRequest;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     */
+    capabilityOverrides?: Record<string, boolean>;
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {

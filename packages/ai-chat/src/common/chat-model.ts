@@ -1646,7 +1646,10 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         respData?: SerializableChatResponseData
     ): void {
         this._id = reqData.id;
-        this._request = { text: reqData.text };
+        this._request = {
+            text: reqData.text,
+            capabilityOverrides: reqData.capabilityOverrides
+        };
         this._agentId = reqData.agentId;
         this._data = {};
         this._context = { variables: [] };
@@ -1887,7 +1890,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
             } : undefined,
-            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
+            capabilityOverrides: this.request.capabilityOverrides
         };
     }
 

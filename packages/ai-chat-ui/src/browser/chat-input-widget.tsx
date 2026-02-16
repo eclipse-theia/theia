@@ -224,6 +224,23 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
+     * Extracts capability overrides from the last request in the chat model.
+     * Used to restore user's capability choices when switching sessions or on reload.
+     */
+    protected getLastCapabilityOverridesFromModel(chatModel: ChatModel): Map<string, boolean> {
+        const requests = chatModel.getRequests();
+        if (requests.length === 0) {
+            return new Map();
+        }
+        const lastRequest = requests[requests.length - 1];
+        const overrides = lastRequest.request.capabilityOverrides;
+        if (!overrides) {
+            return new Map();
+        }
+        return new Map(Object.entries(overrides));
+    }
+
+    /**
      * Refreshes capabilities for the current receiving agent.
      * Called when prompt fragments change to ensure capabilities reflect the latest template.
      */
@@ -319,6 +336,9 @@ export class AIChatInputWidget extends ReactWidget {
         this.onDisposeForChatModel.push(
             this.pendingImageRegistry.registerEditorMapping(this.getResourceUri().toString(), chatModel.id)
         );
+
+        // Restore capability overrides from the last request in this session (if any)
+        this.userCapabilityOverrides = this.getLastCapabilityOverridesFromModel(chatModel);
         this.onDisposeForChatModel.push(chatModel.onDidChange(event => {
             if (event.kind === 'addVariable') {
                 // Validate files added via any path (including LLM tool calls)
