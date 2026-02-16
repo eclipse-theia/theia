@@ -17,7 +17,7 @@
 .theia-settings-container .settings-search-container {
   display: flex;
   align-items: center;
-  padding: 1px /* Enough for the search bar's outline to show up. */
+  padding: 1px; /* Enough for the search bar's outline to show up. */
 }
 
 .theia-settings-container .settings-search-container .settings-search-input {
