@@ -92,7 +92,6 @@ function SingleSelectQuestion({ question, node }: { question: QuestionResponseCo
                             }}
                             disabled={isDisabled}
                             key={index}
-                            title={option.description}
                         >
                             <span className="theia-QuestionPartRenderer-option-label">{option.text}</span>
                             {option.description && (
