@@ -133,18 +133,18 @@ describe('condenseArguments', () => {
 
 describe('formatArgsForTooltip', () => {
 
-    it('renders short single-line args as plain text', () => {
+    it('renders short single-line args as inline code', () => {
         const args = JSON.stringify({ path: 'test.ts' });
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**path:** test.ts');
+        expect(result.value).to.contain('**path:** `test.ts`');
         expect(result.value).to.not.contain('```');
     });
 
-    it('renders long single-line string as plain text (no newlines)', () => {
+    it('renders long single-line string as inline code (no newlines)', () => {
         const longPath = 'src/browser/chat-response-renderer/toolcall-utils.ts';
         const args = JSON.stringify({ path: longPath });
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain(`**path:** ${longPath.replace(/[\\\`*_{}[\]()#+\-!|>~]/g, '\\$&')}`);
+        expect(result.value).to.contain(`**path:** \`${longPath}\``);
         expect(result.value).to.not.contain('```');
     });
 
@@ -172,27 +172,27 @@ describe('formatArgsForTooltip', () => {
         expect(result.value).to.contain('```');
     });
 
-    it('renders simple non-string values as plain text (no newlines)', () => {
+    it('renders simple non-string values as inline code (no code blocks)', () => {
         const args = '{"count": 42, "enabled": true, "value": null}';
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**count:** 42');
-        expect(result.value).to.contain('**enabled:** true');
-        expect(result.value).to.contain('**value:** null');
+        expect(result.value).to.contain('**count:** `42`');
+        expect(result.value).to.contain('**enabled:** `true`');
+        expect(result.value).to.contain('**value:** `null`');
         expect(result.value).to.not.contain('```');
     });
 
     it('renders mixed single-line and multi-line values correctly', () => {
         const args = JSON.stringify({ path: 'test.ts', content: 'line1\nline2' });
         const result = formatArgsForTooltip(args);
-        expect(result.value).to.contain('**path:** test.ts');
+        expect(result.value).to.contain('**path:** `test.ts`');
         expect(result.value).to.contain('**content:**');
         expect(result.value).to.contain('```');
     });
 
-    it('falls back to plain text for short unparseable JSON', () => {
+    it('falls back to code block for short unparseable JSON', () => {
         const invalidJson = 'not json at all';
         const result = formatArgsForTooltip(invalidJson);
-        expect(result.value).to.not.contain('```');
+        expect(result.value).to.contain('```');
         expect(result.value).to.contain('not json at all');
     });
 
@@ -203,18 +203,74 @@ describe('formatArgsForTooltip', () => {
         expect(result.value).to.contain(invalidJson);
     });
 
-    it('handles top-level non-object parsed value as plain text (no newlines)', () => {
-        const longString = '"a string that is longer than thirty characters total"';
-        expect(longString.length).to.be.greaterThan(30);
+    it('handles top-level non-object parsed value as code block', () => {
+        const longString = '"a string that is longer than fifty characters total and keeps going"';
+        expect(longString.length).to.be.greaterThan(50);
         const result = formatArgsForTooltip(longString);
-        expect(result.value).to.not.contain('```');
-        expect(result.value).to.contain('a string that is longer than thirty characters total');
+        expect(result.value).to.contain('```');
+        expect(result.value).to.contain('a string that is longer than fifty characters total and keeps going');
     });
 
     it('handles top-level array as code block (serialization produces newlines)', () => {
         const args = JSON.stringify([1, 2, 3]);
         const result = formatArgsForTooltip(args);
         expect(result.value).to.contain('```');
+    });
+
+    it('separates top-level entries with horizontal rules', () => {
+        const args = JSON.stringify({ path: 'test.ts', enabled: true });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('---');
+    });
+
+    it('renders primitive array as JSON code block', () => {
+        const args = JSON.stringify({ tags: ['a', 'b', 'c'] });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**tags:**');
+        expect(result.value).to.contain('```');
+        expect(result.value).to.contain('"a"');
+        expect(result.value).to.contain('"b"');
+    });
+
+    it('expands array of objects with string values into sections', () => {
+        const args = JSON.stringify({
+            replacements: [
+                { oldContent: 'line one\nline two', newContent: 'line three\nline four' }
+            ]
+        });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**oldContent:**');
+        expect(result.value).to.contain('**newContent:**');
+        expect(result.value).to.contain('line one\nline two');
+        expect(result.value).to.contain('line three\nline four');
+    });
+
+    it('renders short strings as code blocks inside array items', () => {
+        const args = JSON.stringify({
+            replacements: [
+                { oldContent: '// 2024', newContent: '// 2025' }
+            ]
+        });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('**oldContent:**');
+        expect(result.value).to.contain('**newContent:**');
+        expect(result.value).to.contain('// 2024');
+        expect(result.value).to.contain('// 2025');
+        // Both values should be in code blocks, not inline code
+        const codeBlockCount = (result.value.match(/```/g) || []).length;
+        expect(codeBlockCount).to.be.greaterThanOrEqual(4); // 2 code blocks = 4 fences
+    });
+
+    it('numbers array items when there are multiple', () => {
+        const args = JSON.stringify({
+            replacements: [
+                { old: 'aaa\nbbb', new: 'ccc\nddd' },
+                { old: 'eee\nfff', new: 'ggg\nhhh' }
+            ]
+        });
+        const result = formatArgsForTooltip(args);
+        expect(result.value).to.contain('\\[0\\]');
+        expect(result.value).to.contain('\\[1\\]');
     });
 
 });
