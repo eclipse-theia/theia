@@ -64,6 +64,14 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Controls whether to follow symlinks while searching.'),
             default: true,
             type: 'boolean',
+        },
+        'search.exclude': {
+            type: 'object',
+            // eslint-disable-next-line max-len
+            markdownDescription: nls.localize('theia/search-in-workspace/searchExclude', 'Configure [glob patterns](https://aka.ms/vscode-glob-patterns) for excluding files and folders in full-text searches and file search in quick open. Inherits all glob patterns from the `#files.exclude#` setting.'),
+            default: {
+                '**/node_modules': true
+            }
         }
     }
 };
@@ -76,6 +84,7 @@ export class SearchInWorkspaceConfiguration {
     'search.searchOnEditorModification': boolean;
     'search.smartCase': boolean;
     'search.followSymlinks': boolean;
+    'search.exclude': { [key: string]: boolean };
 }
 
 export const SearchInWorkspacePreferenceContribution = Symbol('SearchInWorkspacePreferenceContribution');
