@@ -4,6 +4,17 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.69.0 - TBD
+
+- [workspace] introduced `WorkspaceSearchFilterService` to centralize search exclusion globs [#16775](https://github.com/eclipse-theia/theia/pull/16775)
+
+<a name="breaking_changes_1.69.0">[Breaking Changes:](#breaking_changes_1.69.0)</a>
+
+- [workspace, search-in-workspace, file-search] refactored some protected fields that can break subclasses as part of [#16775](https://github.com/eclipse-theia/theia/pull/16775):
+  - `SearchInWorkspaceResultTreeWidget`: removed `filesystemPreferences` property (`FileSystemPreferences`), replaced by `searchFilterService` (`WorkspaceSearchFilterService`). The `getExcludeGlobs` method now accepts an additional `useExcludeSettings` parameter.
+  - `SearchInWorkspaceWidget`: renamed `includeIgnoredState` to `useExcludeSettingsState` with inverted semantics (now `enabled: true` means exclusions are applied). Removed `FileSystemPreferences` injection, replaced by `searchFilterService` (`WorkspaceSearchFilterService`).
+  - `QuickFileSelectService`: removed `fsPreferences` property (`FileSystemPreferences`), replaced by `searchFilterService` (`WorkspaceSearchFilterService`). Exclusion patterns are now provided via a new `getExcludePatterns` method.
+
 ## 1.68.0 - 1/29/2026
 
 - [ai-chat] added mode selection for coder and architect agents [#16860](https://github.com/eclipse-theia/theia/pull/16860)
