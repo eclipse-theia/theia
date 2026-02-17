@@ -397,16 +397,16 @@ export class MonacoQuickInputService implements QuickInputService {
     createInputBox(): InputBox {
         const monacoInputBox = this.monacoService.createInputBox();
         return new Proxy(monacoInputBox as unknown as InputBox, {
-            set(target: any, prop: string | symbol, value: any): boolean {
+            set(target: InputBox, prop: string | symbol, value: unknown): boolean {
                 if (prop === 'severity') {
-                    target[prop] = severityToMonaco(value);
+                    (target as unknown as IInputBox)[prop] = severityToMonaco(value as Severity);
                     return true;
                 }
-                target[prop] = value;
+                (target as unknown as Record<string | symbol, unknown>)[prop] = value;
                 return true;
             },
-            get(target: any, prop: string | symbol): any {
-                const result = target[prop];
+            get(target: InputBox, prop: string | symbol): unknown {
+                const result = (target as unknown as Record<string | symbol, unknown>)[prop];
                 if (typeof result === 'function') {
                     return result.bind(target);
                 }
