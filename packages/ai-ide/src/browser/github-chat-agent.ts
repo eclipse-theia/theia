@@ -78,8 +78,8 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
                         { text: nls.localize('theia/ai/ide/github/configureGitHubServer/no', 'No, cancel'), value: 'cancel' }
                     ],
                     request,
-                    async selectedOptions => {
-                        if (selectedOptions[0]?.value === 'configure') {
+                    async (selectedOption: { text: string; value?: string }) => {
+                        if (selectedOption?.value === 'configure') {
                             await this.offerConfiguration();
                             request.response.response.addContent(new MarkdownChatResponseContentImpl(nls.localize('theia/ai/ide/github/configureGitHubServer/followup',
                                 'Settings file opened. Please add your GitHub Personal Access Token to the `serverAuthToken` property in the GitHub server configuration, then '
@@ -107,8 +107,8 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
                         { text: nls.localize('theia/ai/ide/github/startGitHubServer/no', 'No, cancel'), value: 'no' }
                     ],
                     request,
-                    async selectedOptions => {
-                        if (selectedOptions[0]?.value === 'yes') {
+                    async (selectedOption: { text: string; value?: string }) => {
+                        if (selectedOption?.value === 'yes') {
                             const progress = request.response.addProgressMessage({
                                 content: nls.localize('theia/ai/ide/github/startGitHubServer/progress', 'Starting GitHub MCP server.'),
                                 show: 'whileIncomplete'

@@ -450,6 +450,7 @@ export interface QuestionContentData {
     header?: string;
     options: { text: string; value?: string; description?: string }[];
     multiSelect?: boolean;
+    selectedOption?: { text: string; value?: string };
     selectedOptions?: { text: string; value?: string }[];
 }
 
@@ -747,6 +748,10 @@ export namespace ProgressChatResponseContent {
 }
 
 export type QuestionResponseHandler = (
+    selectedOption: { text: string, value?: string },
+) => void;
+
+export type MultiSelectQuestionResponseHandler = (
     selectedOptions: { text: string, value?: string }[],
 ) => void;
 
@@ -756,8 +761,9 @@ export interface QuestionResponseContent extends ChatResponseContent {
     header?: string;
     options: { text: string, value?: string, description?: string }[];
     multiSelect?: boolean;
+    selectedOption?: { text: string, value?: string };
     selectedOptions?: { text: string, value?: string }[];
-    handler?: QuestionResponseHandler;
+    handler?: QuestionResponseHandler | MultiSelectQuestionResponseHandler;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -2466,16 +2472,27 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
         public question: string,
         public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
-        public handler: QuestionResponseHandler | undefined,
-        selectedOptions?: { text: string; value?: string }[],
+        public handler: QuestionResponseHandler | MultiSelectQuestionResponseHandler | undefined,
+        selectedOption?: { text: string; value?: string },
         public multiSelect?: boolean,
-        public header?: string
+        public header?: string,
+        selectedOptions?: { text: string; value?: string }[]
     ) {
-        this._selectedOptions = selectedOptions;
+        this._selectedOptions = selectedOptions ?? (selectedOption ? [selectedOption] : undefined);
     }
 
     get isReadOnly(): boolean {
         return !this.handler || !this.request;
+    }
+
+    set selectedOption(option: { text: string; value?: string } | undefined) {
+        this._selectedOptions = option ? [option] : undefined;
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
+    }
+    get selectedOption(): { text: string; value?: string } | undefined {
+        return this._selectedOptions?.[0];
     }
 
     set selectedOptions(options: { text: string; value?: string }[] | undefined) {
@@ -2501,8 +2518,12 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
         const data: QuestionContentData = {
             question: this.question,
             options: this.options,
-            selectedOptions: this._selectedOptions
         };
+        if (this.multiSelect) {
+            data.selectedOptions = this._selectedOptions;
+        } else if (this._selectedOptions?.[0]) {
+            data.selectedOption = this._selectedOptions[0];
+        }
         if (this.header !== undefined) {
             data.header = this.header;
         }

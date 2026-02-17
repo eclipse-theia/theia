@@ -380,7 +380,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             question,
             APPROVAL_OPTIONS,
             request,
-            selectedOptions => this.handleApprovalResponse(selectedOptions[0], approvalRequest.requestId, approvalRequest.toolName, request)
+            (selectedOption: { text: string; value?: string }) => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request)
         );
 
         // Store references for this specific approval request
@@ -405,7 +405,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         const originalToolInput = toolInputs.get(requestId);
 
         if (questionContent) {
-            questionContent.selectedOptions = [selectedOption];
+            questionContent.selectedOption = selectedOption;
         }
 
         pendingApprovals.delete(requestId);
@@ -490,16 +490,24 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 }
             };
 
+            const isMultiSelect = questionItem.multiSelect || undefined;
+            const handler = isMultiSelect
+                ? (selectedOptions: { text: string; value?: string }[]) => {
+                    answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
+                    onAnswered();
+                }
+                : (selectedOption: { text: string; value?: string }) => {
+                    answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
+                    onAnswered();
+                };
+
             const questionContent = new QuestionResponseContentImpl(
                 questionItem.question,
                 options,
                 request,
-                selectedOptions => {
-                    answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
-                    onAnswered();
-                },
+                handler,
                 undefined,
-                questionItem.multiSelect || undefined,
+                isMultiSelect,
                 questionItem.header
             );
 

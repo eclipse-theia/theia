@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChatResponseContent, QuestionResponseContent } from '@theia/ai-chat';
+import { ChatResponseContent, MultiSelectQuestionResponseHandler, QuestionResponseContent, QuestionResponseHandler } from '@theia/ai-chat';
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
@@ -49,7 +49,9 @@ function isResolved(question: QuestionResponseContent): boolean {
 function skipQuestion(question: QuestionResponseContent): void {
     if (!question.isReadOnly && question.handler) {
         question.selectedOptions = [];
-        question.handler([]);
+        if (question.multiSelect) {
+            (question.handler as MultiSelectQuestionResponseHandler)([]);
+        }
     }
 }
 
@@ -86,8 +88,8 @@ function SingleSelectQuestion({ question, node }: { question: QuestionResponseCo
                             className={`theia-QuestionPartRenderer-option ${isOptionSelected(question, option) ? 'selected' : ''}`}
                             onClick={() => {
                                 if (!question.isReadOnly && question.handler) {
-                                    question.selectedOptions = [option];
-                                    question.handler([option]);
+                                    question.selectedOption = option;
+                                    (question.handler as QuestionResponseHandler)(option);
                                 }
                             }}
                             disabled={isDisabled}
@@ -150,7 +152,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
         question.selectedOptions = selectedOpts;
         setConfirmed(true);
         if (question.handler) {
-            question.handler(selectedOpts);
+            (question.handler as MultiSelectQuestionResponseHandler)(selectedOpts);
         }
     }, [isDisabled, selectedIndices, question]);
 

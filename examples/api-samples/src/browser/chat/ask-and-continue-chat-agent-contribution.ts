@@ -131,8 +131,8 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
                 const question = content.replace(/^<question>\n|<\/question>$/g, '');
                 const parsedQuestion = JSON.parse(question);
 
-                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOptions => {
-                    this.handleAnswer(selectedOptions[0], request);
+                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, (selectedOption: { text: string; value?: string }) => {
+                    this.handleAnswer(selectedOption, request);
                 });
             },
             incompleteContentFactory: (content: string, request: MutableChatRequestModel) =>
