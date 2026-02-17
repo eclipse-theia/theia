@@ -252,8 +252,7 @@ export class ReplaceContentInFileFunctionHelper {
                         properties: replacementProperties,
                         required: ['oldContent', 'newContent']
                     },
-                    description: `An array of replacement objects, each containing oldContent and newContent strings.
-                    Ensure these strings are valid JSON string values, escaping quotes only as required.`
+                    description: 'An array of replacement objects, each containing oldContent and newContent strings.'
                 },
                 reset: {
                     type: 'boolean',
