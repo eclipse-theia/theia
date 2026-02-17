@@ -125,7 +125,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
     const isDisabled = question.isReadOnly || confirmed || !node.response.isWaitingForInput;
     const hasDescriptions = question.options.some(option => option.description);
 
-    const toggleOption = (index: number): void => {
+    const toggleOption = React.useCallback((index: number): void => {
         if (isDisabled) {
             return;
         }
@@ -138,9 +138,9 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
             }
             return next;
         });
-    };
+    }, [isDisabled]);
 
-    const handleConfirm = (): void => {
+    const handleConfirm = React.useCallback((): void => {
         if (isDisabled || selectedIndices.size === 0) {
             return;
         }
@@ -152,7 +152,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
         if (question.handler) {
             question.handler(selectedOpts);
         }
-    };
+    }, [isDisabled, selectedIndices, question]);
 
     return (
         <div className="theia-QuestionPartRenderer-root">
@@ -166,7 +166,6 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
                         onClick={() => toggleOption(index)}
                         disabled={isDisabled}
                         key={index}
-                        title={option.description}
                     >
                         <span className="theia-QuestionPartRenderer-option-label">{option.text}</span>
                         {option.description && (

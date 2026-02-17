@@ -448,7 +448,7 @@ export interface ErrorContentData {
 export interface QuestionContentData {
     question: string;
     header?: string;
-    options: { text: string; value?: string }[];
+    options: { text: string; value?: string; description?: string }[];
     multiSelect?: boolean;
     selectedOptions?: { text: string; value?: string }[];
 }
