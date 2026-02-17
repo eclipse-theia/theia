@@ -166,7 +166,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
         return {
             content: result.message,
-            severity: InputBoxValidationSeverityToSeverity(result.severity ?? InputBoxValidationSeverity.Error)
+            severity: inputBoxValidationSeverityToSeverity(result.severity ?? InputBoxValidationSeverity.Error)
         };
     }
 
@@ -560,7 +560,7 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
             if (typeof validationMessage === 'object' && validationMessage) {
                 this.update({
                     validationMessage: validationMessage.message,
-                    severity: InputBoxValidationSeverityToSeverity(validationMessage.severity)
+                    severity: inputBoxValidationSeverityToSeverity(validationMessage.severity)
                 });
             } else {
                 this.update({
