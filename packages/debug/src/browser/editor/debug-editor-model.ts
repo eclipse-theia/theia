@@ -176,7 +176,7 @@ export class DebugEditorModel implements Disposable {
 
         const decorations: monaco.editor.IModelDeltaDecoration[] = [];
         const isTopFrameInEditor = topFrame.source && new URI(topFrame.source.uri.toString()).isEqual(this.uri);
-        const isCurrentFrameInEditor = currentFrame.source && new URI(currentFrame.source.uri.toString()).isEqual(this.uri);
+        const isCurrentFrameInEditor = this.sessionManager.isCurrentEditorFrame(this.uri);
 
         if (isTopFrameInEditor) {
             const columnUntilEOLRange = new monaco.Range(topFrame.raw.line, topFrame.raw.column, topFrame.raw.line, 1 << 30);
