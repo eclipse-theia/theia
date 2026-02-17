@@ -40,7 +40,7 @@ import { PluginIconPath } from './plugin-icon-path';
  * - {@link InputBoxValidationSeverity}: Info=1, Warning=2, Error=3 (matches Monaco/VS Code)
  * - {@link Severity}: Ignore=0, Error=1, Warning=2, Info=3
  */
-function InputBoxValidationSeverityToSeverity(severity: InputBoxValidationSeverity): Severity {
+function inputBoxValidationSeverityToSeverity(severity: InputBoxValidationSeverity): Severity {
     switch (severity) {
         case InputBoxValidationSeverity.Error: return Severity.Error;
         case InputBoxValidationSeverity.Warning: return Severity.Warning;
