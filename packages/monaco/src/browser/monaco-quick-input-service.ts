@@ -43,6 +43,25 @@ import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor
 import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService';
 import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate';
 import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hover';
+import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
+import { Severity } from '@theia/core/lib/common/severity';
+
+/**
+ * Converts Theia's {@link Severity} to Monaco's {@link MonacoSeverity}.
+ *
+ * These enums have different numeric values for Error and Info:
+ * - Theia: Ignore=0, Error=1, Warning=2, Info=3
+ * - Monaco: Ignore=0, Info=1, Warning=2, Error=3
+ */
+function severityToMonaco(severity: Severity): MonacoSeverity {
+    switch (severity) {
+        case Severity.Error: return MonacoSeverity.Error;
+        case Severity.Warning: return MonacoSeverity.Warning;
+        case Severity.Info: return MonacoSeverity.Info;
+        case Severity.Ignore:
+        default: return MonacoSeverity.Ignore;
+    }
+}
 
 // Copied from @vscode/src/vs/base/parts/quickInput/browser/quickInputList.ts
 export interface IListElement {
@@ -376,8 +395,24 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     createInputBox(): InputBox {
-        // need to cast because of vscode issue https://github.com/microsoft/vscode/issues/190584
-        return this.monacoService.createInputBox() as InputBox;
+        const monacoInputBox = this.monacoService.createInputBox();
+        return new Proxy(monacoInputBox as unknown as InputBox, {
+            set(target: any, prop: string | symbol, value: any): boolean {
+                if (prop === 'severity') {
+                    target[prop] = severityToMonaco(value);
+                    return true;
+                }
+                target[prop] = value;
+                return true;
+            },
+            get(target: any, prop: string | symbol): any {
+                const result = target[prop];
+                if (typeof result === 'function') {
+                    return result.bind(target);
+                }
+                return result;
+            }
+        });
     }
 
     input(options?: InputOptions, token?: monaco.CancellationToken): Promise<string | undefined> {
@@ -386,7 +421,13 @@ export class MonacoQuickInputService implements QuickInputService {
             const { validateInput, ...props } = options;
             inputOptions = { ...props };
             if (validateInput) {
-                inputOptions.validateInput = async input => validateInput(input);
+                inputOptions.validateInput = async input => {
+                    const result = await validateInput(input);
+                    if (result && typeof result !== 'string') {
+                        return { content: result.content, severity: severityToMonaco(result.severity) };
+                    }
+                    return result;
+                };
             }
         }
         return this.monacoService.input(inputOptions, token);

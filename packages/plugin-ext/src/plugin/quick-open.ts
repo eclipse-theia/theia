@@ -24,6 +24,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { InputBoxValidationSeverity, QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
+import { Severity } from '@theia/core/lib/common/severity';
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import { convertToTransferQuickPickItems } from './type-converters';
@@ -31,6 +32,22 @@ import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { PluginIconPath } from './plugin-icon-path';
+
+/**
+ * Converts plugin API {@link InputBoxValidationSeverity} values to Theia's {@link Severity} enum.
+ *
+ * Note: These enums have different numeric values:
+ * - {@link InputBoxValidationSeverity}: Info=1, Warning=2, Error=3 (matches Monaco/VS Code)
+ * - {@link Severity}: Ignore=0, Error=1, Warning=2, Info=3
+ */
+function InputBoxValidationSeverityToSeverity(severity: InputBoxValidationSeverity): Severity {
+    switch (severity) {
+        case InputBoxValidationSeverity.Error: return Severity.Error;
+        case InputBoxValidationSeverity.Warning: return Severity.Warning;
+        case InputBoxValidationSeverity.Info: return Severity.Info;
+        default: return Severity.Ignore;
+    }
+}
 
 const canceledName = 'Canceled';
 /**
@@ -137,7 +154,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return this.proxy.$showInputBox(options, typeof this.validateInputHandler === 'function');
     }
 
-    async $validateInput(input: string): Promise<string | { content: string; severity: number; } | null | undefined> {
+    async $validateInput(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> {
         if (!this.validateInputHandler) {
             return;
         }
@@ -147,11 +164,9 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             return result;
         }
 
-        // InputBoxValidationSeverity values (Info=1, Warning=2, Error=3)
-        // match Monaco Severity values directly, so we can pass them through
         return {
             content: result.message,
-            severity: result.severity ?? InputBoxValidationSeverity.Error
+            severity: InputBoxValidationSeverityToSeverity(result.severity ?? InputBoxValidationSeverity.Error)
         };
     }
 
@@ -543,12 +558,15 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
         if (this._validationMessage !== validationMessage) {
             this._validationMessage = validationMessage;
             if (typeof validationMessage === 'object' && validationMessage) {
-                // InputBoxValidationSeverity values (Info=1, Warning=2, Error=3)
-                // match Monaco Severity values directly
-                this.update({ validationMessage: validationMessage.message, severity: validationMessage.severity });
+                this.update({
+                    validationMessage: validationMessage.message,
+                    severity: InputBoxValidationSeverityToSeverity(validationMessage.severity)
+                });
             } else {
-                // Plain string defaults to Error severity (3), undefined/null clears validation
-                this.update({ validationMessage, severity: validationMessage ? InputBoxValidationSeverity.Error : 0 });
+                this.update({
+                    validationMessage,
+                    severity: validationMessage ? Severity.Error : Severity.Ignore
+                });
             }
         }
     }

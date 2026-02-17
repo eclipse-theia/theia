@@ -40,6 +40,7 @@ import {
 } from '@theia/core/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { Severity } from '@theia/core/lib/common/severity';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { QuickInputButtons } from '../../plugin/types-impl';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
@@ -210,7 +211,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
             inputBox.buttons = options.buttons ? this.convertToQuickInputButtons(options.buttons) : [];
             inputBox.validationMessage = options.validationMessage;
             if (options.validationMessage) {
-                inputBox.severity = options.severity ?? 3 /* Error */;
+                inputBox.severity = options.severity ?? Severity.Error;
             }
             if (validateInput) {
                 options.validateInput = (val: string) => this.proxy.$validateInput(val);
@@ -226,7 +227,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                     const result = await options.validateInput(value);
                     if (!result || typeof result === 'string') {
                         inputBox.validationMessage = result || undefined;
-                        inputBox.severity = result ? 3 /* Error */ : 0 /* Ignore */;
+                        inputBox.severity = result ? Severity.Error : Severity.Ignore;
                     } else {
                         inputBox.validationMessage = result.content;
                         inputBox.severity = result.severity;
