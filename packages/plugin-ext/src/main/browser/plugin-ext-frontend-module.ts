@@ -20,7 +20,6 @@ import '../../../src/main/browser/style/comments.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    ApplicationShell,
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
     ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution, LabelProvider,
     UndoRedoHandler, DiffUris, Navigatable, SplitWidget,
@@ -90,8 +89,7 @@ import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './noteb
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
-import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import { NavigationLocation } from '@theia/editor/lib/browser/navigation/navigation-location';
+import { CustomEditorNavigationContribution } from './custom-editors/custom-editor-navigation-contribution';
 import { bindWebviewPreferences } from '../common/webview-preferences';
 import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
 import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
@@ -207,19 +205,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CustomEditorUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(CustomEditorUndoRedoHandler);
 
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
-        onStart(): void {
-            const shell = ctx.container.get(ApplicationShell);
-            const locationService = ctx.container.get(NavigationLocationService);
-            shell.onDidChangeActiveWidget(({ newValue }) => {
-                if (newValue instanceof CustomEditorWidget && newValue.resource) {
-                    locationService.navigate(service =>
-                        service.register(NavigationLocation.create(newValue.resource, { line: 0, character: 0 }))
-                    );
-                }
-            });
-        }
-    }));
+    bind(CustomEditorNavigationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(CustomEditorNavigationContribution);
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: CustomEditorWidget.SIDE_BY_SIDE_FACTORY_ID,
