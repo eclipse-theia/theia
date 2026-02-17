@@ -89,6 +89,7 @@ import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './noteb
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
+import { CustomEditorNavigationContribution } from './custom-editors/custom-editor-navigation-contribution';
 import { bindWebviewPreferences } from '../common/webview-preferences';
 import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
 import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
@@ -203,6 +204,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WidgetFactory).toService(CustomEditorWidgetFactory);
     bind(CustomEditorUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(CustomEditorUndoRedoHandler);
+
+    bind(CustomEditorNavigationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(CustomEditorNavigationContribution);
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: CustomEditorWidget.SIDE_BY_SIDE_FACTORY_ID,
