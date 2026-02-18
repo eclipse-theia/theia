@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Agent, AgentService, AISettingsService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
-import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
@@ -76,16 +76,16 @@ import {
 import { ChangeSetFileElementDeserializerContribution } from './change-set-file-element-deserializer';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, ChatAgent);
+    bindRootContributionProvider(bind, ChatAgent);
 
     bind(ChatContentDeserializerRegistryImpl).toSelf().inSingletonScope();
     bind(ChatContentDeserializerRegistry).toService(ChatContentDeserializerRegistryImpl);
-    bindContributionProvider(bind, ChatContentDeserializerContribution);
+    bindRootContributionProvider(bind, ChatContentDeserializerContribution);
     bind(ChatContentDeserializerContribution).to(DefaultChatContentDeserializerContribution).inSingletonScope();
 
     bind(ChangeSetElementDeserializerRegistryImpl).toSelf().inSingletonScope();
     bind(ChangeSetElementDeserializerRegistry).toService(ChangeSetElementDeserializerRegistryImpl);
-    bindContributionProvider(bind, ChangeSetElementDeserializerContribution);
+    bindRootContributionProvider(bind, ChangeSetElementDeserializerContribution);
     bind(ChangeSetElementDeserializerContribution).to(ChangeSetFileElementDeserializerContribution).inSingletonScope();
 
     bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
@@ -102,7 +102,7 @@ export default new ContainerModule(bind => {
     bind(ChatSessionNamingAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ChatSessionNamingAgent);
 
-    bindContributionProvider(bind, ResponseContentMatcherProvider);
+    bindRootContributionProvider(bind, ResponseContentMatcherProvider);
     bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();
     bind(ResponseContentMatcherProvider).toService(DefaultResponseContentMatcherProvider);
     bind(DefaultResponseContentFactory).toSelf().inSingletonScope();
@@ -172,7 +172,7 @@ export default new ContainerModule(bind => {
 
     bind(ChangeSetDecoratorService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ChangeSetDecoratorService);
-    bindContributionProvider(bind, ChangeSetDecorator);
+    bindRootContributionProvider(bind, ChangeSetDecorator);
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
