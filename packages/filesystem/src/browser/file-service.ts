@@ -39,7 +39,7 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { TernarySearchTree } from '@theia/core/lib/common/ternary-search-tree';
 import {
     ensureFileSystemProviderError, etag, ETAG_DISABLED,
-    FileChange, FileChangeType, FileChangesEvent,
+    FileChangesEvent,
     FileOperation, FileOperationError,
     FileOperationEvent, FileOperationResult, FileSystemProviderCapabilities,
     FileSystemProviderErrorCode, FileType, hasFileFolderCopyCapability, hasOpenReadWriteCloseCapability, hasReadWriteCapability,
@@ -64,7 +64,6 @@ import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
 import { Minimatch } from 'minimatch';
-import debounce = require('lodash.debounce');
 import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
@@ -376,7 +375,7 @@ export class FileService {
         this.onDidChangeFileSystemProviderRegistrationsEmitter.fire({ added: true, scheme, provider });
 
         const providerDisposables = new DisposableCollection();
-        providerDisposables.push(provider.onDidChangeFile(changes => this.bufferFileChanges(changes)));
+        providerDisposables.push(provider.onDidChangeFile(changes => this.onDidFilesChangeEmitter.fire(new FileChangesEvent(changes))));
         providerDisposables.push(provider.onFileWatchError(() => this.handleFileWatchError()));
         providerDisposables.push(provider.onDidChangeCapabilities(() => this.onDidChangeFileSystemProviderCapabilitiesEmitter.fire({ provider, scheme })));
         if (ReadOnlyMessageFileSystemProvider.is(provider)) {
@@ -1431,84 +1430,6 @@ export class FileService {
      */
     get onDidFilesChange(): Event<FileChangesEvent> {
         return this.onDidFilesChangeEmitter.event;
-    }
-
-    private static readonly FILE_CHANGES_DEBOUNCE_MS = 100;
-    private pendingFileChanges = new Map<string, FileChange[]>();
-
-    /**
-     * Buffer incoming file changes and deduplicate by URI before emitting.
-     * Multiple overlapping watchers may report the same file change independently;
-     * this ensures consumers only see one consolidated event per debounce window.
-     */
-    private bufferFileChanges(changes: readonly FileChange[]): void {
-        for (const change of changes) {
-            const uriStr = change.resource.toString();
-            const existing = this.pendingFileChanges.get(uriStr) || [];
-            this.normalizeFileChange(existing, change);
-            this.pendingFileChanges.set(uriStr, existing);
-        }
-        this.debouncedFlushPendingFileChanges();
-    }
-
-    private debouncedFlushPendingFileChanges = debounce(() => this.flushPendingFileChanges(), FileService.FILE_CHANGES_DEBOUNCE_MS);
-
-    /**
-     * Normalize a new change into the existing changes for the same URI.
-     *
-     * Rules (same as FileChangeCollection):
-     * - ADDED + ADDED => ADDED
-     * - ADDED + UPDATED => ADDED
-     * - ADDED + DELETED => [ADDED, DELETED]
-     * - UPDATED + ADDED => UPDATED
-     * - UPDATED + UPDATED => UPDATED
-     * - UPDATED + DELETED => DELETED
-     * - DELETED + ADDED => UPDATED
-     * - DELETED + UPDATED => UPDATED
-     * - DELETED + DELETED => DELETED
-     */
-    private normalizeFileChange(changes: FileChange[], change: FileChange): void {
-        let currentType: FileChangeType | undefined;
-        let nextType: FileChangeType | [FileChangeType, FileChangeType] = change.type;
-        do {
-            const current = changes.pop();
-            currentType = current?.type;
-            nextType = this.reduceFileChangeType(currentType, nextType);
-        } while (!Array.isArray(nextType) && currentType !== undefined && currentType !== nextType);
-
-        const resource = change.resource;
-        if (Array.isArray(nextType)) {
-            changes.push(...nextType.map(type => ({ resource, type })));
-        } else {
-            changes.push({ resource, type: nextType });
-        }
-    }
-
-    private reduceFileChangeType(current: FileChangeType | undefined, change: FileChangeType): FileChangeType | [FileChangeType, FileChangeType] {
-        if (current === undefined) {
-            return change;
-        }
-        if (current === FileChangeType.ADDED) {
-            if (change === FileChangeType.DELETED) {
-                return [FileChangeType.ADDED, FileChangeType.DELETED];
-            }
-            return FileChangeType.ADDED;
-        }
-        if (change === FileChangeType.DELETED) {
-            return FileChangeType.DELETED;
-        }
-        return FileChangeType.UPDATED;
-    }
-
-    private flushPendingFileChanges(): void {
-        const allChanges: FileChange[] = [];
-        for (const changes of this.pendingFileChanges.values()) {
-            allChanges.push(...changes);
-        }
-        this.pendingFileChanges.clear();
-        if (allChanges.length > 0) {
-            this.onDidFilesChangeEmitter.fire(new FileChangesEvent(allChanges));
-        }
     }
 
     private activeWatchers = new Map<string, WatcherEntry>();
