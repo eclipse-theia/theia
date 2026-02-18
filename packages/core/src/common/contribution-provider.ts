@@ -30,19 +30,21 @@ export interface ContributionProvider<T extends object> {
 class ContainerBasedContributionProvider<T extends object> implements ContributionProvider<T> {
 
     protected services: T[] | undefined;
+    protected container: interfaces.Container | undefined;
 
     constructor(
         protected readonly serviceIdentifier: interfaces.ServiceIdentifier<T>,
-        protected readonly container: interfaces.Container
-    ) { }
+        container: interfaces.Container
+    ) {
+        this.container = container;
+    }
 
     getContributions(recursive?: boolean): T[] {
         if (this.services === undefined) {
             const currentServices: T[] = [];
             let filterRegistry: ContributionFilterRegistry | undefined;
-            let currentContainer: interfaces.Container | null = this.container;
-            // eslint-disable-next-line no-null/no-null
-            while (currentContainer !== null) {
+            let currentContainer = this.container;
+            while (currentContainer) {
                 if (currentContainer.isBound(this.serviceIdentifier)) {
                     try {
                         currentServices.push(...currentContainer.getAll(this.serviceIdentifier));
@@ -53,12 +55,11 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
                 if (filterRegistry === undefined && currentContainer.isBound(ContributionFilterRegistry)) {
                     filterRegistry = currentContainer.get(ContributionFilterRegistry);
                 }
-                // eslint-disable-next-line no-null/no-null
-                currentContainer = recursive === true ? currentContainer.parent : null;
+                currentContainer = recursive === true ? currentContainer.parent ?? undefined : undefined;
             }
 
             this.services = filterRegistry ? filterRegistry.applyFilters(currentServices, this.serviceIdentifier) : currentServices;
-
+            this.container = undefined;
         }
         return this.services;
     }
@@ -78,6 +79,26 @@ export function bindContributionProvider(bindable: Bindable, id: symbol): void {
     const bindingToSyntax = (Bindable.isContainer(bindable) ? bindable.bind(ContributionProvider) : bindable(ContributionProvider));
     bindingToSyntax
         .toDynamicValue(ctx => new ContainerBasedContributionProvider(id, ctx.container))
+        .inSingletonScope().whenTargetNamed(id);
+}
+
+/**
+ * Like {@link bindContributionProvider}, but walks to the root container before
+ * constructing the provider. This avoids a memory leak where the provider
+ * permanently retains a reference to whichever child container first resolves it.
+ *
+ * See {@link https://github.com/eclipse-theia/theia/issues/10877#issuecomment-1107000223}
+ */
+export function bindRootContributionProvider(bindable: Bindable, id: symbol): void {
+    const bindingToSyntax = (Bindable.isContainer(bindable) ? bindable.bind(ContributionProvider) : bindable(ContributionProvider));
+    bindingToSyntax
+        .toDynamicValue(ctx => {
+            let container = ctx.container;
+            while (container.parent) {
+                container = container.parent;
+            }
+            return new ContainerBasedContributionProvider(id, container);
+        })
         .inSingletonScope().whenTargetNamed(id);
 }
 
