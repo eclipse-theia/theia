@@ -18,7 +18,10 @@ import {
     SEARCH_IN_WORKSPACE_FUNCTION_ID,
     FIND_FILES_BY_PATTERN_FUNCTION_ID,
     LIST_TASKS_FUNCTION_ID,
-    RUN_TASK_FUNCTION_ID
+    RUN_TASK_FUNCTION_ID,
+    LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
+    RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
+    STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
 } from './workspace-functions';
 import { TODO_WRITE_FUNCTION_ID } from './todo-tool';
 import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
@@ -150,6 +153,15 @@ If no relevant tests exist for your changes:
 - Create new test files using ~{${WRITE_FILE_REPLACEMENTS_ID}} or ~{${WRITE_FILE_CONTENT_ID}}
 - Follow patterns from existing tests in the codebase
 - Ensure new tests validate the new behavior and prevent regressions
+
+## Running Applications
+Running tasks will not return until a task is done. To launch an application so that the user \
+or an agent can test it or interact with it continuously, use launch configurations instead.
+- ~{${LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID}} — list all available launch configs and their state (running or not)
+- ~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}} — start a launch configuration (returns immediately, app runs in background)
+- ~{${STOP_LAUNCH_CONFIGURATION_FUNCTION_ID}} — stop a running launch configuration
+
+Launch configurations are defined in \`.vscode/launch.json\`. If none exist or you need to inspect/modify them, read or create this file.
 
 ## Progress Tracking
 - ~{${TODO_WRITE_FUNCTION_ID}} — track task progress with a todo list visible to the user
