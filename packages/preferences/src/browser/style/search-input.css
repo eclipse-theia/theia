@@ -66,7 +66,7 @@
 
 .theia-settings-container .settings-search-container .option:disabled {
   cursor: default;
-  opacity: 0.4;
+  opacity: var(--theia-mod-disabled-opacity);
 }
 
 .theia-settings-container .settings-search-container .enabled {

@@ -116,7 +116,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         this.node.appendChild(innerWrapper);
         const noLeavesMessage = document.createElement('div');
         noLeavesMessage.classList.add('settings-no-results-announcement');
-        noLeavesMessage.textContent = nls.localize('theia/preferences/noResults', 'That search query has returned no results.');
+        noLeavesMessage.textContent = nls.localizeByDefault('No Settings Found');
         this.node.appendChild(noLeavesMessage);
     }
 
