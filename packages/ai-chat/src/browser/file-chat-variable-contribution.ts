@@ -17,7 +17,7 @@
 import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
 import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
-import { CancellationToken, ILogger, nls, QuickInputService } from '@theia/core';
+import { CancellationToken, ILogger, nls, QuickInputService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
@@ -26,7 +26,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable } from '../common/image-context-variable';
 import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, LabelProvider, NavigatableWidget } from '@theia/core/lib/browser';
 
 @injectable()
 export class FileChatVariableContribution implements FrontendVariableContribution {
@@ -44,6 +44,12 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
@@ -77,7 +83,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     protected async imageArgumentPicker(): Promise<string | undefined> {
         const quickPick = this.quickInputService.createQuickPick();
-        quickPick.title = nls.localize('theia/ai/chat/selectImageFile', 'Select an image file');
+        quickPick.placeholder = nls.localize('theia/ai/chat/imagePickerPlaceholder', 'Select an image file or search by name');
 
         // Create "From Clipboard" option
         const clipboardOption = {
@@ -87,27 +93,31 @@ export class FileChatVariableContribution implements FrontendVariableContributio
             isClipboardOption: true
         };
 
-        // Get all files and filter only image files
-        const allPicks = await this.quickFileSelectService.getPicks();
-        const filePicks = allPicks.filter(item => {
-            if (FileQuickPickItem.is(item)) {
-                return this.isImageFile(item.uri.path.toString());
-            }
-            return false;
-        });
+        // Get currently opened image files
+        const openedImagePicks = this.getOpenedImageFilePicks();
+        const openedUris = new Set(openedImagePicks.map(item => item.uri.toString()));
 
-        quickPick.items = [clipboardOption, ...filePicks];
+        // Initial items: opened image files + clipboard option at the end
+        quickPick.items = [...openedImagePicks, clipboardOption];
 
         const updateItems = async (value: string) => {
-            const filteredPicks = await this.quickFileSelectService.getPicks(value, CancellationToken.None);
-            const filteredFilePicks = filteredPicks.filter(item => {
-                if (FileQuickPickItem.is(item)) {
-                    return this.isImageFile(item.uri.path.toString());
-                }
-                return false;
-            });
-            // Keep clipboard option at top when filtering
-            quickPick.items = [clipboardOption, ...filteredFilePicks];
+            if (!value) {
+                // No search term: show opened files + clipboard
+                quickPick.items = [...openedImagePicks, clipboardOption];
+                return;
+            }
+            // Search for image files
+            const picks = await this.quickFileSelectService.getPicks(value, CancellationToken.None);
+            const imagePicks = picks.filter((item): item is FileQuickPickItem =>
+                FileQuickPickItem.is(item) && this.isImageFile(item.uri.path.toString()) && !openedUris.has(item.uri.toString())
+            );
+            // Filter opened images by search term
+            const lowerValue = value.toLowerCase();
+            const filteredOpenedImages = openedImagePicks.filter(item =>
+                item.label.toLowerCase().includes(lowerValue) ||
+                (item.description?.toLowerCase().includes(lowerValue) ?? false)
+            );
+            quickPick.items = [...filteredOpenedImages, ...imagePicks, clipboardOption];
         };
 
         const onChangeListener = quickPick.onDidChangeValue(updateItems);
@@ -145,6 +155,61 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                 }
             });
         });
+    }
+
+    /**
+     * Get URIs of currently opened image files in all widgets.
+     */
+    protected getOpenedImageUris(): URI[] {
+        const openedImageUris: URI[] = [];
+        const seenUris = new Set<string>();
+
+        // Get all widgets from the main area
+        const mainWidgets = this.shell.getWidgets('main');
+
+        // Use NavigatableWidget.get() helper to find widgets with URIs
+        for (const [uri] of NavigatableWidget.get(mainWidgets)) {
+            const uriString = uri.toString();
+
+            // Skip duplicates and non-image files
+            if (seenUris.has(uriString) || !this.isImageFile(uri.path.toString())) {
+                continue;
+            }
+
+            seenUris.add(uriString);
+            openedImageUris.push(uri);
+        }
+
+        return openedImageUris;
+    }
+
+    /**
+     * Get quick pick items for opened image files.
+     * Creates items directly with proper file icons from the labelProvider.
+     */
+    protected getOpenedImageFilePicks(): FileQuickPickItem[] {
+        const openedImageUris = this.getOpenedImageUris();
+        if (openedImageUris.length === 0) {
+            return [];
+        }
+
+        const openedImagePicks: FileQuickPickItem[] = [];
+
+        for (const uri of openedImageUris) {
+            const label = this.labelProvider.getName(uri);
+            const description = this.labelProvider.getDetails(uri);
+            const iconClasses = this.getFileIconClasses(uri);
+
+            openedImagePicks.push({
+                label,
+                description,
+                iconClasses,
+                uri,
+                alwaysShow: true
+            });
+        }
+
+        return openedImagePicks;
     }
 
     /**
@@ -227,6 +292,17 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                     };
                 })
         );
+    }
+
+    /**
+     * Get icon classes for a file URI, matching the format used by QuickFileSelectService.
+     */
+    protected getFileIconClasses(uri: URI): string[] {
+        const icon = this.labelProvider.getIcon(uri).split(' ').filter(v => v.length > 0);
+        if (icon.length > 0) {
+            icon.push('file-icon');
+        }
+        return icon;
     }
 
     /**
