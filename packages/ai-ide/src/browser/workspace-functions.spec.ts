@@ -34,7 +34,6 @@ import { Container } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { OpenerService } from '@theia/core/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
@@ -91,8 +90,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         };
 
         const mockMonacoWorkspace = {
-            // eslint-disable-next-line no-null/no-null
-            getTextDocument: () => null
+            getTextDocument: () => undefined
         } as unknown as MonacoWorkspace;
 
         const mockProblemManager = {
@@ -110,10 +108,6 @@ describe('Workspace Functions Cancellation Tests', () => {
             })
         } as unknown as MonacoTextModelService;
 
-        const mockOpenerService = {
-            open: async () => { }
-        };
-
         // Register mocks in the container
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
@@ -121,7 +115,6 @@ describe('Workspace Functions Cancellation Tests', () => {
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
         container.bind(ProblemManager).toConstantValue(mockProblemManager);
         container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
-        container.bind(OpenerService).toConstantValue(mockOpenerService);
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(GetWorkspaceDirectoryStructure).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -232,8 +225,7 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
         };
 
         const mockMonacoWorkspace = {
-            // eslint-disable-next-line no-null/no-null
-            getTextDocument: () => null
+            getTextDocument: () => undefined
         } as unknown as MonacoWorkspace;
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
