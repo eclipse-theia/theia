@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import {
     RemoteConnectionProvider,
@@ -38,5 +38,5 @@ export default new ContainerModule(bind => {
         return connection.createProxy<MCPToolFrontendDelegate>(mcpToolDelegatePath, client);
     }).inSingletonScope();
 
-    bindContributionProvider(bind, MCPFrontendContribution);
+    bindRootContributionProvider(bind, MCPFrontendContribution);
 });

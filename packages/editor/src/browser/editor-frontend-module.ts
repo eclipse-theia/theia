@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 import '../../src/browser/language-status/editor-language-status.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindContributionProvider, CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContribution, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { EditorManager, EditorAccess, ActiveEditorAccess, CurrentEditorAccess, EditorSelectionResolver } from './editor-manager';
@@ -52,8 +52,8 @@ export default new ContainerModule(bind => {
     bind(EditorManager).toSelf().inSingletonScope();
     bind(OpenHandler).toService(EditorManager);
 
-    bindContributionProvider(bind, EditorSelectionResolver);
-    bindContributionProvider(bind, SplitEditorContribution);
+    bindRootContributionProvider(bind, EditorSelectionResolver);
+    bindRootContributionProvider(bind, SplitEditorContribution);
 
     bind(TextEditorSplitContribution).toSelf().inSingletonScope();
     bind(SplitEditorContribution).toService(TextEditorSplitContribution);

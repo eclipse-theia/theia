@@ -16,7 +16,7 @@
 
 import { injectable, inject, named, interfaces } from 'inversify';
 import URI from '../../common/uri';
-import { ContributionProvider, bindContributionProvider } from '../../common/contribution-provider';
+import { ContributionProvider, bindRootContributionProvider } from '../../common/contribution-provider';
 
 export const PreferenceConfiguration = Symbol('PreferenceConfiguration');
 export interface PreferenceConfiguration {
@@ -24,7 +24,7 @@ export interface PreferenceConfiguration {
 }
 
 export function bindPreferenceConfigurations(bind: interfaces.Bind): void {
-    bindContributionProvider(bind, PreferenceConfiguration);
+    bindRootContributionProvider(bind, PreferenceConfiguration);
     bind(PreferenceConfigurations).toSelf().inSingletonScope();
 }
 

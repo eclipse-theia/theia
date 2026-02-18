@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module';
@@ -49,7 +49,7 @@ export default new ContainerModule(bind => {
     createCommonBindings(bind);
 
     bind(TaskRunnerRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, TaskRunnerContribution);
+    bindRootContributionProvider(bind, TaskRunnerContribution);
     bind(TaskBackendApplicationContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(TaskBackendApplicationContribution);
 

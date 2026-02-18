@@ -16,7 +16,7 @@
 
 import { interfaces } from 'inversify';
 import {
-    bindContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
+    bindRootContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
     MessageService, ResourceProvider, ResourceResolver
 } from '../common';
 import { PreferenceProvider } from '../common/preferences/preference-provider';
@@ -53,5 +53,5 @@ export function bindPreferenceService(bind: interfaces.Bind): void {
 export function bindResourceProvider(bind: interfaces.Bind): void {
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context => uri => context.container.get(DefaultResourceProvider).get(uri));
-    bindContributionProvider(bind, ResourceResolver);
+    bindRootContributionProvider(bind, ResourceResolver);
 }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import '../../src/browser/style/index.css';
-import { bindContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
@@ -92,8 +92,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CommandContribution).toService(ChatInputCapabilitiesContribution);
     bind(KeybindingContribution).toService(ChatInputCapabilitiesContribution);
 
-    bindContributionProvider(bind, ChatResponsePartRenderer);
-    bindContributionProvider(bind, ChatWelcomeMessageProvider);
+    bindRootContributionProvider(bind, ChatResponsePartRenderer);
+    bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
 
     bindChatViewWidget(bind);
 
@@ -163,8 +163,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );
 
-    bindContributionProvider(bind, CodePartRendererAction);
-    bindContributionProvider(bind, ChangeSetActionRenderer);
+    bindRootContributionProvider(bind, CodePartRendererAction);
+    bindRootContributionProvider(bind, ChangeSetActionRenderer);
     bind(CopyToClipboardButtonAction).toSelf().inSingletonScope();
     bind(CodePartRendererAction).toService(CopyToClipboardButtonAction);
     bind(InsertCodeAtCursorButtonAction).toSelf().inSingletonScope();
@@ -182,7 +182,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChangeSetAcceptAction).toSelf().inSingletonScope();
     bind(ChangeSetActionRenderer).toService(ChangeSetAcceptAction);
 
-    bindContributionProvider(bind, ChatNodeToolbarActionContribution);
+    bindRootContributionProvider(bind, ChatNodeToolbarActionContribution);
     bind(DefaultChatNodeToolbarActionContribution).toSelf().inSingletonScope();
     bind(ChatNodeToolbarActionContribution).toService(DefaultChatNodeToolbarActionContribution);
 

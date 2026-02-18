@@ -18,7 +18,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import {
     MessageClient, MessageService,
     ProgressClient, ProgressService,
-    bindContributionProvider
+    bindRootContributionProvider
 } from '@theia/core';
 import { MainPluginApiProvider, PluginDeployerDirectoryHandler } from '@theia/plugin-ext';
 import { PluginTheiaHeadlessDirectoryHandler } from './handlers/plugin-theia-headless-directory-handler';
@@ -29,7 +29,7 @@ export function bindHeadlessMain(bind: interfaces.Bind): void {
 }
 
 export function bindBackendMain(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind): void {
-    bindContributionProvider(bind, MainPluginApiProvider);
+    bindRootContributionProvider(bind, MainPluginApiProvider);
 
     //
     // Main API dependencies
