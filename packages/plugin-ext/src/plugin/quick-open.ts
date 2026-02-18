@@ -24,14 +24,30 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { InputBoxValidationSeverity, QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
+import { Severity } from '@theia/core/lib/common/severity';
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { Severity } from '@theia/core/lib/common/severity';
 import { PluginIconPath } from './plugin-icon-path';
+
+/**
+ * Converts plugin API {@link InputBoxValidationSeverity} values to Theia's {@link Severity} enum.
+ *
+ * Note: These enums have different numeric values:
+ * - {@link InputBoxValidationSeverity}: Info=1, Warning=2, Error=3 (matches Monaco/VS Code)
+ * - {@link Severity}: Ignore=0, Error=1, Warning=2, Info=3
+ */
+function inputBoxValidationSeverityToSeverity(severity: InputBoxValidationSeverity): Severity {
+    switch (severity) {
+        case InputBoxValidationSeverity.Error: return Severity.Error;
+        case InputBoxValidationSeverity.Warning: return Severity.Warning;
+        case InputBoxValidationSeverity.Info: return Severity.Info;
+        default: return Severity.Ignore;
+    }
+}
 
 const canceledName = 'Canceled';
 /**
@@ -148,25 +164,9 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             return result;
         }
 
-        let severity: Severity;
-        switch (result.severity) {
-            case InputBoxValidationSeverity.Info:
-                severity = Severity.Info;
-                break;
-            case InputBoxValidationSeverity.Warning:
-                severity = Severity.Warning;
-                break;
-            case InputBoxValidationSeverity.Error:
-                severity = Severity.Error;
-                break;
-            default:
-                severity = result.message ? Severity.Error : Severity.Ignore;
-                break;
-        }
-
         return {
             content: result.message,
-            severity
+            severity: inputBoxValidationSeverityToSeverity(result.severity ?? InputBoxValidationSeverity.Error)
         };
     }
 
@@ -517,7 +517,7 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
 
     private _password: boolean;
     private _valueSelection: readonly [number, number] | undefined;
-    private _validationMessage: string | undefined;
+    private _validationMessage: string | theia.InputBoxValidationMessage | undefined;
 
     constructor(
         override readonly quickOpen: QuickOpenExtImpl,
@@ -550,14 +550,24 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
         this.update({ valueSelection });
     }
 
-    get validationMessage(): string | undefined {
+    get validationMessage(): string | theia.InputBoxValidationMessage | undefined {
         return this._validationMessage;
     }
 
-    set validationMessage(validationMessage: string | undefined) {
+    set validationMessage(validationMessage: string | theia.InputBoxValidationMessage | undefined) {
         if (this._validationMessage !== validationMessage) {
             this._validationMessage = validationMessage;
-            this.update({ validationMessage });
+            if (typeof validationMessage === 'object' && validationMessage) {
+                this.update({
+                    validationMessage: validationMessage.message,
+                    severity: inputBoxValidationSeverityToSeverity(validationMessage.severity)
+                });
+            } else {
+                this.update({
+                    validationMessage,
+                    severity: validationMessage ? Severity.Error : Severity.Ignore
+                });
+            }
         }
     }
 }
