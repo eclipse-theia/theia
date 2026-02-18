@@ -166,7 +166,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             // restart servers
             for (const name of startedServerNames) {
                 await this.frontendMCPService.startServer(name).catch(error => {
-                    console.error('Failed to restart MCP servers after changing workspace root setting', error);
+                    console.error(`Failed to restart MCP server ${name} after changing workspace root setting`, error);
                 });
             }
         }
