@@ -227,14 +227,14 @@ export class DebugSessionManager {
     }
 
     protected async startConfiguration(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
+        // Check workspace trust before starting debug session
+        const trust = await this.workspaceTrustService.requestWorkspaceTrust();
+        if (!trust) {
+            return undefined;
+        }
+
         return this.progressService.withProgress(nls.localizeByDefault('Starting...'), 'debug', async () => {
             try {
-                // Check workspace trust before starting debug session
-                const trust = await this.workspaceTrustService.requestWorkspaceTrust();
-                if (!trust) {
-                    return undefined;
-                }
-
                 // If a parent session is available saving should be handled by the parent
                 if (!options.configuration.parentSessionId && !options.configuration.suppressSaveBeforeStart && !await this.saveAll()) {
                     return undefined;
