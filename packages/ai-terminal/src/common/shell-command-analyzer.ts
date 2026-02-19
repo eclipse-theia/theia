@@ -129,9 +129,35 @@ export class DefaultShellCommandAnalyzer implements ShellCommandAnalyzer {
             }
 
             // Outside quotes
+
+            // Handle newline/carriage-return as command separators
+            if (ch === '\n' || ch === '\r') {
+                if (ch === '\r' && command[i + 1] === '\n') {
+                    i++; // consume \r\n as a single separator
+                }
+                this.pushSubCommand(results, current);
+                current = '';
+                continue;
+            }
+
             if (ch === '\\') {
-                escaped = true;
-                current += ch;
+                const next = command[i + 1];
+                if (next !== undefined && !'|&;"\'\\\n\r \t'.includes(next)) {
+                    // Non-special character after backslash: strip the backslash, keep next char
+                    current += next;
+                    i++;
+                } else {
+                    escaped = true;
+                    current += ch;
+                }
+                continue;
+            }
+
+            // Collapse whitespace outside quotes: runs of spaces/tabs become a single space
+            if (ch === ' ' || ch === '\t') {
+                if (current.length > 0 && !current.endsWith(' ')) {
+                    current += ' ';
+                }
                 continue;
             }
 
@@ -194,7 +220,7 @@ export class DefaultShellCommandAnalyzer implements ShellCommandAnalyzer {
         return results;
     }
 
-    private pushSubCommand(results: string[], sub: string): void {
+    protected pushSubCommand(results: string[], sub: string): void {
         const trimmed = sub.trim();
         if (trimmed.length > 0) {
             results.push(trimmed);

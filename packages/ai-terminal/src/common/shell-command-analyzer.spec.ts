@@ -114,6 +114,18 @@ describe('shell-command-analyzer', () => {
             expect(analyzer.parseCommand('echo foo \\| bar')).to.deep.equal(['echo foo \\| bar']);
         });
 
+        it('should preserve backslash before & and not split', () => {
+            expect(analyzer.parseCommand('echo foo \\& bar')).to.deep.equal(['echo foo \\& bar']);
+        });
+
+        it('should preserve backslash before ; and not split', () => {
+            expect(analyzer.parseCommand('echo foo \\; bar')).to.deep.equal(['echo foo \\; bar']);
+        });
+
+        it('should preserve backslash before backslash', () => {
+            expect(analyzer.parseCommand('echo foo \\\\ bar')).to.deep.equal(['echo foo \\\\ bar']);
+        });
+
         it('should handle single quotes inside double quotes with pipe', () => {
             expect(analyzer.parseCommand('echo "it\'s here" | cat')).to.deep.equal(['echo "it\'s here"', 'cat']);
         });
@@ -128,6 +140,58 @@ describe('shell-command-analyzer', () => {
 
         it('should handle multiple quoted separators in compound command', () => {
             expect(analyzer.parseCommand('echo "a;b" && cat "c|d"')).to.deep.equal(['echo "a;b"', 'cat "c|d"']);
+        });
+
+        it('should not split on OR operator inside double quotes', () => {
+            expect(analyzer.parseCommand('echo "a || b" || ls')).to.deep.equal(['echo "a || b"', 'ls']);
+        });
+
+        it('should not split on OR operator inside single quotes', () => {
+            expect(analyzer.parseCommand("echo 'a || b' || ls")).to.deep.equal(["echo 'a || b'", 'ls']);
+        });
+
+        it('should split on newline as command separator', () => {
+            expect(analyzer.parseCommand('echo test\nls')).to.deep.equal(['echo test', 'ls']);
+        });
+
+        it('should split on carriage-return-newline as command separator', () => {
+            expect(analyzer.parseCommand('echo test\r\nls')).to.deep.equal(['echo test', 'ls']);
+        });
+
+        it('should split on carriage-return as command separator', () => {
+            expect(analyzer.parseCommand('echo test\rls')).to.deep.equal(['echo test', 'ls']);
+        });
+
+        it('should not split on newline inside double quotes', () => {
+            expect(analyzer.parseCommand('echo "hello\nworld"')).to.deep.equal(['echo "hello\nworld"']);
+        });
+
+        it('should not split on newline inside single quotes', () => {
+            expect(analyzer.parseCommand('echo \'hello\nworld\'')).to.deep.equal(["echo 'hello\nworld'"]);
+        });
+
+        it('should collapse whitespace outside quotes', () => {
+            expect(analyzer.parseCommand('sh  -e "foo"')).to.deep.equal(['sh -e "foo"']);
+        });
+
+        it('should preserve whitespace inside double quotes while collapsing outside', () => {
+            expect(analyzer.parseCommand('echo   "hello   world"')).to.deep.equal(['echo "hello   world"']);
+        });
+
+        it('should collapse multiple spaces in unquoted command', () => {
+            expect(analyzer.parseCommand('git  log  --oneline')).to.deep.equal(['git log --oneline']);
+        });
+
+        it('should collapse tabs to single space outside quotes', () => {
+            expect(analyzer.parseCommand('sh\t-e "foo"')).to.deep.equal(['sh -e "foo"']);
+        });
+
+        it('should strip meaningless backslash escapes outside quotes', () => {
+            expect(analyzer.parseCommand('s\\h -e "foo"')).to.deep.equal(['sh -e "foo"']);
+        });
+
+        it('should strip backslash before non-special characters', () => {
+            expect(analyzer.parseCommand('ec\\ho test')).to.deep.equal(['echo test']);
         });
     });
 
