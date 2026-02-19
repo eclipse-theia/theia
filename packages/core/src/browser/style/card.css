@@ -17,7 +17,7 @@
 /* Base card container */
 .theia-Card {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
     background-color: var(--theia-editor-background);
     border: 1px solid var(--theia-dropdown-border);
@@ -51,8 +51,11 @@
 
 .theia-Card-content {
     flex: 1;
+    align-self: stretch;
     min-width: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .theia-Card-title {
@@ -68,5 +71,6 @@
 .theia-Card-subtitle {
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-descriptionForeground);
-    margin-top: calc(var(--theia-ui-padding) / 2);
+    margin-top: auto;
+    padding-top: calc(var(--theia-ui-padding) / 2);
 }

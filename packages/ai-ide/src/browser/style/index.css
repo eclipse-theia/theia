@@ -1017,9 +1017,19 @@
 .theia-WelcomeMessage-SessionCards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 320px));
+  grid-auto-rows: 1fr;
   justify-content: center;
   gap: calc(var(--theia-ui-padding) * 1.5);
   width: 100%;
+}
+
+.theia-WelcomeMessage-SessionCards > * {
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-WelcomeMessage-SessionCards .theia-Card {
+  flex: 1;
 }
 
 .theia-WelcomeMessage-BrowseAllLink {
