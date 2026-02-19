@@ -1038,6 +1038,48 @@
   text-decoration: underline;
 }
 
+.theia-chat-session-tooltip-label {
+  font-weight: 600;
+  margin-bottom: calc(var(--theia-ui-padding) * 0.5);
+}
+
+.theia-chat-session-tooltip-snippet h1,
+.theia-chat-session-tooltip-snippet h2,
+.theia-chat-session-tooltip-snippet h3,
+.theia-chat-session-tooltip-snippet h4,
+.theia-chat-session-tooltip-snippet h5,
+.theia-chat-session-tooltip-snippet h6 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0 0 0.3em 0;
+}
+
+.theia-chat-session-tooltip hr {
+  border: none;
+  border-top: 1px solid var(--theia-widget-border);
+  margin: var(--theia-ui-padding) 0;
+}
+
+.theia-chat-session-tooltip dl {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: calc(var(--theia-ui-padding) * 1.5);
+  row-gap: calc(var(--theia-ui-padding) * 0.5);
+  align-items: baseline;
+}
+
+.theia-chat-session-tooltip dt {
+  font-weight: 600;
+}
+
+.theia-chat-session-tooltip dd {
+  margin: 0;
+  opacity: 0.85;
+  word-break: break-word;
+}
+
 .theia-Card-active-session {
   position: relative;
 }

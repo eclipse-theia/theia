@@ -85,7 +85,7 @@ export const Card = React.memo(function Card(props: CardProps): React.ReactEleme
             <div className="theia-Card-content">
                 <div
                     className="theia-Card-title"
-                    title={titleTooltip ?? title}
+                    title={titleTooltip}
                     style={titleStyle}
                 >
                     {title}
