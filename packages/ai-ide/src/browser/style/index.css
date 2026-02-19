@@ -1038,6 +1038,21 @@
   text-decoration: underline;
 }
 
+.theia-Card-active-session {
+  position: relative;
+}
+
+.theia-Card-active-session::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--theia-focusBorder);
+}
+
 /*
  * AI Tools Configuration Widget Styles
  * Only touch styles in this section for the tools configuration widget

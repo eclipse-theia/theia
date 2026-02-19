@@ -76,6 +76,11 @@ export class AIChatNavigationService {
     get canGoBack(): boolean { return this.pointer > 0; }
     get canGoForward(): boolean { return this.pointer < this.history.length - 1; }
 
+    /** Returns true if the given session ID appears anywhere in the navigation history. */
+    hasSession(sessionId: string): boolean {
+        return this.history.some(entry => entry === sessionId);
+    }
+
     async back(): Promise<void> {
         if (!this.canGoBack) { return; }
         this.pointer--;

@@ -19,6 +19,7 @@ import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import { ChatService, ChatSessionMetadata } from '@theia/ai-chat';
 import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
+import { AIChatNavigationService } from '@theia/ai-chat-ui/lib/browser/ai-chat-navigation-service';
 import { CommandRegistry, Emitter, Event, PreferenceService } from '@theia/core';
 import { Card, codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
@@ -86,6 +87,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(AIChatNavigationService)
+    protected readonly navigationService: AIChatNavigationService;
+
     protected _sessions: ChatSessionMetadata[] = [];
 
     protected readonly onStateChangedEmitter = new Emitter<void>();
@@ -94,7 +98,10 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @postConstruct()
     protected init(): void {
         this.loadSessions();
-        this.chatService.onSessionEvent(() => this.loadSessions());
+        this.chatService.onSessionEvent(() => {
+            this.loadSessions();
+        });
+        this.navigationService.onDidChange(() => this.onStateChangedEmitter.fire());
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PERSISTED_SESSION_LIMIT_PREF || e.preferenceName === SESSION_STORAGE_PREF) {
                 this.loadSessions();
@@ -174,15 +181,19 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         );
     }
 
-    protected renderSessionCard = (session: ChatSessionMetadata): React.ReactNode => (
-        <Card
-            key={session.sessionId}
-            icon={codicon('comment-discussion')}
-            title={session.title || nls.localizeByDefault('Untitled Chat')}
-            subtitle={formatTimeAgo(session.saveDate)}
-            onClick={() => this.handleSessionCardClick(session.sessionId)}
-        />
-    );
+    protected renderSessionCard = (session: ChatSessionMetadata): React.ReactNode => {
+        const isInHistory = this.navigationService.hasSession(session.sessionId);
+        return (
+            <Card
+                key={session.sessionId}
+                icon={codicon('comment-discussion')}
+                title={session.title || nls.localizeByDefault('Untitled Chat')}
+                subtitle={formatTimeAgo(session.saveDate)}
+                onClick={() => this.handleSessionCardClick(session.sessionId)}
+                className={isInHistory ? 'theia-Card-active-session' : undefined}
+            />
+        );
+    };
 
     protected handleSessionCardClick = async (sessionId: string): Promise<void> => {
         await this.chatService.getOrRestoreSession(sessionId);
