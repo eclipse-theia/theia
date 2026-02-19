@@ -20,7 +20,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -69,7 +69,7 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).toService(MiniBrowserOpenHandler);
     bind(TabBarToolbarContribution).toService(MiniBrowserOpenHandler);
 
-    bindContributionProvider(bind, LocationMapper);
+    bindRootContributionProvider(bind, LocationMapper);
     bind(LocationMapper).to(FileLocationMapper).inSingletonScope();
     bind(LocationMapper).to(HttpLocationMapper).inSingletonScope();
     bind(LocationMapper).to(HttpsLocationMapper).inSingletonScope();

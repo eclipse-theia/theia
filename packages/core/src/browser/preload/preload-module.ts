@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { PreloadContribution, Preloader } from './preloader';
-import { bindContributionProvider } from '../../common/contribution-provider';
+import { bindRootContributionProvider } from '../../common/contribution-provider';
 import { I18nPreloadContribution } from './i18n-preload-contribution';
 import { OSPreloadContribution } from './os-preload-contribution';
 import { ThemePreloadContribution } from './theme-preload-contribution';
@@ -27,8 +27,8 @@ import { TextReplacementContribution } from './text-replacement-contribution';
 
 export default new ContainerModule(bind => {
     bind(Preloader).toSelf().inSingletonScope();
-    bindContributionProvider(bind, PreloadContribution);
-    bindContributionProvider(bind, TextReplacementContribution);
+    bindRootContributionProvider(bind, PreloadContribution);
+    bindRootContributionProvider(bind, TextReplacementContribution);
 
     bind(LocalizationServer).toDynamicValue(ctx =>
         ServiceConnectionProvider.createProxy<LocalizationServer>(ctx.container, LocalizationServerPath)

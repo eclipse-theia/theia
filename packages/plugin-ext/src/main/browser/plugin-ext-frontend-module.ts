@@ -26,7 +26,7 @@ import {
     noopWidgetStatusBarContribution,
     WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid, PreferenceContribution } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindRootContributionProvider, URI, generateUuid, PreferenceContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -262,7 +262,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(TextContentResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(TextContentResourceResolver);
-    bindContributionProvider(bind, MainPluginApiProvider);
+    bindRootContributionProvider(bind, MainPluginApiProvider);
 
     bind(PluginDebugService).toSelf().inSingletonScope();
     rebind(DebugService).toService(PluginDebugService);
@@ -293,7 +293,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CellOutputWebviewFactory).toFactory(ctx => () =>
         createCellOutputWebviewContainer(ctx.container).get(CellOutputWebviewImpl)
     );
-    bindContributionProvider(bind, ArgumentProcessorContribution);
+    bindRootContributionProvider(bind, ArgumentProcessorContribution);
 
     bind(PluginExtToolbarItemArgumentProcessor).toSelf().inSingletonScope();
     bind(ArgumentProcessorContribution).toService(PluginExtToolbarItemArgumentProcessor);
