@@ -797,7 +797,7 @@
 .theia-WelcomeMessage-Divider {
   align-self: stretch;
   height: 0;
-  border-top: 1px solid var(--theia-panelTitle-activeBorder);
+  border-top: 1px solid var(--theia-dropdown-border);
   margin: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 3);
 }
 

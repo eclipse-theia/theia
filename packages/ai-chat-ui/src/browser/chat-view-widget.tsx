@@ -158,7 +158,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
      */
     protected get welcomeProvider(): ChatWelcomeMessageProvider | undefined {
         return this.welcomeMessageProviders.getContributions()
-            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
+            .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
     }
 
     protected async shouldEnableInput(): Promise<boolean> {

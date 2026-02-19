@@ -66,7 +66,7 @@ export const aiChatPreferences: PreferenceSchema = {
                 'on the available width. Set to 0 to hide the recent chats section.'),
             default: 3,
             minimum: 0,
-            maximum: 10,
+            maximum: 6,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [SESSION_STORAGE_PREF]: {

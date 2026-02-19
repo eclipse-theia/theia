@@ -403,7 +403,7 @@ export class ChatViewTreeWidget extends TreeWidget {
      */
     protected getSortedWelcomeMessageProviders(): ChatWelcomeMessageProvider[] {
         return this.welcomeMessageProviders.getContributions()
-            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+            .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
     }
 
     /**

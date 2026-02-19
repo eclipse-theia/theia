@@ -87,7 +87,6 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     protected readonly preferenceService: PreferenceService;
 
     protected _sessions: ChatSessionMetadata[] = [];
-    protected _loading = false;
 
     protected readonly onStateChangedEmitter = new Emitter<void>();
     readonly onStateChanged: Event<void> = this.onStateChangedEmitter.event;
@@ -120,18 +119,16 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
             return;
         }
 
-        this._loading = true;
         this.onStateChangedEmitter.fire();
 
         try {
             const index = await this.chatService.getPersistedSessions();
             this._sessions = Object.values(index)
-                .sort((a, b) => b.saveDate - a.saveDate);
+                .toSorted((a, b) => b.saveDate - a.saveDate);
         } catch (error) {
             console.error('Failed to load persisted sessions:', error);
             this._sessions = [];
         } finally {
-            this._loading = false;
             this.onStateChangedEmitter.fire();
         }
     }
