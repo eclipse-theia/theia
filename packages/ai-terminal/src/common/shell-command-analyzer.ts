@@ -17,15 +17,6 @@
 import { injectable } from '@theia/core/shared/inversify';
 
 /**
- * Pattern to match command concatenation operators: &&, &, ||, |&, |, ;
- * Note: Single `&` uses negative lookaround `(?<!&)&(?!&)` to explicitly
- * prevent matching when adjacent to another `&`, rather than relying on
- * alternation ordering.
- * `|&` must appear before `|` in the alternation to be matched first.
- */
-const COMMAND_SEPARATOR_PATTERN = /\s*(?:&&|(?<!&)&(?!&)|\|\||\|&|\||;)\s*/;
-
-/**
  * Pattern to detect dangerous shell patterns:
  * - $( - command substitution
  * - ` - backtick command substitution
@@ -98,9 +89,115 @@ export class DefaultShellCommandAnalyzer implements ShellCommandAnalyzer {
     }
 
     parseCommand(command: string): string[] {
-        return command
-            .split(COMMAND_SEPARATOR_PATTERN)
-            .map(cmd => cmd.trim())
-            .filter(cmd => cmd.length > 0);
+        const results: string[] = [];
+        let current = '';
+        let inDouble = false;
+        let inSingle = false;
+        let escaped = false;
+
+        for (let i = 0; i < command.length; i++) {
+            const ch = command[i];
+
+            if (escaped) {
+                current += ch;
+                escaped = false;
+                continue;
+            }
+
+            if (inSingle) {
+                current += ch;
+                if (ch === "'") {
+                    inSingle = false;
+                }
+                continue;
+            }
+
+            if (inDouble) {
+                if (ch === '\\') {
+                    const next = command[i + 1];
+                    if (next === '"' || next === '\\') {
+                        current += ch + next;
+                        i++;
+                        continue;
+                    }
+                }
+                current += ch;
+                if (ch === '"') {
+                    inDouble = false;
+                }
+                continue;
+            }
+
+            // Outside quotes
+            if (ch === '\\') {
+                escaped = true;
+                current += ch;
+                continue;
+            }
+
+            if (ch === '"') {
+                inDouble = true;
+                current += ch;
+                continue;
+            }
+
+            if (ch === "'") {
+                inSingle = true;
+                current += ch;
+                continue;
+            }
+
+            // Check for multi-character separators first
+            if (ch === '&' && command[i + 1] === '&') {
+                this.pushSubCommand(results, current);
+                current = '';
+                i++; // skip second '&'
+                continue;
+            }
+
+            if (ch === '|' && command[i + 1] === '|') {
+                this.pushSubCommand(results, current);
+                current = '';
+                i++; // skip second '|'
+                continue;
+            }
+
+            if (ch === '|' && command[i + 1] === '&') {
+                this.pushSubCommand(results, current);
+                current = '';
+                i++; // skip '&'
+                continue;
+            }
+
+            if (ch === '|') {
+                this.pushSubCommand(results, current);
+                current = '';
+                continue;
+            }
+
+            if (ch === '&') {
+                this.pushSubCommand(results, current);
+                current = '';
+                continue;
+            }
+
+            if (ch === ';') {
+                this.pushSubCommand(results, current);
+                current = '';
+                continue;
+            }
+
+            current += ch;
+        }
+
+        this.pushSubCommand(results, current);
+        return results;
+    }
+
+    private pushSubCommand(results: string[], sub: string): void {
+        const trimmed = sub.trim();
+        if (trimmed.length > 0) {
+            results.push(trimmed);
+        }
     }
 }
