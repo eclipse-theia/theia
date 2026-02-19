@@ -65,6 +65,20 @@ export namespace ChatCommands {
         label: 'Open Current Session Summary',
         category: CHAT_CATEGORY
     }, 'theia/ai-chat-ui/open-current-session-summary', CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_NAVIGATE_BACK = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.navigate-back',
+        iconClass: codicon('arrow-left'),
+        category: ChatCommands.CHAT_CATEGORY,
+        label: 'Navigate Back'
+    }, 'theia/ai-chat-ui/navigate-back', ChatCommands.CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_NAVIGATE_FORWARD = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.navigate-forward',
+        iconClass: codicon('arrow-right'),
+        category: ChatCommands.CHAT_CATEGORY,
+        label: 'Navigate Forward'
+    }, 'theia/ai-chat-ui/navigate-forward', ChatCommands.CHAT_CATEGORY_KEY);
 }
 
 export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND = Command.toDefaultLocalizedCommand({

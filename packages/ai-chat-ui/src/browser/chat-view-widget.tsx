@@ -25,6 +25,7 @@ import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -65,6 +66,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(ContributionProvider) @named(ChatWelcomeMessageProvider)
     protected readonly welcomeMessageProviders: ContributionProvider<ChatWelcomeMessageProvider>;
+
+    @inject(AIChatNavigationService)
+    protected readonly navigationService: AIChatNavigationService;
 
     protected chatSession: ChatSession;
 
@@ -238,6 +242,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                 ? { text: query, modeId }
                 : { ...query };
         if (chatRequest.text.length === 0) { return; }
+
+        if (this.chatSession.model.isEmpty()) {
+            this.navigationService.notifyQueryFromWelcomeScreen(this.chatSession.id);
+        }
 
         // Include all variables (context + pending image attachments) in the request
         const allVariables = this.inputWidget.getAllVariablesForRequest();

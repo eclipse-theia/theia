@@ -23,6 +23,7 @@ import {
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { ChatAgent, ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
@@ -77,6 +78,9 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         iconClass: 'codicon-remove-close',
         tooltip: nls.localize('theia/ai/chat-ui/removeChat', 'Remove Chat'),
     };
+
+    @inject(AIChatNavigationService)
+    protected readonly navigationService: AIChatNavigationService;
 
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
@@ -219,6 +223,16 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             },
             isVisible: () => this.activationService.isActive
         });
+        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_BACK, {
+            execute: () => this.navigationService.back(),
+            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoBack),
+            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_FORWARD, {
+            execute: () => this.navigationService.forward(),
+            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoForward),
+            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
+        });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
             isVisible: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -263,6 +277,25 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        const navigationChangedEmitter = new Emitter<void>();
+        this.navigationService.onDidChange(() => navigationChangedEmitter.fire());
+
+        registry.registerItem({
+            id: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
+            command: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
+            tooltip: nls.localize('theia/ai-chat-ui/navigate-back', 'Navigate Back'),
+            onDidChange: navigationChangedEmitter.event,
+            priority: 0,
+            when: ENABLE_AI_CONTEXT_KEY
+        });
+        registry.registerItem({
+            id: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
+            command: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
+            tooltip: nls.localize('theia/ai-chat-ui/navigate-forward', 'Navigate Forward'),
+            onDidChange: navigationChangedEmitter.event,
+            priority: 0,
+            when: ENABLE_AI_CONTEXT_KEY
+        });
         registry.registerItem({
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,

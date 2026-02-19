@@ -21,6 +21,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { AIChatContribution } from './ai-chat-ui-contribution';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
@@ -64,6 +65,8 @@ import { ChatInputModeContribution } from './chat-input-mode-contribution';
 import { ChatFocusContribution } from './chat-focus-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    bind(AIChatNavigationService).toSelf().inSingletonScope();
+
     bindViewContribution(bind, AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
 
