@@ -18,6 +18,7 @@ import * as fuzzy from 'fuzzy';
 import { Event } from './event';
 import { KeySequence } from './keys';
 import { CancellationToken } from './cancellation';
+import { Severity } from './severity';
 
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');
@@ -146,6 +147,7 @@ export interface InputBox extends QuickInput {
     readonly onDidTriggerButton: Event<QuickInputButton>;
     prompt: string | undefined;
     validationMessage: string | undefined;
+    severity?: Severity;
 }
 
 export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInput {
@@ -190,7 +192,7 @@ export interface InputOptions {
     placeHolder?: string;
     password?: boolean;
     ignoreFocusLost?: boolean;
-    validateInput?(input: string): Promise<string | { content: string; severity: number; } | null | undefined> | undefined;
+    validateInput?(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> | undefined;
 }
 
 export interface QuickPickItemButtonEvent<T extends QuickPickItemOrSeparator> {

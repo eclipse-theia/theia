@@ -56,9 +56,17 @@ Tests are located in the same directory as the components under test.
 
 ### Compile and Test
 
-This projects uses npm.
+Use `npm` (not `yarn`) for all package management and script execution.
+
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
 done for a final validation. There are usually pre-defined tasks for all these operations, prefer to use these instead of npm directly.
+
+**Important:** Building a package only compiles TypeScript. Before any UI testing, you must also rebuild the browser example application (`examples/browser`),
+which bundles the frontend via webpack. Without this step, the running browser app will not include the latest code changes.
+
+### Start Theia
+
+To start Theia as a browser app to show something to the user or for UI testing use the launch config "Start Theia Default (Browser backend, no debug)"
 
 ### Preferences
 

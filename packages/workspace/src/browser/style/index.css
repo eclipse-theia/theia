@@ -16,32 +16,32 @@
 
 /* Workspace Trust Dialog Styles */
 
-.workspace-trust-content {
+.workspace-trust-dialog .workspace-trust-content {
     display: flex;
     flex-direction: column;
     gap: calc(var(--theia-ui-padding) * 3);
     padding: calc(var(--theia-ui-padding) * 2);
 }
 
-.workspace-trust-header {
+.workspace-trust-dialog .workspace-trust-header {
     display: flex;
     align-items: center;
     gap: calc(var(--theia-ui-padding) * 2);
 }
 
-.workspace-trust-header i {
+.workspace-trust-dialog .workspace-trust-header i {
     font-size: calc(var(--theia-ui-font-size3) * 2.5) !important;
     color: var(--theia-button-background);
 }
 
-.workspace-trust-title {
+.workspace-trust-dialog .workspace-trust-title {
     font-size: var(--theia-ui-font-size2);
     font-weight: 600;
     line-height: var(--theia-content-line-height);
 }
 
-.workspace-trust-description,
-.workspace-trust-folder {
+.workspace-trust-dialog .workspace-trust-description,
+.workspace-trust-dialog .workspace-trust-folder {
     margin-left: calc(var(--theia-ui-font-size3) * 2.5 + var(--theia-ui-padding) * 2);
 }
 
@@ -51,17 +51,18 @@
     justify-content: flex-start !important;
 }
 
-.workspace-trust-description {
+.workspace-trust-dialog .dialogContent div.workspace-trust-description {
     color: var(--theia-descriptionForeground);
     line-height: var(--theia-content-line-height);
+    white-space: pre-line;
 }
 
-.workspace-trust-folder-list {
+.workspace-trust-dialog .workspace-trust-folder-list {
     padding-inline-start: 15px;
     margin-block: 0;
 }
 
-.workspace-trust-folder {
+.workspace-trust-dialog .workspace-trust-folder {
     font-family: var(--theia-code-font-family);
     font-size: var(--theia-code-font-size);
     color: var(--theia-foreground);

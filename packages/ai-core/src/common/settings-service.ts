@@ -32,6 +32,11 @@ export interface AgentSettings {
     languageModelRequirements?: LanguageModelRequirement[];
     enable?: boolean;
     /**
+     * Whether the agent should be shown in the chat UI.
+     * If undefined, defaults to true.
+     */
+    showInChat?: boolean;
+    /**
      * A mapping of main template IDs to their selected variant IDs.
      * If a main template is not present in this mapping, it means the main template is used.
      */

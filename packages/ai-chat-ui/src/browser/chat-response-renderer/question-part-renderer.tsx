@@ -50,6 +50,7 @@ export class QuestionPartRenderer
                                 }}
                                 disabled={isDisabled}
                                 key={index}
+                                title={option.description}
                             >
                                 {option.text}
                             </button>

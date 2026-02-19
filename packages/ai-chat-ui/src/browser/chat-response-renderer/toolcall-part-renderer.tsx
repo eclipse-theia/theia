@@ -21,14 +21,13 @@ import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
+import { ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
 import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
-import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
-import { condenseArguments } from './toolcall-utils';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -143,22 +142,14 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (!target || !response.arguments || !response.arguments.trim() || response.arguments.trim() === '{}') {
             return;
         }
-        const prettyArgs = this.prettyPrintArgs(response.arguments);
-        const markdownString = new MarkdownStringImpl(`**${response.name}**\n`).appendCodeblock('json', prettyArgs);
+        const markdownString = formatArgsForTooltip(response.arguments);
         this.hoverService.requestHover({
             content: markdownString,
             target,
-            position: 'right'
+            position: 'right',
+            interactive: true,
+            cssClasses: ['toolcall-args-hover']
         });
-    }
-
-    private prettyPrintArgs(args: string): string {
-        try {
-            return JSON.stringify(JSON.parse(args), undefined, 2);
-        } catch (e) {
-            // fall through
-            return args;
-        }
     }
 }
 
@@ -194,10 +185,8 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     showArgsTooltip,
     contextMenuRenderer
 }) => {
-    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
-    const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
-    // eslint-disable-next-line no-null/no-null
-    const summaryRef = React.useRef<HTMLElement>(null);
+    const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
+    const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
 
     const formatReason = (reason: unknown): string => {
         if (!reason) {
@@ -215,30 +204,6 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
             return String(reason);
         }
     };
-
-    React.useEffect(() => {
-        if (confirmationMode === ToolConfirmationMode.ALWAYS_ALLOW) {
-            response.confirm();
-            setConfirmationState('allowed');
-            return;
-        } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
-            response.deny();
-            setConfirmationState('denied');
-            return;
-        }
-        response.confirmed
-            .then(confirmed => {
-                if (confirmed === true) {
-                    setConfirmationState('allowed');
-                } else {
-                    setConfirmationState('denied');
-                }
-            })
-            .catch(reason => {
-                setRejectionReason(reason);
-                setConfirmationState('rejected');
-            });
-    }, [response, confirmationMode]);
 
     const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
         if (mode === 'forever' && response.name) {
@@ -274,12 +239,13 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
             ) : confirmationState === 'denied' ? (
                 <span className='theia-toolCall-denied'>
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                    {ToolCallChatResponseContent.isDenialResult(response.result) && response.result.reason ? <span> — {response.result.reason}</span> : undefined}
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>
                     <summary
-                        ref={summaryRef}
-                        onMouseEnter={() => showArgsTooltip(response, summaryRef.current ?? undefined)}
+                        ref={(el: HTMLElement | null) => { summaryRef.current = el ?? undefined; }}
+                        onMouseEnter={() => showArgsTooltip(response, summaryRef.current)}
                     >
                         {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
                         (<span className='theia-toolCall-args-label'>{getArgumentsLabel(response.name, response.arguments)}</span>)
@@ -288,6 +254,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         {responseRenderer(response)}
                     </div>
                 </details>
+            ) : confirmationState === 'pending' ? (
+                <span className='theia-toolCall-pending'>
+                    <Spinner /> {response.name}
+                </span>
             ) : (
                 confirmationState === 'allowed' && !requestCanceled && (
                     <span className='theia-toolCall-allowed'>

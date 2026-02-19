@@ -140,6 +140,9 @@ export interface CustomAgentDescription {
 
     /** The default large language model to use with this agent */
     defaultLLM: string;
+
+    /** Whether this agent should appear in the chat UI (defaults to true if not specified) */
+    showInChat?: boolean;
 }
 
 export namespace CustomAgentDescription {
@@ -148,19 +151,35 @@ export namespace CustomAgentDescription {
      */
     export function is(entry: unknown): entry is CustomAgentDescription {
         // eslint-disable-next-line no-null/no-null
-        return typeof entry === 'object' && entry !== null
-            && 'id' in entry && typeof entry.id === 'string'
-            && 'name' in entry && typeof entry.name === 'string'
-            && 'description' in entry && typeof entry.description === 'string'
-            && 'prompt' in entry && typeof entry.prompt === 'string'
-            && 'defaultLLM' in entry && typeof entry.defaultLLM === 'string';
+        if (typeof entry !== 'object' || entry === null) {
+            return false;
+        }
+        if (!('id' in entry && typeof entry.id === 'string')) {
+            return false;
+        }
+        if (!('name' in entry && typeof entry.name === 'string')) {
+            return false;
+        }
+        if (!('description' in entry && typeof entry.description === 'string')) {
+            return false;
+        }
+        if (!('prompt' in entry && typeof entry.prompt === 'string')) {
+            return false;
+        }
+        if (!('defaultLLM' in entry && typeof entry.defaultLLM === 'string')) {
+            return false;
+        }
+        if ('showInChat' in entry && typeof entry.showInChat !== 'boolean') {
+            return false;
+        }
+        return true;
     }
 
     /**
      * Compares two CustomAgentDescription objects for equality
      */
     export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
-        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM;
+        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM && a.showInChat === b.showInChat;
     }
 }
 

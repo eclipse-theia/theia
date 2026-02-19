@@ -19,6 +19,7 @@
     "@theia/ai-chat-ui": "1.68.0",
     "@theia/ai-core": "1.68.0",
     "@theia/ai-mcp": "1.68.0",
+    "@theia/ai-terminal": "1.68.0",
     "@theia/core": "1.68.0",
     "@theia/debug": "1.68.0",
     "@theia/editor": "1.68.0",

@@ -19,7 +19,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
 import { Emitter } from '@theia/core/lib/common/event.js';
-import { CallToolResult, CallToolResultSchema, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolResult, CallToolResultSchema, ListResourcesResult, ListRootsRequestSchema, ListRootsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 
 export class MCPServer {
@@ -28,6 +28,7 @@ export class MCPServer {
     private client: Client;
     private error?: string;
     private status: MCPServerStatus;
+    private workspaceRoots: string[] | undefined;
 
     private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
     readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
@@ -53,6 +54,13 @@ export class MCPServer {
     isStopped(): boolean {
         return this.status === MCPServerStatus.NotRunning
             || this.status === MCPServerStatus.NotConnected;
+    }
+
+    setWorkspaceRoots(roots: string[] | undefined): void {
+        this.workspaceRoots = roots;
+        if (this.isRunning() && this.workspaceRoots) {
+            this.client.sendRootsListChanged();
+        }
     }
 
     async getDescription(): Promise<MCPServerDescription> {
@@ -84,15 +92,42 @@ export class MCPServer {
         }
 
         let connected = false;
-        this.client = new Client(
-            {
-                name: 'theia-client',
-                version: '1.0.0',
-            },
-            {
-                capabilities: {}
-            }
-        );
+
+        // if the preference useWorkspaceRoots is set to false, we will receive undefined here
+        // in that case the MCP server should have access to the entire filesystem, i.e. we don't configure roots
+        if (!this.workspaceRoots) {
+            this.client = new Client(
+                {
+                    name: 'theia-client',
+                    version: '1.0.0',
+                },
+                {
+                    capabilities: {}
+                }
+            );
+        } else {
+            this.client = new Client(
+                {
+                    name: 'theia-client',
+                    version: '1.0.0',
+                },
+                {
+                    capabilities: {
+                        roots: {
+                            listChanged: true
+                        }
+                    }
+                }
+            );
+            // Register request handler to provide workspace roots when server requests them
+            this.client.setRequestHandler(ListRootsRequestSchema, async () => {
+                const roots = this.workspaceRoots?.map(uri => ({
+                    uri,
+                    name: uri.split('/').pop() || uri
+                }));
+                return { roots } as ListRootsResult;
+            });
+        }
         this.error = undefined;
 
         if (isLocalMCPServerDescription(this.description)) {
