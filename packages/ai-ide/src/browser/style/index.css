@@ -1101,10 +1101,10 @@
 .theia-Card-active-session::after {
   content: '';
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
+  top: calc(var(--theia-ui-padding) * 1.5);
+  right: calc(var(--theia-ui-padding) * 1.5);
+  width: calc(var(--theia-ui-padding) * 1.5);
+  height: calc(var(--theia-ui-padding) * 1.5);
   border-radius: 50%;
   background-color: var(--theia-focusBorder);
 }

@@ -20,10 +20,10 @@
     align-items: flex-start;
     padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
     background-color: var(--theia-editor-background);
-    border: 1px solid var(--theia-dropdown-border);
-    border-radius: 10px;
+    border: var(--theia-border-width) solid var(--theia-dropdown-border);
+    border-radius: calc(var(--theia-ui-padding) * 2);
     text-align: left;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px var(--theia-widget-shadow);
 }
 
 /* Interactive card variant for clickable actions. */
@@ -35,7 +35,7 @@
 .theia-Card-interactive:hover {
     background-color: color-mix(in srgb, var(--theia-list-hoverBackground) 50%, var(--theia-editor-background));
     border-color: var(--theia-focusBorder);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 6px var(--theia-widget-shadow);
 }
 
 .theia-Card-interactive:focus {

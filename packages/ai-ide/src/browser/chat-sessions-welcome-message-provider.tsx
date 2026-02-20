@@ -105,7 +105,7 @@ function ChatSessionCard(
         if (!hoverActiveRef.current || !chatSession) { return; }
 
         const content = buildSessionTooltip(chatSession, session, chatAgentService, markdownRenderer);
-        hoverService.requestHover({ content, target, position: 'top' });
+        hoverService.requestHover({ content, target, position: 'left' });
     }, [session, chatService, chatAgentService, hoverService]);
 
     const handleMouseLeave = React.useCallback(() => {
