@@ -21,7 +21,8 @@ import {
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest, ParsedCapability } from '@theia/ai-core';
-import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
+import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
@@ -125,6 +126,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ApplicationShell)
+    protected readonly applicationShell: ApplicationShell;
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
@@ -570,13 +574,43 @@ export class AIChatInputWidget extends ReactWidget {
     protected async handleAgentCompletion(request: ChatRequestModel): Promise<void> {
         try {
             const agentId = request.agentId;
+            const sessionId = request.session.id;
 
-            if (agentId) {
-                await this.agentNotificationService.showCompletionNotification(agentId);
+            if (agentId && sessionId) {
+                // Get the session title for display in the notification
+                const session = this.chatService.getSession(sessionId);
+                const sessionTitle = session?.title;
+
+                const options: CompletionNotificationOptions = {
+                    shouldSuppress: () => this.isChatSessionFocused(sessionId),
+                    onActivate: () => this.focusChatSession(sessionId),
+                    sessionTitle,
+                };
+                await this.agentNotificationService.showCompletionNotification(agentId, options);
             }
         } catch (error) {
             console.error('Failed to handle agent completion notification:', error);
         }
+    }
+
+    /**
+     * Check if the specific chat session is currently focused.
+     * Returns true only if the chat widget is focused AND viewing the same session.
+     */
+    protected isChatSessionFocused(sessionId: string): boolean {
+        const activeWidget = this.applicationShell.activeWidget;
+        if (!activeWidget || activeWidget.id !== 'chat-view-widget') {
+            return false;
+        }
+        const activeSession = this.chatService.getActiveSession();
+        return activeSession?.id === sessionId;
+    }
+
+    /**
+     * Focus the chat session by setting it as active with focus.
+     */
+    protected focusChatSession(sessionId: string): void {
+        this.chatService.setActiveSession(sessionId, { focus: true });
     }
 
     protected getResourceUri(): URI {

@@ -20,6 +20,8 @@ import { interfaces } from '@theia/core/shared/inversify';
 import {
     NOTIFICATION_TYPES,
     NOTIFICATION_TYPE_OFF,
+    NOTIFICATION_TYPE_LABELS,
+    NOTIFICATION_TYPE_DESCRIPTIONS,
     NotificationType
 } from './notification-types';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
@@ -129,13 +131,11 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: {
             title: nls.localize('theia/ai/core/defaultNotification/title', 'Default Notification Type'),
             markdownDescription: nls.localize('theia/ai/core/defaultNotification/mdDescription',
-                'The default notification method used when an AI agent completes a task. Individual agents can override this setting.\n\
-                - `os-notification`: Show OS/system notifications\n\
-                - `message`: Show notifications in the status bar/message area\n\
-                - `blink`: Blink or highlight the UI\n\
-                - `off`: Disable all notifications'),
+                'The default notification method used when an AI agent completes a task. Individual agents can override this setting.'),
             type: 'string',
             enum: [...NOTIFICATION_TYPES],
+            enumItemLabels: NOTIFICATION_TYPES.map(type => NOTIFICATION_TYPE_LABELS[type]),
+            enumDescriptions: NOTIFICATION_TYPES.map(type => NOTIFICATION_TYPE_DESCRIPTIONS[type]),
             default: NOTIFICATION_TYPE_OFF
         },
         [PREFERENCE_NAME_SKILL_DIRECTORIES]: {

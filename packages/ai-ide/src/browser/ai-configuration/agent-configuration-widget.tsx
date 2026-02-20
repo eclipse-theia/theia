@@ -28,9 +28,12 @@ import {
     parseCapabilitiesFromTemplate,
     PromptFragmentCustomizationService,
     PromptService,
+    NotificationType,
+    PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
 } from '@theia/ai-core/lib/common';
-import { ChatAgentService } from '@theia/ai-chat/lib/common';
-import { codicon, QuickInputService } from '@theia/core/lib/browser';
+import { isChatAgent } from '@theia/ai-chat/lib/common';
+import { codicon, CommonCommands, QuickInputService } from '@theia/core/lib/browser';
+import { CommandService } from '@theia/core/lib/common/command';
 import { URI } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -41,6 +44,7 @@ import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { nls } from '@theia/core';
 import { PromptVariantRenderer } from './template-settings-renderer';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
+import { AgentNotificationSettings } from './components/agent-notification-settings';
 
 interface ParsedPrompt {
     functions: string[];
@@ -57,9 +61,6 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
     @inject(AgentService)
     protected readonly agentService: AgentService;
-
-    @inject(ChatAgentService)
-    protected readonly chatAgentService: ChatAgentService;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
@@ -85,10 +86,14 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
     protected languageModels: LanguageModel[] | undefined;
     protected languageModelAliases: LanguageModelAlias[] = [];
     protected parsedPromptParts: ParsedPrompt | undefined;
     protected isLoadingDetails = false;
+    protected agentCompletionNotificationType?: NotificationType;
 
     @postConstruct()
     protected init(): void {
@@ -224,8 +229,10 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
             this.parsedPromptParts = await this.parsePromptFragmentsForVariableAndFunction(agent);
             const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
             this.showInChatState = agentSettings?.showInChat ?? true;
+            this.agentCompletionNotificationType = agentSettings?.completionNotification;
         } else {
             this.parsedPromptParts = undefined;
+            this.agentCompletionNotificationType = undefined;
         }
         this.isLoadingDetails = false;
         this.update();
@@ -268,7 +275,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                                 <span className='toggle-slider'></span>
                             </div>
                         </label>
-                        {this.isChatAgent(agent.id) && (
+                        {isChatAgent(agent) && (
                             <label className={`agent-enable-toggle${enabled ? '' : ' disabled'}`}
                                 title={nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}>
                                 <span className='toggle-label'>{nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}</span>
@@ -326,7 +333,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
             {globalVariables.length > 0 && (
                 <>
-                    <div className="settings-section-subcategory-title">
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
                         {nls.localize('theia/ai/core/agentConfiguration/usedGlobalVariables', 'Used Global Variables')}
                     </div>
                     <AgentGlobalVariables
@@ -338,7 +345,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
             {this.parsedPromptParts.agentSpecificVariables.length > 0 && (
                 <>
-                    <div className="settings-section-subcategory-title">
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
                         {nls.localize('theia/ai/core/agentConfiguration/usedAgentSpecificVariables', 'Used Agent-Specific Variables')}
                     </div>
                     <ul className='variable-references'>
@@ -352,7 +359,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
             {functions.length > 0 && (
                 <>
-                    <div className="settings-section-subcategory-title">
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
                         {nls.localize('theia/ai/core/agentConfiguration/usedFunctions', 'Used Functions')}
                     </div>
                     <ul className='function-references'>
@@ -367,6 +374,20 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                         {nls.localize('theia/ai/core/agentConfiguration/availableCapabilities', 'Available Capabilities')}
                     </div>
                     <AgentCapabilities capabilities={this.parsedPromptParts.capabilities} />
+                </>
+            )}
+
+            {isChatAgent(agent) && (
+                <>
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
+                        {nls.localize('theia/ai/core/agentConfiguration/notificationSettings', 'Notification Settings')}
+                    </div>
+                    <AgentNotificationSettings
+                        agentId={agent.id}
+                        currentNotificationType={this.agentCompletionNotificationType}
+                        onNotificationTypeChange={this.handleNotificationTypeChange}
+                        onOpenNotificationSettings={this.openNotificationSettings}
+                    />
                 </>
             )}
         </div>;
@@ -479,10 +500,6 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         this.update();
     };
 
-    protected isChatAgent(agentId: string): boolean {
-        return this.chatAgentService.getAllAgents().some(a => a.id === agentId);
-    }
-
     private toggleShowInChat = async () => {
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (!agent) {
@@ -495,6 +512,18 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         await this.aiSettingsService.updateAgentSettings(agent.id, { showInChat: newValue });
         this.showInChatState = newValue;
         this.update();
+    };
+
+    private handleNotificationTypeChange = async (agentId: string, notificationType: NotificationType | undefined): Promise<void> => {
+        await this.aiSettingsService.updateAgentSettings(agentId, {
+            completionNotification: notificationType
+        });
+        this.agentCompletionNotificationType = notificationType;
+        this.update();
+    };
+
+    private openNotificationSettings = (): void => {
+        this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE);
     };
 }
 

@@ -158,6 +158,10 @@ export interface ChatAgent extends Agent {
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
 }
 
+export function isChatAgent(agent: Agent): agent is ChatAgent {
+    return 'locations' in agent && Array.isArray((agent as ChatAgent).locations) && 'invoke' in agent;
+}
+
 @injectable()
 export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
