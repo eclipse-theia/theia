@@ -18,7 +18,7 @@ import * as chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Localization, sortLocalization } from './common';
-import { deepl, DeeplLanguage, DeeplParameters, defaultLanguages, isSupportedLanguage } from './deepl-api';
+import { deepl, DeeplLanguage, DeeplParameters, DeeplResponse, defaultLanguages, isSupportedLanguage } from './deepl-api';
 
 export interface LocalizationOptions {
     freeApi: Boolean
@@ -28,7 +28,7 @@ export interface LocalizationOptions {
     targetLanguages: string[]
 }
 
-export type LocalizationFunction = (parameters: DeeplParameters) => Promise<string[]>;
+export type LocalizationFunction = (parameters: DeeplParameters) => Promise<DeeplResponse>;
 
 export class LocalizationManager {
 

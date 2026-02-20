@@ -139,12 +139,65 @@ describe('correctly extracts from file content', () => {
         ]);
     });
 
-    it('should show error for template literals', async () => {
+    it('should extract from template literal without expressions', async () => {
         const content = 'nls.localize("key", `template literal value`)';
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content), {
+            'key': 'template literal value'
+        });
+    });
+
+    it('should dedent multiline template literal', async () => {
+        const content = [
+            'nls.localize("key", `first line',
+            '                        second line',
+            '                        third line`)'
+        ].join('\n');
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content), {
+            'key': 'first line\nsecond line\nthird line'
+        });
+    });
+
+    it('should dedent multiline template literal with blank lines', async () => {
+        const content = [
+            'nls.localize("key", `first paragraph.',
+            '',
+            '                        second paragraph.`)'
+        ].join('\n');
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content), {
+            'key': 'first paragraph.\n\nsecond paragraph.'
+        });
+    });
+
+    it('should show error for template literals with expressions', async () => {
+        const content = 'const name = "World"; nls.localize("key", `Hello ${name}`)';
         const errors: string[] = [];
         assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {});
         assert.deepStrictEqual(errors, [
-            "test.ts(1,20): Template literals are not supported for localization. Please use the additional arguments of the 'nls.localize' function to format strings"
+            "test.ts(1,42): Template literals with expressions are not supported for localization. " +
+            "Please use the additional arguments of the 'nls.localize' function to format strings"
+        ]);
+    });
+
+    it('should extract from string concatenation', async () => {
+        const content = 'nls.localize("key", "Hello " + "World")';
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content), {
+            'key': 'Hello World'
+        });
+    });
+
+    it('should extract from multi-part string concatenation', async () => {
+        const content = 'nls.localize("key", "part one " + "part two " + "part three")';
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content), {
+            'key': 'part one part two part three'
+        });
+    });
+
+    it('should return an error when concatenation includes a non-string expression', async () => {
+        const content = 'nls.localize("key", "hello " + someFunction())';
+        const errors: string[] = [];
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {});
+        assert.deepStrictEqual(errors, [
+            "test.ts(1,31): 'someFunction()' is not a string constant"
         ]);
     });
 
