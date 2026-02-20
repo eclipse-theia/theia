@@ -76,6 +76,60 @@ function SessionCardsGrid({ sessions, maxRows, renderCard }: SessionCardsGridPro
     );
 }
 
+/** Returns true when the session has new exchanges (requests or completed responses) since it was last activated. */
+function useUnreadMessages(sessionId: string, chatService: ChatService): boolean {
+    const [hasUnread, setHasUnread] = React.useState(false);
+    const seenCountRef = React.useRef(0);
+    const seenCompletedRef = React.useRef(0);
+
+    React.useEffect(() => {
+        const trash = new DisposableCollection();
+
+        const countCompleted = (reqs: ReturnType<ChatSession['model']['getRequests']>) =>
+            reqs.filter(r => r.response.isComplete).length;
+
+        const attach = (s: ChatSession) => {
+            const reqs = s.model.getRequests();
+            seenCountRef.current = reqs.length;
+            seenCompletedRef.current = countCompleted(reqs);
+            s.model.onDidChange(() => {
+                const current = s.model.getRequests();
+                if (current.length > seenCountRef.current || countCompleted(current) > seenCompletedRef.current) {
+                    setHasUnread(true);
+                }
+            }, undefined, trash);
+        };
+
+        const existing = chatService.getSession(sessionId);
+        if (existing) {
+            attach(existing);
+        } else {
+            chatService.onSessionEvent(event => {
+                if (event.type === 'created' && event.sessionId === sessionId) {
+                    const s = chatService.getSession(sessionId);
+                    if (s) {
+                        attach(s);
+                    }
+                }
+            }, undefined, trash);
+        }
+
+        chatService.onSessionEvent(event => {
+            if (event.type === 'activeChange' && event.sessionId === sessionId) {
+                const s = chatService.getSession(sessionId);
+                const reqs = s?.model.getRequests() ?? [];
+                seenCountRef.current = reqs.length;
+                seenCompletedRef.current = countCompleted(reqs);
+                setHasUnread(false);
+            }
+        }, undefined, trash);
+
+        return () => trash.dispose();
+    }, [sessionId, chatService]);
+
+    return hasUnread;
+}
+
 /** Re-renders the caller whenever the formatted time-ago string would change. */
 function useTimeAgo(date: number): string {
     const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
@@ -118,6 +172,7 @@ function ChatSessionCard(
 
     const timeAgo = useTimeAgo(session.saveDate);
     const [isWorking, setIsWorking] = React.useState(false);
+    const hasUnread = useUnreadMessages(session.sessionId, chatService);
 
     React.useEffect(() => {
         const trash = new DisposableCollection();
@@ -190,6 +245,7 @@ function ChatSessionCard(
                 actionButtons={actionButtons}
                 onClick={onClick}
             />
+            {hasUnread && <div className="theia-chat-session-card-unread-badge" />}
         </div>
     );
 }

@@ -1108,6 +1108,18 @@
   animation: theia-chat-session-throb 1.4s ease-in-out infinite;
 }
 
+.theia-chat-session-card-unread-badge {
+  position: absolute;
+  top: calc(var(--theia-ui-padding) * 1.5);
+  right: calc(var(--theia-ui-padding) * 1.5);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--theia-activityBarBadge-background);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /*
  * AI Tools Configuration Widget Styles
  * Only touch styles in this section for the tools configuration widget
