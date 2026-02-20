@@ -1094,19 +1094,18 @@
   word-break: break-word;
 }
 
-.theia-Card-active-session {
+.theia-chat-session-card-wrapper {
   position: relative;
 }
 
-.theia-Card-active-session::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--theia-ui-padding) * 1.5);
-  right: calc(var(--theia-ui-padding) * 1.5);
-  width: calc(var(--theia-ui-padding) * 1.5);
-  height: calc(var(--theia-ui-padding) * 1.5);
-  border-radius: 50%;
-  background-color: var(--theia-focusBorder);
+@keyframes theia-chat-session-throb {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
+}
+
+.theia-chat-session-card-working .theia-Card-icon {
+  color: var(--theia-focusBorder);
+  animation: theia-chat-session-throb 1.4s ease-in-out infinite;
 }
 
 /*

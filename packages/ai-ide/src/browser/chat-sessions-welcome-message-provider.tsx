@@ -16,11 +16,10 @@
 
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
-import { ChatAgentService, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
+import { ChatAgentService, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
 import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
-import { AIChatNavigationService } from '@theia/ai-chat-ui/lib/browser/ai-chat-navigation-service';
-import { CommandRegistry, Emitter, Event, PreferenceService } from '@theia/core';
+import { CommandRegistry, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
 import { Card, codicon, HoverService } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
@@ -83,15 +82,42 @@ interface ChatSessionCardProps {
     hoverService: HoverService;
     markdownRenderer: MarkdownRenderer;
     onClick: () => void;
-    className?: string;
 }
 
 function ChatSessionCard(
-    { session, chatService, chatAgentService, hoverService, markdownRenderer, onClick, className }: ChatSessionCardProps
+    { session, chatService, chatAgentService, hoverService, markdownRenderer, onClick }: ChatSessionCardProps
 ): React.ReactElement {
     // eslint-disable-next-line no-null/no-null
     const wrapperRef = React.useRef<HTMLDivElement | null>(null);
     const hoverActiveRef = React.useRef(false);
+
+    const [isWorking, setIsWorking] = React.useState(false);
+
+    React.useEffect(() => {
+        const trash = new DisposableCollection();
+
+        const attach = (s: ChatSession) => {
+            const recompute = () => setIsWorking(s.model.getRequests().some(ChatRequestModel.isInProgress));
+            recompute();
+            s.model.onDidChange(recompute, undefined, trash);
+        };
+
+        const existing = chatService.getSession(session.sessionId);
+        if (existing) {
+            attach(existing);
+        } else {
+            chatService.onSessionEvent(event => {
+                if (event.type === 'created' && event.sessionId === session.sessionId) {
+                    const s = chatService.getSession(session.sessionId);
+                    if (s) {
+                        attach(s);
+                    }
+                }
+            }, undefined, trash);
+        }
+
+        return () => trash.dispose();
+    }, [session.sessionId, chatService]);
 
     const handleMouseEnter = React.useCallback(async () => {
         hoverActiveRef.current = true;
@@ -116,13 +142,13 @@ function ChatSessionCard(
     }, [hoverService]);
 
     return (
-        <div ref={wrapperRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        <div ref={wrapperRef} className={`theia-chat-session-card-wrapper${isWorking ? ' theia-chat-session-card-working' : ''}`}
+        <div ref={wrapperRef} className="theia-chat-session-card-wrapper" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
             <Card
-                icon={codicon('comment-discussion')}
+                icon={isWorking ? codicon('pulse') : codicon('comment-discussion')}
                 title={session.title || nls.localizeByDefault('Untitled Chat')}
                 subtitle={formatTimeAgo(session.saveDate)}
                 onClick={onClick}
-                className={className}
             />
         </div>
     );
@@ -219,9 +245,6 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(AIChatNavigationService)
-    protected readonly navigationService: AIChatNavigationService;
-
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
 
@@ -250,7 +273,6 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         this.chatService.onSessionEvent(() => {
             this.loadSessions();
         });
-        this.navigationService.onDidChange(() => this.onStateChangedEmitter.fire());
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PERSISTED_SESSION_LIMIT_PREF || e.preferenceName === SESSION_STORAGE_PREF) {
                 this.loadSessions();
@@ -330,21 +352,17 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         );
     }
 
-    protected renderSessionCard = (session: ChatSessionMetadata): React.ReactNode => {
-        const isInHistory = this.navigationService.hasSession(session.sessionId);
-        return (
-            <ChatSessionCard
-                key={session.sessionId}
-                session={session}
-                chatService={this.chatService}
-                chatAgentService={this.chatAgentService}
-                hoverService={this.hoverService}
-                markdownRenderer={this.markdownRenderer}
-                onClick={() => this.handleSessionCardClick(session.sessionId)}
-                className={isInHistory ? 'theia-Card-active-session' : undefined}
-            />
-        );
-    };
+    protected renderSessionCard = (session: ChatSessionMetadata): React.ReactNode => (
+        <ChatSessionCard
+            key={session.sessionId}
+            session={session}
+            chatService={this.chatService}
+            chatAgentService={this.chatAgentService}
+            hoverService={this.hoverService}
+            markdownRenderer={this.markdownRenderer}
+            onClick={() => this.handleSessionCardClick(session.sessionId)}
+        />
+    );
 
     protected handleSessionCardClick = async (sessionId: string): Promise<void> => {
         await this.chatService.getOrRestoreSession(sessionId);

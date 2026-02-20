@@ -20,10 +20,9 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
