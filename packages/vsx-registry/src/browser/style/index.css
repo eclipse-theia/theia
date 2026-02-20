@@ -78,10 +78,7 @@
 .theia-vsx-extensions-search-bar {
   display: flex;
   align-content: center;
-  padding: var(--theia-ui-padding) 
-           max(var(--theia-scrollbar-width), var(--theia-ui-padding)) 
-           var(--theia-ui-padding) 
-           calc(var(--theia-ui-padding) * 3);
+  padding: var(--theia-ui-padding) max(var(--theia-scrollbar-width), var(--theia-ui-padding)) var(--theia-ui-padding) calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-vsx-extensions-search-bar .theia-input {
@@ -217,10 +214,7 @@
 
 .theia-vsx-extension-editor .header {
   display: flex;
-  padding: calc(var(--theia-ui-padding) * 3)
-           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
-           calc(var(--theia-ui-padding) * 3)
-           calc(var(--theia-ui-padding) * 3);
+  padding: calc(var(--theia-ui-padding) * 3) max(var(--theia-ui-padding), var(--theia-scrollbar-width)) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3);
   flex-shrink: 0;
   border-bottom: 1px solid hsla(0, 0%, 50%, 0.5);
   width: 100%;
@@ -356,6 +350,35 @@
   font-size: var(--theia-ui-font-size0);
   font-style: italic;
   margin-left: calc(var(--theia-ui-padding) * 5 / 3);
+}
+
+.theia-vsx-extension-deprecated {
+  background: var(--theia-statusBarItem-warningBackground, #cc6633);
+  color: var(--theia-statusBarItem-warningForeground, #ffffff);
+  border-radius: 2px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.theia-vsx-extension-deprecation-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 0px 24px;
+  background: var(--theia-inputValidation-warningBackground);
+  border: 1px solid var(--theia-inputValidation-warningBorder);
+  color: var(--theia-foreground);
+  font-size: 12px;
+}
+
+.theia-vsx-extension-name-deprecated {
+  text-decoration: line-through;
+  opacity: 0.8;
 }
 
 .theia-vsx-extension-editor .header .details .subtitle {

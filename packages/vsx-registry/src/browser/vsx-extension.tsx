@@ -64,6 +64,7 @@ export class VSXExtensionData {
     readonly verified?: boolean;
     readonly namespaceAccess?: VSXExtensionNamespaceAccess;
     readonly publishedBy?: VSXUser;
+    readonly deprecated?: boolean;
     static KEYS: Set<(keyof VSXExtensionData)> = new Set([
         'version',
         'iconUrl',
@@ -82,7 +83,8 @@ export class VSXExtensionData {
         'preview',
         'verified',
         'namespaceAccess',
-        'publishedBy'
+        'publishedBy',
+        'deprecated'
     ]);
 }
 
@@ -292,6 +294,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
 
     get preview(): boolean | undefined {
         return this.getData('preview');
+    }
+
+    get deprecated(): boolean | undefined {
+        return this.getData('deprecated');
     }
 
     get verified(): boolean | undefined {
@@ -508,7 +514,7 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
                 !builtin && installed && !uninstalled && <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button>
             }
             {
-                !builtin && !installed && <button className="theia-button prominent action" onClick={this.install}>{nls.localizeByDefault('Install')}</button>
+                !builtin && !installed && <button className={`theia-button prominent action${this.props.extension.deprecated ? ' theia-mod-disabled' : ''}`} disabled={this.props.extension.deprecated} onClick={this.install}>{nls.localizeByDefault('Install')}</button>
             }
             <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div>
         </div>;
@@ -560,9 +566,14 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
             <div className='theia-vsx-extension-content'>
                 <div className='title'>
                     <div className='noWrapInfo'>
-                        <span className='name'>{displayName}</span>&nbsp;
+                        <span className={`name${this.props.extension.deprecated ? ' theia-vsx-extension-name-deprecated' : ''}`}>{displayName}</span>&nbsp;
                         <span className='version'>{VSXExtension.formatVersion(version)}&nbsp;
                         </span>{disabled && installed && <span className='disabled'>({nls.localizeByDefault('disabled')})</span>}
+                        {this.props.extension.deprecated && (
+                            <span className='theia-vsx-extension-tag theia-vsx-extension-deprecated' title='This extension is deprecated'>
+                                Deprecated
+                            </span>
+                        )}
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
@@ -613,10 +624,11 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                     <div className='icon-container placeholder' />}
                 <div className='details'>
                     <div className='title'>
-                        <span title='Extension name' className='name' onClick={this.openExtension}>{displayName}</span>
+                        <span title='Extension name' className={`name${this.props.extension.deprecated ? ' theia-vsx-extension-name-deprecated' : ''}`} onClick={this.openExtension}>{displayName}</span>
                         <span title='Extension identifier' className='identifier'>{id}</span>
                         {preview && <span className='preview'>Preview</span>}
                         {builtin && <span className='builtin'>Built-in</span>}
+                        {this.props.extension.deprecated && <span className='theia-vsx-extension-tag theia-vsx-extension-deprecated' title='This extension is deprecated'>Deprecated</span>}
                     </div>
                     <div className='subtitle'>
                         <span title='Publisher name' className='publisher' onClick={this.searchPublisher}>
@@ -637,6 +649,12 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                     {this.renderAction()}
                 </div>
             </div>
+            {this.props.extension.deprecated && (
+                <div className='theia-vsx-extension-deprecation-notice'>
+                    <i className='codicon codicon-warning' />
+                    This extension has been deprecated.
+                </div>
+            )}
             {
                 sanitizedReadme &&
                 <div className='scroll-container'
