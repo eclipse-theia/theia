@@ -24,6 +24,8 @@ import {
     LanguageModelRegistry,
     matchVariablesRegEx,
     PROMPT_FUNCTION_REGEX,
+    ParsedCapability,
+    parseCapabilitiesFromTemplate,
     PromptFragmentCustomizationService,
     PromptService,
 } from '@theia/ai-core/lib/common';
@@ -44,6 +46,7 @@ interface ParsedPrompt {
     functions: string[];
     globalVariables: string[];
     agentSpecificVariables: string[];
+    capabilities: ParsedCapability[];
 };
 
 @injectable()
@@ -357,11 +360,20 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                     </ul>
                 </>
             )}
+
+            {this.parsedPromptParts.capabilities.length > 0 && (
+                <>
+                    <div className="settings-section-subcategory-title">
+                        {nls.localize('theia/ai/core/agentConfiguration/availableCapabilities', 'Available Capabilities')}
+                    </div>
+                    <AgentCapabilities capabilities={this.parsedPromptParts.capabilities} />
+                </>
+            )}
         </div>;
     }
 
     protected async parsePromptFragmentsForVariableAndFunction(agent: Agent): Promise<ParsedPrompt> {
-        const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
+        const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [], capabilities: [] };
         const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
         const selectedVariants = agentSettings?.selectedVariants ?? {};
 
@@ -374,16 +386,28 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
             }
 
             this.extractVariablesAndFunctions(promptToAnalyze, result, agent);
+            this.extractCapabilities(promptToAnalyze, result);
         }
 
         return result;
+    }
+
+    protected extractCapabilities(promptContent: string, result: ParsedPrompt): void {
+        const capabilities = parseCapabilitiesFromTemplate(promptContent);
+        const existingIds = new Set(result.capabilities.map(c => c.fragmentId));
+        for (const capability of capabilities) {
+            if (!existingIds.has(capability.fragmentId)) {
+                result.capabilities.push(capability);
+                existingIds.add(capability.fragmentId);
+            }
+        }
     }
 
     protected extractVariablesAndFunctions(promptContent: string, result: ParsedPrompt, agent: Agent): void {
         const variableMatches = matchVariablesRegEx(promptContent);
         variableMatches.forEach(match => {
             const variableId = match[1];
-            if (variableId.startsWith('!--')) {
+            if (variableId.startsWith('!--') || variableId.startsWith('capability:')) {
                 return;
             }
 
@@ -530,6 +554,36 @@ const AgentFunctions = ({ functions }: AgentFunctionsProps) => {
         </li>)}
     </>;
 };
+
+interface AgentCapabilitiesProps {
+    capabilities: ParsedCapability[];
+}
+const AgentCapabilities = ({ capabilities }: AgentCapabilitiesProps) => (
+    <table className="ai-templates-table">
+        <thead>
+            <tr>
+                <th>{nls.localize('theia/ai/ide/agentConfiguration/capabilityId', 'Fragment ID')}</th>
+                <th>{nls.localize('theia/ai/ide/agentConfiguration/enabledByDefault', 'Enabled by Default')}</th>
+                <th>{nls.localizeByDefault('Description')}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {capabilities.map(capability => (
+                <tr key={capability.fragmentId}>
+                    <td className="ai-variable-name-cell">{capability.fragmentId}</td>
+                    <td className="ai-variable-name-cell">
+                        {capability.defaultEnabled
+                            ? nls.localize('theia/ai/ide/agentConfiguration/capabilityOn', 'On')
+                            : nls.localizeByDefault('Off')}
+                    </td>
+                    <td className="ai-variable-description-cell">
+                        {/* TODO show capability description ??  */nls.localize('theia/ai/ide/agentConfiguration/noDescription', 'No description available')}
+                    </td>
+                </tr>
+            ))}
+        </tbody>
+    </table>
+);
 
 interface AgentSpecificVariablesProps {
     promptVariables: string[];

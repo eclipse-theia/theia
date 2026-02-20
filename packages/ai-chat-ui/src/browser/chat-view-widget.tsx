@@ -220,12 +220,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query?: string | ChatRequest, modeId?: string): Promise<void> {
+    protected async onQuery(query?: string | ChatRequest, modeId?: string, capabilityOverrides?: Record<string, boolean>): Promise<void> {
         const chatRequest: ChatRequest = !query
             ? { text: '' }
             : typeof query === 'string'
-                ? { text: query, modeId }
-                : { ...query };
+                ? { text: query, modeId, capabilityOverrides }
+                : { ...query, capabilityOverrides };
         if (chatRequest.text.length === 0) { return; }
 
         // Include all variables (context + pending image attachments) in the request
