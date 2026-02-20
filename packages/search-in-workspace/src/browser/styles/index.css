@@ -97,19 +97,22 @@
   outline: none;
 }
 
-.t-siw-search-container .searchHeader .search-field .option {
+.t-siw-search-container .searchHeader .search-field .option,
+.t-siw-search-container .searchHeader .glob-field-input .option {
   opacity: 0.7;
   cursor: pointer;
 }
 
-.t-siw-search-container .searchHeader .search-field .option.enabled {
+.t-siw-search-container .searchHeader .search-field .option.enabled,
+.t-siw-search-container .searchHeader .glob-field-input .option.enabled {
   color: var(--theia-inputOption-activeForeground);
   border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
   background-color: var(--theia-inputOption-activeBackground);
   opacity: 1;
 }
 
-.t-siw-search-container .searchHeader .search-field .option:hover {
+.t-siw-search-container .searchHeader .search-field .option:hover,
+.t-siw-search-container .searchHeader .glob-field-input .option:hover {
   opacity: 1;
 }
 
@@ -163,6 +166,7 @@
 }
 
 .t-siw-search-container .searchHeader .search-field .option,
+.t-siw-search-container .searchHeader .glob-field-input .option,
 .t-siw-search-container .searchHeader .button-container .btn {
   width: 21px;
   height: 21px;
@@ -176,7 +180,8 @@
   border: var(--theia-border-width) solid transparent;
 }
 
-.t-siw-search-container .searchHeader .search-field .fa.option {
+.t-siw-search-container .searchHeader .search-field .fa.option,
+.t-siw-search-container .searchHeader .glob-field-input .fa.option {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -210,6 +215,38 @@
   margin-bottom: 4px;
   user-select: none;
   font-size: var(--theia-ui-font-size0);
+}
+
+.t-siw-search-container .searchHeader .glob-field-container .glob-field .glob-field-input {
+  display: flex;
+  align-items: center;
+  background: var(--theia-input-background);
+  border-style: solid;
+  border-width: var(--theia-border-width);
+  border-color: var(--theia-input-background);
+  border-radius: 2px;
+}
+
+.t-siw-search-container .searchHeader .glob-field-container .glob-field .glob-field-input:focus-within {
+  border-color: var(--theia-focusBorder);
+}
+
+.t-siw-search-container .searchHeader .glob-field-container .glob-field .glob-field-input .theia-input {
+  background: none;
+  border: none;
+}
+
+.t-siw-search-container .searchHeader .glob-field-container .glob-field .glob-field-input .theia-input:focus {
+  border: none;
+  outline: none;
+}
+
+.t-siw-search-container .searchHeader .glob-field-container .glob-field .glob-field-input .option-buttons {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  background-color: unset;
+  margin: auto 2px;
 }
 
 .t-siw-search-container
