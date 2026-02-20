@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
@@ -36,9 +36,6 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
-
-    @inject(TokenUsageService)
-    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.OPENAI_API_KEY;
@@ -122,7 +119,6 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.developerMessageSettings,
                         modelDescription.maxRetries,
                         modelDescription.useResponseApi ?? false,
-                        this.tokenUsageService,
                         proxyUrl
                     )
                 ]);
