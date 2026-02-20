@@ -36,12 +36,14 @@ export async function deepl(
     while (textArray.length > 0) {
         textChunks.push(textArray.splice(0, deeplLimit));
     }
-    const responses: DeeplResponse[] = await Promise.all(textChunks.map(async chunk => {
+    // Process chunks sequentially to respect DeepL API rate limits
+    const responses: DeeplResponse[] = [];
+    for (const chunk of textChunks) {
         const parameterCopy: DeeplParameters = { ...parameters, text: chunk };
         const url = `https://${sub_domain}.deepl.com/v2/translate`;
         const buffer = Buffer.from(toFormData(parameterCopy));
-        return postWithRetry(url, parameters.auth_key, buffer, 1);
-    }));
+        responses.push(await postWithRetry(url, parameters.auth_key, buffer, 1));
+    }
     const mergedResponse: DeeplResponse = { translations: [] };
     for (const response of responses) {
         mergedResponse.translations.push(...response.translations);
@@ -64,6 +66,16 @@ async function postWithRetry(url: string, key: string, buffer: Buffer, attempt: 
     } catch (e) {
         if ('message' in e && typeof e.message === 'string' && e.message.includes('Too Many Requests')) {
             return postWithRetry(url, key, buffer, attempt + 1);
+        }
+        // Try to extract the error details from the DeepL response body
+        // eslint-disable-next-line no-null/no-null
+        if (typeof e === 'object' && e !== null && 'json' in e && typeof e.json === 'function') {
+            try {
+                const errorBody = await e.json();
+                console.error('DeepL error response:', JSON.stringify(errorBody));
+            } catch {
+                // Ignore if we can't parse the error body
+            }
         }
         throw e;
     }
@@ -97,9 +109,15 @@ function coerceTranslation(text: string): string {
         .replace(/\uff1f/g, '?');
 }
 
+// Parameters that are used internally and should not be sent to the DeepL API
+const internalParameters = new Set(['auth_key', 'free_api']);
+
 function toFormData(parameters: DeeplParameters): string {
     const str: string[] = [];
     for (const [key, value] of Object.entries(parameters)) {
+        if (internalParameters.has(key)) {
+            continue;
+        }
         if (typeof value === 'string') {
             str.push(encodeURIComponent(key) + '=' + encodeURIComponent(value.toString()));
         } else if (Array.isArray(value)) {

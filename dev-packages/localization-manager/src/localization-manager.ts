@@ -119,11 +119,16 @@ export class LocalizationManager {
     }
 
     protected addIgnoreTags(text: string): string {
-        return text.replace(/(\{\d*\})/g, '<x>$1</x>');
+        // Escape existing angle brackets so DeepL's XML parser doesn't treat them as tags
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Wrap placeholders like {0}, {1} in ignore tags to preserve them during translation
+        return escaped.replace(/(\{\d*\})/g, '<x>$1</x>');
     }
 
     protected removeIgnoreTags(text: string): string {
-        return text.replace(/<x>(\{\d+\})<\/x>/g, '$1');
+        const result = text.replace(/<x>(\{\d+\})<\/x>/g, '$1');
+        // Restore escaped angle brackets
+        return result.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     }
 
     protected buildLocalizationMap(source: Localization, target: Localization): LocalizationMap {
