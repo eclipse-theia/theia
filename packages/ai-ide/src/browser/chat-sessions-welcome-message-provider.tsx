@@ -75,6 +75,29 @@ function SessionCardsGrid({ sessions, maxRows, renderCard }: SessionCardsGridPro
     );
 }
 
+/** Re-renders the caller whenever the formatted time-ago string would change. */
+function useTimeAgo(date: number): string {
+    const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
+
+    React.useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+
+        const schedule = () => {
+            const ageMs = Date.now() - date;
+            // Update frequently when very recent, then progressively slower.
+            const delayMs = ageMs < 60_000 ? 10_000
+                : ageMs < 3_600_000 ? 60_000
+                : 3_600_000;
+            timeoutId = setTimeout(() => { forceUpdate(); schedule(); }, delayMs);
+        };
+
+        schedule();
+        return () => clearTimeout(timeoutId);
+    }, [date]);
+
+    return formatTimeAgo(date);
+}
+
 interface ChatSessionCardProps {
     session: ChatSessionMetadata;
     chatService: ChatService;
@@ -91,6 +114,7 @@ function ChatSessionCard(
     const wrapperRef = React.useRef<HTMLDivElement | null>(null);
     const hoverActiveRef = React.useRef(false);
 
+    const timeAgo = useTimeAgo(session.saveDate);
     const [isWorking, setIsWorking] = React.useState(false);
 
     React.useEffect(() => {
@@ -147,7 +171,7 @@ function ChatSessionCard(
             <Card
                 icon={isWorking ? codicon('pulse') : codicon('comment-discussion')}
                 title={session.title || nls.localizeByDefault('Untitled Chat')}
-                subtitle={formatTimeAgo(session.saveDate)}
+                subtitle={timeAgo}
                 onClick={onClick}
             />
         </div>
