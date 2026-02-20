@@ -22,6 +22,7 @@ import { ContainerOutputProvider } from '../../electron-common/container-output-
 import * as fs from '@theia/core/shared/fs-extra';
 import { RemotePortForwardingProvider } from '@theia/remote/lib/electron-common/remote-port-forwarding-provider';
 import { RemoteDockerContainerConnection } from '../remote-container-connection-provider';
+import { WorkspaceCreationContribution } from './workspace-creation-contribution';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
@@ -31,6 +32,7 @@ export function registerContainerCreationContributions(bind: interfaces.Bind): v
     bind(ContainerCreationContribution).to(RemoteUserContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(PostCreateCommandContribution).inSingletonScope();
     bind(ContainerCreationContribution).to(ContainerEnvContribution).inSingletonScope();
+    bind(ContainerCreationContribution).to(WorkspaceCreationContribution).inSingletonScope();
 }
 
 @injectable()

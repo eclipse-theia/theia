@@ -146,7 +146,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
 
             return {
                 containerId: container.id,
-                workspacePath: (await container.inspect()).Mounts[0].Destination,
+                workspacePath: devContainerConfig.workspaceFolder ?? (await container.inspect()).Mounts[0].Destination,
                 port: localPort.toString(),
             };
         } catch (e) {
