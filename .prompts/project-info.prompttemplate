@@ -1,6 +1,6 @@
 ## Theia Project Information
 
-This section contains informations specific about the Theia Project and code base, which the user is currenty working on.
+This section contains information specific about the Theia Project and code base, which the user is currently working on.
 
 ### Architecture overview
 
@@ -44,6 +44,7 @@ Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-v
 - The use of `null` is forbidden. Use `undefined` instead for representing absent or uninitialized values.
 - Use single quotes (`'`) for string literals instead of double quotes (`"`).
 - Use Theia's Event/Emitter/Disposable for handling event listener patterns
+- For localization, use `nls.localizeByDefault(defaultValue)` when the string exists in VS Code's language packs. ESLint will flag `nls.localize` with a custom key if a matching default string is available. Only use `nls.localize('theia/<package>/<id>', 'text')` for strings that do not exist in VS Code translations.
 
 ### Test File References
 
@@ -60,6 +61,13 @@ Use `npm` (not `yarn`) for all package management and script execution.
 
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
 done for a final validation. There are usually pre-defined tasks for all these operations, prefer to use these instead of npm directly.
+
+**Important:** Building a package only compiles TypeScript. Before any UI testing, you must also rebuild the browser example application (`examples/browser`),
+which bundles the frontend via webpack. Without this step, the running browser app will not include the latest code changes.
+
+### Start Theia
+
+To start Theia as a browser app to show something to the user or for UI testing use the launch config "Start Theia Default (Browser backend, no debug)"
 
 ### Preferences
 

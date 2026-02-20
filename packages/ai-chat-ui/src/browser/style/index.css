@@ -7,8 +7,8 @@
   flex: 1;
 }
 
-.chat-input-widget > .ps__rail-x,
-.chat-input-widget > .ps__rail-y {
+.chat-input-widget>.ps__rail-x,
+.chat-input-widget>.ps__rail-y {
   display: none !important;
 }
 
@@ -23,7 +23,7 @@
   overflow-wrap: break-word;
 }
 
-div:last-child > .theia-ChatNode {
+div:last-child>.theia-ChatNode {
   border: none;
 }
 
@@ -59,6 +59,7 @@ div:last-child > .theia-ChatNode {
 }
 
 @keyframes dots {
+
   0%,
   20% {
     content: "";
@@ -137,7 +138,7 @@ div:last-child > .theia-ChatNode {
   padding-inline-start: 1rem;
 }
 
-.theia-ChatNode li > p {
+.theia-ChatNode li>p {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -151,7 +152,7 @@ div:last-child > .theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
-.theia-RequestNode > p div {
+.theia-RequestNode>p div {
   display: inline;
 }
 
@@ -451,8 +452,7 @@ div:last-child > .theia-ChatNode {
   text-align: center;
 }
 
-.theia-ChatInput-ChangeSet-List
-  .theia-ChatInput-ChangeSet-Icon.codicon::before {
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon.codicon::before {
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -469,8 +469,7 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
 }
 
-.theia-ChatInput-ChangeSet-List
-  .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
   font-size: var(--theia-ui-font-size0) px;
   margin-left: 4px;
 }
@@ -638,10 +637,12 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInputOptions .theia-ChatInputOptions-left,
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   display: flex;
+  align-items: center;
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-left {
   order: -1;
+  gap: calc(var(--theia-ui-padding) / 3);
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
@@ -663,6 +664,12 @@ div:last-child > .theia-ChatNode {
   border-radius: 5px;
   border: var(--theia-border-width) solid transparent;
   cursor: pointer;
+  outline: none;
+}
+
+.theia-ChatInputOptions .option:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
 }
 
 .theia-ChatInputOptions .option.disabled {
@@ -680,38 +687,39 @@ div:last-child > .theia-ChatNode {
   flex-direction: row-reverse;
 }
 
-.theia-ChatInput-ModeSelector {
-  margin-left: 4px;
-  min-width: 21px;
+/* Mode selector - compact SelectComponent inside toolbar */
+.theia-ChatInput-ModeSelector.theia-select-component {
+  min-width: unset;
+  min-height: unset;
   height: 21px;
-  padding: 2px;
-  border: none;
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  border: var(--theia-border-width) solid transparent;
+  box-sizing: border-box;
   background: var(--theia-editor-background);
-  color: var(--theia-foreground);
-  font-size: 13px;
+  font-size: var(--theia-content-font-size);
   border-radius: 5px;
-  outline: none;
-  cursor: pointer;
   max-width: 150px;
+  outline: none;
 }
 
-.theia-ChatInput-ModeSelector:hover:not(:disabled) {
+.theia-ChatInput-ModeSelector .theia-select-component-chevron {
+  font-size: var(--theia-ui-font-size1);
+  margin-left: calc(var(--theia-ui-padding) / 3);
+}
+
+.theia-ChatInput-ModeSelector.theia-select-component:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.theia-ChatInput-ModeSelector:disabled {
-  opacity: var(--theia-mod-disabled-opacity);
-  cursor: default;
-}
-
-.theia-ChatInput-ModeSelector:focus {
+.theia-ChatInput-ModeSelector.theia-select-component:focus-visible {
   outline: 1px solid var(--theia-focusBorder);
   outline-offset: -1px;
 }
 
-.theia-ChatInput-ModeSelector option {
-  background: var(--theia-dropdown-background);
-  color: var(--theia-dropdown-foreground);
+.theia-ChatInput-ModeSelector.disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  pointer-events: none;
 }
 
 .theia-CodePartRenderer-root {
@@ -1036,7 +1044,8 @@ div:last-child > .theia-ChatNode {
   font-weight: bold;
 }
 
-.theia-toolCall-allowed .codicon-loading {
+.theia-toolCall-allowed .codicon-loading,
+.theia-toolCall-pending .codicon-loading {
   font-size: 1em;
 }
 
@@ -1181,8 +1190,7 @@ div:last-child > .theia-ChatNode {
 
 /* Delegation response styles */
 .theia-delegation-container {
-  border: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   border-radius: var(--theia-ui-padding);
   margin: var(--theia-ui-padding) 0;
   background-color: var(--theia-sideBar-background);
@@ -1197,8 +1205,7 @@ div:last-child > .theia-ChatNode {
   padding: var(--theia-ui-padding);
   background-color: var(--theia-editorGroupHeader-tabsBackground);
   border-radius: var(--theia-ui-padding) var(--theia-ui-padding) 0 0;
-  border-bottom: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   list-style: none;
   position: relative;
 }
@@ -1301,8 +1308,7 @@ div:last-child > .theia-ChatNode {
 .delegation-prompt-section {
   margin-bottom: var(--theia-ui-padding);
   padding-bottom: var(--theia-ui-padding);
-  border-bottom: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
 }
 
 .delegation-prompt {
@@ -1319,7 +1325,7 @@ div:last-child > .theia-ChatNode {
   margin-top: var(--theia-ui-padding);
 }
 
-.delegation-response-section > strong {
+.delegation-response-section>strong {
   display: block;
   margin-bottom: var(--theia-ui-padding);
   color: var(--theia-foreground);
@@ -1386,7 +1392,112 @@ div:last-child > .theia-ChatNode {
   white-space: pre-wrap;
 }
 
-/* Preserve JSON indentation in hover tooltips */
-.theia-hover div.rendered-markdown {
-  white-space: pre;
+/* Scrollable hover for large tool call arguments */
+.theia-hover.toolcall-args-hover div.rendered-markdown {
+  max-height: 400px;
+  max-width: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
+/* Code blocks inside tool call hovers: constrain and scroll.
+   Monaco renders fenced code blocks as div[data-code] > span > div.monaco-tokenized-source,
+   not as <pre> elements, so we target both structures. */
+.theia-hover.toolcall-args-hover div.rendered-markdown pre,
+.theia-hover.toolcall-args-hover div.rendered-markdown div[data-code] {
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre;
+  margin: var(--theia-ui-padding) 0;
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  border-radius: 3px;
+  background-color: var(--theia-textCodeBlock-background);
+}
+
+/* Inline code styling */
+.theia-hover.toolcall-args-hover div.rendered-markdown code:not(pre code) {
+  padding: 1px var(--theia-ui-padding);
+  border-radius: 3px;
+  background-color: var(--theia-textCodeBlock-background);
+  word-break: break-all;
+  font-family: var(--theia-monospace-font-family);
+}
+
+/* Spacing between arg sections - uses internal border like hover-service.css */
+.theia-hover.toolcall-args-hover div.rendered-markdown hr {
+  border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
+  border-bottom: 0;
+  margin: var(--theia-ui-padding) 0;
+}
+
+/* Collapsible Section — subtle separator-label for config area sections */
+.theia-ChatInput-CapabilitiesSection {
+  border-top: 1px solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
+  margin-top: var(--theia-ui-padding);
+  padding-top: calc(var(--theia-ui-padding) / 3);
+}
+
+.theia-ChatInput-CapabilitiesSection-heading {
+  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) * 4 / 3);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  font-family: var(--theia-ui-font-family);
+  user-select: none;
+}
+
+
+/* Capability Chips — inline toggles inside editor box, styled like search option buttons */
+.theia-ChatInput-CapabilityChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--theia-ui-padding) * 2 / 3);
+  padding: calc(var(--theia-ui-padding) * 2 / 3) calc(var(--theia-ui-padding) * 4 / 3);
+  max-height: 84px;
+  overflow-y: auto;
+}
+
+.theia-ChatInput-CapabilityChip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  padding: calc(var(--theia-ui-padding) / 3) var(--theia-ui-padding);
+  line-height: var(--theia-icon-size);
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-foreground);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  white-space: nowrap;
+}
+
+.theia-ChatInput-CapabilityChip.checked {
+  border-color: var(--theia-inputOption-activeBorder);
+  background-color: var(--theia-inputOption-activeBackground);
+}
+
+.theia-ChatInput-CapabilityChip-icon {
+  font-size: var(--theia-statusBar-font-size);
+  margin-right: calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-ChatInput-CapabilityChip:hover:not(.chip-disabled):not(.checked) {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-CapabilityChip:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.theia-ChatInput-CapabilityChip.checked:focus-visible {
+  outline-width: 2px;
+}
+
+.theia-ChatInput-CapabilityChip.chip-disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Capabilities chevron toggle — first item in toolbar left section */

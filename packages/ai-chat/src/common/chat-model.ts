@@ -265,6 +265,12 @@ export interface ChatRequest {
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
     readonly modeId?: string;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     * Only includes capabilities that differ from their default value.
+     */
+    readonly capabilityOverrides?: Record<string, boolean>;
 }
 
 export interface ChatContext {
@@ -492,11 +498,15 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     finished: boolean;
     result?: ToolCallResult;
     confirmed: Promise<boolean>;
+    /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
+    needsUserConfirmation: Promise<void>;
     whenFinished: Promise<void>;
     data?: Record<string, string>;
     confirm(): void;
     deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
+    /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
+    requestUserConfirmation(): void;
     /**
      * Mark the tool call as completed with the given result.
      *
@@ -1646,7 +1656,10 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         respData?: SerializableChatResponseData
     ): void {
         this._id = reqData.id;
-        this._request = { text: reqData.text };
+        this._request = {
+            text: reqData.text,
+            capabilityOverrides: reqData.capabilityOverrides
+        };
         this._agentId = reqData.agentId;
         this._data = {};
         this._context = { variables: [] };
@@ -1887,7 +1900,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
             } : undefined,
-            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
+            capabilityOverrides: this.request.capabilityOverrides
         };
     }
 
@@ -2182,6 +2196,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
     protected _data?: Record<string, string>;
+    protected _needsUserConfirmation: Promise<void>;
+    protected _needsUserConfirmationResolver?: () => void;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
@@ -2197,6 +2213,9 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._data = data;
         this._confirmed = this.createConfirmationPromise();
         this._whenFinished = this.createFinishedPromise();
+        this._needsUserConfirmation = new Promise<void>(resolve => {
+            this._needsUserConfirmationResolver = resolve;
+        });
     }
 
     get id(): string | undefined {
@@ -2224,6 +2243,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
 
     get confirmed(): Promise<boolean> {
         return this._confirmed;
+    }
+
+    get needsUserConfirmation(): Promise<void> {
+        return this._needsUserConfirmation;
     }
 
     get whenFinished(): Promise<void> {
@@ -2267,6 +2290,13 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._result = { denied: true, reason };
             this._confirmationResolver(false);
             this.resolveFinished();
+        }
+    }
+
+    requestUserConfirmation(): void {
+        if (this._needsUserConfirmationResolver) {
+            this._needsUserConfirmationResolver();
+            this._needsUserConfirmationResolver = undefined;
         }
     }
 

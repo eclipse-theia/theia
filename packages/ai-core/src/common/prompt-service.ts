@@ -435,9 +435,10 @@ export interface PromptService {
      * Gets the effective variant ID and customization state for a prompt fragment.
      * This is a convenience method that combines getEffectiveVariantId and customization check.
      * @param fragmentId The prompt fragment ID or variant set ID
+     * @param modeId Optional mode ID to use as variant override (if it's a valid variant for the fragment)
      * @returns The variant info or undefined if no valid variant exists
      */
-    getPromptVariantInfo(fragmentId: string): PromptVariantInfo | undefined;
+    getPromptVariantInfo(fragmentId: string, modeId?: string): PromptVariantInfo | undefined;
 
     /**
      * Gets the default variant ID of the given set
@@ -694,8 +695,17 @@ export class PromptServiceImpl implements PromptService {
         return undefined;
     }
 
-    getPromptVariantInfo(fragmentId: string): PromptVariantInfo | undefined {
-        const variantId = this.getEffectiveVariantId(fragmentId) ?? fragmentId;
+    getPromptVariantInfo(fragmentId: string, modeId?: string): PromptVariantInfo | undefined {
+        // If modeId is provided and is a valid variant, use it; otherwise use effective variant
+        let variantId: string | undefined;
+        if (modeId) {
+            const variantIds = this.getVariantIds(fragmentId);
+            if (variantIds.includes(modeId)) {
+                variantId = modeId;
+            }
+        }
+        variantId ??= this.getEffectiveVariantId(fragmentId) ?? fragmentId;
+
         const rawFragment = this.getRawPromptFragment(variantId);
         if (!rawFragment) {
             return undefined;

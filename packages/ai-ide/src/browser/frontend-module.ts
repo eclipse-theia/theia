@@ -97,7 +97,7 @@ import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
-import { TaskContextAgent } from './task-context-agent';
+
 import { ProjectInfoAgent } from './project-info-agent';
 import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
@@ -111,7 +111,7 @@ import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunct
 import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
 import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
 import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
-import { WithAppTesterCommandContribution } from './with-apptester-command-contribution';
+import { WithAppTesterContribution } from './with-apptester-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -129,8 +129,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CoderAgent);
     bind(ChatAgent).toService(CoderAgent);
 
-    bind(TaskContextAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(TaskContextAgent);
     bind(ProjectInfoAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ProjectInfoAgent);
     bind(ChatAgent).toService(ProjectInfoAgent);
@@ -315,5 +313,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(FixGitHubTicketCommandContribution);
     bind(FrontendApplicationContribution).to(AddressGhReviewCommandContribution);
     bind(FrontendApplicationContribution).to(AnalyzesGhTicketCommandContribution);
-    bind(FrontendApplicationContribution).to(WithAppTesterCommandContribution);
+    bind(FrontendApplicationContribution).to(WithAppTesterContribution);
 });
