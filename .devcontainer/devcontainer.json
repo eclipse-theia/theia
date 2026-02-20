@@ -1,0 +1,93 @@
+{
+  "name": "Eclipse Theia Browser",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20",
+      "nodeGypDependencies": true
+    }
+  },
+  "containerEnv": {
+    "NODE_OPTIONS": "--max_old_space_size=4096",
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+  },
+  "overrideCommand": false,
+  "mounts": [
+    "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached",
+    {
+      "source": "theia-workspace-node-modules",
+      "target": "/workspace/node_modules",
+      "type": "volume"
+    },
+    {
+      "source": "theia-examples-browser-node-modules",
+      "target": "/workspace/examples/browser/node_modules",
+      "type": "volume"
+    },
+    {
+      "source": "theia-examples-browser-only-node-modules",
+      "target": "/workspace/examples/browser-only/node_modules",
+      "type": "volume"
+    },
+    {
+      "source": "theia-cache",
+      "target": "/workspace/.npm-cache",
+      "type": "volume"
+    },
+    {
+      "source": "theia-yarn-cache",
+      "target": "/workspace/.yarn-cache",
+      "type": "volume"
+    },
+    {
+      "source": "theia-build-cache",
+      "target": "/workspace/.build-cache",
+      "type": "volume"
+    },
+    {
+      "source": "theia-typescript-cache",
+      "target": "/workspace/.tscache",
+      "type": "volume"
+    }
+  ],
+  "postCreateCommand": "chmod +x ./.devcontainer/post-create.sh && ./.devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "resmon.show.battery": false,
+        "resmon.show.cpufreq": false,
+        "terminal.integrated.env.linux": {
+          "NODE_OPTIONS": "--max_old_space_size=4096"
+        }
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "EditorConfig.EditorConfig",
+        "GitHub.vscode-pull-request-github",
+        "ms-vscode.vscode-github-issue-notebooks",
+        "ms-python.python",
+        "mutantdino.resourcemonitor",
+        "ms-vscode-remote.remote-containers-resource-monitor",
+        "DavidAnson.vscode-markdownlint"
+      ]
+    }
+  },
+  "forwardPorts": [
+    3000
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Theia Browser App",
+      "onAutoForward": "notify"
+    }
+  },
+  "hostRequirements": {
+    "memory": "12gb",
+    "cpus": 6
+  }
+}
