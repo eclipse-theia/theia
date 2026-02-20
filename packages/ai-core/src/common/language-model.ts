@@ -323,6 +323,7 @@ export interface UserRequest extends LanguageModelRequest {
 
 export interface LanguageModelTextResponse {
     text: string;
+    usage?: UsageResponsePart;
 }
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
@@ -335,6 +336,8 @@ export const isLanguageModelStreamResponsePart = (part: unknown): part is Langua
 export interface UsageResponsePart {
     input_tokens: number;
     output_tokens: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
 }
 export const isUsageResponsePart = (part: unknown): part is UsageResponsePart =>
     !!(part && typeof part === 'object' &&
@@ -414,6 +417,7 @@ export const isLanguageModelStreamResponse = (obj: unknown): obj is LanguageMode
 export interface LanguageModelParsedResponse {
     parsed: unknown;
     content: string;
+    usage?: UsageResponsePart;
 }
 export const isLanguageModelParsedResponse = (obj: unknown): obj is LanguageModelParsedResponse =>
     !!(obj && typeof obj === 'object' && 'parsed' in obj && 'content' in obj);

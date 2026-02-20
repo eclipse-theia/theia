@@ -26,8 +26,6 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageParams,
-    TokenUsageService,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -206,7 +204,6 @@ export class AnthropicModel implements LanguageModel {
         public url: string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService,
         protected proxy?: string
     ) { }
 
@@ -334,18 +331,12 @@ export class AnthropicModel implements LanguageModel {
                         currentMessage = event.message;
                     } else if (event.type === 'message_stop') {
                         if (currentMessage) {
-                            yield { input_tokens: currentMessage.usage.input_tokens, output_tokens: currentMessage.usage.output_tokens };
-                            // Record token usage if token usage service is available
-                            if (that.tokenUsageService && currentMessage.usage) {
-                                const tokenUsageParams: TokenUsageParams = {
-                                    inputTokens: currentMessage.usage.input_tokens,
-                                    outputTokens: currentMessage.usage.output_tokens,
-                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens || undefined,
-                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens || undefined,
-                                    requestId: request.requestId
-                                };
-                                await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
-                            }
+                            yield {
+                                input_tokens: currentMessage.usage.input_tokens,
+                                output_tokens: currentMessage.usage.output_tokens,
+                                cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens || undefined,
+                                cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens || undefined,
+                            };
                         }
 
                     }
@@ -432,21 +423,18 @@ export class AnthropicModel implements LanguageModel {
             const response = await anthropic.messages.create(params);
             const textContent = response.content[0];
 
-            // Record token usage if token usage service is available
-            if (this.tokenUsageService && response.usage) {
-                const tokenUsageParams: TokenUsageParams = {
-                    inputTokens: response.usage.input_tokens,
-                    outputTokens: response.usage.output_tokens,
-                    requestId: request.requestId
-                };
-                await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
-            }
+            const usage = response.usage ? {
+                input_tokens: response.usage.input_tokens,
+                output_tokens: response.usage.output_tokens,
+                cache_creation_input_tokens: response.usage.cache_creation_input_tokens || undefined,
+                cache_read_input_tokens: response.usage.cache_read_input_tokens || undefined,
+            } : undefined;
 
             if (textContent?.type === 'text') {
-                return { text: textContent.text };
+                return { text: textContent.text, usage };
             }
 
-            return { text: '' };
+            return { text: '', usage };
         } catch (error) {
             throw new Error(`Failed to get response from Anthropic API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }

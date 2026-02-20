@@ -16,6 +16,7 @@
 
 import { GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentLocation } from './chat-agents';
+import { ResponseTokenUsage } from './chat-model';
 
 export interface SerializableChangeSetElement {
     kind?: string;
@@ -129,6 +130,7 @@ export interface SerializableChatResponseData {
     errorMessage?: string;
     promptVariantId?: string;
     isPromptVariantEdited?: boolean;
+    tokenUsage?: ResponseTokenUsage;
     content: SerializableChatResponseContentData[];
 }
 

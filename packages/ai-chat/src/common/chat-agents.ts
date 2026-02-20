@@ -33,6 +33,8 @@ import {
     isToolCallResponsePart,
     isUsageResponsePart,
     LanguageModel,
+    TokenUsageService,
+    UsageResponsePart,
     LanguageModelMessage,
     LanguageModelRequirement,
     LanguageModelResponse,
@@ -47,13 +49,14 @@ import {
 } from '@theia/ai-core';
 import {
     Agent,
+    isLanguageModelParsedResponse,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelRegistry,
     LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
 import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
@@ -68,6 +71,7 @@ import {
     ToolCallArgumentsDeltaContent,
     ErrorChatResponseContent,
     InformationalChatResponseContent,
+    ResponseTokenUsage,
 } from './chat-model';
 import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
@@ -179,6 +183,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
 
+    @inject(TokenUsageService) @optional() protected tokenUsageService: TokenUsageService | undefined;
+
     readonly abstract id: string;
     readonly abstract name: string;
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
@@ -259,6 +265,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             );
 
             await this.addContentsToResponse(languageModelResponse, request);
+            await this.recordTokenUsageFromResponse(request, languageModel);
             await this.onResponseComplete(request);
 
         } catch (e) {
@@ -526,6 +533,28 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return request.response.complete();
     }
 
+    protected mapUsageResponsePart(usage: UsageResponsePart): ResponseTokenUsage {
+        return {
+            inputTokens: usage.input_tokens,
+            outputTokens: usage.output_tokens,
+            cacheCreationInputTokens: usage.cache_creation_input_tokens,
+            cacheReadInputTokens: usage.cache_read_input_tokens,
+        };
+    }
+
+    protected async recordTokenUsageFromResponse(request: MutableChatRequestModel, languageModel: LanguageModel): Promise<void> {
+        const tokenUsage = request.response.tokenUsage;
+        if (tokenUsage && this.tokenUsageService) {
+            await this.tokenUsageService.recordTokenUsage(languageModel.id, {
+                inputTokens: tokenUsage.inputTokens,
+                outputTokens: tokenUsage.outputTokens,
+                cachedInputTokens: tokenUsage.cacheCreationInputTokens,
+                readCachedInputTokens: tokenUsage.cacheReadInputTokens,
+                requestId: request.id,
+            });
+        }
+    }
+
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void>;
 }
 
@@ -581,6 +610,17 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         if (isLanguageModelTextResponse(languageModelResponse)) {
             const contents = this.parseContents(languageModelResponse.text, request);
             request.response.response.addContents(contents);
+            if (languageModelResponse.usage) {
+                request.response.setTokenUsage(this.mapUsageResponsePart(languageModelResponse.usage));
+            }
+            return;
+        }
+        if (isLanguageModelParsedResponse(languageModelResponse)) {
+            const contents = this.parseContents(languageModelResponse.content, request);
+            request.response.response.addContents(contents);
+            if (languageModelResponse.usage) {
+                request.response.setTokenUsage(this.mapUsageResponsePart(languageModelResponse.usage));
+            }
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
@@ -655,6 +695,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
             return new ThinkingChatResponseContentImpl(token.thought, token.signature);
         }
         if (isUsageResponsePart(token)) {
+            request.response.setTokenUsage(this.mapUsageResponsePart(token));
             return [];
         }
         return this.defaultContentFactory.create('', request);
