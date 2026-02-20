@@ -380,7 +380,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             question,
             APPROVAL_OPTIONS,
             request,
-            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request)
+            (selectedOption: { text: string; value?: string }) => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request)
         );
 
         // Store references for this specific approval request
@@ -465,41 +465,50 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 description: opt.description
             }));
 
-            const questionText = questionItem.header
-                ? `**${questionItem.header}:** ${questionItem.question}`
-                : questionItem.question;
+            const onAnswered = (): void => {
+                answeredCount++;
+                if (answeredCount === totalQuestions) {
+                    this.getPendingAskUserQuestions(request).delete(approvalRequest.requestId);
 
-            const questionContent = new QuestionResponseContentImpl(
-                questionText,
-                options,
-                request,
-                selectedOption => {
-                    // Key by question text to match the Claude Code SDK's expected answers format
-                    answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
-                    answeredCount++;
+                    const updatedInput: AskUserQuestionInput = {
+                        ...toolInput,
+                        answers
+                    };
 
-                    if (answeredCount === totalQuestions) {
-                        this.getPendingAskUserQuestions(request).delete(approvalRequest.requestId);
+                    const response: ToolApprovalResponseMessage = {
+                        type: 'tool-approval-response',
+                        requestId: approvalRequest.requestId,
+                        approved: true,
+                        updatedInput
+                    };
 
-                        const updatedInput: AskUserQuestionInput = {
-                            ...toolInput,
-                            answers
-                        };
+                    this.claudeCode.sendApprovalResponse(response);
 
-                        const response: ToolApprovalResponseMessage = {
-                            type: 'tool-approval-response',
-                            requestId: approvalRequest.requestId,
-                            approved: true,
-                            updatedInput
-                        };
-
-                        this.claudeCode.sendApprovalResponse(response);
-
-                        if (this.getPendingApprovals(request).size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
-                            request.response.stopWaitingForInput();
-                        }
+                    if (this.getPendingApprovals(request).size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
+                        request.response.stopWaitingForInput();
                     }
                 }
+            };
+
+            const isMultiSelect = questionItem.multiSelect || undefined;
+            const handler = isMultiSelect
+                ? (selectedOptions: { text: string; value?: string }[]) => {
+                    answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
+                    onAnswered();
+                }
+                : (selectedOption: { text: string; value?: string }) => {
+                    answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
+                    onAnswered();
+                };
+
+            const questionContent = new QuestionResponseContentImpl(
+                questionItem.question,
+                options,
+                request,
+                handler,
+                undefined,
+                isMultiSelect,
+                questionItem.header
             );
 
             request.response.response.addContent(questionContent);

@@ -453,8 +453,11 @@ export interface ErrorContentData {
  */
 export interface QuestionContentData {
     question: string;
-    options: { text: string; value?: string }[];
+    header?: string;
+    options: { text: string; value?: string; description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
 }
 
 export interface TextChatResponseContent
@@ -758,12 +761,19 @@ export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
 
+export type MultiSelectQuestionResponseHandler = (
+    selectedOptions: { text: string, value?: string }[],
+) => void;
+
 export interface QuestionResponseContent extends ChatResponseContent {
     kind: 'question';
     question: string;
+    header?: string;
     options: { text: string, value?: string, description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string, value?: string };
-    handler?: QuestionResponseHandler;
+    selectedOptions?: { text: string, value?: string }[];
+    handler?: QuestionResponseHandler | MultiSelectQuestionResponseHandler;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -2486,47 +2496,73 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
  */
 export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
-    protected _selectedOption: { text: string; value?: string } | undefined;
+    protected _selectedOptions: { text: string; value?: string }[] | undefined;
 
     constructor(
         public question: string,
         public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
-        public handler: QuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string }
+        public handler: QuestionResponseHandler | MultiSelectQuestionResponseHandler | undefined,
+        selectedOption?: { text: string; value?: string },
+        public multiSelect?: boolean,
+        public header?: string,
+        selectedOptions?: { text: string; value?: string }[]
     ) {
-        this._selectedOption = selectedOption;
+        this._selectedOptions = selectedOptions ?? (selectedOption ? [selectedOption] : undefined);
     }
 
     get isReadOnly(): boolean {
         return !this.handler || !this.request;
     }
 
-    set selectedOption(option: { text: string; value?: string; } | undefined) {
-        this._selectedOption = option;
-        // Only trigger change notification if request is available (not in read-only mode)
+    set selectedOption(option: { text: string; value?: string } | undefined) {
+        this._selectedOptions = option ? [option] : undefined;
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
     }
-    get selectedOption(): { text: string; value?: string; } | undefined {
-        return this._selectedOption;
+    get selectedOption(): { text: string; value?: string } | undefined {
+        return this._selectedOptions?.[0];
     }
+
+    set selectedOptions(options: { text: string; value?: string }[] | undefined) {
+        this._selectedOptions = options;
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
+    }
+    get selectedOptions(): { text: string; value?: string }[] | undefined {
+        return this._selectedOptions;
+    }
+
     asString?(): string | undefined {
-        return `Question: ${this.question}
-${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
+        const answer = this._selectedOptions && this._selectedOptions.length > 0
+            ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
+            : 'No answer';
+        return `Question: ${this.question}\n${answer}`;
     }
     merge?(): boolean {
         return false;
     }
     toSerializable(): SerializableChatResponseContentData<QuestionContentData> {
+        const data: QuestionContentData = {
+            question: this.question,
+            options: this.options,
+        };
+        if (this.multiSelect) {
+            data.selectedOptions = this._selectedOptions;
+        } else if (this._selectedOptions?.[0]) {
+            data.selectedOption = this._selectedOptions[0];
+        }
+        if (this.header !== undefined) {
+            data.header = this.header;
+        }
+        if (this.multiSelect !== undefined) {
+            data.multiSelect = this.multiSelect;
+        }
         return {
             kind: 'question',
-            data: {
-                question: this.question,
-                options: this.options,
-                selectedOption: this._selectedOption
-            }
+            data
         };
     }
 }
