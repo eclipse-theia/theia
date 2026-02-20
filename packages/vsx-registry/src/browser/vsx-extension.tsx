@@ -514,7 +514,15 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
                 !builtin && installed && !uninstalled && <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button>
             }
             {
-                !builtin && !installed && <button className={`theia-button prominent action${this.props.extension.deprecated ? ' theia-mod-disabled' : ''}`} disabled={this.props.extension.deprecated} onClick={this.install}>{nls.localizeByDefault('Install')}</button>
+                !builtin && !installed && (
+                    <button
+                        className={`theia-button prominent action${this.props.extension.deprecated ? ' theia-mod-disabled' : ''}`}
+                        disabled={this.props.extension.deprecated}
+                        onClick={this.install}
+                    >
+                        {nls.localizeByDefault('Install')}
+                    </button>
+                )
             }
             <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div>
         </div>;
@@ -624,11 +632,24 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                     <div className='icon-container placeholder' />}
                 <div className='details'>
                     <div className='title'>
-                        <span title='Extension name' className={`name${this.props.extension.deprecated ? ' theia-vsx-extension-name-deprecated' : ''}`} onClick={this.openExtension}>{displayName}</span>
+                        <span
+                            title='Extension name'
+                            className={`name${this.props.extension.deprecated ? ' theia-vsx-extension-name-deprecated' : ''}`}
+                            onClick={this.openExtension}
+                        >
+                            {displayName}
+                        </span>
                         <span title='Extension identifier' className='identifier'>{id}</span>
                         {preview && <span className='preview'>Preview</span>}
                         {builtin && <span className='builtin'>Built-in</span>}
-                        {this.props.extension.deprecated && <span className='theia-vsx-extension-tag theia-vsx-extension-deprecated' title='This extension is deprecated'>Deprecated</span>}
+                        {this.props.extension.deprecated && (
+                            <span
+                                className='theia-vsx-extension-tag theia-vsx-extension-deprecated'
+                                title='This extension is deprecated'
+                            >
+                                Deprecated
+                            </span>
+                        )}
                     </div>
                     <div className='subtitle'>
                         <span title='Publisher name' className='publisher' onClick={this.searchPublisher}>
