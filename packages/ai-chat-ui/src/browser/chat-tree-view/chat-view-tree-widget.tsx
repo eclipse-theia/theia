@@ -418,9 +418,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         const nodes = providers
             .map(p => p.renderDisabledMessage?.())
             .filter((node): node is React.ReactNode => node !== undefined);
-        return nodes.length > 0
-            ? <div className="theia-WelcomeMessage-Container">{nodes}</div>
-            : <></>;
+        return this.renderContributedWelcomeContent('theia-WelcomeMessage-Container', nodes);
     }
 
     protected renderWelcomeMessage(): React.ReactNode {
@@ -428,6 +426,10 @@ export class ChatViewTreeWidget extends TreeWidget {
         const nodes = providers
             .map(p => p.renderWelcomeMessage?.())
             .filter((node): node is React.ReactNode => node !== undefined);
+        return this.renderContributedWelcomeContent('theia-WelcomeMessage-Container', nodes);
+    }
+
+    protected renderContributedWelcomeContent(containerClass: string, nodes: React.ReactNode[]): React.ReactNode {
         if (nodes.length === 0) {
             return <></>;
         }
@@ -438,7 +440,11 @@ export class ChatViewTreeWidget extends TreeWidget {
             }
             withDividers.push(node);
         });
-        return <div className='theia-WelcomeMessage-Container'>{withDividers}</div>;
+        return <div className={containerClass}>
+            <div className='theia-WelcomeMessage-Container-Inner'>
+                {withDividers}
+            </div>
+        </div>;
     }
 
     protected mapRequestToNode(branch: ChatHierarchyBranch): RequestNode {

@@ -813,6 +813,10 @@
   height: 100%;
   width: 100%;
 }
+.theia-WelcomeMessage-Container-Inner {
+  margin: auto 0; /* Centred vertically */
+  width: 100%;
+}
 
 .theia-WelcomeMessage-Divider {
   align-self: stretch;
