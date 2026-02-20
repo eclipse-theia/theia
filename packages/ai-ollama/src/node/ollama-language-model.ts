@@ -342,7 +342,8 @@ export class OllamaModel implements LanguageModel {
             this.tokenUsageService.recordTokenUsage(this.id, {
                 inputTokens: response.prompt_eval_count,
                 outputTokens: response.eval_count,
-                requestId: `ollama_${response.created_at}`
+                requestId: `ollama_${response.created_at}`,
+                sessionId: `ollama_${response.created_at}`
             }).catch(error => console.error('Error recording token usage:', error));
         }
     }

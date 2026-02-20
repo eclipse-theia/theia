@@ -634,7 +634,8 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 outputTokens,
                 cachedInputTokens,
                 readCachedInputTokens,
-                requestId
+                requestId,
+                sessionId: request.session.id
             });
         } catch (error) {
             this.logger.error('Failed to report token usage:', error);
