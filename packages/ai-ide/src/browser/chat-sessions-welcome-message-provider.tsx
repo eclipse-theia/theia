@@ -45,9 +45,23 @@ function SessionCardsGrid({ sessions, maxRows, renderCard }: SessionCardsGridPro
         if (!el) {
             return;
         }
-        const trackStr = getComputedStyle(el).gridTemplateColumns;
-        const cols = trackStr && trackStr !== 'none' ? trackStr.split(' ').length : 1;
-        setColumns(prev => prev !== cols ? cols : prev);
+
+        const gridStyle = getComputedStyle(el);
+        const gap = parseFloat(gridStyle.columnGap || gridStyle.gap || '0') || 0;
+
+        const containerWidth = el.getBoundingClientRect().width;
+
+        // If we have at least one child, use its actual laid-out width.
+        const first = el.firstElementChild as HTMLElement | null;
+        if (!first) {
+            setColumns(1);
+            return;
+        }
+
+        const itemWidth = first.getBoundingClientRect().width || 1;
+        const cols = Math.max(1, Math.floor((containerWidth + gap) / (itemWidth + gap)));
+
+        setColumns(prev => (prev !== cols ? cols : prev));
     }, []);
 
     // Detect columns synchronously before first paint to avoid flash
@@ -216,7 +230,8 @@ function ChatSessionCard(
 
         const content = buildSessionTooltip(chatSession, session, chatAgentService, markdownRenderer);
         hoverService.requestHover({ content, target, position: 'left' });
-    }, [session, chatService, chatAgentService, hoverService]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer]);
+    React.useEffect(() => () => { hoverActiveRef.current = false; }, []); // Block mouseEnter proceeding on unmount
 
     const handleMouseLeave = React.useCallback(() => {
         hoverActiveRef.current = false;
@@ -239,7 +254,7 @@ function ChatSessionCard(
                 onMouseLeave={handleMouseLeave}
                 onMouseOver={handleMouseOver}>
             <Card
-                icon={isWorking ? codicon('pulse') : codicon('comment-discussion')}
+                icon={isWorking ? `${codicon('loading')} theia-animation-spin` : codicon('comment-discussion')}
                 title={session.title || nls.localizeByDefault('Untitled Chat')}
                 subtitle={timeAgo}
                 actionButtons={actionButtons}

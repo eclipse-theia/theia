@@ -1099,20 +1099,14 @@
   position: relative;
 }
 
-@keyframes theia-chat-session-throb {
-  0%, 100% { opacity: 1;   transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.8); }
-}
-
 .theia-chat-session-card-working .theia-Card-icon {
   color: var(--theia-focusBorder);
-  animation: theia-chat-session-throb 1.4s ease-in-out infinite;
 }
 
 .theia-chat-session-card-unread-badge {
   position: absolute;
   top: calc(var(--theia-ui-padding) * 1.5);
-  right: calc(var(--theia-ui-padding) * 1.5);
+  left: calc(var(--theia-ui-padding) * 1.5);
   width: 8px;
   height: 8px;
   border-radius: 50%;

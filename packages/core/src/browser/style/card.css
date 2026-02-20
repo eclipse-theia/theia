@@ -53,7 +53,6 @@
     flex: 1;
     align-self: stretch;
     min-width: 0;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
