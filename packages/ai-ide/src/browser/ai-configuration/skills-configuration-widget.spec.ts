@@ -29,6 +29,8 @@ import { Emitter, URI } from '@theia/core';
 import { OpenHandler, OpenerService } from '@theia/core/lib/browser';
 import { Skill } from '@theia/ai-core/lib/common/skill';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
+import { PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
+import { Agent, AgentService } from '@theia/ai-core';
 
 import { AISkillsConfigurationWidget } from './skills-configuration-widget';
 
@@ -60,45 +62,71 @@ describe('AISkillsConfigurationWidget', () => {
         ReactDOM.render(element as React.ReactElement, host);
     }
 
-    it('renders empty state when SkillService.getSkills() returns []', () => {
-        const widget = new AISkillsConfigurationWidget();
-
+    function createMockSkillService(skills: Skill[] = []): Partial<SkillService> {
         const onSkillsChangedEmitter = new Emitter<void>();
-        const skillService: Partial<SkillService> = {
-            getSkills: () => [],
+        return {
+            getSkills: () => skills,
             onSkillsChanged: onSkillsChangedEmitter.event
         };
-        (widget as unknown as { skillService: SkillService }).skillService = skillService as SkillService;
+    }
 
-        (widget as unknown as { openerService: OpenerService }).openerService = {} as OpenerService;
+    function createMockPromptService(commands: PromptFragment[] = []): Partial<PromptService> {
+        const onPromptsChangeEmitter = new Emitter<void>();
+        return {
+            getCommands: () => commands,
+            onPromptsChange: onPromptsChangeEmitter.event
+        };
+    }
 
+    function createMockAgentService(agents: Agent[] = []): Partial<AgentService> {
+        const onDidChangeAgentsEmitter = new Emitter<void>();
+        return {
+            getAllAgents: () => agents,
+            onDidChangeAgents: onDidChangeAgentsEmitter.event
+        };
+    }
+
+    function createWidget(
+        skills: Skill[] = [],
+        commands: PromptFragment[] = [],
+        agents: Agent[] = [],
+        openerService?: Partial<OpenerService>
+    ): AISkillsConfigurationWidget {
+        const widget = new AISkillsConfigurationWidget();
+        (widget as unknown as { skillService: SkillService }).skillService = createMockSkillService(skills) as SkillService;
+        (widget as unknown as { promptService: PromptService }).promptService = createMockPromptService(commands) as PromptService;
+        (widget as unknown as { agentService: AgentService }).agentService = createMockAgentService(agents) as AgentService;
+        (widget as unknown as { openerService: OpenerService }).openerService = (openerService ?? {}) as OpenerService;
         (widget as unknown as { init: () => void }).init();
+        return widget;
+    }
+
+    // --- Skills section tests ---
+
+    it('renders empty state when no skills are available', () => {
+        const widget = createWidget();
         renderWidget(widget);
 
-        expect(host.querySelectorAll('tbody tr').length).to.equal(0);
+        const skillsSection = host.querySelector('.ai-skills-section');
+        expect(skillsSection).to.not.be.null;
+
+        const emptyState = skillsSection!.querySelector('.ai-empty-state-content');
+        expect(emptyState).to.not.be.null;
     });
 
     it('renders multiple skills with correct name/description/location', () => {
-        const widget = new AISkillsConfigurationWidget();
-
         const skills: Skill[] = [
             { name: 'Skill A', description: 'Desc A', location: '/path/a' } as Skill,
             { name: 'Skill B', description: 'Desc B', location: '/path/b' } as Skill
         ];
 
-        const onSkillsChangedEmitter = new Emitter<void>();
-        const skillService: Partial<SkillService> = {
-            getSkills: () => skills,
-            onSkillsChanged: onSkillsChangedEmitter.event
-        };
-        (widget as unknown as { skillService: SkillService }).skillService = skillService as SkillService;
-
-        (widget as unknown as { openerService: OpenerService }).openerService = {} as OpenerService;
-
-        (widget as unknown as { init: () => void }).init();
+        const widget = createWidget(skills);
         renderWidget(widget);
 
-        const rows = Array.from(host.querySelectorAll('tbody tr'));
+        const skillsSection = host.querySelector('.ai-skills-section');
+        expect(skillsSection).to.not.be.null;
+
+        const rows = Array.from(skillsSection!.querySelectorAll('tbody tr'));
         expect(rows.length).to.equal(2);
 
         expect(rows[0].querySelector('.skill-name-column')?.textContent).to.contain('Skill A');
@@ -111,18 +139,9 @@ describe('AISkillsConfigurationWidget', () => {
     });
 
     it('clicking "Open" calls opener with URI.fromFilePath(skill.location)', async () => {
-        const widget = new AISkillsConfigurationWidget();
-
         const skills: Skill[] = [
             { name: 'Skill A', description: 'Desc A', location: '/path/a' } as Skill
         ];
-
-        const onSkillsChangedEmitter = new Emitter<void>();
-        const skillService: Partial<SkillService> = {
-            getSkills: () => skills,
-            onSkillsChanged: onSkillsChangedEmitter.event
-        };
-        (widget as unknown as { skillService: SkillService }).skillService = skillService as SkillService;
 
         let openedUri: URI | undefined;
         const opener: OpenHandler = {
@@ -132,22 +151,83 @@ describe('AISkillsConfigurationWidget', () => {
         };
         const openerService: Partial<OpenerService> = {
             getOpener: async () => opener,
-            // The widget calls `open(openerService, uri)` which internally uses `getOpener`.
-            // Provide `getOpeners` as well in case other code paths expect it.
             getOpeners: async () => [opener]
         };
-        (widget as unknown as { openerService: OpenerService }).openerService = openerService as OpenerService;
 
-        (widget as unknown as { init: () => void }).init();
+        const widget = createWidget(skills, [], [], openerService);
         renderWidget(widget);
 
         const button = host.querySelector('button[title="Open"]');
-        expect(button).not.to.equal(undefined);
+        expect(button).to.not.be.null;
 
         (button as HTMLButtonElement).click();
-
         await Promise.resolve();
 
         expect(openedUri?.toString()).to.equal(URI.fromFilePath('/path/a').toString());
+    });
+
+    // --- Slash commands section tests ---
+
+    it('renders slash commands section when commands are available', () => {
+        const commands: PromptFragment[] = [
+            { id: 'cmd1', template: '', isCommand: true, commandName: 'test', commandDescription: 'Test command' },
+            { id: 'cmd2', template: '', isCommand: true, commandName: 'help', commandDescription: 'Help command' }
+        ];
+
+        const widget = createWidget([], commands);
+        renderWidget(widget);
+
+        const slashCommandsSection = host.querySelector('.ai-slash-commands-section');
+        expect(slashCommandsSection).to.not.be.null;
+
+        const rows = Array.from(slashCommandsSection!.querySelectorAll('tbody tr'));
+        expect(rows.length).to.equal(2);
+
+        expect(rows[0].querySelector('.slash-command-name-column')?.textContent).to.contain('/test');
+        expect(rows[0].querySelector('.slash-command-description-column')?.textContent).to.contain('Test command');
+
+        expect(rows[1].querySelector('.slash-command-name-column')?.textContent).to.contain('/help');
+        expect(rows[1].querySelector('.slash-command-description-column')?.textContent).to.contain('Help command');
+    });
+
+    it('renders empty state for slash commands when none are available', () => {
+        const widget = createWidget();
+        renderWidget(widget);
+
+        const slashCommandsSection = host.querySelector('.ai-slash-commands-section');
+        expect(slashCommandsSection).to.not.be.null;
+
+        const emptyState = slashCommandsSection!.querySelector('.ai-empty-state-content');
+        expect(emptyState).to.not.be.null;
+    });
+
+    it('shows "All agents" when command has no specific agents', () => {
+        const commands: PromptFragment[] = [
+            { id: 'cmd1', template: '', isCommand: true, commandName: 'global', commandDescription: 'Global command' }
+        ];
+
+        const widget = createWidget([], commands);
+        renderWidget(widget);
+
+        const allAgentsText = host.querySelector('.slash-command-all-agents');
+        expect(allAgentsText).to.not.be.null;
+    });
+
+    it('shows agent chips when command is restricted to specific agents', () => {
+        const agents: Agent[] = [
+            { id: 'agent1', name: 'Agent One', description: 'Test agent 1', variables: [], functions: [], prompts: [], agentSpecificVariables: [], languageModelRequirements: [] },
+            { id: 'agent2', name: 'Agent Two', description: 'Test agent 2', variables: [], functions: [], prompts: [], agentSpecificVariables: [], languageModelRequirements: [] }
+        ];
+
+        const commands: PromptFragment[] = [
+            { id: 'cmd1', template: '', isCommand: true, commandName: 'specific', commandDescription: 'Agent-specific command', commandAgents: ['agent1'] }
+        ];
+
+        const widget = createWidget([], commands, agents);
+        renderWidget(widget);
+
+        const agentChips = host.querySelectorAll('.agent-chip');
+        expect(agentChips.length).to.equal(1);
+        expect(agentChips[0].textContent).to.contain('Agent One');
     });
 });
