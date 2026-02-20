@@ -61,11 +61,6 @@ export class MonacoDiffEditor extends MonacoEditor {
         this.documents.add(originalModel);
         this.wordWrapOverride = options?.wordWrapOverride2;
         this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor);
-        if (parentEditor) {
-            // Embedded diff editors don't participate in visibility tracking (they're not wrapped in EditorWidget),
-            // so we need to set the model immediately since handleVisibilityChanged will never be called.
-            this.diffEditor.setModel(this.diffEditorModel);
-        }
     }
 
     get diffEditor(): monaco.editor.IStandaloneDiffEditor {
