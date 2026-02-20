@@ -351,11 +351,23 @@ function extractString(node: ts.Expression): string {
         }
         node = reference;
     }
-    if (ts.isTemplateLiteral(node)) {
+    // Template literals without interpolations (e.g. `some text`) are treated as plain strings.
+    // Multiline template literals are dedented to remove source code indentation.
+    if (ts.isNoSubstitutionTemplateLiteral(node)) {
+        return dedent(node.text);
+    }
+    // Template literals with interpolated expressions (e.g. `Hello ${name}`) cannot be
+    // statically resolved, so they are rejected. Use nls.localize format args instead.
+    if (ts.isTemplateExpression(node)) {
         throw new TypeScriptError(
-            "Template literals are not supported for localization. Please use the additional arguments of the 'nls.localize' function to format strings",
+            "Template literals with expressions are not supported for localization. Please use the additional arguments of the 'nls.localize' function to format strings",
             node
         );
+    }
+    // String concatenation (e.g. 'part one ' + 'part two') is resolved by recursively
+    // extracting both sides. This allows splitting long localization strings across lines.
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+        return extractString(node.left) + extractString(node.right);
     }
     if (!ts.isStringLiteralLike(node)) {
         throw new TypeScriptError(`'${node.getText()}' is not a string constant`, node);
@@ -398,6 +410,37 @@ function isCommandLocalizeUtility(node: ts.Node): boolean {
     }
 
     return node.expression.getText() === 'Command.toLocalizedCommand';
+}
+
+/**
+ * Removes common leading whitespace from each line of a multiline string,
+ * similar to Python's `textwrap.dedent`. This is used to clean up template
+ * literals that inherit indentation from the surrounding source code.
+ */
+function dedent(str: string): string {
+    const lines = str.split('\n');
+    if (lines.length <= 1) {
+        return str;
+    }
+    // Find the minimum indentation across all non-empty lines (skipping the first line)
+    let minIndent = Infinity;
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().length === 0) {
+            continue;
+        }
+        const indent = line.match(/^(\s*)/)?.[1].length ?? 0;
+        minIndent = Math.min(minIndent, indent);
+    }
+    if (minIndent === Infinity || minIndent === 0) {
+        return str;
+    }
+    // Remove the common indentation from all lines except the first
+    const dedented = [lines[0]];
+    for (let i = 1; i < lines.length; i++) {
+        dedented.push(lines[i].substring(minIndent));
+    }
+    return dedented.join('\n');
 }
 
 const unescapeMap: Record<string, string> = {
