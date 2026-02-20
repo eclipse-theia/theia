@@ -16,7 +16,7 @@
 
 import { Emitter, Event } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatService, isActiveSessionChangedEvent, isSessionDeletedEvent } from '@theia/ai-chat';
 
 export const WELCOME_SCREEN_ENTRY = Symbol('ai-chat-navigation-welcome-screen');
 export type NavEntry = typeof WELCOME_SCREEN_ENTRY | string;
@@ -37,6 +37,10 @@ export class AIChatNavigationService {
     @postConstruct()
     protected init(): void {
         this.chatService.onSessionEvent(event => {
+            if (isSessionDeletedEvent(event)) {
+                this.handleSessionDeleted(event.sessionId);
+                return;
+            }
             if (this.isNavigating) { return; }
             if (isActiveSessionChangedEvent(event)) {
                 this.handleActiveChange(event.sessionId);
@@ -60,10 +64,34 @@ export class AIChatNavigationService {
         }
     }
 
+    private handleSessionDeleted(sessionId: string): void {
+        const deletedCurrent = this.history[this.pointer] === sessionId;
+        const removedBeforeOrAt = this.history.slice(0, this.pointer + 1).filter(e => e === sessionId).length;
+
+        this.history = this.history.filter(e => e !== sessionId);
+        if (this.history.length === 0) {
+            this.history = [WELCOME_SCREEN_ENTRY];
+        }
+        this.pointer = Math.min(this.pointer - removedBeforeOrAt, this.history.length - 1);
+
+        if (deletedCurrent) {
+            this.navigateTo(this.history[this.pointer]);
+        }
+        this.onDidChangeEmitter.fire();
+    }
+
     /** Called by ChatViewWidget when a query is submitted on an empty (welcome screen) session. */
     notifyQueryFromWelcomeScreen(sessionId: string): void {
         if (this.isNavigating) { return; }
-        this.push(sessionId);
+        if (this.canGoBack && !this.canGoForward) {
+            // Welcome was pushed forward via '+' from an existing session — it is acting as a
+            // placeholder for the new session. Replace it in-place so pressing back returns
+            // to the previous session rather than landing on a now-purposeless welcome screen.
+            this.history[this.pointer] = sessionId;
+            this.onDidChangeEmitter.fire();
+        } else {
+            this.push(sessionId);
+        }
     }
 
     private push(entry: NavEntry): void {
