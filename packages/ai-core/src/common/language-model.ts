@@ -19,6 +19,11 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
+export interface ThinkingModeSettings {
+    enabled: boolean;
+    budgetTokens?: number;
+}
+
 export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
 export namespace LanguageModelMessage {
 
@@ -266,7 +271,8 @@ export interface LanguageModelRequest {
     tools?: ToolRequest[];
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
-    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean }
+    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
+    thinkingMode?: ThinkingModeSettings;
 }
 export interface ResponseFormatJsonSchema {
     type: 'json_schema';

@@ -1085,18 +1085,12 @@ div:last-child>.theia-ChatNode {
 }
 
 .session-settings-container {
-  margin-bottom: 10px;
-  height: calc(100% - 50px);
+  display: flex;
+  flex-direction: column;
 }
 
 .monaco-session-settings-dialog {
-  flex: 1;
-  min-height: 350px;
-  min-width: 500px;
-  height: 25vh;
-  width: 30vh;
-  border: 1px solid var(--theia-editorWidget-border);
-  margin-bottom: 10px;
+  min-width: 400px;
 }
 
 .session-settings-error {
@@ -1107,6 +1101,75 @@ div:last-child>.theia-ChatNode {
 
 .session-settings-container .monaco-editor {
   outline-color: var(--theia-editor-background);
+}
+
+.session-settings-thinking-mode {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  margin-bottom: 8px;
+}
+
+.session-settings-section-header {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--theia-foreground);
+}
+
+.session-settings-checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.session-settings-checkbox-container input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.session-settings-checkbox-container label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.session-settings-budget-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 22px;
+}
+
+.session-settings-budget-container label {
+  white-space: nowrap;
+}
+
+.session-settings-budget-container label.disabled {
+  color: var(--theia-disabledForeground);
+}
+
+.session-settings-budget-container input[type="number"] {
+  width: 100px;
+  padding: 4px 8px;
+  border: 1px solid var(--theia-input-border);
+  border-radius: 4px;
+  background-color: var(--theia-input-background);
+  color: var(--theia-input-foreground);
+}
+
+.session-settings-budget-container input[type="number"]:disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.session-settings-advanced {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.session-settings-editor-container {
+  height: 150px;
 }
 
 .chat-agent-suggestions {

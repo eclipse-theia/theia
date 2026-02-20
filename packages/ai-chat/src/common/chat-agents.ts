@@ -383,7 +383,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
         isPromptVariantCustomized?: boolean
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
-        const settings = { ...agentSettings, ...request.session.settings };
+        const { commonSettings, ...providerSettings } = request.session.settings ?? {};
+        const settings = { ...agentSettings, ...providerSettings };
         const dedupedTools = this.deduplicateTools(toolRequests);
         const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
         return this.languageModelService.sendRequest(
@@ -392,6 +393,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 messages,
                 tools,
                 settings,
+                thinkingMode: request.session.settings?.commonSettings?.thinkingMode,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
