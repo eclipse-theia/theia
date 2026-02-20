@@ -60,6 +60,7 @@
 
 .theia-Card-title {
     font-weight: 500;
+    color: var(--theia-foreground);
     display: -webkit-box;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;

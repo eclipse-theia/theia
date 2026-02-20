@@ -1070,7 +1070,7 @@
 
 .theia-chat-session-tooltip hr {
   border: none;
-  border-top: 1px solid var(--theia-widget-border);
+  border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
   margin: var(--theia-ui-padding) 0;
 }
 
@@ -1086,11 +1086,12 @@
 
 .theia-chat-session-tooltip dt {
   font-weight: 600;
+  color: var(--theia-foreground);
 }
 
 .theia-chat-session-tooltip dd {
   margin: 0;
-  opacity: 0.85;
+  color: var(--theia-descriptionForeground);
   word-break: break-word;
 }
 
