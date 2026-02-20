@@ -17,7 +17,7 @@
 import { nls, PreferenceContribution, PreferenceSchema } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
 
-export const AI_LLAMAFILE_PREFERENCES_TITLE = nls.localize('theia/ai/llamaFile/prefs/title', '✨ AI LlamaFile');
+export const AI_LLAMAFILE_PREFERENCES_TITLE = nls.localize('theia/ai/llamaFile/prefs/title', 'AI LlamaFile');
 export const PREFERENCE_LLAMAFILE = 'ai-features.llamafile.llamafiles';
 
 export const aiLlamafilePreferencesSchema: PreferenceSchema = {
