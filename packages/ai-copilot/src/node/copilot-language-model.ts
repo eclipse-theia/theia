@@ -110,7 +110,7 @@ export class CopilotLanguageModel implements LanguageModel {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return { stream: new StreamingAsyncIterator(runner as any, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
+        return { stream: new StreamingAsyncIterator(runner as any, request.requestId, request.sessionId, cancellationToken, this.tokenUsageService, this.id) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -129,7 +129,8 @@ export class CopilotLanguageModel implements LanguageModel {
                 {
                     inputTokens: response.usage.prompt_tokens,
                     outputTokens: response.usage.completion_tokens,
-                    requestId: request.requestId
+                    requestId: request.requestId,
+                    sessionId: request.sessionId
                 }
             );
         }
@@ -159,7 +160,8 @@ export class CopilotLanguageModel implements LanguageModel {
                 {
                     inputTokens: result.usage.prompt_tokens,
                     outputTokens: result.usage.completion_tokens,
-                    requestId: request.requestId
+                    requestId: request.requestId,
+                    sessionId: request.sessionId
                 }
             );
         }

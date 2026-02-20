@@ -51,6 +51,7 @@ import { createChatViewTreeWidget } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
+import { ChatTokenUsageIndicatorWidget } from './chat-token-usage-indicator';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
@@ -189,6 +190,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         return widget;
     });
 
+    bind(ChatTokenUsageIndicatorWidget).toSelf();
 });
 
 function bindChatViewWidget(bind: interfaces.Bind): void {

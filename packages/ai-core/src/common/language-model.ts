@@ -329,6 +329,8 @@ export const isLanguageModelStreamResponsePart = (part: unknown): part is Langua
 export interface UsageResponsePart {
     input_tokens: number;
     output_tokens: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
 }
 export const isUsageResponsePart = (part: unknown): part is UsageResponsePart =>
     !!(part && typeof part === 'object' &&

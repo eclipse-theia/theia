@@ -45,7 +45,7 @@ describe('StreamingAsyncIterator', () => {
     });
 
     function createIterator(withCancellationToken = false): StreamingAsyncIterator {
-        return new StreamingAsyncIterator(mockStream, '', withCancellationToken ? cts.token : undefined);
+        return new StreamingAsyncIterator(mockStream, '', '', withCancellationToken ? cts.token : undefined);
     }
 
     it('should yield messages in the correct order when consumed immediately', async () => {

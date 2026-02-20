@@ -645,7 +645,8 @@ export class CodexChatAgent implements ChatAgent {
                 inputTokens: usage.input_tokens,
                 outputTokens: usage.output_tokens,
                 cachedInputTokens: usage.cached_input_tokens,
-                requestId: request.id
+                requestId: request.id,
+                sessionId: request.session.id
             });
         } catch (error) {
             console.error('Failed to report token usage:', error);

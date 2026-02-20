@@ -319,7 +319,8 @@ export class GoogleModel implements LanguageModel {
                                 that.tokenUsageService.recordTokenUsage(that.id, {
                                     inputTokens: promptTokens,
                                     outputTokens: completionTokens,
-                                    requestId: request.requestId
+                                    requestId: request.requestId,
+                                    sessionId: request.sessionId
                                 }).catch(error => console.error('Error recording token usage:', error));
                             }
                         }
@@ -458,7 +459,8 @@ export class GoogleModel implements LanguageModel {
                     await this.tokenUsageService.recordTokenUsage(this.id, {
                         inputTokens: promptTokens,
                         outputTokens: completionTokens,
-                        requestId: request.requestId
+                        requestId: request.requestId,
+                        sessionId: request.sessionId
                     });
                 }
             }

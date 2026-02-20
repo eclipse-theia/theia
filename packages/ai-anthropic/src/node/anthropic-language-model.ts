@@ -326,7 +326,8 @@ export class AnthropicModel implements LanguageModel {
                                     outputTokens: currentMessage.usage.output_tokens,
                                     cachedInputTokens: currentMessage.usage.cache_creation_input_tokens || undefined,
                                     readCachedInputTokens: currentMessage.usage.cache_read_input_tokens || undefined,
-                                    requestId: request.requestId
+                                    requestId: request.requestId,
+                                    sessionId: request.sessionId
                                 };
                                 await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
                             }
@@ -421,7 +422,8 @@ export class AnthropicModel implements LanguageModel {
                 const tokenUsageParams: TokenUsageParams = {
                     inputTokens: response.usage.input_tokens,
                     outputTokens: response.usage.output_tokens,
-                    requestId: request.requestId
+                    requestId: request.requestId,
+                    sessionId: request.sessionId
                 };
                 await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
             }
