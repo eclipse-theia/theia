@@ -17,14 +17,14 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { Widget } from '@theia/core/lib/browser';
+import { ConfirmDialog, Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
 import { AIChatNavigationService } from './ai-chat-navigation-service';
-import { ChatAgent, ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
+import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
@@ -222,6 +222,17 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 return this.chatService.getSessions().some(session => !!session.title) || this.hasPersistedSessions;
             },
             isVisible: () => this.activationService.isActive
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_RENAME_SESSION, {
+            execute: (session: ChatSessionMetadata | string) => this.renameSession(typeof session === 'string' ? session : session.sessionId),
+            isVisible: () => this.activationService.isActive,
+            isEnabled: () => this.activationService.isActive
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_DELETE_SESSION, {
+            execute: (session: ChatSessionMetadata | string, confirm?: boolean) =>
+                this.deleteSession(typeof session === 'string' ? session : session.sessionId, typeof session === 'string' ? confirm : true),
+            isVisible: () => this.activationService.isActive,
+            isEnabled: () => this.activationService.isActive
         });
         registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_BACK, {
             execute: () => this.navigationService.back(),
@@ -431,38 +442,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         quickPick.onDidTriggerItemButton(async context => {
             if (context.button === AIChatContribution.RENAME_CHAT_BUTTON) {
                 quickPick.hide();
-                this.quickInputService.input({
-                    placeHolder: nls.localize('theia/ai/chat-ui/enterChatName', 'Enter chat name')
-                }).then(name => {
-                    if (name && name.length > 0) {
-                        const session = this.chatService.getSession(context.item.id!);
-                        if (session) {
-                            session.title = name;
-                        }
-                    }
-                });
+                await this.renameSession(context.item.id!);
             } else if (context.button === AIChatContribution.REMOVE_CHAT_BUTTON) {
-                const activeSession = this.chatService.getActiveSession();
-
-                // Wait for deletion to complete before refreshing the list
-                this.chatService.deleteSession(context.item.id!).then(() => getItems()).then(items => {
-                    quickPick.items = items;
-                    if (items.length === 0) {
-                        quickPick.hide();
-                    }
-                    // Update persisted sessions flag after deletion
-                    this.checkPersistedSessions();
-
-                    if (activeSession && activeSession.id === context.item.id) {
-                        this.chatService.createSession(ChatAgentLocation.Panel, {
-                            // Auto-focus only when the quick pick is no longer visible
-                            focus: items.length === 0
-                        });
-                    }
-                }).catch(error => {
-                    this.logger.error('Failed to delete chat session', error);
-                    this.messageService.error(nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session'));
-                });
+                await this.deleteSession(context.item.id!);
+                const items = await getItems();
+                quickPick.items = items;
+                if (items.length === 0) {
+                    quickPick.hide();
+                }
             }
         });
 
@@ -492,6 +479,40 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         quickPick.onDidHide(() => defer.resolve(undefined));
 
         return defer.promise;
+    }
+
+    protected async renameSession(sessionId: string): Promise<void> {
+        const name = await this.quickInputService.input({
+            placeHolder: nls.localize('theia/ai/chat-ui/enterChatName', 'Enter chat name')
+        });
+        if (name && name.length > 0) {
+            await this.chatService.renameSession(sessionId, name);
+        }
+    }
+
+    protected async deleteSession(sessionId: string, confirm = false): Promise<void> {
+        if (confirm) {
+            const confirmed = await new ConfirmDialog({
+                title: nls.localize('theia/ai/chat-ui/deleteChat', 'Delete Chat'),
+                msg: nls.localize('theia/ai/chat-ui/confirmDeleteChatMsg', 'Are you sure you want to delete this chat?')
+            }).open();
+            if (!confirmed) {
+                return;
+            }
+        }
+        const activeSession = this.chatService.getActiveSession();
+        try {
+            await this.chatService.deleteSession(sessionId);
+            this.checkPersistedSessions();
+            if (activeSession && activeSession.id === sessionId) {
+                this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+            }
+        } catch (error) {
+            this.logger.error('Failed to delete chat session', error);
+            this.messageService.error(
+                nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session')
+            );
+        }
     }
 
     protected withWidget(

@@ -74,3 +74,57 @@
     margin-top: auto;
     padding-top: calc(var(--theia-ui-padding) / 2);
 }
+
+/* Footer area used when actionButtons are present */
+.theia-Card-footer {
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+    margin-top: auto;
+    padding-top: calc(var(--theia-ui-padding) / 2);
+    position: relative;
+}
+
+.theia-Card-footer-time {
+    display: block;
+    transition: opacity 0.15s;
+}
+
+.theia-Card-footer-actions {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--theia-ui-padding);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+
+.theia-Card:hover .theia-Card-footer-time {
+    opacity: 0;
+}
+
+.theia-Card:hover .theia-Card-footer-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.theia-Card-action-btn {
+    background: transparent;
+    border: none;
+    padding: 0 var(--theia-ui-padding);
+    cursor: pointer;
+    color: var(--theia-icon-foreground);
+    display: inline-flex;
+    align-items: center;
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    font-size: inherit;
+    line-height: 1;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.theia-Card-action-btn:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-foreground);
+}

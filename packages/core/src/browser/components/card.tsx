@@ -16,6 +16,15 @@
 
 import * as React from 'react';
 
+export interface CardActionButton {
+    /** Icon class (e.g., codicon) */
+    iconClass: string;
+    /** Accessible label and tooltip */
+    title: string;
+    /** Called when the button is clicked; receives the mouse event */
+    onClick: (e: React.MouseEvent) => void;
+}
+
 export interface CardProps {
     /** Icon class (e.g., codicon) */
     icon?: string;
@@ -33,6 +42,12 @@ export interface CardProps {
     maxTitleLines?: number;
     /** Tooltip for title */
     titleTooltip?: string;
+    /**
+     * Optional action buttons shown in the card footer on hover.
+     * When provided, `subtitle` is rendered as fading text beneath the title
+     * and is replaced by the action buttons on hover.
+     */
+    actionButtons?: CardActionButton[];
 }
 
 /**
@@ -49,7 +64,8 @@ export const Card = React.memo(function Card(props: CardProps): React.ReactEleme
         className,
         children,
         maxTitleLines = 4,
-        titleTooltip
+        titleTooltip,
+        actionButtons
     } = props;
 
     const isInteractive = onClick !== undefined;
@@ -90,10 +106,27 @@ export const Card = React.memo(function Card(props: CardProps): React.ReactEleme
                 >
                     {title}
                 </div>
-                {subtitle && (
-                    <div className="theia-Card-subtitle">
-                        {subtitle}
+                {actionButtons ? (
+                    <div className="theia-Card-footer">
+                        {subtitle && <span className="theia-Card-footer-time">{subtitle}</span>}
+                        <div className="theia-Card-footer-actions">
+                            {actionButtons.map((btn, i) => (
+                                <button
+                                    key={i}
+                                    className={`theia-Card-action-btn ${btn.iconClass}`}
+                                    title={btn.title}
+                                    aria-label={btn.title}
+                                    onClick={btn.onClick}
+                                />
+                            ))}
+                        </div>
                     </div>
+                ) : (
+                    subtitle && (
+                        <div className="theia-Card-subtitle">
+                            {subtitle}
+                        </div>
+                    )
                 )}
                 {children}
             </div>

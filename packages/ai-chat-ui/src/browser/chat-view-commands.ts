@@ -79,6 +79,20 @@ export namespace ChatCommands {
         category: ChatCommands.CHAT_CATEGORY,
         label: 'Navigate Forward'
     }, 'theia/ai-chat-ui/navigate-forward', ChatCommands.CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_RENAME_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.rename-session',
+        iconClass: codicon('edit'),
+        label: 'Rename Chat',
+        category: CHAT_CATEGORY
+    }, 'theia/ai-chat-ui/renameChat', CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_DELETE_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.delete-session',
+        iconClass: codicon('remove-close'),
+        label: 'Delete Chat',
+        category: CHAT_CATEGORY
+    }, 'theia/ai-chat-ui/deleteChat', CHAT_CATEGORY_KEY);
 }
 
 export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND = Command.toDefaultLocalizedCommand({

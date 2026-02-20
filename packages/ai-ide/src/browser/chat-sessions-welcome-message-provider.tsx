@@ -19,11 +19,12 @@ import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import { ChatAgentService, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
 import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
-import { CommandRegistry, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
-import { Card, codicon, HoverService } from '@theia/core/lib/browser';
+import { ChatSessionCardActionContribution } from './chat-session-card-action-contribution';
+import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
+import { Card, CardActionButton, codicon, HoverService } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 
 const TOOLTIP_SNIPPET_MAX_LENGTH = 1000;
@@ -105,10 +106,11 @@ interface ChatSessionCardProps {
     hoverService: HoverService;
     markdownRenderer: MarkdownRenderer;
     onClick: () => void;
+    actionButtons?: CardActionButton[];
 }
 
 function ChatSessionCard(
-    { session, chatService, chatAgentService, hoverService, markdownRenderer, onClick }: ChatSessionCardProps
+    { session, chatService, chatAgentService, hoverService, markdownRenderer, onClick, actionButtons }: ChatSessionCardProps
 ): React.ReactElement {
     // eslint-disable-next-line no-null/no-null
     const wrapperRef = React.useRef<HTMLDivElement | null>(null);
@@ -143,7 +145,10 @@ function ChatSessionCard(
         return () => trash.dispose();
     }, [session.sessionId, chatService]);
 
-    const handleMouseEnter = React.useCallback(async () => {
+    const handleMouseEnter = React.useCallback(async (e: React.MouseEvent) => {
+        if ((e.target as Element).closest('.theia-Card-action-btn')) {
+            return;
+        }
         hoverActiveRef.current = true;
         const target = wrapperRef.current;
         if (!target) { return; }
@@ -165,13 +170,24 @@ function ChatSessionCard(
         hoverService.cancelHover();
     }, [hoverService]);
 
+    const handleMouseOver = React.useCallback((e: React.MouseEvent) => {
+        if ((e.target as Element).closest('.theia-Card-action-btn')) {
+            hoverActiveRef.current = false;
+            hoverService.cancelHover();
+        }
+    }, [hoverService]);
+
     return (
-        <div ref={wrapperRef} className={`theia-chat-session-card-wrapper${isWorking ? ' theia-chat-session-card-working' : ''}`}
-        <div ref={wrapperRef} className="theia-chat-session-card-wrapper" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        <div ref={wrapperRef}
+                className={`theia-chat-session-card-wrapper${isWorking ? ' theia-chat-session-card-working' : ''}`}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                onMouseOver={handleMouseOver}>
             <Card
                 icon={isWorking ? codicon('pulse') : codicon('comment-discussion')}
                 title={session.title || nls.localizeByDefault('Untitled Chat')}
                 subtitle={timeAgo}
+                actionButtons={actionButtons}
                 onClick={onClick}
             />
         </div>
@@ -278,6 +294,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(MarkdownRendererFactory)
     protected readonly markdownRendererFactory: MarkdownRendererFactory;
 
+    @inject(ContributionProvider) @named(ChatSessionCardActionContribution)
+    protected readonly chatSessionCardActionContributions: ContributionProvider<ChatSessionCardActionContribution>;
+
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
         if (!this._markdownRenderer) {
@@ -376,17 +395,33 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         );
     }
 
-    protected renderSessionCard = (session: ChatSessionMetadata): React.ReactNode => (
-        <ChatSessionCard
-            key={session.sessionId}
-            session={session}
-            chatService={this.chatService}
-            chatAgentService={this.chatAgentService}
-            hoverService={this.hoverService}
-            markdownRenderer={this.markdownRenderer}
-            onClick={() => this.handleSessionCardClick(session.sessionId)}
-        />
-    );
+    protected renderSessionCard = (session: ChatSessionMetadata): React.ReactNode => {
+        const actionButtons: CardActionButton[] = this.chatSessionCardActionContributions
+            .getContributions()
+            .flatMap(c => c.getActions(session))
+            .filter(action => this.commandRegistry.isEnabled(action.commandId, session))
+            .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
+            .map(action => ({
+                iconClass: action.iconClass,
+                title: action.tooltip ?? '',
+                onClick: (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    this.commandRegistry.executeCommand(action.commandId, session);
+                }
+            }));
+        return (
+            <ChatSessionCard
+                key={session.sessionId}
+                session={session}
+                chatService={this.chatService}
+                chatAgentService={this.chatAgentService}
+                hoverService={this.hoverService}
+                markdownRenderer={this.markdownRenderer}
+                onClick={() => this.handleSessionCardClick(session.sessionId)}
+                actionButtons={actionButtons}
+            />
+        );
+    };
 
     protected handleSessionCardClick = async (sessionId: string): Promise<void> => {
         await this.chatService.getOrRestoreSession(sessionId);
