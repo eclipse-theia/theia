@@ -23,6 +23,7 @@ import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import * as monaco from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
 import { TrimTrailingWhitespaceCommand } from '@theia/monaco-editor-core/esm/vs/editor/common/commands/trimTrailingWhitespaceCommand';
 import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
 import { CommandExecutor } from '@theia/monaco-editor-core/esm/vs/editor/common/cursor/cursor';
@@ -317,23 +318,41 @@ export class ChangeSetFileElement implements ChangeSetElement {
      */
     protected async applyChangesWithMonaco(contents?: string): Promise<void> {
         let modelReference: IReference<MonacoEditorModel> | undefined;
-
         try {
             modelReference = await this.monacoTextModelService.createModelReference(this.uri);
             const model = modelReference.object;
             model.suppressOpenEditorWhenDirty = true;
             const targetContent = contents ?? this.targetState;
-            model.textEditorModel.setValue(targetContent);
-
+            const currentContent = model.textEditorModel.getValue();
+            if (currentContent !== targetContent) {
+                // Compute minimal edits using Monaco's diff service
+                // Use Monaco's IEditorWorkerService directly for minimal edits
+                const IEditorWorkerService = await import('@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker').then(m => m.IEditorWorkerService);
+                const workerService = StandaloneServices.get(IEditorWorkerService);
+                const minimalEdits = await workerService.computeMoreMinimalEdits(
+                    model.textEditorModel.uri,
+                    [{ range: model.textEditorModel.getFullModelRange(), text: targetContent }]
+                );
+                if (minimalEdits && minimalEdits.length > 0) {
+                    model.textEditorModel.pushStackElement();
+                    model.textEditorModel.pushEditOperations(
+                        null,
+                        minimalEdits.map((edit: { range: monaco.IRange, text: string }) => ({
+                            range: edit.range,
+                            text: edit.text,
+                            forceMoveMarkers: false
+                        })) as monaco.editor.IIdentifiedSingleEditOperation[],
+                        () => null
+                    );
+                    model.textEditorModel.pushStackElement();
+                }
+            }
             const languageId = model.languageId;
             const uriStr = this.uri.toString();
-
             await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
             await this.applyFormatting(model, languageId, uriStr);
-
             await model.save();
             this.state = 'applied';
-
         } catch (error) {
             console.error('Failed to apply changes with Monaco:', error);
             await this.writeChanges(contents);
