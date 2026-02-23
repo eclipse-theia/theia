@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CommandMenu, Disposable, Emitter, Event, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
@@ -47,8 +47,8 @@ export class DirtyDiffWidget implements Disposable {
     private readonly onDidCloseEmitter = new Emitter<unknown>();
     readonly onDidClose: Event<unknown> = this.onDidCloseEmitter.event;
     protected index: number = -1;
-    private peekView: DirtyDiffPeekView;
-    private diffEditorPromise: Promise<MonacoDiffEditor>;
+    private readonly peekView: DirtyDiffPeekView;
+    private readonly diffEditorPromise: Promise<MonacoDiffEditor>;
     protected _changes?: readonly Change[];
 
     constructor(
@@ -56,10 +56,7 @@ export class DirtyDiffWidget implements Disposable {
         @inject(MonacoEditorProvider) readonly editorProvider: MonacoEditorProvider,
         @inject(ContextKeyService) readonly contextKeyService: ContextKeyService,
         @inject(MenuModelRegistry) readonly menuModelRegistry: MenuModelRegistry,
-    ) { }
-
-    @postConstruct()
-    create(): void {
+    ) {
         this.peekView = new DirtyDiffPeekView(this);
         this.peekView.onDidClose(e => this.onDidCloseEmitter.fire(e));
         this.diffEditorPromise = this.peekView.create();
@@ -115,8 +112,7 @@ export class DirtyDiffWidget implements Disposable {
         this.updateHeading();
     }
 
-    async showChange(index: number): Promise<void> {
-        await this.checkCreated();
+    showChange(index: number): void {
         if (index >= 0 && index < this.changes.length) {
             this.index = index;
             this.showCurrentChange();
@@ -124,7 +120,6 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     showNextChange(): void {
-        this.checkCreated();
         const index = this.index;
         const length = this.changes.length;
         if (length > 0 && (index < 0 || length > 1)) {
@@ -134,7 +129,6 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     showPreviousChange(): void {
-        this.checkCreated();
         const index = this.index;
         const length = this.changes.length;
         if (length > 0 && (index < 0 || length > 1)) {
@@ -144,24 +138,28 @@ export class DirtyDiffWidget implements Disposable {
     }
 
     async getContentWithSelectedChanges(predicate: (change: Change, index: number, changes: readonly Change[]) => boolean): Promise<string> {
-        await this.checkCreated();
         const changes = this.changes.filter(predicate);
-        const { diffEditor } = await this.diffEditorPromise!;
-        const diffEditorModel = diffEditor.getModel()!;
-        return applyChanges(changes, diffEditorModel.original, diffEditorModel.modified);
+        const diffEditor = await this.diffEditorPromise;
+        return applyChanges(changes, diffEditor.originalModel.textEditorModel, diffEditor.modifiedModel.textEditorModel);
     }
 
     dispose(): void {
-        this.peekView?.dispose();
+        this.peekView.dispose();
         this.onDidCloseEmitter.dispose();
     }
 
     protected showCurrentChange(): void {
         this.updateHeading();
         const { previousRange, currentRange } = this.changes[this.index];
-        this.peekView.show(Position.create(LineRange.getEndPosition(currentRange).line, 0),
-            this.computeHeightInLines());
-        this.diffEditorPromise.then(({ diffEditor }) => {
+        this.peekView.show(
+            Position.create(LineRange.getEndPosition(currentRange).line, 0),
+            this.computeHeightInLines()
+        ).then(async () => {
+            this.editor.focus();
+            const diffEditor = await this.diffEditorPromise;
+            if (diffEditor.isDisposed()) {
+                return;
+            }
             let startLine = LineRange.getStartPosition(currentRange).line;
             let endLine = LineRange.getEndPosition(currentRange).line;
             if (LineRange.isEmpty(currentRange)) { // the change is a removal
@@ -170,10 +168,9 @@ export class DirtyDiffWidget implements Disposable {
                 --startLine;
                 ++endLine;
             }
-            diffEditor.revealLinesInCenter(startLine + 1, endLine + 1, // monaco line numbers are 1-based
+            diffEditor.diffEditor.revealLinesInCenter(startLine + 1, endLine + 1, // monaco line numbers are 1-based
                 monaco.editor.ScrollType.Immediate);
         });
-        this.editor.focus();
     }
 
     protected updateHeading(): void {
@@ -201,10 +198,6 @@ export class DirtyDiffWidget implements Disposable {
         const changeHeightInLines = LineRange.getLineCount(currentRange) + LineRange.getLineCount(previousRange);
 
         return Math.min(changeHeightInLines + /* padding */ 8, Math.floor(editorHeightInLines / 3));
-    }
-
-    protected async checkCreated(): Promise<MonacoDiffEditor> {
-        return this.diffEditorPromise;
     }
 }
 
@@ -277,6 +270,7 @@ function applyChanges(changes: readonly Change[], original: monaco.editor.ITextM
 
 class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
 
+    private diffEditorPromise?: Promise<MonacoDiffEditor>;
     private diffEditor?: MonacoDiffEditor;
     private height?: number;
 
@@ -288,34 +282,27 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
         try {
             this.bodyElement = document.createElement('div');
             this.bodyElement.classList.add('body');
-            const diffEditor = await this.widget.editorProvider.createEmbeddedDiffEditor(this.editor, this.bodyElement, this.widget.previousRevisionUri);
+            this.diffEditorPromise = this.widget.editorProvider.createEmbeddedDiffEditor(this.editor, this.bodyElement, this.widget.previousRevisionUri);
+            const diffEditor = await this.diffEditorPromise;
             this.diffEditor = diffEditor;
             this.toDispose.push(diffEditor);
             super.create();
-            return new Promise(resolve => {
-                // The diff computation is asynchronous and may complete before or after we register the listener.
-                // This can happen when the file is already open in another editor, causing the model to be cached
-                // and the diff to compute almost instantly. To handle this race condition, we check if the diff
-                // is already available before waiting for onDidUpdateDiff.
-                // setTimeout is needed because the non-side-by-side diff editor might still not have created the view zones;
-                // otherwise, the first change shown might not be properly revealed in the diff editor.
-                // See also https://github.com/microsoft/vscode/blob/b30900b56c4b3ca6c65d7ab92032651f4cb23f15/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L248
-                if (diffEditor.diffEditor.getLineChanges()) {
-                    setTimeout(() => resolve(diffEditor));
-                    return;
-                }
-                const disposable = diffEditor.diffEditor.onDidUpdateDiff(() => setTimeout(() => {
-                    resolve(diffEditor);
-                    disposable.dispose();
-                }));
-            });
+            return diffEditor;
         } catch (e) {
             this.dispose();
             throw e;
         }
     }
 
-    override show(rangeOrPos: Range | Position, heightInLines: number): void {
+    override async show(rangeOrPos: Range | Position, heightInLines: number): Promise<void> {
+        const { diffEditorPromise } = this;
+        if (!diffEditorPromise) {
+            throw new Error('Call the create() method first');
+        }
+        const diffEditor = await diffEditorPromise;
+        if (diffEditor.isDisposed()) {
+            return;
+        }
         const borderColor = this.getBorderColor();
         this.style({
             arrowColor: borderColor,
@@ -326,6 +313,32 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
         });
         this.updateActions();
         super.show(rangeOrPos, heightInLines);
+        diffEditor.handleVisibilityChanged(true);
+        return new Promise(resolve => {
+            // The diff computation is asynchronous and may complete before or after we register the listener.
+            // This can happen when the file is already open in another editor, causing the model to be cached
+            // and the diff to compute almost instantly. To handle this race condition, we check if the diff
+            // is already available before waiting for onDidUpdateDiff.
+            // setTimeout is needed because the non-side-by-side diff editor might still not have created the view zones;
+            // otherwise, the first change shown might not be properly revealed in the diff editor.
+            // See also https://github.com/microsoft/vscode/blob/b30900b56c4b3ca6c65d7ab92032651f4cb23f15/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L248
+            if (diffEditor.diffEditor.getLineChanges()) {
+                setTimeout(() => resolve());
+                return;
+            }
+            const disposable = diffEditor.diffEditor.onDidUpdateDiff(() => setTimeout(() => {
+                resolve();
+                disposable.dispose();
+            }));
+        });
+    }
+
+    override hide(): void {
+        const { diffEditor } = this;
+        if (diffEditor && !diffEditor.isDisposed()) {
+            diffEditor.handleVisibilityChanged(false);
+        }
+        super.hide();
     }
 
     private getBorderColor(): string {
