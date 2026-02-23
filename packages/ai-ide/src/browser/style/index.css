@@ -601,7 +601,7 @@
 }
 
 .selected-indicator {
-  background-color: var(--theia-charts-blue);
+  background-color: var(--theia-button-background);
   color: var(--theia-editor-background);
   font-size: 12px;
   padding: 2px 6px;
@@ -711,7 +711,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--theia-charts-blue);
+  background-color: var(--theia-button-background);
   color: var(--theia-editor-background);
   gap: 6px;
   padding: 6px 8px;
@@ -736,7 +736,7 @@
 }
 
 .prompt-fragment-section.selected-variant {
-  border: 3px solid var(--theia-charts-blue);
+  border: 3px solid var(--theia-button-background);
 }
 
 .prompt-fragment-header {
