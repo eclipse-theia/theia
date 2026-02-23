@@ -38,11 +38,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             default: [
                 'gpt-5.2',
                 'gpt-5.2-pro',
-                'gpt-5.1',
-                'gpt-5',
                 'gpt-5-mini',
                 'gpt-4.1',
-                'gpt-4.1-mini',
                 'gpt-4o'
             ],
             items: {
