@@ -339,8 +339,8 @@ export class EditorFormatterStatusContribution {
         // No formatter configured
         return {
             icon: FormatterIcon.Info,
-            label: nls.localize('theia/editor/nFormatters', '{0} formatters', formatterCount),
-            tooltip: nls.localize('theia/editor/noDefaultConfigured', 'No default formatter configured'),
+            label: nls.localize('theia/editor/noDefaultConfiguredLabel', 'No default formatter configured'),
+            tooltip: nls.localize('theia/editor/noDefaultConfiguredTooltip', 'No default formatter configured ({0} formatters available)', formatterCount),
             hasConfigureAction: true,
             severity: Severity.Info
         };

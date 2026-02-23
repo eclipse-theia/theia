@@ -287,8 +287,7 @@ export class EditorLanguageStatusService {
         const itemContainer = document.createElement('div');
         itemContainer.classList.add('hover-language-status');
 
-        const alwaysShowIcon = this.isFormatterItem(item);
-        itemContainer.appendChild(this.createSeverityIndicator(item.severity, alwaysShowIcon));
+        itemContainer.appendChild(this.createSeverityIndicator(item.severity));
 
         const textContainer = document.createElement('div');
         textContainer.className = 'element';

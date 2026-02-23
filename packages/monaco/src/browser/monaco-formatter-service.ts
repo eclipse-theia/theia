@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Emitter, Event, PreferenceLanguageOverrideService, PreferenceScope, PreferenceService } from '@theia/core';
+import { Emitter, Event, PreferenceInspection, PreferenceLanguageOverrideService, PreferenceScope, PreferenceService } from '@theia/core';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FormatterInfo, FormatterService, FormatterSettingScope, FormatterStatus } from '@theia/editor/lib/browser/editor-formatter-service';
 import { TextEditor } from '@theia/editor/lib/browser';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -53,6 +54,9 @@ export class MonacoFormatterService implements FormatterService {
 
     @inject(PreferenceLanguageOverrideService)
     protected readonly preferenceSchema: PreferenceLanguageOverrideService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected readonly onDidChangeFormattersEmitter = new Emitter<void>();
     readonly onDidChangeFormatters: Event<void> = this.onDidChangeFormattersEmitter.event;
@@ -125,14 +129,8 @@ export class MonacoFormatterService implements FormatterService {
             return undefined;
         }
 
-        let scope: FormatterSettingScope;
-        if (inspection.workspaceFolderValue !== undefined) {
-            scope = 'folder';
-        } else if (inspection.workspaceValue !== undefined) {
-            scope = 'workspace';
-        } else {
-            scope = 'user';
-        }
+        const preferenceScope = this.getConfiguredScopeFromInspection(inspection);
+        const scope = this.preferenceToFormatterScope(preferenceScope);
         const formatter = formatters.find(f => f.id === configuredFormatterId);
 
         return {
@@ -141,6 +139,37 @@ export class MonacoFormatterService implements FormatterService {
             isInvalid: formatter === undefined,
             configuredFormatterId
         };
+    }
+
+    /**
+     * Determines the preference scope from an inspection result.
+     * In single-folder workspaces, folder and workspace scopes are equivalent,
+     * so we need to check if we're in a multi-root workspace.
+     */
+    protected getConfiguredScopeFromInspection<T>(inspection: PreferenceInspection<T>): PreferenceScope | undefined {
+        if (this.workspaceService.isMultiRootWorkspaceOpened && inspection.workspaceFolderValue !== undefined) {
+            return PreferenceScope.Folder;
+        }
+        if (inspection.workspaceValue !== undefined) {
+            return PreferenceScope.Workspace;
+        }
+        if (inspection.globalValue !== undefined) {
+            return PreferenceScope.User;
+        }
+        return undefined;
+    }
+
+    protected preferenceToFormatterScope(scope: PreferenceScope | undefined): FormatterSettingScope {
+        switch (scope) {
+            case PreferenceScope.Folder:
+                return 'folder';
+            case PreferenceScope.Workspace:
+                return 'workspace';
+            case PreferenceScope.User:
+                return 'user';
+            default:
+                return 'none';
+        }
     }
 
     getAvailableFormatters(editor: TextEditor): FormatterInfo[] {
@@ -207,15 +236,6 @@ export class MonacoFormatterService implements FormatterService {
             return undefined;
         }
 
-        if (inspection.workspaceFolderValue !== undefined) {
-            return PreferenceScope.Folder;
-        }
-        if (inspection.workspaceValue !== undefined) {
-            return PreferenceScope.Workspace;
-        }
-        if (inspection.globalValue !== undefined) {
-            return PreferenceScope.User;
-        }
-        return undefined;
+        return this.getConfiguredScopeFromInspection(inspection);
     }
 }
