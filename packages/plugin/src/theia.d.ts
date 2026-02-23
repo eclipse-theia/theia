@@ -4827,7 +4827,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A panel that contains a webview.
+     * A panel that contains a {@linkcode Webview}.
      */
     export interface WebviewPanel {
         /**
@@ -4879,7 +4879,7 @@ export module '@theia/plugin' {
         /**
          * Fired when the panel is disposed.
          *
-         * This may be because the user closed the panel or because `.dispose()` was
+         * This may be because the user closed the panel or because {@linkcode WebviewPanel.dispose dispose} was
          * called on it.
          *
          * Trying to use the panel after it has been disposed throws an exception.
@@ -4892,7 +4892,7 @@ export module '@theia/plugin' {
          * A webview panel may only show in a single column at a time. If it is already showing, this
          * method moves it to a new column.
          *
-         * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
+         * @param viewColumn View column to show the panel in. Shows in the current {@linkcode WebviewPanel.viewColumn} if undefined.
          * @param preserveFocus When `true`, the webview will not take focus.
          */
         reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
@@ -4902,17 +4902,17 @@ export module '@theia/plugin' {
          *
          * This closes the panel if it showing and disposes of the resources owned by the webview.
          * Webview panels are also disposed when the user closes the webview panel. Both cases
-         * fire the `onDispose` event.
+         * fire the {@linkcode onDidDispose} event.
          */
         dispose(): void;
     }
 
     /**
-     * Event fired when a webview panel's view state changes.
+     * Event fired when a {@linkcode WebviewPanel webview panel's} view state changes.
      */
     export interface WebviewPanelOnDidChangeViewStateEvent {
         /**
-         * Webview panel whose view state changed.
+         * {@linkcode WebviewPanel} whose view state changed.
          */
         readonly webviewPanel: WebviewPanel;
     }
@@ -5017,7 +5017,7 @@ export module '@theia/plugin' {
      *
      * Text based custom editors use a [`TextDocument`](#TextDocument) as their data model. This considerably simplifies
      * implementing a custom editor as it allows Theia to handle many common operations such as
-     * undo and backup. The provider is responsible for synchronizing text changes between the webview and the `TextDocument`.
+     * undo and backup. The provider is responsible for synchronizing text changes between the webview and the {@linkcode TextDocument}.
      */
     export interface CustomTextEditorProvider {
 
@@ -5027,14 +5027,13 @@ export module '@theia/plugin' {
          * This is called when a user first opens a resource for a `CustomTextEditorProvider`, or if they reopen an
          * existing editor using this `CustomTextEditorProvider`.
          *
-         *
          * @param document Document for the resource to resolve.
          *
          * @param webviewPanel The webview panel used to display the editor UI for this resource.
          *
          * During resolve, the provider must fill in the initial html for the content webview panel and hook up all
-         * the event listeners on it that it is interested in. The provider can also hold onto the `WebviewPanel` to
-         * use later for example in a command. See [`WebviewPanel`](#WebviewPanel) for additional details.
+         * the event listeners on it that it is interested in. The provider can also hold onto the {@linkcode WebviewPanel} to
+         * use later for example in a command. See {@linkcode WebviewPanel} for additional details.
          *
          * @param token A cancellation token that indicates the result is no longer needed.
          *
@@ -5081,7 +5080,7 @@ export module '@theia/plugin' {
          *
          * This is invoked by Theia when the user undoes this edit. To implement `undo`, your
          * extension should restore the document and editor to the state they were in just before this
-         * edit was added to Theia's internal edit stack by `onDidChangeCustomDocument`.
+         * edit was added to Theia's internal edit stack by {@linkcode CustomEditorProvider.onDidChangeCustomDocument}.
          */
         undo(): Thenable<void> | void;
 
@@ -5090,7 +5089,7 @@ export module '@theia/plugin' {
          *
          * This is invoked by Theia when the user redoes this edit. To implement `redo`, your
          * extension should restore the document and editor to the state they were in just after this
-         * edit was added to Theia's internal edit stack by `onDidChangeCustomDocument`.
+         * edit was added to Theia's internal edit stack by {@linkcode CustomEditorProvider.onDidChangeCustomDocument}.
          */
         redo(): Thenable<void> | void;
 
@@ -5150,10 +5149,10 @@ export module '@theia/plugin' {
          * Create a new document for a given resource.
          *
          * `openCustomDocument` is called when the first time an editor for a given resource is opened. The opened
-         * document is then passed to `resolveCustomEditor` so that the editor can be shown to the user.
+         * document is then passed to {@link resolveCustomEditor} so that the editor can be shown to the user.
          *
-         * Already opened `CustomDocument` are re-used if the user opened additional editors. When all editors for a
-         * given resource are closed, the `CustomDocument` is disposed of. Opening an editor at this point will
+         * Already opened {@linkcode CustomDocument CustomDocuments} are re-used if the user opened additional editors. When all editors for a
+         * given resource are closed, the {@linkcode CustomDocument CustomDocuments} is disposed of. Opening an editor at this point will
          * trigger another call to `openCustomDocument`.
          *
          * @param uri Uri of the document to open.
@@ -5174,8 +5173,8 @@ export module '@theia/plugin' {
          * @param webviewPanel The webview panel used to display the editor UI for this resource.
          *
          * During resolve, the provider must fill in the initial html for the content webview panel and hook up all
-         * the event listeners on it that it is interested in. The provider can also hold onto the `WebviewPanel` to
-         * use later for example in a command. See [`WebviewPanel`](#WebviewPanel) for additional details.
+         * the event listeners on it that it is interested in. The provider can also hold onto the {@linkcode WebviewPanel} to
+         * use later for example in a command. See {@linkcode WebviewPanel} for additional details.
          *
          * @param token A cancellation token that indicates the result is no longer needed.
          *
@@ -5191,7 +5190,7 @@ export module '@theia/plugin' {
         /**
          * Unique identifier for the backup.
          *
-         * This id is passed back to your extension in `openCustomDocument` when opening a custom editor from a backup.
+         * This id is passed back to your extension in {@linkcode CustomReadonlyEditorProvider.openCustomDocument openCustomDocument} when opening a custom editor from a backup.
          */
         readonly id: string;
 
@@ -5239,18 +5238,18 @@ export module '@theia/plugin' {
          * anything from changing some text, to cropping an image, to reordering a list. Your extension is free to
          * define what an edit is and what data is stored on each edit.
          *
-         * Firing `onDidChange` causes Theia to mark the editors as being dirty. This is cleared when the user either
-         * saves or reverts the file.
+         * Firing {@linkcode CustomEditorProvider.onDidChangeCustomDocument onDidChangeCustomDocument} causes
+         * Theia to mark the editors as being dirty. This is cleared when the user either saves or reverts the file.
          *
-         * Editors that support undo/redo must fire a `CustomDocumentEditEvent` whenever an edit happens. This allows
+         * Editors that support undo/redo must fire a {@linkcode CustomDocumentEditEvent} whenever an edit happens. This allows
          * users to undo and redo the edit using Theia's standard Theia keyboard shortcuts. Theia will also mark
          * the editor as no longer being dirty if the user undoes all edits to the last saved state.
          *
-         * Editors that support editing but cannot use Theia's standard undo/redo mechanism must fire a `CustomDocumentContentChangeEvent`.
+         * Editors that support editing but cannot use Theia's standard undo/redo mechanism must fire a {@linkcode CustomDocumentContentChangeEvent}.
          * The only way for a user to clear the dirty state of an editor that does not support undo/redo is to either
          * `save` or `revert` the file.
          *
-         * An editor should only ever fire `CustomDocumentEditEvent` events, or only ever fire `CustomDocumentContentChangeEvent` events.
+         * An editor should only ever fire {@linkcode CustomDocumentEditEvent} events, or only ever fire {@linkcode CustomDocumentContentChangeEvent} events.
          */
         readonly onDidChangeCustomDocument: Event<CustomDocumentEditEvent<T>> | Event<CustomDocumentContentChangeEvent<T>>;
 
@@ -5260,14 +5259,14 @@ export module '@theia/plugin' {
          * This method is invoked by Theia when the user saves a custom editor. This can happen when the user
          * triggers save while the custom editor is active, by commands such as `save all`, or by auto save if enabled.
          *
-         * To implement `save`, the implementer must persist the custom editor. This usually means writing the
-         * file data for the custom document to disk. After `save` completes, any associated editor instances will
-         * no longer be marked as dirty.
+         * The implementer must persist the custom editor. This usually means writing the
+         * file data for the custom document to disk. After {@linkcode saveCustomDocument} completes, any associated
+         * editor instances will no longer be marked as dirty.
          *
          * @param document Document to save.
          * @param cancellation Token that signals the save is no longer required (for example, if another save was triggered).
          *
-         * @return Thenable signaling that saving has completed.
+         * @returns A {@linkcode Thenable} that saving has completed.
          */
         saveCustomDocument(document: T, cancellation: CancellationToken): Thenable<void>;
 
@@ -5275,7 +5274,7 @@ export module '@theia/plugin' {
          * Save a custom document to a different location.
          *
          * This method is invoked by Theia when the user triggers 'save as' on a custom editor. The implementer must
-         * persist the custom editor to `destination`.
+         * persist the custom editor to {@linkcode destination}.
          *
          * When the user accepts save as, the current editor is be replaced by an non-dirty editor for the newly saved file.
          *
@@ -5283,7 +5282,7 @@ export module '@theia/plugin' {
          * @param destination Location to save to.
          * @param cancellation Token that signals the save is no longer required.
          *
-         * @return Thenable signaling that saving has completed.
+         * @returns A {@linkcode Thenable} signaling that saving has completed.
          */
         saveCustomDocumentAs(document: T, destination: Uri, cancellation: CancellationToken): Thenable<void>;
 
@@ -5293,37 +5292,39 @@ export module '@theia/plugin' {
          * This method is invoked by Theia when the user triggers `File: Revert File` in a custom editor. (Note that
          * this is only used using Theia's `File: Revert File` command and not on a `git revert` of the file).
          *
-         * To implement `revert`, the implementer must make sure all editor instances (webviews) for `document`
+         * The implementer must make sure all editor instances (webviews) for {@linkcode document}
          * are displaying the document in the same state is saved in. This usually means reloading the file from the
          * workspace.
          *
          * @param document Document to revert.
          * @param cancellation Token that signals the revert is no longer required.
          *
-         * @return Thenable signaling that the change has completed.
+         * @returns A {@linkcode Thenable} signaling that the revert has completed.
          */
         revertCustomDocument(document: T, cancellation: CancellationToken): Thenable<void>;
 
         /**
          * Back up a dirty custom document.
          *
-         * Backups are used for hot exit and to prevent data loss. Your `backup` method should persist the resource in
+         * Backups are used for hot exit and to prevent data loss. Your {@linkcode backupCustomDocument} method should persist the resource in
          * its current state, i.e. with the edits applied. Most commonly this means saving the resource to disk in
-         * the `ExtensionContext.storagePath`. When VS Code reloads and your custom editor is opened for a resource,
+         * the `ExtensionContext.storagePath`. When the editor reloads and your custom editor is opened for a resource,
          * your extension should first check to see if any backups exist for the resource. If there is a backup, your
          * extension should load the file contents from there instead of from the resource in the workspace.
          *
-         * `backup` is triggered approximately one second after the user stops editing the document. If the user
-         * rapidly edits the document, `backup` will not be invoked until the editing stops.
+         * {@linkcode backupCustomDocument} is triggered approximately one second after the user stops editing the document. If the user
+         * rapidly edits the document, {@linkcode backupCustomDocument} will not be invoked until the editing stops.
          *
-         * `backup` is not invoked when `auto save` is enabled (since auto save already persists the resource).
+         * {@linkcode backupCustomDocument} is not invoked when `auto save` is enabled (since auto save already persists the resource).
          *
          * @param document Document to backup.
          * @param context Information that can be used to backup the document.
          * @param cancellation Token that signals the current backup since a new backup is coming in. It is up to your
          * extension to decided how to respond to cancellation. If for example your extension is backing up a large file
          * in an operation that takes time to complete, your extension may decide to finish the ongoing backup rather
-         * than cancelling it to ensure that VS Code has some valid backup.
+         * than cancelling it to ensure that the editor has some valid backup.
+         *
+         * @returns A {@linkcode Thenable} signaling that the backup has completed.
          */
         backupCustomDocument(document: T, context: CustomDocumentBackupContext, cancellation: CancellationToken): Thenable<CustomDocumentBackup>;
 
@@ -5397,7 +5398,7 @@ export module '@theia/plugin' {
         show(preserveFocus?: boolean): void;
     }
     /**
-     * Provider for creating `WebviewView` elements.
+     * Provider for creating {@linkcode WebviewView} elements.
      */
     export interface WebviewViewProvider {
         /**
