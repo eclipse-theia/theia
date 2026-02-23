@@ -173,8 +173,8 @@ describe('correctly extracts from file content', () => {
         const errors: string[] = [];
         assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {});
         assert.deepStrictEqual(errors, [
-            "test.ts(1,42): Template literals with expressions are not supported for localization. " +
-            "Please use the additional arguments of the 'nls.localize' function to format strings"
+            'test.ts(1,42): Template literals with expressions are not supported for localization. ' +
+            'Please use the additional arguments of the \'nls.localize\' function to format strings'
         ]);
     });
 
