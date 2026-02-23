@@ -66,7 +66,7 @@ export interface TerminalContribution {
 }
 
 class TerminalBufferImpl implements TerminalBuffer {
-    constructor(private readonly term: Terminal) {
+    constructor(private readonly term: Terminal, private readonly logger: ILogger) {
     }
 
     get length(): number {
@@ -87,8 +87,9 @@ class TerminalBufferImpl implements TerminalBuffer {
                 continue;
             }
             result.push(line.translateToString(trimRight));
+            this.logger.debug(`TerminalBufferImpl.getLines: line ${i}: ${result[result.length - 1]}`);
         }
-        console.log(result);
+
         return result;
     }
 
@@ -220,7 +221,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
             theme: this.themeService.theme
         });
-        this._buffer = new TerminalBufferImpl(this.term);
+        this._buffer = new TerminalBufferImpl(this.term, this.logger);
         this._currentTerminalOutput = [];
 
         this.fitAddon = new FitAddon();
