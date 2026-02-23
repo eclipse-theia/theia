@@ -17,7 +17,7 @@
 import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
 import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
-import { CancellationToken, ILogger, nls, QuickInputService, URI } from '@theia/core';
+import { CancellationToken, ILogger, nls, QuickInputService, QuickPickItemOrSeparator, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
@@ -26,7 +26,16 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable } from '../common/image-context-variable';
 import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils';
-import { ApplicationShell, LabelProvider, NavigatableWidget } from '@theia/core/lib/browser';
+import { ApplicationShell, LabelProvider } from '@theia/core/lib/browser';
+import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
+import * as fuzzy from '@theia/core/shared/fuzzy';
+import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
+
+interface ClipboardQuickPickItem extends QuickPickItem {
+    isClipboardOption: true;
+}
+
+type ImagePickerItem = FileQuickPickItem | ClipboardQuickPickItem;
 
 @injectable()
 export class FileChatVariableContribution implements FrontendVariableContribution {
@@ -50,6 +59,9 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    @inject(NavigationLocationService)
+    protected readonly navigationLocationService: NavigationLocationService;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
@@ -85,39 +97,11 @@ export class FileChatVariableContribution implements FrontendVariableContributio
         const quickPick = this.quickInputService.createQuickPick();
         quickPick.placeholder = nls.localize('theia/ai/chat/imagePickerPlaceholder', 'Select an image file or search by name');
 
-        // Create "From Clipboard" option
-        const clipboardOption = {
-            label: nls.localize('theia/ai/chat/fromClipboard', '$(clippy) From Clipboard'),
-            description: nls.localize('theia/ai/chat/fromClipboardDescription', 'Paste image from clipboard'),
-            alwaysShow: true,
-            isClipboardOption: true
-        };
-
-        // Get currently opened image files
-        const openedImagePicks = this.getOpenedImageFilePicks();
-        const openedUris = new Set(openedImagePicks.map(item => item.uri.toString()));
-
-        // Initial items: opened image files + clipboard option at the end
-        quickPick.items = [...openedImagePicks, clipboardOption];
+        // Build initial items with recently opened images and clipboard option
+        quickPick.items = await this.buildImagePickerItems('');
 
         const updateItems = async (value: string) => {
-            if (!value) {
-                // No search term: show opened files + clipboard
-                quickPick.items = [...openedImagePicks, clipboardOption];
-                return;
-            }
-            // Search for image files
-            const picks = await this.quickFileSelectService.getPicks(value, CancellationToken.None);
-            const imagePicks = picks.filter((item): item is FileQuickPickItem =>
-                FileQuickPickItem.is(item) && this.isImageFile(item.uri.path.toString()) && !openedUris.has(item.uri.toString())
-            );
-            // Filter opened images by search term
-            const lowerValue = value.toLowerCase();
-            const filteredOpenedImages = openedImagePicks.filter(item =>
-                item.label.toLowerCase().includes(lowerValue) ||
-                (item.description?.toLowerCase().includes(lowerValue) ?? false)
-            );
-            quickPick.items = [...filteredOpenedImages, ...imagePicks, clipboardOption];
+            quickPick.items = await this.buildImagePickerItems(value);
         };
 
         const onChangeListener = quickPick.onDidChangeValue(updateItems);
@@ -158,51 +142,86 @@ export class FileChatVariableContribution implements FrontendVariableContributio
     }
 
     /**
-     * Get URIs of currently opened image files in all widgets.
+     * Build the complete list of items for the image picker.
+     * Includes recently opened images, file search results (when filtering), and clipboard option.
      */
-    protected getOpenedImageUris(): URI[] {
-        const seenUris = new Set<string>();
-        const mainWidgets = this.shell.getWidgets('main');
+    protected async buildImagePickerItems(filter: string): Promise<(ImagePickerItem | QuickPickItemOrSeparator)[]> {
+        const result: (ImagePickerItem | QuickPickItemOrSeparator)[] = [];
+        const collectedUris = new Set<string>();
 
-        return [...NavigatableWidget.get(mainWidgets, uri => this.isImageFile(uri.path.toString()))]
-            .map(([uri]) => uri)
-            .filter(uri => {
-                const uriString = uri.toString();
-                if (seenUris.has(uriString)) {
-                    return false;
-                }
-                seenUris.add(uriString);
-                return true;
-            });
+        // Add recently opened images
+        const recentImages = this.getRecentlyOpenedImagePicks(filter, collectedUris);
+        if (recentImages.length > 0) {
+            result.push({ type: 'separator', label: nls.localizeByDefault('recently opened') });
+            result.push(...recentImages);
+        }
+
+        // Add file search results when filtering
+        if (filter) {
+            const searchResults = await this.getImageSearchResults(filter, collectedUris);
+            if (searchResults.length > 0) {
+                result.push({ type: 'separator', label: nls.localizeByDefault('file results') });
+                result.push(...searchResults);
+            }
+        }
+
+        // Add clipboard option
+        result.push(
+            { type: 'separator', label: nls.localize('theia/ai/chat/clipboardSeparator', 'clipboard') },
+            {
+                label: nls.localize('theia/ai/chat/fromClipboard', '$(clippy) From Clipboard'),
+                description: nls.localize('theia/ai/chat/fromClipboardDescription', 'Paste image from clipboard'),
+                alwaysShow: true,
+                isClipboardOption: true
+            } as ClipboardQuickPickItem
+        );
+
+        return result;
     }
 
     /**
-     * Get quick pick items for opened image files.
-     * Creates items directly with proper file icons from the labelProvider.
+     * Get quick pick items for recently opened image files.
      */
-    protected getOpenedImageFilePicks(): FileQuickPickItem[] {
-        const openedImageUris = this.getOpenedImageUris();
-        if (openedImageUris.length === 0) {
-            return [];
-        }
+    protected getRecentlyOpenedImagePicks(filter: string, collectedUris: Set<string>): FileQuickPickItem[] {
+        return [...this.navigationLocationService.locations()]
+            .reverse()
+            .filter(location => {
+                const uriString = location.uri.toString();
+                if (collectedUris.has(uriString) ||
+                    location.uri.scheme !== 'file' ||
+                    !this.isImageFile(location.uri.path.toString()) ||
+                    (filter && !fuzzy.test(filter, uriString))) {
+                    return false;
+                }
+                collectedUris.add(uriString);
+                return true;
+            })
+            .map(location => this.toFileQuickPickItem(location.uri));
+    }
 
-        const openedImagePicks: FileQuickPickItem[] = [];
+    /**
+     * Search for image files matching the filter.
+     */
+    protected async getImageSearchResults(filter: string, collectedUris: Set<string>): Promise<FileQuickPickItem[]> {
+        const picks = await this.quickFileSelectService.getPicks(filter, CancellationToken.None);
+        return picks.filter((item): item is FileQuickPickItem =>
+            FileQuickPickItem.is(item) &&
+            this.isImageFile(item.uri.path.toString()) &&
+            !collectedUris.has(item.uri.toString())
+        );
+    }
 
-        for (const uri of openedImageUris) {
-            const label = this.labelProvider.getName(uri);
-            const description = this.labelProvider.getDetails(uri);
-            const iconClasses = this.getFileIconClasses(uri);
-
-            openedImagePicks.push({
-                label,
-                description,
-                iconClasses,
-                uri,
-                alwaysShow: true
-            });
-        }
-
-        return openedImagePicks;
+    /**
+     * Convert a URI to a FileQuickPickItem.
+     */
+    protected toFileQuickPickItem(uri: URI): FileQuickPickItem {
+        return {
+            label: this.labelProvider.getName(uri),
+            description: this.labelProvider.getDetails(uri),
+            iconClasses: this.getFileIconClasses(uri),
+            uri,
+            alwaysShow: true
+        };
     }
 
     /**
