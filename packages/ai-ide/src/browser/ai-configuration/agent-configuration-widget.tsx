@@ -53,7 +53,7 @@ interface ParsedPrompt {
 export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<Agent> {
 
     static readonly ID = 'ai-agent-configuration-container-widget';
-    static readonly LABEL = nls.localize('theia/ai/core/agentConfiguration/label', 'Agents');
+    static readonly LABEL = nls.localizeByDefault('Agents');
 
     @inject(AgentService)
     protected readonly agentService: AgentService;
@@ -297,7 +297,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                             <tr>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/templateName', 'Template')}</th>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/variant', 'Variant')}</th>
-                                <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
+                                <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
