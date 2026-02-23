@@ -17,9 +17,10 @@
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import { ChatAgentService, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
-import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
+import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { ChatSessionCardActionContribution } from './chat-session-card-action-contribution';
+import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
 import { Card, CardActionButton, codicon, HoverService } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
@@ -156,7 +157,7 @@ function useTimeAgo(date: number): string {
             // Update frequently when very recent, then progressively slower.
             const delayMs = ageMs < 60_000 ? 10_000
                 : ageMs < 3_600_000 ? 60_000
-                : 3_600_000;
+                    : 3_600_000;
             timeoutId = setTimeout(() => { forceUpdate(); schedule(); }, delayMs);
         };
 
@@ -249,10 +250,10 @@ function ChatSessionCard(
 
     return (
         <div ref={wrapperRef}
-                className={`theia-chat-session-card-wrapper${isWorking ? ' theia-chat-session-card-working' : ''}`}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                onMouseOver={handleMouseOver}>
+            className={`theia-chat-session-card-wrapper${isWorking ? ' theia-chat-session-card-working' : ''}`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onMouseOver={handleMouseOver}>
             <Card
                 icon={isWorking ? `${codicon('loading')} theia-animation-spin` : codicon('comment-discussion')}
                 title={session.title || nls.localizeByDefault('Untitled Chat')}
@@ -368,6 +369,11 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(ContributionProvider) @named(ChatSessionCardActionContribution)
     protected readonly chatSessionCardActionContributions: ContributionProvider<ChatSessionCardActionContribution>;
 
+    @inject(FrontendLanguageModelRegistry)
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
+
+    protected _inputEnabled = false;
+
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
         if (!this._markdownRenderer) {
@@ -384,16 +390,33 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @postConstruct()
     protected init(): void {
         this.loadSessions();
+        this.updateInputEnabled();
         this.chatService.onSessionEvent(() => {
             this.loadSessions();
+        });
+        this.languageModelRegistry.onChange(() => {
+            this.updateInputEnabled();
         });
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PERSISTED_SESSION_LIMIT_PREF || e.preferenceName === SESSION_STORAGE_PREF) {
                 this.loadSessions();
             } else if (e.preferenceName === WELCOME_SCREEN_SESSIONS_PREF) {
                 this.onStateChangedEmitter.fire();
+            } else if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
+                this.updateInputEnabled();
             }
         });
+    }
+
+    protected async updateInputEnabled(): Promise<void> {
+        const models = await this.languageModelRegistry.getLanguageModels();
+        const hasReadyModels = models.some(model => model.status.status === 'ready');
+        const bypassed = this.preferenceService.get<boolean>(BYPASS_MODEL_REQUIREMENT_PREF, false);
+        const enabled = hasReadyModels || bypassed;
+        if (this._inputEnabled !== enabled) {
+            this._inputEnabled = enabled;
+            this.onStateChangedEmitter.fire();
+        }
     }
 
     protected async loadSessions(): Promise<void> {
@@ -435,6 +458,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     }
 
     renderWelcomeMessage(): React.ReactNode {
+        if (!this._inputEnabled) {
+            return undefined;
+        }
         const maxRows = this.getMaxRows();
         if (!this.isPersistenceEnabled() || maxRows === 0 || this._sessions.length === 0) {
             return undefined;
