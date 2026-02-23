@@ -186,8 +186,10 @@ class AiTerminalChatWidget {
 
     protected getRecentTerminalCommands(): string[] {
         const maxLines = 100;
-        return this.terminalWidget.buffer.getLines(0,
-            this.terminalWidget.buffer.length > maxLines ? maxLines : this.terminalWidget.buffer.length
+        const terminalBufferLength = this.terminalWidget.buffer.length;
+        return this.terminalWidget.buffer.getLines(
+            Math.max(0, terminalBufferLength - maxLines),
+            Math.min(maxLines, terminalBufferLength)
         );
     }
 
