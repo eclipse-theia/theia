@@ -99,6 +99,15 @@ export interface QuickInputButton {
      * Whether the button should be visible even when the user is not hovering.
      */
     alwaysVisible?: boolean;
+    /**
+     * The location where the button should be rendered.
+     * @monaco-uplift: consider using a typed enum matching Monaco's QuickInputButtonLocation instead of number.
+     */
+    location?: number;
+    /**
+     * When present, indicates that the button is a toggle button.
+     */
+    toggle?: { checked: boolean };
 }
 
 export interface QuickInputButtonHandle extends QuickInputButton {
