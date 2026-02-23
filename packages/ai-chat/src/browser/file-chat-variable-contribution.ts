@@ -161,26 +161,19 @@ export class FileChatVariableContribution implements FrontendVariableContributio
      * Get URIs of currently opened image files in all widgets.
      */
     protected getOpenedImageUris(): URI[] {
-        const openedImageUris: URI[] = [];
         const seenUris = new Set<string>();
-
-        // Get all widgets from the main area
         const mainWidgets = this.shell.getWidgets('main');
 
-        // Use NavigatableWidget.get() helper to find widgets with URIs
-        for (const [uri] of NavigatableWidget.get(mainWidgets)) {
-            const uriString = uri.toString();
-
-            // Skip duplicates and non-image files
-            if (seenUris.has(uriString) || !this.isImageFile(uri.path.toString())) {
-                continue;
-            }
-
-            seenUris.add(uriString);
-            openedImageUris.push(uri);
-        }
-
-        return openedImageUris;
+        return [...NavigatableWidget.get(mainWidgets, uri => this.isImageFile(uri.path.toString()))]
+            .map(([uri]) => uri)
+            .filter(uri => {
+                const uriString = uri.toString();
+                if (seenUris.has(uriString)) {
+                    return false;
+                }
+                seenUris.add(uriString);
+                return true;
+            });
     }
 
     /**
