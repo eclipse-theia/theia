@@ -127,7 +127,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--theia-charts-blue);
+  background-color: var(--theia-button-background);
   color: var(--theia-editor-background);
   gap: calc(var(--theia-ui-padding) / 2);
   padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) / 1.5);

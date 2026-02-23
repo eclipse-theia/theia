@@ -183,11 +183,12 @@ describe('AISkillsConfigurationWidget', () => {
         const rows = Array.from(slashCommandsSection!.querySelectorAll('tbody tr'));
         expect(rows.length).to.equal(2);
 
-        expect(rows[0].querySelector('.slash-command-name-column')?.textContent).to.contain('/test');
-        expect(rows[0].querySelector('.slash-command-description-column')?.textContent).to.contain('Test command');
+        // Commands are sorted alphabetically by name: 'help' comes before 'test'
+        expect(rows[0].querySelector('.slash-command-name-column')?.textContent).to.contain('/help');
+        expect(rows[0].querySelector('.slash-command-description-column')?.textContent).to.contain('Help command');
 
-        expect(rows[1].querySelector('.slash-command-name-column')?.textContent).to.contain('/help');
-        expect(rows[1].querySelector('.slash-command-description-column')?.textContent).to.contain('Help command');
+        expect(rows[1].querySelector('.slash-command-name-column')?.textContent).to.contain('/test');
+        expect(rows[1].querySelector('.slash-command-description-column')?.textContent).to.contain('Test command');
     });
 
     it('renders empty state for slash commands when none are available', () => {

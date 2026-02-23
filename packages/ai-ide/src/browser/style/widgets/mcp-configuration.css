@@ -308,12 +308,7 @@
   resize: vertical;
   min-height: 60px;
   font-family: var(--monaco-monospace-font);
-  font-size: var(--theia-ui-font-size0);
-}
-
-.mcp-dialog-form .mcp-form-checkbox {
-  display: flex;
-  align-items: center;
+  font-size: var(--theia-ui-font-size1);
 }
 
 .mcp-dialog-form .mcp-form-checkbox label {
@@ -322,8 +317,4 @@
   gap: calc(var(--theia-ui-padding) / 2);
   cursor: pointer;
   margin-bottom: 0;
-}
-
-.mcp-dialog-form .mcp-form-checkbox input[type="checkbox"] {
-  margin: 0;
 }

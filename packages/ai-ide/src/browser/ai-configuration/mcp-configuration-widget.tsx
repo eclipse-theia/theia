@@ -33,6 +33,7 @@ import { PROMPT_VARIABLE } from '@theia/ai-core/lib/common/prompt-variable-contr
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { DialogProps } from '@theia/core/lib/browser/dialogs';
+import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 
 type ServerType = 'local' | 'remote';
 
@@ -80,7 +81,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
         this.appendCloseButton(nls.localizeByDefault('Cancel'));
         this.appendAcceptButton(isEditing
             ? nls.localize('theia/ai/mcpConfiguration/form/saveChanges', 'Save Changes')
-            : nls.localize('theia/ai/mcpConfiguration/addServer', 'Add Server'));
+            : nls.localizeByDefault('Add Server'));
     }
 
     get value(): MCPServerFormData | undefined {
@@ -126,19 +127,21 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         onChange={e => this.handleFormChange('name', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/serverNamePlaceholder', 'e.g., my-mcp-server')}
                         disabled={this.isEditing}
+                        spellCheck={false}
                     />
                 </div>
 
                 <div className="mcp-form-field">
                     <label>{nls.localize('theia/ai/mcpConfiguration/form/serverType', 'Server Type')}:</label>
-                    <select
+                    <SelectComponent
                         className="theia-select"
-                        value={this.formData.serverType}
-                        onChange={e => this.handleFormChange('serverType', e.target.value as ServerType)}
-                    >
-                        <option value="local">{nls.localize('theia/ai/mcpConfiguration/form/localServer', 'Local (Command)')}</option>
-                        <option value="remote">{nls.localize('theia/ai/mcpConfiguration/form/remoteServer', 'Remote (URL)')}</option>
-                    </select>
+                        defaultValue={this.formData.serverType}
+                        options={[
+                            { value: 'local', label: nls.localize('theia/ai/mcpConfiguration/form/localServer', 'Local (Command)') },
+                            { value: 'remote', label: nls.localize('theia/ai/mcpConfiguration/form/remoteServer', 'Remote (URL)') }
+                        ]}
+                        onChange={option => this.handleFormChange('serverType', option.value as ServerType)}
+                    />
                 </div>
 
                 {this.formData.serverType === 'local' ? this.renderLocalServerFields() : this.renderRemoteServerFields()}
@@ -147,6 +150,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                     <label>
                         <input
                             type="checkbox"
+                            className='theia-input'
                             checked={this.formData.autostart}
                             onChange={e => this.handleFormChange('autostart', e.target.checked)}
                         />
@@ -168,6 +172,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         value={this.formData.command}
                         onChange={e => this.handleFormChange('command', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/commandPlaceholder', 'e.g., npx or uvx')}
+                        spellCheck={false}
                     />
                 </div>
 
@@ -179,6 +184,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         value={this.formData.args}
                         onChange={e => this.handleFormChange('args', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/argsPlaceholder', 'Space-separated, e.g., -y @modelcontextprotocol/server-brave-search')}
+                        spellCheck={false}
                     />
                 </div>
 
@@ -190,6 +196,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         onChange={e => this.handleFormChange('env', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/envPlaceholder', 'KEY=value (one per line)')}
                         rows={3}
+                        spellCheck={false}
                     />
                 </div>
             </>
@@ -207,6 +214,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         value={this.formData.serverUrl}
                         onChange={e => this.handleFormChange('serverUrl', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/serverUrlPlaceholder', 'e.g., https://mcp.example.com')}
+                        spellCheck={false}
                     />
                 </div>
 
@@ -218,6 +226,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         value={this.formData.serverAuthToken}
                         onChange={e => this.handleFormChange('serverAuthToken', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/authTokenPlaceholder', 'Optional authentication token')}
+                        spellCheck={false}
                     />
                 </div>
 
@@ -229,6 +238,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         value={this.formData.serverAuthTokenHeader}
                         onChange={e => this.handleFormChange('serverAuthTokenHeader', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/authHeaderPlaceholder', 'Default: Authorization with Bearer')}
+                        spellCheck={false}
                     />
                 </div>
 
@@ -240,6 +250,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                         onChange={e => this.handleFormChange('headers', e.target.value)}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/headersPlaceholder', 'Header-Name=value (one per line)')}
                         rows={3}
+                        spellCheck={false}
                     />
                 </div>
             </>
@@ -648,7 +659,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
     protected async openAddServerDialog(): Promise<void> {
         const dialog = new MCPServerDialog(
-            { title: nls.localize('theia/ai/mcpConfiguration/addMcpServer', 'Add MCP Server'), maxWidth: 500 },
+            { title: nls.localizeByDefault('Add MCP Server'), maxWidth: 500 },
             { ...DEFAULT_FORM_DATA },
             this.servers.map(s => s.name),
             false
@@ -795,7 +806,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 <div className="mcp-header-actions">
                     <button className="theia-button main" onClick={() => this.openAddServerDialog()}>
                         <i className={codicon('add')}></i>
-                        {nls.localize('theia/ai/mcpConfiguration/addMcpServer', 'Add MCP Server')}
+                        {nls.localizeByDefault('Add MCP Server')}
                     </button>
                 </div>
                 {this.servers.length === 0 ? (
