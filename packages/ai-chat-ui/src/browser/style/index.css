@@ -205,11 +205,11 @@ div:last-child>.theia-ChatNode {
 }
 
 .theia-ChatInput {
-  margin-top: 16px;
+  margin-top: calc(var(--theia-ui-padding) * 8 / 3);
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  gap: 4px;
+  gap: calc(var(--theia-ui-padding) * 2 / 3);
 }
 
 .theia-ChatInput[data-ai-disabled="true"] {
@@ -536,11 +536,11 @@ div:last-child>.theia-ChatNode {
 }
 
 .theia-ChatInput-Editor-Box {
-  margin: 0 16px 16px 16px;
-  padding: 2px;
+  margin: 0 var(--theia-ui-padding) var(--theia-ui-padding) var(--theia-ui-padding);
+  padding: calc(var(--theia-ui-padding) / 3);
   height: auto;
   border: var(--theia-border-width) solid var(--theia-dropdown-border);
-  border-radius: 4px;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
   background-color: var(--theia-editor-background);
   display: flex;
   flex-direction: column;
@@ -569,7 +569,7 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInput-Editor-Placeholder {
   position: absolute;
   top: var(--theia-ui-padding);
-  left: 8px;
+  left: calc(var(--theia-ui-padding) * 4 / 3);
   right: 0;
   display: flex;
   align-items: center;
@@ -595,7 +595,7 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInput-Editor .monaco-editor .margin,
 .theia-ChatInput-Editor .monaco-editor .monaco-editor-background,
 .theia-ChatInput-Editor .monaco-editor .inputarea.ime-input {
-  padding-left: 8px !important;
+  padding-left: calc(var(--theia-ui-padding) * 4 / 3) !important;
 }
 
 .theia-ChatInput-ImagePreview-Item {
@@ -627,8 +627,8 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInputOptions {
   width: 100%;
   height: 25px;
-  padding-left: 3px;
-  padding-right: 6px;
+  padding-left: calc(var(--theia-ui-padding) / 2);
+  padding-right: var(--theia-ui-padding);
   display: flex;
   justify-content: space-between;
   color: var(--theia-foreground);
@@ -646,30 +646,30 @@ div:last-child>.theia-ChatNode {
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
-  margin-right: 8px;
+  margin-right: calc(var(--theia-ui-padding) * 4 / 3);
 }
 
 .theia-ChatInputOptions .option {
-  min-width: 21px;
-  height: 21px;
-  padding: 2px;
+  min-width: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
+  height: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
+  padding: calc(var(--theia-ui-padding) / 3);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2px;
+  gap: calc(var(--theia-ui-padding) / 3);
   box-sizing: border-box;
   user-select: none;
   background-repeat: no-repeat;
   background-position: center;
-  border-radius: 5px;
+  border-radius: calc(var(--theia-ui-padding) * 5 / 6);
   border: var(--theia-border-width) solid transparent;
   cursor: pointer;
   outline: none;
 }
 
 .theia-ChatInputOptions .option:focus-visible {
-  outline: 1px solid var(--theia-focusBorder);
-  outline-offset: -1px;
+  outline: var(--theia-border-width) solid var(--theia-focusBorder);
+  outline-offset: calc(-1 * var(--theia-border-width));
 }
 
 .theia-ChatInputOptions .option.disabled {
@@ -691,14 +691,14 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInput-ModeSelector.theia-select-component {
   min-width: unset;
   min-height: unset;
-  height: 21px;
+  height: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
   padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
   border: var(--theia-border-width) solid transparent;
   box-sizing: border-box;
   background: var(--theia-editor-background);
   font-family: var(--theia-ui-font-family);
   font-size: var(--theia-content-font-size);
-  border-radius: 5px;
+  border-radius: calc(var(--theia-ui-padding) * 5 / 6);
   max-width: 150px;
   outline: none;
 }
@@ -1429,13 +1429,14 @@ div:last-child>.theia-ChatNode {
 
 /* Collapsible Section — subtle separator-label for config area sections */
 .theia-ChatInput-CapabilitiesSection {
-  border-top: 1px solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
+  border-top: var(--theia-border-width) solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
   margin-top: var(--theia-ui-padding);
   padding-top: calc(var(--theia-ui-padding) / 3);
 }
 
 .theia-ChatInput-CapabilitiesSection-heading {
-  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) * 4 / 3);
+  padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding) / 3);
+  padding-bottom: var(--theia-ui-padding);
   color: var(--theia-descriptionForeground);
   font-size: var(--theia-ui-font-size1);
   font-family: var(--theia-ui-font-family);
@@ -1466,6 +1467,7 @@ div:last-child>.theia-ChatNode {
   user-select: none;
   outline: none;
   white-space: nowrap;
+  margin: 1px 0px;
 }
 
 .theia-ChatInput-CapabilityChip.checked {
@@ -1497,4 +1499,348 @@ div:last-child>.theia-ChatNode {
   pointer-events: none;
 }
 
-/* Capabilities chevron toggle — first item in toolbar left section */
+.theia-ChatInputOptions .option.toggled {
+  border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
+  background-color: var(--theia-inputOption-activeBackground);
+}
+
+.theia-ChatInputOptions .option {
+  position: relative;
+}
+
+.theia-capabilities-badge-dot {
+  position: absolute;
+  top: var(--theia-border-width);
+  right: var(--theia-border-width);
+  width: var(--theia-ui-padding);
+  height: var(--theia-ui-padding);
+  border-radius: 50%;
+  background-color: var(--theia-activityBarBadge-background);
+  pointer-events: none;
+}
+
+/* Generic Capabilities Section */
+.theia-ChatInput-GenericCapabilitiesSection {
+  border-top: var(--theia-border-width) solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
+  margin-top: var(--theia-ui-padding);
+  padding-top: calc(var(--theia-ui-padding) / 3);
+}
+
+.theia-ChatInput-GenericCapabilitiesSection-heading {
+  padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding) / 3);
+  padding-bottom: var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  font-family: var(--theia-ui-font-family);
+  user-select: none;
+}
+
+/* Generic Capabilities Tree — fixed height so filtering doesn't grow the panel */
+.theia-GenericCapabilities-Tree {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 250px;
+}
+
+.theia-GenericCapabilities-Tree.disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  pointer-events: none;
+}
+
+/* Search/filter bar — replicates settings search input (preferences-searchbar-widget) */
+.theia-GenericCapabilities-Tree-SearchContainer {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
+  flex-shrink: 0;
+}
+
+.theia-GenericCapabilities-Tree-SearchInput {
+  flex: 1;
+  text-indent: calc(var(--theia-ui-padding) + 2px);
+  padding: 2px 0;
+  min-height: 22px;
+  box-sizing: border-box;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+}
+
+/* Hide native clear button */
+.theia-GenericCapabilities-Tree-SearchInput::-webkit-search-decoration,
+.theia-GenericCapabilities-Tree-SearchInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.theia-GenericCapabilities-Tree-SearchActions {
+  height: 20px;
+  align-items: center;
+  position: absolute;
+  z-index: 1;
+  right: calc(var(--theia-ui-padding) + 3px);
+  display: flex;
+}
+
+.theia-GenericCapabilities-Tree-SearchAction {
+  width: 18px;
+  height: 18px;
+  margin: 0 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  user-select: none;
+  border: var(--theia-border-width) solid transparent;
+  opacity: 0.7;
+  cursor: pointer;
+  appearance: none;
+  background-color: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.theia-GenericCapabilities-Tree-SearchAction:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+  opacity: 1;
+}
+
+/* Tree content */
+.theia-GenericCapabilities-Tree-Content {
+  flex: 1;
+  overflow-y: auto;
+  outline: none;
+}
+
+.theia-GenericCapabilities-Tree-Content:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.theia-GenericCapabilities-Tree-Empty {
+  padding: var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+  text-align: center;
+}
+
+/* Tree node (root or group) */
+.theia-GenericCapabilities-TreeNode {
+  user-select: none;
+}
+
+.theia-GenericCapabilities-TreeNode.root {
+  border-bottom: var(--theia-border-width) solid var(--theia-dropdown-border);
+}
+
+.theia-GenericCapabilities-TreeNode.root:last-child {
+  border-bottom: none;
+}
+
+.theia-GenericCapabilities-TreeNodeHeader {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  padding-left: var(--tree-indent, var(--theia-ui-padding));
+  cursor: pointer;
+  outline: none;
+}
+
+.theia-GenericCapabilities-TreeNode.root>.theia-GenericCapabilities-TreeNodeHeader {
+  background-color: var(--theia-sideBarSectionHeader-background);
+}
+
+.theia-GenericCapabilities-TreeNode.group>.theia-GenericCapabilities-TreeNodeHeader {
+  background-color: color-mix(in srgb, var(--theia-sideBarSectionHeader-background) 50%, transparent);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-GenericCapabilities-TreeNodeHeader:hover {
+  background: var(--theia-list-hoverBackground);
+  color: var(--theia-list-hoverForeground);
+}
+
+/* Selected (focused) header — active when tree has focus */
+.theia-GenericCapabilities-Tree-Content:focus-within .theia-GenericCapabilities-TreeNodeHeader.theia-mod-selected {
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+/* Selected header — inactive when tree lacks focus */
+.theia-GenericCapabilities-TreeNodeHeader.theia-mod-selected {
+  background: var(--theia-list-inactiveSelectionBackground);
+  color: var(--theia-list-inactiveSelectionForeground);
+}
+
+.theia-GenericCapabilities-TreeNode-Chevron {
+  flex-shrink: 0;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-GenericCapabilities-TreeNode-Name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-GenericCapabilities-TreeNodeChildren {
+  /* Children container */
+}
+
+/* Tree item (leaf) */
+.theia-GenericCapabilities-TreeItem {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  padding-left: var(--tree-indent, var(--theia-ui-padding));
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.theia-GenericCapabilities-TreeItem:hover:not(.theia-mod-disabled) {
+  background: var(--theia-list-hoverBackground);
+  color: var(--theia-list-hoverForeground);
+}
+
+/* Selected (focused) item — active when tree has focus */
+.theia-GenericCapabilities-Tree-Content:focus-within .theia-GenericCapabilities-TreeItem.theia-mod-selected {
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+/* Selected item — inactive when tree lacks focus */
+.theia-GenericCapabilities-TreeItem.theia-mod-selected {
+  background: var(--theia-list-inactiveSelectionBackground);
+  color: var(--theia-list-inactiveSelectionForeground);
+}
+
+.theia-GenericCapabilities-TreeItem.theia-mod-disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+}
+
+.theia-GenericCapabilities-TreeItem-Checkbox {
+  flex-shrink: 0;
+}
+
+.theia-GenericCapabilities-TreeItem-Name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--theia-ui-font-size1);
+  padding-bottom: 1px;
+  margin-bottom: -1px;
+}
+
+/* Two-column capabilities panel layout */
+.theia-ChatInput-CapabilitiesPanel {
+  display: flex;
+  flex-direction: row;
+  gap: var(--theia-ui-padding);
+  border-bottom: 1px solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
+  padding: var(--theia-ui-padding);
+}
+
+.theia-ChatInput-CapabilitiesPanel-Left {
+  flex: 0 0 auto;
+  min-width: 120px;
+  max-width: 200px;
+}
+
+.theia-ChatInput-CapabilitiesPanel-Divider {
+  width: 1px;
+  background-color: var(--theia-panel-border);
+  margin: 0 calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-ChatInput-CapabilitiesPanel-Right {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Override chip layout to be vertical in left panel */
+.theia-ChatInput-CapabilitiesPanel-Left .theia-ChatInput-CapabilitiesSection {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.theia-ChatInput-CapabilitiesPanel-Left .theia-ChatInput-CapabilityChips {
+  flex-direction: column;
+  max-height: 280px;
+  padding: 0;
+}
+
+/* Override generic capabilities section in right panel */
+.theia-ChatInput-CapabilitiesPanel-Right .theia-ChatInput-GenericCapabilitiesSection {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.theia-ChatInput-CapabilitiesPanel-Right .theia-GenericCapabilities-Tree {
+  height: 280px;
+}
+
+/* Tree checkbox styling - use native inputs aligned with settings checkboxes */
+.theia-GenericCapabilities-TreeNode-Checkbox,
+.theia-GenericCapabilities-TreeItem-Checkbox {
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.theia-GenericCapabilities-Tree-SearchAction:focus-visible {
+  border-color: var(--theia-focusBorder);
+  opacity: 1;
+}
+
+/* Capabilities Collapsed Bar - horizontal scrollable chip row */
+.theia-capabilities-collapsed-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding) * 4 / 3);
+  min-width: 0;
+}
+
+/* Capabilities quick bar - horizontal scrollable chip container */
+.theia-capabilities-collapsed-scrollbar {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: calc(var(--theia-ui-padding) * 2 / 3);
+  min-width: 0;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  min-height: calc(var(--theia-content-line-height) + var(--theia-ui-padding) / 3);
+}
+
+/* Thin overlay scrollbar, always reserves space but thumb only visible on hover */
+.theia-capabilities-collapsed-scrollbar::-webkit-scrollbar {
+  height: calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-capabilities-collapsed-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-capabilities-collapsed-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: var(--theia-scrollbarSlider-background);
+}
+
+.theia-capabilities-collapsed-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--theia-scrollbarSlider-hoverBackground);
+}

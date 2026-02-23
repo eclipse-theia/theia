@@ -288,7 +288,8 @@ export class ChatServiceImpl implements ChatService {
 
         const resolutionContext: ChatSessionContext = {
             model: session.model,
-            capabilityOverrides: request.capabilityOverrides
+            capabilityOverrides: request.capabilityOverrides,
+            genericCapabilitySelections: request.genericCapabilitySelections
         };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);

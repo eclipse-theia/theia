@@ -41,7 +41,7 @@ export class ChatInputCapabilitiesContribution implements CommandContribution, K
         keybindings.registerKeybinding({
             command: CHAT_INPUT_TOGGLE_CAPABILITIES_COMMAND.id,
             keybinding: 'ctrlcmd+shift+.',
-            when: 'chatInputFocus && chatInputHasCapabilities'
+            when: 'chatInputFocus'
         });
     }
 

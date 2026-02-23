@@ -36,3 +36,6 @@ export * from './skill-prompt-coordinator';
 export * from './frontend-variable-service';
 export * from './ai-core-command-contribution';
 export * from '../common/language-model-service';
+export * from './generic-capabilities-variable-contribution';
+export * from './generic-capabilities-prompt-fragment-contribution';
+export * from './prompt-variable-contribution';

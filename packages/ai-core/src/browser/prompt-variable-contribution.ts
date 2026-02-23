@@ -25,9 +25,9 @@ import {
     ResolvedAIVariable,
     AIVariableResolverWithVariableDependencies,
     AIVariableArg
-} from './variable-service';
-import { isCustomizedPromptFragment, PromptService } from './prompt-service';
-import { PromptText } from './prompt-text';
+} from '../common/variable-service';
+import { isCustomizedPromptFragment, PromptService } from '../common/prompt-service';
+import { PromptText } from '../common/prompt-text';
 
 export const PROMPT_VARIABLE: AIVariable = {
     id: 'prompt-provider',
@@ -242,5 +242,44 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
         }
 
         return builtinPromptCompletions;
+    }
+
+    /**
+     * Resolves multiple prompt fragments in parallel and concatenates their resolved text.
+     */
+    async resolvePromptFragments(
+        fragmentIds: string[],
+        variable: AIVariable,
+        context: AIVariableContext,
+        resolveDependency?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
+    ): Promise<ResolvedAIVariable> {
+        if (fragmentIds.length === 0) {
+            return { variable, value: '', allResolvedDependencies: [] };
+        }
+
+        const results = await Promise.all(
+            fragmentIds.map(fragmentId =>
+                this.promptService.getResolvedPromptFragmentWithoutFunctions(fragmentId, undefined, context, resolveDependency)
+                    .then(resolved => resolved ? { fragmentId, resolved } : undefined)
+            )
+        );
+
+        const resolvedFragments: string[] = [];
+        const allDependencies: ResolvedAIVariable[] = [];
+
+        for (const result of results) {
+            if (result) {
+                resolvedFragments.push(`### ${result.fragmentId}\n${result.resolved.text}`);
+                if (result.resolved.variables) {
+                    allDependencies.push(...result.resolved.variables);
+                }
+            }
+        }
+
+        return {
+            variable,
+            value: resolvedFragments.join('\n\n'),
+            allResolvedDependencies: allDependencies
+        };
     }
 }

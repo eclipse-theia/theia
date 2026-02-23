@@ -50,10 +50,6 @@ export const CapabilityChipsRow: React.FunctionComponent<CapabilityChipsRowProps
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
 
-    if (capabilities.length === 0) {
-        return undefined;
-    }
-
     const handleKeyDown = (e: React.KeyboardEvent): void => {
         if (disabled) {
             return;
@@ -128,7 +124,7 @@ interface CapabilityChipProps {
  * option buttons (match case, regex). Uses inputOption theme colors
  * when enabled, transparent when disabled.
  */
-const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChip({
+export const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChip({
     fragmentId,
     name,
     description,

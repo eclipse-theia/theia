@@ -15,13 +15,13 @@
 // *****************************************************************************
 import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
+import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia/ai-core';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
@@ -235,12 +235,17 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query?: string | ChatRequest, modeId?: string, capabilityOverrides?: Record<string, boolean>): Promise<void> {
+    protected async onQuery(
+        query?: string | ChatRequest,
+        modeId?: string,
+        capabilityOverrides?: Record<string, boolean>,
+        genericCapabilitySelections?: GenericCapabilitySelections
+    ): Promise<void> {
         const chatRequest: ChatRequest = !query
             ? { text: '' }
             : typeof query === 'string'
-                ? { text: query, modeId, capabilityOverrides }
-                : { ...query, capabilityOverrides };
+                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections }
+                : { ...query, capabilityOverrides, genericCapabilitySelections };
         if (chatRequest.text.length === 0) { return; }
 
         if (this.chatSession.model.isEmpty()) {

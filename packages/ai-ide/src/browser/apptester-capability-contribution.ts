@@ -16,8 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PromptService } from '@theia/ai-core/lib/common';
-import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
+import { AGENT_DELEGATION_FUNCTION_ID, PromptService } from '@theia/ai-core';
 import { RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
 import { nls } from '@theia/core';
 
