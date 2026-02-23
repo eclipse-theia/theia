@@ -1319,7 +1319,9 @@ export function convertQuickInputButton(plugin: Plugin, button: theia.QuickInput
     return {
         handle: index,
         iconUrl: PluginIconPath.toUrl(iconPath, plugin) ?? ThemeIcon.get(iconPath),
-        tooltip: button.tooltip
+        tooltip: button.tooltip,
+        location: button.location,
+        toggle: button.toggle
     };
 }
 

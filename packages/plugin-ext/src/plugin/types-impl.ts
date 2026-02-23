@@ -2227,6 +2227,12 @@ export enum CommentThreadCollapsibleState {
     Expanded = 1
 }
 
+export enum QuickInputButtonLocation {
+    Title = 1,
+    Inline = 2,
+    Input = 3
+}
+
 @es5ClassCompat
 export class QuickInputButtons {
     static readonly Back: theia.QuickInputButton = {
