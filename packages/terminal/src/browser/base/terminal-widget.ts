@@ -200,37 +200,28 @@ export interface TerminalCommandHistoryState {
     /**
      * Array of executed commands and their output in the terminal.
      */
-    commandHistory: TerminalBlock[];
+    readonly commandHistory: TerminalBlock[];
 
     /**
-     * The current command being executed in the terminal.
+     * The hex-decoded command currently being executed, or empty string if idle.
      */
-    currentCommand: string;
+    readonly currentCommand: string;
 
     /**
-     * Clears the current command and output collection state to avoid pollution of terminal history between commands.
+     * Marks the start of a new command execution.
+     * @param command the decoded command string
+     */
+    startCommand(command: string): void;
+
+    /**
+     * Records the finished command and its output as a new history block.
+     */
+    finishCommand(block: TerminalBlock): void;
+
+    /**
+     * Clears the current in-progress command state.
      */
     clearCommandCollectionState(): void;
-
-    /**
-     * Clears the current command output buffer.
-     */
-    clearCommandOutputBuffer(): void;
-
-    /**
-     * Method to be called when a terminal command starts executing.
-     */
-    startCommand(encodedCommand: string): void;
-
-    /**
-     * Method to accumulate command output as it is received.
-     */
-    accumulateCommandOutput(data: string): void;
-
-    /**
-     * Method to be called when a terminal command finishes executing.
-     */
-    finishCommand(): void;
 
     /**
      * Event which fires when terminal command starts executing.

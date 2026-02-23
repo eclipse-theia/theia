@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Terminal } from 'xterm';
+import { Terminal, IMarker } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -33,6 +33,7 @@ import {
     TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
     TerminalLocation,
     TerminalBuffer,
+    TerminalBlock,
     TerminalCommandHistoryState
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -94,6 +95,14 @@ class TerminalBufferImpl implements TerminalBuffer {
         return result;
     }
 
+}
+
+/**
+ * Internal extension of TerminalBlock that retains xterm markers for buffer position tracking.
+ */
+interface TrackedTerminalBlock extends TerminalBlock {
+    readonly startMarker?: IMarker;
+    readonly endMarker?: IMarker;
 }
 
 @injectable()
@@ -182,6 +191,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly commandSeparatorDecorations = new DisposableCollection();
 
     protected readonly toDisposeOnCommandHistory = new DisposableCollection();
+    protected commandOutputStartMarker: IMarker | undefined;
+    protected commandStartMarker: IMarker | undefined;
 
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
@@ -217,7 +228,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.title.closable = true;
         this.addClass('terminal-container');
 
-        const commandHistoryStateImpl = new TerminalCommandHistoryStateImpl(this.logger, this.preferences);
+        const commandHistoryStateImpl = new TerminalCommandHistoryStateImpl(this.preferences);
         this.commandHistoryState = commandHistoryStateImpl;
 
         this.term = new Terminal({
@@ -396,52 +407,98 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             : false;
     }
 
+    /**
+     * Registers or deregisters command history handlers based on the current preference state.
+     *
+     * Manages the OSC 133 handler that tracks command lifecycle events. OSC 133 is an iTerm2
+     * escape-sequence family marking events such as command start and prompt display
+     * (see https://iterm2.com/documentation-escape-codes.html). We use a customized subset:
+     *
+     *   - prompt_started: emitted when the prompt is shown (command output ends)
+     *   - command_started;<hex-encoded-command>: emitted when a command begins
+     *
+     * Command output is read directly from xterm's buffer using markers to track line positions,
+     * avoiding the need to intercept and sanitize raw terminal data.
+     */
     protected updateCommandHistoryHandlers(): void {
         this.toDisposeOnCommandHistory.dispose();
+        this.resetCommandOutputMarker();
+        this.resetCommandMarker();
         if (!this.commandHistoryState.enableCommandHistory) {
             return;
         }
-        this.toDisposeOnCommandHistory.push(this.term.onKey(({ domEvent }) => {
-            // clear the output on command execution to prevent tracking of previously typed input
-            if (domEvent.key === 'Enter') {
-                // when a command is running, command buffer should not be cleared
-                if (this.commandHistoryState.currentCommand) {
-                    return;
-                }
-                this.commandHistoryState.clearCommandOutputBuffer();
-            }
-        }));
-
-        /*
-        * Initialize support for OSC 133 sequences used to track command history and optionally show command separators.
-        *
-        * OSC 133 is an iTerm2 escape-sequence family marking events such as command start and prompt display
-        * (see https://iterm2.com/documentation-escape-codes.html). We use a customized subset of these sequences
-        * to record command lifecycle events in the terminal:
-        *
-        *   - prompt_started: emitted when the prompt is shown
-        *   - command_started;<hex-encoded-command>: emitted when a command begins
-        *
-        * These sequences are only emitted when the user's shell is configured to do so. The required integration
-        * scripts are provided in packages/terminal/src/node/shell-integrations and injected during terminal creation.
-        */
         this.toDisposeOnCommandHistory.push(
             this.term.parser.registerOscHandler(133, (oscPayload: string) => {
                 if (oscPayload === 'prompt_started') {
+                    if (this.commandHistoryState.currentCommand) {
+                        this.finishCurrentCommand();
+                    }
+                    this.commandStartMarker?.dispose();
+                    this.commandStartMarker = this.term.registerMarker(0);
                     if (this.commandHistoryState.enableCommandSeparator) {
                         this.addCommandSeparator();
                     }
-                    if (!this.commandHistoryState.currentCommand) {
-                        return true;
-                    }
-                    this.commandHistoryState.finishCommand();
                 } else if (oscPayload.startsWith('command_started')) {
-                    const encodedCommand = oscPayload.split(';')[1];
-                    this.commandHistoryState.startCommand(encodedCommand);
+                    this.startNewCommand(oscPayload.split(';')[1]);
                 }
                 return true;
             })
         );
+    }
+
+    protected resetCommandOutputMarker(): void {
+        this.commandOutputStartMarker?.dispose();
+        this.commandOutputStartMarker = undefined;
+    }
+
+    protected resetCommandMarker(): void {
+        this.commandStartMarker?.dispose();
+        this.commandStartMarker = undefined;
+    }
+
+    protected startNewCommand(hexEncodedCommand: string): void {
+        this.commandOutputStartMarker?.dispose();
+        this.commandOutputStartMarker = this.term.registerMarker(0);
+        this.commandHistoryState.startCommand(this.decodeHexString(hexEncodedCommand));
+    }
+
+    protected finishCurrentCommand(): void {
+        const startMarker = this.commandOutputStartMarker;
+        const endMarker = this.term.registerMarker(0);
+        const startLine = startMarker?.line ?? -1;
+        const endLine = endMarker?.line ?? -1;
+
+        let output = '';
+        if (startLine >= 0 && endLine >= 0) {
+            output = this.readBufferLines(startLine, endLine);
+            this.logger.debug('Terminal command result captured:', this._buffer.getLines(0, this._buffer.length));
+        }
+
+        const block: TrackedTerminalBlock = {
+            command: this.commandHistoryState.currentCommand,
+            output,
+            startMarker,
+            endMarker: endMarker ?? undefined,
+        };
+
+
+        this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
+        this.commandHistoryState.finishCommand(block);
+        this.commandOutputStartMarker = undefined;
+        this.commandStartMarker = undefined;
+    }
+
+    /**
+     * Decodes a hex-encoded string to UTF-8 using browser-compatible APIs.
+     */
+    protected decodeHexString(hexString: string): string {
+        if (!hexString) {
+            return '';
+        }
+        const hexBytes = new Uint8Array(
+            (hexString.match(/.{1,2}/g) || []).map(byte => parseInt(byte, 16))
+        );
+        return new TextDecoder('utf-8').decode(hexBytes);
     }
 
     private addCommandSeparator(): void {
@@ -462,6 +519,25 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.commandSeparatorDecorations.push(marker);
         this.commandSeparatorDecorations.push(deco);
+    }
+
+    /**
+     * Reads clean text from the xterm buffer between two line positions.
+     * xterm's buffer already contains parsed, escape-sequence-free text,
+     * so no manual sanitization is needed.
+     * 
+     * not necessary when https://github.com/eclipse-theia/theia/pull/16975 is merged
+     */
+    protected readBufferLines(startLine: number, endLine: number): string {
+        const lines: string[] = [];
+        const buffer = this.term.buffer.active;
+        for (let i = startLine; i < endLine; i++) {
+            const line = buffer.getLine(i);
+            if (line) {
+                lines.push(line.translateToString(true));
+            }
+        }
+        return lines.join('\n').trimEnd();
     }
 
     protected setIconClass(): void {
@@ -897,10 +973,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     write(data: string): void {
-        if (this.commandHistoryState.enableCommandHistory) {
-            this.commandHistoryState.accumulateCommandOutput(data);
-        }
-
         if (this.termOpened) {
             this.term.write(data);
             this._currentTerminalOutput.push(data);
@@ -923,6 +995,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
         this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
+        this.resetCommandOutputMarker();
         this.commandHistoryState.clearCommandCollectionState();
     }
 
