@@ -24,7 +24,7 @@ import { nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
-import { appTesterTemplate, appTesterNextTemplate, appTesterTemplateVariant, REQUIRED_MCP_SERVERS, REQUIRED_MCP_SERVERS_NEXT } from './app-tester-prompt-template';
+import { appTesterPlaywrightTemplate, appTesterDefaultTemplate, appTesterNextTemplate, REQUIRED_MCP_SERVERS, REQUIRED_MCP_SERVERS_NEXT } from './app-tester-prompt-template';
 
 export const AppTesterChatAgentId = 'AppTester';
 @injectable()
@@ -49,7 +49,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
     override iconClass: string = 'codicon codicon-beaker';
     protected override systemPromptId: string = 'app-tester-system';
     override prompts = [
-        { id: 'app-tester-system', defaultVariant: appTesterTemplate, variants: [appTesterTemplateVariant, appTesterNextTemplate] }
+        { id: 'app-tester-system', defaultVariant: appTesterDefaultTemplate, variants: [appTesterPlaywrightTemplate, appTesterNextTemplate] }
     ];
 
     /**
@@ -120,7 +120,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
 
     protected isNextVariant(): boolean {
         const effectiveVariantId = this.promptService.getEffectiveVariantId(this.systemPromptId!);
-        return effectiveVariantId === 'app-tester-system-next';
+        return effectiveVariantId !== 'app-tester-system-playwright';
     }
 
     protected getRequiredServers(): MCPServerDescription[] {
