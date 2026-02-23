@@ -23,22 +23,6 @@ import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { PluginIdentifiers, PluginPackage } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 /**
- * Represents the identity of an extension extracted from its package.json.
- */
-export interface ExtensionIdentity {
-    /** The publisher of the extension (may be undefined for unpublished extensions) */
-    publisher?: string;
-    /** The name of the extension */
-    name: string;
-    /** The version of the extension */
-    version: string;
-    /** The unversioned ID in the format `publisher.name` */
-    unversionedId: PluginIdentifiers.UnversionedId;
-    /** The versioned ID in the format `publisher.name@version` */
-    versionedId: PluginIdentifiers.VersionedId;
-}
-
-/**
  * Extracts extension identity from a VSIX file by reading its package.json.
  *
  * VSIX files are ZIP archives with the extension content in an `extension/` subdirectory.
@@ -47,7 +31,11 @@ export interface ExtensionIdentity {
  * @param vsixPath Path to the VSIX file
  * @returns The extension identity, or undefined if the package.json cannot be read or is invalid
  */
-export async function extractExtensionIdentityFromVsix(vsixPath: string): Promise<ExtensionIdentity | undefined> {
+/**
+ * Extracts extension identity from a VSIX file by reading its package.json.
+ * Returns PluginIdentifiers.Components (publisher?, name, version).
+ */
+export async function extractExtensionIdentityFromVsix(vsixPath: string): Promise<PluginIdentifiers.Components | undefined> {
     try {
         // Extract only the package.json file from the VSIX
         const files = await decompress(vsixPath, {
@@ -77,13 +65,7 @@ export async function extractExtensionIdentityFromVsix(vsixPath: string): Promis
             version: packageJson.version
         };
 
-        return {
-            publisher: packageJson.publisher,
-            name: packageJson.name,
-            version: packageJson.version,
-            unversionedId: PluginIdentifiers.componentsToUnversionedId(components),
-            versionedId: PluginIdentifiers.componentsToVersionedId(components)
-        };
+        return components;
     } catch (error) {
         console.error(`[${vsixPath}]: Failed to extract extension identity from VSIX`, error);
         return undefined;
