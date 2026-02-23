@@ -804,12 +804,36 @@
   padding: calc(var(--theia-ui-padding) * 2);
 }
 
+/* Welcome message container */
+.theia-WelcomeMessage-Container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+}
+.theia-WelcomeMessage-Container-Inner {
+  margin: auto 0; /* Centred vertically */
+  width: 100%;
+}
+
+.theia-WelcomeMessage-Divider {
+  align-self: stretch;
+  height: 0;
+  border-top: 1px solid var(--theia-dropdown-border);
+  margin: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 3);
+}
+
 .theia-WelcomeMessage {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  height: 100%;
+  width: 100%;
+}
+
+.theia-WelcomeMessage-Main {
+  padding-top: calc(var(--theia-ui-padding) * 8);
 }
 
 .theia-WelcomeMessage-Content {
@@ -982,6 +1006,113 @@
   color: var(--theia-descriptionForeground);
   margin: calc(var(--theia-ui-padding) * 1.3) 0 calc(var(--theia-ui-padding) * 2) 0;
   font-weight: 500;
+}
+
+.theia-WelcomeMessage-SessionsSection {
+  padding-left: calc(var(--theia-ui-padding) * 3);
+  padding-right: calc(var(--theia-ui-padding) * 3);
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.theia-WelcomeMessage-SessionCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 320px));
+  grid-auto-rows: 1fr;
+  justify-content: center;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+  width: 100%;
+}
+
+.theia-WelcomeMessage-SessionCards > * {
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-WelcomeMessage-SessionCards .theia-Card {
+  flex: 1;
+}
+
+.theia-WelcomeMessage-BrowseAllLink {
+  margin-top: calc(var(--theia-ui-padding) * 2);
+  padding-bottom: calc(var(--theia-ui-padding) * 2);
+  text-align: center;
+}
+
+.theia-WelcomeMessage-BrowseAllLink a {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-WelcomeMessage-BrowseAllLink a:hover {
+  text-decoration: underline;
+}
+
+.theia-chat-session-tooltip-label {
+  font-weight: 600;
+  margin-bottom: calc(var(--theia-ui-padding) * 0.5);
+}
+
+.theia-chat-session-tooltip-snippet h1,
+.theia-chat-session-tooltip-snippet h2,
+.theia-chat-session-tooltip-snippet h3,
+.theia-chat-session-tooltip-snippet h4,
+.theia-chat-session-tooltip-snippet h5,
+.theia-chat-session-tooltip-snippet h6 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0 0 0.3em 0;
+}
+
+.theia-chat-session-tooltip hr {
+  border: none;
+  border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
+  margin: var(--theia-ui-padding) 0;
+}
+
+.theia-chat-session-tooltip dl {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: calc(var(--theia-ui-padding) * 1.5);
+  row-gap: calc(var(--theia-ui-padding) * 0.5);
+  align-items: baseline;
+}
+
+.theia-chat-session-tooltip dt {
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
+.theia-chat-session-tooltip dd {
+  margin: 0;
+  color: var(--theia-descriptionForeground);
+  word-break: break-word;
+}
+
+.theia-chat-session-card-wrapper {
+  position: relative;
+}
+
+.theia-chat-session-card-working .theia-Card-icon {
+  color: var(--theia-focusBorder);
+}
+
+.theia-chat-session-card-unread-badge {
+  position: absolute;
+  top: calc(var(--theia-ui-padding) * 1.5);
+  left: calc(var(--theia-ui-padding) * 1.5);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--theia-activityBarBadge-background);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /*

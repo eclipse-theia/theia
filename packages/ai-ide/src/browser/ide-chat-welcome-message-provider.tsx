@@ -63,6 +63,8 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
 @injectable()
 export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider {
 
+    readonly priority = 100;
+
     @inject(MarkdownRenderer)
     protected readonly markdownRenderer: MarkdownRenderer;
 
@@ -197,7 +199,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     }
 
     protected renderWelcomeScreen(): React.ReactNode {
-        return <div className={'theia-WelcomeMessage'} key="normal-welcome">
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main'} key="normal-welcome">
             <TheiaIdeAiLogo width={200} height={200} className="theia-WelcomeMessage-Logo" />
             <LocalizedMarkdown
                 localizationKey="theia/ai/ide/chatWelcomeMessage"
@@ -255,7 +257,7 @@ This typically happens in custom IDE distributions where Theia AI language model
             </div>;
         }
 
-        return <div className={'theia-WelcomeMessage'} key="setup-state">
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main'} key="setup-state">
             <TheiaIdeAiLogo width={150} height={150} className="theia-WelcomeMessage-Logo" />
             <LocalizedMarkdown
                 key="configure-provider-hasmodels"
@@ -321,7 +323,7 @@ See the [documentation](https://theia-ide.org/docs/user_ai/) for more details.
         const recommendedAgents = this.recommendationService.getRecommendedAgents()
             .filter(agent => this.chatAgentService.getAgent(agent.id) !== undefined);
 
-        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-AgentSelection'} key="agent-selection">
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main theia-WelcomeMessage-AgentSelection'} key="agent-selection">
             <TheiaIdeAiLogo width={200} height={200} className="theia-WelcomeMessage-Logo" />
             <LocalizedMarkdown
                 localizationKey="theia/ai/ide/selectDefaultAgent"
