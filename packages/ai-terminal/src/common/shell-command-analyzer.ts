@@ -56,8 +56,13 @@ export interface ShellCommandAnalyzer {
     containsDangerousPatterns(command: string): boolean;
 
     /**
-     * Parses a shell command string into individual sub-commands by splitting
-     * on concatenation operators (&&, ||, ;, |).
+     * Parses a shell command string into individual sub-commands using a
+     * quote-aware state-machine tokenizer. Respects single quotes, double
+     * quotes, and backslash escapes. Splits on operators `&&`, `||`, `|&`,
+     * `|`, `&`, and `;`, as well as newline characters outside quotes.
+     * Collapses runs of whitespace outside quotes and strips meaningless
+     * backslash escapes outside quotes (e.g. `\h` → `h`). Degrades
+     * gracefully when quotes are unmatched.
      *
      * @param command The shell command to parse
      * @returns Array of trimmed sub-commands with empty entries filtered out
