@@ -49,7 +49,7 @@ export class CommandExecutionRenderer implements ChatResponsePartRenderer<CodexT
 
         if (!item) {
             const args = content.arguments ? JSON.parse(content.arguments) : {};
-            return <CommandExecutionInProgressComponent command={args.command || 'executing...'} />;
+            return <CommandExecutionInProgressComponent command={args.command || nls.localizeByDefault('Executing...')} />;
         }
 
         return <CommandExecutionComponent item={item} />;
@@ -65,7 +65,7 @@ const CommandExecutionInProgressComponent: React.FC<{
             <span className="codex-tool-name">{nls.localizeByDefault('Terminal')}</span>
             <code className="codex-command-line">{command}</code>
             <span className="codex-exit-code in-progress">
-                {nls.localize('theia/ai/codex/running', 'Running...')}
+                {nls.localizeByDefault('Running...')}
             </span>
         </div>
     </div>

@@ -35,7 +35,7 @@ export class ThinkingPartRenderer implements ChatResponsePartRenderer<ThinkingCh
         return (
             <div className='theia-thinking'>
                 <details>
-                    <summary>{nls.localize('theia/ai/chat-ui/thinking-part-renderer/thinking', 'Thinking')}</summary>
+                    <summary>{nls.localizeByDefault('Thinking')}</summary>
                     <pre>{response.content}</pre>
                 </details>
             </div>

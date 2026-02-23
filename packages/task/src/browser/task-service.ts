@@ -1104,7 +1104,7 @@ export class TaskService implements TaskConfigurationClient {
         const widget = await this.taskTerminalWidgetManager.open({
             created: new Date().toString(),
             id: this.getTerminalWidgetId(terminalId),
-            title: nls.localize('theia/task/taskTerminalTitle', 'Task: {0}', taskInfo.config.label || nls.localize('theia/task/taskIdLabel', '#{0}', taskId)),
+            title: nls.localizeByDefault('Task: {0}', taskInfo.config.label || nls.localize('theia/task/taskIdLabel', '#{0}', taskId)),
             destroyTermOnClose: true,
             useServerTitle: false
         }, {
