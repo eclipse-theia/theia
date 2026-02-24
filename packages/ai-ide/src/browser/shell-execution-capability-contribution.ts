@@ -37,8 +37,8 @@ export class ShellExecutionCapabilityContribution implements FrontendApplication
     protected buildTemplate(): string {
         const label = nls.localize('theia/ai/ide/shellExecutionCapability/name', 'Shell Execution');
         const description = nls.localize('theia/ai/ide/shellExecutionCapability/description',
-            'Allows the agent to run arbitrary shell commands on the host system. The agent can then delegate to execute scripts, \
-            query system information, and perform operations for which no dedicated tool exists.');
+            'Allows the agent to run arbitrary shell commands on the host system. The agent can then delegate to execute scripts \
+            that are not available as tasks, query system information, and perform operations for which no dedicated tool exists.');
 
         return `---
 name: ${label}
