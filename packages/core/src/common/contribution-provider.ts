@@ -75,6 +75,21 @@ export namespace Bindable {
     }
 }
 
+/**
+ * Binds a {@link ContributionProvider} for the given service identifier.
+ *
+ * **In most cases, prefer {@link bindRootContributionProvider} instead.** This variant retains a reference
+ * to whichever container first resolves the provider. If that container is a short-lived child (e.g. a widget
+ * container), the provider will keep the child — and everything cached in it — alive for the lifetime of the
+ * application, causing a memory leak.
+ *
+ * Use `bindContributionProvider` only when you are certain that some or all of the relevant services are
+ * scoped to a child container rather than the root container — for example, inside a
+ * {@link ConnectionContainerModule} (connection-scoped child containers).
+ *
+ * @param bindable - A `Container` or `Bind` function to register the provider in.
+ * @param id - The service identifier symbol whose contributions the provider collects.
+ */
 export function bindContributionProvider(bindable: Bindable, id: symbol): void {
     const bindingToSyntax = (Bindable.isContainer(bindable) ? bindable.bind(ContributionProvider) : bindable(ContributionProvider));
     bindingToSyntax
@@ -83,11 +98,23 @@ export function bindContributionProvider(bindable: Bindable, id: symbol): void {
 }
 
 /**
- * Like {@link bindContributionProvider}, but walks to the root container before
- * constructing the provider. This avoids a memory leak where the provider
- * permanently retains a reference to whichever child container first resolves it.
+ * Binds a {@link ContributionProvider} for the given service identifier, resolving contributions
+ * from the **root** (top-level) Inversify container.
+ *
+ * **This is the recommended default** for binding contribution providers in module-level `ContainerModule`
+ * definitions. It walks up from whichever container first resolves the provider to the root container,
+ * ensuring the provider does not permanently retain a reference to a short-lived child container.
+ *
+ * Use this function when contributions are registered at the application level (the common case for
+ * `FrontendApplicationContribution`, `CommandContribution`, `MenuContribution`, `KeybindingContribution`,
+ * and similar top-level contribution points).
+ *
+ * If you need contributions that are scoped to a child container (e.g. connection-scoped), use {@link bindContributionProvider} instead.
  *
  * See {@link https://github.com/eclipse-theia/theia/issues/10877#issuecomment-1107000223}
+ *
+ * @param bindable - A `Container` or `Bind` function to register the provider in.
+ * @param id - The service identifier symbol whose contributions the provider collects.
  */
 export function bindRootContributionProvider(bindable: Bindable, id: symbol): void {
     const bindingToSyntax = (Bindable.isContainer(bindable) ? bindable.bind(ContributionProvider) : bindable(ContributionProvider));
