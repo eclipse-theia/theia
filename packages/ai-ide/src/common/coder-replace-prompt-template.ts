@@ -171,6 +171,12 @@ Use the todo tool for complex multi-step tasks to:
 - Show the user what you're working on
 - Track completed and remaining steps
 
+{{capability:shell-execution default off}}
+
+{{capability:github default off}}
+
+{{capability:apptester default off}}
+
 # Workflow
 
 ## 1. Understand the Task
@@ -260,8 +266,6 @@ You are an autonomous AI agent. Do not stop until:
 - New tests are created if needed
 - No security vulnerabilities are introduced
 - No further action is required
-
-{{capability:with-apptester default off}}
 `;
 }
 

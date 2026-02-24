@@ -21,25 +21,19 @@ import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-chat/lib/browser/agent-d
 import { RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
 
 @injectable()
-export class WithAppTesterContribution implements FrontendApplicationContribution {
+export class AppTesterCapabilityContribution implements FrontendApplicationContribution {
 
     @inject(PromptService)
     protected readonly promptService: PromptService;
 
     onStart(): void {
-        this.registerWithAppTesterCommand();
-    }
-
-    protected registerWithAppTesterCommand(): void {
-        const commandTemplate = this.buildCommandTemplate();
-
         this.promptService.addBuiltInPromptFragment({
-            id: 'with-apptester',
-            template: commandTemplate
+            id: 'apptester',
+            template: this.buildTemplate()
         });
     }
 
-    protected buildCommandTemplate(): string {
+    protected buildTemplate(): string {
         return `After implementing the changes, delegate to the AppTester agent to test the implementation. The changes need to be applied and built.
 
     Use the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool to delegate to the AppTester agent.
