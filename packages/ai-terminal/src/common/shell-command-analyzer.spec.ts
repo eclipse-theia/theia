@@ -77,6 +77,34 @@ describe('shell-command-analyzer', () => {
             // |& is a single bash operator (pipe stderr+stdout), distinct from | then &
             expect(analyzer.parseCommand('cmd1 |& cmd2')).to.deep.equal(['cmd1', 'cmd2']);
         });
+
+        it('should not split on backslash-escaped pipes in grep patterns', () => {
+            expect(analyzer.parseCommand('grep -rn "TODO\\|FIXME\\|HACK" src/')).to.deep.equal(['grep -rn "TODO\\|FIXME\\|HACK" src/']);
+        });
+
+        it('should still split on real pipe after escaped pipes', () => {
+            expect(analyzer.parseCommand('grep "a\\|b" file | head -5')).to.deep.equal(['grep "a\\|b" file', 'head -5']);
+        });
+
+        it('should not split on backslash-escaped pipe outside of quotes', () => {
+            expect(analyzer.parseCommand('echo hello \\| world')).to.deep.equal(['echo hello \\| world']);
+        });
+
+        it('should not split on & in stderr redirect 2>&1', () => {
+            expect(analyzer.parseCommand('npx eslint src 2>&1 | head -80')).to.deep.equal(['npx eslint src 2>&1', 'head -80']);
+        });
+
+        it('should not split on & in stdout redirect >&2', () => {
+            expect(analyzer.parseCommand('echo error >&2')).to.deep.equal(['echo error >&2']);
+        });
+
+        it('should not split on & in input redirect <&3', () => {
+            expect(analyzer.parseCommand('cat <&3')).to.deep.equal(['cat <&3']);
+        });
+
+        it('should still split on real background & after redirect', () => {
+            expect(analyzer.parseCommand('cmd 2>&1 & cmd2')).to.deep.equal(['cmd 2>&1', 'cmd2']);
+        });
     });
 
     describe('containsDangerousPatterns', () => {

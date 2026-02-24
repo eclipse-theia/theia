@@ -18,12 +18,14 @@ import { injectable } from '@theia/core/shared/inversify';
 
 /**
  * Pattern to match command concatenation operators: &&, &, ||, |&, |, ;
- * Note: Single `&` uses negative lookaround `(?<!&)&(?!&)` to explicitly
- * prevent matching when adjacent to another `&`, rather than relying on
- * alternation ordering.
+ * Note: Single `&` uses negative lookaround `(?<![&><])&(?!&)` to prevent
+ * matching when adjacent to another `&` or part of a file descriptor
+ * redirection (e.g., `2>&1`, `<&3`).
  * `|&` must appear before `|` in the alternation to be matched first.
+ * Pipe-related separators use `(?<!\\)` to avoid splitting on backslash-escaped
+ * pipes (e.g., `\|` in grep/sed regex patterns).
  */
-const COMMAND_SEPARATOR_PATTERN = /\s*(?:&&|(?<!&)&(?!&)|\|\||\|&|\||;)\s*/;
+const COMMAND_SEPARATOR_PATTERN = /\s*(?:&&|(?<![&><])&(?!&)|(?<!\\)\|\||(?<!\\)\|&|(?<!\\)\||;)\s*/;
 
 /**
  * Pattern to detect dangerous shell patterns:
