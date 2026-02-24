@@ -66,8 +66,11 @@ export class LocalizationManager {
                 existingTranslations.set(targetLanguage, {});
             }
         }
-        const results = await Promise.all(languages.map(language => this.translateLanguage(source, existingTranslations.get(language)!, language, options)));
-        let result = results.reduce((acc, val) => acc && val, true);
+        let result = true;
+        for (const language of languages) {
+            const success = await this.translateLanguage(source, existingTranslations.get(language)!, language, options);
+            result = result && success;
+        }
 
         for (const targetLanguage of languages) {
             const targetPath = this.translationFileName(sourceFile, targetLanguage);
@@ -122,7 +125,7 @@ export class LocalizationManager {
         // Escape existing angle brackets so DeepL's XML parser doesn't treat them as tags
         const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         // Wrap placeholders like {0}, {1} in ignore tags to preserve them during translation
-        return escaped.replace(/(\{\d*\})/g, '<x>$1</x>');
+        return escaped.replace(/(\{\d+\})/g, '<x>$1</x>');
     }
 
     protected removeIgnoreTags(text: string): string {
