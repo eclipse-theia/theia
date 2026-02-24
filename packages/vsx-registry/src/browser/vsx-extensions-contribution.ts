@@ -305,7 +305,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
         // Filter extensions to one per version, preferring the current platform or universal
         const filteredExtensions: VSXExtensionRaw[] = [];
-        for (const [_, exts] of extensionsByVersion.entries()) {
+        for (const exts of extensionsByVersion.values()) {
             if (exts.length === 1) {
                 // Only one extension for this version, use it directly
                 filteredExtensions.push(exts[0]);
