@@ -601,7 +601,7 @@
 }
 
 .selected-indicator {
-  background-color: var(--theia-charts-blue);
+  background-color: var(--theia-button-background);
   color: var(--theia-editor-background);
   font-size: 12px;
   padding: 2px 6px;
@@ -711,7 +711,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--theia-charts-blue);
+  background-color: var(--theia-button-background);
   color: var(--theia-editor-background);
   gap: 6px;
   padding: 6px 8px;
@@ -736,7 +736,7 @@
 }
 
 .prompt-fragment-section.selected-variant {
-  border: 3px solid var(--theia-charts-blue);
+  border: 3px solid var(--theia-button-background);
 }
 
 .prompt-fragment-header {
@@ -1092,6 +1092,17 @@
   text-decoration: underline;
 }
 
+.theia-chat-session-badge-unread-tooltip {
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 600;
+  color: var(--theia-activityBarBadge-foreground);
+  background-color: var(--theia-activityBarBadge-background);
+  border-radius: calc(var(--theia-ui-padding) * 0.75);
+  padding: 1px calc(var(--theia-ui-padding) * 0.75);
+  display: inline-block;
+  margin-bottom: var(--theia-ui-padding);
+}
+
 .theia-chat-session-tooltip-label {
   font-weight: 600;
   margin-bottom: calc(var(--theia-ui-padding) * 0.5);
@@ -1143,7 +1154,7 @@
   color: var(--theia-focusBorder);
 }
 
-.theia-chat-session-card-unread-badge {
+.theia-chat-session-badge-unread {
   position: absolute;
   top: calc(var(--theia-ui-padding) * 1.5);
   left: calc(var(--theia-ui-padding) * 1.5);

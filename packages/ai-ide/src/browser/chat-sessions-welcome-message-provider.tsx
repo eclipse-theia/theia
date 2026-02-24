@@ -30,6 +30,12 @@ import * as React from '@theia/core/shared/react';
 
 const TOOLTIP_SNIPPET_MAX_LENGTH = 1000;
 
+/** Minimal view of the unread state that React components can subscribe to. */
+interface UnreadStateProvider {
+    isUnread(sessionId: string): boolean;
+    readonly onUnreadChanged: Event<string>;
+}
+
 interface SessionCardsGridProps {
     sessions: ChatSessionMetadata[];
     maxRows: number;
@@ -91,56 +97,19 @@ function SessionCardsGrid({ sessions, maxRows, renderCard }: SessionCardsGridPro
     );
 }
 
-/** Returns true when the session has new exchanges (requests or completed responses) since it was last activated. */
-function useUnreadMessages(sessionId: string, chatService: ChatService): boolean {
-    const [hasUnread, setHasUnread] = React.useState(false);
-    const seenCountRef = React.useRef(0);
-    const seenCompletedRef = React.useRef(0);
+/** Subscribes the component to the unread flag for one session. */
+function useUnreadMessages(sessionId: string, provider: UnreadStateProvider): boolean {
+    const [hasUnread, setHasUnread] = React.useState(() => provider.isUnread(sessionId));
 
     React.useEffect(() => {
-        const trash = new DisposableCollection();
-
-        const countCompleted = (reqs: ReturnType<ChatSession['model']['getRequests']>) =>
-            reqs.filter(r => r.response.isComplete).length;
-
-        const attach = (s: ChatSession) => {
-            const reqs = s.model.getRequests();
-            seenCountRef.current = reqs.length;
-            seenCompletedRef.current = countCompleted(reqs);
-            s.model.onDidChange(() => {
-                const current = s.model.getRequests();
-                if (current.length > seenCountRef.current || countCompleted(current) > seenCompletedRef.current) {
-                    setHasUnread(true);
-                }
-            }, undefined, trash);
-        };
-
-        const existing = chatService.getSession(sessionId);
-        if (existing) {
-            attach(existing);
-        } else {
-            chatService.onSessionEvent(event => {
-                if (event.type === 'created' && event.sessionId === sessionId) {
-                    const s = chatService.getSession(sessionId);
-                    if (s) {
-                        attach(s);
-                    }
-                }
-            }, undefined, trash);
-        }
-
-        chatService.onSessionEvent(event => {
-            if (event.type === 'activeChange' && event.sessionId === sessionId) {
-                const s = chatService.getSession(sessionId);
-                const reqs = s?.model.getRequests() ?? [];
-                seenCountRef.current = reqs.length;
-                seenCompletedRef.current = countCompleted(reqs);
-                setHasUnread(false);
+        setHasUnread(provider.isUnread(sessionId));
+        const disposable = provider.onUnreadChanged(changedId => {
+            if (changedId === sessionId) {
+                setHasUnread(provider.isUnread(sessionId));
             }
-        }, undefined, trash);
-
-        return () => trash.dispose();
-    }, [sessionId, chatService]);
+        });
+        return () => disposable.dispose();
+    }, [sessionId, provider]);
 
     return hasUnread;
 }
@@ -174,12 +143,13 @@ interface ChatSessionCardProps {
     chatAgentService: ChatAgentService;
     hoverService: HoverService;
     markdownRenderer: MarkdownRenderer;
+    unreadState: UnreadStateProvider;
     onClick: () => void;
     actionButtons?: CardActionButton[];
 }
 
 function ChatSessionCard(
-    { session, chatService, chatAgentService, hoverService, markdownRenderer, onClick, actionButtons }: ChatSessionCardProps
+    { session, chatService, chatAgentService, hoverService, markdownRenderer, unreadState, onClick, actionButtons }: ChatSessionCardProps
 ): React.ReactElement {
     // eslint-disable-next-line no-null/no-null
     const wrapperRef = React.useRef<HTMLDivElement | null>(null);
@@ -187,7 +157,7 @@ function ChatSessionCard(
 
     const timeAgo = useTimeAgo(session.saveDate);
     const [isWorking, setIsWorking] = React.useState(false);
-    const hasUnread = useUnreadMessages(session.sessionId, chatService);
+    const hasUnread = useUnreadMessages(session.sessionId, unreadState);
 
     React.useEffect(() => {
         const trash = new DisposableCollection();
@@ -229,9 +199,9 @@ function ChatSessionCard(
         }
         if (!hoverActiveRef.current || !chatSession) { return; }
 
-        const content = buildSessionTooltip(chatSession, session, chatAgentService, markdownRenderer);
+        const content = buildSessionTooltip(chatSession, session, chatAgentService, markdownRenderer, hasUnread);
         hoverService.requestHover({ content, target, position: 'left' });
-    }, [session, chatService, chatAgentService, hoverService, markdownRenderer]);
+    }, [session, chatService, chatAgentService, hoverService, markdownRenderer, hasUnread]);
     React.useEffect(() => () => { hoverActiveRef.current = false; }, []); // Block mouseEnter proceeding on unmount
 
     const handleMouseLeave = React.useCallback(() => {
@@ -261,20 +231,28 @@ function ChatSessionCard(
                 actionButtons={actionButtons}
                 onClick={onClick}
             />
-            {hasUnread && <div className="theia-chat-session-card-unread-badge" />}
+            {hasUnread && !isWorking && <div className="theia-chat-session-badge-unread" />}
         </div>
     );
 }
 
 function buildSessionTooltip(
     session: ChatSession, metadata: ChatSessionMetadata,
-    agentService: ChatAgentService, markdownRenderer: MarkdownRenderer
+    agentService: ChatAgentService, markdownRenderer: MarkdownRenderer,
+    isUnread: boolean
 ): HTMLElement {
     const requests = session.model.getRequests();
     const lastRequest = requests.at(-1);
 
     const container = document.createElement('div');
     container.className = 'theia-chat-session-tooltip';
+
+    if (isUnread) {
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-unread-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/tooltip/unread', 'Unread');
+        container.appendChild(badge);
+    }
 
     if (lastRequest) {
         const lastResponse = lastRequest.response;
@@ -374,6 +352,10 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     protected _inputEnabled = false;
 
+    private readonly unreadSessions = new Map<string, { unread: boolean; seenRequests: number; seenCompleted: number; listener: DisposableCollection }>();
+    private readonly onUnreadChangedEmitter = new Emitter<string>();
+    readonly onUnreadChanged: Event<string> = this.onUnreadChangedEmitter.event;
+
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
         if (!this._markdownRenderer) {
@@ -389,11 +371,26 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     @postConstruct()
     protected init(): void {
-        this.loadSessions();
-        this.updateInputEnabled();
-        this.chatService.onSessionEvent(() => {
+        for (const session of this.chatService.getSessions()) {
+            this.watchSession(session);
+        }
+
+        this.chatService.onSessionEvent(event => {
+            if (event.type === 'created') {
+                const s = this.chatService.getSession(event.sessionId);
+                if (s) {
+                    this.watchSession(s);
+                }
+            } else if (event.type === 'activeChange' && event.sessionId) {
+                this.markSessionRead(event.sessionId);
+            } else if (event.type === 'deleted') {
+                this.unwatchSession(event.sessionId);
+            }
             this.loadSessions();
         });
+
+        this.loadSessions();
+        this.updateInputEnabled();
         this.languageModelRegistry.onChange(() => {
             this.updateInputEnabled();
         });
@@ -457,6 +454,61 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 3);
     }
 
+    isUnread(sessionId: string): boolean {
+        return this.unreadSessions.get(sessionId)?.unread === true;
+    }
+
+    protected watchSession(session: ChatSession): void {
+        if (this.unreadSessions.has(session.id)) {
+            return;
+        }
+        const reqs = session.model.getRequests();
+        const state = {
+            unread: false,
+            seenRequests: reqs.length,
+            seenCompleted: this.countCompleted(reqs),
+            listener: new DisposableCollection()
+        };
+        this.unreadSessions.set(session.id, state);
+
+        session.model.onDidChange(() => {
+            const current = session.model.getRequests();
+            if (current.length > state.seenRequests || this.countCompleted(current) > state.seenCompleted) {
+                if (!state.unread) {
+                    state.unread = true;
+                    this.onUnreadChangedEmitter.fire(session.id);
+                }
+            }
+        }, undefined, state.listener);
+    }
+
+    protected markSessionRead(sessionId: string): void {
+        const state = this.unreadSessions.get(sessionId);
+        if (!state) {
+            return;
+        }
+        const session = this.chatService.getSession(sessionId);
+        const reqs = session?.model.getRequests() ?? [];
+        state.seenRequests = reqs.length;
+        state.seenCompleted = this.countCompleted(reqs);
+        if (state.unread) {
+            state.unread = false;
+            this.onUnreadChangedEmitter.fire(sessionId);
+        }
+    }
+
+    protected unwatchSession(sessionId: string): void {
+        const state = this.unreadSessions.get(sessionId);
+        if (state) {
+            state.listener.dispose();
+            this.unreadSessions.delete(sessionId);
+        }
+    }
+
+    private countCompleted(reqs: ReturnType<ChatSession['model']['getRequests']>): number {
+        return reqs.filter(r => r.response.isComplete).length;
+    }
+
     renderWelcomeMessage(): React.ReactNode {
         if (!this._inputEnabled) {
             return undefined;
@@ -514,6 +566,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                 chatAgentService={this.chatAgentService}
                 hoverService={this.hoverService}
                 markdownRenderer={this.markdownRenderer}
+                unreadState={this}
                 onClick={() => this.handleSessionCardClick(session.sessionId)}
                 actionButtons={actionButtons}
             />

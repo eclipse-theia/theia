@@ -51,8 +51,8 @@ export const REQUIRED_MCP_SERVERS_NEXT: MCPServerDescription[] = [
   }
 ];
 
-export const appTesterTemplate: BasePromptFragment = {
-  id: 'app-tester-system-default',
+export const appTesterPlaywrightTemplate: BasePromptFragment = {
+  id: 'app-tester-system-playwright',
   template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
@@ -92,8 +92,8 @@ Some files and other pieces of data may have been added by the user to the conte
 `
 };
 
-export const appTesterNextTemplate: BasePromptFragment = {
-  id: 'app-tester-system-next',
+export const appTesterDefaultTemplate: BasePromptFragment = {
+  id: 'app-tester-system-default',
   template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution
@@ -170,7 +170,8 @@ If you started an app with ~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}}, close it 
 `
 };
 
-export const appTesterTemplateVariant: BasePromptFragment = {
-  id: 'app-tester-system-empty',
-  template: '',
+export const appTesterNextTemplate: BasePromptFragment = {
+  id: 'app-tester-system-next',
+  template: appTesterDefaultTemplate.template,
 };
+

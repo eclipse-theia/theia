@@ -319,8 +319,8 @@ describe('ShellCommandPermissionService', () => {
         describe('edge cases', () => {
             it('handles multiple spaces in command', () => {
                 storedPatterns = ['git log *'];
-                // Double space doesn't match - exact pattern requires single space
-                expect(service.isCommandAllowed('git  log')).to.be.false;
+                // Double space is normalized to single space during parsing
+                expect(service.isCommandAllowed('git  log')).to.be.true;
             });
 
             it('is case sensitive', () => {
