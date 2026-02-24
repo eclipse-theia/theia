@@ -24,9 +24,61 @@ import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 
-export type ToolConfirmationState = 'waiting' | 'allowed' | 'denied' | 'rejected';
+export type ToolConfirmationState = 'pending' | 'waiting' | 'allowed' | 'denied' | 'rejected';
 
 export type ConfirmationScope = 'once' | 'session' | 'forever';
+
+/**
+ * Shared hook that manages the confirmation state machine for tool calls.
+ *
+ * Handles initial state computation, auto-allow/deny via preference mode,
+ * and wiring up the response's confirmation and user-confirmation promises.
+ */
+export function useToolConfirmationState(
+    response: ToolCallChatResponseContent,
+    confirmationMode: ToolConfirmationPreferenceMode
+): { confirmationState: ToolConfirmationState; rejectionReason: unknown } {
+    const getInitialState = (): ToolConfirmationState => {
+        if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
+            return 'allowed';
+        }
+        if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
+            return 'denied';
+        }
+        if (response.finished) {
+            return ToolCallChatResponseContent.isDenialResult(response.result) ? 'denied' : 'allowed';
+        }
+        return 'pending';
+    };
+
+    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>(getInitialState);
+    const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
+
+    React.useEffect(() => {
+        if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
+            response.confirm();
+            setConfirmationState('allowed');
+            return;
+        } else if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
+            response.deny();
+            setConfirmationState('denied');
+            return;
+        }
+        response.confirmed
+            .then(confirmed => {
+                setConfirmationState(confirmed ? 'allowed' : 'denied');
+            })
+            .catch(reason => {
+                setRejectionReason(reason);
+                setConfirmationState('rejected');
+            });
+        response.needsUserConfirmation.then(() => {
+            setConfirmationState(prev => prev === 'pending' ? 'waiting' : prev);
+        });
+    }, [response, confirmationMode]);
+
+    return { confirmationState, rejectionReason };
+}
 
 export interface ToolConfirmationCallbacks {
     toolRequest?: ToolRequest;
@@ -384,26 +436,7 @@ export function withToolCallConfirmation<P extends object>(
             ...componentProps
         } = props;
 
-        const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
-
-        React.useEffect(() => {
-            if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
-                response.confirm();
-                setConfirmationState('allowed');
-                return;
-            } else if (confirmationMode === ToolConfirmationPreferenceMode.DISABLED) {
-                response.deny();
-                setConfirmationState('denied');
-                return;
-            }
-            response.confirmed
-                .then(confirmed => {
-                    setConfirmationState(confirmed === true ? 'allowed' : 'denied');
-                })
-                .catch(() => {
-                    setConfirmationState('rejected');
-                });
-        }, [response, confirmationMode]);
+        const { confirmationState } = useToolConfirmationState(response, confirmationMode);
 
         const handleAllow = React.useCallback((scope: ConfirmationScope = 'once') => {
             if (scope === 'forever' && response.name) {
@@ -435,6 +468,14 @@ export function withToolCallConfirmation<P extends object>(
             return (
                 <div className="theia-tool-confirmation-status denied">
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/executionDenied', 'Tool execution denied')}
+                </div>
+            );
+        }
+
+        if (confirmationState === 'pending') {
+            return (
+                <div className="theia-tool-confirmation-status pending">
+                    <span className={`${codicon('loading')} theia-animation-spin`}></span> {response.name}
                 </div>
             );
         }

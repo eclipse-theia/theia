@@ -140,6 +140,9 @@ export interface CustomAgentDescription {
 
     /** The default large language model to use with this agent */
     defaultLLM: string;
+
+    /** Whether this agent should appear in the chat UI (defaults to true if not specified) */
+    showInChat?: boolean;
 }
 
 export namespace CustomAgentDescription {
@@ -148,19 +151,35 @@ export namespace CustomAgentDescription {
      */
     export function is(entry: unknown): entry is CustomAgentDescription {
         // eslint-disable-next-line no-null/no-null
-        return typeof entry === 'object' && entry !== null
-            && 'id' in entry && typeof entry.id === 'string'
-            && 'name' in entry && typeof entry.name === 'string'
-            && 'description' in entry && typeof entry.description === 'string'
-            && 'prompt' in entry && typeof entry.prompt === 'string'
-            && 'defaultLLM' in entry && typeof entry.defaultLLM === 'string';
+        if (typeof entry !== 'object' || entry === null) {
+            return false;
+        }
+        if (!('id' in entry && typeof entry.id === 'string')) {
+            return false;
+        }
+        if (!('name' in entry && typeof entry.name === 'string')) {
+            return false;
+        }
+        if (!('description' in entry && typeof entry.description === 'string')) {
+            return false;
+        }
+        if (!('prompt' in entry && typeof entry.prompt === 'string')) {
+            return false;
+        }
+        if (!('defaultLLM' in entry && typeof entry.defaultLLM === 'string')) {
+            return false;
+        }
+        if ('showInChat' in entry && typeof entry.showInChat !== 'boolean') {
+            return false;
+        }
+        return true;
     }
 
     /**
      * Compares two CustomAgentDescription objects for equality
      */
     export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
-        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM;
+        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM && a.showInChat === b.showInChat;
     }
 }
 
@@ -416,9 +435,10 @@ export interface PromptService {
      * Gets the effective variant ID and customization state for a prompt fragment.
      * This is a convenience method that combines getEffectiveVariantId and customization check.
      * @param fragmentId The prompt fragment ID or variant set ID
+     * @param modeId Optional mode ID to use as variant override (if it's a valid variant for the fragment)
      * @returns The variant info or undefined if no valid variant exists
      */
-    getPromptVariantInfo(fragmentId: string): PromptVariantInfo | undefined;
+    getPromptVariantInfo(fragmentId: string, modeId?: string): PromptVariantInfo | undefined;
 
     /**
      * Gets the default variant ID of the given set
@@ -675,8 +695,17 @@ export class PromptServiceImpl implements PromptService {
         return undefined;
     }
 
-    getPromptVariantInfo(fragmentId: string): PromptVariantInfo | undefined {
-        const variantId = this.getEffectiveVariantId(fragmentId) ?? fragmentId;
+    getPromptVariantInfo(fragmentId: string, modeId?: string): PromptVariantInfo | undefined {
+        // If modeId is provided and is a valid variant, use it; otherwise use effective variant
+        let variantId: string | undefined;
+        if (modeId) {
+            const variantIds = this.getVariantIds(fragmentId);
+            if (variantIds.includes(modeId)) {
+                variantId = modeId;
+            }
+        }
+        variantId ??= this.getEffectiveVariantId(fragmentId) ?? fragmentId;
+
         const rawFragment = this.getRawPromptFragment(variantId);
         if (!rawFragment) {
             return undefined;

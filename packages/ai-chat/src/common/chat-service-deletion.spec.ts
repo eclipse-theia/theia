@@ -260,9 +260,10 @@ describe('ChatService Session Deletion', () => {
             expect(sessionStore.deletedSessions).to.include(persistedSessionId);
         });
 
-        it('should not fire SessionDeletedEvent for persisted-only sessions', async () => {
+        it('should fire SessionDeletedEvent for persisted-only sessions', async () => {
             // When deleting a persisted-only session (not in memory),
-            // we shouldn't fire the event since no in-memory state changed
+            // we still fire the event so consumers (e.g. the Welcome view's chat cards)
+            // can remove the entry.
             const persistedSessionId = 'persisted-session-456';
             let eventFired = false;
 
@@ -276,9 +277,9 @@ describe('ChatService Session Deletion', () => {
             // Delete the persisted-only session
             await chatService.deleteSession(persistedSessionId);
 
-            // Event should not have been fired since session wasn't in memory
-            expect(eventFired).to.be.false;
-            // But storage deletion should still have happened
+            // Event should have been fired so the Welcome view can remove the entry
+            expect(eventFired).to.be.true;
+            // Storage deletion should also have happened
             expect(sessionStore.deletedSessions).to.include(persistedSessionId);
         });
     });

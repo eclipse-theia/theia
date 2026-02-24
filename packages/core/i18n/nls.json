@@ -1,8 +1,6 @@
 {
   "ai-chat-ui.show-settings": "Show AI Settings",
-  "ai-chat:summarize-session-as-task-for-coder": "Summarize Session as Task for Coder",
   "ai.executePlanWithCoder": "Execute Current Plan with Coder",
-  "ai.updateTaskContext": "Update Current Task Context",
   "aiConfiguration:open": "Open AI Configuration view",
   "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
@@ -48,11 +46,39 @@
           "mdDescription": "Specifies the currently selected prompt variants for this agent.",
           "title": "Selected Variants"
         },
+        "showInChat": {
+          "mdDescription": "Specifies whether the agent should be shown in the chat UI (true) or hidden (false).",
+          "title": "Show in Chat"
+        },
         "title": "Agent Settings"
       },
       "anthropic": {
         "apiKey": {
           "description": "Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Either the key to access the API served at the given url or `true` to use the global Anthropic API key"
+          },
+          "enableStreaming": {
+            "title": "Indicates whether the streaming API shall be used. `true` by default."
+          },
+          "id": {
+            "title": "A unique identifier which is used in the UI to identify the custom model"
+          },
+          "maxRetries": {
+            "title": "Maximum number of retries when a request fails. 3 by default"
+          },
+          "mdDescription": "Integrate custom models compatible with the Anthropic API. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global anthropic API key.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            - specify `useCaching: false` to indicate that prompt caching shall not be used.            \n            - specify `maxRetries: <number>` to indicate the maximum number of retries when a request fails. 3 by default.",
+          "modelId": {
+            "title": "Model ID"
+          },
+          "url": {
+            "title": "The Anthropic API compatible endpoint where the model is hosted"
+          },
+          "useCaching": {
+            "title": "Indicates whether the model supports prompt caching. `true` by default"
+          }
         },
         "models": {
           "description": "Official Anthropic models to use"
@@ -63,6 +89,9 @@
           "architect": "Architect",
           "coder": "Coder",
           "universal": "Universal"
+        },
+        "app-tester": {
+          "description": "This agent tests your application user interface to verify user-specified test scenarios through browser automation. It can automate testing workflows and provide detailed feedback on application functionality."
         },
         "applySuggestion": "Apply suggestion",
         "bypassModelRequirement": {
@@ -94,6 +123,8 @@
         "defaultAgent": {
           "description": "Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query.         If no Default Agent is configured, Theia´s defaults will be applied."
         },
+        "fromClipboard": "$(clippy) From Clipboard",
+        "fromClipboardDescription": "Paste image from clipboard",
         "imageContextVariable": {
           "args": {
             "data": {
@@ -120,38 +151,43 @@
             }
           }
         },
+        "pendingImage": {
+          "file": "Pending image: {0}",
+          "pasted": "Pending image (pasted)"
+        },
+        "persistedSessionLimit": {
+          "description": "Maximum number of chat sessions to persist. Use -1 for unlimited sessions, 0 to disable session persistence. When the limit is reduced, the oldest sessions exceeding the new limit are automatically removed on the next save."
+        },
         "pinChatAgent": {
           "description": "Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.        You can manually unpin or switch agents anytime."
         },
         "revertSuggestion": "Revert suggestion",
         "selectImageFile": "Select an image file",
-        "sessionStorage": {
-          "description": "Configure where to store chat sessions.",
-          "globalPath": "Global Path",
-          "pathNotUsedForScope": "Not used with {0} storage scope.",
-          "pathRequired": "Path cannot be empty",
-          "pathSettings": "Path Settings",
-          "resetToDefault": "Reset to default",
-          "scope": {
-            "global": "Store chat sessions in the global configuration folder.",
-            "workspace": "Store chat sessions in the workspace folder."
-          },
-          "workspacePath": "Workspace Path"
+        "sessionStorageScope": {
+          "description": "Choose whether to persist chat sessions in separate per-workspace stores or in a single global store. If no workspace is open, sessions will fall back to global storage.",
+          "global": "Store chat sessions in a single store, shared across all workspaces.",
+          "workspace": "Store chat sessions in workspace-specific metadata storage. Sessions are associated with the workspace but stored outside the workspace directory."
         },
         "taskContextService": {
-          "summarizeProgressMessage": "Summarize: {0}",
-          "updatingProgressMessage": "Updating: {0}"
+          "summarizeProgressMessage": "Summarize: {0}"
+        },
+        "taskContextStorageDirectory": {
+          "description": "A workspace relative path in which to persist and from which to retrieve task context descriptions. If set to empty value, generated task contexts will be stored in memory rather than on disk."
         },
         "toolConfirmation": {
           "confirm": {
             "description": "Ask for confirmation before executing tools"
           },
+          "description": "Configure confirmation behavior for different tools. Key is the tool ID, value is the confirmation mode. Use \"*\" as the key to set a global default for all tools.",
           "disabled": {
             "description": "Disable tool execution"
           },
           "yolo": {
             "description": "Execute tools automatically without confirmation"
           }
+        },
+        "universal": {
+          "description": "This agent is designed to help software developers by providing concise and accurate answers to general programming and software development questions. It is also the fall-back for any generic questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot access the current user context or the workspace."
         },
         "view": {
           "label": "AI Chat"
@@ -181,11 +217,13 @@
           "clearHistory": "Clear Input Prompt History",
           "cycleMode": "Cycle Chat Mode",
           "nextPrompt": "Next Prompt",
-          "previousPrompt": "Previous Prompt"
+          "previousPrompt": "Previous Prompt",
+          "toggleCapabilities": "Toggle Capabilities Configuration"
         },
         "chatInputAriaLabel": "Type your message here",
         "chatResponses": "Chat responses",
         "code-part-renderer": {
+          "copied": "Copied",
           "generatedCode": "Generated Code"
         },
         "collapseChangeSet": "Collapse Change Set",
@@ -224,6 +262,7 @@
         "focusResponse": "Focus Chat Response",
         "noChatAgentsAvailable": "No chat agents available.",
         "openDiff": "Open Diff",
+        "openImage": "Open image",
         "openOriginalFile": "Open Original File",
         "performThisTask": "Perform this task.",
         "persistedSession": "Persisted session (click to restore)",
@@ -241,12 +280,14 @@
         "selectVariableArguments": "Select variable arguments",
         "send": "Send (Enter)",
         "sessionNotFoundForRetry": "Session not found for retry",
+        "switchAgentMode": "Switch Agent Mode",
         "text-part-renderer": {
           "cantDisplay": "Can't display response, please check your ChatResponsePartRenderers!"
         },
         "thinking-part-renderer": {
           "thinking": "Thinking"
         },
+        "toggleCapabilitiesConfig": "Toggle Capabilities Configuration",
         "toolcall-part-renderer": {
           "denied": "Execution denied",
           "finished": "Ran",
@@ -257,6 +298,7 @@
           "allow-session": "Allow for this Chat",
           "allowed": "Tool execution allowed",
           "alwaysAllowConfirm": "I understand, enable auto-approval",
+          "alwaysAllowGenericWarning": "This tool requires confirmation before auto-approval can be enabled. Once enabled, all future invocations will execute without confirmation. Only enable this if you trust this tool and understand the potential risks.",
           "alwaysAllowTitle": "Enable Auto-Approval for \"{0}\"?",
           "canceled": "Tool execution canceled",
           "denied": "Tool execution denied",
@@ -278,6 +320,10 @@
       },
       "claude-code": {
         "agentDescription": "Anthropic's coding agent",
+        "allowSession": "Allow for this session",
+        "apiKey": {
+          "description": "Enter an API Key for Claude Code. **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+        },
         "askBeforeEdit": "Ask before edit",
         "changeSetTitle": "Changes by Claude Code",
         "clearCommand": {
@@ -302,6 +348,9 @@
         "entireFile": "Entire File",
         "excludingOnePattern": " (exluding 1 pattern)",
         "excludingPatterns": " (excluding {0} patterns)",
+        "executablePath": {
+          "description": "Path to the Claude Code executable (cli.js) of the `@anthropic-ai/claude-agent-sdk`.If not specified, the system will attempt to resolve the path automatically from the global npm installation."
+        },
         "executedCommand": "Executed: {0}",
         "failedToParseBashToolData": "Failed to parse Bash tool data",
         "failedToParseEditToolData": "Failed to parse Edit tool data",
@@ -387,6 +436,11 @@
         },
         "toolApprovalRequest": "Claude Code wants to use the \"{0}\" tool. Do you want to allow this?",
         "totalEdits": "Total Edits",
+        "vars": {
+          "activeEditor": {
+            "description": "The URI of the currently active editor."
+          }
+        },
         "webFetch": "Web Fetch",
         "writing": "Writing"
       },
@@ -395,6 +449,9 @@
       },
       "codex": {
         "agentDescription": "OpenAI's coding assistant powered by Codex",
+        "apiKey": {
+          "description": "OpenAI API key for Codex. If not set, falls back to the shared OpenAI API key (`ai-features.openAiOfficial.openAiApiKey`). Can also be set via `OPENAI_API_KEY` environment variable."
+        },
         "completedCount": "{0}/{1} completed",
         "exitCode": "Exit code: {0}",
         "fileChangeFailed": "Codex failed to apply changes for: {0}",
@@ -476,6 +533,7 @@
           "initiating": "Initiating authentication...",
           "instructions": "To authorize Theia to use GitHub Copilot, visit the URL below and enter the code:",
           "openGitHub": "Open GitHub",
+          "privacy": "Theia is an open-source project. We only request access to your GitHub username to connect to GitHub Copilot services — no other data is accessed or stored.",
           "success": "Successfully signed in to GitHub Copilot!",
           "successHint": "If your GitHub account has access to Copilot, you can now configure Copilot language models in the ",
           "title": "Sign in to GitHub Copilot",
@@ -503,14 +561,18 @@
         "agentConfiguration": {
           "actions": "Actions",
           "addCustomAgent": "Add Custom Agent",
+          "availableCapabilities": "Available Capabilities",
           "enableAgent": "Enable Agent",
           "label": "Agents",
           "llmRequirements": "LLM Requirements",
           "notUsedInPrompt": "Not used in prompt",
+          "notUsedInPromptTooltip": "This variable is declared by the agent but not referenced in the current prompt template.",
           "promptTemplates": "Prompt Templates",
           "selectAgentMessage": "Please select an Agent first!",
+          "showInChat": "Show in Chat",
           "templateName": "Template",
           "undeclared": "Undeclared",
+          "undeclaredTooltip": "This variable is used in the prompt but has no description declared by the agent.",
           "usedAgentSpecificVariables": "Used Agent-Specific Variables",
           "usedFunctions": "Used Functions",
           "usedGlobalVariables": "Used Global Variables",
@@ -525,6 +587,16 @@
         "blinkTitle": {
           "agentCompleted": "Theia - Agent Completed",
           "namedAgentCompleted": "Theia - Agent \"{0}\" Completed"
+        },
+        "capabilityVariable": {
+          "argDescription": "The prompt fragment id, optionally followed by \"default on\" or \"default off\" (defaults to off)",
+          "completions": {
+            "detail": {
+              "off": "Capability disabled by default",
+              "on": "Capability enabled by default"
+            }
+          },
+          "description": "Conditionally resolves prompt fragments based on default on/off setting"
         },
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
@@ -606,9 +678,6 @@
             "title": "Language Model Aliases"
           }
         },
-        "prefs": {
-          "title": "AI Features [Beta]"
-        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "Active customization",
           "createCustomizationTitle": "Create Customization",
@@ -688,6 +757,9 @@
           },
           "title": "Custom Request Settings"
         },
+        "skillDirectories": {
+          "description": "Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. The .prompts/skills directory in your workspace and the skills directory in your product's configuration folder are always included."
+        },
         "skillsVariable": {
           "description": "Returns the list of available skills that can be used by AI agents"
         },
@@ -750,6 +822,7 @@
         "clear": {
           "tooltip": "Clear History of all agents"
         },
+        "edited": "edited",
         "exchange-card": {
           "agentId": "Agent",
           "timestamp": "Started"
@@ -758,6 +831,7 @@
         "request-card": {
           "agent": "Agent",
           "model": "Model",
+          "promptVariant": "Prompt Variant",
           "request": "Request",
           "response": "Response",
           "timestamp": "Timestamp",
@@ -799,12 +873,15 @@
       "ide": {
         "agent-description": "Configure AI agent settings including enablement, LLM selection, prompt template customization, and custom agent creation in the [AI Configuration View]({0}).",
         "agentConfiguration": {
+          "capabilityId": "Fragment ID",
+          "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "Create new file",
             "openExistingFile": "Open existing file",
             "placeholder": "Choose where to create or open a custom agents file",
             "title": "Select Location for Custom Agents File"
           },
+          "enabledByDefault": "Enabled by Default",
           "noDescription": "No description available"
         },
         "app-tester": {
@@ -829,14 +906,11 @@
         },
         "architectAgent": {
           "mode": {
-            "default": "Default Mode",
             "plan": "Plan Mode",
             "simple": "Simple Mode"
           },
           "suggestion": {
-            "executePlanWithCoder": "Execute \"{0}\" with Coder",
-            "summarizeSessionAsTaskForCoder": "Summarize this session as a task for Coder",
-            "updateTaskContext": "Update current task context"
+            "executePlanWithCoder": "Execute \"{0}\" with Coder"
           }
         },
         "bypassHint": "Some agents like Claude Code don't require Theia Language Models",
@@ -859,8 +933,10 @@
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Got it",
-            "label": "AI command"
+            "label": "AI command",
+            "message": "Executing callback with args {0}. The first arg is the command id registered for the dynamically registered command. The other args are the actual args for the handler."
           },
+          "description": "This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. Based on the user request, it can find the right command and then let the user execute it.",
           "response": {
             "customHandler": "Try executing this:",
             "noCommand": "Sorry, I can't find such a command",
@@ -882,14 +958,17 @@
           }
         },
         "enableAI": {
-          "mdDescription": "❗ This setting allows you to access the latest AI capabilities (Beta version).            \n            Please note that these features are in a beta phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "This setting allows you to access the latest AI capabilities (Beta version).            \n            Please note that these features are in a beta phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
         },
         "github": {
           "configureGitHubServer": {
             "canceled": "GitHub server configuration cancelled. Please configure the GitHub MCP server to use this agent.",
+            "followup": "Settings file opened. Please add your GitHub Personal Access Token to the `serverAuthToken` property in the GitHub server configuration, then  save and try again.\n\nYou can create a Personal Access Token at: https://github.com/settings/tokens",
             "no": "No, cancel",
+            "question": "The GitHub MCP server is not configured. Would you like to configure it now? This will open the settings.json file where you can add your GitHub access token.",
             "yes": "Yes, configure GitHub server"
           },
+          "description": "This agent helps you interact with GitHub repositories, issues, pull requests, and other GitHub features through the GitHub MCP server. It can help you manage your repositories, create issues, handle pull requests, and perform various GitHub operations.",
           "errorCheckingGitHubServerStatus": "Error checking GitHub MCP server status: {0}",
           "startGitHubServer": {
             "canceled": "Please start the GitHub MCP server to use this agent.",
@@ -914,6 +993,9 @@
           "error": {
             "noAgents": "No chat agent available to handle request. Please check your configuration whether any are enabled."
           },
+          "excludedAgents": {
+            "mdDescription": "List of agent IDs that the orchestrator is not allowed to delegate to. These agents will not be visible to the orchestrator when selecting an agent to handle a request."
+          },
           "progressMessage": "Determining the most appropriate agent",
           "response": {
             "delegatingToAgent": "Delegating to `@{0}`"
@@ -921,6 +1003,12 @@
         },
         "prompt-template-description": "Select prompt variants and customize prompt templates for AI agents in the [AI Configuration View]({0}).",
         "recommendedAgents": "Recommended agents:",
+        "shellAllowlist": {
+          "placeholder": "e.g., \"git log\" (exact) or \"git log *\" (with args)"
+        },
+        "shellDenylist": {
+          "placeholder": "e.g., \"git push *\" or \"rm -rf /\""
+        },
         "skillsConfiguration": {
           "label": "Skills",
           "location": {
@@ -930,6 +1018,7 @@
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "I understand, enable auto-approval",
+            "genericWarning": "This tool requires confirmation before auto-approval can be enabled. Once enabled, all future invocations will execute without confirmation. Only enable this if you trust this tool and understand the potential risks.",
             "title": "Enable Auto-Approval for \"{0}\"?"
           },
           "confirmationMode": {
@@ -944,6 +1033,16 @@
             "title": "Reset All Tool Confirmation Modes"
           },
           "resetAllTooltip": "Reset all tools to default",
+          "shellAllowlist": {
+            "description": "Commands matching these patterns will be automatically allowed without confirmation. Use * as wildcard: \"git log\" (exact match), \"git log *\" (with any arguments). Wildcard must be preceded by a space.",
+            "empty": "No patterns configured. All shell commands will require confirmation.",
+            "title": "Shell Execute Allowlist"
+          },
+          "shellDenylist": {
+            "description": "Commands matching these patterns will be automatically denied without confirmation. Use this to block dangerous commands like 'git push *' or 'rm -rf /'.",
+            "empty": "No patterns configured. No shell commands will be automatically denied.",
+            "title": "Shell Execute Denylist"
+          },
           "toolOptions": {
             "confirm": {
               "label": "Confirm"
@@ -965,7 +1064,7 @@
           "port": {
             "description": "The port to use to start the server."
           },
-          "title": "✨ AI LlamaFile",
+          "title": "AI LlamaFile",
           "uri": {
             "description": "The file uri to the Llamafile."
           }
@@ -1032,6 +1131,10 @@
         },
         "stop": {
           "label": "MCP: Stop MCP Server"
+        },
+        "useWorkspaceAsRoot": {
+          "mdDescription": "Roots define the boundaries of where servers can operate within the filesystem. If enabled, the workspace folders will be used as roots, otherwise the MCP servers will have access to the entire filesystem. Changing this setting will restart all running MCP servers to apply the new roots configuration.",
+          "title": "Use Workspace as Root"
         }
       },
       "mcpConfiguration": {
@@ -1086,6 +1189,9 @@
           },
           "url": {
             "title": "The Open AI API compatible endpoint where the model is hosted"
+          },
+          "useResponseApi": {
+            "title": "Use the newer OpenAI Response API instead of the Chat Completion API. `false` by default for custom providers.Note: Will automatically fall back to Chat Completions API when tools are used."
           }
         },
         "models": {
@@ -1097,6 +1203,7 @@
       },
       "promptTemplates": {
         "directories": {
+          "description": "List of relative paths indicating folders in the current workspace to be scanned for WORKSPACE specific prompt templates. When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files (highest) > workspace directories > global directories (lowest).",
           "title": "Workspace-specific Prompt Template Directories"
         },
         "extensions": {
@@ -1104,6 +1211,7 @@
           "title": "Additional Prompt Template File Extensions"
         },
         "files": {
+          "description": "List of relative paths to specific files in the current workspace to be used as prompt templates. When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files (highest) > workspace directories > global directories (lowest).",
           "title": "Workspace-specific Prompt Template Files"
         }
       },
@@ -1232,9 +1340,15 @@
           "description": "If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).",
           "title": "Consider .gitignore"
         },
+        "createSkillAgent": {
+          "description": "An AI assistant for creating new skills. Skills provide reusable instructions and domain knowledge for AI agents. This agent helps you create well-structured skills in the .prompts/skills directory with proper YAML frontmatter and markdown content."
+        },
         "excludedPattern": {
           "description": "List of patterns (glob or regex) for files/folders to exclude.",
           "title": "Excluded File Patterns"
+        },
+        "projectInfoAgent": {
+          "description": "An AI assistant for managing project information templates. This agent helps create, update, and review the .prompts/project-info.prompttemplate file which provides context about your project to other AI agents. It can analyze your workspace to suggest project information or update existing templates based on your requirements."
         },
         "searchMaxResults": {
           "description": "Maximum number of search results returned by the workspace search function.",
@@ -1265,7 +1379,10 @@
     "ai-core": {
       "agentCompletionMessage": "Agent \"{0}\" has completed its task.",
       "agentCompletionTitle": "Agent \"{0}\" Task Completed",
-      "agentCompletionWithTask": "Agent \"{0}\" has completed the task: {1}"
+      "agentCompletionWithTask": "Agent \"{0}\" has completed the task: {1}",
+      "preferences": {
+        "title": "AI Features"
+      }
     },
     "ai-editor": {
       "contextMenu": "Ask AI",
@@ -1291,9 +1408,6 @@
       },
       "todoTool": {
         "noTasks": "No tasks"
-      },
-      "withAppTesterCommand": {
-        "description": "Delegate testing to the AppTester agent (requires agent mode)"
       }
     },
     "ai-mcp": {
@@ -1309,6 +1423,12 @@
       "executionDeniedWithReason": "Denied with reason",
       "noOutput": "No output",
       "partialOutput": "Partial Output",
+      "shellCommandAllowlist": {
+        "description": "List of shell command patterns. Use * as wildcard: \"git log\" (exact match), \"git log *\" (with optional arguments), \"* --version\" (any command ending with --version). Wildcard must be preceded by space. Commands with dangerous patterns ($, backticks) are never auto-allowed."
+      },
+      "shellCommandDenylist": {
+        "description": "List of shell command patterns that should always be denied. Commands matching these patterns will be auto-rejected without confirmation. Uses pattern syntax: \"git push\" (exact match) or \"git push *\" (with any arguments). Ships with default patterns for dangerous commands (eval, exec, sudo, rm -rf, etc.)."
+      },
       "timeout": "Timeout",
       "workingDirectory": "Working directory"
     },
@@ -1465,6 +1585,7 @@
       "confirmRunToShiftedPosition_title": "Cannot run the current thread to exactly the specified location",
       "consoleFilter": "Filter (e.g. text, !exclude)",
       "consoleFilterAriaLabel": "Filter debug console output",
+      "consoleFilterTooltip": "Filter console output by text. Separate multiple terms with commas. Prefix with `!` to exclude a term.\n\nExamples:\n\n- `text` - show lines containing \"text\"\n- `text, other` - show lines containing \"text\" or \"other\"\n- `!text` - hide lines containing \"text\"\n- `text, !other` - show \"text\" but hide \"other\"",
       "consoleSessionSelectorTooltip": "Switch between debug sessions. Each debug session has its own console output.",
       "consoleSeverityTooltip": "Filter console output by severity level. Only messages with the selected severity will be shown.",
       "continueAll": "Continue All",
@@ -1767,7 +1888,8 @@
       "debugInstance": "Debug Instance",
       "debugMode": "Using inspect or inspect-brk for Node.js debug",
       "debugPorts": {
-        "debugPort": "Port to use for this server's Node.js debug"
+        "debugPort": "Port to use for this server's Node.js debug",
+        "serverName": "The plugin host server name, e.g. \"hosted-plugin\" as in \"--hosted-plugin-inspect=\" or \"headless-hosted-plugin\" as in \"--headless-hosted-plugin-inspect=\""
       },
       "devHost": "Development Host",
       "failed": "Failed to run hosted plugin instance: {0}",
@@ -1950,7 +2072,9 @@
       "page": "Page",
       "rename": "Rename",
       "resetTerminalManagerLayout": "Reset Terminal Manager Layout",
-      "toggleTreeView": "Toggle Tree View"
+      "tabsDisplay": "Controls how terminals are displayed. 'tree' shows multiple terminals in a single view with a tree view for management,'tabbed' shows each terminal in its own view in a separate tab.",
+      "toggleTreeView": "Toggle Tree View",
+      "treeViewLocation": "The location of the terminal manager's tree view. Only applies when 'terminal.grouping.mode' is set to 'tree'."
     },
     "test": {
       "cancelAllTestRuns": "Cancel All Test Runs",
@@ -2044,6 +2168,7 @@
         "title": "Workspace File"
       },
       "trashTitle": "Move {0} to Trash",
+      "trustDialogMessage": "If you trust the authors, code in this folder may be executed.\n\nIf not, some features will be disabled.\n\nThe workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet.\nCheck the 'Restricted Mode' indicator in the status bar for details.",
       "trustEmptyWindow": "Controls whether or not the empty workspace is trusted by default.",
       "trustEnabled": "Controls whether or not workspace trust is enabled. If disabled, all workspaces are trusted.",
       "trustTrustedFolders": "List of folder URIs that are trusted without prompting.",

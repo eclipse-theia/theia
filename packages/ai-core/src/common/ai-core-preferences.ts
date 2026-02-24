@@ -24,7 +24,7 @@ import {
 } from './notification-types';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
-export const AI_CORE_PREFERENCES_TITLE = '✨ ' + nls.localize('theia/ai/core/prefs/title', 'AI Features [Beta]');
+export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences/title', 'AI Features');
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
@@ -141,7 +141,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_SKILL_DIRECTORIES]: {
             description: nls.localize('theia/ai/core/skillDirectories/description',
                 'Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. ' +
-                'The default skills directory in your product\'s configuration folder is always included.'),
+                'The .prompts/skills directory in your workspace and the skills directory in your product\'s configuration folder are always included.'),
             type: 'array',
             items: {
                 type: 'string'

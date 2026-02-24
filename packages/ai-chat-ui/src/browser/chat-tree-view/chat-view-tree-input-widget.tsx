@@ -94,8 +94,27 @@ export class AIChatTreeInputWidget extends AIChatInputWidget {
         this.request.editContextManager.addVariables(variable);
     }
 
+    /**
+     * In edit mode, image attachments go to editContextManager like other context.
+     * They don't need separate handling since editContextManager is message-scoped.
+     * We add the variable directly rather than registering with the pending image registry.
+     */
+    override registerPendingImage(variable: AIVariableResolutionRequest): string {
+        this.request.editContextManager.addVariables(variable);
+        // Return a placeholder short ID - in edit mode, the full data is in editContextManager
+        return `edit_img_${Date.now()}`;
+    }
+
     protected override getContext(): readonly AIVariableResolutionRequest[] {
         return this.request.editContextManager.getVariables();
+    }
+
+    override getAllVariablesForRequest(): AIVariableResolutionRequest[] {
+        return [...this.request.editContextManager.getVariables()];
+    }
+
+    override clearPendingImageAttachments(): void {
+        // No-op in edit mode - editContextManager handles its own lifecycle
     }
 
     protected override deleteContextElement(index: number): void {

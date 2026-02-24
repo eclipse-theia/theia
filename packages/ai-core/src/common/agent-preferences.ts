@@ -38,6 +38,13 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
                         markdownDescription: nls.localize('theia/ai/agents/enable/mdDescription', 'Specifies whether the agent should be enabled (true) or disabled (false).'),
                         default: true
                     },
+                    showInChat: {
+                        type: 'boolean',
+                        title: nls.localize('theia/ai/agents/showInChat/title', 'Show in Chat'),
+                        markdownDescription: nls.localize('theia/ai/agents/showInChat/mdDescription',
+                            'Specifies whether the agent should be shown in the chat UI (true) or hidden (false).'),
+                        default: true
+                    },
                     languageModelRequirements: {
                         type: 'array',
                         title: nls.localize('theia/ai/agents/languageModelRequirements/title', 'Language Model Requirements'),

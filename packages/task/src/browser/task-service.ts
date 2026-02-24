@@ -29,6 +29,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import {
@@ -196,6 +197,9 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskContextKeyService)
     protected readonly taskContextKeyService: TaskContextKeyService;
+
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
 
     @postConstruct()
     protected init(): void {
@@ -528,6 +532,9 @@ export class TaskService implements TaskConfigurationClient {
      * @param scope  The scope where to look for tasks
      */
     async run(token: number, source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskInfo | undefined> {
+        if (!(await this.requestWorkspaceTrust())) {
+            return;
+        }
         let task: TaskConfiguration | undefined;
         task = this.taskConfigurations.getTask(scope, taskLabel);
         if (!task) { // if a configured task cannot be found, search from detected tasks
@@ -746,6 +753,9 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        if (!(await this.requestWorkspaceTrust())) {
+            return;
+        }
         console.debug('entering runTask');
         const releaseLock = await this.taskStartingLock.acquire();
         console.debug('got lock');
@@ -1160,8 +1170,17 @@ export class TaskService implements TaskConfigurationClient {
         return completedTask && completedTask.exitCode.promise;
     }
 
-    async getTerminateSignal(id: number): Promise<string | undefined> {
-        const completedTask = this.runningTasks.get(id);
-        return completedTask && completedTask.terminateSignal.promise;
+    async getTerminateSignal(taskId: number): Promise<string | undefined> {
+        const completedTask = this.runningTasks.get(taskId);
+        return completedTask?.terminateSignal.promise;
+    }
+
+    /**
+     * Request workspace trust from the user. Returns true if the workspace is trusted,
+     * false if the user declined to trust the workspace.
+     */
+    protected async requestWorkspaceTrust(): Promise<boolean> {
+        const trusted = await this.workspaceTrustService.requestWorkspaceTrust();
+        return trusted === true;
     }
 }

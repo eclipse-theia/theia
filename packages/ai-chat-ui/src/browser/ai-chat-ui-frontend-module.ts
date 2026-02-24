@@ -21,6 +21,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { AIChatContribution } from './ai-chat-ui-contribution';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
@@ -47,7 +48,7 @@ import {
     TypeDocSymbolSelectionResolver,
 } from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
-import { createChatViewTreeWidget } from './chat-tree-view';
+import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
@@ -62,8 +63,12 @@ import { ChatInputHistoryService } from './chat-input-history';
 import { ChatInputHistoryContribution } from './chat-input-history-contribution';
 import { ChatInputModeContribution } from './chat-input-mode-contribution';
 import { ChatFocusContribution } from './chat-focus-contribution';
+import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
+import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    bind(AIChatNavigationService).toSelf().inSingletonScope();
+
     bindViewContribution(bind, AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
 
@@ -80,7 +85,15 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CommandContribution).toService(ChatFocusContribution);
     bind(KeybindingContribution).toService(ChatFocusContribution);
 
+    bind(ChatCapabilitiesServiceImpl).toSelf().inSingletonScope();
+    bind(ChatCapabilitiesService).toService(ChatCapabilitiesServiceImpl);
+
+    bind(ChatInputCapabilitiesContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputCapabilitiesContribution);
+    bind(KeybindingContribution).toService(ChatInputCapabilitiesContribution);
+
     bindContributionProvider(bind, ChatResponsePartRenderer);
+    bindContributionProvider(bind, ChatWelcomeMessageProvider);
 
     bindChatViewWidget(bind);
 

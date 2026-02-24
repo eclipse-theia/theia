@@ -28,7 +28,6 @@ import {
     type ChatRequest,
     type ChatHierarchyBranch,
 } from '@theia/ai-chat';
-import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
@@ -54,7 +53,6 @@ import {
     inject,
     injectable,
     named,
-    optional,
     postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -97,6 +95,8 @@ export interface ChatWelcomeMessageProvider {
     readonly modelRequirementBypassed?: boolean;
     readonly defaultAgent?: string;
     readonly onStateChanged?: Event<void>;
+    /** Optional priority for rendering order. Higher values render first. Default: 0 */
+    readonly priority?: number;
 }
 
 @injectable()
@@ -126,8 +126,8 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(HoverService)
     protected hoverService: HoverService;
 
-    @inject(ChatWelcomeMessageProvider) @optional()
-    protected welcomeMessageProvider?: ChatWelcomeMessageProvider;
+    @inject(ContributionProvider) @named(ChatWelcomeMessageProvider)
+    protected readonly welcomeMessageProviders: ContributionProvider<ChatWelcomeMessageProvider>;
 
     @inject(AIChatTreeInputFactory)
     protected inputWidgetFactory: AIChatTreeInputFactory;
@@ -229,12 +229,14 @@ export class ChatViewTreeWidget extends TreeWidget {
             })
         ]);
 
-        if (this.welcomeMessageProvider?.onStateChanged) {
-            this.toDispose.push(
-                this.welcomeMessageProvider.onStateChanged(() => {
-                    this.update();
-                })
-            );
+        for (const provider of this.welcomeMessageProviders.getContributions()) {
+            if (provider.onStateChanged) {
+                this.toDispose.push(
+                    provider.onStateChanged(() => {
+                        this.update();
+                    })
+                );
+            }
         }
 
         // Initialize lastScrollTop with current scroll position
@@ -396,12 +398,53 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.update();
     }
 
+    /**
+     * Returns providers sorted by priority (highest first).
+     */
+    protected getSortedWelcomeMessageProviders(): ChatWelcomeMessageProvider[] {
+        return this.welcomeMessageProviders.getContributions()
+            .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    }
+
+    /**
+     * Returns the highest-priority provider for backward-compatible property access.
+     */
+    protected get welcomeMessageProvider(): ChatWelcomeMessageProvider | undefined {
+        return this.getSortedWelcomeMessageProviders()[0];
+    }
+
     protected renderDisabledMessage(): React.ReactNode {
-        return this.welcomeMessageProvider?.renderDisabledMessage?.() ?? <></>;
+        const providers = this.getSortedWelcomeMessageProviders();
+        const nodes = providers
+            .map(p => p.renderDisabledMessage?.())
+            .filter((node): node is React.ReactNode => node !== undefined);
+        return this.renderContributedWelcomeContent('theia-WelcomeMessage-Container', nodes);
     }
 
     protected renderWelcomeMessage(): React.ReactNode {
-        return this.welcomeMessageProvider?.renderWelcomeMessage?.() ?? <></>;
+        const providers = this.getSortedWelcomeMessageProviders();
+        const nodes = providers
+            .map(p => p.renderWelcomeMessage?.())
+            .filter((node): node is React.ReactNode => node !== undefined);
+        return this.renderContributedWelcomeContent('theia-WelcomeMessage-Container', nodes);
+    }
+
+    protected renderContributedWelcomeContent(containerClass: string, nodes: React.ReactNode[]): React.ReactNode {
+        if (nodes.length === 0) {
+            return <></>;
+        }
+        const withDividers: React.ReactNode[] = [];
+        nodes.forEach((node, index) => {
+            if (index > 0) {
+                withDividers.push(<div key={`welcome-divider-${index}`} className='theia-WelcomeMessage-Divider' />);
+            }
+            withDividers.push(node);
+        });
+        return <div className={containerClass}>
+            <div className='theia-WelcomeMessage-Container-Inner'>
+                {withDividers}
+            </div>
+        </div>;
     }
 
     protected mapRequestToNode(branch: ChatHierarchyBranch): RequestNode {
@@ -830,31 +873,6 @@ const ChatRequestRender = (
         );
     };
 
-    // Extract image variables from the request context
-    const imageVariables = node.request.context.variables
-        .filter(ImageContextVariable.isResolvedImageContext)
-        .map(resolved => ImageContextVariable.parseResolved(resolved))
-        .filter((img): img is NonNullable<typeof img> => img !== undefined);
-
-    const renderImages = () => {
-        if (imageVariables.length === 0) {
-            return undefined;
-        }
-        return (
-            <div className="theia-RequestNode-Images">
-                {imageVariables.map((img, index) => (
-                    <div key={index} className="theia-RequestNode-ImagePreview">
-                        <img
-                            src={`data:${img.mimeType};base64,${img.data}`}
-                            alt={img.name ?? img.wsRelativePath ?? 'Image'}
-                            title={img.name ?? img.wsRelativePath ?? 'Image'}
-                        />
-                    </div>
-                ))}
-            </div>
-        );
-    };
-
     return (
         <div className="theia-RequestNode">
             <p>
@@ -895,7 +913,6 @@ const ChatRequestRender = (
                     }
                 })}
             </p>
-            {renderImages()}
             {renderFooter()}
         </div>
     );

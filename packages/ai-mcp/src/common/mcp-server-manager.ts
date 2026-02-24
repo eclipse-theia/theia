@@ -60,6 +60,7 @@ export interface MCPServerManager {
     disconnectClient(client: MCPFrontendNotificationService): void;
     readResource(serverName: string, resourceId: string): Promise<ReadResourceResult>;
     getResources(serverName: string): Promise<ListResourcesResult>;
+    setWorkspaceRoots(roots: string[] | undefined): void;
 }
 
 export interface ToolInformation {

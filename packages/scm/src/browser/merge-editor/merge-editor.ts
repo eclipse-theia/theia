@@ -20,7 +20,7 @@ import {
     ApplicationShell, BaseWidget, FocusTracker, LabelProvider, Message, Navigatable, NavigatableWidgetOpenHandler, PanelLayout,
     Saveable, SaveableSource, SplitPanel, StatefulWidget, StorageService, Widget, WidgetOpenerOptions
 } from '@theia/core/lib/browser';
-import { Autorun, DerivedObservable, Observable, ObservableUtils, SettableObservable } from '@theia/core/lib/common/observable';
+import { Autorun, DerivedObservable, Observable, SettableObservable } from '@theia/core/lib/common/observable';
 import { Range } from '@theia/editor/lib/browser';
 import { MergeRange } from './model/merge-range';
 import { MergeEditorModel } from './model/merge-editor-model';
@@ -229,50 +229,63 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
     }
 
     protected doInitializeLayout(): void {
-        this.toDispose.push(Autorun.create(({ isFirstRun }) => {
+        this.toDispose.push(Autorun.create(({ isFirstRun }) => { // note: by design, this autorun should only depend on this.layoutMode
             const { layoutMode } = this;
 
-            const scrollState = this.scrollSync.storeScrollState();
-            const currentPane = this.currentPaneObservable.getUntracked();
+            Observable.noAutoTracking(() => {
+                const scrollState = this.scrollSync.storeScrollState();
+                const { currentPane } = this;
 
-            this.applyLayoutMode(layoutMode);
+                this.applyLayoutMode(layoutMode);
 
-            const pane = currentPane?.isVisible ? currentPane : this.resultPane;
-            this.currentPaneObservable.set(pane);
-            pane.activate();
+                const pane = currentPane?.isVisible ? currentPane : this.resultPane;
+                this.currentPaneObservable.set(pane);
+                pane.activate();
 
-            this.scrollSync.restoreScrollState(scrollState);
+                this.scrollSync.restoreScrollState(scrollState);
 
-            if (!isFirstRun) {
-                this.settings.layoutMode = layoutMode;
-            }
+                if (!isFirstRun) {
+                    this.settings.layoutMode = layoutMode;
+                }
+            });
         }));
         let storedState: {
             scrollState: unknown;
             currentPane: MergeEditorPane | undefined;
         } | undefined;
-        this.toDispose.push(ObservableUtils.autorunWithDisposables(({ toDispose }) => {
+        let viewZones: Disposable | undefined;
+        this.toDispose.push(Disposable.create(() => viewZones?.dispose()));
+        this.toDispose.push(Autorun.create(() => { // note: by design, this autorun should only depend on this.isShown and any observables accessed in this.createViewZones()
             if (this.isShown) {
 
-                toDispose.push(this.createViewZones());
+                let scrollState: unknown;
+                Observable.noAutoTracking(() => {
+                    scrollState = storedState?.scrollState ?? this.scrollSync.storeScrollState();
+                    viewZones?.dispose();
+                });
 
-                if (storedState) {
-                    const { currentPane, scrollState } = storedState;
-                    storedState = undefined;
+                viewZones = this.createViewZones();
 
-                    const pane = currentPane ?? this.resultPane;
-                    this.currentPaneObservable.set(pane);
-                    pane.activate();
+                Observable.noAutoTracking(() => {
+                    if (storedState) {
+                        const { currentPane } = storedState;
+                        storedState = undefined;
 
+                        const pane = currentPane ?? this.resultPane;
+                        this.currentPaneObservable.set(pane);
+                        pane.activate();
+                    }
                     this.scrollSync.restoreScrollState(scrollState);
-                } else {
-                    this.scrollSync.update();
-                }
+                });
             } else {
-                storedState = {
-                    scrollState: this.scrollSync.storeScrollState(),
-                    currentPane: this.currentPaneObservable.getUntracked()
-                };
+                Observable.noAutoTracking(() => {
+                    storedState = {
+                        scrollState: this.scrollSync.storeScrollState(),
+                        currentPane: this.currentPane
+                    };
+                    viewZones?.dispose();
+                    viewZones = undefined;
+                });
             }
         }));
     }

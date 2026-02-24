@@ -65,6 +65,34 @@ export namespace ChatCommands {
         label: 'Open Current Session Summary',
         category: CHAT_CATEGORY
     }, 'theia/ai-chat-ui/open-current-session-summary', CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_NAVIGATE_BACK = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.navigate-back',
+        iconClass: codicon('arrow-left'),
+        category: ChatCommands.CHAT_CATEGORY,
+        label: 'Navigate Back'
+    }, 'theia/ai-chat-ui/navigate-back', ChatCommands.CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_NAVIGATE_FORWARD = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.navigate-forward',
+        iconClass: codicon('arrow-right'),
+        category: ChatCommands.CHAT_CATEGORY,
+        label: 'Navigate Forward'
+    }, 'theia/ai-chat-ui/navigate-forward', ChatCommands.CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_RENAME_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.rename-session',
+        iconClass: codicon('edit'),
+        label: 'Rename Chat',
+        category: CHAT_CATEGORY
+    }, 'theia/ai-chat-ui/renameChat', CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_DELETE_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-ui.delete-session',
+        iconClass: codicon('remove-close'),
+        label: 'Delete Chat',
+        category: CHAT_CATEGORY
+    }, 'theia/ai-chat-ui/deleteChat', CHAT_CATEGORY_KEY);
 }
 
 export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND = Command.toDefaultLocalizedCommand({

@@ -73,7 +73,7 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
 
     protected override async loadItems(): Promise<void> {
         await this.languageModelAliasRegistry.ready;
-        this.items = this.languageModelAliasRegistry.getAliases();
+        this.items = this.languageModelAliasRegistry.getAliases().sort((a, b) => a.id.localeCompare(b.id));
 
         // Set initial selection
         if (this.items.length > 0 && !this.selectedItem) {

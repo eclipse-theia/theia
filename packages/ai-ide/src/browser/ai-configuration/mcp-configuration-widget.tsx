@@ -14,20 +14,249 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, ConfirmDialog, ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
 import {
     isLocalMCPServerDescription,
     isRemoteMCPServerDescription,
+    LocalMCPServerDescription,
     MCPFrontendNotificationService,
     MCPFrontendService,
     MCPServerDescription,
-    MCPServerStatus
+    MCPServerStatus,
+    RemoteMCPServerDescription
 } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { MessageService, nls } from '@theia/core';
+import { MessageService, nls, PreferenceScope, PreferenceService } from '@theia/core';
 import { PROMPT_VARIABLE } from '@theia/ai-core/lib/common/prompt-variable-contribution';
+import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
+import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
+import { DialogProps } from '@theia/core/lib/browser/dialogs';
+import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
+
+type ServerType = 'local' | 'remote';
+
+interface MCPServerFormData {
+    name: string;
+    serverType: ServerType;
+    command: string;
+    args: string;
+    env: string;
+    serverUrl: string;
+    serverAuthToken: string;
+    serverAuthTokenHeader: string;
+    headers: string;
+    autostart: boolean;
+}
+
+const DEFAULT_FORM_DATA: MCPServerFormData = {
+    name: '',
+    serverType: 'local',
+    command: '',
+    args: '',
+    env: '',
+    serverUrl: '',
+    serverAuthToken: '',
+    serverAuthTokenHeader: '',
+    headers: '',
+    autostart: true
+};
+
+class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
+    protected formData: MCPServerFormData;
+    protected existingServerNames: string[];
+    protected isEditing: boolean;
+
+    constructor(
+        props: DialogProps,
+        initialData: MCPServerFormData,
+        existingServerNames: string[],
+        isEditing: boolean
+    ) {
+        super(props);
+        this.formData = { ...initialData };
+        this.existingServerNames = existingServerNames;
+        this.isEditing = isEditing;
+        this.appendCloseButton(nls.localizeByDefault('Cancel'));
+        this.appendAcceptButton(isEditing
+            ? nls.localize('theia/ai/mcpConfiguration/form/saveChanges', 'Save Changes')
+            : nls.localizeByDefault('Add Server'));
+    }
+
+    get value(): MCPServerFormData | undefined {
+        return this.formData;
+    }
+
+    protected override isValid(): string {
+        const errors: string[] = [];
+
+        if (!this.formData.name.trim()) {
+            errors.push(nls.localize('theia/ai/mcpConfiguration/form/nameRequired', 'Server name is required'));
+        } else if (!this.isEditing && this.existingServerNames.includes(this.formData.name.trim())) {
+            errors.push(nls.localize('theia/ai/mcpConfiguration/form/nameExists', 'A server with this name already exists'));
+        }
+
+        if (this.formData.serverType === 'local') {
+            if (!this.formData.command.trim()) {
+                errors.push(nls.localize('theia/ai/mcpConfiguration/form/commandRequired', 'Command is required for local servers'));
+            }
+        } else {
+            if (!this.formData.serverUrl.trim()) {
+                errors.push(nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'));
+            }
+        }
+
+        return errors.join('. ');
+    }
+
+    protected handleFormChange = (field: keyof MCPServerFormData, value: string | boolean): void => {
+        this.formData = { ...this.formData, [field]: value };
+        this.update();
+    };
+
+    protected render(): React.ReactNode {
+        return (
+            <div className="mcp-dialog-form">
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/form/serverName', 'Server Name')}:</label>
+                    <input
+                        type="text"
+                        className="theia-input"
+                        value={this.formData.name}
+                        onChange={e => this.handleFormChange('name', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/serverNamePlaceholder', 'e.g., my-mcp-server')}
+                        disabled={this.isEditing}
+                        spellCheck={false}
+                    />
+                </div>
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/form/serverType', 'Server Type')}:</label>
+                    <SelectComponent
+                        className="theia-select"
+                        defaultValue={this.formData.serverType}
+                        options={[
+                            { value: 'local', label: nls.localize('theia/ai/mcpConfiguration/form/localServer', 'Local (Command)') },
+                            { value: 'remote', label: nls.localize('theia/ai/mcpConfiguration/form/remoteServer', 'Remote (URL)') }
+                        ]}
+                        onChange={option => this.handleFormChange('serverType', option.value as ServerType)}
+                    />
+                </div>
+
+                {this.formData.serverType === 'local' ? this.renderLocalServerFields() : this.renderRemoteServerFields()}
+
+                <div className="mcp-form-field mcp-form-checkbox">
+                    <label>
+                        <input
+                            type="checkbox"
+                            className='theia-input'
+                            checked={this.formData.autostart}
+                            onChange={e => this.handleFormChange('autostart', e.target.checked)}
+                        />
+                        {nls.localize('theia/ai/mcpConfiguration/form/autostart', 'Autostart')}
+                    </label>
+                </div>
+            </div>
+        );
+    }
+
+    protected renderLocalServerFields(): React.ReactNode {
+        return (
+            <>
+                <div className="mcp-form-field">
+                    <label>{nls.localizeByDefault('Command')}:</label>
+                    <input
+                        type="text"
+                        className="theia-input"
+                        value={this.formData.command}
+                        onChange={e => this.handleFormChange('command', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/commandPlaceholder', 'e.g., npx or uvx')}
+                        spellCheck={false}
+                    />
+                </div>
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/arguments', 'Arguments')}:</label>
+                    <input
+                        type="text"
+                        className="theia-input"
+                        value={this.formData.args}
+                        onChange={e => this.handleFormChange('args', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/argsPlaceholder', 'Space-separated, e.g., -y @modelcontextprotocol/server-brave-search')}
+                        spellCheck={false}
+                    />
+                </div>
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables')}:</label>
+                    <textarea
+                        className="theia-input"
+                        value={this.formData.env}
+                        onChange={e => this.handleFormChange('env', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/envPlaceholder', 'KEY=value (one per line)')}
+                        rows={3}
+                        spellCheck={false}
+                    />
+                </div>
+            </>
+        );
+    }
+
+    protected renderRemoteServerFields(): React.ReactNode {
+        return (
+            <>
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL')}:</label>
+                    <input
+                        type="text"
+                        className="theia-input"
+                        value={this.formData.serverUrl}
+                        onChange={e => this.handleFormChange('serverUrl', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/serverUrlPlaceholder', 'e.g., https://mcp.example.com')}
+                        spellCheck={false}
+                    />
+                </div>
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/serverAuthToken', 'Auth Token')}:</label>
+                    <input
+                        type="password"
+                        className="theia-input"
+                        value={this.formData.serverAuthToken}
+                        onChange={e => this.handleFormChange('serverAuthToken', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/authTokenPlaceholder', 'Optional authentication token')}
+                        spellCheck={false}
+                    />
+                </div>
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/serverAuthTokenHeader', 'Auth Header Name')}:</label>
+                    <input
+                        type="text"
+                        className="theia-input"
+                        value={this.formData.serverAuthTokenHeader}
+                        onChange={e => this.handleFormChange('serverAuthTokenHeader', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/authHeaderPlaceholder', 'Default: Authorization with Bearer')}
+                        spellCheck={false}
+                    />
+                </div>
+
+                <div className="mcp-form-field">
+                    <label>{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers')}:</label>
+                    <textarea
+                        className="theia-input"
+                        value={this.formData.headers}
+                        onChange={e => this.handleFormChange('headers', e.target.value)}
+                        placeholder={nls.localize('theia/ai/mcpConfiguration/form/headersPlaceholder', 'Header-Name=value (one per line)')}
+                        rows={3}
+                        spellCheck={false}
+                    />
+                </div>
+            </>
+        );
+    }
+}
 
 @injectable()
 export class AIMCPConfigurationWidget extends ReactWidget {
@@ -50,6 +279,9 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @postConstruct()
     protected init(): void {
         this.id = AIMCPConfigurationWidget.ID;
@@ -62,7 +294,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     }
 
     protected async loadServers(): Promise<void> {
-        const serverNames = await this.mcpFrontendService.getServerNames();
+        const serverNames = (await this.mcpFrontendService.getServerNames()).sort((a, b) => a.localeCompare(b));
         const descriptions = await Promise.all(serverNames.map(name => this.mcpFrontendService.getServerDescription(name)));
         this.servers = descriptions.filter((desc): desc is MCPServerDescription => desc !== undefined);
         this.update();
@@ -195,6 +427,16 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                             title={stopLabel}
                         />
                     )}
+                    <button
+                        className={`mcp-action-button ${codicon('edit')}`}
+                        onClick={() => this.openEditServerDialog(server)}
+                        title={nls.localize('theia/ai/mcpConfiguration/editServer', 'Edit Server')}
+                    />
+                    <button
+                        className={`mcp-action-button mcp-delete-button ${codicon('trash')}`}
+                        onClick={() => this.handleDeleteServer(server.name)}
+                        title={nls.localize('theia/ai/mcpConfiguration/deleteServer', 'Delete Server')}
+                    />
                 </div>
             </div>
         );
@@ -415,18 +657,165 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         );
     }
 
-    protected render(): React.ReactNode {
-        if (this.servers.length === 0) {
-            return (
-                <div className="mcp-no-servers">
-                    {nls.localize('theia/ai/mcpConfiguration/noServers', 'No MCP servers configured')}
-                </div>
-            );
+    protected async openAddServerDialog(): Promise<void> {
+        const dialog = new MCPServerDialog(
+            { title: nls.localizeByDefault('Add MCP Server'), maxWidth: 500 },
+            { ...DEFAULT_FORM_DATA },
+            this.servers.map(s => s.name),
+            false
+        );
+        const result = await dialog.open();
+        if (result) {
+            await this.saveServer(result);
+        }
+    }
+
+    protected async openEditServerDialog(server: MCPServerDescription): Promise<void> {
+        let formData: MCPServerFormData;
+
+        if (isLocalMCPServerDescription(server)) {
+            formData = {
+                name: server.name,
+                serverType: 'local',
+                command: server.command,
+                args: server.args?.join(' ') ?? '',
+                env: server.env ? Object.entries(server.env).map(([k, v]) => `${k}=${v}`).join('\n') : '',
+                serverUrl: '',
+                serverAuthToken: '',
+                serverAuthTokenHeader: '',
+                headers: '',
+                autostart: server.autostart ?? true
+            };
+        } else if (isRemoteMCPServerDescription(server)) {
+            formData = {
+                name: server.name,
+                serverType: 'remote',
+                command: '',
+                args: '',
+                env: '',
+                serverUrl: server.serverUrl,
+                serverAuthToken: server.serverAuthToken ?? '',
+                serverAuthTokenHeader: server.serverAuthTokenHeader ?? '',
+                headers: server.headers
+                    ? Object.entries(server.headers).map(([k, v]) => `${k}=${v}`).join('\n')
+                    : '',
+                autostart: server.autostart ?? true
+            };
+        } else {
+            return;
         }
 
+        const dialog = new MCPServerDialog(
+            { title: nls.localize('theia/ai/mcpConfiguration/editServerTitle', 'Edit MCP Server'), maxWidth: 500 },
+            formData,
+            this.servers.filter(s => s.name !== server.name).map(s => s.name),
+            true
+        );
+        const result = await dialog.open();
+        if (result) {
+            await this.saveServer(result);
+        }
+    }
+
+    protected parseKeyValuePairs(input: string): Record<string, string> | undefined {
+        if (!input.trim()) {
+            return undefined;
+        }
+        const result: Record<string, string> = {};
+        const lines = input.split('\n').filter(line => line.trim());
+        for (const line of lines) {
+            const eqIndex = line.indexOf('=');
+            if (eqIndex > 0) {
+                const key = line.substring(0, eqIndex).trim();
+                const value = line.substring(eqIndex + 1).trim();
+                if (key) {
+                    result[key] = value;
+                }
+            }
+        }
+        return Object.keys(result).length > 0 ? result : undefined;
+    }
+
+    protected async saveServer(formData: MCPServerFormData): Promise<void> {
+        const currentServers = this.preferenceService.get<Record<string, object>>(MCP_SERVERS_PREF, {});
+        const newServers = { ...currentServers };
+        const serverName = formData.name.trim();
+
+        if (formData.serverType === 'local') {
+            const serverConfig: Partial<LocalMCPServerDescription> = {
+                command: formData.command.trim(),
+                autostart: formData.autostart
+            };
+            if (formData.args.trim()) {
+                serverConfig.args = formData.args.trim().split(/\s+/);
+            }
+            const env = this.parseKeyValuePairs(formData.env);
+            if (env) {
+                serverConfig.env = env;
+            }
+            newServers[serverName] = serverConfig;
+        } else {
+            const serverConfig: Partial<RemoteMCPServerDescription> = {
+                serverUrl: formData.serverUrl.trim(),
+                autostart: formData.autostart
+            };
+            if (formData.serverAuthToken.trim()) {
+                serverConfig.serverAuthToken = formData.serverAuthToken.trim();
+            }
+            if (formData.serverAuthTokenHeader.trim()) {
+                serverConfig.serverAuthTokenHeader = formData.serverAuthTokenHeader.trim();
+            }
+            const headers = this.parseKeyValuePairs(formData.headers);
+            if (headers) {
+                serverConfig.headers = headers;
+            }
+            newServers[serverName] = serverConfig;
+        }
+
+        try {
+            await this.preferenceService.set(MCP_SERVERS_PREF, newServers, PreferenceScope.User);
+        } catch (error) {
+            this.messageService.error(nls.localize('theia/ai/mcpConfiguration/saveServerError', 'Failed to save MCP server configuration: {0}', String(error)));
+        }
+    }
+
+    protected async handleDeleteServer(serverName: string): Promise<void> {
+        const dialog = new ConfirmDialog({
+            title: nls.localize('theia/ai/mcpConfiguration/deleteServerDialogTitle', 'Delete MCP Server'),
+            msg: nls.localize('theia/ai/mcpConfiguration/deleteServerDialogMsg', 'Are you sure you want to delete the server "{0}"?', serverName),
+            ok: nls.localizeByDefault('Delete'),
+            cancel: nls.localizeByDefault('Cancel')
+        });
+
+        const shouldDelete = await dialog.open();
+        if (shouldDelete) {
+            try {
+                const currentServers = this.preferenceService.get<Record<string, object>>(MCP_SERVERS_PREF, {});
+                const newServers = { ...currentServers };
+                delete newServers[serverName];
+                await this.preferenceService.set(MCP_SERVERS_PREF, newServers, PreferenceScope.User);
+            } catch (error) {
+                this.messageService.error(nls.localize('theia/ai/mcpConfiguration/deleteServerError', 'Failed to delete MCP server: {0}', String(error)));
+            }
+        }
+    }
+
+    protected render(): React.ReactNode {
         return (
             <div className="mcp-configuration-container">
-                {this.servers.map(server => this.renderServerCard(server))}
+                <div className="mcp-header-actions">
+                    <button className="theia-button main" onClick={() => this.openAddServerDialog()}>
+                        <i className={codicon('add')}></i>
+                        {nls.localizeByDefault('Add MCP Server')}
+                    </button>
+                </div>
+                {this.servers.length === 0 ? (
+                    <div className="mcp-no-servers">
+                        {nls.localize('theia/ai/mcpConfiguration/noServers', 'No MCP servers configured')}
+                    </div>
+                ) : (
+                    this.servers.map(server => this.renderServerCard(server))
+                )}
             </div>
         );
     }

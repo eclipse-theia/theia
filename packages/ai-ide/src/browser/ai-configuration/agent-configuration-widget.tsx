@@ -24,9 +24,12 @@ import {
     LanguageModelRegistry,
     matchVariablesRegEx,
     PROMPT_FUNCTION_REGEX,
+    ParsedCapability,
+    parseCapabilitiesFromTemplate,
     PromptFragmentCustomizationService,
     PromptService,
 } from '@theia/ai-core/lib/common';
+import { ChatAgentService } from '@theia/ai-chat/lib/common';
 import { codicon, QuickInputService } from '@theia/core/lib/browser';
 import { URI } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -43,6 +46,7 @@ interface ParsedPrompt {
     functions: string[];
     globalVariables: string[];
     agentSpecificVariables: string[];
+    capabilities: ParsedCapability[];
 };
 
 @injectable()
@@ -53,6 +57,9 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
     @inject(AgentService)
     protected readonly agentService: AgentService;
+
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
@@ -166,7 +173,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                 className={
                     `agent-status-indicator ${enabled ? `agent-enabled ${codicon('circle-filled')}` : `agent-disabled ${codicon('circle')}`}`
                 }
-                title={enabled ? 'Enabled' : 'Disabled'}
+                title={enabled ? nls.localizeByDefault('Enabled') : nls.localizeByDefault('Disabled')}
             >
             </span>
         );
@@ -215,12 +222,16 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (agent) {
             this.parsedPromptParts = await this.parsePromptFragmentsForVariableAndFunction(agent);
+            const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
+            this.showInChatState = agentSettings?.showInChat ?? true;
         } else {
             this.parsedPromptParts = undefined;
         }
         this.isLoadingDetails = false;
         this.update();
     }
+
+    protected showInChatState: boolean = true;
 
     protected renderItemDetail(agent: Agent): React.ReactNode {
         if (this.isLoadingDetails) {
@@ -239,7 +250,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
         const agentNameWithTags = <>
             {agent.name}
-            {agent.tags?.length && <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span>}
+            {agent.tags && agent.tags.length > 0 && <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span>}
         </>;
 
         return <div key={agent.id}>
@@ -249,12 +260,25 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                         {agentNameWithTags}
                         <pre className='ai-id-label'>Id: {agent.id}</pre>
                     </div>
-                    <label className='agent-enable-toggle' title={nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}>
-                        <div className='toggle-switch' onClick={this.toggleAgentEnabled}>
-                            <input type="checkbox" checked={enabled} onChange={this.toggleAgentEnabled} />
-                            <span className='toggle-slider'></span>
-                        </div>
-                    </label>
+                    <div className='agent-toggles'>
+                        <label className='agent-enable-toggle' title={nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}>
+                            <span className='toggle-label'>{nls.localize('theia/ai/core/agentConfiguration/enableAgent', 'Enable Agent')}</span>
+                            <div className='toggle-switch' onClick={this.toggleAgentEnabled}>
+                                <input type="checkbox" checked={enabled} onChange={this.toggleAgentEnabled} />
+                                <span className='toggle-slider'></span>
+                            </div>
+                        </label>
+                        {this.isChatAgent(agent.id) && (
+                            <label className={`agent-enable-toggle${enabled ? '' : ' disabled'}`}
+                                title={nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}>
+                                <span className='toggle-label'>{nls.localize('theia/ai/core/agentConfiguration/showInChat', 'Show in Chat')}</span>
+                                <div className='toggle-switch' onClick={enabled ? this.toggleShowInChat : undefined}>
+                                    <input type="checkbox" checked={this.showInChatState} disabled={!enabled} onChange={this.toggleShowInChat} />
+                                    <span className='toggle-slider'></span>
+                                </div>
+                            </label>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -336,11 +360,20 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                     </ul>
                 </>
             )}
+
+            {this.parsedPromptParts.capabilities.length > 0 && (
+                <>
+                    <div className="settings-section-subcategory-title">
+                        {nls.localize('theia/ai/core/agentConfiguration/availableCapabilities', 'Available Capabilities')}
+                    </div>
+                    <AgentCapabilities capabilities={this.parsedPromptParts.capabilities} />
+                </>
+            )}
         </div>;
     }
 
     protected async parsePromptFragmentsForVariableAndFunction(agent: Agent): Promise<ParsedPrompt> {
-        const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
+        const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [], capabilities: [] };
         const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
         const selectedVariants = agentSettings?.selectedVariants ?? {};
 
@@ -353,16 +386,28 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
             }
 
             this.extractVariablesAndFunctions(promptToAnalyze, result, agent);
+            this.extractCapabilities(promptToAnalyze, result);
         }
 
         return result;
+    }
+
+    protected extractCapabilities(promptContent: string, result: ParsedPrompt): void {
+        const capabilities = parseCapabilitiesFromTemplate(promptContent);
+        const existingIds = new Set(result.capabilities.map(c => c.fragmentId));
+        for (const capability of capabilities) {
+            if (!existingIds.has(capability.fragmentId)) {
+                result.capabilities.push(capability);
+                existingIds.add(capability.fragmentId);
+            }
+        }
     }
 
     protected extractVariablesAndFunctions(promptContent: string, result: ParsedPrompt, agent: Agent): void {
         const variableMatches = matchVariablesRegEx(promptContent);
         variableMatches.forEach(match => {
             const variableId = match[1];
-            if (variableId.startsWith('!--')) {
+            if (variableId.startsWith('!--') || variableId.startsWith('capability:')) {
                 return;
             }
 
@@ -433,6 +478,24 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         }
         this.update();
     };
+
+    protected isChatAgent(agentId: string): boolean {
+        return this.chatAgentService.getAllAgents().some(a => a.id === agentId);
+    }
+
+    private toggleShowInChat = async () => {
+        const agent = this.aiConfigurationSelectionService.getActiveAgent();
+        if (!agent) {
+            return;
+        }
+        if (!this.agentService.isEnabled(agent.id)) {
+            return;
+        }
+        const newValue = !this.showInChatState;
+        await this.aiSettingsService.updateAgentSettings(agent.id, { showInChat: newValue });
+        this.showInChatState = newValue;
+        this.update();
+    };
 }
 
 interface AgentGlobalVariablesProps {
@@ -492,6 +555,36 @@ const AgentFunctions = ({ functions }: AgentFunctionsProps) => {
     </>;
 };
 
+interface AgentCapabilitiesProps {
+    capabilities: ParsedCapability[];
+}
+const AgentCapabilities = ({ capabilities }: AgentCapabilitiesProps) => (
+    <table className="ai-templates-table">
+        <thead>
+            <tr>
+                <th>{nls.localize('theia/ai/ide/agentConfiguration/capabilityId', 'Fragment ID')}</th>
+                <th>{nls.localize('theia/ai/ide/agentConfiguration/enabledByDefault', 'Enabled by Default')}</th>
+                <th>{nls.localizeByDefault('Description')}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {capabilities.map(capability => (
+                <tr key={capability.fragmentId}>
+                    <td className="ai-variable-name-cell">{capability.fragmentId}</td>
+                    <td className="ai-variable-name-cell">
+                        {capability.defaultEnabled
+                            ? nls.localize('theia/ai/ide/agentConfiguration/capabilityOn', 'On')
+                            : nls.localizeByDefault('Off')}
+                    </td>
+                    <td className="ai-variable-description-cell">
+                        {/* TODO show capability description ??  */nls.localize('theia/ai/ide/agentConfiguration/noDescription', 'No description available')}
+                    </td>
+                </tr>
+            ))}
+        </tbody>
+    </table>
+);
+
 interface AgentSpecificVariablesProps {
     promptVariables: string[];
     agent: Agent;
@@ -529,7 +622,9 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
             <span className="ai-configuration-value-row-value">{variableId}</span>
         </div>
         {undeclared ? (
-            <div className="ai-configuration-value-row">
+            <div className="ai-configuration-value-row"
+                title={nls.localize('theia/ai/core/agentConfiguration/undeclaredTooltip',
+                    'This variable is used in the prompt but has no description declared by the agent.')}>
                 <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                 <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                     {nls.localize('theia/ai/core/agentConfiguration/undeclared', 'Undeclared')}
@@ -542,7 +637,9 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
                     <span className="ai-configuration-value-row-value">{agentDefinedVariable.description}</span>
                 </div>
                 {notUsed && (
-                    <div className="ai-configuration-value-row">
+                    <div className="ai-configuration-value-row"
+                        title={nls.localize('theia/ai/core/agentConfiguration/notUsedInPromptTooltip',
+                            'This variable is declared by the agent but not referenced in the current prompt template.')}>
                         <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                         <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                             {nls.localize('theia/ai/core/agentConfiguration/notUsedInPrompt', 'Not used in prompt')}

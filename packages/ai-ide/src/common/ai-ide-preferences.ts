@@ -25,8 +25,8 @@ export const aiIdePreferenceSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_NAME_ENABLE_AI]: {
             title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: nls.localize('theia/ai/ide/enableAI/mdDescription',
-                '❗ This setting allows you to access the latest AI capabilities (Beta version).\
+            markdownDescription: '❗ ' + nls.localize('theia/ai/ide/enableAI/mdDescription',
+                'This setting allows you to access the latest AI capabilities (Beta version).\
             \n\
             Please note that these features are in a beta phase, which means they may \
             undergo changes and will be further improved. It is important to be aware that these features may generate\

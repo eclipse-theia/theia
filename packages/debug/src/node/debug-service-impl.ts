@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-configuration';
-import { DebugService, DebuggerDescription } from '../common/debug-service';
+import { DebugService, DebuggerDescription, DynamicDebugConfigurationProvider } from '../common/debug-service';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
@@ -70,6 +70,18 @@ export class DebugServiceImpl implements DebugService {
     async provideDynamicDebugConfigurations(): Promise<Record<string, DebugConfiguration[]>> {
         // TODO: Support dynamic debug configurations through Theia extensions?
         return {};
+    }
+    async provideDynamicDebugConfigurationsByType(type: string, folder?: string): Promise<DebugConfiguration[]> {
+        // TODO: Support dynamic debug configurations through Theia extensions?
+        return [];
+    }
+    getDynamicDebugConfigurationProviders(): DynamicDebugConfigurationProvider[] {
+        // TODO: Support dynamic debug configurations through Theia extensions?
+        return [];
+    }
+    getDynamicDebugConfigurationProviderTypes(): string[] {
+        // TODO: Support dynamic debug configurations through Theia extensions?
+        return [];
     }
     fetchDynamicDebugConfiguration(name: string, type: string, folder?: string): Promise<DebugConfiguration | undefined> {
         // TODO: Support dynamic debug configurations through Theia extensions?
