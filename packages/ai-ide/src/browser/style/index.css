@@ -1092,6 +1092,17 @@
   text-decoration: underline;
 }
 
+.theia-chat-session-badge-unread-tooltip {
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 600;
+  color: var(--theia-activityBarBadge-foreground);
+  background-color: var(--theia-activityBarBadge-background);
+  border-radius: calc(var(--theia-ui-padding) * 0.75);
+  padding: 1px calc(var(--theia-ui-padding) * 0.75);
+  display: inline-block;
+  margin-bottom: var(--theia-ui-padding);
+}
+
 .theia-chat-session-tooltip-label {
   font-weight: 600;
   margin-bottom: calc(var(--theia-ui-padding) * 0.5);
@@ -1143,7 +1154,7 @@
   color: var(--theia-focusBorder);
 }
 
-.theia-chat-session-card-unread-badge {
+.theia-chat-session-badge-unread {
   position: absolute;
   top: calc(var(--theia-ui-padding) * 1.5);
   left: calc(var(--theia-ui-padding) * 1.5);
