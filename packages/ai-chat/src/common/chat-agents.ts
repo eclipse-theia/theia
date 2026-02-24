@@ -57,6 +57,7 @@ import {
     ChatModel,
     ChatRequestModel,
     ChatResponseContent,
+    CommonChatSessionSettings,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
     MutableChatRequestModel,
@@ -378,6 +379,21 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return deduped;
     }
 
+    /**
+     * Extracts session settings from the request, separating Theia-specific common settings
+     * from arbitrary provider settings.
+     *
+     * @param request The chat request model containing session settings
+     * @returns An object with `commonSettings` (Theia-specific) and `providerSettings` (passed to LLM)
+     */
+    protected getSessionSettings(request: MutableChatRequestModel): {
+        commonSettings: CommonChatSessionSettings | undefined;
+        providerSettings: Record<string, unknown>;
+    } {
+        const { commonSettings, ...providerSettings } = request.session.settings ?? {};
+        return { commonSettings, providerSettings };
+    }
+
     protected async sendLlmRequest(
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
@@ -387,7 +403,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
         isPromptVariantCustomized?: boolean
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
-        const { commonSettings, ...providerSettings } = request.session.settings ?? {};
+        const { commonSettings, providerSettings } = this.getSessionSettings(request);
         const settings = { ...agentSettings, ...providerSettings };
         const dedupedTools = this.deduplicateTools(toolRequests);
         const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
@@ -397,7 +413,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 messages,
                 tools,
                 settings,
-                thinkingMode: request.session.settings?.commonSettings?.thinkingMode,
+                thinkingMode: commonSettings?.thinkingMode,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,

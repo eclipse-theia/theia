@@ -111,7 +111,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         isPromptVariantCustomized?: boolean
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
-        const { commonSettings, ...providerSettings } = request.session.settings ?? {};
+        const { commonSettings, providerSettings } = this.getSessionSettings(request);
         const settings = { ...agentSettings, ...providerSettings };
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
         const subRequestId = request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id;
@@ -122,7 +122,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
                 messages,
                 tools,
                 settings,
-                thinkingMode: request.session.settings?.commonSettings?.thinkingMode,
+                thinkingMode: commonSettings?.thinkingMode,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,

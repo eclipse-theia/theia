@@ -43,6 +43,9 @@ const ThinkingModeSection: React.FC<ThinkingModeSectionProps> = ({
         <div className="session-settings-section-header">
             {nls.localize('theia/ai/session-settings-dialog/thinkingMode', 'Thinking Mode')}
         </div>
+        <div className="session-settings-section-note">
+            {nls.localize('theia/ai/session-settings-dialog/thinkingModeNote', 'Some models may ignore this setting.')}
+        </div>
         <div className="session-settings-checkbox-container">
             <input
                 type="checkbox"
@@ -313,6 +316,8 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
     protected handleThinkingBudgetChange = (budget: number): void => {
         this.thinkingBudget = budget;
         this.updateSettingsFromThinkingMode();
+        this.render();
+        this.attachEditorContainer();
     };
 
     protected updateSettingsFromThinkingMode(): void {

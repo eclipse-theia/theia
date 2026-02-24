@@ -1112,8 +1112,14 @@ div:last-child>.theia-ChatNode {
 .session-settings-section-header {
   font-weight: 600;
   font-size: 13px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: var(--theia-foreground);
+}
+
+.session-settings-section-note {
+  font-size: 12px;
+  color: var(--theia-descriptionForeground);
+  margin-bottom: 8px;
 }
 
 .session-settings-checkbox-container {
