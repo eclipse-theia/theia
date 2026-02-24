@@ -19,6 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
+import { nls } from '@theia/core';
 
 @injectable()
 export class AppTesterCapabilityContribution implements FrontendApplicationContribution {
@@ -34,7 +35,14 @@ export class AppTesterCapabilityContribution implements FrontendApplicationContr
     }
 
     protected buildTemplate(): string {
-        return `After implementing the changes, delegate to the AppTester agent to test the implementation. The changes need to be applied and built.
+        const name = nls.localize('theia/ai/ide/appTester/name', 'App Tester');
+        const description = nls.localize('theia/ai/ide/appTester/description', 'Delegate testing to the AppTester agent after implementation');
+
+        return `---
+    name: ${name}
+    description: ${description}
+    ---
+    After implementing the changes, delegate to the AppTester agent to test the implementation. The changes need to be applied and built.
 
     Use the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool to delegate to the AppTester agent.
 

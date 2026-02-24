@@ -40,6 +40,10 @@ export interface ParsedCapability {
     fragmentId: string;
     /** Whether the capability is enabled by default */
     defaultEnabled: boolean;
+    /** Display name for the capability (defaults to fragmentId if not specified) */
+    name?: string;
+    /** Description of the capability */
+    description?: string;
 }
 
 /**
