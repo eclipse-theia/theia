@@ -256,6 +256,183 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
     });
 });
 
+describe('FileContentFunction handler', () => {
+    let container: Container;
+    let fileContentFunction: FileContentFunction;
+    let mockFileService: FileService;
+    let mockMonacoWorkspace: MonacoWorkspace;
+    let mockPreferenceService: { get: <T>(path: string, defaultValue: T) => T };
+
+    let disableJSDOMInner: () => void;
+    before(() => {
+        disableJSDOMInner = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOMInner();
+    });
+
+    beforeEach(() => {
+        container = new Container();
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        mockFileService = {
+            exists: async () => true,
+            resolve: async () => ({
+                isFile: true,
+                isDirectory: false,
+                size: 1024,
+                resource: new URI('file:///workspace/test.txt')
+            }),
+            read: async () => ({ value: 'line1\nline2\nline3\nline4\nline5' })
+        } as unknown as FileService;
+
+        mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        mockMonacoWorkspace = {
+            getTextDocument: () => undefined
+        } as unknown as MonacoWorkspace;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+
+        fileContentFunction = container.get(FileContentFunction);
+    });
+
+    it('returns file content when file is within size limit', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+        expect(result).to.equal('line1\nline2\nline3\nline4\nline5');
+    });
+
+    it('rejects without reading when on-disk size exceeds limit', async () => {
+        // Stat reports 512 KB; default limit is 256 KB
+        let readCalled = false;
+        (mockFileService as unknown as { resolve: unknown }).resolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 512 * 1024,
+            resource: new URI('file:///workspace/big.txt')
+        });
+        (mockFileService as unknown as { read: unknown }).read = async () => {
+            readCalled = true;
+            return { value: 'should not be read' };
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.sizeKB).to.equal(512);
+        expect(readCalled).to.be.false;
+    });
+
+    it('returns editor content when file is open in editor and within size limit', async () => {
+        let resolveCalled = false;
+        (mockFileService as unknown as { resolve: unknown }).resolve = async () => {
+            resolveCalled = true;
+            return { isFile: true, isDirectory: false, size: 1024, resource: new URI('file:///workspace/open.txt') };
+        };
+        mockMonacoWorkspace.getTextDocument = () => ({
+            getText: () => 'editor content'
+        } as unknown as ReturnType<MonacoWorkspace['getTextDocument']>);
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'open.txt' }), undefined);
+
+        expect(result).to.equal('editor content');
+        expect(resolveCalled).to.be.false;
+    });
+
+    it('rejects editor content when it exceeds the size limit', async () => {
+        const bigContent = 'x'.repeat(512 * 1024);
+        mockMonacoWorkspace.getTextDocument = () => ({
+            getText: () => bigContent
+        } as unknown as ReturnType<MonacoWorkspace['getTextDocument']>);
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'open.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.sizeKB).to.equal(512);
+    });
+
+    it('returns sliced content with header when offset and limit are provided', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 1, limit: 2 }), undefined);
+
+        expect(result).to.include('[Lines 2\u20133 of 5 total.');
+        expect(result).to.include('line2\nline3');
+    });
+
+    it('skips stat pre-check and reads full file when offset/limit are provided', async () => {
+        // Stat would report huge file, but offset+limit path must still attempt the read
+        let resolveCalled = false;
+        (mockFileService as unknown as { resolve: unknown }).resolve = async () => {
+            resolveCalled = true;
+            return {
+                isFile: true,
+                isDirectory: false,
+                size: 512 * 1024,
+                resource: new URI('file:///workspace/big.txt')
+            };
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt', offset: 0, limit: 3 }), undefined);
+
+        // resolve is NOT called for the pre-check in the offset/limit path
+        expect(resolveCalled).to.be.false;
+        expect(result).to.include('line1\nline2\nline3');
+    });
+
+    it('rejects when the requested slice itself exceeds the size limit', async () => {
+        const bigLine = 'x'.repeat(1024);
+        const bigContent = Array.from({ length: 300 }, () => bigLine).join('\n');
+        (mockFileService as unknown as { read: unknown }).read = async () => ({ value: bigContent });
+        // stat size is small so the pre-check passes (not reached in offset path anyway)
+        (mockFileService as unknown as { resolve: unknown }).resolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 1024,
+            resource: new URI('file:///workspace/big.txt')
+        });
+
+        const handler = fileContentFunction.getTool().handler;
+        // Reading all 300 lines × 1 KB each = ~300 KB, over the 256 KB default limit
+        const result = await handler(JSON.stringify({ file: 'big.txt', offset: 0, limit: 300 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.resultSizeKB).to.be.greaterThan(256);
+    });
+
+    it('returns File not found error when file does not exist', async () => {
+        (mockFileService as unknown as { resolve: unknown }).resolve = async () => {
+            throw new Error('File not found');
+        };
+        (mockFileService as unknown as { read: unknown }).read = async () => {
+            throw new Error('File not found');
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'nonexistent.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.equal('File not found');
+    });
+});
+
 describe('FindFilesByPattern.getArgumentsShortLabel', () => {
     let container: Container;
     let getArgumentsShortLabel: (args: string) => { label: string; hasMore: boolean } | undefined;

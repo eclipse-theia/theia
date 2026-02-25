@@ -283,7 +283,9 @@ export class FileContentFunction implements ToolProvider {
                 'Do NOT use this for files you haven\'t located yet - use findFilesByPattern or searchInWorkspace first. ' +
                 `Files exceeding the configured size limit (${this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256)}KB) will return an error. ` +
                 'It is recommended to read the whole file by not providing offset or limit parameters, ' +
-                'unless you expect it to be very large.',
+                'unless you expect it to be very large. ' +
+                'If the size limit is hit, do NOT attempt to read the full file in chunks using offset and limit — ' +
+                'this wastes context window. Use searchInWorkspace to find the specific content you need instead.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -360,9 +362,34 @@ export class FileContentFunction implements ToolProvider {
             }
 
             const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
+            const maxSizeKB = this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
+
+            if (offset === undefined && limit === undefined && openEditorValue === undefined) {
+                const stat = await this.fileService.resolve(targetUri);
+                const sizeKB = Math.round((stat.size ?? 0) / 1024);
+                if (sizeKB > maxSizeKB) {
+                    return JSON.stringify({
+                        error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit (' + sizeKB + 'KB). ' +
+                            'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, or use searchInWorkspace to find specific content.',
+                        sizeKB,
+                        maxSizeKB
+                    });
+                }
+            }
+
             const rawContent = openEditorValue !== undefined ? openEditorValue : (await this.fileService.read(targetUri)).value;
 
-            const maxSizeKB = this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
+            if (offset === undefined && limit === undefined) {
+                const sizeKB = Math.round(rawContent.length / 1024);
+                if (sizeKB > maxSizeKB) {
+                    return JSON.stringify({
+                        error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit (' + sizeKB + 'KB). ' +
+                            'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, or use searchInWorkspace to find specific content.',
+                        sizeKB,
+                        maxSizeKB
+                    });
+                }
+            }
 
             if (offset !== undefined || limit !== undefined) {
                 const lines = rawContent.split('\n');
@@ -372,8 +399,8 @@ export class FileContentFunction implements ToolProvider {
                 const resultSizeKB = Math.round(result.length / 1024);
                 if (resultSizeKB > maxSizeKB) {
                     return JSON.stringify({
-                        error: `Requested range exceeds the configured ${maxSizeKB}KB size limit (${resultSizeKB}KB). ` +
-                            `Use a smaller limit to read fewer lines at a time.`,
+                        error: 'Requested range exceeds the configured ' + maxSizeKB + 'KB size limit (' + resultSizeKB + 'KB). ' +
+                            'Use a smaller limit to read fewer lines at a time.',
                         resultSizeKB,
                         maxSizeKB
                     });
@@ -382,16 +409,6 @@ export class FileContentFunction implements ToolProvider {
                 const endLine = startOffset + sliced.length;
                 const header = `[Lines ${startLine}–${endLine} of ${lines.length} total. Use offset and limit to read other ranges.]`;
                 return `${header}\n${result}`;
-            }
-
-            const sizeKB = Math.round(rawContent.length / 1024);
-            if (sizeKB > maxSizeKB) {
-                return JSON.stringify({
-                    error: `File exceeds the configured ${maxSizeKB}KB size limit (${sizeKB}KB). ` +
-                        `Use the 'offset' (0-based) and 'limit' parameters to read specific line ranges, or use searchInWorkspace to find specific content.`,
-                    sizeKB,
-                    maxSizeKB
-                });
             }
 
             return rawContent;
