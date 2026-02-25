@@ -314,18 +314,10 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
 
         registry.register({
             kind: 'question',
-            deserialize: (data: QuestionContentData) =>
-                // Restore in read-only mode (no handler/request)
-                new QuestionResponseContentImpl(
-                    data.question,
-                    data.options,
-                    undefined,
-                    undefined,
-                    data.selectedOption,
-                    data.multiSelect,
-                    data.header,
-                    data.selectedOptions
-                )
+            // Restore in read-only mode (no handler/request)
+            deserialize: (data: QuestionContentData) => data.multiSelect
+                ? new QuestionResponseContentImpl(data.question, data.options, undefined, undefined, undefined, true, data.header, data.selectedOptions)
+                : new QuestionResponseContentImpl(data.question, data.options, undefined, undefined, data.selectedOption)
         });
     }
 }

@@ -2499,6 +2499,25 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
     protected _selectedOptions: { text: string; value?: string }[] | undefined;
 
     constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: QuestionResponseHandler | undefined,
+        selectedOption?: { text: string; value?: string },
+        multiSelect?: false,
+        header?: string,
+    );
+    constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: MultiSelectQuestionResponseHandler | undefined,
+        selectedOption: undefined,
+        multiSelect: true,
+        header?: string,
+        selectedOptions?: { text: string; value?: string }[]
+    );
+    constructor(
         public question: string,
         public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
