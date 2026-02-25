@@ -193,6 +193,22 @@ describe('shell-command-analyzer', () => {
         it('should strip backslash before non-special characters', () => {
             expect(analyzer.parseCommand('ec\\ho test')).to.deep.equal(['echo test']);
         });
+
+        it('should not split on & in stderr redirect 2>&1', () => {
+            expect(analyzer.parseCommand('npx eslint src 2>&1 | head -80')).to.deep.equal(['npx eslint src 2>&1', 'head -80']);
+        });
+
+        it('should not split on & in stdout redirect >&2', () => {
+            expect(analyzer.parseCommand('echo error >&2')).to.deep.equal(['echo error >&2']);
+        });
+
+        it('should not split on & in input redirect <&3', () => {
+            expect(analyzer.parseCommand('cat <&3')).to.deep.equal(['cat <&3']);
+        });
+
+        it('should still split on real background & after redirect', () => {
+            expect(analyzer.parseCommand('cmd 2>&1 & cmd2')).to.deep.equal(['cmd 2>&1', 'cmd2']);
+        });
     });
 
     describe('containsDangerousPatterns', () => {

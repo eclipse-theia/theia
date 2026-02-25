@@ -16,24 +16,27 @@
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
-import { ToolConfirmationActions, ConfirmationScope, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import { InlineActionMenuNode, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { nls } from '@theia/core/lib/common/nls';
+import { CommandRegistry, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ShellExecutionTool } from './shell-execution-tool';
+import { ShellCommandPermissionService } from './shell-command-permission-service';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
     ShellExecutionToolResult,
     ShellExecutionCanceledResult
 } from '../common/shell-execution-server';
 import { parseShellExecutionInput, ShellExecutionInput } from '../common/shell-execution-input-parser';
+import { generateCommandPatterns, flattenSuggestions, PatternSuggestion } from '../common/shell-command-patterns';
 
 @injectable()
 export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -52,6 +55,12 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
 
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(ShellCommandPermissionService)
+    protected shellCommandPermissionService: ShellCommandPermissionService;
+
+    @inject(CommandRegistry)
+    protected commandRegistry: CommandRegistry;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response) && response.name === SHELL_EXECUTION_FUNCTION_ID) {
@@ -75,12 +84,14 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
                 input={input}
                 confirmationMode={confirmationMode}
                 toolConfirmationManager={this.toolConfirmationManager}
+                toolRequest={toolRequest}
                 shellExecutionTool={this.shellExecutionTool}
                 clipboardService={this.clipboardService}
-                toolRequest={toolRequest}
                 chatId={chatId}
                 requestCanceled={parentNode.response.isCanceled}
                 contextMenuRenderer={this.contextMenuRenderer}
+                shellCommandPermissionService={this.shellCommandPermissionService}
+                commandRegistry={this.commandRegistry}
             />
         );
     }
@@ -91,12 +102,14 @@ interface ShellExecutionToolComponentProps {
     input: ShellExecutionInput;
     confirmationMode: ToolConfirmationPreferenceMode;
     toolConfirmationManager: ToolConfirmationManager;
+    toolRequest?: ToolRequest;
     shellExecutionTool: ShellExecutionTool;
     clipboardService: ClipboardService;
-    toolRequest?: ToolRequest;
     chatId: string;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
+    shellCommandPermissionService: ShellCommandPermissionService;
+    commandRegistry: CommandRegistry;
 }
 
 const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = ({
@@ -104,12 +117,14 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     input,
     confirmationMode,
     toolConfirmationManager,
+    toolRequest,
     shellExecutionTool,
     clipboardService,
-    toolRequest,
     chatId,
     requestCanceled,
-    contextMenuRenderer
+    contextMenuRenderer,
+    shellCommandPermissionService,
+    commandRegistry
 }) => {
     const { confirmationState } = useToolConfirmationState(response, confirmationMode);
     const [toolFinished, setToolFinished] = React.useState(response.finished);
@@ -144,23 +159,47 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
         // Don't reset isCanceling - stay in canceling state until tool finishes
     }, [response.id, shellExecutionTool, isCanceling]);
 
-    const handleAllow = React.useCallback((scope: ConfirmationScope) => {
-        if (scope === 'forever') {
-            toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
-        } else if (scope === 'session') {
-            toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
+    const handleAllow = React.useCallback((patterns?: string[]) => {
+        if (patterns && patterns.length > 0) {
+            try {
+                shellCommandPermissionService.addAllowlistPatterns(...patterns);
+            } catch (err) {
+                console.warn('Failed to add allowlist patterns:', err);
+            }
         }
         response.confirm();
-    }, [response, toolConfirmationManager, chatId, toolRequest]);
+    }, [response, shellCommandPermissionService]);
 
-    const handleDeny = React.useCallback((scope: ConfirmationScope, reason?: string) => {
-        if (scope === 'forever') {
-            toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.DISABLED);
-        } else if (scope === 'session') {
-            toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.DISABLED, chatId);
+    const handleDeny = React.useCallback((options?: { patterns?: string[]; reason?: string }) => {
+        if (options?.patterns && options.patterns.length > 0) {
+            try {
+                shellCommandPermissionService.addDenylistPatterns(...options.patterns);
+            } catch (err) {
+                console.warn('Failed to add denylist patterns:', err);
+            }
         }
-        response.deny(reason);
+        response.deny(options?.reason);
+    }, [response, shellCommandPermissionService]);
+
+    const handleAllowAllForever = React.useCallback(() => {
+        toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
+        response.confirm();
+    }, [response, toolConfirmationManager, toolRequest]);
+
+    const handleAllowAllSession = React.useCallback(() => {
+        toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
+        response.confirm();
     }, [response, toolConfirmationManager, chatId]);
+
+    // Command and tab IDs from @theia/ai-ide (OPEN_AI_CONFIG_VIEW.id / ToolsConfigurationWidget.ID).
+    // The package may not be present, so guard via commandRegistry.getCommand().
+    const hasPermissionsConfiguration = React.useMemo(() =>
+        commandRegistry.getCommand('aiConfiguration:open') !== undefined,
+    [commandRegistry]);
+
+    const openPermissionsConfiguration = React.useCallback(() => {
+        commandRegistry.executeCommand('aiConfiguration:open', 'ai-tools-configuration-widget');
+    }, [commandRegistry]);
 
     let result: ShellExecutionToolResult | undefined;
     let canceledResult: ShellExecutionCanceledResult | undefined;
@@ -208,10 +247,13 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
         return (
             <ConfirmationUI
                 input={input}
-                toolRequest={toolRequest}
+                shellCommandPermissionService={shellCommandPermissionService}
                 onAllow={handleAllow}
+                onAllowAllForever={handleAllowAllForever}
+                onAllowAllSession={handleAllowAllSession}
                 onDeny={handleDeny}
                 contextMenuRenderer={contextMenuRenderer}
+                openPermissionsConfiguration={hasPermissionsConfiguration ? openPermissionsConfiguration : undefined}
             />
         );
     }
@@ -266,18 +308,24 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
 
 interface ConfirmationUIProps {
     input: ShellExecutionInput;
-    toolRequest?: ToolRequest;
-    onAllow: (scope: ConfirmationScope) => void;
-    onDeny: (scope: ConfirmationScope, reason?: string) => void;
+    shellCommandPermissionService: ShellCommandPermissionService;
+    onAllow: (patterns?: string[]) => void;
+    onAllowAllForever: () => void;
+    onAllowAllSession: () => void;
+    onDeny: (options?: { patterns?: string[]; reason?: string }) => void;
     contextMenuRenderer: ContextMenuRenderer;
+    openPermissionsConfiguration?: () => void;
 }
 
 const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
     input,
-    toolRequest,
+    shellCommandPermissionService,
     onAllow,
+    onAllowAllForever,
+    onAllowAllSession,
     onDeny,
-    contextMenuRenderer
+    contextMenuRenderer,
+    openPermissionsConfiguration
 }) => (
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool confirmation">
@@ -313,16 +361,328 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                 )}
             </div>
 
-            <ToolConfirmationActions
-                toolName={SHELL_EXECUTION_FUNCTION_ID}
-                toolRequest={toolRequest}
+            <ShellExecutionConfirmationActions
+                command={input.command}
+                shellCommandPermissionService={shellCommandPermissionService}
                 onAllow={onAllow}
+                onAllowAllForever={onAllowAllForever}
+                onAllowAllSession={onAllowAllSession}
                 onDeny={onDeny}
                 contextMenuRenderer={contextMenuRenderer}
+                openPermissionsConfiguration={openPermissionsConfiguration}
             />
         </div>
     </div>
 );
+
+/**
+ * Discriminated union for the confirmation actions UI state machine.
+ * - 'buttons': Default state showing Allow/Deny split buttons
+ * - 'deny-reason': User is entering a reason for denial
+ * - 'allow-all-session': Confirming "allow all" for the current chat session
+ * - 'allow-all-forever': Confirming "allow all" permanently
+ */
+type ConfirmationActionsState =
+    | { kind: 'buttons' }
+    | { kind: 'deny-reason'; denyReason: string }
+    | { kind: 'allow-all-session' }
+    | { kind: 'allow-all-forever' };
+
+interface ShellExecutionConfirmationActionsProps {
+    command: string;
+    shellCommandPermissionService: ShellCommandPermissionService;
+    onAllow: (patterns?: string[]) => void;
+    onAllowAllForever: () => void;
+    onAllowAllSession: () => void;
+    onDeny: (options?: { patterns?: string[]; reason?: string }) => void;
+    contextMenuRenderer: ContextMenuRenderer;
+    openPermissionsConfiguration?: () => void;
+}
+
+const ShellExecutionConfirmationActions: React.FC<ShellExecutionConfirmationActionsProps> = ({
+    command,
+    shellCommandPermissionService,
+    onAllow,
+    onAllowAllForever,
+    onAllowAllSession,
+    onDeny,
+    contextMenuRenderer,
+    openPermissionsConfiguration
+}) => {
+    const [uiState, setUiState] = React.useState<ConfirmationActionsState>({ kind: 'buttons' });
+
+    const handleSubmitDenyReason = React.useCallback(() => {
+        if (uiState.kind !== 'deny-reason') {
+            return;
+        }
+        onDeny({ reason: uiState.denyReason.trim() || undefined });
+        setUiState({ kind: 'buttons' });
+    }, [onDeny, uiState]);
+
+    const handleCancelSecondaryState = React.useCallback(() => {
+        setUiState({ kind: 'buttons' });
+    }, []);
+
+    const handleDenyReasonKeyDown = React.useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSubmitDenyReason();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            handleCancelSecondaryState();
+        }
+    }, [handleSubmitDenyReason, handleCancelSecondaryState]);
+
+    const showAllowDropdown = React.useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+        const analysis = shellCommandPermissionService.analyzeCommand(command);
+        const allowSuggestions = analysis.hasDangerousPatterns
+            ? []
+            : generateCommandPatterns(analysis.unallowedSubCommands);
+
+        const menu = new GroupImpl('shell-execution-allow-dropdown');
+
+        if (allowSuggestions.length > 0) {
+            const patternsGroup = new GroupImpl('patterns', '1');
+
+            allowSuggestions.forEach((suggestion, index) => {
+                patternsGroup.addNode(new InlineActionMenuNode(
+                    `always-allow-${index}`,
+                    formatSuggestionLabel(suggestion, 'allow'),
+                    () => onAllow(suggestion.patterns),
+                    String(index)
+                ));
+            });
+
+            menu.addNode(patternsGroup);
+        }
+
+        const allowAllGroup = new GroupImpl('allow-all', '2');
+        allowAllGroup.addNode(new InlineActionMenuNode(
+            'allow-all-session',
+            nls.localize('theia/ai-terminal/allowAllSession', 'Allow all shell commands for this chat...'),
+            () => setUiState({ kind: 'allow-all-session' }),
+            '0'
+        ));
+        allowAllGroup.addNode(new InlineActionMenuNode(
+            'allow-all-forever',
+            nls.localize('theia/ai-terminal/allowAllForever', 'Always allow all shell commands...'),
+            () => setUiState({ kind: 'allow-all-forever' }),
+            '1'
+        ));
+        menu.addNode(allowAllGroup);
+
+        const splitButtonContainer = event.currentTarget.parentElement;
+        const containerRect = splitButtonContainer?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect();
+        contextMenuRenderer.render({
+            menuPath: ['shell-execution-allow-context-menu'],
+            menu,
+            anchor: { x: containerRect.left, y: containerRect.bottom },
+            context: event.currentTarget,
+            skipSingleRootNode: true
+        });
+    }, [contextMenuRenderer, shellCommandPermissionService, command, onAllow]);
+
+    const showDenyDropdown = React.useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+        const analysis = shellCommandPermissionService.analyzeCommand(command);
+        const denySuggestions = flattenSuggestions(generateCommandPatterns(analysis.subCommands));
+
+        const menu = new GroupImpl('shell-execution-deny-dropdown');
+
+        if (denySuggestions.length > 0) {
+            const patternsGroup = new GroupImpl('patterns', '1');
+
+            denySuggestions.forEach((suggestion, index) => {
+                patternsGroup.addNode(new InlineActionMenuNode(
+                    `always-deny-${index}`,
+                    formatSuggestionLabel(suggestion, 'deny'),
+                    () => onDeny({ patterns: suggestion.patterns }),
+                    String(index)
+                ));
+            });
+
+            menu.addNode(patternsGroup);
+        }
+
+        const reasonGroup = new GroupImpl('reason', '2');
+        reasonGroup.addNode(new InlineActionMenuNode(
+            'deny-with-reason',
+            nls.localize('theia/ai/chat-ui/toolconfirmation/deny-with-reason', 'Deny with reason...'),
+            () => setUiState({ kind: 'deny-reason', denyReason: '' }),
+            '0'
+        ));
+        menu.addNode(reasonGroup);
+
+        const splitButtonContainer = event.currentTarget.parentElement;
+        const containerRect = splitButtonContainer?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect();
+        contextMenuRenderer.render({
+            menuPath: ['shell-execution-deny-context-menu'],
+            menu,
+            anchor: { x: containerRect.left, y: containerRect.bottom },
+            context: event.currentTarget,
+            skipSingleRootNode: true
+        });
+    }, [contextMenuRenderer, shellCommandPermissionService, command, onDeny]);
+
+    if (uiState.kind === 'allow-all-session' || uiState.kind === 'allow-all-forever') {
+        const isSession = uiState.kind === 'allow-all-session';
+        return (
+            <div>
+                <div className="theia-tool-confirmation-always-allow-modal">
+                    <div className="theia-tool-confirmation-header">
+                        <span className={codicon('warning')}></span>
+                        {isSession
+                            ? nls.localize('theia/ai-terminal/allowAllSessionTitle', 'Allow ALL Shell Commands for This Chat?')
+                            : nls.localize('theia/ai-terminal/allowAllTitle', 'Allow ALL Shell Commands?')
+                        }
+                    </div>
+                    <div className="theia-tool-confirmation-warning">
+                        {isSession
+                            ? nls.localize('theia/ai-terminal/allowAllSessionWarning',
+                                'This will allow the AI to execute any shell command without confirmation for the remainder of this chat session. ' +
+                                'Shell commands have full system access and can execute any command, ' +
+                                'modify files outside the workspace, and access network resources. ' +
+                                'Commands on the deny list will still be blocked.'
+                            )
+                            : nls.localize('theia/ai-terminal/allowAllWarning',
+                                'This will allow the AI to execute any shell command without confirmation. ' +
+                                'Shell commands have full system access and can execute any command, ' +
+                                'modify files outside the workspace, and access network resources. ' +
+                                'Commands on the deny list will still be blocked.'
+                            )
+                        }
+                    </div>
+                    <div className="theia-tool-confirmation-actions">
+                        <button
+                            className="theia-button secondary"
+                            onClick={handleCancelSecondaryState}
+                        >
+                            {nls.localizeByDefault('Cancel')}
+                        </button>
+                        <button
+                            className="theia-button main"
+                            onClick={() => {
+                                setUiState({ kind: 'buttons' });
+                                if (isSession) {
+                                    onAllowAllSession();
+                                } else {
+                                    onAllowAllForever();
+                                }
+                            }}
+                        >
+                            {isSession
+                                ? nls.localize('theia/ai-terminal/allowAllSessionConfirm', 'I understand, allow all for this chat')
+                                : nls.localize('theia/ai-terminal/allowAllConfirm', 'I understand, allow all')
+                            }
+                        </button>
+                    </div>
+                </div>
+                <ConfigurationLink openPermissionsConfiguration={openPermissionsConfiguration} />
+            </div>
+        );
+    }
+
+    if (uiState.kind === 'deny-reason') {
+        return (
+            <div>
+                <div className="theia-tool-confirmation-deny-reason">
+                    <input
+                        autoFocus
+                        type="text"
+                        className="theia-input theia-tool-confirmation-deny-reason-input"
+                        placeholder={nls.localize('theia/ai/chat-ui/toolconfirmation/deny-reason-placeholder', 'Enter reason for denial...')}
+                        value={uiState.denyReason}
+                        onChange={e => setUiState({ kind: 'deny-reason', denyReason: e.target.value })}
+                        onKeyDown={handleDenyReasonKeyDown}
+                    />
+                    <div className="theia-tool-confirmation-deny-reason-actions">
+                        <button
+                            className="theia-button secondary"
+                            onClick={handleCancelSecondaryState}
+                        >
+                            {nls.localizeByDefault('Cancel')}
+                        </button>
+                        <button
+                            className="theia-button main"
+                            onClick={handleSubmitDenyReason}
+                        >
+                            {nls.localizeByDefault('Deny')}
+                        </button>
+                    </div>
+                </div>
+                <ConfigurationLink openPermissionsConfiguration={openPermissionsConfiguration} />
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <div className="theia-tool-confirmation-actions">
+                <div
+                    className="theia-tool-confirmation-split-button deny"
+                >
+                    <button
+                        className="theia-button secondary theia-tool-confirmation-main-btn"
+                        onClick={() => onDeny()}
+                    >
+                        {nls.localizeByDefault('Deny')}
+                    </button>
+                    <button
+                        className="theia-button secondary theia-tool-confirmation-chevron-btn"
+                        onClick={showDenyDropdown}
+                        aria-haspopup="true"
+                        aria-label={nls.localize('theia/ai/chat-ui/toolconfirmation/deny-options-dropdown-tooltip', 'More Deny Options')}
+                        tabIndex={0}
+                        title={nls.localize('theia/ai/chat-ui/toolconfirmation/deny-options-dropdown-tooltip', 'More Deny Options')}
+                    >
+                        <span className={codicon('chevron-down')}></span>
+                    </button>
+                </div>
+
+                <div
+                    className="theia-tool-confirmation-split-button allow"
+                >
+                    <button
+                        className="theia-button main theia-tool-confirmation-main-btn"
+                        onClick={() => onAllow()}
+                    >
+                        {nls.localizeByDefault('Allow')}
+                    </button>
+                    <button
+                        className="theia-button main theia-tool-confirmation-chevron-btn"
+                        onClick={showAllowDropdown}
+                        aria-haspopup="true"
+                        aria-label={nls.localize('theia/ai/chat-ui/toolconfirmation/allow-options-dropdown-tooltip', 'More Allow Options')}
+                        tabIndex={0}
+                        title={nls.localize('theia/ai/chat-ui/toolconfirmation/allow-options-dropdown-tooltip', 'More Allow Options')}
+                    >
+                        <span className={codicon('chevron-down')}></span>
+                    </button>
+                </div>
+            </div>
+            <ConfigurationLink openPermissionsConfiguration={openPermissionsConfiguration} />
+        </div>
+    );
+};
+
+const ConfigurationLink: React.FC<{ openPermissionsConfiguration?: () => void }> = ({ openPermissionsConfiguration }) => {
+    if (!openPermissionsConfiguration) {
+        // eslint-disable-next-line no-null/no-null
+        return null;
+    }
+    return (
+        <div className="shell-execution-tool configuration-link">
+            <a
+                role="button"
+                tabIndex={0}
+                onClick={openPermissionsConfiguration}
+                onKeyDown={e => { if (e.key === 'Enter') { openPermissionsConfiguration(); } }}
+            >
+                <span className={codicon('gear')} />
+                {nls.localize('theia/ai-terminal/configurePermissions', 'Configure shell command permissions')}
+            </a>
+        </div>
+    );
+};
 
 interface RunningUIProps {
     input: ShellExecutionInput;
@@ -612,9 +972,34 @@ const CopyButton: React.FC<CopyButtonProps> = ({ text, clipboardService }) => {
     );
 };
 
+function formatSuggestionLabel(suggestion: PatternSuggestion, action: 'allow' | 'deny'): string {
+    const quoted = suggestion.patterns.map(p => `"${truncatePattern(p)}"`);
+    if (quoted.length === 2) {
+        return action === 'allow'
+            ? nls.localize('theia/ai-terminal/alwaysAllowPatterns', 'Always allow {0} and {1}', quoted[0], quoted[1])
+            : nls.localize('theia/ai-terminal/alwaysDenyPatterns', 'Always deny {0} and {1}', quoted[0], quoted[1]);
+    }
+    if (quoted.length > 2) {
+        const list = quoted.join(', ');
+        return action === 'allow'
+            ? nls.localize('theia/ai-terminal/alwaysAllowPatternsList', 'Always allow {0}', list)
+            : nls.localize('theia/ai-terminal/alwaysDenyPatternsList', 'Always deny {0}', list);
+    }
+    return action === 'allow'
+        ? nls.localize('theia/ai-terminal/alwaysAllowPattern', 'Always allow {0}', quoted[0] ?? '')
+        : nls.localize('theia/ai-terminal/alwaysDenyPattern', 'Always deny {0}', quoted[0] ?? '');
+}
+
 function truncateCommand(command: string): string {
     // Only take first line, CSS handles the ellipsis truncation
     return command.split('\n')[0];
+}
+
+function truncatePattern(pattern: string, maxLength: number = 50): string {
+    if (pattern.length <= maxLength) {
+        return pattern;
+    }
+    return pattern.substring(0, maxLength - 3) + '...';
 }
 
 function formatDuration(ms: number): string {

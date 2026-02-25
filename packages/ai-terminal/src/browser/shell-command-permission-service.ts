@@ -25,6 +25,19 @@ export interface CommandCheckResult {
     matchedPattern?: string;
 }
 
+/**
+ * Full analysis of a command for the confirmation UI.
+ * Provides everything needed to generate meaningful allow/deny pattern options.
+ */
+export interface CommandAnalysis {
+    /** The individual sub-commands parsed from the full command. */
+    subCommands: string[];
+    /** Whether the command contains dangerous shell patterns (allowlist is bypassed for these). */
+    hasDangerousPatterns: boolean;
+    /** Sub-commands not yet covered by any allowlist pattern. */
+    unallowedSubCommands: string[];
+}
+
 @injectable()
 export class ShellCommandPermissionService {
 
@@ -33,6 +46,23 @@ export class ShellCommandPermissionService {
 
     @inject(ShellCommandAnalyzer)
     protected readonly shellCommandAnalyzer: ShellCommandAnalyzer;
+
+    /**
+     * Provides a full analysis of a command for the confirmation UI.
+     * Returns parsed sub-commands, dangerous pattern detection, and which
+     * sub-commands are not yet covered by the allowlist.
+     */
+    analyzeCommand(command: string): CommandAnalysis {
+        const subCommands = this.shellCommandAnalyzer.parseCommand(command);
+        const hasDangerousPatterns = this.shellCommandAnalyzer.containsDangerousPatterns(command);
+
+        const allowlistPatterns = this.getAllowlistPatterns();
+        const unallowedSubCommands = subCommands.filter(subCommand =>
+            !allowlistPatterns.some(pattern => this.matchesPattern(subCommand, pattern))
+        );
+
+        return { subCommands, hasDangerousPatterns, unallowedSubCommands };
+    }
 
     /**
      * Checks if a command is allowed based on the allowlist patterns.
@@ -121,12 +151,12 @@ export class ShellCommandPermissionService {
     }
 
     /**
-     * Adds a pattern to the allowlist.
+     * Adds one or more patterns to the allowlist in a single update.
      * Rejects empty or whitespace-only patterns, "*" alone, and invalid wildcard positions.
-     * Trims the pattern before adding and avoids duplicates.
+     * Trims patterns before adding and avoids duplicates.
      */
-    addAllowlistPattern(pattern: string): void {
-        this.addPatternToList(pattern, SHELL_COMMAND_ALLOWLIST_PREFERENCE, () => this.getAllowlistPatterns());
+    addAllowlistPatterns(...patterns: string[]): void {
+        this.addPatternsToList(patterns, SHELL_COMMAND_ALLOWLIST_PREFERENCE, () => this.getAllowlistPatterns());
     }
 
     removeAllowlistPattern(pattern: string): void {
@@ -138,11 +168,11 @@ export class ShellCommandPermissionService {
     }
 
     /**
-     * Adds a pattern to the denylist.
+     * Adds one or more patterns to the denylist in a single update.
      * Uses the same validation as allowlist patterns.
      */
-    addDenylistPattern(pattern: string): void {
-        this.addPatternToList(pattern, SHELL_COMMAND_DENYLIST_PREFERENCE, () => this.getDenylistPatterns());
+    addDenylistPatterns(...patterns: string[]): void {
+        this.addPatternsToList(patterns, SHELL_COMMAND_DENYLIST_PREFERENCE, () => this.getDenylistPatterns());
     }
 
     removeDenylistPattern(pattern: string): void {
@@ -169,13 +199,14 @@ export class ShellCommandPermissionService {
         return trimmed;
     }
 
-    protected addPatternToList(pattern: string, preferenceKey: string, getCurrentPatterns: () => string[]): void {
-        const trimmed = this.validatePattern(pattern);
+    protected addPatternsToList(patterns: string[], preferenceKey: string, getCurrentPatterns: () => string[]): void {
+        const validated = patterns.map(p => this.validatePattern(p));
         const currentPatterns = getCurrentPatterns();
-        if (!currentPatterns.includes(trimmed)) {
+        const newPatterns = validated.filter(p => !currentPatterns.includes(p));
+        if (newPatterns.length > 0) {
             this.preferenceService.updateValue(
                 preferenceKey,
-                [...currentPatterns, trimmed]
+                [...currentPatterns, ...newPatterns]
             );
         }
     }
