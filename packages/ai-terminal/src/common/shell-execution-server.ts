@@ -42,6 +42,10 @@ export interface ShellExecutionResult {
     canceled?: boolean;
     /** The resolved working directory where the command was executed */
     resolvedCwd?: string;
+    /** Whether stdout was capped at the stream-level size limit */
+    stdoutCapped?: boolean;
+    /** Whether stderr was capped at the stream-level size limit */
+    stderrCapped?: boolean;
 }
 
 export interface ShellExecutionServer {
@@ -85,38 +89,84 @@ export const GRACE_LINES = 10;
 export const MAX_LINE_LENGTH = 1000;
 
 export function truncateLine(line: string): string {
+    return truncateLineWithInfo(line).result;
+}
+
+export interface TruncateLineResult {
+    result: string;
+    charsOmitted: number;
+}
+
+export function truncateLineWithInfo(line: string): TruncateLineResult {
     if (line.length <= MAX_LINE_LENGTH) {
-        return line;
+        return { result: line, charsOmitted: 0 };
     }
     const halfLength = Math.floor((MAX_LINE_LENGTH - 30) / 2);
     const omittedCount = line.length - halfLength * 2;
-    return `${line.slice(0, halfLength)} ... [${omittedCount} chars omitted] ... ${line.slice(-halfLength)}`;
+    return {
+        result: `${line.slice(0, halfLength)} ... [${omittedCount} chars omitted] ... ${line.slice(-halfLength)}`,
+        charsOmitted: omittedCount
+    };
 }
 
-export function combineAndTruncate(stdout: string, stderr: string): string {
+/**
+ * Combines stdout and stderr into a single string without any truncation.
+ */
+export function combineOutput(stdout: string, stderr: string): string {
     const trimmedStdout = stdout.trim();
     const trimmedStderr = stderr.trim();
-
-    let output = trimmedStdout;
-    if (trimmedStderr) {
-        output = output
-            ? `${output}\n--- stderr ---\n${trimmedStderr}`
-            : trimmedStderr;
+    if (trimmedStdout && trimmedStderr) {
+        return `${trimmedStdout}\n--- stderr ---\n${trimmedStderr}`;
     }
+    return trimmedStdout || trimmedStderr;
+}
 
+export interface TruncateOutputResult {
+    output: string;
+    totalCharsOmitted: number;
+}
+
+/**
+ * Applies line-count and line-length truncation to an already-combined output string.
+ */
+export function truncateOutput(output: string): TruncateOutputResult {
     if (!output) {
-        return output;
+        return { output, totalCharsOmitted: 0 };
     }
 
     const lines = output.split('\n');
+    let totalCharsOmitted = 0;
 
     if (lines.length <= HEAD_LINES + TAIL_LINES + GRACE_LINES) {
-        return lines.map(truncateLine).join('\n');
+        const truncatedLines = lines.map(line => {
+            const { result, charsOmitted } = truncateLineWithInfo(line);
+            totalCharsOmitted += charsOmitted;
+            return result;
+        });
+        return { output: truncatedLines.join('\n'), totalCharsOmitted };
     }
 
-    const headLines = lines.slice(0, HEAD_LINES).map(truncateLine);
-    const tailLines = lines.slice(-TAIL_LINES).map(truncateLine);
-    const omittedCount = lines.length - HEAD_LINES - TAIL_LINES;
+    const omittedLineCount = lines.length - HEAD_LINES - TAIL_LINES;
+    const omittedLines = lines.slice(HEAD_LINES, lines.length - TAIL_LINES);
+    for (const line of omittedLines) {
+        totalCharsOmitted += line.length + 1; // +1 for the newline
+    }
+    // Adjust: the last omitted line doesn't have a trailing newline in the join
+    totalCharsOmitted -= 1;
 
-    return [...headLines, `\n... [${omittedCount} lines omitted] ...\n`, ...tailLines].join('\n');
+    const headLines = lines.slice(0, HEAD_LINES).map(line => {
+        const { result, charsOmitted } = truncateLineWithInfo(line);
+        totalCharsOmitted += charsOmitted;
+        return result;
+    });
+    const tailLines = lines.slice(-TAIL_LINES).map(line => {
+        const { result, charsOmitted } = truncateLineWithInfo(line);
+        totalCharsOmitted += charsOmitted;
+        return result;
+    });
+
+    return {
+        output: [...headLines, `\n... [${omittedLineCount} lines omitted] ...\n`, ...tailLines].join('\n'),
+        totalCharsOmitted
+    };
 }
