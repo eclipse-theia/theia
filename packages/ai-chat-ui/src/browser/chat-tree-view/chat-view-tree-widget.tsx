@@ -57,7 +57,7 @@ import {
     postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { ImageContextVariable, ResolvedImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
+import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
@@ -831,22 +831,7 @@ const ChatRequestRender = (
     };
 
     // Single-pass: parse inline image parts once and index by part position
-    const inlineImageByIndex = new Map<number, ResolvedImageContextVariable>();
-    parts.forEach((part, index) => {
-        if (part instanceof ParsedChatRequestVariablePart
-            && part.variableName === 'imageContext'
-            && part.resolution
-            && part.resolution.arg) {
-            try {
-                const parsed = ImageContextVariable.parseArg(part.resolution.arg);
-                if (ImageContextVariable.isResolved(parsed)) {
-                    inlineImageByIndex.set(index, parsed);
-                }
-            } catch {
-                // ignore parse errors
-            }
-        }
-    });
+    const inlineImageByIndex = ImageContextVariable.extractInlineImagesWithIndices(parts);
     const inlineImageDataSet = new Set<string>(Array.from(inlineImageByIndex.values()).map(v => v.data));
 
     const renderContextImages = () => {

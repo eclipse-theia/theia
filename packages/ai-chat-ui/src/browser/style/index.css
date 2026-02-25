@@ -188,7 +188,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-RequestNode-ImagePreview-Inline {
-  display: block;
+  display: inline-block;
   margin: 4px 0;
 }
 

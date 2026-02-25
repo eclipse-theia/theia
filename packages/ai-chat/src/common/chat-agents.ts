@@ -69,7 +69,6 @@ import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ImageContextVariable, ResolvedImageContextVariable } from './image-context-variable';
-import { ParsedChatRequestVariablePart } from './parsed-chat-request';
 
 /**
  * System message content, enriched with function descriptions.
@@ -318,24 +317,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             messages.push(...imageMessages);
 
             const contextImageData = new Set(imageMessages.map(msg => msg.image.base64data));
-            const inlineImageMessages = request.message.parts
-                .filter((part): part is ParsedChatRequestVariablePart =>
-                    part instanceof ParsedChatRequestVariablePart &&
-                    part.variableName === 'imageContext' &&
-                    !!part.resolution?.arg
-                )
-                .map(part => {
-                    try {
-                        const parsed = ImageContextVariable.parseArg(part.resolution.arg!);
-                        if (ImageContextVariable.isResolved(parsed)) {
-                            return parsed;
-                        }
-                    } catch {
-                        // arg might not be valid JSON, skip
-                    }
-                    return undefined;
-                })
-                .filter((content): content is ResolvedImageContextVariable => content !== undefined)
+            const inlineImageMessages = ImageContextVariable.extractInlineImages(request.message.parts)
                 .filter(content => !contextImageData.has(content.data))
                 .map(content => ({
                     actor: 'user' as const,
