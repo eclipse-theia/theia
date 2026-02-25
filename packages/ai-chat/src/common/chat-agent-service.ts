@@ -196,7 +196,6 @@ export class ChatAgentServiceImpl implements ChatAgentService {
         this.onDefaultAgentChangedEmitter.fire(this.getEffectiveDefaultAgent());
     }
 
-
     protected get agents(): ChatAgent[] {
         // We can't collect the contributions at @postConstruct because this will lead to a circular dependency
         // with chat agents reusing the chat agent service (e.g. orchestrator)
