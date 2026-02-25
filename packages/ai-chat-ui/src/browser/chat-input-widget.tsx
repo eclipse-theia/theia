@@ -48,6 +48,7 @@ import { ContextFileValidationService, FileValidationResult, FileValidationState
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
 import { ChatCapabilitiesService } from './chat-capabilities-service';
 import { CapabilityChipsRow } from './chat-capabilities-panel';
+import { ChatInputFocusService } from './chat-input-focus-service';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>) => Promise<void>;
 type Unpin = () => void;
@@ -140,6 +141,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(HoverService)
     protected readonly hoverService: HoverService;
+
+    @inject(ChatInputFocusService)
+    protected readonly chatInputFocusService: ChatInputFocusService;
 
     protected navigationState: ChatInputNavigationState;
 
@@ -565,13 +569,17 @@ export class AIChatInputWidget extends ReactWidget {
 
         this.toDispose.push(editor.onDidFocusEditorWidget(() => {
             this.chatInputFocusKey.set(true);
+            this.chatInputFocusService.setFocused(this);
             this.updateCursorPositionKeys();
         }));
 
         this.toDispose.push(editor.onDidBlurEditorWidget(() => {
-            this.chatInputFocusKey.set(false);
-            this.chatInputFirstLineKey.set(false);
-            this.chatInputLastLineKey.set(false);
+            this.chatInputFocusService.clearFocused(this);
+            if (this.chatInputFocusService.getFocused() === undefined) {
+                this.chatInputFocusKey.set(false);
+                this.chatInputFirstLineKey.set(false);
+                this.chatInputLastLineKey.set(false);
+            }
         }));
 
         this.toDispose.push(editor.onDidChangeCursorPosition(() => {

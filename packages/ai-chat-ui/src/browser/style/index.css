@@ -696,6 +696,7 @@ div:last-child>.theia-ChatNode {
   border: var(--theia-border-width) solid transparent;
   box-sizing: border-box;
   background: var(--theia-editor-background);
+  font-family: var(--theia-ui-font-family);
   font-size: var(--theia-content-font-size);
   border-radius: 5px;
   max-width: 150px;
