@@ -19,6 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
+import { nls } from '@theia/core';
 
 @injectable()
 export class AppTesterCapabilityContribution implements FrontendApplicationContribution {
@@ -34,40 +35,50 @@ export class AppTesterCapabilityContribution implements FrontendApplicationContr
     }
 
     protected buildTemplate(): string {
-        return `After implementing the changes, delegate to the AppTester agent to test the implementation. The changes need to be applied and built.
+        const name = nls.localize('theia/ai/ide/appTester/name', 'App Tester');
+        const description = nls.localize('theia/ai/ide/appTester/description',
+            'Allows the agent to test browser applications end to end. For this, the agent can delegate to the AppTester agent, \
+            which automates browser interactions to verify the implementation.'
+        );
 
-    Use the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool to delegate to the AppTester agent.
+        return `---
+name: ${name}
+description: ${description}
+---
+After implementing the changes, delegate to the AppTester agent to test the implementation. The changes need to be applied and built.
 
-    **Agent ID:** 'AppTester'
-    **Prompt:** Provide a description of what was implemented and should be tested, including:
-    - Summary of changes made
-    - Expected behavior
-    - Areas to focus testing on
-    - **Application URL:** Specify the exact URL if known (e.g., http://localhost:3000)
-    - **Application Status:** Clearly specify whether the application has started, or if the AppTester needs to launch it
-    - **Launch Configuration:** If known, specify which launch configuration to use
-    - **UI Navigation Instructions:** If the feature requires opening a specific view, panel, menu, or using the command palette, provide explicit instructions
+Use the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool to delegate to the AppTester agent.
 
-    Example prompt format:
-    \`\`\`
-    I have implemented [description of changes].
+**Agent ID:** 'AppTester'
+**Prompt:** Provide a description of what was implemented and should be tested, including:
+- Summary of changes made
+- Expected behavior
+- Areas to focus testing on
+- **Application URL:** Specify the exact URL if known (e.g., http://localhost:3000)
+- **Application Status:** Clearly specify whether the application has started, or if the AppTester needs to launch it
+- **Launch Configuration:** If known, specify which launch configuration to use
+- **UI Navigation Instructions:** If the feature requires opening a specific view, panel, menu, or using the command palette, provide explicit instructions
 
-    Expected behavior: [what should happen]
+Example prompt format:
+\`\`\`
+I have implemented [description of changes].
 
-    Application URL: http://localhost:3000
-    Application status: The application is running.
-    (OR: Application status: Not started yet. Use launch configuration "[config-name]" to start it.)
-    IMPORTANT: You CANNOT start the application using the ${RUN_TASK_FUNCTION_ID} tool, as it will block the delegation.
+Expected behavior: [what should happen]
 
-    UI Navigation: To test this feature, you need to [e.g., "click the AI Chat icon in the left sidebar to open the AI Chat View",
-    or "open the Command Palette and run 'Open Settings'", or "the feature should be visible immediately on the main page"].
+Application URL: http://localhost:3000
+Application status: The application is running.
+(OR: Application status: Not started yet. Use launch configuration "[config-name]" to start it.)
+IMPORTANT: You CANNOT start the application using the ${RUN_TASK_FUNCTION_ID} tool, as it will block the delegation.
 
-    Please test the implementation focusing on [specific areas].
-    \`\`\`
+UI Navigation: To test this feature, you need to [e.g., "click the AI Chat icon in the left sidebar to open the AI Chat View",
+or "open the Command Palette and run 'Open Settings'", or "the feature should be visible immediately on the main page"].
 
-    **IMPORTANT:** Include as much information as possible (URL, port, launch config, UI navigation steps)
-    to guide the AppTester efficiently.
+Please test the implementation focusing on [specific areas].
+\`\`\`
 
-    The AppTester will verify the implementation and report any issues found.`;
+**IMPORTANT:** Include as much information as possible (URL, port, launch config, UI navigation steps)
+to guide the AppTester efficiently.
+
+The AppTester will verify the implementation and report any issues found.`;
     }
 }

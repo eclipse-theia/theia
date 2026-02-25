@@ -19,6 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { GitHubChatAgentId } from './github-chat-agent';
+import { nls } from '@theia/core';
 
 @injectable()
 export class GitHubCapabilityContribution implements FrontendApplicationContribution {
@@ -34,7 +35,16 @@ export class GitHubCapabilityContribution implements FrontendApplicationContribu
     }
 
     protected buildTemplate(): string {
-        return `## GitHub
+        const name = nls.localize('theia/ai/ide/githubCapability/name', 'GitHub');
+        const description = nls.localize('theia/ai/ide/githubCapability/description',
+            'Allows the agent to interact with GitHub. For this, the agent can delegate to the GitHub agent, \
+            which can read and write issues, pull requests, comments, and repository contents.');
+
+        return `---
+name: ${name}
+description: ${description}
+---
+## GitHub
 
 You can interact with GitHub (issues, pull requests, repositories, etc.) by delegating to the GitHub agent \
 using the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool.

@@ -19,6 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { SHELL_EXECUTION_FUNCTION_ID } from '@theia/ai-terminal/lib/common/shell-execution-server';
 import { LIST_TASKS_FUNCTION_ID, RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
+import { nls } from '@theia/core';
 
 @injectable()
 export class ShellExecutionCapabilityContribution implements FrontendApplicationContribution {
@@ -34,7 +35,16 @@ export class ShellExecutionCapabilityContribution implements FrontendApplication
     }
 
     protected buildTemplate(): string {
-        return `## Shell Execution
+        const label = nls.localize('theia/ai/ide/shellExecutionCapability/name', 'Shell Execution');
+        const description = nls.localize('theia/ai/ide/shellExecutionCapability/description',
+            'Allows the agent to run arbitrary shell commands on the host system. The agent can then delegate to execute scripts \
+            that are not available as tasks, query system information, and perform operations for which no dedicated tool exists.');
+
+        return `---
+name: ${label}
+description: ${description}
+---
+## Shell Execution
 
 You have access to the ~{${SHELL_EXECUTION_FUNCTION_ID}} tool, which lets you run arbitrary shell commands on the host system and capture their output.
 

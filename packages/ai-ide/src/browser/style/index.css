@@ -1488,6 +1488,7 @@
 
 .ai-variable-name-cell {
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .ai-variable-description-cell {

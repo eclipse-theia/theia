@@ -73,6 +73,14 @@ export class ChatCapabilitiesServiceImpl implements ChatCapabilitiesService {
             ? this.promptService.getRawPromptFragment(variantInfo.variantId)?.template
             : undefined;
 
-        return template ? parseCapabilitiesFromTemplate(template) : [];
+        const capabilities = template ? parseCapabilitiesFromTemplate(template) : [];
+        return capabilities.map(cap => {
+            const fragment = this.promptService.getRawPromptFragment(cap.fragmentId);
+            return {
+                ...cap,
+                name: fragment?.name,
+                description: fragment?.description,
+            };
+        });
     }
 }
