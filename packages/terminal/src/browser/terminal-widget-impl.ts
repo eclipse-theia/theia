@@ -72,11 +72,23 @@ class TerminalBufferImpl implements TerminalBuffer {
     get length(): number {
         return this.term.buffer.active.length;
     };
-    getLines(start: number, length: number): string[] {
+    getLines(start: number, length: number, trimRight: boolean = false): string[] {
         const result: string[] = [];
-        for (let i = 0; i < length && this.length - 1 - i >= 0; i++) {
-            result.push(this.term.buffer.active.getLine(this.length - 1 - i)!.translateToString());
+        const activeBuffer = this.term.buffer.active;
+
+        if (start < 0) {
+            return [];
         }
+
+        const end = Math.min(start + length, activeBuffer.length);
+        for (let i = start; i < end; i++) {
+            const line = activeBuffer.getLine(i);
+            if (!line) {
+                continue;
+            }
+            result.push(line.translateToString(trimRight));
+        }
+
         return result;
     }
 

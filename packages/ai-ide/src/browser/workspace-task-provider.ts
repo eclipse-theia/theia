@@ -125,7 +125,7 @@ export class TaskRunnerProvider implements ToolProvider {
                 const length = terminal?.buffer.length ?? 0;
                 const numberOfLines = Math.min(length, 50);
                 const result: string[] = [];
-                const allLines = terminal?.buffer.getLines(0, length).reverse() ?? [];
+                const allLines = terminal?.buffer.getLines(0, length) ?? [];
 
                 // collect the first 50 lines:
                 const firstLines = allLines.slice(0, numberOfLines);
