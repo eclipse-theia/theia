@@ -193,6 +193,7 @@
 .quick-input-list .monaco-icon-label.codicon::before {
   position: relative;
   top: 3px;
+  margin-right: 5px;
 }
 
 .quick-input-list .monaco-icon-label.theia-file-icons-js {
