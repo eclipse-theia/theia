@@ -26,7 +26,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable } from '../common/image-context-variable';
 import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils';
-import { ApplicationShell, LabelProvider } from '@theia/core/lib/browser';
+import { ApplicationShell, codiconArray, LabelProvider } from '@theia/core/lib/browser';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
@@ -169,7 +169,8 @@ export class FileChatVariableContribution implements FrontendVariableContributio
         result.push(
             { type: 'separator', label: nls.localize('theia/ai/chat/clipboardSeparator', 'clipboard') },
             {
-                label: nls.localize('theia/ai/chat/fromClipboard', '$(clippy) From Clipboard'),
+                label: nls.localize('theia/ai/chat/fromClipboard', 'From Clipboard'),
+                iconClasses: codiconArray('clippy'),
                 description: nls.localize('theia/ai/chat/fromClipboardDescription', 'Paste image from clipboard'),
                 alwaysShow: true,
                 isClipboardOption: true
