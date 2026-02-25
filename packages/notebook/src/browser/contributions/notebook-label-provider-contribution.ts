@@ -19,11 +19,14 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { CellKind, CellUri } from '../../common';
 import { NotebookService } from '../service/notebook-service';
 import { NotebookCellOutlineNode } from './notebook-outline-contribution';
-import type Token = require('markdown-it/lib/token');
 import markdownit = require('@theia/core/shared/markdown-it');
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { URI } from '@theia/core';
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Token = any;
 
 @injectable()
 export class NotebookLabelProviderContribution implements LabelProviderContribution {

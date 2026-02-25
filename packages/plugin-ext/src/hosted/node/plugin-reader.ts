@@ -44,8 +44,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
     configure(app: express.Application): void {
         app.get('/hostedPlugin/:pluginId/:path(*)', async (req, res) => {
-            const pluginId = req.params.pluginId;
-            const filePath = req.params.path;
+            const pluginId = String(req.params.pluginId);
+            const filePath = String((req.params as any)['path(*)'] ?? (req.params as any).path);
 
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
@@ -109,7 +109,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
     }
 
     protected async handleMissingResource(req: express.Request, res: express.Response): Promise<void> {
-        const pluginId = req.params.pluginId;
+        const pluginId = String(req.params.pluginId);
         res.status(404).send(`The plugin with id '${escape_html(pluginId)}' does not exist.`);
     }
 
