@@ -316,8 +316,20 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
             kind: 'question',
             // Restore in read-only mode (no handler/request)
             deserialize: (data: QuestionContentData) => data.multiSelect
-                ? new QuestionResponseContentImpl(data.question, data.options, undefined, undefined, undefined, true, data.header, data.selectedOptions)
-                : new QuestionResponseContentImpl(data.question, data.options, undefined, undefined, data.selectedOption)
+                ? new QuestionResponseContentImpl(
+                    data.question,
+                    data.options,
+                    undefined,
+                    undefined,
+                    { multiSelect: true, header: data.header, selectedOptions: data.selectedOptions }
+                )
+                : new QuestionResponseContentImpl(
+                    data.question,
+                    data.options,
+                    undefined,
+                    undefined,
+                    { selectedOption: data.selectedOption }
+                )
         });
     }
 }

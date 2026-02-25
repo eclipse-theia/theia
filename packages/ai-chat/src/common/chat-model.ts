@@ -774,6 +774,8 @@ export interface QuestionResponseContent extends ChatResponseContent {
     selectedOption?: { text: string, value?: string };
     selectedOptions?: { text: string, value?: string }[];
     handler?: QuestionResponseHandler | MultiSelectQuestionResponseHandler;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -2491,11 +2493,26 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
 }
 
 /**
+ * Options bag for constructing a {@link QuestionResponseContentImpl}.
+ */
+export interface QuestionResponseContentOptions {
+    selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
+    multiSelect?: boolean;
+    header?: string;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
+}
+
+/**
  * Default implementation for the QuestionResponseContent.
  * Can be created with or without handler/request for read-only (restored) mode.
  */
 export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
+    public multiSelect?: boolean;
+    public header?: string;
+    public onSkip?: () => void;
     protected _selectedOptions: { text: string; value?: string }[] | undefined;
 
     constructor(
@@ -2503,31 +2520,27 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
         options: { text: string, value?: string, description?: string }[],
         request: MutableChatRequestModel | undefined,
         handler: QuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string },
-        multiSelect?: false,
-        header?: string,
+        questionOptions?: Omit<QuestionResponseContentOptions, 'multiSelect'> & { multiSelect?: false }
     );
     constructor(
         question: string,
         options: { text: string, value?: string, description?: string }[],
         request: MutableChatRequestModel | undefined,
         handler: MultiSelectQuestionResponseHandler | undefined,
-        selectedOption: undefined,
-        multiSelect: true,
-        header?: string,
-        selectedOptions?: { text: string; value?: string }[]
+        questionOptions: QuestionResponseContentOptions & { multiSelect: true }
     );
     constructor(
         public question: string,
         public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
         public handler: QuestionResponseHandler | MultiSelectQuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string },
-        public multiSelect?: boolean,
-        public header?: string,
-        selectedOptions?: { text: string; value?: string }[]
+        questionOptions?: QuestionResponseContentOptions
     ) {
-        this._selectedOptions = selectedOptions ?? (selectedOption ? [selectedOption] : undefined);
+        this.multiSelect = questionOptions?.multiSelect;
+        this.header = questionOptions?.header;
+        this.onSkip = questionOptions?.onSkip;
+        this._selectedOptions = questionOptions?.selectedOptions ??
+            (questionOptions?.selectedOption ? [questionOptions.selectedOption] : undefined);
     }
 
     get isReadOnly(): boolean {

@@ -380,7 +380,8 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             question,
             APPROVAL_OPTIONS,
             request,
-            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request)
+            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request),
+            { onSkip: () => this.handleApprovalSkip(approvalRequest.requestId, request) }
         );
 
         // Store references for this specific approval request
@@ -430,6 +431,24 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         this.claudeCode.sendApprovalResponse(response);
 
         // Only stop waiting for input if there are no more pending approvals or questions
+        if (pendingApprovals.size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
+            request.response.stopWaitingForInput();
+        }
+    }
+
+    protected handleApprovalSkip(requestId: string, request: MutableChatRequestModel): void {
+        const pendingApprovals = this.getPendingApprovals(request);
+        pendingApprovals.delete(requestId);
+        this.getApprovalToolInputs(request).delete(requestId);
+
+        const response: ToolApprovalResponseMessage = {
+            type: 'tool-approval-response',
+            requestId,
+            approved: false,
+            message: 'User dismissed the tool approval request'
+        };
+        this.claudeCode.sendApprovalResponse(response);
+
         if (pendingApprovals.size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
             request.response.stopWaitingForInput();
         }
@@ -498,7 +517,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                         answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
                         onAnswered();
                     },
-                    undefined, true, questionItem.header
+                    { multiSelect: true, header: questionItem.header }
                 );
             } else {
                 questionContent = new QuestionResponseContentImpl(
@@ -507,7 +526,13 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                         answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
                         onAnswered();
                     },
-                    undefined, undefined, questionItem.header
+                    {
+                        header: questionItem.header,
+                        onSkip: () => {
+                            answers[questionItem.question] = '';
+                            onAnswered();
+                        }
+                    }
                 );
             }
 

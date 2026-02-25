@@ -47,11 +47,16 @@ function isResolved(question: QuestionResponseContent): boolean {
 }
 
 function skipQuestion(question: QuestionResponseContent): void {
-    if (!question.isReadOnly && question.handler) {
-        question.selectedOptions = [];
-        if (question.multiSelect) {
+    if (question.isReadOnly) {
+        return;
+    }
+    question.selectedOptions = [];
+    if (question.multiSelect) {
+        if (question.handler) {
             (question.handler as MultiSelectQuestionResponseHandler)([]);
         }
+    } else {
+        question.onSkip?.();
     }
 }
 
@@ -78,7 +83,7 @@ function SingleSelectQuestion({ question, node }: { question: QuestionResponseCo
 
     return (
         <div className="theia-QuestionPartRenderer-root">
-            <DismissButton question={question} disabled={isDisabled} />
+            {question.onSkip && <DismissButton question={question} disabled={isDisabled} />}
             {question.header && <div className="theia-QuestionPartRenderer-header">{question.header}</div>}
             <div className="theia-QuestionPartRenderer-question">{question.question}</div>
             <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
@@ -154,7 +159,7 @@ function MultiSelectQuestion({ question, node }: { question: QuestionResponseCon
         if (question.handler) {
             (question.handler as MultiSelectQuestionResponseHandler)(selectedOpts);
         }
-    }, [isDisabled, selectedIndices, question]);
+    }, [isDisabled, selectedIndices]);
 
     return (
         <div className="theia-QuestionPartRenderer-root">
