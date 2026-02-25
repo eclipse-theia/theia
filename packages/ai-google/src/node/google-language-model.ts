@@ -213,10 +213,6 @@ export class GoogleModel implements LanguageModel {
                             functionDeclarations
                         }]
                     }),
-                    thinkingConfig: {
-                        // https://ai.google.dev/gemini-api/docs/thinking#summaries
-                        includeThoughts: true,
-                    },
                     temperature: 1,
                     ...settings
                 },
