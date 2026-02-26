@@ -73,8 +73,10 @@ import { AISettingsService } from '../common/settings-service';
 import { DefaultSkillService, SkillService } from './skill-service';
 import { SkillPromptCoordinator } from './skill-prompt-coordinator';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
-import { PromptVariableContribution } from '../common/prompt-variable-contribution';
+import { PromptVariableContribution } from './prompt-variable-contribution';
 import { CapabilityVariableContribution } from '../common/capability-variable-contribution';
+import { GenericCapabilitiesVariableContribution } from './generic-capabilities-variable-contribution';
+import { GenericCapabilitiesPromptFragmentContribution } from './generic-capabilities-prompt-fragment-contribution';
 import { LanguageModelService } from '../common/language-model-service';
 import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
@@ -141,13 +143,22 @@ export default new ContainerModule(bind => {
     bind(TheiaVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TheiaVariableContribution);
 
-    bind(AIVariableContribution).to(PromptVariableContribution).inSingletonScope();
+    bind(PromptVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(PromptVariableContribution);
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(FileVariableContribution).inSingletonScope();
-    bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
+    bind(AgentsVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(AgentsVariableContribution);
     bind(AIVariableContribution).to(OpenEditorsVariableContribution).inSingletonScope();
-    bind(AIVariableContribution).to(SkillsVariableContribution).inSingletonScope();
+    bind(SkillsVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(SkillsVariableContribution);
     bind(AIVariableContribution).to(CapabilityVariableContribution).inSingletonScope();
+
+    bind(GenericCapabilitiesVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(GenericCapabilitiesVariableContribution);
+
+    bind(GenericCapabilitiesPromptFragmentContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(GenericCapabilitiesPromptFragmentContribution);
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 

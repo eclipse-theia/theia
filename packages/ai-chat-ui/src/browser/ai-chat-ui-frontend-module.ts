@@ -66,6 +66,7 @@ import { ChatInputFocusService } from './chat-input-focus-service';
 import { ChatFocusContribution } from './chat-focus-contribution';
 import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
 import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
+import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIChatNavigationService).toSelf().inSingletonScope();
@@ -91,6 +92,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatCapabilitiesServiceImpl).toSelf().inSingletonScope();
     bind(ChatCapabilitiesService).toService(ChatCapabilitiesServiceImpl);
 
+    bindContributionProvider(bind, GenericCapabilitiesContribution);
+    bind(GenericCapabilitiesServiceImpl).toSelf().inSingletonScope();
+    bind(GenericCapabilitiesService).toService(GenericCapabilitiesServiceImpl);
+
     bind(ChatInputCapabilitiesContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatInputCapabilitiesContribution);
     bind(KeybindingContribution).toService(ChatInputCapabilitiesContribution);
@@ -105,6 +110,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         showContext: true,
         showPinnedAgent: true,
         showChangeSet: true,
+        showCapabilities: true,
         enablePromptHistory: true
     } satisfies AIChatInputConfiguration);
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
@@ -128,6 +134,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
             showPinnedAgent: true,
             showChangeSet: false,
             showSuggestions: false,
+            showCapabilities: true,
             enablePromptHistory: false
         } satisfies AIChatInputConfiguration);
         container.bind(AIChatTreeInputWidget).toSelf().inSingletonScope();

@@ -28,6 +28,8 @@ import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-
 import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
 import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { GenericCapabilitiesContribution } from '@theia/ai-core';
+import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-contribution';
 
 export default new ContainerModule(bind => {
     bind(McpFrontendApplicationContribution).toSelf().inSingletonScope();
@@ -35,6 +37,9 @@ export default new ContainerModule(bind => {
     bind(WorkspaceRestrictionContribution).toService(McpFrontendApplicationContribution);
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
+
+    bind(MCPGenericCapabilitiesContribution).toSelf().inSingletonScope();
+    bind(GenericCapabilitiesContribution).toService(MCPGenericCapabilitiesContribution);
     bind(MCPServerManagerServerClient).to(MCPServerManagerServerClientImpl).inSingletonScope();
 
     bind(MCPServerManagerServer).toDynamicValue(ctx => {

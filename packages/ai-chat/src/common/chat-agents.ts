@@ -23,7 +23,9 @@ import {
     AgentSpecificVariables,
     AIVariableContext,
     AIVariableResolutionRequest,
+    CAPABILITY_TYPE_PROMPT_MAP,
     CapabilityAwareContext,
+    GenericCapabilitySelections,
     getTextOfResponse,
     isLanguageModelStreamResponsePart,
     isTextResponsePart,
@@ -209,11 +211,18 @@ export abstract class AbstractChatAgent implements ChatAgent {
             if (!languageModel) {
                 throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
-            const systemMessageDescription = await this.getSystemMessageDescription({
+            const context: ChatSessionContext = {
                 model: request.session,
                 request,
-                capabilityOverrides: request.request.capabilityOverrides
-            } satisfies ChatSessionContext);
+                capabilityOverrides: request.request.capabilityOverrides,
+                genericCapabilitySelections: request.request.genericCapabilitySelections
+            };
+            let systemMessageDescription = await this.getSystemMessageDescription(context);
+
+            // Append generic capabilities fragment if selections exist (done here so all subclass overrides benefit)
+            if (systemMessageDescription && CapabilityAwareContext.is(context) && GenericCapabilitySelections.hasSelections(context.genericCapabilitySelections)) {
+                systemMessageDescription = await this.appendGenericCapabilities(systemMessageDescription, context);
+            }
 
             if (systemMessageDescription?.promptVariantId) {
                 request.response.setPromptVariantInfo(
@@ -296,7 +305,70 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const variantInfo = this.promptService.getPromptVariantInfo(this.systemPromptId);
 
         const resolvedPrompt = await this.promptService.getResolvedPromptFragment(this.systemPromptId, undefined, context);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, variantInfo?.variantId, variantInfo?.isCustomized) : undefined;
+        if (!resolvedPrompt) {
+            return undefined;
+        }
+
+        return SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, variantInfo?.variantId, variantInfo?.isCustomized);
+    }
+
+    /**
+     * Appends resolved generic capability prompt fragments to the system message.
+     * Only includes fragments for capability types that have selections.
+     */
+    protected async appendGenericCapabilities(
+        systemMessage: SystemMessageDescription,
+        context: CapabilityAwareContext
+    ): Promise<SystemMessageDescription> {
+        const selections = context.genericCapabilitySelections;
+        if (!selections) {
+            return systemMessage;
+        }
+
+        // Determine which prompt fragments to include based on selections
+        const fragmentIds = CAPABILITY_TYPE_PROMPT_MAP
+            .filter(({ type }) => (selections[type]?.length ?? 0) > 0)
+            .map(({ promptId }) => promptId);
+
+        if (fragmentIds.length === 0) {
+            return systemMessage;
+        }
+
+        // Resolve all selected fragments in parallel
+        const resolvedResults = await Promise.all(
+            fragmentIds.map(fragmentId => this.promptService.getResolvedPromptFragment(fragmentId, undefined, context))
+        );
+
+        const resolvedTexts: string[] = [];
+        let combinedFunctions = systemMessage.functionDescriptions;
+
+        for (const resolvedFragment of resolvedResults) {
+            if (resolvedFragment && resolvedFragment.text.trim()) {
+                resolvedTexts.push(resolvedFragment.text);
+
+                // Merge function descriptions
+                if (resolvedFragment.functionDescriptions && resolvedFragment.functionDescriptions.size > 0) {
+                    combinedFunctions = new Map(combinedFunctions ?? []);
+                    for (const [key, value] of resolvedFragment.functionDescriptions) {
+                        if (!combinedFunctions.has(key)) {
+                            combinedFunctions.set(key, value);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (resolvedTexts.length === 0) {
+            return systemMessage;
+        }
+
+        const combinedText = systemMessage.text + '\n\n' + resolvedTexts.join('\n\n');
+
+        return {
+            ...systemMessage,
+            text: combinedText,
+            functionDescriptions: combinedFunctions
+        };
     }
 
     protected async getMessages(

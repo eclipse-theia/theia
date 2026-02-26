@@ -21,6 +21,7 @@
 
 import {
     AIVariableResolutionRequest,
+    GenericCapabilitySelections,
     LanguageModelMessage,
     ResolvedAIContextVariable,
     ResolvedAIVariable,
@@ -295,6 +296,13 @@ export interface ChatRequest {
      * Only includes capabilities that differ from their default value.
      */
     readonly capabilityOverrides?: Record<string, boolean>;
+
+    /**
+     * Generic capability selections for this request.
+     * Contains user-selected skills, functions, MCP tools, etc.
+     * from the capabilities panel dropdowns.
+     */
+    readonly genericCapabilitySelections?: GenericCapabilitySelections;
 }
 
 export interface ChatContext {
@@ -1672,7 +1680,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._id = reqData.id;
         this._request = {
             text: reqData.text,
-            capabilityOverrides: reqData.capabilityOverrides
+            capabilityOverrides: reqData.capabilityOverrides,
+            genericCapabilitySelections: reqData.genericCapabilitySelections
         };
         this._agentId = reqData.agentId;
         this._data = {};
@@ -1915,7 +1924,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
             } : undefined,
             parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
-            capabilityOverrides: this.request.capabilityOverrides
+            capabilityOverrides: this.request.capabilityOverrides,
+            genericCapabilitySelections: this.request.genericCapabilitySelections
         };
     }
 
