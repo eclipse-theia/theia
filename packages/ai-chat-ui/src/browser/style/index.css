@@ -786,33 +786,106 @@ div:last-child>.theia-ChatNode {
 }
 
 .theia-QuestionPartRenderer-root {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--theia-ui-padding);
   border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
-  padding: 8px 12px 12px;
-  border-radius: 5px;
-  margin: 0 0 8px 0;
+  padding: calc(var(--theia-ui-padding) * 2);
+  border-radius: var(--theia-ui-padding);
+  margin: 0 0 var(--theia-ui-padding) 0;
+}
+
+.theia-QuestionPartRenderer-dismiss {
+  position: absolute;
+  top: var(--theia-ui-padding);
+  right: var(--theia-ui-padding);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  padding: 2px;
+  line-height: 1;
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+}
+
+.theia-QuestionPartRenderer-dismiss:hover {
+  color: var(--theia-foreground);
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-QuestionPartRenderer-header {
+  font-weight: 700;
+  font-size: var(--theia-ui-font-size0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-QuestionPartRenderer-question {
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
 }
 
 .theia-QuestionPartRenderer-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--theia-ui-padding);
+}
+
+.theia-QuestionPartRenderer-options.has-descriptions {
+  flex-direction: column;
 }
 
 .theia-QuestionPartRenderer-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
   min-width: 100px;
   flex: 1 1 auto;
   margin: 0;
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  border-radius: var(--theia-ui-padding);
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  background-color: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.theia-QuestionPartRenderer-option:hover:not(:disabled) {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.theia-QuestionPartRenderer-option.selected {
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  border-color: var(--theia-button-background);
 }
 
 .theia-QuestionPartRenderer-option.selected:disabled:hover {
-  background-color: var(--theia-button-disabledBackground);
+  background-color: var(--theia-button-background);
 }
 
 .theia-QuestionPartRenderer-option:disabled:not(.selected) {
-  background-color: var(--theia-button-secondaryBackground);
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+}
+
+.theia-QuestionPartRenderer-option-label {
+  font-weight: 600;
+}
+
+.theia-QuestionPartRenderer-option-description {
+  font-size: var(--theia-ui-font-size0);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.theia-QuestionPartRenderer-confirm {
+  align-self: flex-end;
+  margin-top: calc(var(--theia-ui-padding) / 2);
 }
 
 .theia-toolCall,

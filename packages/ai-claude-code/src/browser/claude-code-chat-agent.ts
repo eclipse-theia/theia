@@ -380,7 +380,8 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             question,
             APPROVAL_OPTIONS,
             request,
-            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request)
+            selectedOption => this.handleApprovalResponse(selectedOption, approvalRequest.requestId, approvalRequest.toolName, request),
+            { onSkip: () => this.handleApprovalSkip(approvalRequest.requestId, request) }
         );
 
         // Store references for this specific approval request
@@ -435,6 +436,24 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         }
     }
 
+    protected handleApprovalSkip(requestId: string, request: MutableChatRequestModel): void {
+        const pendingApprovals = this.getPendingApprovals(request);
+        pendingApprovals.delete(requestId);
+        this.getApprovalToolInputs(request).delete(requestId);
+
+        const response: ToolApprovalResponseMessage = {
+            type: 'tool-approval-response',
+            requestId,
+            approved: false,
+            message: 'User dismissed the tool approval request'
+        };
+        this.claudeCode.sendApprovalResponse(response);
+
+        if (pendingApprovals.size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
+            request.response.stopWaitingForInput();
+        }
+    }
+
     protected handleAskUserQuestion(
         approvalRequest: ToolApprovalRequestMessage,
         request: MutableChatRequestModel
@@ -465,42 +484,57 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 description: opt.description
             }));
 
-            const questionText = questionItem.header
-                ? `**${questionItem.header}:** ${questionItem.question}`
-                : questionItem.question;
+            const onAnswered = (): void => {
+                answeredCount++;
+                if (answeredCount === totalQuestions) {
+                    this.getPendingAskUserQuestions(request).delete(approvalRequest.requestId);
 
-            const questionContent = new QuestionResponseContentImpl(
-                questionText,
-                options,
-                request,
-                selectedOption => {
-                    // Key by question text to match the Claude Code SDK's expected answers format
-                    answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
-                    answeredCount++;
+                    const updatedInput: AskUserQuestionInput = {
+                        ...toolInput,
+                        answers
+                    };
 
-                    if (answeredCount === totalQuestions) {
-                        this.getPendingAskUserQuestions(request).delete(approvalRequest.requestId);
+                    const response: ToolApprovalResponseMessage = {
+                        type: 'tool-approval-response',
+                        requestId: approvalRequest.requestId,
+                        approved: true,
+                        updatedInput
+                    };
 
-                        const updatedInput: AskUserQuestionInput = {
-                            ...toolInput,
-                            answers
-                        };
+                    this.claudeCode.sendApprovalResponse(response);
 
-                        const response: ToolApprovalResponseMessage = {
-                            type: 'tool-approval-response',
-                            requestId: approvalRequest.requestId,
-                            approved: true,
-                            updatedInput
-                        };
-
-                        this.claudeCode.sendApprovalResponse(response);
-
-                        if (this.getPendingApprovals(request).size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
-                            request.response.stopWaitingForInput();
-                        }
+                    if (this.getPendingApprovals(request).size === 0 && this.getPendingAskUserQuestions(request).size === 0) {
+                        request.response.stopWaitingForInput();
                     }
                 }
-            );
+            };
+
+            let questionContent: QuestionResponseContentImpl;
+            if (questionItem.multiSelect) {
+                questionContent = new QuestionResponseContentImpl(
+                    questionItem.question, options, request,
+                    selectedOptions => {
+                        answers[questionItem.question] = selectedOptions.map(o => o.value ?? o.text).join(', ');
+                        onAnswered();
+                    },
+                    { multiSelect: true, header: questionItem.header }
+                );
+            } else {
+                questionContent = new QuestionResponseContentImpl(
+                    questionItem.question, options, request,
+                    selectedOption => {
+                        answers[questionItem.question] = selectedOption.value ?? selectedOption.text;
+                        onAnswered();
+                    },
+                    {
+                        header: questionItem.header,
+                        onSkip: () => {
+                            answers[questionItem.question] = '';
+                            onAnswered();
+                        }
+                    }
+                );
+            }
 
             request.response.response.addContent(questionContent);
         }

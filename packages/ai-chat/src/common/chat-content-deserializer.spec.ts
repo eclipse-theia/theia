@@ -293,7 +293,7 @@ describe('Chat Content Serialization', () => {
                 options,
                 undefined, // request
                 undefined, // handler
-                { text: 'Blue' } // selectedOption
+                { selectedOption: { text: 'Blue' } }
             );
             const serialized = original.toSerializable?.();
 
@@ -315,6 +315,80 @@ describe('Chat Content Serialization', () => {
             expect(deserialized.kind).to.equal('question');
             expect(deserialized.asString?.()).to.include('Question: Which color do you find most calming?');
             expect(deserialized.asString?.()).to.include('Answer: Blue');
+        });
+
+        it('should serialize and deserialize multi-select question with selected options', async () => {
+            const options = [
+                { text: 'TypeScript' },
+                { text: 'Python' },
+                { text: 'Rust' }
+            ];
+            const original = new QuestionResponseContentImpl(
+                'Which languages do you use?',
+                options,
+                undefined, // request
+                undefined, // handler
+                { multiSelect: true, selectedOptions: [{ text: 'TypeScript' }, { text: 'Rust' }] }
+            );
+            const serialized = original.toSerializable?.();
+
+            expect(serialized).to.not.be.undefined;
+            expect(serialized!.kind).to.equal('question');
+            expect(serialized!.data).to.deep.equal({
+                question: 'Which languages do you use?',
+                options: options,
+                multiSelect: true,
+                selectedOptions: [{ text: 'TypeScript' }, { text: 'Rust' }]
+            });
+
+            const withFallback = {
+                ...serialized!,
+                fallbackMessage: original.asString?.() || original.toString()
+            };
+
+            const deserialized = await registry.deserialize(withFallback);
+            expect(deserialized.kind).to.equal('question');
+            expect(deserialized.asString?.()).to.include('Answer: TypeScript, Rust');
+            const q = deserialized as QuestionResponseContentImpl;
+            expect(q.multiSelect).to.be.true;
+            expect(q.selectedOptions).to.deep.equal([{ text: 'TypeScript' }, { text: 'Rust' }]);
+        });
+
+        it('should serialize and deserialize multi-select question with header and no selected options', async () => {
+            const options = [
+                { text: 'Option A' },
+                { text: 'Option B' }
+            ];
+            const original = new QuestionResponseContentImpl(
+                'Pick any that apply',
+                options,
+                undefined, // request
+                undefined, // handler
+                { multiSelect: true, header: 'Configuration' }
+            );
+            const serialized = original.toSerializable?.();
+
+            expect(serialized).to.not.be.undefined;
+            expect(serialized!.kind).to.equal('question');
+            expect(serialized!.data).to.deep.equal({
+                question: 'Pick any that apply',
+                options: options,
+                multiSelect: true,
+                header: 'Configuration',
+                selectedOptions: undefined
+            });
+
+            const withFallback = {
+                ...serialized!,
+                fallbackMessage: original.asString?.() || original.toString()
+            };
+
+            const deserialized = await registry.deserialize(withFallback);
+            expect(deserialized.kind).to.equal('question');
+            const q = deserialized as QuestionResponseContentImpl;
+            expect(q.multiSelect).to.be.true;
+            expect(q.header).to.equal('Configuration');
+            expect(q.selectedOptions).to.be.undefined;
         });
 
         it('should serialize and deserialize question without selected option', async () => {

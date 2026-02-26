@@ -13,7 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChatResponseContent, QuestionResponseContent } from '@theia/ai-chat';
+import { ChatResponseContent, MultiSelectQuestionResponseHandler, QuestionResponseContent, QuestionResponseHandler } from '@theia/ai-chat';
+import { nls } from '@theia/core';
+import { codicon } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
@@ -32,33 +34,162 @@ export class QuestionPartRenderer
     }
 
     render(question: QuestionResponseContent, node: ResponseNode): ReactNode {
-        const isDisabled = question.isReadOnly || question.selectedOption !== undefined || !node.response.isWaitingForInput;
-
-        return (
-            <div className="theia-QuestionPartRenderer-root">
-                <div className="theia-QuestionPartRenderer-question">{question.question}</div>
-                <div className="theia-QuestionPartRenderer-options">
-                    {
-                        question.options.map((option, index) => (
-                            <button
-                                className={`theia-button theia-QuestionPartRenderer-option ${question.selectedOption?.text === option.text ? 'selected' : ''}`}
-                                onClick={() => {
-                                    if (!question.isReadOnly && question.handler) {
-                                        question.selectedOption = option;
-                                        question.handler(option);
-                                    }
-                                }}
-                                disabled={isDisabled}
-                                key={index}
-                                title={option.description}
-                            >
-                                {option.text}
-                            </button>
-                        ))
-                    }
-                </div>
-            </div>
-        );
+        if (question.multiSelect) {
+            return <MultiSelectQuestion question={question} node={node} />;
+        }
+        return <SingleSelectQuestion question={question} node={node} />;
     }
 
+}
+
+function isResolved(question: QuestionResponseContent): boolean {
+    return question.selectedOptions !== undefined;
+}
+
+function skipQuestion(question: QuestionResponseContent): void {
+    if (question.isReadOnly) {
+        return;
+    }
+    question.selectedOptions = [];
+    if (question.multiSelect) {
+        if (question.handler) {
+            (question.handler as MultiSelectQuestionResponseHandler)([]);
+        }
+    } else {
+        question.onSkip?.();
+    }
+}
+
+function isOptionSelected(question: QuestionResponseContent, option: { text: string }): boolean {
+    return question.selectedOptions?.some(s => s.text === option.text) === true;
+}
+
+function DismissButton({ question, disabled }: { question: QuestionResponseContent, disabled: boolean }): React.JSX.Element | undefined {
+    if (disabled) {
+        return undefined;
+    }
+    return (
+        <button
+            className={`theia-QuestionPartRenderer-dismiss ${codicon('close')}`}
+            onClick={() => skipQuestion(question)}
+            title={nls.localizeByDefault('Dismiss')}
+        />
+    );
+}
+
+function SingleSelectQuestion({ question, node }: { question: QuestionResponseContent, node: ResponseNode }): React.JSX.Element {
+    const isDisabled = question.isReadOnly || isResolved(question) || !node.response.isWaitingForInput;
+    const hasDescriptions = question.options.some(option => option.description);
+
+    return (
+        <div className="theia-QuestionPartRenderer-root">
+            {question.onSkip && <DismissButton question={question} disabled={isDisabled} />}
+            {question.header && <div className="theia-QuestionPartRenderer-header">{question.header}</div>}
+            <div className="theia-QuestionPartRenderer-question">{question.question}</div>
+            <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
+                {
+                    question.options.map((option, index) => (
+                        <button
+                            className={`theia-QuestionPartRenderer-option ${isOptionSelected(question, option) ? 'selected' : ''}`}
+                            onClick={() => {
+                                if (!question.isReadOnly && question.handler) {
+                                    question.selectedOption = option;
+                                    (question.handler as QuestionResponseHandler)(option);
+                                }
+                            }}
+                            disabled={isDisabled}
+                            key={index}
+                        >
+                            <span className="theia-QuestionPartRenderer-option-label">{option.text}</span>
+                            {option.description && (
+                                <span className="theia-QuestionPartRenderer-option-description">{option.description}</span>
+                            )}
+                        </button>
+                    ))
+                }
+            </div>
+        </div>
+    );
+}
+
+function MultiSelectQuestion({ question, node }: { question: QuestionResponseContent, node: ResponseNode }): React.JSX.Element {
+    const restoredIndices = React.useMemo(() => {
+        if (question.selectedOptions && question.selectedOptions.length > 0) {
+            const indices = new Set<number>();
+            for (const selected of question.selectedOptions) {
+                const idx = question.options.findIndex(o => o.text === selected.text);
+                if (idx >= 0) {
+                    indices.add(idx);
+                }
+            }
+            return indices;
+        }
+        return new Set<number>();
+    }, []);
+
+    const [selectedIndices, setSelectedIndices] = React.useState<Set<number>>(restoredIndices);
+    const [confirmed, setConfirmed] = React.useState(isResolved(question));
+    const isDisabled = question.isReadOnly || confirmed || !node.response.isWaitingForInput;
+    const hasDescriptions = question.options.some(option => option.description);
+
+    const toggleOption = React.useCallback((index: number): void => {
+        if (isDisabled) {
+            return;
+        }
+        setSelectedIndices(prev => {
+            const next = new Set(prev);
+            if (next.has(index)) {
+                next.delete(index);
+            } else {
+                next.add(index);
+            }
+            return next;
+        });
+    }, [isDisabled]);
+
+    const handleConfirm = React.useCallback((): void => {
+        if (isDisabled || selectedIndices.size === 0) {
+            return;
+        }
+        const selectedOpts = Array.from(selectedIndices)
+            .sort((a, b) => a - b)
+            .map(i => question.options[i]);
+        question.selectedOptions = selectedOpts;
+        setConfirmed(true);
+        if (question.handler) {
+            (question.handler as MultiSelectQuestionResponseHandler)(selectedOpts);
+        }
+    }, [isDisabled, selectedIndices]);
+
+    return (
+        <div className="theia-QuestionPartRenderer-root">
+            <DismissButton question={question} disabled={isDisabled} />
+            {question.header && <div className="theia-QuestionPartRenderer-header">{question.header}</div>}
+            <div className="theia-QuestionPartRenderer-question">{question.question}</div>
+            <div className={`theia-QuestionPartRenderer-options ${hasDescriptions ? 'has-descriptions' : ''}`}>
+                {question.options.map((option, index) => (
+                    <button
+                        className={`theia-QuestionPartRenderer-option ${selectedIndices.has(index) ? 'selected' : ''}`}
+                        onClick={() => toggleOption(index)}
+                        disabled={isDisabled}
+                        key={index}
+                    >
+                        <span className="theia-QuestionPartRenderer-option-label">{option.text}</span>
+                        {option.description && (
+                            <span className="theia-QuestionPartRenderer-option-description">{option.description}</span>
+                        )}
+                    </button>
+                ))}
+            </div>
+            {!isDisabled && (
+                <button
+                    className="theia-QuestionPartRenderer-confirm theia-button main"
+                    onClick={handleConfirm}
+                    disabled={selectedIndices.size === 0}
+                >
+                    {nls.localize('theia/ai-chat-ui/confirm', 'Confirm')}
+                </button>
+            )}
+        </div>
+    );
 }
