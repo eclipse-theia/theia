@@ -89,11 +89,17 @@ describe('Chat Auto-Save Mechanism', () => {
             invoke: () => Promise.resolve()
         };
 
+        readonly onDidChangeAgents = { dispose: () => { } };
+        readonly onDefaultAgentChanged = { dispose: () => { } };
+
         getAgent(id: string): typeof this.testAgent | undefined {
             return id === 'test-agent' ? this.testAgent : undefined;
         }
         getAgents(): typeof this.testAgent[] {
             return [this.testAgent];
+        }
+        resolveAgent(): typeof this.testAgent {
+            return this.testAgent;
         }
     }
 
