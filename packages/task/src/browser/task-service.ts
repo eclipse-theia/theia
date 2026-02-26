@@ -1015,7 +1015,7 @@ export class TaskService implements TaskConfigurationClient {
             const taskToRun: TaskConfiguration = {
                 ...resolvedTask,
                 enabledCommandHistory: this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false
-            }
+            };
             taskInfo = await this.taskServer.run(taskToRun, this.getContext(), option);
             this.lastTask = { resolvedTask, option };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
