@@ -250,7 +250,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
-            this.updateCommandHistoryHandlers();
+            if (change.preferenceName === 'terminal.integrated.enableCommandHistory') {
+                this.updateCommandHistoryHandlers();
+            }
             this.needsResize = true;
             this.update();
         }));
@@ -481,12 +483,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
 
-        deco.onRender(e => {
+        const renderListener = deco.onRender(e => {
             e.classList.add('terminal-command-separator');
         });
 
         this.commandSeparatorDecorations.push(marker);
         this.commandSeparatorDecorations.push(deco);
+        this.commandSeparatorDecorations.push(renderListener);
     }
 
     protected setIconClass(): void {

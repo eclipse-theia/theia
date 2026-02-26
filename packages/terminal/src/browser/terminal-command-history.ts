@@ -40,11 +40,7 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     ) {
         this.toDispose.push(this.onCommandStartEmitter);
         this.toDispose.push(this.onPromptShownEmitter);
-
-        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
-        this.enableCommandSeparator = this.enableCommandHistory
-            ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
-            : false;
+        this.updateConfig();
     }
 
     startCommand(command: string): void {
