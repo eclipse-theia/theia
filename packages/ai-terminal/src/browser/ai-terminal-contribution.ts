@@ -192,9 +192,9 @@ class AiTerminalChatWidget {
     }
 
     protected getRecentTerminalCommands(): string[] {
-        // Character count for recent context when one line is 120 characters long.
-        const characterLimit = 1200;
         if (this.getEnableCommandHistory()) {
+            // Character count for recent context when one line is 120 characters long.
+            const characterLimit = 1200;
             const commandHistory = this.terminalWidget.commandHistoryState.commandHistory;
             return this.extractContextFromTerminalOutput(commandHistory, characterLimit);
         }
@@ -216,23 +216,23 @@ class AiTerminalChatWidget {
             const blockCharacters = block.command.length + block.output.length;
 
             if (currentCharacters + blockCharacters <= characterLimit) {
-                context.unshift(`${block.command}\n${block.output}`);
+                context.push(`${block.command}\n${block.output}`);
                 currentCharacters += blockCharacters;
             } else {
                 const remainingCharacters = characterLimit - currentCharacters;
                 if (block.command.length <= remainingCharacters) {
                     const outputLimit = remainingCharacters - block.command.length;
                     const trimmedOutput = block.output.substring(0, outputLimit);
-                    context.unshift(`${block.command}\n${trimmedOutput}`);
+                    context.push(`${block.command}\n${trimmedOutput}`);
                 } else {
                     const trimmedCommand = block.command.substring(0, remainingCharacters);
-                    context.unshift(trimmedCommand);
+                    context.push(trimmedCommand);
                 }
                 break;
             }
         }
 
-        return context;
+        return context.reverse();
     }
 
     protected getNextCommandIndex(step: number): number {
