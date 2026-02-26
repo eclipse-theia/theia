@@ -1,11 +1,11 @@
 {
   "name": "@theia/ai-copilot",
-  "version": "1.68.0",
+  "version": "1.69.0",
   "description": "Theia - GitHub Copilot Integration",
   "dependencies": {
-    "@theia/ai-core": "1.68.0",
-    "@theia/ai-openai": "1.68.0",
-    "@theia/core": "1.68.0",
+    "@theia/ai-core": "1.69.0",
+    "@theia/ai-openai": "1.69.0",
+    "@theia/core": "1.69.0",
     "openai": "^6.3.0",
     "tslib": "^2.6.2"
   },
@@ -43,7 +43,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.68.0"
+    "@theia/ext-scripts": "1.69.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
