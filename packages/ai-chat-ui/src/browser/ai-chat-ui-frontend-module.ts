@@ -92,7 +92,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatCapabilitiesServiceImpl).toSelf().inSingletonScope();
     bind(ChatCapabilitiesService).toService(ChatCapabilitiesServiceImpl);
 
-    bindContributionProvider(bind, GenericCapabilitiesContribution);
+    bindRootContributionProvider(bind, GenericCapabilitiesContribution);
     bind(GenericCapabilitiesServiceImpl).toSelf().inSingletonScope();
     bind(GenericCapabilitiesService).toService(GenericCapabilitiesServiceImpl);
 
