@@ -116,6 +116,7 @@
         "chatSessionSummaryAgent": {
           "description": "用于生成聊天会话摘要的代理程序。"
         },
+        "clipboardSeparator": "剪贴板",
         "confirmApplySuggestion": "文件{0}自本建议创建后已发生变更。您确定要应用此更改吗?",
         "confirmRevertSuggestion": "文件{0}自本建议创建后已发生变更。您确定要撤销此更改吗?",
         "couldNotFindMatchingLM": "未找到匹配的语言模型。请检查您的设置！",
@@ -143,6 +144,7 @@
           "description": "为图像提供上下文信息",
           "label": "图像文件"
         },
+        "imagePickerPlaceholder": "选择图像文件或按名称搜索",
         "orchestrator": {
           "description": "该智能体通过人工智能技术,将用户请求与所有可用聊天智能体的描述进行比对分析,并选择最匹配的智能体进行响应。用户请求将直接转交至选定的智能体处理,无需额外确认。",
           "vars": {
@@ -162,7 +164,6 @@
           "description": "启用代理固定功能,可在不同提示中自动保持指定聊天代理处于活动状态,减少重复提及的需要。您可随时手动取消固定或切换代理。"
         },
         "revertSuggestion": "撤销建议",
-        "selectImageFile": "选择图像文件",
         "sessionStorageScope": {
           "description": "选择是否将聊天会话分别存储在独立的工作区存储库中,或统一存储于全局存储库。若未打开任何工作区,会话将回退至全局存储。",
           "global": "将聊天会话存储在单一存储库中,供所有工作区共享。",
@@ -191,11 +192,15 @@
         },
         "view": {
           "label": "AI Chat"
+        },
+        "welcomeScreenSessions": {
+          "description": "欢迎界面显示的近期聊天会话行数。可见会话数量取决于可用宽度。设置为0可隐藏近期聊天区域。"
         }
       },
       "chat-ui": {
         "addContextVariable": "添加上下文变量",
         "agent": "代理",
+        "agentDelegationDescription": "可委派的其他AI代理",
         "aiDisabled": "AI功能已禁用",
         "applyAll": "应用全部",
         "applyAllTitle": "应用所有待处理更改",
@@ -204,10 +209,7 @@
         "cancel": "取消 (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiFeatureHeader": "🚀 AI功能现已可用(测试版)！",
-          "featuresDisabled": "当前所有AI功能均已禁用！",
           "generating": "生成",
-          "howToEnable": "如何启用 AI 功能:",
           "noRenderer": "错误:未找到渲染器",
           "scrollToBottom": "跳转至最新消息",
           "waitingForInput": "等待输入",
@@ -222,14 +224,17 @@
         },
         "chatInputAriaLabel": "在此处输入您的消息",
         "chatResponses": "聊天回复",
+        "clearAllSelections": "清除搜索字符串和功能选项",
         "code-part-renderer": {
           "copied": "已复制",
           "generatedCode": "生成的代码"
         },
+        "collapseAll": "折叠全部",
         "collapseChangeSet": "折叠 更改集",
         "command-part-renderer": {
           "commandNotExecutable": "该命令的ID为\"{0}\",但无法通过聊天窗口执行。"
         },
+        "confirmDeleteChatMsg": "您确定要删除此聊天记录吗?",
         "copyCodeBlock": "复制代码块",
         "couldNotSendRequestToSession": "无法向会话{1}发送请求\"{0}\"",
         "delegation-response-renderer": {
@@ -248,6 +253,7 @@
           }
         },
         "deleteChangeSet": "删除变更集",
+        "deleteChat": "删除聊天记录",
         "editRequest": "编辑",
         "edited": "编辑",
         "editedTooltipHint": "此提示变体已进行编辑。您可在AI配置视图中重置它。",
@@ -260,17 +266,27 @@
         "failedToRetry": "重试失败消息",
         "focusInput": "聚焦聊天输入",
         "focusResponse": "焦点聊天响应",
+        "functions": "功能",
+        "functionsDescription": "Theia 扩展提供的内置函数",
+        "genericCapabilities": "通用功能",
+        "mcpFunctions": "MCP",
+        "mcpFunctionsDescription": "来自连接服务器的模型上下文协议(MCP)功能",
         "noChatAgentsAvailable": "没有可用的聊天机器人。",
+        "noMatchingCapabilities": "无匹配功能",
         "openDiff": "打开差异",
         "openImage": "打开图像",
         "openOriginalFile": "打开原始文件",
         "performThisTask": "执行此任务。",
         "persistedSession": "持久化会话(点击恢复)",
+        "promptFragments": "提示",
+        "promptFragmentsDescription": "用于对话的自定义提示片段",
         "removeChat": "移除聊天功能",
         "renameChat": "重命名聊天",
         "requestNotFoundForRetry": "请求未找到,请重试",
         "responseFrom": "来自 {0} 的响应",
+        "searchCapabilities": "搜索功能",
         "selectAgentQuickPickPlaceholder": "为新会话选择代理",
+        "selectAllInCategory": "选择此类别中的所有项目",
         "selectChat": "选择聊天",
         "selectContextVariableQuickPickPlaceholder": "选择一个上下文变量附加到消息中",
         "selectTaskContextQuickPickItem": {
@@ -280,12 +296,10 @@
         "selectVariableArguments": "选择可变参数",
         "send": "发送(回车)",
         "sessionNotFoundForRetry": "未找到可重试的会话",
+        "skillsDescription": "可重复使用的技能指令,可添加至对话中",
         "switchAgentMode": "切换代理模式",
         "text-part-renderer": {
           "cantDisplay": "无法显示响应,请检查您的ChatResponsePartRenderers！"
-        },
-        "thinking-part-renderer": {
-          "thinking": "思考"
         },
         "toggleCapabilitiesConfig": "切换功能配置",
         "toolcall-part-renderer": {
@@ -315,6 +329,8 @@
           "contentNotRestoreable": "此内容(类型为'{0}')无法完全恢复。它可能来自已不再可用的扩展程序。"
         },
         "unpinAgent": "取消固定代理",
+        "unselectAllInCategory": "取消选择此类别中的所有选项",
+        "variablesDescription": "提供上下文信息的动态变量",
         "variantTooltip": "提示变体:{0}",
         "yourMessage": "您的消息"
       },
@@ -459,7 +475,6 @@
         "itemCount": "{0} 项目",
         "noItems": "无项目",
         "oneItem": "1 项",
-        "running": "正在运行...",
         "searched": "已检索",
         "searching": "搜索",
         "todoList": "Todo List",
@@ -536,7 +551,6 @@
           "privacy": "Theia是一个开源项目。我们仅请求访问您的GitHub用户名以连接GitHub Copilot服务——不会访问或存储任何其他数据。",
           "success": "已成功登录 GitHub Copilot！",
           "successHint": "若您的 GitHub 账户已启用 Copilot 功能,现在可通过以下方式配置 Copilot 语言模型: ",
-          "title": "登录 GitHub Copilot",
           "tos": "通过登录,即表示您同意 ",
           "tosLink": "GitHub 服务条款",
           "verifying": "正在验证授权..."
@@ -552,6 +566,9 @@
         "models": {
           "description": "GitHub Copilot可选模型。可用模型取决于您的Copilot订阅类型。"
         },
+        "signOut": {
+          "confirmMessage": "您确定要退出 GitHub Copilot 吗?"
+        },
         "statusBar": {
           "signedIn": "已使用{0}账号登录GitHub Copilot。点击退出登录。",
           "signedOut": "尚未登录 GitHub Copilot。点击登录。"
@@ -559,14 +576,16 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "操作",
           "addCustomAgent": "添加自定义代理",
           "availableCapabilities": "可用功能",
+          "completionNotificationDescriptionPrefix": "选择当此代理完成任务时希望接收的通知方式。\"默认\"使用 ",
+          "defaultNotificationDescription": "使用全局AI通知设置",
           "enableAgent": "启用代理",
-          "label": "代理",
           "llmRequirements": "大型语言模型需求",
           "notUsedInPrompt": "不用于提示符",
           "notUsedInPromptTooltip": "该变量由代理声明,但在当前提示模板中未被引用。",
+          "notificationSettings": "通知设置",
+          "notificationSettingsLink": "AI通知设置",
           "promptTemplates": "提示模板",
           "selectAgentMessage": "请先选择一个代理！",
           "showInChat": "在聊天中显示",
@@ -665,6 +684,16 @@
           "unavailableModel": "所选模型已不再可用"
         },
         "noVariableFoundForOpenRequest": "未找到用于打开请求的变量。",
+        "notification": {
+          "message": {
+            "description": "在应用程序内显示通知消息"
+          },
+          "off": {
+            "description": "禁用所有通知"
+          },
+          "osNotification": "操作系统通知",
+          "windowBlink": "窗口闪烁"
+        },
         "openEditorsShortVariable": {
           "description": "当前所有打开文件的简短引用(相对路径,以逗号分隔)"
         },
@@ -770,6 +799,30 @@
           "edited": "编辑",
           "unavailableVariant": "不可用"
         },
+        "thinkingMode": {
+          "mdDescription": "允许为支持扩展思考能力的模型指定思考模式设置。\n            每个设置包含:\n            - `scope`:定义设置的适用条件:\n              - `modelId`(可选):匹配的模型ID\n              - `providerId`(可选):匹配的提供商ID\n              - `agentId`(可选): 匹配的代理ID\n            - `thinkingMode`:思考模式配置:\n              - `enabled`(布尔值):是否启用思考模式\n              - `budgetTokens`(数字,可选):思考的最大令牌数(若模型支持)\n            设置匹配基于特异性(代理:100分,模型:10分,提供商:1分)。",
+          "scope": {
+            "agentId": {
+              "description": "(可选)应用设置的代理ID。"
+            },
+            "modelId": {
+              "description": "(可选)模型ID"
+            },
+            "providerId": {
+              "description": "(可选)应用设置的提供者ID。"
+            }
+          },
+          "thinkingMode": {
+            "budgetTokens": {
+              "description": "用于思考的最大令牌数。仅当模型支持思考预算时适用。"
+            },
+            "description": "思维模式配置。",
+            "enabled": {
+              "description": "是否启用了思考模式。"
+            }
+          },
+          "title": "思考模式设置"
+        },
         "todayVariable": {
           "description": "今日要事",
           "format": {
@@ -873,7 +926,6 @@
       "ide": {
         "agent-description": "在[AI配置视图]({0})中配置AI代理设置,包括启用状态、LLM选择、提示模板自定义及自定义代理创建。",
         "agentConfiguration": {
-          "capabilityId": "片段ID",
           "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "创建新文件",
@@ -904,6 +956,10 @@
             "question": "Playwright MCP 服务器未运行。是否现在启动?此操作可能安装 Playwright MCP 服务器。"
           }
         },
+        "appTester": {
+          "description": "允许代理对浏览器应用程序进行端到端测试。为此,代理可委托AppTester代理执行任务,该代理通过自动化浏览器交互来验证实现效果。",
+          "name": "应用程序测试员"
+        },
         "architectAgent": {
           "mode": {
             "plan": "平面模式",
@@ -913,9 +969,10 @@
             "executePlanWithCoder": "使用 Coder 执行 \"{0}\""
           }
         },
+        "browseAllChats": "浏览所有聊天记录...",
         "bypassHint": "某些智能体(如Claude Code)无需Theia语言模型支持",
         "chatDisabledMessage": {
-          "featuresTitle": "当前支持的视图与功能:"
+          "title": "AI功能已禁用"
         },
         "coderAgent": {
           "mode": {
@@ -948,6 +1005,7 @@
             }
           }
         },
+        "configurationState": "配置问题",
         "configureAgent": {
           "header": "配置默认代理"
         },
@@ -957,6 +1015,7 @@
             "edit": "默认模式"
           }
         },
+        "deleteChat": "删除聊天记录",
         "enableAI": {
           "mdDescription": "此设置允许您访问最新的人工智能功能(测试版)。            \n            请注意,这些功能处于测试阶段,可能随时变更并持续优化。需特别注意:这些功能可能持续向您授权访问的语言模型(LLMs)发起请求,由此产生的费用需密切监控。 启用此选项即表示您已知晓上述风险。            \n            **请注意！本节下方设置仅在主功能启用后生效。启用功能后,您需在下方至少配置一个LLM提供商。详情参见[文档](https://theia-ide.org/docs/user_ai/)**。"
         },
@@ -979,16 +1038,20 @@
             "yes": "是的,启动服务器"
           }
         },
+        "githubCapability": {
+          "description": "允许代理与 GitHub 进行交互。为此,该代理可委托 GitHub 代理执行操作,后者能够读写问题、拉取请求、评论及仓库内容。",
+          "name": "GitHub"
+        },
         "githubRepoName": {
           "description": "当前GitHub仓库名称(例如\"eclipse-theia/theia\")"
         },
+        "howToGetStarted": "如何开始使用",
         "model-selection-description": "在[AI配置视图]({0})中选择每个AI代理使用的超大规模语言模型(LLMs)。",
         "moreAgentsAvailable": {
           "header": "更多代理程序可用"
         },
         "noRecommendedAgents": "没有可用的推荐代理。",
         "openSettings": "打开 AI 设置",
-        "or": "或",
         "orchestrator": {
           "error": {
             "noAgents": "当前无可用聊天机器人处理请求。请检查您的配置中是否启用了相关机器人。"
@@ -1002,18 +1065,28 @@
           }
         },
         "prompt-template-description": "在[AI配置视图]({0})中为AI代理选择提示变体并自定义提示模板。",
-        "recommendedAgents": "推荐代理:",
+        "recentChats": "最近聊天记录",
+        "renameChat": "重命名聊天",
         "shellAllowlist": {
           "placeholder": "例如:\"git log\"(精确命令)或\"git log *\"(带参数的命令)"
         },
         "shellDenylist": {
           "placeholder": "例如:\"git push *\" 或 \"rm -rf /\""
         },
+        "shellExecutionCapability": {
+          "description": "允许代理在主机系统上运行任意shell命令。代理可进一步委托执行非任务类脚本、查询系统信息,以及执行无专用工具支持的操作。",
+          "name": "Shell 执行"
+        },
         "skillsConfiguration": {
-          "label": "技能",
           "location": {
             "label": "位置"
-          }
+          },
+          "noSkills": "无可用技能",
+          "noSlashCommands": "无斜杠命令可用",
+          "slashCommand": {
+            "allAgents": "所有代理"
+          },
+          "slashCommandsSectionHeader": "斜杠命令"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1048,6 +1121,15 @@
               "label": "确认"
             }
           }
+        },
+        "tooltip": {
+          "agent": "代理",
+          "lastActivity": "最近活动",
+          "lastMessage": "最后一条消息",
+          "messages": "消息",
+          "multipleExchanges": "{0} 交易所",
+          "oneExchange": "1 交换",
+          "unread": "未读"
         },
         "variableConfiguration": {
           "selectVariable": "请选择一个变量。",
@@ -1149,9 +1231,36 @@
         "copyAllSingle": "复制全部用于聊天(包含所有工具的单一提示符片段)",
         "copyForPrompt": "复制工具(用于聊天或提示模板)",
         "copyForPromptTemplate": "复制全部内容用于提示模板(包含所有工具的单一提示片段)",
+        "deleteServer": "删除服务器",
+        "deleteServerDialogMsg": "您确定要删除服务器\"{0}\"吗?",
+        "deleteServerDialogTitle": "删除 MCP 服务器",
+        "deleteServerError": "删除MCP服务器失败:{0}",
+        "editServer": "编辑服务器",
+        "editServerTitle": "编辑 MCP 服务器",
         "environmentVariables": "环境变量",
+        "form": {
+          "argsPlaceholder": "空格分隔,例如:-y @modelcontextprotocol/server-brave-search",
+          "authHeaderPlaceholder": "默认值:基于Bearer的授权",
+          "authTokenPlaceholder": "可选身份验证令牌",
+          "autostart": "自动启动",
+          "commandPlaceholder": "例如:npx 或 uvx",
+          "commandRequired": "本地服务器需要命令行支持",
+          "envPlaceholder": "KEY=value(每行一个)",
+          "headersPlaceholder": "Header-Name=value(每行一个)",
+          "localServer": "本地(命令)",
+          "nameExists": "已存在同名服务器",
+          "nameRequired": "服务器名称为必填项",
+          "remoteServer": "远程(URL)",
+          "saveChanges": "保存更改",
+          "serverName": "服务器名称",
+          "serverNamePlaceholder": "例如:my-mcp-server",
+          "serverType": "服务器类型",
+          "serverUrlPlaceholder": "例如:https://mcp.example.com",
+          "serverUrlRequired": "远程服务器需提供服务器URL"
+        },
         "headers": "标题",
         "noServers": "未配置任何MCP服务器",
+        "saveServerError": "保存 MCP 服务器配置失败:{0}",
         "serverAuthToken": "授权令牌",
         "serverAuthTokenHeader": "身份验证标头名称",
         "serverUrl": "服务器URL",
@@ -1248,6 +1357,11 @@
         }
       },
       "session-settings-dialog": {
+        "advancedSettings": "高级设置(JSON)",
+        "budgetTokens": "预算代币:",
+        "enableThinking": "启用扩展思维",
+        "thinkingMode": "思考模式",
+        "thinkingModeNote": "某些型号可能忽略此设置。",
         "title": "设置会话设置",
         "tooltip": "设置会话设置"
       },
@@ -1363,9 +1477,13 @@
       "fileChangeSetTitle": "建议修改内容"
     },
     "ai-chat-ui": {
+      "deleteChat": "删除聊天记录",
       "initiate-session-task-context": "任务背景:启动会话",
+      "navigate-back": "返回导航",
+      "navigate-forward": "向前导航",
       "open-current-session-summary": "打开当前会话摘要",
       "open-settings-tooltip": "打开 AI 设置...",
+      "renameChat": "重命名聊天",
       "scroll-lock": "锁定滚动",
       "scroll-unlock": "解锁滚动",
       "session-settings": "设置会话设置",
@@ -1378,11 +1496,12 @@
     },
     "ai-core": {
       "agentCompletionMessage": "代理\"{0}\"已完成其任务。",
+      "agentCompletionMessageWithSession": "代理\"{0}\"已在\"{1}\"中完成其任务。",
       "agentCompletionTitle": "代理\"{0}\"任务已完成",
-      "agentCompletionWithTask": "代理\"{0}\"已完成任务:{1}",
       "preferences": {
         "title": "AI功能"
-      }
+      },
+      "showChat": "显示聊天"
     },
     "ai-editor": {
       "contextMenu": "询问AI",
@@ -1414,8 +1533,23 @@
       "blockedServersLabel": "MCP服务器(自动启动被阻止)"
     },
     "ai-terminal": {
+      "allowAllConfirm": "我理解,允许所有",
+      "allowAllForever": "始终允许所有shell命令...",
+      "allowAllSession": "允许此聊天中的所有shell命令...",
+      "allowAllSessionConfirm": "我明白了,允许本次聊天的所有内容",
+      "allowAllSessionTitle": "允许此聊天使用所有Shell命令?",
+      "allowAllSessionWarning": "此操作将允许AI在本聊天会话剩余时间内无需确认即可执行任意shell命令。shell命令拥有完整系统访问权限,可执行任意指令、修改工作区外的文件并访问网络资源。拒绝列表中的命令仍将被拦截。",
+      "allowAllTitle": "允许所有Shell命令?",
+      "allowAllWarning": "此设置将允许AI无需确认即可执行任意shell命令。shell命令具备完整系统访问权限,可执行任意指令、修改工作区外的文件并访问网络资源。拒绝列表中的命令仍将被拦截。",
+      "alwaysAllowPattern": "始终允许 {0}",
+      "alwaysAllowPatterns": "始终允许访问 {0} 和 {1}",
+      "alwaysAllowPatternsList": "始终允许 {0}",
+      "alwaysDenyPattern": "始终拒绝 {0}",
+      "alwaysDenyPatterns": "始终拒绝 {0} 和 {1}",
+      "alwaysDenyPatternsList": "始终拒绝 {0}",
       "cancelExecution": "取消命令执行",
       "canceling": "正在取消...",
+      "configurePermissions": "配置 shell 命令权限",
       "confirmExecution": "确认Shell命令",
       "denialReason": "原因",
       "executionCanceled": "已取消",
@@ -1593,6 +1727,7 @@
       "couldNotRunTask": "无法运行任务“{0}”。",
       "dataBreakpoint": "数据断点",
       "debugConfiguration": "调试配置",
+      "debugRestricted": "在受限模式下,调试功能已禁用",
       "debugSessionInitializationFailed": "调试会话初始化失败。请查看控制台获取详细信息。",
       "debugSessionTypeNotSupported": "调试会话类型\"{0}\"不被支持。",
       "debugToolbarMenu": "调试工具栏菜单",
@@ -1623,6 +1758,11 @@
       "unverifiedBreakpoint": "未经核实的{0}"
     },
     "editor": {
+      "clearFormatterSetting": "清除格式化设置",
+      "configuredIn": "配置于{0}",
+      "configuredNotInstalled": "在{1}中配置但未安装的\"{0}\"",
+      "configuredNotInstalledFallbackNamed": "在 {1} 中配置的 '{0}' 未安装,使用 '{2}'",
+      "currentFormatter": "(当前)",
       "diffEditor.wordWrap2": "行将根据 `#editor.wordWrap#` 设置进行换行。",
       "dirtyEncoding": "该文件处于未保存状态。请先保存文件,再使用其他编码重新打开。",
       "editor.bracketPairColorization.enabled": "控制括号配对着色功能的启用状态。使用 `#workbench.colorCustomizations#` 可覆盖括号高亮颜色。",
@@ -1643,11 +1783,26 @@
       "editor.suggestLineHeight": "建议控件的行高设置。当设置为`0`时,将使用`#editor.lineHeight#`的值。最小值为8。",
       "editor.tabSize": "制表符等同于多少个空格。当`#editor.detectIndentation#`启用时,此设置将根据文件内容被覆盖。",
       "formatOnSaveTimeout": "文件保存时执行的格式化操作将在指定毫秒数后超时取消。",
+      "formatter": "格式化器",
+      "noDefaultConfiguredLabel": "未配置默认格式化器",
+      "noDefaultConfiguredTooltip": "未配置默认格式化器(可选格式化器:{0})",
+      "noEditor": "当前无编辑器处于活动状态",
+      "noFormatter": "无格式化器",
+      "noFormatterInstalled": "未安装格式化工具",
+      "noFormattersAvailable": "此语言暂无可用格式化工具",
+      "noFormattersInstalledTooltip": "此语言尚未安装任何格式化工具。",
+      "onlyAvailableFormatter": "仅可用格式化器",
+      "onlyFormatterInstalled": "{0} (仅安装格式化工具)",
       "persistClosedEditors": "控制是否在窗口重新加载时保留工作区已关闭编辑器的历史记录。",
+      "selectFormatter": "选择默认格式化器",
+      "selectScope": "选择保存设置的位置",
       "showAllEditors": "显示所有已打开的编辑器",
+      "showFormatterInfo": "显示格式化器信息",
       "splitHorizontal": "水平分割编辑器",
       "splitVertical": "垂直分割编辑器",
-      "toggleStickyScroll": "切换粘性滚动"
+      "toggleStickyScroll": "切换粘性滚动",
+      "userSettingsDetail": "应用于所有工作区",
+      "workspaceSettingsDetail": "仅应用于当前工作区"
     },
     "external-terminal": {
       "cwd": "为新建外部终端选择当前工作目录"
@@ -2026,7 +2181,8 @@
       },
       "taskAlreadyRunningInTerminal": "任务已在终端中运行",
       "taskExitedWithCode": "任务“{0}”已退出,状态码为{1}。",
-      "taskTerminalTitle": "任务:{0}",
+      "taskIdLabel": "#{0}",
+      "taskRestricted": "任务执行在受限模式下被禁用",
       "taskTerminatedBySignal": "任务 '{0}' 被信号 {1} 终止。",
       "terminalWillBeReusedByTasks": "终端将被任务重复使用。"
     },

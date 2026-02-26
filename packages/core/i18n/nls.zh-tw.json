@@ -116,6 +116,7 @@
         "chatSessionSummaryAgent": {
           "description": "用於生成聊天會話摘要的代理程式。"
         },
+        "clipboardSeparator": "剪貼簿",
         "confirmApplySuggestion": "自本建議建立以來,檔案 {0} 已發生變更。您確定要套用此變更嗎?",
         "confirmRevertSuggestion": "自本建議建立以來,檔案 {0} 已發生變更。您確定要還原此變更嗎?",
         "couldNotFindMatchingLM": "未能找到相符的語言模型。請檢查您的設定！",
@@ -143,6 +144,7 @@
           "description": "為圖片提供背景資訊",
           "label": "圖像檔案"
         },
+        "imagePickerPlaceholder": "選擇影像檔案或依名稱搜尋",
         "orchestrator": {
           "description": "此代理程式會根據所有可用聊天代理的描述分析用戶請求,並選取最符合的代理來回應請求(透過人工智慧實現)。用戶請求將直接委派給選定的代理,無需進一步確認。",
           "vars": {
@@ -162,7 +164,6 @@
           "description": "啟用代理固定功能,可自動維持指定聊天代理在各提示間保持活躍狀態,減少重複提及的需求。您可隨時手動取消固定或切換代理。"
         },
         "revertSuggestion": "還原建議",
-        "selectImageFile": "選擇一個圖像檔案",
         "sessionStorageScope": {
           "description": "選擇是否將聊天會話分別儲存於獨立的工作區儲存空間,或集中存放於單一全域儲存空間。若未開啟任何工作區,會話將預設回退至全域儲存空間。",
           "global": "將聊天會話儲存於單一儲存庫中,供所有工作區共享。",
@@ -191,11 +192,15 @@
         },
         "view": {
           "label": "AI 聊天"
+        },
+        "welcomeScreenSessions": {
+          "description": "歡迎畫面顯示的近期聊天會話行數。可見會話數量取決於可用寬度。設定為 0 可隱藏近期聊天區塊。"
         }
       },
       "chat-ui": {
         "addContextVariable": "新增上下文變數",
         "agent": "代理",
+        "agentDelegationDescription": "可委派的其他 AI 代理程式",
         "aiDisabled": "AI 功能已停用",
         "applyAll": "全部套用",
         "applyAllTitle": "套用所有待處理變更",
@@ -204,10 +209,7 @@
         "cancel": "取消 (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiFeatureHeader": "🚀 人工智慧功能現已開放(測試版)！",
-          "featuresDisabled": "目前所有 AI 功能皆已停用！",
           "generating": "生成",
-          "howToEnable": "如何啟用 AI 功能:",
           "noRenderer": "錯誤:未找到渲染器",
           "scrollToBottom": "跳至最新訊息",
           "waitingForInput": "等待輸入",
@@ -222,14 +224,17 @@
         },
         "chatInputAriaLabel": "在此輸入您的訊息",
         "chatResponses": "聊天回應",
+        "clearAllSelections": "清除搜尋字串與功能選項",
         "code-part-renderer": {
           "copied": "複製",
           "generatedCode": "生成代碼"
         },
+        "collapseAll": "收起所有",
         "collapseChangeSet": "收合變更集",
         "command-part-renderer": {
           "commandNotExecutable": "該指令的識別碼為「{0}」,但無法從聊天視窗執行。"
         },
+        "confirmDeleteChatMsg": "您確定要刪除此對話記錄嗎?",
         "copyCodeBlock": "複製程式碼區塊",
         "couldNotSendRequestToSession": "無法向會話 {1} 發送請求 \"{0}\"",
         "delegation-response-renderer": {
@@ -248,6 +253,7 @@
           }
         },
         "deleteChangeSet": "刪除變更集",
+        "deleteChat": "刪除對話",
         "editRequest": "編輯",
         "edited": "編輯",
         "editedTooltipHint": "此提示變體已進行編輯。您可在 AI 設定視圖中重設此設定。",
@@ -260,17 +266,27 @@
         "failedToRetry": "重試失敗訊息",
         "focusInput": "焦點聊天輸入",
         "focusResponse": "焦點聊天回應",
+        "functions": "功能",
+        "functionsDescription": "Theia 擴充套件提供的內建函數",
+        "genericCapabilities": "通用功能",
+        "mcpFunctions": "MCP",
+        "mcpFunctionsDescription": "來自連線伺服器的模型上下文協定(MCP)功能",
         "noChatAgentsAvailable": "目前沒有可用的聊天代理程式。",
+        "noMatchingCapabilities": "無匹配功能",
         "openDiff": "開啟差異檢視",
         "openImage": "開啟圖片",
         "openOriginalFile": "開啟原始檔案",
         "performThisTask": "執行此任務。",
         "persistedSession": "持久化會話(點擊恢復)",
+        "promptFragments": "提示",
+        "promptFragmentsDescription": "對話中需包含的自訂提示片段",
         "removeChat": "移除聊天功能",
         "renameChat": "重新命名聊天",
         "requestNotFoundForRetry": "請求未找到,請重試",
         "responseFrom": "來自 {0} 的回應",
+        "searchCapabilities": "搜尋功能",
         "selectAgentQuickPickPlaceholder": "為新工作階段選擇代理程式",
+        "selectAllInCategory": "選取此類別中的所有項目",
         "selectChat": "選擇聊天",
         "selectContextVariableQuickPickPlaceholder": "選擇要附加至訊息的上下文變數",
         "selectTaskContextQuickPickItem": {
@@ -280,12 +296,10 @@
         "selectVariableArguments": "選擇可變參數",
         "send": "傳送(Enter)",
         "sessionNotFoundForRetry": "未找到可重試的會話",
+        "skillsDescription": "可重複使用的技能指令,可添加至對話中",
         "switchAgentMode": "切換代理模式",
         "text-part-renderer": {
           "cantDisplay": "無法顯示回應,請檢查您的 ChatResponsePartRenderers！"
-        },
-        "thinking-part-renderer": {
-          "thinking": "思考"
         },
         "toggleCapabilitiesConfig": "切換功能設定",
         "toolcall-part-renderer": {
@@ -315,6 +329,8 @@
           "contentNotRestoreable": "此內容(類型為「{0}」)無法完整還原。該內容可能來自已不再可用的擴充功能。"
         },
         "unpinAgent": "解除固定代理程式",
+        "unselectAllInCategory": "取消選取此類別中的所有項目",
+        "variablesDescription": "提供上下文資訊的動態變數",
         "variantTooltip": "提示變體:{0}",
         "yourMessage": "您的訊息"
       },
@@ -459,7 +475,6 @@
         "itemCount": "{0} 項目",
         "noItems": "無項目",
         "oneItem": "1 項",
-        "running": "正在執行...",
         "searched": "搜尋",
         "searching": "搜尋",
         "todoList": "待辦事項清單",
@@ -536,7 +551,6 @@
           "privacy": "Theia 為開源專案。我們僅要求存取您的 GitHub 使用者名稱以連接 GitHub Copilot 服務——不會存取或儲存任何其他資料。",
           "success": "已成功登入 GitHub Copilot！",
           "successHint": "若您的 GitHub 帳戶具備 Copilot 存取權限,現在即可在 ",
-          "title": "登入 GitHub Copilot",
           "tos": "登入即表示您同意 ",
           "tosLink": "GitHub 服務條款",
           "verifying": "驗證授權中..."
@@ -552,6 +566,9 @@
         "models": {
           "description": "GitHub Copilot 可用模型。實際可用模型取決於您的 Copilot 訂閱方案。"
         },
+        "signOut": {
+          "confirmMessage": "您確定要登出 GitHub Copilot 嗎?"
+        },
         "statusBar": {
           "signedIn": "已以 {0} 身分登入 GitHub Copilot。點擊此處登出。",
           "signedOut": "尚未登入 GitHub Copilot。點擊登入。"
@@ -559,14 +576,16 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "操作",
           "addCustomAgent": "新增自訂代理程式",
           "availableCapabilities": "可用功能",
+          "completionNotificationDescriptionPrefix": "選擇您希望在此代理完成任務時接收的通知方式。「預設」選項採用 ",
+          "defaultNotificationDescription": "使用全域人工智慧通知設定",
           "enableAgent": "啟用代理程式",
-          "label": "代理程式",
           "llmRequirements": "大型語言模型需求",
           "notUsedInPrompt": "不用於提示",
           "notUsedInPromptTooltip": "此變數由代理程式宣告,但在當前提示模板中未被引用。",
+          "notificationSettings": "通知設定",
+          "notificationSettingsLink": "AI 通知設定",
           "promptTemplates": "提示模板",
           "selectAgentMessage": "請先選擇一個代理程式！",
           "showInChat": "顯示於聊天視窗",
@@ -665,6 +684,16 @@
           "unavailableModel": "所選模型已不再提供"
         },
         "noVariableFoundForOpenRequest": "未找到可開啟請求的變數。",
+        "notification": {
+          "message": {
+            "description": "在應用程式內顯示通知訊息"
+          },
+          "off": {
+            "description": "停用所有通知"
+          },
+          "osNotification": "作業系統通知",
+          "windowBlink": "視窗閃爍"
+        },
         "openEditorsShortVariable": {
           "description": "所有當前開啟檔案的簡短參考(相對路徑,以逗號分隔)"
         },
@@ -770,6 +799,30 @@
           "edited": "編輯",
           "unavailableVariant": "不可用"
         },
+        "thinkingMode": {
+          "mdDescription": "允許為支援擴展思考功能的模型指定思考模式設定。\n            每項設定包含:\n            - `scope`:定義設定適用時機:\n              - `modelId`(可選):需匹配的模型 ID\n              - `providerId`(可選):需匹配的供應商 ID\n              - `agentId`(可選): 需匹配的代理程式ID\n            - `thinkingMode`:思考模式配置:\n              - `enabled`(布林值):是否啟用思考模式\n              - `budgetTokens`(數字,可選):思考操作的最大代幣數(若模型支援此功能)\n            設定匹配依優先級排序(代理程式:100分,模型:10分,供應商:1分)。",
+          "scope": {
+            "agentId": {
+              "description": "(可選)需套用設定的代理程式識別碼。"
+            },
+            "modelId": {
+              "description": "(可選)模型識別碼"
+            },
+            "providerId": {
+              "description": "(可選)設定套用的提供者識別碼。"
+            }
+          },
+          "thinkingMode": {
+            "budgetTokens": {
+              "description": "思考時使用的最大代幣數。僅適用於支援思考預算的模型。"
+            },
+            "description": "思考模式設定。",
+            "enabled": {
+              "description": "思考模式是否已啟用。"
+            }
+          },
+          "title": "思考模式設定"
+        },
         "todayVariable": {
           "description": "今日要辦的事",
           "format": {
@@ -873,7 +926,6 @@
       "ide": {
         "agent-description": "在 [AI 設定檢視窗] ({0}) 中配置 AI 代理設定,包含啟用狀態、大型語言模型選取、提示字串範本自訂,以及自訂代理建立。",
         "agentConfiguration": {
-          "capabilityId": "片段 ID",
           "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "建立新檔案",
@@ -904,6 +956,10 @@
             "question": "Playwright MCP 伺服器未運行。是否現在啟動?此操作可能安裝 Playwright MCP 伺服器。"
           }
         },
+        "appTester": {
+          "description": "允許代理程式對瀏覽器應用程式進行端對端測試。為此,代理程式可委派給 AppTester 代理程式,該代理程式能自動化瀏覽器互動以驗證實作。",
+          "name": "應用程式測試員"
+        },
         "architectAgent": {
           "mode": {
             "plan": "平面模式",
@@ -913,9 +969,10 @@
             "executePlanWithCoder": "使用 Coder 執行「{0}」"
           }
         },
+        "browseAllChats": "瀏覽所有對話...",
         "bypassHint": "部分代理程式(如Claude Code)無需使用Theia語言模型",
         "chatDisabledMessage": {
-          "featuresTitle": "目前支援的檢視模式與功能:"
+          "title": "AI 功能已停用"
         },
         "coderAgent": {
           "mode": {
@@ -948,6 +1005,7 @@
             }
           }
         },
+        "configurationState": "設定問題",
         "configureAgent": {
           "header": "設定預設代理程式"
         },
@@ -957,6 +1015,7 @@
             "edit": "預設模式"
           }
         },
+        "deleteChat": "刪除對話",
         "enableAI": {
           "mdDescription": "此設定可讓您存取最新的人工智慧功能(測試版)。            \n            請注意,這些功能處於測試階段,可能隨時調整並持續改進。請務必知悉,這些功能可能對您授權存取的語言模型(LLMs)產生持續性請求,可能產生相關費用,需密切監控。 啟用此選項即表示您已知悉相關風險。            \n            **請注意！本節下方設定僅在主功能啟用後生效。啟用功能後,您需於下方至少設定一組            LLM供應商。詳見[官方文件](https://theia-ide.org/docs/user_ai/)**。"
         },
@@ -979,16 +1038,20 @@
             "yes": "是的,啟動伺服器"
           }
         },
+        "githubCapability": {
+          "description": "允許代理程式與 GitHub 進行互動。為此,代理程式可委派給 GitHub 代理程式,該代理程式能讀取與寫入問題、拉取請求、評論及儲存庫內容。",
+          "name": "GitHub"
+        },
         "githubRepoName": {
           "description": "當前 GitHub 儲存庫名稱(例如:\"eclipse-theia/theia\")"
         },
+        "howToGetStarted": "如何開始使用",
         "model-selection-description": "請於 [AI 設定檢視窗]({0})中選擇各 AI 代理程式所使用的大型語言模型(LLMs)。",
         "moreAgentsAvailable": {
           "header": "更多代理程式可供使用"
         },
         "noRecommendedAgents": "目前沒有可用的推薦代理程式。",
         "openSettings": "開啟 AI 設定",
-        "or": "或",
         "orchestrator": {
           "error": {
             "noAgents": "目前無可用聊天機器人處理此請求。請檢查您的設定是否啟用了任何聊天機器人。"
@@ -1002,18 +1065,28 @@
           }
         },
         "prompt-template-description": "在 [AI 設定檢視窗] ({0}) 中選擇提示語變體並自訂 AI 代理的提示語範本。",
-        "recommendedAgents": "推薦代理程式:",
+        "recentChats": "最近的對話",
+        "renameChat": "重新命名聊天",
         "shellAllowlist": {
           "placeholder": "例如:\"git log\"(精確指令)或 \"git log *\"(帶參數指令)"
         },
         "shellDenylist": {
           "placeholder": "例如:\"git push *\" 或 \"rm -rf /\""
         },
+        "shellExecutionCapability": {
+          "description": "允許代理程式在主機系統上執行任意殼層指令。代理程式可藉此委派執行非任務形式的腳本、查詢系統資訊,以及執行無專用工具可處理的操作。",
+          "name": "殼層執行"
+        },
         "skillsConfiguration": {
-          "label": "技能",
           "location": {
             "label": "位置"
-          }
+          },
+          "noSkills": "無可用技能",
+          "noSlashCommands": "無可用斜線指令",
+          "slashCommand": {
+            "allAgents": "所有代理程式"
+          },
+          "slashCommandsSectionHeader": "斜線指令"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1048,6 +1121,15 @@
               "label": "確認"
             }
           }
+        },
+        "tooltip": {
+          "agent": "代理",
+          "lastActivity": "最後活動",
+          "lastMessage": "最後訊息",
+          "messages": "訊息",
+          "multipleExchanges": "{0} 交易所",
+          "oneExchange": "1 交換",
+          "unread": "未讀"
         },
         "variableConfiguration": {
           "selectVariable": "請選擇一個變數。",
@@ -1149,9 +1231,36 @@
         "copyAllSingle": "複製全部內容至聊天視窗(單一提示片段含所有工具)",
         "copyForPrompt": "複製工具(適用於聊天或提示模板)",
         "copyForPromptTemplate": "複製所有內容作為提示模板(單一提示片段,包含所有工具)",
+        "deleteServer": "刪除伺服器",
+        "deleteServerDialogMsg": "您確定要刪除伺服器「{0}」嗎?",
+        "deleteServerDialogTitle": "刪除 MCP 伺服器",
+        "deleteServerError": "刪除 MCP 伺服器失敗:{0}",
+        "editServer": "編輯伺服器",
+        "editServerTitle": "編輯 MCP 伺服器",
         "environmentVariables": "環境變數",
+        "form": {
+          "argsPlaceholder": "以空格分隔,例如:-y @modelcontextprotocol/server-brave-search",
+          "authHeaderPlaceholder": "預設值:使用 Bearer 進行授權",
+          "authTokenPlaceholder": "可選驗證令牌",
+          "autostart": "自動啟動",
+          "commandPlaceholder": "例如:npx 或 uvx",
+          "commandRequired": "需透過指令執行本地伺服器操作",
+          "envPlaceholder": "KEY=value(每行一個)",
+          "headersPlaceholder": "標頭名稱=值(每行一個)",
+          "localServer": "本地 (命令)",
+          "nameExists": "已存在名稱相同之伺服器",
+          "nameRequired": "伺服器名稱為必填欄位",
+          "remoteServer": "遠端 (URL)",
+          "saveChanges": "儲存變更",
+          "serverName": "伺服器名稱",
+          "serverNamePlaceholder": "例如:my-mcp-server",
+          "serverType": "伺服器類型",
+          "serverUrlPlaceholder": "例如:https://mcp.example.com",
+          "serverUrlRequired": "遠端伺服器需提供伺服器網址"
+        },
         "headers": "標題",
         "noServers": "未設定任何 MCP 伺服器",
+        "saveServerError": "儲存 MCP 伺服器設定失敗:{0}",
         "serverAuthToken": "授權憑證",
         "serverAuthTokenHeader": "驗證標頭名稱",
         "serverUrl": "伺服器網址",
@@ -1248,6 +1357,11 @@
         }
       },
       "session-settings-dialog": {
+        "advancedSettings": "進階設定 (JSON)",
+        "budgetTokens": "預算代幣:",
+        "enableThinking": "啟用擴展思考",
+        "thinkingMode": "思考模式",
+        "thinkingModeNote": "某些型號可能忽略此設定。",
         "title": "設定工作階段設定",
         "tooltip": "設定工作階段設定"
       },
@@ -1363,9 +1477,13 @@
       "fileChangeSetTitle": "建議修改內容"
     },
     "ai-chat-ui": {
+      "deleteChat": "刪除對話",
       "initiate-session-task-context": "任務背景:啟動會話",
+      "navigate-back": "返回",
+      "navigate-forward": "向前導航",
       "open-current-session-summary": "開啟當前工作階段摘要",
       "open-settings-tooltip": "開啟 AI 設定...",
+      "renameChat": "重新命名聊天",
       "scroll-lock": "鎖定捲動",
       "scroll-unlock": "解鎖捲動",
       "session-settings": "設定工作階段設定",
@@ -1378,11 +1496,12 @@
     },
     "ai-core": {
       "agentCompletionMessage": "代理程式「{0}」已完成其任務。",
+      "agentCompletionMessageWithSession": "代理程式「{0}」已於「{1}」完成其任務。",
       "agentCompletionTitle": "代理程式「{0}」任務已完成",
-      "agentCompletionWithTask": "代理程式「{0}」已完成任務:{1}",
       "preferences": {
         "title": "AI 功能"
-      }
+      },
+      "showChat": "顯示聊天"
     },
     "ai-editor": {
       "contextMenu": "請問 AI",
@@ -1414,8 +1533,23 @@
       "blockedServersLabel": "MCP 伺服器(自動啟動遭封鎖)"
     },
     "ai-terminal": {
+      "allowAllConfirm": "我理解,允許所有",
+      "allowAllForever": "始終允許所有殼層指令...",
+      "allowAllSession": "允許此對話執行所有殼層指令...",
+      "allowAllSessionConfirm": "我明白了,允許此對話中的所有內容",
+      "allowAllSessionTitle": "允許此對話執行所有 Shell 指令?",
+      "allowAllSessionWarning": "此設定將允許 AI 在本次對話會話剩餘時間內執行任何 shell 指令,且無需確認。shell 指令具備完整系統存取權限,可執行任意命令、修改工作區外的檔案,並存取網路資源。被列入拒絕清單的指令仍將被阻擋。",
+      "allowAllTitle": "允許執行所有 Shell 指令?",
+      "allowAllWarning": "此設定將允許 AI 無需確認即可執行任何 shell 指令。shell 指令具備完整系統存取權限,可執行任意命令、修改工作區外的檔案,並存取網路資源。列入拒絕清單的指令仍將被阻擋。",
+      "alwaysAllowPattern": "始終允許 {0}",
+      "alwaysAllowPatterns": "始終允許 {0} 與 {1}",
+      "alwaysAllowPatternsList": "始終允許 {0}",
+      "alwaysDenyPattern": "永遠拒絕 {0}",
+      "alwaysDenyPatterns": "永遠拒絕 {0} 與 {1}",
+      "alwaysDenyPatternsList": "永遠拒絕 {0}",
       "cancelExecution": "取消命令執行",
       "canceling": "正在取消...",
+      "configurePermissions": "設定殼層指令權限",
       "confirmExecution": "確認 Shell 指令",
       "denialReason": "原因",
       "executionCanceled": "已取消",
@@ -1593,6 +1727,7 @@
       "couldNotRunTask": "無法執行任務「{0}」。",
       "dataBreakpoint": "資料中斷點",
       "debugConfiguration": "除錯設定",
+      "debugRestricted": "在受限模式下,除錯功能已停用",
       "debugSessionInitializationFailed": "除錯會話初始化失敗。請參閱控制台以獲取詳細資訊。",
       "debugSessionTypeNotSupported": "「{0}」此類除錯會話類型不受支援。",
       "debugToolbarMenu": "除錯工具列選單",
@@ -1623,6 +1758,11 @@
       "unverifiedBreakpoint": "未經核實的 {0}"
     },
     "editor": {
+      "clearFormatterSetting": "清除格式化設定",
+      "configuredIn": "設定於 {0}",
+      "configuredNotInstalled": "在 {1} 中設定但未安裝的「{0}」",
+      "configuredNotInstalledFallbackNamed": "在 {1} 中設定的 '{0}' 未安裝,故使用 '{2}'",
+      "currentFormatter": "(現有)",
       "diffEditor.wordWrap2": "行會根據 `#editor.wordWrap#` 設定進行換行。",
       "dirtyEncoding": "檔案狀態為未儲存。請先儲存檔案,再以其他編碼重新開啟。",
       "editor.bracketPairColorization.enabled": "控制括號配對著色功能是否啟用。使用 `#workbench.colorCustomizations#` 可覆寫括號高亮顏色。",
@@ -1643,11 +1783,26 @@
       "editor.suggestLineHeight": "建議小工具的行高設定。當設定為 `0` 時,將採用 `#editor.lineHeight#` 的值。最小值為 8。",
       "editor.tabSize": "制表符等同於多少個空格。當 `#editor.detectIndentation#` 啟用時,此設定會根據檔案內容覆寫。",
       "formatOnSaveTimeout": "在檔案儲存時執行的格式化操作,將於指定毫秒數的超時後取消。",
+      "formatter": "格式化程式",
+      "noDefaultConfiguredLabel": "未設定預設格式化程式",
+      "noDefaultConfiguredTooltip": "未設定預設格式化程式(可用格式化程式:{0})",
+      "noEditor": "無編輯器處於活動狀態",
+      "noFormatter": "無格式化程式",
+      "noFormatterInstalled": "未安裝格式化工具",
+      "noFormattersAvailable": "此語言暫無可用格式化工具",
+      "noFormattersInstalledTooltip": "此語言尚未安裝任何格式化工具。",
+      "onlyAvailableFormatter": "僅限可用格式化程式",
+      "onlyFormatterInstalled": "{0} (僅安裝格式化工具)",
       "persistClosedEditors": "控制是否在視窗重新載入時,為工作區保留已關閉編輯器的歷史記錄。",
+      "selectFormatter": "選擇預設格式化工具",
+      "selectScope": "選擇儲存設定的位置",
       "showAllEditors": "顯示所有開啟的編輯器",
+      "showFormatterInfo": "顯示格式化資訊",
       "splitHorizontal": "水平分割編輯器",
       "splitVertical": "垂直分割編輯器",
-      "toggleStickyScroll": "切換固定捲動"
+      "toggleStickyScroll": "切換固定捲動",
+      "userSettingsDetail": "套用至所有工作區",
+      "workspaceSettingsDetail": "僅適用於當前工作區"
     },
     "external-terminal": {
       "cwd": "為新外部終端機選取當前工作目錄"
@@ -2026,7 +2181,8 @@
       },
       "taskAlreadyRunningInTerminal": "任務已在終端機中執行",
       "taskExitedWithCode": "任務「{0}」已以代碼{1}結束。",
-      "taskTerminalTitle": "任務:{0}",
+      "taskIdLabel": "#{0}",
+      "taskRestricted": "在受限模式下,任務執行功能已停用",
       "taskTerminatedBySignal": "任務 '{0}' 已因信號 {1} 而終止。",
       "terminalWillBeReusedByTasks": "終端機將被任務重複使用。"
     },
