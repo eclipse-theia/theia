@@ -31,6 +31,7 @@ import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scan
 import { PluginDebugConfiguration } from '../common/plugin-dev-protocol';
 import { HostedPluginProcess } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
 import { isENOENT } from '@theia/plugin-ext/lib/common/errors';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 const DEFAULT_HOSTED_PLUGIN_PORT = 3030;
 
@@ -114,6 +115,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     @inject(RequestService)
     protected readonly request: RequestService;
+
+    @inject(ILogger) @named('plugin-dev')
+    protected readonly logger: ILogger;
 
     isRunning(): boolean {
         return this.isPluginRunning;
@@ -233,10 +237,10 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             return true;
         } catch (err) {
             if (!isENOENT(err)) {
-                console.error(err);
+                this.logger.error('Failed to read plugin package.json', err);
             }
-            return false;
-        }
+        return false;
+}
     }
 
     protected async getStartCommand(port?: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
