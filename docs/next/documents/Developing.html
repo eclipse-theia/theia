@@ -1,0 +1,428 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Developing | Theia API Documentation v1.69.0</title><link rel="icon" href="../assets/favicon.png" type="image/png"/><meta name="description" content="Documentation for Theia API Documentation v1.69.0"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">Theia API Documentation v1.69.0</a><div id="tsd-toolbar-links"><a href="https://theia-ide.org/">Eclipse Theia Website</a><a href="https://github.com/eclipse-theia/theia">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">Developing</a></li></ul><h1>Developing</h1></div><div class="tsd-panel tsd-typography"><p>This file contains tips to help you take (and understand) your first steps in
+the world of Theia development. Are you in a hurry? See the
+<a href="#quick-start">Quick Start</a>.</p>
+<h1 id="how-to-build-theia-and-the-example-applications" class="tsd-anchor-link">How to build Theia and the example applications<a href="#how-to-build-theia-and-the-example-applications" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1><p>Theia is a framework to build IDEs, so you can't really &quot;run&quot; Theia itself.
+However, you can run the example applications included in its repository. One
+is a browser-based IDE and the other is the Electron-based equivalent.</p>
+<p>The following instructions are for Linux and macOS.</p>
+<p>For Windows instructions <a href="#building-on-windows">click here</a>.</p>
+<ul>
+<li><a href="#prerequisites"><strong>Prerequisites</strong></a></li>
+<li><a href="#quick-start"><strong>Quick Start</strong></a>
+<ul>
+<li><a href="#run-the-browser-example-with-ssl">Run with SSL</a></li>
+</ul>
+</li>
+<li><a href="#clone-the-repository"><strong>Clone the repository</strong></a></li>
+<li><a href="#the-repository-structure"><strong>The repository structure</strong></a></li>
+<li><a href="#build-core-extensions-and-examples-packages"><strong>Build core, extensions and examples packages</strong></a></li>
+<li><a href="#build-extension-packages-individually"><strong>Build extension packages individually</strong></a></li>
+<li><a href="#run-the-browser-based-example-application"><strong>Run the browser-based example application</strong></a></li>
+<li><a href="#run-the-electron-based-example-application"><strong>Run the Electron-based example application</strong></a></li>
+<li><a href="#rebuilding"><strong>Rebuilding</strong></a></li>
+<li><a href="#watching"><strong>Watching</strong></a>
+<ul>
+<li><a href="#watch-the-core-and-extension-packages">Watch the core and extension packages</a></li>
+<li><a href="#watch-the-examples">Watch the examples</a></li>
+<li><a href="#watch-a-specific-package">Watch a specific package</a></li>
+<li><a href="#watch-a-specific-package-and-its-local-upstream-dependencies">Watch a specific package and its local upstream dependencies</a></li>
+</ul>
+</li>
+<li><a href="#debugging"><strong>Debugging</strong></a>
+<ul>
+<li><a href="#debug-the-browser-examples-backend">Debug the browser example's backend</a></li>
+<li><a href="#debug-the-browser-examples-frontend">Debug the browser example's frontend</a></li>
+<li><a href="#debug-the-browser-examples-frontend-and-backend-at-the-same-time">Debug the browser example's frontend and backend at the same time</a></li>
+<li><a href="#debug-the-electron-examples-backend">Debug the Electron example's backend</a></li>
+<li><a href="#debug-the-electron-examples-frontend">Debug the Electron example's frontend</a></li>
+<li><a href="#debug-the-electron-examples-frontend-and-backend-at-the-same-time">Debug the Electron example's frontend and backend at the same time</a></li>
+<li><a href="#debug-ipc-servers">Debug IPC servers</a></li>
+<li><a href="#debug-the-plugin-host">Debug the plugin host</a></li>
+</ul>
+</li>
+<li><a href="#profiling"><strong>Profiling</strong></a>
+<ul>
+<li><a href="#profile-the-frontend-process">Profile the frontend process</a></li>
+<li><a href="#profile-the-backend-process">Profile the backend process</a></li>
+<li><a href="#profile-ipc-servers">Profile IPC servers</a></li>
+<li><a href="#profile-the-plugin-host">Profile the plugin host</a></li>
+</ul>
+</li>
+<li><a href="#testing"><strong>Testing</strong></a></li>
+<li><a href="#code-coverage"><strong>Code coverage</strong></a></li>
+<li><a href="#building-on-windows"><strong>Building on Windows</strong></a></li>
+<li><a href="#troubleshooting"><strong>Troubleshooting</strong></a>
+<ul>
+<li><a href="#linux">Linux</a></li>
+<li><a href="#windows">Windows</a></li>
+<li><a href="#macos">macOS</a></li>
+<li><a href="#root-privileges-errors">Root privileges errors</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="prerequisites" class="tsd-anchor-link">Prerequisites<a href="#prerequisites" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Node.js <code>&gt;= 20</code> and <code>&lt; 24</code>.
+<ul>
+<li>If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by <a href="https://github.com/microsoft/vscode">VS Code</a>.</li>
+</ul>
+</li>
+<li>git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)</li>
+<li>Python3 is required for the build due to <a href="https://github.com/nodejs/node-gyp/tree/v11.4.0#installation"><code>node-gyp</code></a></li>
+</ul>
+<p>Some additional tools and libraries are needed depending on your platform:</p>
+<ul>
+<li>
+<p>Linux</p>
+<ul>
+<li><a href="https://www.gnu.org/software/make/">make</a></li>
+<li><a href="https://gcc.gnu.org/">gcc</a> (or another compiling toolchain)</li>
+<li><a href="https://www.freedesktop.org/wiki/Software/pkg-config/">pkg-config</a></li>
+<li>build-essential: <code>sudo apt-get install build-essential</code>
+<a name="prerequisite_native_keymap"></a></li>
+<li><a href="#prerequisite_native_keymap"><code>native-keymap</code></a> native node module dependencies:
+<ul>
+<li>Debian-based: <code>sudo apt-get install libx11-dev libxkbfile-dev</code></li>
+<li>Red Hat-based: <code>sudo yum install libX11-devel.x86_64 libxkbfile-devel.x86_64 # or .i686</code></li>
+<li>FreeBSD: <code>sudo pkg install libX11</code>
+<a name="prerequisite_keytar"></a></li>
+</ul>
+</li>
+<li><a href="#prerequisite_keytar"><code>keytar</code></a> native node module dependencies (<a href="https://github.com/atom/node-keytar#on-linux">reference</a>):
+<ul>
+<li>Debian/Ubuntu: <code>sudo apt-get install libsecret-1-dev</code></li>
+<li>Red Hat-based: <code>sudo yum install libsecret-devel</code></li>
+<li>Arch Linux: <code>sudo pacman -S libsecret</code></li>
+<li>Alpine: <code>apk add libsecret-dev</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Linux/MacOS</p>
+<ul>
+<li><a href="https://github.com/nvm-sh/nvm">nvm</a> is recommended to easily switch between Node.js versions.</li>
+</ul>
+</li>
+<li>
+<p>Windows</p>
+<ul>
+<li>We recommend using <a href="https://scoop.sh/"><code>scoop</code></a>. The detailed steps are <a href="#building-on-windows">here</a>.</li>
+</ul>
+</li>
+</ul>
+<h2 id="quick-start" class="tsd-anchor-link">Quick Start<a href="#quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>To build and run the browser example:</p>
+<pre><code class="sh"><span class="hl-5">git</span><span class="hl-1"> </span><span class="hl-0">clone</span><span class="hl-1"> </span><span class="hl-0">https://github.com/eclipse-theia/theia</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">cd</span><span class="hl-1"> </span><span class="hl-0">theia</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:browser</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">download:plugins</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">start:browser</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Start your browser on <a href="http://localhost:3000">http://localhost:3000</a>.</p>
+<p>To build and run the Electron example:</p>
+<pre><code class="sh"><span class="hl-5">git</span><span class="hl-1"> </span><span class="hl-0">clone</span><span class="hl-1"> </span><span class="hl-0">https://github.com/eclipse-theia/theia</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">cd</span><span class="hl-1"> </span><span class="hl-0">theia</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:electron</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">download:plugins</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">start:electron</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="download-plugins" class="tsd-anchor-link">Download plugins<a href="#download-plugins" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>You can download plugins to use with the examples applications by running:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">download:plugins</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="run-the-browser-example-with-ssl" class="tsd-anchor-link">Run the browser example with SSL<a href="#run-the-browser-example-with-ssl" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>To run the browser example using SSL use:</p>
+<pre><code class="sh"><span class="hl-5">git</span><span class="hl-1"> </span><span class="hl-0">clone</span><span class="hl-1"> </span><span class="hl-0">https://github.com/eclipse-theia/theia</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">cd</span><span class="hl-1"> </span><span class="hl-0">theia</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">download:plugins</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:browser</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">start:browser</span><span class="hl-1"> </span><span class="hl-6">--ssl</span><span class="hl-1"> </span><span class="hl-6">--cert</span><span class="hl-1"> </span><span class="hl-0">/path/to/cert.crt</span><span class="hl-1"> </span><span class="hl-6">--certkey</span><span class="hl-1"> </span><span class="hl-0">/path/to/certkey.key</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Start your browser on <a href="https://localhost:3000">https://localhost:3000</a>.</p>
+<h2 id="clone-the-repository" class="tsd-anchor-link">Clone the repository<a href="#clone-the-repository" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code class="sh"><span class="hl-5">git</span><span class="hl-1"> </span><span class="hl-0">clone</span><span class="hl-1"> </span><span class="hl-0">https://github.com/eclipse-theia/theia</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The directory containing the Theia repository will now be referred to as
+<code>$THEIA</code>, so if you want to copy-paste the examples, you can set the <code>THEIA</code>
+variable in your shell:</p>
+<pre><code class="sh"><span class="hl-3">THEIA</span><span class="hl-1">=</span><span class="hl-3">$PWD</span><span class="hl-0">/theia</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="the-repository-structure" class="tsd-anchor-link">The repository structure<a href="#the-repository-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Theia repository has multiple folders:</p>
+<ul>
+<li><code>packages</code> folder contains runtime packages, as the core package and extensions to it</li>
+<li><code>dev-packages</code> folder contains devtime packages
+<ul>
+<li><a href="../media/README-1.md">@theia/cli</a> is a command line tool to manage Theia applications</li>
+<li><a href="../media/README-2.md">@theia/ext-scripts</a> is a command line tool to share scripts between Theia runtime packages</li>
+</ul>
+</li>
+<li><code>examples</code> folder contains example applications, both Electron-based and browser-based</li>
+<li><code>doc</code> folder provides documentation about how Theia works</li>
+<li><code>scripts</code> folder contains JavaScript scripts used by npm scripts when
+installing</li>
+<li>the root folder lists dev dependencies and wires everything together with <a href="https://lerna.js.org/">Lerna</a></li>
+</ul>
+<h2 id="build-core-extensions-and-examples-packages" class="tsd-anchor-link">Build core, extensions and examples packages<a href="#build-core-extensions-and-examples-packages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>You can download dependencies and build TypeScript packages using:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><br/><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">compile</span>
+</code><button type="button">Copy</button></pre>
+
+<p>These commands download dependencies, links and builds all TypeScript packages.</p>
+<p>To build the example applications:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:browser</span><br/><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:browser-only</span><br/><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:electron</span><br/><br/><span class="hl-12"># build all example applications at once:</span><br/><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:applications</span>
+</code><button type="button">Copy</button></pre>
+
+<p>To learn more and understand precisely what's going on, please look at scripts in <a href="../media/package.json">package.json</a>.</p>
+<h2 id="build-everything" class="tsd-anchor-link">Build Everything<a href="#build-everything" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">all</span>
+</code><button type="button">Copy</button></pre>
+
+<p>This will install dependencies, link and build TypeScript packages, lint, and build the example applications.</p>
+<h2 id="build-typescript-sources" class="tsd-anchor-link">Build TypeScript sources<a href="#build-typescript-sources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Dependencies must be installed before running this command.</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">compile</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="linting" class="tsd-anchor-link">Linting<a href="#linting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Linting takes a lot of time, this is a limitation from ESLint. We always lint in the GitHub Workflows, but if you want to lint locally you have to do it manually:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">lint</span><span class="hl-1"> </span><span class="hl-12"># lint TypeScript sources</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Note that <code>npm run all</code> does linting.</p>
+<h2 id="build-extension-packages-individually" class="tsd-anchor-link">Build extension packages individually<a href="#build-extension-packages-individually" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>From the root:</p>
+<pre><code class="sh"><span class="hl-5">npx</span><span class="hl-1"> </span><span class="hl-0">lerna</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">compile</span><span class="hl-1"> </span><span class="hl-6">--scope</span><span class="hl-1"> </span><span class="hl-0">@theia/core</span>
+</code><button type="button">Copy</button></pre>
+
+<p>From the package:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">compile</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="run-the-browser-based-example-application" class="tsd-anchor-link">Run the browser-based example application<a href="#run-the-browser-based-example-application" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>We can start the application from the <a href="../media/browser">examples/browser</a> directory with:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">start</span>
+</code><button type="button">Copy</button></pre>
+
+<p>This command starts the backend application listening on port <code>3000</code>. The frontend application should be available on <a href="http://localhost:3000">http://localhost:3000</a>.</p>
+<p>If you rebuild native Node.js packages for Electron then rollback these changes
+before starting the browser example by running from the root directory:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">rebuild:browser</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="run-the-electron-based-example-application" class="tsd-anchor-link">Run the Electron-based example application<a href="#run-the-electron-based-example-application" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">start:electron</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="rebuilding" class="tsd-anchor-link">Rebuilding<a href="#rebuilding" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Rebuilds everything: TypeScript and example applications.</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="watching" class="tsd-anchor-link">Watching<a href="#watching" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="watch-the-core-and-extension-packages" class="tsd-anchor-link">Watch the core and extension packages<a href="#watch-the-core-and-extension-packages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>To rebuild <em>everything</em> each time a change is detected run:</p>
+<pre><code class="sh"><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">watch</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="watch-the-examples" class="tsd-anchor-link">Watch the examples<a href="#watch-the-examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>To rebuild each time a change is detected in frontend or backend you can run:</p>
+<pre><code class="sh"><span class="hl-12"># either</span><br/><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">watch:browser</span><br/><br/><span class="hl-12"># or</span><br/><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">watch:electron</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="watch-a-specific-package" class="tsd-anchor-link">Watch a specific package<a href="#watch-a-specific-package" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>You can use <code>npx</code> to watch a single package:</p>
+<pre><code class="sh"><span class="hl-5">npx</span><span class="hl-1"> </span><span class="hl-0">lerna</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">watch</span><span class="hl-1"> </span><span class="hl-6">--scope</span><span class="hl-1"> </span><span class="hl-0">@theia/package-name</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="watch-a-specific-package-and-its-local-upstream-dependencies" class="tsd-anchor-link">Watch a specific package and its local upstream dependencies<a href="#watch-a-specific-package-and-its-local-upstream-dependencies" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><h4 id="using-typescript-build-mode" class="tsd-anchor-link">Using TypeScript build mode<a href="#using-typescript-build-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Once you have built all TypeScript packages once, making a single change and recompiling should be rather quick.</p>
+<p>Given this, you can efficiently watch the whole monorepo using TypeScript build mode and have it quickly compiled.</p>
+<p>See <a href="#watch-the-core-and-extension-packages">Watch the core and extension packages</a>.</p>
+<p>In this mode, TypeScript only compiles what changed along with its dependents.</p>
+<h4 id="using-theias-run-utility" class="tsd-anchor-link">Using Theia's <code>run</code> utility<a href="#using-theias-run-utility" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Let assume you have to work for instance in the <code>@theia/navigator</code> extension. But you might have to apply changes in any of its upstream dependencies such as <code>@theia/filesystem</code> or <code>@theia/core</code>, you can either do <code>npm run watch</code> which could be super expensive, as it watches all the packages. Or you can do <code>npx run watch @theia/navigator</code> and <code>npx run watch @theia/filesystem</code> and <code>npx run watch @theia/core</code> in three individual shells. Or you can do the following single-liner:</p>
+<pre><code class="sh"><span class="hl-5">npx</span><span class="hl-1"> </span><span class="hl-0">lerna</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">watch</span><span class="hl-1"> </span><span class="hl-6">--scope</span><span class="hl-1"> </span><span class="hl-0">@theia/navigator</span><span class="hl-1"> </span><span class="hl-6">--include-filtered-dependencies</span><span class="hl-1"> </span><span class="hl-6">--parallel</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="debugging" class="tsd-anchor-link">Debugging<a href="#debugging" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><h3 id="debug-the-browser-examples-backend" class="tsd-anchor-link">Debug the browser example's backend<a href="#debug-the-browser-examples-backend" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Open the debug view and run the <code>Launch Browser Backend</code> configuration.</li>
+</ul>
+<h3 id="debug-the-browser-examples-frontend" class="tsd-anchor-link">Debug the browser example's frontend<a href="#debug-the-browser-examples-frontend" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Start the backend by using <code>npm run start</code>.</li>
+<li>In a browser: Open <a href="http://localhost:3000/">http://localhost:3000/</a> and use the dev tools for debugging.</li>
+<li>Open the debug view and run the <code>Launch Browser Frontend</code> configuration.</li>
+</ul>
+<h3 id="debug-the-browser-examples-frontend-and-backend-at-the-same-time" class="tsd-anchor-link">Debug the browser example's frontend and backend at the same time<a href="#debug-the-browser-examples-frontend-and-backend-at-the-same-time" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Open the debug view and run the <code>Launch Browser Backend</code> configuration.</li>
+<li>Then run the <code>Launch Browser Frontend</code> configuration.</li>
+</ul>
+<h3 id="debug-the-electron-examples-backend" class="tsd-anchor-link">Debug the Electron example's backend<a href="#debug-the-electron-examples-backend" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Open the debug view and run the <code>Launch Electron Backend</code> configuration.</li>
+</ul>
+<h3 id="debug-the-electron-examples-frontend" class="tsd-anchor-link">Debug the Electron example's frontend<a href="#debug-the-electron-examples-frontend" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Start the Electron backend
+<ul>
+<li>Either open the debug view and run the <code>Launch Electron Backend</code> configuration</li>
+<li>Or use <code>npm run start</code>.</li>
+</ul>
+</li>
+<li>Attach to the Electron Frontend
+<ul>
+<li>Either open the debug view and run the <code>Attach to Electron Frontend</code> configuration</li>
+<li>Or in Electron: Help -&gt; Toggle Electron Developer Tools.</li>
+</ul>
+</li>
+</ul>
+<h3 id="debug-the-electron-examples-frontend-and-backend-at-the-same-time" class="tsd-anchor-link">Debug the Electron example's frontend and backend at the same time<a href="#debug-the-electron-examples-frontend-and-backend-at-the-same-time" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Open the debug view and run the <code>Launch Electron Backend &amp; Frontend</code> configuration.</li>
+</ul>
+<h3 id="debug-ipc-servers" class="tsd-anchor-link">Debug IPC servers<a href="#debug-ipc-servers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Pass <code>--${server-name}-inspect</code> arg to the backend server.
+<ul>
+<li>For example <code>--nsfw-watcher-inspect=0</code> to inspect nsfw watcher processes with dynamic port allocation.</li>
+<li>All variations of <code>--inspect</code> flag are supported: <a href="https://nodejs.org/en/docs/inspector/#command-line-options">https://nodejs.org/en/docs/inspector/#command-line-options</a>.</li>
+</ul>
+</li>
+<li>Attach the debugger to the logged port.</li>
+</ul>
+<p>In order to look up <code>server-name</code> run the backend server with <code>--log-level=debug</code> flag to enable logging of IPC servers instantiation.
+You should be able to see message of <code>[${server-name}: ${server-PID}]: IPC started</code> format, like <code>[nsfw-watcher: 37557] IPC started</code>.</p>
+<h3 id="debug-the-plugin-host" class="tsd-anchor-link">Debug the plugin host<a href="#debug-the-plugin-host" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Pass <code>--hosted-plugin-inspect=9339</code> arg to the backend server from the command line.
+<ul>
+<li>Instead, you can run <code>Launch Browser Backend</code> launch configuration which is already pre-configured.</li>
+</ul>
+</li>
+<li>Open the debug view and run the <code>Attach to Plugin Host</code> launch configuration.
+<ul>
+<li>It connects to the plugin host if at least one extension is detected, otherwise it timeouts after 60s.</li>
+<li>If you want to debug the activation then enable <code>stopOnEntry</code> flag.</li>
+</ul>
+</li>
+<li>Open the browser page.</li>
+</ul>
+<hr>
+<h3 id="debugging-plugin-sources" class="tsd-anchor-link">Debugging Plugin Sources<a href="#debugging-plugin-sources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p><a href="https://github.com/eclipse-theia/theia/issues/3251#issuecomment-468166533">click for base article</a></p>
+<p>The following launch configuration is meant to be used when the Theia project is opened as the main project in VS Code, the following launch configuration is added inside .vscode/launch.json.</p>
+<ul>
+<li>The source repository of your plugin is expected under your <code>${workspaceFolder}/plugins</code> folder</li>
+<li>You can start the frontend from URL: <a href="http://localhost:3030">http://localhost:3030</a></li>
+<li>It's suggested to update your frontend launch configuration URL to open your favorite target project in a second launch</li>
+</ul>
+<p>Launch configuration template that will start the backend process, and then attempt to connect on port 9339 to debug the plugin-host sub-process:</p>
+<pre><code class="jsonc"><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;name&quot;</span><span class="hl-1">: </span><span class="hl-0">&quot;Launch VS Code extension as Theia plugin&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;type&quot;</span><span class="hl-1">: </span><span class="hl-0">&quot;node&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;request&quot;</span><span class="hl-1">: </span><span class="hl-0">&quot;launch&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;port&quot;</span><span class="hl-1">: </span><span class="hl-4">9339</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;timeout&quot;</span><span class="hl-1">: </span><span class="hl-4">100000</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;args&quot;</span><span class="hl-1">: [</span><br/><span class="hl-1">        </span><span class="hl-0">&quot;${workspaceFolder}/examples/browser/src-gen/backend/main.js&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-0">&quot;${workspaceFolder}&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-0">&quot;--port=3030&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-0">&quot;--hosted-plugin-inspect=9339&quot;</span><span class="hl-1">, </span><span class="hl-12">// spawn the plugin-host in debug mode</span><br/><span class="hl-1">        </span><span class="hl-0">&quot;--plugins=local-dir:${workspaceFolder}/plugins&quot;</span><br/><span class="hl-1">    ],</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;stopOnEntry&quot;</span><span class="hl-1">: </span><span class="hl-6">false</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;sourceMaps&quot;</span><span class="hl-1">: </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;outFiles&quot;</span><span class="hl-1">: [</span><br/><span class="hl-1">        </span><span class="hl-0">&quot;${workspaceFolder}/**/*.js&quot;</span><br/><span class="hl-1">    ],</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;internalConsoleOptions&quot;</span><span class="hl-1">: </span><span class="hl-0">&quot;openOnSessionStart&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;outputCapture&quot;</span><span class="hl-1">: </span><span class="hl-0">&quot;std&quot;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="producing-typescript-maps-for-your-plugin" class="tsd-anchor-link">Producing typescript maps for your plugin<a href="#producing-typescript-maps-for-your-plugin" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Enable source maps in the plugin's <code>tsconfig.json</code></p>
+<pre><code class="jsonc"><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;compilerOptions&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">        </span><span class="hl-2">&quot;sourceMap&quot;</span><span class="hl-1">: </span><span class="hl-6">true</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>If Webpack is used you should bundle in development mode in the <code>package.json</code> scripts to avoid minification:</p>
+<pre><code class="sh"><span class="hl-5">webpack</span><span class="hl-1"> </span><span class="hl-6">--mode</span><span class="hl-1"> </span><span class="hl-0">development</span>
+</code><button type="button">Copy</button></pre>
+
+<p>As well as enabling source map output in the <strong>webpack.config.js</strong></p>
+<pre><code class="js"><span class="hl-14">module</span><span class="hl-1">.</span><span class="hl-14">exports</span><span class="hl-1"> = {</span><br/><span class="hl-1">    </span><span class="hl-3">devtool:</span><span class="hl-1"> </span><span class="hl-0">&#39;source-map&#39;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="compiling-and-blocking-typescript-from-walking-up-parent-directories-see-discussion" class="tsd-anchor-link">Compiling and blocking typescript from walking up parent directories <a href="https://github.com/Microsoft/TypeScript/issues/13992#issuecomment-386253983">(see discussion)</a><a href="#compiling-and-blocking-typescript-from-walking-up-parent-directories-see-discussion" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>If you get errors while building like:</p>
+<pre><code class="sh"><span class="hl-1">(</span><span class="hl-5">parent</span><span class="hl-1"> </span><span class="hl-0">folders</span><span class="hl-1">)</span><span class="hl-5">/index.d.ts:</span><span class="hl-1"> </span><span class="hl-0">error</span><span class="hl-1"> </span><span class="hl-0">TS2300:</span><span class="hl-1"> </span><span class="hl-0">Duplicate</span><span class="hl-1"> </span><span class="hl-0">identifier</span>
+</code><button type="button">Copy</button></pre>
+
+<p>You can fix it by modifying your <code>tsconfig.json</code>:</p>
+<pre><code class="jsonc"><span class="hl-1">{</span><br/><span class="hl-1">    </span><span class="hl-2">&quot;compilerOptions&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">       </span><span class="hl-2">&quot;typeRoots&quot;</span><span class="hl-1">: [</span><span class="hl-0">&quot;./node_modules/@types&quot;</span><span class="hl-1">]</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="profiling" class="tsd-anchor-link">Profiling<a href="#profiling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Use Chrome devtools to profile both the frontend and backend (Node.js).
+<ul>
+<li>For Node.js: open chrome://inspect, click the configure button and ensure target host and port are listed.</li>
+</ul>
+</li>
+<li>Learn how to get and understand CPU measurements: <a href="https://developers.google.com/web/tools/chrome-devtools/evaluate-performance/">https://developers.google.com/web/tools/chrome-devtools/evaluate-performance/</a></li>
+<li>Learn how to get and understand Memory measurements: <a href="https://developers.google.com/web/tools/chrome-devtools/memory-problems/">https://developers.google.com/web/tools/chrome-devtools/memory-problems/</a></li>
+<li>Before taking the memory snapshot always collect garbage.</li>
+<li>Make sure that Chrome extensions don't distort measurements by disabling them.
+<ul>
+<li>For frontend: React extension is leaking components.</li>
+</ul>
+</li>
+<li>Make measurements before and after improvements to provide them as evidence on a pull request.
+<ul>
+<li>Also document how to reproduce improved measurements in <code>How to test</code> section of a pull request description.</li>
+</ul>
+</li>
+<li>If objects don't have a proper class, i.e. plain JSON, then find one of them in the first snapshot
+and check that it is garbage collected in the diff between snapshots.</li>
+</ul>
+<h3 id="profile-the-frontend-process" class="tsd-anchor-link">Profile the frontend process<a href="#profile-the-frontend-process" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>In Browser: open the devtools.</li>
+<li>In Electron: Help -&gt; Toggle Electron Developer Tools.</li>
+</ul>
+<h3 id="profile-the-backend-process" class="tsd-anchor-link">Profile the backend process<a href="#profile-the-backend-process" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Pass <code>--inspect</code> arg to the backend server: <a href="https://nodejs.org/en/docs/inspector/#command-line-options">https://nodejs.org/en/docs/inspector/#command-line-options</a>.</li>
+</ul>
+<h3 id="profile-ipc-servers" class="tsd-anchor-link">Profile IPC servers<a href="#profile-ipc-servers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Pass <code>--${server-name}-inspect</code> arg to the backend server.
+<ul>
+<li>For example <code>--nsfw-watcher-inspect=0</code> to inspect nsfw watcher processes with dynamic port allocation.</li>
+<li>All variations of <code>--inspect</code> flag are supported: <a href="https://nodejs.org/en/docs/inspector/#command-line-options">https://nodejs.org/en/docs/inspector/#command-line-options</a>.</li>
+</ul>
+</li>
+</ul>
+<h3 id="profile-the-plugin-host" class="tsd-anchor-link">Profile the plugin host<a href="#profile-the-plugin-host" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Pass <code>--hosted-plugin-inspect</code> arg to the backend server.
+<ul>
+<li>All variations of <code>--inspect</code> flag are supported: <a href="https://nodejs.org/en/docs/inspector/#command-line-options">https://nodejs.org/en/docs/inspector/#command-line-options</a>.</li>
+</ul>
+</li>
+</ul>
+<h2 id="testing" class="tsd-anchor-link">Testing<a href="#testing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>See the <a href="Testing.html">unit testing</a> documentation.</li>
+<li>See the <a href="api-testing.html">API integration testing</a> documentation.</li>
+</ul>
+<h2 id="code-coverage" class="tsd-anchor-link">Code coverage<a href="#code-coverage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><pre><code class="sh"><span class="hl-1">    </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">test</span>
+</code><button type="button">Copy</button></pre>
+
+<p>By default, this will generate the code coverage for the tests in an HTML
+format, which can be easily viewed with your browser (Chrome/Firefox/Edge/Safari
+etc.) by opening <code>packages/&lt;package name&gt;/coverage/index.html</code>.</p>
+<h2 id="building-on-windows" class="tsd-anchor-link">Building on Windows<a href="#building-on-windows" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><ul>
+<li>Install <a href="https://github.com/lukesampson/scoop#installation"><code>scoop</code></a>.</li>
+<li>Install <a href="https://github.com/coreybutler/nvm-windows"><code>nvm</code></a> with scoop: <code>scoop install nvm</code>.</li>
+<li>Install Node.js with <code>nvm</code>: <code>nvm install lts</code>, then use it: <code>nvm use lts</code>. You can list all available Node.js versions with <code>nvm list available</code> if you want to pick another version.</li>
+<li>If you need to install <code>windows-build-tools</code>, see <a href="#installing-windows-build-tools"><code>Installing Windows Build Tools</code></a>.</li>
+<li>If you run into problems with installing the required build tools, the <code>node-gyp</code> documentation offers a useful <a href="https://github.com/nodejs/node-gyp#on-windows">guide</a> how to install the dependencies manually. The versions required for building Theia are:
+<ul>
+<li>Visual Studio <a href="https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022">build tools</a> 17</li>
+</ul>
+</li>
+<li>If you have multiple versions of either python or Visual Studio installed, or if the tool is not found, you may adjust the version used as described
+<a href="https://github.com/nodejs/node-gyp?tab=readme-ov-file#configuring-python-dependency">here</a></li>
+</ul>
+<p>Clone, build and run Theia.
+Using Git Bash as administrator:</p>
+<pre><code class="sh"><span class="hl-5">git</span><span class="hl-1"> </span><span class="hl-0">clone</span><span class="hl-1"> </span><span class="hl-0">https://github.com/eclipse-theia/theia.git</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">cd</span><span class="hl-1"> </span><span class="hl-0">theia</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">install</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">build:browser</span><span class="hl-1"> </span><span class="hl-10">\</span><br/><span class="hl-1">    &amp;&amp; </span><span class="hl-5">npm</span><span class="hl-1"> </span><span class="hl-0">run</span><span class="hl-1"> </span><span class="hl-0">start:browser</span>
+</code><button type="button">Copy</button></pre>
+
+<p>If you do not have Git Bash installed on your system, <a href="https://gitforwindows.org/">get one</a>, or use <code>scoop</code>: <code>scoop install git</code>.</p>
+<h3 id="installing-windows-build-tools" class="tsd-anchor-link">Installing Windows Build Tools<a href="#installing-windows-build-tools" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>Previously, <a href="https://github.com/felixrieseberg/windows-build-tools"><code>windows-build-tools</code></a> is required to build Native Nodes modules on Windows. The npm package is now <a href="https://www.npmjs.com/package/windows-build-tools"><code>deprecated</code></a> because NodeJS installer can now install all the required tools that it needs, including Windows Build Tools.</li>
+<li>In case you need to install the tool manually, run <code>PowerShell</code> as <em>Administrator</em> and copy paste the following: <code>npm --add-python-to-path install --global --production windows-build-tools</code>.</li>
+</ul>
+<h2 id="troubleshooting" class="tsd-anchor-link">Troubleshooting<a href="#troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><blockquote>
+<p>First make sure that you follow the steps given in the <a href="https://github.com/eclipse-theia/theia/blob/master/doc/Developing.md#run-the-browser-based-example-applicatio">docs</a> correctly.</p>
+</blockquote>
+<h3 id="linux" class="tsd-anchor-link">Linux<a href="#linux" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>The start command will start a watcher on many files in the theia directory.
+To avoid ENOSPC errors, increase your default inotify watches.</p>
+<p>It can be done like so:</p>
+<pre><code class="sh"><span class="hl-5">echo</span><span class="hl-1"> </span><span class="hl-0">fs.inotify.max_user_watches=</span><span class="hl-4">524288</span><span class="hl-1"> | </span><span class="hl-5">sudo</span><span class="hl-1"> </span><span class="hl-0">tee</span><span class="hl-1"> </span><span class="hl-6">-a</span><span class="hl-1"> </span><span class="hl-0">/etc/sysctl.conf</span><span class="hl-1"> &amp;&amp; </span><span class="hl-5">sudo</span><span class="hl-1"> </span><span class="hl-0">sysctl</span><span class="hl-1"> </span><span class="hl-6">-p</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="windows" class="tsd-anchor-link">Windows<a href="#windows" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>If you see <code>LINK : fatal error LNK1104: cannot open file 'C:\\Users\\path\\to\\node.lib' [C:\path\to\theia\node_modules\drivelist\build\drivelist.vcxproj]</code>, then set the Visual Studio version manually with <code>npm config set msvs_version 2017 --global</code>.</p>
+<p>If you are facing with <code>EPERM: operation not permitted</code> or <code>permission denied</code>
+errors while building, testing or running the application then;</p>
+<ul>
+<li>You don't have write access to the installation directory.</li>
+<li>Try to run your command line (<code>PowerShell</code>, <code>GitBash</code>, <code>Cygwin</code> or whatever
+you are using) as an administrator.</li>
+<li>The permissions in the NPM cache might get corrupted. Please try to run
+<code>npm cache clean</code> to fix them.</li>
+<li>If you experience issues such as <code>Error: EBUSY: resource busy or locked, rename</code>,
+try to disable (or uninstall) your anti-malware software.
+See <a href="https://github.com/npm/npm/issues/13461#issuecomment-282556281">here</a>.</li>
+<li>Still having issues on Windows? File a [bug]. We are working on Linux or OS X
+operating systems. Hence, we are more than happy to receive any Windows-related
+feedbacks, <a href="https://github.com/eclipse-theia/theia/issues">bug</a> reports.</li>
+</ul>
+<p>If you're still struggling with the build, but you use Windows 10, then you can enable the <code>Windows Subsystem for Linux</code> and you can get a Linux distro for free.</p>
+<h3 id="macos" class="tsd-anchor-link">macOS<a href="#macos" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>You need to have the Xcode command line tools installed in order to build and run Theia. You can install the tools by running</p>
+<pre><code class="sh"><span class="hl-5">xcode-select</span><span class="hl-1"> </span><span class="hl-6">--install</span>
+</code><button type="button">Copy</button></pre>
+
+<p>If you already have Xcode installed, but you see the <code>xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance</code> error, you need to run the following command to fix it: <code>sudo xcode-select --switch /Library/Developer/CommandLineTools</code>.</p>
+<p>The solution is the same if you have updated to <code>10.14</code> (Mojave) and you can see the <code>gyp: No Xcode or CLT version detected!</code> error. More details <a href="https://github.com/nodejs/node-gyp#on-macos">here</a>.</p>
+<h3 id="root-privileges-errors" class="tsd-anchor-link">Root privileges errors<a href="#root-privileges-errors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><p>When trying to install with root privileges, you might encounter errors such as
+<code>cannot run in wd</code>.</p>
+<p>Several options are available to you:</p>
+<ul>
+<li>Install without root privileges</li>
+<li>Use the <code>--unsafe-perm</code> flag: <code>npm install --unsafe-perm</code></li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#how-to-build-theia-and-the-example-applications"><span>How to build <wbr/>Theia and the example applications</span></a><ul><li><a href="#prerequisites"><span>Prerequisites</span></a></li><li><a href="#quick-start"><span>Quick <wbr/>Start</span></a></li><li><ul><li><a href="#download-plugins"><span>Download plugins</span></a></li><li><a href="#run-the-browser-example-with-ssl"><span>Run the browser example with <wbr/>SSL</span></a></li></ul></li><li><a href="#clone-the-repository"><span>Clone the repository</span></a></li><li><a href="#the-repository-structure"><span>The repository structure</span></a></li><li><a href="#build-core-extensions-and-examples-packages"><span>Build core, extensions and examples packages</span></a></li><li><a href="#build-everything"><span>Build <wbr/>Everything</span></a></li><li><a href="#build-typescript-sources"><span>Build <wbr/>Type<wbr/>Script sources</span></a></li><li><a href="#linting"><span>Linting</span></a></li><li><a href="#build-extension-packages-individually"><span>Build extension packages individually</span></a></li><li><a href="#run-the-browser-based-example-application"><span>Run the browser-<wbr/>based example application</span></a></li><li><a href="#run-the-electron-based-example-application"><span>Run the <wbr/>Electron-<wbr/>based example application</span></a></li><li><a href="#rebuilding"><span>Rebuilding</span></a></li><li><a href="#watching"><span>Watching</span></a></li><li><ul><li><a href="#watch-the-core-and-extension-packages"><span>Watch the core and extension packages</span></a></li><li><a href="#watch-the-examples"><span>Watch the examples</span></a></li><li><a href="#watch-a-specific-package"><span>Watch a specific package</span></a></li><li><a href="#watch-a-specific-package-and-its-local-upstream-dependencies"><span>Watch a specific package and its local upstream dependencies</span></a></li><li><ul><li><a href="#using-typescript-build-mode"><span>Using <wbr/>Type<wbr/>Script build mode</span></a></li><li><a href="#using-theias-run-utility"><span>Using <wbr/>Theia&#39;s run utility</span></a></li></ul></li></ul></li><li><a href="#debugging"><span>Debugging</span></a></li><li><ul><li><a href="#debug-the-browser-examples-backend"><span>Debug the browser example&#39;s backend</span></a></li><li><a href="#debug-the-browser-examples-frontend"><span>Debug the browser example&#39;s frontend</span></a></li><li><a href="#debug-the-browser-examples-frontend-and-backend-at-the-same-time"><span>Debug the browser example&#39;s frontend and backend at the same time</span></a></li><li><a href="#debug-the-electron-examples-backend"><span>Debug the <wbr/>Electron example&#39;s backend</span></a></li><li><a href="#debug-the-electron-examples-frontend"><span>Debug the <wbr/>Electron example&#39;s frontend</span></a></li><li><a href="#debug-the-electron-examples-frontend-and-backend-at-the-same-time"><span>Debug the <wbr/>Electron example&#39;s frontend and backend at the same time</span></a></li><li><a href="#debug-ipc-servers"><span>Debug <wbr/>IPC servers</span></a></li><li><a href="#debug-the-plugin-host"><span>Debug the plugin host</span></a></li><li><a href="#debugging-plugin-sources"><span>Debugging <wbr/>Plugin <wbr/>Sources</span></a></li><li><ul><li><a href="#producing-typescript-maps-for-your-plugin"><span>Producing typescript maps for your plugin</span></a></li><li><a href="#compiling-and-blocking-typescript-from-walking-up-parent-directories-see-discussion"><span>Compiling and blocking typescript from walking up parent directories (see discussion)</span></a></li></ul></li></ul></li><li><a href="#profiling"><span>Profiling</span></a></li><li><ul><li><a href="#profile-the-frontend-process"><span>Profile the frontend process</span></a></li><li><a href="#profile-the-backend-process"><span>Profile the backend process</span></a></li><li><a href="#profile-ipc-servers"><span>Profile <wbr/>IPC servers</span></a></li><li><a href="#profile-the-plugin-host"><span>Profile the plugin host</span></a></li></ul></li><li><a href="#testing"><span>Testing</span></a></li><li><a href="#code-coverage"><span>Code coverage</span></a></li><li><a href="#building-on-windows"><span>Building on <wbr/>Windows</span></a></li><li><ul><li><a href="#installing-windows-build-tools"><span>Installing <wbr/>Windows <wbr/>Build <wbr/>Tools</span></a></li></ul></li><li><a href="#troubleshooting"><span>Troubleshooting</span></a></li><li><ul><li><a href="#linux"><span>Linux</span></a></li><li><a href="#windows"><span>Windows</span></a></li><li><a href="#macos"><span>mac<wbr/>OS</span></a></li><li><a href="#root-privileges-errors"><span>Root privileges errors</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://theia-ide.org/" class="tsd-nav-link">Eclipse Theia Website</a><a href="https://github.com/eclipse-theia/theia" class="tsd-nav-link">GitHub</a></nav><nav class="tsd-navigation"><a href="../modules.html">Theia API Documentation v1.69.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer></footer><div class="overlay"></div></body></html>

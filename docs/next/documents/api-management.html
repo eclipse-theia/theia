@@ -1,0 +1,96 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>api-management | Theia API Documentation v1.69.0</title><link rel="icon" href="../assets/favicon.png" type="image/png"/><meta name="description" content="Documentation for Theia API Documentation v1.69.0"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">Theia API Documentation v1.69.0</a><div id="tsd-toolbar-links"><a href="https://theia-ide.org/">Eclipse Theia Website</a><a href="https://github.com/eclipse-theia/theia">GitHub</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">api-management</a></li></ul><h1>api-management</h1></div><div class="tsd-panel tsd-typography"><h1 id="api-management" class="tsd-anchor-link">API Management<a href="#api-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1><blockquote>
+<p>The guidance below is for the code of the Theia framework only. End products will get better development experience by using private visibility.</p>
+</blockquote>
+<ul>
+<li><a href="#stability"><strong>Stability</strong></a>
+<ul>
+<li><a href="#experimental"><strong>Experimental</strong></a></li>
+<li><a href="#stable"><strong>Stable</strong></a></li>
+</ul>
+</li>
+<li><a href="#finalization"><strong>Finalization</strong></a></li>
+<li><a href="#deprecation"><strong>Deprecation</strong></a></li>
+</ul>
+<p>Theia is a framework embracing openness, extensibility, and customizability as much as possible:</p>
+<ul>
+<li>API defaults to public visibility for clients.</li>
+<li>API defaults to protected for extenders.</li>
+<li>Language constructions prohibiting runtime access to internals are never used.</li>
+</ul>
+<p>Usually, the version management is built around API visibility.
+Particularly, when a public API is broken a new major release is required.</p>
+<p>Since all APIs are more or less public, following the conventional approach is not practicable for Theia.
+It will slow down API innovation, accumulate technical debt or require many major releases.</p>
+<p>Instead, we demand a major release only if a <em>stable</em> API is broken.
+Breaking an <em>experimental</em> API is allowed in a minor release.</p>
+<h2 id="stability" class="tsd-anchor-link">Stability<a href="#stability" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>Conceptually, an API consists of all assumptions adopters depend on to make use or extend Theia.
+A stable API is based on assumptions that are not subject to change.
+It does not matter whether an API is public or internal, or whether it is used a lot or never.</p>
+<blockquote>
+<p>For instance, the language server protocol (LSP) depends on such data types like URIs and positions
+since they don't change from language to language. It ensures its stability.</p>
+</blockquote>
+<p>API stability is indicated explicitly by adding <code>@experimental</code> or <code>@stable</code> js-doc tags.</p>
+<p>The explicit stability tag should be accompanied by <code>@since</code> tag indicating when API was added.
+The <code>@stable</code> tag should mention since which version an API was finalized.</p>
+<p>An API without a stability tag is considered to be experimental and does not require <code>@since</code> tag.</p>
+<pre><code class="ts"><span class="hl-12">/**</span><br/><span class="hl-12"> * One does not need any annotations while working on experimental APIs.</span><br/><span class="hl-12"> */</span><br/><span class="hl-13">export</span><span class="hl-1"> </span><span class="hl-6">interface</span><span class="hl-1"> </span><span class="hl-14">ExperimentalInterface</span><span class="hl-1"> {</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-12">/**</span><br/><span class="hl-12"> * </span><span class="hl-6">@since</span><span class="hl-12"> 0.1.0</span><br/><span class="hl-12"> * </span><span class="hl-6">@stable</span><span class="hl-12"> since 1.0.0</span><br/><span class="hl-12"> */</span><br/><span class="hl-13">export</span><span class="hl-1"> </span><span class="hl-6">interface</span><span class="hl-1"> </span><span class="hl-14">StableInterface</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">    </span><span class="hl-12">/**</span><br/><span class="hl-12">     * The same as `StableInterface`.</span><br/><span class="hl-12">     */</span><br/><span class="hl-1">    </span><span class="hl-5">stableMethod</span><span class="hl-1">(): </span><span class="hl-14">void</span><span class="hl-1">;</span><br/><br/><span class="hl-1">    </span><span class="hl-12">/**</span><br/><span class="hl-12">     * Adding new API to stable API should be explicit.</span><br/><span class="hl-12">     *</span><br/><span class="hl-12">     * </span><span class="hl-6">@since</span><span class="hl-12"> 1.1.0</span><br/><span class="hl-12">     * </span><span class="hl-6">@experimental</span><br/><span class="hl-12">     */</span><br/><span class="hl-1">    </span><span class="hl-5">experimentalMethod</span><span class="hl-1">(): </span><span class="hl-14">void</span><span class="hl-1">;</span><br/><br/><span class="hl-1">}</span><br/>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="experimental" class="tsd-anchor-link">Experimental<a href="#experimental" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li>All new APIs should always be added as <strong>experimental</strong> since it's almost impossible to get <a href="#stable">stable API</a> right the first time.</li>
+<li>Experimental APIs don't require the stability tag, but if a new member is added to <a href="#stable">stable API</a> then it should be explicitly annotated.</li>
+<li>Experimental APIs don't require extensive documentation. It does not mean that one shouldn't document unobvious parts.</li>
+<li>Experimental APIs don't follow <a href="https://semver.org/#spec-item-8">semver</a> semantic.</li>
+<li>Experimental APIs could be changed or removed without <a href="#deprecation">the deprecation cycle</a> if they were not widely adopted.</li>
+<li>Adoption should be measured by the number of internal clients or based on the feedback of Theia contributors and committers.</li>
+</ul>
+<h3 id="stable" class="tsd-anchor-link">Stable<a href="#stable" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3><ul>
+<li><a href="#experimental">Experimental APIs</a> can be graduated to <code>stable</code> via <a href="#finalization">the finalization cycle</a>.</li>
+<li>Stable APIs should be based on design decisions that are not likely to change.</li>
+<li>Stable APIs should have sufficient adoption.</li>
+<li>Stable APIs should have proper documentation.</li>
+<li>Stable APIs must follow <a href="https://semver.org/#spec-item-8">semver</a> semantic.</li>
+<li>They can be changed only in a backward-compatible fashion.</li>
+<li>They can be removed only via <a href="#deprecation">the deprecation cycle</a>.</li>
+</ul>
+<h2 id="finalization" class="tsd-anchor-link">Finalization<a href="#finalization" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>API finalization should be requested via GitHub issues with <code>api-finalization</code> label.
+Such request should be resolved via a pull request following to <a href="https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#pull-requests">PR guidelines</a>.</p>
+<p>Finalization implies a review of the adoption, stability, and documentation of APIs.
+One cannot judge stability without gaining enough experience
+and provide stable documentation without API stability in the first place.</p>
+<p>If there is not enough adoption, then finalization should be postponed.
+If it does not get adopted later, it should be considered to move APIs
+from the framework to another repository managed by requesting adopters.</p>
+<blockquote>
+<p>Why? Consider the case if the LSP would have a feature that can be supported only by one tool.
+It is reasonable to move such a feature to a tool specific LSP extension
+instead of bloating the protocol. The same applies to the framework:
+If API is added and used only by one adopter, then such API has to be moved to the adopter.
+It ensures control of API for such adopters and reduces the API surface of the framework.</p>
+</blockquote>
+<p>If APIs are based on design decisions that are subject to change, then
+one could postpone finalization before such decisions are resolved.</p>
+<blockquote>
+<p>Why? Some design decisions are only temporarily subject to change, for instance,
+which layout framework should be used. After it is resolved,
+such a design decision becomes fundamental, cannot be changed, and can be adopted.</p>
+</blockquote>
+<p>If it is not possible, then APIs should be refactored to hide such assumptions.</p>
+<blockquote>
+<p>Why? Some design decisions are changeable by nature, for instance, for the LSP,
+kind of symbols of a concrete language. In such a case,
+API should be changed to operate abstract symbol data type to hide concrete symbols.</p>
+</blockquote>
+<p>If sufficient adoption and API stability are established,
+documentation should be reviewed and completed.</p>
+<h2 id="deprecation" class="tsd-anchor-link">Deprecation<a href="#deprecation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2><p>API deprecation is indicated by adding <code>@deprecated</code> js-doc tag.
+The deprecation tag should mention, since which version it is deprecated, explain why and what should be used instead.</p>
+<pre><code class="ts"><span class="hl-12">/**</span><br/><span class="hl-12"> * </span><span class="hl-6">@since</span><span class="hl-12"> 0.1.0</span><br/><span class="hl-12"> * </span><span class="hl-6">@stable</span><span class="hl-12"> since 1.0.0</span><br/><span class="hl-12"> * </span><span class="hl-6">@deprecated</span><span class="hl-12"> since 1.1.0 - because that and that, use that instead</span><br/><span class="hl-12"> */</span><br/><span class="hl-13">export</span><span class="hl-1"> </span><span class="hl-6">interface</span><span class="hl-1"> </span><span class="hl-14">DeprecatedStableInterface</span><span class="hl-1"> {</span><br/><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Deprecated <a href="#stable">stable API</a> can be removed in one of the next <em>major</em> releases</p>
+<p>Deprecated <a href="#experimental">experimental API</a> can be removed in one of the next <em>minor</em> releases</p>
+<p>Breaking changes should be documented in <a href="../media/CHANGELOG.md">CHANGELOG</a>. Each breaking change should be justified to adopters
+and guide what should be done instead.</p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#api-management"><span>API <wbr/>Management</span></a><ul><li><a href="#stability"><span>Stability</span></a></li><li><ul><li><a href="#experimental"><span>Experimental</span></a></li><li><a href="#stable"><span>Stable</span></a></li></ul></li><li><a href="#finalization"><span>Finalization</span></a></li><li><a href="#deprecation"><span>Deprecation</span></a></li></ul></div></details></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="https://theia-ide.org/" class="tsd-nav-link">Eclipse Theia Website</a><a href="https://github.com/eclipse-theia/theia" class="tsd-nav-link">GitHub</a></nav><nav class="tsd-navigation"><a href="../modules.html">Theia API Documentation v1.69.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer></footer><div class="overlay"></div></body></html>
