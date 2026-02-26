@@ -59,6 +59,11 @@ export interface TerminalBuffer {
     getLines(start: number, length: number, trimRight?: boolean): string[];
 }
 
+export interface TerminalBlock {
+    readonly command: string;
+    readonly output: string;
+}
+
 /**
  * Terminal UI widget.
  */
@@ -182,6 +187,9 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract setTitle(title: string): void;
 
     abstract waitOnExit(waitOnExit?: boolean | string): void;
+
+    abstract commandHistory: TerminalBlock[];
+
 }
 
 /**

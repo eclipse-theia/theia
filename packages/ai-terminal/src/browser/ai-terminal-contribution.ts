@@ -185,6 +185,13 @@ class AiTerminalChatWidget {
     }
 
     protected getRecentTerminalCommands(): string[] {
+        const commandHistory = this.terminalWidget.commandHistory;
+        console.log('Full command history:', commandHistory);
+        const lastCommandTest = commandHistory[-1];
+        if (lastCommandTest) {
+            console.log('Last command from history:', lastCommandTest);
+        }
+
         const maxLines = 100;
         const terminalBufferLength = this.terminalWidget.buffer.length;
         return this.terminalWidget.buffer.getLines(

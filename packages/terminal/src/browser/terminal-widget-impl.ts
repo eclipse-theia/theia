@@ -32,7 +32,8 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import {
     TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
     TerminalLocation,
-    TerminalBuffer
+    TerminalBuffer,
+    TerminalBlock
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from '../common/terminal-preferences';
@@ -177,12 +178,27 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
+    protected readonly onTerminalCommandStartEmitter = new Emitter<void>();
+    readonly onTerminalCommandStart: Event<void> = this.onTerminalCommandStartEmitter.event;
+
+    protected readonly onTerminalPromptShownEmitter = new Emitter<void>();
+    readonly onTerminalPromptShown: Event<void> = this.onTerminalPromptShownEmitter.event;
+
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
         return this._buffer;
     }
 
     private _currentTerminalOutput: string[];
+    private _commandHistory: TerminalBlock[] = [];
+    override get commandHistory(): TerminalBlock[] {
+        return this._commandHistory;
+    }
+
+    private isCommandRunning: boolean = false;
+    private currentCommand: string = '';
+    private currentOutput: string = '';
+
 
     @postConstruct()
     protected init(): void {
@@ -287,6 +303,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onDataEmitter);
         this.toDispose.push(this.onKeyEmitter);
         this.toDispose.push(this.onShellTypeChangedEmiter);
+        this.toDispose.push(this.onTerminalCommandStartEmitter)
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -809,6 +826,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         } else {
             this.initialData += data;
         }
+
+        if (this.isCommandRunning) {
+            this.currentOutput += data;
+        }
     }
 
     resize(cols: number, rows: number): void {
@@ -1037,23 +1058,41 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected initializeOSC133Support(): void {
         this.toDispose.push(this.term.parser.registerOscHandler(133, (data: string) => {
-            const marker = this.term.registerMarker(0);
-            if (marker) {
-                var decoration = this.term.registerDecoration({
-                    marker,
-                    x: 0,
-                    width: this.term.cols
-                });
-                decoration?.onRender((e: HTMLElement) => {
-                    e.classList.add('terminal-command-separator');
-                    e.style.removeProperty('width');
-                    e.style.setProperty('width', '60%', 'important');
-                    e.style.left = '0';
-                    e.style.right = '0';
-                });
+            console.log('OSC 133 data received:', data);
+            if (data === 'prompt_started') {
+                this.isCommandRunning = false;
+                if (!this.currentCommand) {
+                    return true;
+                }
+                const terminalBlock: TerminalBlock = {
+                    command: this.currentCommand,
+                    output: this.sanitizeCommandOutput(this.currentOutput)
+                }
+                this._commandHistory.push(terminalBlock);
+                this.currentCommand = '';
+                this.currentOutput = '';
+                this.onTerminalPromptShownEmitter.fire();
+            } else if (data.includes('command_started')) {
+                this.isCommandRunning = true;
+                const encoded = data.split(';')[1];
+                this.currentCommand = Buffer.from(encoded, 'hex').toString('utf-8');
+                this.onTerminalCommandStartEmitter.fire();
             }
             return true;
-        }
-        ));
+        }));
+    }
+
+    private sanitizeCommandOutput(output: string): string {
+        // remove prompt from the end of the output
+        output = output.slice(0, output.indexOf('\u001b]133;prompt_started'));
+        // remove Operation System Command Blocks (OSC) sequences
+        output = output.replace(/\u001b\].*?(?:\u0007|\u001b\\)/gs, '');
+        // remove control sequence introducer (CSI) sequences
+        output = output.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/gu, '');
+        // remove single-character escape sequences
+        output = output.replace(/\u001b[>=]/g, '');
+        // trim trailing whitespace
+        output = output.replace(/\r/g, '');
+        return output.trimEnd();
     }
 }
