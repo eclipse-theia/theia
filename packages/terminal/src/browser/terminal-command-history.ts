@@ -67,6 +67,13 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
         this.toDispose.dispose();
     }
 
+    updateConfig(): void {
+        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
+        this.enableCommandSeparator = this.enableCommandHistory
+            ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
+            : false;
+    }
+
     /**
      * Decodes a hex-encoded string to UTF-8 using browser-compatible APIs.
      */

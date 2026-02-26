@@ -388,10 +388,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
         this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
-        this.commandHistoryState.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
-        this.commandHistoryState.enableCommandSeparator = this.commandHistoryState.enableCommandHistory
-            ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
-            : false;
+        this.commandHistoryState.updateConfig();
     }
 
     /**

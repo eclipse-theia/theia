@@ -243,6 +243,11 @@ export interface TerminalCommandHistoryState {
      */
     enableCommandSeparator: boolean;
 
+    /**
+     * Updates the configuration enableCommandHistory and enableCommandSeparator.
+     */
+    updateConfig(): void;
+
 }
 
 /**
