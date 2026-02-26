@@ -87,12 +87,9 @@ export class ProcessTaskRunner implements TaskRunner {
             // - shell: defer the spawning to a shell that will evaluate a command line with our executable.
             const terminalProcessOptions = this.getResolvedCommand(taskConfig);
             const terminal: Process = this.taskTerminalProcessFactory(terminalProcessOptions);
-
             const processType = (taskConfig.executionType || taskConfig.type) as 'process' | 'shell';
             const command = this.getCommand(processType, terminalProcessOptions);
-            if (terminal instanceof TaskTerminalProcess && command) {
-                terminal.setTaskCommand(command);
-            }
+            this.setupTaskTerminalCommandHistory(terminal, taskConfig.enableCommandHistory ?? false, command);
 
             // Wait for the confirmation that the process is successfully started, or has failed to start.
             await new Promise((resolve, reject) => {
@@ -113,6 +110,20 @@ export class ProcessTaskRunner implements TaskRunner {
         } catch (error) {
             this.logger.error(`Error occurred while creating task: ${error}`);
             throw error;
+        }
+    }
+
+    /**
+     * Enables or disables command history tracking for the task terminal.
+     * When enabled, OSC sequences are injected into the terminal output stream
+     * to mark command boundaries for history tracking.
+     */
+    protected setupTaskTerminalCommandHistory(terminal: Process, enable: boolean, command?: string): void {
+        if (terminal instanceof TaskTerminalProcess) {
+            terminal.setEnableCommandHistory(enable);
+        }
+        if (terminal instanceof TaskTerminalProcess && command) {
+            terminal.injectCommandStartOsc(command);
         }
     }
 

@@ -69,6 +69,7 @@ import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { Mutex } from 'async-mutex';
 import { TaskContextKeyService } from './task-context-key-service';
+import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -200,6 +201,8 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
+    @inject(TerminalPreferences)
+    protected readonly terminalPreferences: TerminalPreferences;
 
     @postConstruct()
     protected init(): void {
@@ -1009,6 +1012,7 @@ export class TaskService implements TaskConfigurationClient {
         const taskLabel = resolvedTask.label;
         let taskInfo: TaskInfo | undefined;
         try {
+            resolvedTask.enableCommandHistory = this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false;
             taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
             this.lastTask = { resolvedTask, option };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
