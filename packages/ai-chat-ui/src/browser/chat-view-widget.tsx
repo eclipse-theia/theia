@@ -253,10 +253,13 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             ? { ...chatRequest, variables: allVariables }
             : chatRequest;
 
-        // Clear pending image attachments now that they're included in the request
-        this.inputWidget.clearPendingImageAttachments();
-
-        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, requestWithVariables);
+        let requestProgress;
+        try {
+            requestProgress = await this.chatService.sendRequest(this.chatSession.id, requestWithVariables);
+        } finally {
+            // Clear pending image attachments now that they're included in the request
+            this.inputWidget.clearPendingImageAttachments();
+        }
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
                 this.messageService.error(responseModel.errorObject?.message ??

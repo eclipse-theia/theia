@@ -422,6 +422,6 @@ export class DefaultAIVariableService implements AIVariableService {
         } else {
             resolved = undefined;
         }
-        return resolved ? { ...resolved, arg } : undefined;
+        return resolved ? { ...resolved, arg: resolved.arg ?? arg } : undefined;
     }
 }

@@ -20,6 +20,7 @@ import {
     ResolvedAIContextVariable
 } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { ParsedChatRequestPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
 
 export const IMAGE_CONTEXT_VARIABLE: AIVariable = {
     id: 'imageContext',
@@ -171,5 +172,52 @@ export namespace ImageContextVariable {
             variable: IMAGE_CONTEXT_VARIABLE,
             arg: createArgString({ wsRelativePath: path, name: imageName })
         };
+    }
+
+    /**
+     * Extract all resolved inline image variables from a list of parsed chat request parts.
+     * Parts that fail to parse are silently skipped.
+     */
+    export function extractInlineImages(parts: ParsedChatRequestPart[]): ResolvedImageContextVariable[] {
+        const result: ResolvedImageContextVariable[] = [];
+        for (const part of parts) {
+            if (part instanceof ParsedChatRequestVariablePart
+                && part.variableName === 'imageContext'
+                && part.resolution?.arg) {
+                try {
+                    const parsed = parseArg(part.resolution.arg);
+                    if (isResolved(parsed)) {
+                        result.push(parsed);
+                    }
+                } catch {
+                    // arg might not be valid JSON, skip
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Extract resolved inline image variables from a list of parsed chat request parts,
+     * keyed by the index of the part in the original array.
+     * Parts that fail to parse are silently skipped.
+     */
+    export function extractInlineImagesWithIndices(parts: ParsedChatRequestPart[]): Map<number, ResolvedImageContextVariable> {
+        const result = new Map<number, ResolvedImageContextVariable>();
+        parts.forEach((part, index) => {
+            if (part instanceof ParsedChatRequestVariablePart
+                && part.variableName === 'imageContext'
+                && part.resolution?.arg) {
+                try {
+                    const parsed = parseArg(part.resolution.arg);
+                    if (isResolved(parsed)) {
+                        result.set(index, parsed);
+                    }
+                } catch {
+                    // arg might not be valid JSON, skip
+                }
+            }
+        });
+        return result;
     }
 }

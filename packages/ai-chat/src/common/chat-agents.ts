@@ -70,7 +70,7 @@ import {
 import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
-import { ImageContextVariable } from './image-context-variable';
+import { ImageContextVariable, ResolvedImageContextVariable } from './image-context-variable';
 
 /**
  * System message content, enriched with function descriptions.
@@ -315,16 +315,29 @@ export abstract class AbstractChatAgent implements ChatAgent {
             const imageMessages = request.context.variables
                 .filter(variable => ImageContextVariable.isResolvedImageContext(variable))
                 .map(variable => ImageContextVariable.parseResolved(variable))
-                .filter(content => content !== undefined)
+                .filter((content): content is ResolvedImageContextVariable => content !== undefined)
                 .map(content => ({
                     actor: 'user' as const,
                     type: 'image' as const,
                     image: {
-                        base64data: content!.data,
-                        mimeType: content!.mimeType
+                        base64data: content.data,
+                        mimeType: content.mimeType
                     }
                 }));
             messages.push(...imageMessages);
+
+            const contextImageData = new Set(imageMessages.map(msg => msg.image.base64data));
+            const inlineImageMessages = ImageContextVariable.extractInlineImages(request.message.parts)
+                .filter(content => !contextImageData.has(content.data))
+                .map(content => ({
+                    actor: 'user' as const,
+                    type: 'image' as const,
+                    image: {
+                        base64data: content.data,
+                        mimeType: content.mimeType
+                    }
+                }));
+            messages.push(...inlineImageMessages);
 
             if (request.response.isComplete || includeResponseInProgress) {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content

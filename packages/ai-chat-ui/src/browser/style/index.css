@@ -167,6 +167,32 @@ div:last-child>.theia-ChatNode {
   color: var(--theia-badge-foreground);
 }
 
+.theia-RequestNode-ImagePreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.theia-RequestNode-ImagePreview-Item {
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 100px;
+  width: 120px;
+}
+
+.theia-RequestNode-ImagePreview-Item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.theia-RequestNode-ImagePreview-Inline {
+  display: inline-block;
+  margin: 4px 0;
+}
+
 .theia-RequestNode-Footer {
   display: flex;
   align-items: center;
