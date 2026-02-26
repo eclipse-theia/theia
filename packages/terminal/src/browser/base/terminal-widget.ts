@@ -59,6 +59,11 @@ export interface TerminalBuffer {
     getLines(start: number, length: number, trimRight?: boolean): string[];
 }
 
+export interface TerminalBlock {
+    readonly command: string;
+    readonly output: string;
+}
+
 /**
  * Terminal UI widget.
  */
@@ -182,6 +187,67 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract setTitle(title: string): void;
 
     abstract waitOnExit(waitOnExit?: boolean | string): void;
+
+    abstract commandHistoryState: TerminalCommandHistoryState;
+
+}
+
+/**
+ * State of command history in terminal.
+ */
+export interface TerminalCommandHistoryState {
+
+    /**
+     * Array of executed commands and their output in the terminal.
+     */
+    readonly commandHistory: TerminalBlock[];
+
+    /**
+     * The hex-decoded command currently being executed, or empty string if idle.
+     */
+    readonly currentCommand: string;
+
+    /**
+     * Marks the start of a new command execution.
+     * @param command the hexencoded command string
+     */
+    startCommand(command: string): void;
+
+    /**
+     * Records the finished command and its output as a new history block.
+     */
+    finishCommand(block: TerminalBlock): void;
+
+    /**
+     * Clears the current in-progress command state.
+     */
+    clearCommandCollectionState(): void;
+
+    /**
+     * Event which fires when terminal command starts executing.
+     */
+    onTerminalCommandStart: Event<void>;
+
+    /**
+     * Event which fires when terminal prompt is shown.
+     */
+    onTerminalPromptShown: Event<void>;
+
+    /**
+     * Whether to enable command history in terminal.
+     */
+    enableCommandHistory: boolean;
+
+    /**
+     * Whether to show command separator in terminal command history.
+     */
+    enableCommandSeparator: boolean;
+
+    /**
+     * Updates the configuration enableCommandHistory and enableCommandSeparator.
+     */
+    updateConfig(): void;
+
 }
 
 /**

@@ -208,6 +208,12 @@ b73945c70f1117c4e65939dd3e10bdd623cb4ef3 (n/a)
 
 * License: CC-BY-4.0
 
+intellij-community (2025.2.4)
+
+* License: Apache-2.0
+* Project: <https://github.com/JetBrains/intellij-community>
+* Source: <https://github.com/JetBrains/intellij-community>
+
 inversify (5.0.1)
 
 * License: MIT
