@@ -28,8 +28,10 @@ export class TaskTerminalProcess extends TerminalProcess {
     public exited = false;
     public attachmentAttempted = false;
     /**
-     * Controls whether OSC (Operating System Command) sequences are injected
-     * into the terminal stream for command history tracking.
+     * Runtime-only property: whether to enable command history tracking for this task's terminal.
+     * This value is injected from the `terminal.integrated.enableCommandHistory` preference
+     * before the task is sent to the backend. It is not part of the task definition schema
+     * and should not be persisted in tasks.json.
      */
     protected _enableCommandHistory = false;
 

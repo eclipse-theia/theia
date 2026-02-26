@@ -121,9 +121,9 @@ export class ProcessTaskRunner implements TaskRunner {
     protected setupTaskTerminalCommandHistory(terminal: Process, enable: boolean, command?: string): void {
         if (terminal instanceof TaskTerminalProcess) {
             terminal.setEnableCommandHistory(enable);
-        }
-        if (terminal instanceof TaskTerminalProcess && command) {
-            terminal.injectCommandStartOsc(command);
+            if (command) {
+                terminal.injectCommandStartOsc(command);
+            }
         }
     }
 
