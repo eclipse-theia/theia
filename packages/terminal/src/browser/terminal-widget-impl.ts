@@ -200,11 +200,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     private _currentTerminalOutput: string[];
-    private _commandHistory: TerminalBlock[] = [];
-    override get commandHistory(): TerminalBlock[] {
-        return this._commandHistory;
-    }
-
     commandHistoryState: TerminalCommandHistoryState;
 
     @postConstruct()
@@ -470,7 +465,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         let output = '';
         if (startLine >= 0 && endLine >= 0) {
-            output = this.readBufferLines(startLine, endLine);
+            output = this._buffer.getLines(startLine, endLine - startLine, true).join('\n');
             this.logger.debug('Terminal command result captured:', this._buffer.getLines(0, this._buffer.length));
         }
 
@@ -480,7 +475,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             startMarker,
             endMarker: endMarker ?? undefined,
         };
-
 
         this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
         this.commandHistoryState.finishCommand(block);
@@ -519,25 +513,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.commandSeparatorDecorations.push(marker);
         this.commandSeparatorDecorations.push(deco);
-    }
-
-    /**
-     * Reads clean text from the xterm buffer between two line positions.
-     * xterm's buffer already contains parsed, escape-sequence-free text,
-     * so no manual sanitization is needed.
-     * 
-     * not necessary when https://github.com/eclipse-theia/theia/pull/16975 is merged
-     */
-    protected readBufferLines(startLine: number, endLine: number): string {
-        const lines: string[] = [];
-        const buffer = this.term.buffer.active;
-        for (let i = startLine; i < endLine; i++) {
-            const line = buffer.getLine(i);
-            if (line) {
-                lines.push(line.translateToString(true));
-            }
-        }
-        return lines.join('\n').trimEnd();
     }
 
     protected setIconClass(): void {
