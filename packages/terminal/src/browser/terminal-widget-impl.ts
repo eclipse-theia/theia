@@ -97,14 +97,6 @@ class TerminalBufferImpl implements TerminalBuffer {
 
 }
 
-/**
- * Internal extension of TerminalBlock that retains xterm markers for buffer position tracking.
- */
-interface TrackedTerminalBlock extends TerminalBlock {
-    readonly startMarker?: IMarker;
-    readonly endMarker?: IMarker;
-}
-
 @injectable()
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget, ExtractableWidget, EnhancedPreviewWidget {
     readonly isExtractable: boolean = true;
@@ -469,11 +461,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.logger.debug('Terminal command result captured:', this._buffer.getLines(0, this._buffer.length));
         }
 
-        const block: TrackedTerminalBlock = {
+        const block: TerminalBlock = {
             command: this.commandHistoryState.currentCommand,
             output,
-            startMarker,
-            endMarker: endMarker ?? undefined,
         };
 
         this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
