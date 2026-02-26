@@ -47,7 +47,8 @@ describe('ToolConfirmationManager', () => {
             updateValue: sinon.stub().callsFake((_key: string, value: { [toolId: string]: ToolConfirmationMode }) => {
                 storedPreferences = value;
                 return Promise.resolve();
-            })
+            }),
+            inspect: sinon.stub().returns(undefined)
         } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
 
         manager = new ToolConfirmationManager();
@@ -112,6 +113,60 @@ describe('ToolConfirmationManager', () => {
         it('should not persist ALWAYS_ALLOW for regular tools when it matches default', () => {
             manager.setConfirmationMode('regularTool', ToolConfirmationMode.ALWAYS_ALLOW);
             expect(preferenceServiceMock.updateValue.called).to.be.false;
+        });
+
+        it('should not persist when mode matches the global preference default', () => {
+            (preferenceServiceMock.inspect as sinon.SinonStub).returns({
+                defaultValue: { '*': ToolConfirmationMode.CONFIRM }
+            });
+            manager.setConfirmationMode('regularTool', ToolConfirmationMode.CONFIRM);
+            expect(preferenceServiceMock.updateValue.called).to.be.false;
+        });
+
+        it('should persist when mode differs from the global preference default', () => {
+            (preferenceServiceMock.inspect as sinon.SinonStub).returns({
+                defaultValue: { '*': ToolConfirmationMode.CONFIRM }
+            });
+            manager.setConfirmationMode('regularTool', ToolConfirmationMode.DISABLED);
+            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(storedPreferences['regularTool']).to.equal(ToolConfirmationMode.DISABLED);
+        });
+
+        it('should not persist when mode matches the tool-specific preference default', () => {
+            (preferenceServiceMock.inspect as sinon.SinonStub).returns({
+                defaultValue: { 'myTool': ToolConfirmationMode.DISABLED }
+            });
+            manager.setConfirmationMode('myTool', ToolConfirmationMode.DISABLED);
+            expect(preferenceServiceMock.updateValue.called).to.be.false;
+        });
+
+        it('should remove entry when mode matches the tool-specific preference default and entry exists', () => {
+            (preferenceServiceMock.inspect as sinon.SinonStub).returns({
+                defaultValue: { 'myTool': ToolConfirmationMode.DISABLED }
+            });
+            storedPreferences['myTool'] = ToolConfirmationMode.ALWAYS_ALLOW;
+            manager.setConfirmationMode('myTool', ToolConfirmationMode.DISABLED);
+            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(storedPreferences['myTool']).to.be.undefined;
+        });
+
+        it('should not persist CONFIRM for confirmAlwaysAllow tool when global preference default is CONFIRM', () => {
+            (preferenceServiceMock.inspect as sinon.SinonStub).returns({
+                defaultValue: { '*': ToolConfirmationMode.CONFIRM }
+            });
+            const toolRequest = createToolRequest('dangerousTool', true);
+            manager.setConfirmationMode('dangerousTool', ToolConfirmationMode.CONFIRM, toolRequest);
+            expect(preferenceServiceMock.updateValue.called).to.be.false;
+        });
+
+        it('should persist ALWAYS_ALLOW for confirmAlwaysAllow tool when global preference default is CONFIRM', () => {
+            (preferenceServiceMock.inspect as sinon.SinonStub).returns({
+                defaultValue: { '*': ToolConfirmationMode.CONFIRM }
+            });
+            const toolRequest = createToolRequest('dangerousTool', true);
+            manager.setConfirmationMode('dangerousTool', ToolConfirmationMode.ALWAYS_ALLOW, toolRequest);
+            expect(preferenceServiceMock.updateValue.calledOnce).to.be.true;
+            expect(storedPreferences['dangerousTool']).to.equal(ToolConfirmationMode.ALWAYS_ALLOW);
         });
 
         it('should remove entry when setting mode that matches effective default', () => {
