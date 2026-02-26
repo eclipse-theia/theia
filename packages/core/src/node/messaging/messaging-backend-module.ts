@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '../../common';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '../../common';
 // import { BackendApplicationContribution } from '../backend-application';
 import { DefaultMessagingService, MessagingContainer } from './default-messaging-service';
 import { ConnectionContainerModule } from './connection-container-module';
@@ -28,8 +28,8 @@ import { WebsocketFrontendConnectionService } from './websocket-frontend-connect
 import { WebsocketEndpoint } from './websocket-endpoint';
 
 export const messagingBackendModule = new ContainerModule(bind => {
-    bindContributionProvider(bind, ConnectionContainerModule);
-    bindContributionProvider(bind, MessagingService.Contribution);
+    bindRootContributionProvider(bind, ConnectionContainerModule);
+    bindRootContributionProvider(bind, MessagingService.Contribution);
     bind(DefaultMessagingService).toSelf().inSingletonScope();
     bind(MessagingService.Identifier).toService(DefaultMessagingService);
     bind(BackendApplicationContribution).toService(DefaultMessagingService);
@@ -39,7 +39,7 @@ export const messagingBackendModule = new ContainerModule(bind => {
     bind(WebsocketFrontendConnectionService).toSelf().inSingletonScope();
     bind(FrontendConnectionService).toService(WebsocketFrontendConnectionService);
     bind(MessagingListener).toSelf().inSingletonScope();
-    bindContributionProvider(bind, MessagingListenerContribution);
+    bindRootContributionProvider(bind, MessagingListenerContribution);
 
     bind(ConnectionHandler).toDynamicValue(context => {
         const connectionService = context.container.get<WebsocketFrontendConnectionService>(FrontendConnectionService);

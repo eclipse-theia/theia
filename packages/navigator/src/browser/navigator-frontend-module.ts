@@ -36,7 +36,7 @@ import { NavigatorLayoutVersion3Migration, NavigatorLayoutVersion5Migration } fr
 import { NavigatorTabBarDecorator } from './navigator-tab-bar-decorator';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { NavigatorWidgetFactory } from './navigator-widget-factory';
-import { bindContributionProvider } from '@theia/core/lib/common';
+import { bindRootContributionProvider } from '@theia/core/lib/common';
 import { OpenEditorsTreeDecorator } from './open-editors-widget/navigator-open-editors-decorator-service';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
 import { NavigatorTreeDecorator } from './navigator-decorator-service';
@@ -61,8 +61,8 @@ export default new ContainerModule(bind => {
         id: FILE_NAVIGATOR_ID,
         createWidget: () => container.get(FileNavigatorWidget)
     })).inSingletonScope();
-    bindContributionProvider(bind, NavigatorTreeDecorator);
-    bindContributionProvider(bind, OpenEditorsTreeDecorator);
+    bindRootContributionProvider(bind, NavigatorTreeDecorator);
+    bindRootContributionProvider(bind, OpenEditorsTreeDecorator);
     bind(NavigatorTreeDecorator).toService(FileTreeDecoratorAdapter);
     bind(OpenEditorsTreeDecorator).toService(FileTreeDecoratorAdapter);
     bind(NavigatorDeletedEditorDecorator).toSelf().inSingletonScope();

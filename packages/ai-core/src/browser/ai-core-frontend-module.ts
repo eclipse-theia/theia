@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
@@ -85,8 +85,8 @@ import { OSNotificationService } from './os-notification-service';
 import { WindowBlinkService } from './window-blink-service';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, Agent);
-    bindContributionProvider(bind, LanguageModelProvider);
+    bindRootContributionProvider(bind, Agent);
+    bindRootContributionProvider(bind, LanguageModelProvider);
 
     bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
     bind(FrontendLanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);
@@ -132,7 +132,7 @@ export default new ContainerModule(bind => {
 
     bind(SkillPromptCoordinator).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SkillPromptCoordinator);
-    bindContributionProvider(bind, AIVariableContribution);
+    bindRootContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);
     bind(AIVariableService).toService(FrontendVariableService);
@@ -152,7 +152,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 
     bind(ToolInvocationRegistry).to(ToolInvocationRegistryImpl).inSingletonScope();
-    bindContributionProvider(bind, ToolProvider);
+    bindRootContributionProvider(bind, ToolProvider);
 
     bind(AIActivationServiceImpl).toSelf().inSingletonScope();
     bind(AIActivationService).toService(AIActivationServiceImpl);

@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { generateUuid } from '../common/uuid';
-import { bindContributionProvider } from '../common/contribution-provider';
+import { bindRootContributionProvider } from '../common/contribution-provider';
 import { RpcConnectionHandler } from '../common/messaging/proxy-factory';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service';
@@ -40,9 +40,9 @@ export default new ContainerModule(bind => {
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
     bind(ElectronSecurityTokenService).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, ElectronConnectionHandler);
-    bindContributionProvider(bind, ElectronMessagingService.Contribution);
-    bindContributionProvider(bind, ElectronMainApplicationContribution);
+    bindRootContributionProvider(bind, ElectronConnectionHandler);
+    bindRootContributionProvider(bind, ElectronMessagingService.Contribution);
+    bindRootContributionProvider(bind, ElectronMainApplicationContribution);
 
     bind(TheiaMainApi).toSelf().inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(TheiaMainApi);

@@ -30,7 +30,7 @@ import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler';
 import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler';
 import { GithubPluginDeployerResolver } from './plugin-github-resolver';
 import { HttpPluginDeployerResolver } from './plugin-http-resolver';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '@theia/core';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core';
 import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
 import { PluginPathsServiceImpl } from './paths/plugin-paths-service';
 import { PluginServerImpl } from './plugin-server-impl';
@@ -53,7 +53,7 @@ export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(BackendApplicationContribution).toService(PluginApiContribution);
     bind(WsRequestValidatorContribution).toService(PluginApiContribution);
 
-    bindContributionProvider(bind, PluginDeployerParticipant);
+    bindRootContributionProvider(bind, PluginDeployerParticipant);
     bind(PluginDeployer).to(PluginDeployerImpl).inSingletonScope();
     bind(PluginDeployerContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginDeployerContribution);

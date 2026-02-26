@@ -22,7 +22,7 @@ import '@vscode/codicons/dist/codicon.css';
 
 import { ContainerModule } from 'inversify';
 import {
-    bindContributionProvider,
+    bindRootContributionProvider,
     SelectionService,
     ResourceResolver,
     CommandContribution, CommandRegistry, CommandService, commandServicePath,
@@ -151,7 +151,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(NoneIconTheme).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(NoneIconTheme);
     bind(IconThemeService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, IconThemeContribution);
+    bindRootContributionProvider(bind, IconThemeContribution);
     bind(DefaultFileIconThemeContribution).toSelf().inSingletonScope();
     bind(IconThemeContribution).toService(DefaultFileIconThemeContribution);
     bind(IconThemeApplicationContribution).toSelf().inSingletonScope();
@@ -160,14 +160,14 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(LabelProviderContribution).toService(LanguageIconLabelProvider);
 
     bind(ColorRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, ColorContribution);
+    bindRootContributionProvider(bind, ColorContribution);
     bind(ColorApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ColorApplicationContribution);
 
     bind(FrontendApplication).toSelf().inSingletonScope();
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     bind(DefaultFrontendApplicationContribution).toSelf();
-    bindContributionProvider(bind, FrontendApplicationContribution);
+    bindRootContributionProvider(bind, FrontendApplicationContribution);
 
     bind(ApplicationShellOptions).toConstantValue({});
     bind(ApplicationShell).toSelf().inSingletonScope();
@@ -185,7 +185,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     });
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, TabBarToolbarContribution);
+    bindRootContributionProvider(bind, TabBarToolbarContribution);
     bind(TabBarToolbarRegistry).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TabBarToolbarRegistry);
     bind(TabBarToolbarFactory).toFactory(context => () => {
@@ -217,11 +217,11 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return new TheiaDockPanel(options, corePreferences, maximizeCallback);
     });
 
-    bindContributionProvider(bind, TabBarDecorator);
+    bindRootContributionProvider(bind, TabBarDecorator);
     bind(TabBarDecoratorService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TabBarDecoratorService);
 
-    bindContributionProvider(bind, OpenHandler);
+    bindRootContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
     bind(OpenerService).toService(DefaultOpenerService);
 
@@ -237,7 +237,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(TooltipServiceImpl).toSelf().inSingletonScope();
     bind(TooltipService).toService(TooltipServiceImpl);
 
-    bindContributionProvider(bind, ApplicationShellLayoutMigration);
+    bindRootContributionProvider(bind, ApplicationShellLayoutMigration);
     bind<ApplicationShellLayoutMigration>(ApplicationShellLayoutMigration).toConstantValue({
         layoutVersion: 2.0,
         onWillInflateLayout({ layoutVersion }): void {
@@ -247,9 +247,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         }
     });
 
-    bindContributionProvider(bind, ShellLayoutTransformer);
+    bindRootContributionProvider(bind, ShellLayoutTransformer);
 
-    bindContributionProvider(bind, WidgetFactory);
+    bindRootContributionProvider(bind, WidgetFactory);
     bind(WidgetManager).toSelf().inSingletonScope();
     bind(ShellLayoutRestorer).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ShellLayoutRestorer);
@@ -270,17 +270,17 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return registry;
     });
     bind(CommandService).toService(CommandRegistry);
-    bindContributionProvider(bind, CommandContribution);
+    bindRootContributionProvider(bind, CommandContribution);
 
     bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();
 
     bind(MenuModelRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, MenuContribution);
+    bindRootContributionProvider(bind, MenuContribution);
 
     bind(KeyboardLayoutService).toSelf().inSingletonScope();
     bind(KeybindingRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, KeybindingContext);
-    bindContributionProvider(bind, KeybindingContribution);
+    bindRootContributionProvider(bind, KeybindingContext);
+    bindRootContributionProvider(bind, KeybindingContribution);
 
     bindMessageService(bind).onActivation(({ container }, messages) => {
         const client = container.get(MessageClient);
@@ -321,7 +321,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(MarkdownRenderer).to(MarkdownRendererImpl).inSingletonScope();
     bind(MarkdownRendererFactory).toFactory(({ container }) => () => container.get(MarkdownRenderer));
 
-    bindContributionProvider(bind, QuickAccessContribution);
+    bindRootContributionProvider(bind, QuickAccessContribution);
     bind(QuickInputFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QuickInputFrontendContribution);
 
@@ -331,7 +331,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindStatusBar(bind);
     bind(LabelParser).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, LabelProviderContribution);
+    bindRootContributionProvider(bind, LabelProviderContribution);
     bind(LabelProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(LabelProvider);
     bind(DefaultUriLabelProviderContribution).toSelf().inSingletonScope();
@@ -344,7 +344,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindPreferenceService(bind);
     bind(FrontendApplicationContribution).toService(PreferenceService);
 
-    bindContributionProvider(bind, JsonSchemaContribution);
+    bindRootContributionProvider(bind, JsonSchemaContribution);
     bind(JsonSchemaStore).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(JsonSchemaStore);
     bind(JsonSchemaDataStore).toSelf().inSingletonScope();
@@ -433,7 +433,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(WindowTitleService).toSelf().inSingletonScope();
     bind(WindowTitleUpdater).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WindowTitleUpdater);
-    bindContributionProvider(bind, BreadcrumbsContribution);
+    bindRootContributionProvider(bind, BreadcrumbsContribution);
     bind(BreadcrumbsService).toSelf().inSingletonScope();
     bind(BreadcrumbsRenderer).toSelf();
     bind(BreadcrumbsRendererFactory).toFactory(ctx =>
@@ -468,19 +468,19 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(HoverService).toSelf().inSingletonScope();
 
     bind(StylingService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, StylingParticipant);
+    bindRootContributionProvider(bind, StylingParticipant);
     bind(FrontendApplicationContribution).toService(StylingService);
 
     bind(SecondaryWindowHandler).toSelf().inSingletonScope();
     bind(ViewColumnService).toSelf().inSingletonScope();
 
     bind(UndoRedoHandlerService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, UndoRedoHandler);
+    bindRootContributionProvider(bind, UndoRedoHandler);
     bind(DomInputUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(DomInputUndoRedoHandler);
 
     bind(WidgetStatusBarService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WidgetStatusBarService);
-    bindContributionProvider(bind, WidgetStatusBarContribution);
+    bindRootContributionProvider(bind, WidgetStatusBarContribution);
     bindBadgeDecoration(bind);
 });

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { bindContributionProvider, PreferenceProvider } from '../../common';
+import { bindRootContributionProvider, PreferenceProvider } from '../../common';
 import { PreferenceScope, ValidPreferenceScopes } from '../../common/preferences/preference-scope';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import { isObject } from '../../common/types';
@@ -33,7 +33,7 @@ export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
     bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
     bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, PreferenceContribution);
+    bindRootContributionProvider(bind, PreferenceContribution);
     bind(PreferenceContribution).to(FrontendConfigPreferenceContribution).inSingletonScope();
 }
 
