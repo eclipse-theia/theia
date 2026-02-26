@@ -211,7 +211,23 @@ export class AnthropicModel implements LanguageModel {
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        return request.settings ?? {};
+        const baseSettings = request.settings ?? {};
+
+        if (request.thinkingMode?.enabled) {
+            return {
+                ...baseSettings,
+                thinking: {
+                    type: 'enabled',
+                    budget_tokens: request.thinkingMode.budgetTokens ?? this.defaultThinkingBudget
+                }
+            };
+        }
+
+        return baseSettings;
+    }
+
+    protected get defaultThinkingBudget(): number {
+        return 10000;
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
