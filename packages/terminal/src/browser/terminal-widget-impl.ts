@@ -454,7 +454,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected startNewCommand(hexEncodedCommand: string): void {
         this.commandOutputStartMarker?.dispose();
         this.commandOutputStartMarker = this.term.registerMarker(0);
-        this.commandHistoryState.startCommand(this.decodeHexString(hexEncodedCommand));
+        this.commandHistoryState.startCommand(hexEncodedCommand);
     }
 
     protected finishCurrentCommand(): void {
@@ -480,19 +480,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.commandHistoryState.finishCommand(block);
         this.commandOutputStartMarker = undefined;
         this.commandStartMarker = undefined;
-    }
-
-    /**
-     * Decodes a hex-encoded string to UTF-8 using browser-compatible APIs.
-     */
-    protected decodeHexString(hexString: string): string {
-        if (!hexString) {
-            return '';
-        }
-        const hexBytes = new Uint8Array(
-            (hexString.match(/.{1,2}/g) || []).map(byte => parseInt(byte, 16))
-        );
-        return new TextDecoder('utf-8').decode(hexBytes);
     }
 
     private addCommandSeparator(): void {

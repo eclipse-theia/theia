@@ -209,7 +209,7 @@ export interface TerminalCommandHistoryState {
 
     /**
      * Marks the start of a new command execution.
-     * @param command the decoded command string
+     * @param command the hexencoded command string
      */
     startCommand(command: string): void;
 

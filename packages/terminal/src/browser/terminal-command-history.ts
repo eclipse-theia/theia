@@ -48,7 +48,7 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     }
 
     startCommand(command: string): void {
-        this._currentCommand = command;
+        this._currentCommand = this.decodeHexString(command);
         this.onCommandStartEmitter.fire();
     }
 
@@ -65,6 +65,19 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     dispose(): void {
         this._commandHistory = [];
         this.toDispose.dispose();
+    }
+
+    /**
+     * Decodes a hex-encoded string to UTF-8 using browser-compatible APIs.
+     */
+    protected decodeHexString(hexString: string): string {
+        if (!hexString) {
+            return '';
+        }
+        const hexBytes = new Uint8Array(
+            (hexString.match(/.{1,2}/g) || []).map(byte => parseInt(byte, 16))
+        );
+        return new TextDecoder('utf-8').decode(hexBytes);
     }
 
 }
