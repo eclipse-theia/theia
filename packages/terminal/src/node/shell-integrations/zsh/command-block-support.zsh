@@ -59,7 +59,6 @@ __theia_encode() {
 
 __theia_command_preexec() {
   builtin local entered_command="$1"
-  # builtin printf '\e]133;command_started;command=%s\a' "$(__theia_encode "$entered_command")"
   builtin printf '\e]133;command_started;%s\a' "$(__theia_encode "$entered_command")"
   __theia_command_running="1"
   # Restore the original prompt, our integration will be injected back after command execution in `__theia_update_prompt`.

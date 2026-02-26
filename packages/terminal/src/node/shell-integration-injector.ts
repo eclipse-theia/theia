@@ -29,6 +29,7 @@ export class ShellIntegrationInjector {
     static readonly ZSH_INTEGRATION_DIR = 'zsh';
     static readonly ZDOTDIR_ENV_VAR = 'ZDOTDIR';
     static readonly ZDOTDIR_RELATIVE_DIR = '/zsh/zdotdir/';
+    static readonly ZDOTDIR_ORIGINAL_ENV_VAR = 'THEIA_ORIGINAL_ZDOTDIR';
 
     static injectShellIntegration(options: ShellProcessOptions): ShellProcessOptions {
         const shellExecutable = options.shell ?? ShellProcess.getShellExecutablePath();
@@ -53,6 +54,7 @@ export class ShellIntegrationInjector {
                     ...options.env,
                     [this.ZDOTDIR_ENV_VAR]: zdotdirPath,
                     [this.ZSH_INTEGRATION_ENV_VAR]: zshDirPath,
+                    [this.ZDOTDIR_ORIGINAL_ENV_VAR]: options.env?.ZDOTDIR ?? process.env.ZDOTDIR ?? ''
                 },
             };
         } else {

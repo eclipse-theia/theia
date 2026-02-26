@@ -183,8 +183,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly commandSeparatorDecorations = new DisposableCollection();
 
     protected readonly toDisposeOnCommandHistory = new DisposableCollection();
-    protected commandOutputStartMarker: IMarker | undefined;
-    protected commandStartMarker: IMarker | undefined;
+    protected outputStartMarker: IMarker | undefined;
+    protected promptStartMarker: IMarker | undefined;
 
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
@@ -419,8 +419,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     if (this.commandHistoryState.currentCommand) {
                         this.finishCurrentCommand();
                     }
-                    this.commandStartMarker?.dispose();
-                    this.commandStartMarker = this.term.registerMarker(0);
+                    this.promptStartMarker?.dispose();
+                    this.promptStartMarker = this.term.registerMarker(0);
                     if (this.commandHistoryState.enableCommandSeparator) {
                         this.addCommandSeparator();
                     }
@@ -433,26 +433,27 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected resetCommandOutputMarker(): void {
-        this.commandOutputStartMarker?.dispose();
-        this.commandOutputStartMarker = undefined;
+        this.outputStartMarker?.dispose();
+        this.outputStartMarker = undefined;
     }
 
     protected resetCommandMarker(): void {
-        this.commandStartMarker?.dispose();
-        this.commandStartMarker = undefined;
+        this.promptStartMarker?.dispose();
+        this.promptStartMarker = undefined;
     }
 
     protected startNewCommand(hexEncodedCommand: string): void {
-        this.commandOutputStartMarker?.dispose();
-        this.commandOutputStartMarker = this.term.registerMarker(0);
+        this.outputStartMarker?.dispose();
+        this.outputStartMarker = this.term.registerMarker(0);
         this.commandHistoryState.startCommand(hexEncodedCommand);
     }
 
     protected finishCurrentCommand(): void {
-        const startMarker = this.commandOutputStartMarker;
+        const startMarker = this.outputStartMarker;
         const endMarker = this.term.registerMarker(0);
         const startLine = startMarker?.line ?? -1;
         const endLine = endMarker?.line ?? -1;
+        endMarker.dispose();
 
         let output = '';
         if (startLine >= 0 && endLine >= 0) {
@@ -467,8 +468,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
         this.commandHistoryState.finishCommand(block);
-        this.commandOutputStartMarker = undefined;
-        this.commandStartMarker = undefined;
+        this.outputStartMarker = undefined;
+        this.promptStartMarker = undefined;
     }
 
     private addCommandSeparator(): void {

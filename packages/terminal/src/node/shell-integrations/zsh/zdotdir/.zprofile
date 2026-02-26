@@ -21,7 +21,7 @@
 # https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/zsh/zdotdir/.zprofile
 # *****************************************************************************
 
-# See doc in .zshenv for how IntelliJ injects itself into Zsh startup process.
+# See doc in .zshenv for how Theia injects itself into Zsh startup process.
 
 THEIA_ORIGINAL_FILENAME_TO_SOURCE='.zprofile'
 builtin source "$THEIA_ZSH_DIR/zdotdir/source-original.zsh"
