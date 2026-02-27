@@ -167,40 +167,34 @@ export class DisassemblyViewWidget extends BaseWidget {
                 // draw viewable BP
                 let changed = false;
                 bpEvent.added?.forEach(bp => {
-                    if (InstructionBreakpoint.is(bp)) {
-                        const index = this.getIndexFromAddress(bp.instructionReference);
-                        if (index >= 0) {
-                            this._disassembledInstructions!.row(index).isBreakpointSet = true;
+                    const index = this.getIndexFromAddress(bp.origin.raw.instructionReference);
+                    if (index >= 0) {
+                        this._disassembledInstructions!.row(index).isBreakpointSet = true;
+                        this._disassembledInstructions!.row(index).isBreakpointEnabled = bp.enabled;
+                        changed = true;
+                    }
+                });
+
+                bpEvent.removed?.forEach(bp => {
+                    const index = this.getIndexFromAddress(bp.origin.raw.instructionReference);
+                    if (index >= 0) {
+                        this._disassembledInstructions!.row(index).isBreakpointSet = false;
+                        changed = true;
+                    }
+                });
+
+                bpEvent.changed?.forEach(bp => {
+                    const index = this.getIndexFromAddress(bp.origin.raw.instructionReference);
+                    if (index >= 0) {
+                        if (this._disassembledInstructions!.row(index).isBreakpointEnabled !== bp.enabled) {
                             this._disassembledInstructions!.row(index).isBreakpointEnabled = bp.enabled;
                             changed = true;
                         }
                     }
                 });
 
-                bpEvent.removed?.forEach(bp => {
-                    if (InstructionBreakpoint.is(bp)) {
-                        const index = this.getIndexFromAddress(bp.instructionReference);
-                        if (index >= 0) {
-                            this._disassembledInstructions!.row(index).isBreakpointSet = false;
-                            changed = true;
-                        }
-                    }
-                });
-
-                bpEvent.changed?.forEach(bp => {
-                    if (InstructionBreakpoint.is(bp)) {
-                        const index = this.getIndexFromAddress(bp.instructionReference);
-                        if (index >= 0) {
-                            if (this._disassembledInstructions!.row(index).isBreakpointEnabled !== bp.enabled) {
-                                this._disassembledInstructions!.row(index).isBreakpointEnabled = bp.enabled;
-                                changed = true;
-                            }
-                        }
-                    }
-                });
-
                 // get an updated list so that items beyond the current range would render when reached.
-                this._instructionBpList = this.breakpointManager.getInstructionBreakpoints();
+                this._instructionBpList = this.breakpointManager.getInstructionBreakpoints().map(({ origin }) => origin);
 
                 if (changed) {
                     this._onDidChangeStackFrame.fire();
@@ -343,7 +337,7 @@ export class DisassemblyViewWidget extends BaseWidget {
             let lastLocation: DebugProtocol.Source | undefined;
             let lastLine: IRange | undefined;
             for (let i = 0; i < resultEntries.length; i++) {
-                const found = this._instructionBpList.find(p => p.instructionReference === resultEntries[i].address);
+                const found = this._instructionBpList.find(p => p.raw.instructionReference === resultEntries[i].address);
                 const instruction = resultEntries[i];
 
                 // Forward fill the missing location as detailed in the DAP spec.
@@ -423,7 +417,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         if (this._disassembledInstructions) {
             this._loadingLock = true; // stop scrolling during the load.
             this._disassembledInstructions.splice(0, this._disassembledInstructions.length, [disassemblyNotAvailable]);
-            this._instructionBpList = this.breakpointManager.getInstructionBreakpoints();
+            this._instructionBpList = this.breakpointManager.getInstructionBreakpoints().map(({ origin }) => origin);
             this.loadDisassembledInstructions(targetAddress, -DisassemblyViewWidget.NUM_INSTRUCTIONS_TO_LOAD * 4, DisassemblyViewWidget.NUM_INSTRUCTIONS_TO_LOAD * 8).then(() => {
                 // on load, set the target instruction in the middle of the page.
                 if (this._disassembledInstructions!.length > 0) {

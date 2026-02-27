@@ -28,6 +28,8 @@ import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
 import { DebugSessionOptionsBase } from '../debug-session-options';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager';
+import { DebugExceptionBreakpoint } from './debug-exception-breakpoint';
 import { DebugDataBreakpoint } from '../model/debug-data-breakpoint';
 import { DebugVariable } from '../console/debug-console-items';
 
@@ -71,6 +73,9 @@ export class DebugViewModel implements Disposable {
     @inject(DebugSessionManager)
     protected readonly manager: DebugSessionManager;
 
+    @inject(BreakpointManager)
+    protected readonly breakpointManager: BreakpointManager;
+
     @inject(DebugWatchManager)
     protected readonly watch: DebugWatchManager;
 
@@ -100,9 +105,8 @@ export class DebugViewModel implements Disposable {
             // This ensures threads view updates for all sessions
             this.fireDidChange();
         }));
-        this.toDispose.push(this.manager.onDidChangeBreakpoints(({ session, uri }) => {
-            // Fire for all sessions since we now show breakpoints from all active sessions
-            this.fireDidChangeBreakpoints(uri);
+        this.toDispose.push(this.breakpointManager.onDidChangeBreakpoints(e => {
+            this.fireDidChangeBreakpoints(e.uri);
         }));
         this.toDispose.push(this.manager.onDidResolveLazyVariable(({ session, variable }) => {
             if (session === this.currentSession) {
@@ -118,8 +122,7 @@ export class DebugViewModel implements Disposable {
     }
 
     get currentSession(): DebugSession | undefined {
-        const { currentSession } = this.manager;
-        return currentSession;
+        return this.manager.currentSession;
     }
     set currentSession(currentSession: DebugSession | undefined) {
         this.manager.currentSession = currentSession;
@@ -139,19 +142,24 @@ export class DebugViewModel implements Disposable {
     }
 
     get breakpoints(): DebugSourceBreakpoint[] {
-        return this.manager.getBreakpoints();
+        return this.breakpointManager.getBreakpoints();
     }
 
     get functionBreakpoints(): DebugFunctionBreakpoint[] {
-        return this.manager.getFunctionBreakpoints();
+        return this.breakpointManager.getFunctionBreakpoints();
     }
 
-    get instructionBreakpoints(): DebugInstructionBreakpoint[] {
-        return this.manager.getInstructionBreakpoints();
+    get instructionBreakpoints(): readonly DebugInstructionBreakpoint[] {
+        return this.breakpointManager.getInstructionBreakpoints();
     }
 
-    get dataBreakpoints(): DebugDataBreakpoint[] {
-        return this.manager.getDataBreakpoints(this.currentSession);
+    get exceptionBreakpoints(): readonly DebugExceptionBreakpoint[] {
+        return this.breakpointManager.getExceptionBreakpoints()
+            .filter(candidate => this.currentSession ? candidate.isEnabledForSession(this.currentSession.id) : candidate.isPersistentlyVisible());
+    }
+
+    get dataBreakpoints(): readonly DebugDataBreakpoint[] {
+        return this.breakpointManager.getDataBreakpoints();
     }
 
     async start(options: Partial<Pick<DebugSessionOptionsBase, 'startedByUser'>> = {}): Promise<void> {
