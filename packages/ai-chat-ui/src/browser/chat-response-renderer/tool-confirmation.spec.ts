@@ -16,7 +16,8 @@
 
 import { expect } from 'chai';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
-import { ConfirmationScope, ToolConfirmationCallbacks, ToolConfirmationActionsProps, ToolConfirmationProps } from './tool-confirmation';
+import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
+import { ConfirmationScope, CountdownTimerProps, ToolConfirmationCallbacks, ToolConfirmationActionsProps, ToolConfirmationProps } from './tool-confirmation';
 
 const mockContextMenuRenderer = {} as ContextMenuRenderer;
 
@@ -91,6 +92,20 @@ describe('Tool Confirmation Types', () => {
                 contextMenuRenderer: mockContextMenuRenderer
             };
             expect(props.toolRequest?.confirmAlwaysAllow).to.be.true;
+        });
+    });
+
+    describe('CountdownTimerProps', () => {
+        it('should accept a response with confirmationTimeout', () => {
+            const response = { kind: 'toolCall', confirmationTimeout: 30 } as ToolCallChatResponseContent;
+            const props: CountdownTimerProps = { response };
+            expect(props.response.confirmationTimeout).to.equal(30);
+        });
+
+        it('should accept a response without confirmationTimeout', () => {
+            const response = { kind: 'toolCall' } as ToolCallChatResponseContent;
+            const props: CountdownTimerProps = { response };
+            expect(props.response.confirmationTimeout).to.be.undefined;
         });
     });
 

@@ -1267,6 +1267,41 @@ div:last-child>.theia-ChatNode {
   cursor: not-allowed;
 }
 
+.session-settings-confirmation-timeout {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  margin-bottom: 8px;
+}
+
+.session-settings-timeout-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 22px;
+}
+
+.session-settings-timeout-container label {
+  white-space: nowrap;
+}
+
+.session-settings-timeout-container label.disabled {
+  color: var(--theia-disabledForeground);
+}
+
+.session-settings-timeout-container input[type="number"] {
+  width: 100px;
+  padding: 4px 8px;
+  border: 1px solid var(--theia-input-border);
+  border-radius: 4px;
+  background-color: var(--theia-input-background);
+  color: var(--theia-input-foreground);
+}
+
+.session-settings-timeout-container input[type="number"]:disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: not-allowed;
+}
+
 .session-settings-advanced {
   flex: 1;
   display: flex;
