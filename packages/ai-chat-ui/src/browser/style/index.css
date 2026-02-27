@@ -1319,15 +1319,15 @@ div:last-child>.theia-ChatNode {
   /* Down arrow */
   position: absolute;
   right: var(--theia-ui-padding);
-  top: 50%;
-  transform: translateY(-50%);
+  top: var(--theia-ui-padding);
+  transform: translateY(25%);
   transition: transform 0.2s ease;
   color: var(--theia-descriptionForeground);
   font-size: var(--theia-ui-font-size1);
 }
 
 .delegation-response-details:not([open]) .delegation-summary::before {
-  transform: translateY(-50%) rotate(-90deg);
+  transform: translateY(25%) rotate(-90deg);
   /* Right arrow when closed */
 }
 
@@ -1425,6 +1425,21 @@ div:last-child>.theia-ChatNode {
   display: block;
   margin-bottom: var(--theia-ui-padding);
   color: var(--theia-foreground);
+}
+
+.delegation-pending-confirmations {
+  margin-top: var(--theia-ui-padding);
+  padding-top: var(--theia-ui-padding);
+  border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.delegation-pending-confirmations .theia-tool-confirmation {
+  margin: 0;
+  margin-bottom: var(--theia-ui-padding);
+}
+
+.delegation-pending-confirmations .theia-tool-confirmation:last-child {
+  margin-bottom: 0;
 }
 
 .delegation-response-placeholder {

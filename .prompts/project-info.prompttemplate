@@ -78,6 +78,15 @@ which bundles the frontend via webpack. Without this step, the running browser a
 
 To start Theia as a browser app to show something to the user or for UI testing use the launch config "Start Theia Default (Browser backend, no debug)"
 
+#### Building Applications
+
+Before running or testing the application UI, you must build the application:
+
+- **Browser application:** `npm run build:browser`
+- **Electron application:** `npm run build:electron`
+
+These commands bundle the frontend and must be run after any code changes before launching the application via debug configurations.
+
 ### Preferences
 
 Theia uses a preferences system for user/workspace settings. To add new preferences:
