@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2019 TypeFox and others.
+// Copyright (C) 2019-2026 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -25,17 +25,16 @@ import { codicon } from '@theia/core/lib/browser';
 
 export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint> implements TreeElement {
 
-    constructor(readonly origin: FunctionBreakpoint, options: DebugBreakpointOptions) {
+    static create(origin: FunctionBreakpoint, options: DebugBreakpointOptions): DebugFunctionBreakpoint {
+        return new this(origin, options);
+    }
+
+    private constructor(readonly origin: FunctionBreakpoint, options: DebugBreakpointOptions) {
         super(BreakpointManager.FUNCTION_URI, options);
     }
 
     setEnabled(enabled: boolean): void {
-        const breakpoints = this.breakpoints.getFunctionBreakpoints();
-        const breakpoint = breakpoints.find(b => b.id === this.id);
-        if (breakpoint && breakpoint.enabled !== enabled) {
-            breakpoint.enabled = enabled;
-            this.breakpoints.setFunctionBreakpoints(breakpoints);
-        }
+        this.breakpoints.enableBreakpoint(this, enabled);
     }
 
     protected override isEnabled(): boolean {
@@ -43,16 +42,11 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
     }
 
     protected isSupported(): boolean {
-        const { session } = this;
-        return !session || !!session.capabilities.supportsFunctionBreakpoints;
+        return this.raw ? !!this.raw.supportsFunctionBreakpoints : true;
     }
 
     remove(): void {
-        const breakpoints = this.breakpoints.getFunctionBreakpoints();
-        const newBreakpoints = breakpoints.filter(b => b.id !== this.id);
-        if (breakpoints.length !== newBreakpoints.length) {
-            this.breakpoints.setFunctionBreakpoints(newBreakpoints);
-        }
+        this.breakpoints.removeFunctionBreakpoint(this);
     }
 
     get name(): string {
@@ -97,26 +91,21 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         };
     }
 
-    async open(): Promise<void> {
+    static async editOrCreate(breakpoints: BreakpointManager, existing?: DebugFunctionBreakpoint): Promise<void> {
         const input = new SingleTextInputDialog({
             title: nls.localizeByDefault('Add Function Breakpoint'),
             initialValue: this.name
         });
         const newValue = await input.open();
-        if (newValue !== undefined && newValue !== this.name) {
-            const breakpoints = this.breakpoints.getFunctionBreakpoints();
-            const breakpoint = breakpoints.find(b => b.id === this.id);
-            if (breakpoint) {
-                if (breakpoint.raw.name !== newValue) {
-                    breakpoint.raw.name = newValue;
-                    this.breakpoints.setFunctionBreakpoints(breakpoints);
-                }
-            } else {
-                this.origin.raw.name = newValue;
-                breakpoints.push(this.origin);
-                this.breakpoints.setFunctionBreakpoints(breakpoints);
-            }
+        if (!newValue) { return; }
+        if (existing) {
+            breakpoints.updateFunctionBreakpoint(existing, { name: newValue });
+        } else {
+            breakpoints.addFunctionBreakpoint(FunctionBreakpoint.create({ name: newValue }));
         }
     }
 
+    async open(): Promise<void> {
+        DebugFunctionBreakpoint.editOrCreate(this.breakpoints, this);
+    }
 }

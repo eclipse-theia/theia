@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH and others.
+// Copyright (C) 2025-2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -22,14 +22,17 @@ import { DataBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from './debug-breakpoint';
 
 export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
+
+    static create(origin: DataBreakpoint, options: DebugBreakpointOptions): DebugDataBreakpoint {
+        return new this(origin, options);
+    }
+
     constructor(readonly origin: DataBreakpoint, options: DebugBreakpointOptions) {
         super(BreakpointManager.DATA_URI, options);
     }
 
     setEnabled(enabled: boolean): void {
-        if (enabled !== this.origin.enabled) {
-            this.breakpoints.updateDataBreakpoint(this.origin.id, { enabled });
-        }
+        this.breakpoints.enableBreakpoint(this, enabled);
     }
 
     protected override isEnabled(): boolean {
@@ -37,11 +40,11 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
     }
 
     protected isSupported(): boolean {
-        return Boolean(this.session?.capabilities.supportsDataBreakpoints);
+        return this.raw ? !!this.raw.supportsDataBreakpoints : true;
     }
 
     remove(): void {
-        this.breakpoints.removeDataBreakpoint(this.origin.id);
+        this.breakpoints.removeDataBreakpoint(this);
     }
 
     protected doRender(): React.ReactNode {

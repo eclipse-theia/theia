@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH and others.
+// Copyright (C) 2025-2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -95,7 +95,7 @@ export class AddOrEditDataBreakpointAddress implements CommandHandler {
 
         const src: DataBreakpointSource = { type: DataBreakpointSourceType.Address, ...range };
         if (existingBreakpoint) {
-            this.breakpointManager.removeDataBreakpoint(existingBreakpoint.id);
+            this.breakpointManager.removeDataBreakpoint(existingBreakpoint);
         }
 
         this.breakpointManager.addDataBreakpoint(DataBreakpoint.create({ dataId: info.dataId, accessType }, { ...info, canPersist: true }, src));
