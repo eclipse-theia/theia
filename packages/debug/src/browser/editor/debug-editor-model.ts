@@ -64,7 +64,18 @@ export class DebugEditorModel implements Disposable {
 
     protected editorDecorations: string[] = [];
 
-    protected updatingDecorations = false;
+    /**
+     * Set during `render()` to prevent `onDidChangeDecorations` → `updateBreakpoints()`
+     * from reading back the decoration positions we just wrote, which would produce
+     * a spurious or circular `setBreakpoints` call.
+     */
+    protected ignoreDecorationsChangedEvent = false;
+
+    /**
+     * Set during `updateBreakpoints()` to prevent the resulting
+     * `onDidChangeBreakpoints` from re-entering `render()`.
+     */
+    protected ignoreBreakpointsChangeEvent = false;
     protected toDisposeOnModelChange = new DisposableCollection();
 
     @inject(DebugHoverWidget)
@@ -112,7 +123,9 @@ export class DebugEditorModel implements Disposable {
             this.toDisposeOnUpdate,
             Disposable.create(() => this.toDisposeOnModelChange.dispose()),
             this.breakpoints.onDidChangeBreakpoints(event => {
-                this.render();
+                if (!this.ignoreBreakpointsChangeEvent) {
+                    this.render();
+                }
                 this.closeBreakpointIfAffected(event);
             }),
         ]);
@@ -235,8 +248,13 @@ export class DebugEditorModel implements Disposable {
     }
 
     render(): void {
-        this.renderBreakpoints();
-        this.renderCurrentBreakpoints();
+        this.ignoreDecorationsChangedEvent = true;
+        try {
+            this.renderBreakpoints();
+            this.renderCurrentBreakpoints();
+        } finally {
+            this.ignoreDecorationsChangedEvent = false;
+        }
     }
     protected renderBreakpoints(): void {
         const breakpoints = this.breakpoints.getBreakpoints(this.uri);
@@ -299,11 +317,16 @@ export class DebugEditorModel implements Disposable {
     protected updateBreakpoints(): void {
         if (this.areBreakpointsAffected()) {
             const breakpoints = this.createBreakpoints();
-            this.breakpoints.setBreakpoints(this.uri, breakpoints);
+            this.ignoreBreakpointsChangeEvent = true;
+            try {
+                this.breakpoints.setBreakpoints(this.uri, breakpoints);
+            } finally {
+                this.ignoreBreakpointsChangeEvent = false;
+            }
         }
     }
     protected areBreakpointsAffected(): boolean {
-        if (this.updatingDecorations || !this.editor.getControl().getModel()) {
+        if (this.ignoreDecorationsChangedEvent || !this.editor.getControl().getModel()) {
             return false;
         }
         for (const decoration of this.breakpointDecorations) {
@@ -473,12 +496,7 @@ export class DebugEditorModel implements Disposable {
     }
 
     protected deltaDecorations(oldDecorations: string[], newDecorations: monaco.editor.IModelDeltaDecoration[]): string[] {
-        this.updatingDecorations = true;
-        try {
-            return this.editor.getControl().deltaDecorations(oldDecorations, newDecorations);
-        } finally {
-            this.updatingDecorations = false;
-        }
+        return this.editor.getControl().deltaDecorations(oldDecorations, newDecorations);
     }
 
     static STICKINESS = monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges;
