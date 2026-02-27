@@ -25,4 +25,4 @@ export * from './not-available-toolcall-renderer';
 export * from './thinking-part-renderer';
 export * from './progress-part-renderer';
 export * from './tool-confirmation';
-export * from './delegation-response-renderer';
+export * from './delegation-tool-renderer';

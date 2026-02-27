@@ -29,11 +29,12 @@ import {
     ChatSession,
     ChatRequestInvocation,
 } from '../common';
-import { DelegationResponseContent } from './delegation-response-content';
 
 @injectable()
 export class AgentDelegationTool implements ToolProvider {
     static ID = AGENT_DELEGATION_FUNCTION_ID;
+
+    readonly pendingDelegations = new Map<string, { agentName: string; prompt: string; invocation: ChatRequestInvocation }>();
 
     @inject(ChatAgentServiceFactory)
     protected readonly getChatAgentService: () => ChatAgentService;
@@ -71,6 +72,10 @@ export class AgentDelegationTool implements ToolProvider {
                 return this.delegateToAgent(arg_string, ctx);
             },
         };
+    }
+
+    getDelegation(toolCallId: string): { agentName: string; prompt: string; invocation: ChatRequestInvocation } | undefined {
+        return this.pendingDelegations.get(toolCallId);
     }
 
     private async delegateToAgent(
@@ -163,11 +168,14 @@ export class AgentDelegationTool implements ToolProvider {
             }
 
             if (response) {
-                // Add the response content immediately to enable streaming
-                // The renderer will handle the streaming updates
-                ctx.response.response.addContent(
-                    new DelegationResponseContent(agent.name, prompt, response)
-                );
+                // Store the invocation in the registry so the renderer can access it
+                if (ctx.toolCallId) {
+                    this.pendingDelegations.set(ctx.toolCallId, {
+                        agentName: agent.name,
+                        prompt,
+                        invocation: response
+                    });
+                }
 
                 try {
                     // Wait for completion to return the final result as tool output
@@ -184,7 +192,7 @@ export class AgentDelegationTool implements ToolProvider {
                     return stringResult;
                 } catch (completionError) {
                     if (
-                        completionError.message &&
+                        completionError instanceof Error &&
                         completionError.message.includes('cancelled')
                     ) {
                         return 'Operation cancelled by user';
