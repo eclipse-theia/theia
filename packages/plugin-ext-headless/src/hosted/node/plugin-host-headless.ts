@@ -20,6 +20,17 @@ import { ProcessTerminatedMessage, ProcessTerminateMessage } from '@theia/plugin
 import { HeadlessPluginHostRPC } from './plugin-host-headless-rpc';
 import pluginHostModule from './plugin-host-headless-module';
 
+// Workaround: Node 21+ defines globalThis.navigator, which breaks VS Code
+// extensions that use its absence to detect a Node.js environment.
+// Unless explicitly opted in via THEIA_SUPPORT_NODE_GLOBAL_NAVIGATOR=true,
+// override it with a getter that returns undefined.
+if (process.env['THEIA_SUPPORT_NODE_GLOBAL_NAVIGATOR'] !== 'true') {
+    Object.defineProperty(globalThis, 'navigator', {
+        get: () => undefined,
+        configurable: true,
+    });
+}
+
 const banner = `HEADLESS_PLUGIN_HOST(${process.pid}):`;
 console.log(banner, 'Starting instance');
 

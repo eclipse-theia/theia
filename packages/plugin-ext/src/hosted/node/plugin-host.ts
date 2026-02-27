@@ -23,6 +23,17 @@ import { PluginHostRPC } from './plugin-host-rpc';
 import pluginHostModule from './plugin-host-module';
 import { URI } from '../../plugin/types-impl';
 
+// Workaround: Node 21+ defines globalThis.navigator, which breaks VS Code
+// extensions that use its absence to detect a Node.js environment.
+// Unless explicitly opted in via THEIA_SUPPORT_NODE_GLOBAL_NAVIGATOR=true,
+// override it with a getter that returns undefined.
+if (process.env['THEIA_SUPPORT_NODE_GLOBAL_NAVIGATOR'] !== 'true') {
+    Object.defineProperty(globalThis, 'navigator', {
+        get: () => undefined,
+        configurable: true,
+    });
+}
+
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
 // override exit() function, to do not allow plugin kill this node
