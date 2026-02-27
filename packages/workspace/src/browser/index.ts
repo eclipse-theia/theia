@@ -21,3 +21,4 @@ export * from './workspace-frontend-contribution';
 export * from './workspace-frontend-module';
 export * from './workspace-trust-service';
 export * from './metadata-storage';
+export * from './workspace-search-filter-service';
