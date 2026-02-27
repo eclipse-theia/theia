@@ -25,11 +25,7 @@ import { BaseBreakpoint } from '../breakpoint/breakpoint-marker';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { nls } from '@theia/core';
 
-export class DebugBreakpointData {
-    readonly raw?: DebugProtocol.Breakpoint;
-}
-
-export class DebugBreakpointOptions {
+export interface DebugBreakpointOptions {
     readonly labelProvider: LabelProvider;
     readonly breakpoints: BreakpointManager;
     readonly openerService: OpenerService;
@@ -55,7 +51,12 @@ export interface BPSessionData extends BPCapabilities, DebugProtocol.Breakpoint 
     sessionId: string;
 }
 
-export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint> extends DebugBreakpointOptions implements TreeElement {
+export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint> implements TreeElement {
+
+    readonly labelProvider: LabelProvider;
+    readonly breakpoints: BreakpointManager;
+    readonly openerService: OpenerService;
+    readonly commandService: CommandService;
 
     protected _raw?: BPSessionData;
     protected readonly sessionData = new Map<string, BPSessionData>();
@@ -65,8 +66,10 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         readonly uri: URI,
         options: DebugBreakpointOptions
     ) {
-        super();
-        Object.assign(this, options);
+        this.labelProvider = options.labelProvider;
+        this.breakpoints = options.breakpoints;
+        this.openerService = options.openerService;
+        this.commandService = options.commandService;
     }
 
     abstract get origin(): T;
@@ -77,6 +80,9 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
 
     update(sessionId: string, data?: Omit<BPSessionData, 'sessionId'>): void {
         if (!data) {
+            if (!this.sessionData.has(sessionId)) {
+                return;
+            }
             this.sessionData.delete(sessionId);
         } else {
             const toSet = { ...data, sessionId };
@@ -86,9 +92,15 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         this.sessionData.forEach(bp => bp.verified && verifiedLocations.set(`${bp.line}:${bp.column}:${bp.instructionReference}`, bp));
         if (verifiedLocations.size === 1) {
             this._raw = verifiedLocations.values().next().value;
-        } else if (verifiedLocations.size) {
-            this._raw = undefined;
+        } else if (verifiedLocations.size === 0) {
+            // No session has verified; pick the first session's data (if any) so
+            // that capability flags and unverified messages are still available.
+            this._raw = this.sessionData.values().next().value;
         } else {
+            // Multiple sessions verified at the same location collapse to one
+            // entry in verifiedLocations (size === 1 above). If we get here,
+            // sessions disagree on the verified location. Pick the first
+            // session's data rather than hiding everything.
             this._raw = this.sessionData.values().next().value;
         }
     }

@@ -185,13 +185,15 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
         const updatedUris = new Map<string, DebugBreakpoint[]>();
         for (const bp of this.allBreakpoints()) {
             if (!bps) {
-                MapUtils.addOrInsertWith(updatedUris, bp.uri.toString(), bp);
+                // Clearing session data: bp.update will short-circuit if this
+                // session never contributed data, so iterating all is cheap.
                 bp.update(sessionId, undefined);
+                MapUtils.addOrInsertWith(updatedUris, bp.uri.toString(), bp);
             } else {
                 const dataForBp = bps.get(bp.id);
                 if (!dataForBp) { continue; }
-                MapUtils.addOrInsertWith(updatedUris, bp.uri.toString(), bp);
                 bp.update(sessionId, { ...bpCapabilities, ...dataForBp });
+                MapUtils.addOrInsertWith(updatedUris, bp.uri.toString(), bp);
             }
         }
         for (const changed of updatedUris.values()) {
@@ -237,29 +239,49 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
                 didChange ||= this.doEnableBreakpoint(marker.data, enabled);
             }
             if (didChange) {
+                const changed = markers.map(m => m.data);
                 this.fireOnDidChangeMarkers(uri);
+                this.onDidChangeBreakpointsEmitter.fire({ uri, added: [], removed: [], changed });
             }
         }
         let didChangeFunction = false;
-        for (const breakpoint of (this.getFunctionBreakpoints() as DebugBreakpoint[]).concat(this.getInstructionBreakpoints())) {
-            if (breakpoint.enabled !== enabled) {
+        for (const breakpoint of this.functionBreakpoints) {
+            if (breakpoint.origin.enabled !== enabled) {
                 breakpoint.origin.enabled = enabled;
                 didChangeFunction = true;
-
             }
         }
         if (didChangeFunction) {
             this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
+            this.onDidChangeFunctionBreakpointsEmitter.fire({
+                uri: BreakpointManager.FUNCTION_URI, added: [], removed: [], changed: [...this.functionBreakpoints]
+            });
+        }
+        let didChangeInstruction = false;
+        for (const breakpoint of this.instructionBreakpoints) {
+            if (breakpoint.origin.enabled !== enabled) {
+                breakpoint.origin.enabled = enabled;
+                didChangeInstruction = true;
+            }
+        }
+        if (didChangeInstruction) {
+            this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
+            this.onDidChangeInstructionBreakpointsEmitter.fire({
+                uri: BreakpointManager.INSTRUCTION_URI, added: [], removed: [], changed: [...this.instructionBreakpoints]
+            });
         }
         let didChangeData = false;
         for (const breakpoint of this.dataBreakpoints) {
-            if (breakpoint.enabled !== enabled) {
+            if (breakpoint.origin.enabled !== enabled) {
                 breakpoint.origin.enabled = enabled;
                 didChangeData = true;
             }
         }
         if (didChangeData) {
             this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
+            this.onDidChangeDataBreakpointsEmitter.fire({
+                uri: BreakpointManager.DATA_URI, added: [], removed: [], changed: [...this.dataBreakpoints]
+            });
         }
     }
 
@@ -414,6 +436,9 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
                 this.fireOnDidChangeMarkers(new URI(uri));
             }
             this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
+            this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
+            this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
+            this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
         }
     }
 
@@ -442,6 +467,13 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
 
     updateExceptionBreakpointVisibility(sessionId: string): void {
         this.doUpdateExceptionBreakpointVisibility(sessionId);
+        this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
+    }
+
+    clearExceptionSessionEnablement(sessionId: string): void {
+        for (const bp of this.exceptionBreakpoints) {
+            bp.setSessionEnablement(sessionId, false);
+        }
         this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
     }
 
@@ -686,22 +718,4 @@ export namespace BreakpointManager {
         instructionBreakpoints?: InstructionBreakpoint[];
         dataBreakpoints?: DataBreakpoint[];
     }
-}
-
-export function diff<T>(prevs: T[], nexts: T[], toKey: (member: T) => string): { added: T[], removed: T[], changed: T[] } {
-    const old = new Map(prevs.map(item => [toKey(item), item]));
-    const current = new Map(nexts.map(item => [toKey(item), item]));
-    const added = [];
-    const changed = [];
-    for (const [id, next] of current.entries()) {
-        const prev = old.get(id);
-        if (prev) {
-            changed.push(prev);
-        } else {
-            added.push(next);
-        }
-        old.delete(id);
-    }
-    const removed = Array.from(old.values());
-    return { added, removed, changed };
 }

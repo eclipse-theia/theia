@@ -471,6 +471,7 @@ export class DebugSessionManager {
         if (this.remove(session.id)) {
             this.onDidDestroyDebugSessionEmitter.fire(session);
             this.breakpoints.updateSessionData(session.id, session.capabilities);
+            this.breakpoints.clearExceptionSessionEnablement(session.id);
         }
     }
 
