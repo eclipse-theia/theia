@@ -91,6 +91,7 @@ import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-windo
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
 import { CustomEditorNavigationContribution } from './custom-editors/custom-editor-navigation-contribution';
 import { bindWebviewPreferences } from '../common/webview-preferences';
+import { bindPluginHostEnvironmentPreferences } from '../common/plugin-host-environment-preferences';
 import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
 import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
 import { WorkspaceRestriction, WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
@@ -184,6 +185,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     })).inSingletonScope();
 
     bindWebviewPreferences(bind);
+    bindPluginHostEnvironmentPreferences(bind);
     bind(WebviewFrontendPreferenceContribution).toSelf().inSingletonScope();
     bind(PreferenceContribution).toService(WebviewFrontendPreferenceContribution);
     bind(WebviewEnvironment).toSelf().inSingletonScope();
