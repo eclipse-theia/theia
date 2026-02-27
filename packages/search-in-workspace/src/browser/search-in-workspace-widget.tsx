@@ -202,6 +202,12 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             replaceHistoryState: this.replaceRef.current?.state,
             includeHistoryState: this.includeRef.current?.state,
             excludeHistoryState: this.excludeRef.current?.state,
+            // For compatibility in case of downgrade to an earlier Theia version that expects to find this state
+            includeIgnoredState: {
+                ...this.useExcludeSettingsState,
+                enabled: !this.useExcludeSettingsState.enabled,
+                title: nls.localize('theia/search-in-workspace/includeIgnoredFiles', 'Include Ignored Files')
+            },
         };
     }
 
