@@ -52,10 +52,10 @@ jobs:
           # Required for lerna to determine the version of the next package.
           fetch-depth: 0
 
-      - name: Use Node.js 22.x
+      - name: Use Node.js 24.x
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
-          node-version: 22.x
+          node-version: 24.x
           registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.13

@@ -12,7 +12,7 @@
     "@theia/re-exports": "1.69.0"
   },
   "peerDependencies": {
-    "electron": "38.4.0"
+    "electron": "39.7.0"
   },
   "theiaReExports": {
     "shared": {
