@@ -31,7 +31,7 @@ export class DebugBreakpointOpener implements OpenHandler {
     readonly id = 'debug-breakpoint-opener';
 
     canHandle(uri: URI, options?: OpenerOptions | undefined): MaybePromise<number> {
-        return uri.scheme === DEBUG_BREAKPOINT_SCHEME ? 100 : -1;
+        return uri.scheme === DEBUG_BREAKPOINT_SCHEME ? 150 : -1;
     }
 
     open(uri: URI, options?: OpenerOptions | undefined): MaybePromise<object | undefined> {
