@@ -54,6 +54,7 @@ export enum ToolConfirmationMode {
 }
 
 export const TOOL_CONFIRMATION_PREFERENCE = 'ai-features.chat.toolConfirmation';
+export const TOOL_CONFIRMATION_TIMEOUT_PREFERENCE = 'ai-features.chat.toolConfirmationTimeout';
 
 export const chatToolPreferences: PreferenceSchema = {
     properties: {
@@ -73,10 +74,20 @@ export const chatToolPreferences: PreferenceSchema = {
                 'Configure confirmation behavior for different tools. Key is the tool ID, value is the confirmation mode. ' +
                 'Use "*" as the key to set a global default for all tools.'),
             title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [TOOL_CONFIRMATION_TIMEOUT_PREFERENCE]: {
+            type: 'number',
+            default: 0,
+            minimum: 0,
+            description: nls.localize('theia/ai/chat/toolConfirmationTimeout/description',
+                'Timeout in seconds for tool confirmation dialogs. When set to a positive value, tool confirmations will automatically be denied ' +
+                'after the specified duration. Set to 0 to disable (default).'),
+            title: AI_CORE_PREFERENCES_TITLE,
         }
     }
 };
 
 export interface ChatToolConfiguration {
     [TOOL_CONFIRMATION_PREFERENCE]: { [toolId: string]: ToolConfirmationMode };
+    [TOOL_CONFIRMATION_TIMEOUT_PREFERENCE]: number;
 }

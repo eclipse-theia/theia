@@ -19,7 +19,7 @@ import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
-import { ToolConfirmationMode, ChatToolPreferences } from '../common/chat-tool-preferences';
+import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 
 /**
@@ -64,6 +64,13 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     default: {
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
 
+                        // Session setting overrides global preference
+                        const sessionTimeout = request.session.settings?.commonSettings?.confirmationTimeout;
+                        const timeoutSeconds = sessionTimeout !== undefined && sessionTimeout > 0
+                            ? sessionTimeout
+                            : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
+                        toolCallContent.confirmationTimeout = timeoutSeconds;
+
                         // Check for auto-action hook
                         const autoAction = toolRequest.checkAutoAction?.(arg_string);
 
@@ -77,7 +84,27 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                             toolCallContent.requestUserConfirmation();
                         }
 
-                        const confirmed = await toolCallContent.confirmed;
+                        let confirmed: boolean;
+                        if (timeoutSeconds > 0) {
+                            let timeoutId: ReturnType<typeof setTimeout> | undefined;
+                            try {
+                                const timeoutPromise = new Promise<boolean>(resolve => {
+                                    timeoutId = setTimeout(() => {
+                                        if (!toolCallContent.finished) {
+                                            toolCallContent.deny(`Confirmation timed out after ${timeoutSeconds} seconds`);
+                                        }
+                                        resolve(false);
+                                    }, timeoutSeconds * 1000);
+                                });
+                                confirmed = await Promise.race([toolCallContent.confirmed, timeoutPromise]);
+                            } finally {
+                                if (timeoutId !== undefined) {
+                                    clearTimeout(timeoutId);
+                                }
+                            }
+                        } else {
+                            confirmed = await toolCallContent.confirmed;
+                        }
 
                         if (confirmed) {
                             const result = await toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContent.id)));

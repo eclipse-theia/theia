@@ -217,6 +217,8 @@ export interface CommonChatSessionSettings {
      * These are processed by Theia and converted to provider-specific formats.
      */
     thinkingMode?: ThinkingModeSettings;
+    /** Per-session tool confirmation timeout in seconds. Overrides the global preference when set. */
+    confirmationTimeout?: number;
 }
 
 export interface ChatSessionSettings {
@@ -529,6 +531,8 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     arguments?: string;
     finished: boolean;
     result?: ToolCallResult;
+    /** Timeout in seconds for confirmation dialogs. 0 means no timeout. */
+    confirmationTimeout?: number;
     confirmed: Promise<boolean>;
     /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
     needsUserConfirmation: Promise<void>;
@@ -2232,6 +2236,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
     protected _data?: Record<string, string>;
+    protected _confirmationTimeout?: number;
     protected _needsUserConfirmation: Promise<void>;
     protected _needsUserConfirmationResolver?: () => void;
     protected _confirmed: Promise<boolean>;
@@ -2275,6 +2280,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
 
     get data(): Record<string, string> | undefined {
         return this._data;
+    }
+
+    get confirmationTimeout(): number | undefined {
+        return this._confirmationTimeout;
+    }
+
+    set confirmationTimeout(value: number | undefined) {
+        this._confirmationTimeout = value;
     }
 
     get confirmed(): Promise<boolean> {
