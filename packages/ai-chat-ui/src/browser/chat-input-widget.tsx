@@ -1211,7 +1211,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 // Disable code lens and inlay hints to avoid console errors from other contributions
                 codeLens: false,
                 inlayHints: { enabled: 'off' },
-                hover: { enabled: true },
+                hover: { enabled: 'on' },
                 autoSizing: false, // we handle the sizing ourselves
                 scrollBeyondLastLine: false,
                 scrollBeyondLastColumn: 0,

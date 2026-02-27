@@ -47,6 +47,7 @@ import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/h
 import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
 import { Severity } from '@theia/core/lib/common/severity';
 import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 
 /**
  * Converts Theia's {@link Severity} to Monaco's {@link MonacoSeverity}.
@@ -272,7 +273,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 // @monaco-uplift: not sure what to do here
             }
         };
-        this.controller = new QuickInputController(options, layoutService, instantiationService, contextKeyService, storageService);
+        const contextMenuService = StandaloneServices.get(IContextMenuService);
+        this.controller = new QuickInputController(options, layoutService, instantiationService, contextKeyService, storageService, contextMenuService);
         this.updateLayout();
     }
 

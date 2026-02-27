@@ -241,7 +241,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
      */
     protected suppressEditorHover(): void {
         const codeEditor = this.editor.getControl();
-        codeEditor.updateOptions({ hover: { enabled: false } });
+        codeEditor.updateOptions({ hover: { enabled: 'off' } });
         this.suppressEditorHoverToDispose.push(Disposable.create(() => {
             const model = codeEditor.getModel();
             const overrides = {

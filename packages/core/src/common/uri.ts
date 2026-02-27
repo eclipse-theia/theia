@@ -269,10 +269,10 @@ export class URI {
 
 export interface UriComponents {
     scheme: string;
-    authority?: string;
-    path?: string;
-    query?: string;
-    fragment?: string;
+    authority: string;
+    path: string;
+    query: string;
+    fragment: string;
     external?: string;
 }
 

@@ -65,6 +65,7 @@ import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
 import { Selection } from '@theia/editor/lib/browser/editor';
 import { IHoverService, WorkbenchHoverDelegate } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
 import { setHoverDelegateFactory } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegateFactory';
+import { IMarkdownRendererService } from '@theia/monaco-editor-core/esm/vs/platform/markdown/browser/markdownRenderer';
 import { MonacoTextModelService } from './monaco-text-model-service';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
@@ -804,7 +805,8 @@ class EmbeddedCodeEditor extends StandaloneCodeEditor {
         @IAccessibilityService accessibilityService: IAccessibilityService,
         @ILanguageConfigurationService languageConfigurationService: ILanguageConfigurationService,
         @ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
-        @IHoverService hoverService: IHoverService
+        @IHoverService hoverService: IHoverService,
+        @IMarkdownRendererService markdownRendererService: IMarkdownRendererService
     ) {
         super(domElement,
             { ...parentEditor.getRawOptions(), overflowWidgetsDomNode: parentEditor.getOverflowWidgetsDomNode() },
@@ -818,7 +820,8 @@ class EmbeddedCodeEditor extends StandaloneCodeEditor {
             notificationService,
             accessibilityService,
             languageConfigurationService,
-            languageFeaturesService);
+            languageFeaturesService,
+            markdownRendererService);
 
         this._parentEditor = parentEditor;
         this._overwriteOptions = options;

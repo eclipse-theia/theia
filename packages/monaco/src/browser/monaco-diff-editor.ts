@@ -26,6 +26,7 @@ import { ICodeEditor, IDiffEditorConstructionOptions } from '@theia/monaco-edito
 import { IActionDescriptor, IStandaloneCodeEditor, IStandaloneDiffEditor, StandaloneCodeEditor, StandaloneDiffEditor2 }
     from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { IEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/config/editorConfiguration';
+import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
 import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffEditor/embeddedDiffEditorWidget';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { ContextKeyValue, IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
@@ -124,6 +125,14 @@ export class MonacoDiffEditor extends MonacoEditor {
         return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
     }
 
+    override handleVisibilityChanged(nowVisible: boolean): void {
+        const isFirstShow = nowVisible && !this.savedViewState;
+        super.handleVisibilityChanged(nowVisible);
+        if (isFirstShow) {
+            this._diffEditor.revealFirstDiff();
+        }
+    }
+
     override readonly onShouldDisplayDirtyDiffChanged = undefined;
     override shouldDisplayDirtyDiff(): boolean {
         return false;
@@ -144,7 +153,7 @@ export class MonacoDiffEditor extends MonacoEditor {
 class EmbeddedDiffEditor extends EmbeddedDiffEditorWidget implements IStandaloneDiffEditor {
 
     protected override _createInnerEditor(instantiationService: IInstantiationService, container: HTMLElement,
-        options: Readonly<IEditorConstructionOptions>): StandaloneCodeEditor {
+        options: Readonly<IEditorConstructionOptions>, _editorWidgetOptions: ICodeEditorWidgetOptions): StandaloneCodeEditor {
         return instantiationService.createInstance(StandaloneCodeEditor, container, options);
     }
 

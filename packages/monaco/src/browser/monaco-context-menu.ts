@@ -37,7 +37,7 @@ export class MonacoContextMenuService implements IContextMenuService {
     };
     protected readonly onDidHideContextMenuEmitter = new Emitter<void>();
     get onDidHideContextMenu(): Event<void> {
-        return this.onDidShowContextMenuEmitter.event;
+        return this.onDidHideContextMenuEmitter.event;
     };
 
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
