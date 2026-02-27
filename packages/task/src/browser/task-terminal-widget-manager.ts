@@ -158,6 +158,7 @@ export class TaskTerminalWidgetManager {
         if (TaskTerminalWidgetOpenerOptions.echoExecutedCommand(openerOptions) &&
             taskInfo && ProcessTaskInfo.is(taskInfo) && taskInfo.command && taskInfo.command.length > 0
         ) {
+            widget.write('\x1b]133;prompt_started\x07');
             widget.writeLine('\x1b[1m> ' + nls.localizeByDefault('Executing task: {0}', taskInfo.command) + ' <\x1b[0m\n');
         }
         return widget;
