@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatSessionSettings } from '@theia/ai-chat';
+import { ChatSessionSettings, CommonChatSessionSettings } from '@theia/ai-chat';
 import { InMemoryResources, URI, nls } from '@theia/core';
 import { AbstractDialog, Message } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
@@ -79,6 +79,60 @@ const ThinkingModeSection: React.FC<ThinkingModeSectionProps> = ({
     </div>
 );
 
+interface ConfirmationTimeoutSectionProps {
+    enabled: boolean;
+    timeoutSeconds: number;
+    onEnabledChange: (enabled: boolean) => void;
+    onTimeoutChange: (seconds: number) => void;
+}
+
+const ConfirmationTimeoutSection: React.FC<ConfirmationTimeoutSectionProps> = ({
+    enabled,
+    timeoutSeconds,
+    onEnabledChange,
+    onTimeoutChange
+}) => (
+    <div className="session-settings-confirmation-timeout">
+        <div className="session-settings-section-header">
+            {nls.localize('theia/ai/session-settings-dialog/confirmationTimeout', 'Confirmation Timeout')}
+        </div>
+        <div className="session-settings-section-note">
+            {nls.localize('theia/ai/session-settings-dialog/confirmationTimeoutNote',
+                'Automatically deny tool confirmations after the specified time. Overrides the global preference for this session.')}
+        </div>
+        <div className="session-settings-checkbox-container">
+            <input
+                type="checkbox"
+                id="confirmation-timeout-enabled"
+                checked={enabled}
+                onChange={e => onEnabledChange(e.target.checked)}
+            />
+            <label htmlFor="confirmation-timeout-enabled">
+                {nls.localize('theia/ai/session-settings-dialog/enableConfirmationTimeout', 'Enable confirmation timeout')}
+            </label>
+        </div>
+        <div className="session-settings-timeout-container">
+            <label
+                htmlFor="confirmation-timeout-seconds"
+                className={!enabled ? 'disabled' : ''}
+            >
+                {nls.localize('theia/ai/session-settings-dialog/timeoutSeconds', 'Timeout (seconds):')}
+            </label>
+            <input
+                type="number"
+                id="confirmation-timeout-seconds"
+                min={1}
+                max={300}
+                step={1}
+                value={timeoutSeconds}
+                placeholder="10"
+                disabled={!enabled}
+                onChange={e => onTimeoutChange(parseInt(e.target.value, 10))}
+            />
+        </div>
+    </div>
+);
+
 interface AdvancedSettingsSectionProps {
     sectionHeader: string;
 }
@@ -103,17 +157,25 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => (
 interface DialogContentProps {
     thinkingEnabled: boolean;
     thinkingBudget: number;
+    confirmationTimeoutEnabled: boolean;
+    confirmationTimeoutSeconds: number;
     errorMessage: string;
     onThinkingEnabledChange: (enabled: boolean) => void;
     onThinkingBudgetChange: (budget: number) => void;
+    onConfirmationTimeoutEnabledChange: (enabled: boolean) => void;
+    onConfirmationTimeoutSecondsChange: (seconds: number) => void;
 }
 
 const DialogContent: React.FC<DialogContentProps> = ({
     thinkingEnabled,
     thinkingBudget,
+    confirmationTimeoutEnabled,
+    confirmationTimeoutSeconds,
     errorMessage,
     onThinkingEnabledChange,
-    onThinkingBudgetChange
+    onThinkingBudgetChange,
+    onConfirmationTimeoutEnabledChange,
+    onConfirmationTimeoutSecondsChange
 }) => (
     <div className="session-settings-container">
         <ThinkingModeSection
@@ -121,6 +183,12 @@ const DialogContent: React.FC<DialogContentProps> = ({
             budgetTokens={thinkingBudget}
             onEnabledChange={onThinkingEnabledChange}
             onBudgetChange={onThinkingBudgetChange}
+        />
+        <ConfirmationTimeoutSection
+            enabled={confirmationTimeoutEnabled}
+            timeoutSeconds={confirmationTimeoutSeconds}
+            onEnabledChange={onConfirmationTimeoutEnabledChange}
+            onTimeoutChange={onConfirmationTimeoutSecondsChange}
         />
         <AdvancedSettingsSection
             sectionHeader={nls.localize('theia/ai/session-settings-dialog/advancedSettings', 'Advanced Settings (JSON)')}
@@ -137,6 +205,9 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
     protected thinkingEnabled: boolean;
     protected thinkingBudget: number;
+
+    protected confirmationTimeoutEnabled: boolean;
+    protected confirmationTimeoutSeconds: number;
 
     protected contentRoot: Root;
     protected editorContainerNode: HTMLDivElement;
@@ -157,6 +228,11 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         // Extract thinking mode settings from commonSettings
         this.thinkingEnabled = this.settings.commonSettings?.thinkingMode?.enabled ?? false;
         this.thinkingBudget = this.settings.commonSettings?.thinkingMode?.budgetTokens ?? 10000;
+
+        // Extract confirmation timeout settings from commonSettings
+        const savedTimeout = this.settings.commonSettings?.confirmationTimeout;
+        this.confirmationTimeoutEnabled = savedTimeout !== undefined && savedTimeout > 0;
+        this.confirmationTimeoutSeconds = savedTimeout !== undefined && savedTimeout > 0 ? savedTimeout : 10;
 
         // Prepare advanced settings (exclude commonSettings from the JSON editor)
         const { commonSettings, ...advancedSettings } = initialSettings ?? {};
@@ -199,9 +275,13 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
             <DialogContent
                 thinkingEnabled={this.thinkingEnabled}
                 thinkingBudget={this.thinkingBudget}
+                confirmationTimeoutEnabled={this.confirmationTimeoutEnabled}
+                confirmationTimeoutSeconds={this.confirmationTimeoutSeconds}
                 errorMessage={this.errorMessage}
                 onThinkingEnabledChange={this.handleThinkingEnabledChange}
                 onThinkingBudgetChange={this.handleThinkingBudgetChange}
+                onConfirmationTimeoutEnabledChange={this.handleConfirmationTimeoutEnabledChange}
+                onConfirmationTimeoutSecondsChange={this.handleConfirmationTimeoutSecondsChange}
             />
         );
     }
@@ -283,15 +363,8 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
     }
 
     protected updateSettings(advancedSettings: { [key: string]: unknown } = {}): void {
-        this.settings = {
-            ...advancedSettings,
-            commonSettings: this.thinkingEnabled ? {
-                thinkingMode: {
-                    enabled: true,
-                    budgetTokens: isNaN(this.thinkingBudget) ? undefined : this.thinkingBudget
-                }
-            } : undefined
-        };
+        this.settings = { ...advancedSettings };
+        this.updateSettingsFromCommonSettings();
     }
 
     protected setErrorButtonState(isError: boolean): void {
@@ -308,25 +381,44 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
     protected handleThinkingEnabledChange = (enabled: boolean): void => {
         this.thinkingEnabled = enabled;
-        this.updateSettingsFromThinkingMode();
+        this.updateSettingsFromCommonSettings();
         this.render();
         this.attachEditorContainer();
     };
 
     protected handleThinkingBudgetChange = (budget: number): void => {
         this.thinkingBudget = budget;
-        this.updateSettingsFromThinkingMode();
+        this.updateSettingsFromCommonSettings();
         this.render();
         this.attachEditorContainer();
     };
 
-    protected updateSettingsFromThinkingMode(): void {
-        this.settings.commonSettings = this.thinkingEnabled ? {
-            thinkingMode: {
+    protected handleConfirmationTimeoutEnabledChange = (enabled: boolean): void => {
+        this.confirmationTimeoutEnabled = enabled;
+        this.updateSettingsFromCommonSettings();
+        this.render();
+        this.attachEditorContainer();
+    };
+
+    protected handleConfirmationTimeoutSecondsChange = (seconds: number): void => {
+        this.confirmationTimeoutSeconds = seconds;
+        this.updateSettingsFromCommonSettings();
+        this.render();
+        this.attachEditorContainer();
+    };
+
+    protected updateSettingsFromCommonSettings(): void {
+        const commonSettings: CommonChatSessionSettings = {};
+        if (this.thinkingEnabled) {
+            commonSettings.thinkingMode = {
                 enabled: true,
                 budgetTokens: isNaN(this.thinkingBudget) ? undefined : this.thinkingBudget
-            }
-        } : undefined;
+            };
+        }
+        if (this.confirmationTimeoutEnabled && !isNaN(this.confirmationTimeoutSeconds) && this.confirmationTimeoutSeconds > 0) {
+            commonSettings.confirmationTimeout = this.confirmationTimeoutSeconds;
+        }
+        this.settings.commonSettings = Object.keys(commonSettings).length > 0 ? commonSettings : undefined;
     }
 
     get value(): ChatSessionSettings {
