@@ -18,6 +18,7 @@ export interface ShellExecutionInput {
     command: string;
     cwd?: string;
     timeout?: number;
+    fullOutput?: boolean;
 }
 
 /**

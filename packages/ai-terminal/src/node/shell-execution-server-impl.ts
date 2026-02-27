@@ -39,6 +39,8 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
         return new Promise<ShellExecutionResult>(resolve => {
             let stdout = '';
             let stderr = '';
+            let stdoutCapped = false;
+            let stderrCapped = false;
             let killed = false;
 
             const childProcess = spawn(command, [], {
@@ -56,12 +58,16 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
             childProcess.stdout?.on('data', (data: Buffer) => {
                 if (stdout.length < MAX_OUTPUT_SIZE) {
                     stdout += data.toString();
+                } else {
+                    stdoutCapped = true;
                 }
             });
 
             childProcess.stderr?.on('data', (data: Buffer) => {
                 if (stderr.length < MAX_OUTPUT_SIZE) {
                     stderr += data.toString();
+                } else {
+                    stderrCapped = true;
                 }
             });
 
@@ -83,6 +89,11 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                     this.canceledExecutions.delete(executionId);
                 }
 
+                const capped = {
+                    stdoutCapped: stdoutCapped || undefined,
+                    stderrCapped: stderrCapped || undefined,
+                };
+
                 if (signal || killed) {
                     if (wasCanceledByUser) {
                         resolve({
@@ -94,6 +105,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                             duration,
                             canceled: true,
                             resolvedCwd,
+                            ...capped,
                         });
                     } else {
                         resolve({
@@ -104,6 +116,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                             error: `Command timed out after ${effectiveTimeout}ms`,
                             duration,
                             resolvedCwd,
+                            ...capped,
                         });
                     }
                 } else if (code === 0) {
@@ -114,6 +127,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                         stderr,
                         duration,
                         resolvedCwd,
+                        ...capped,
                     });
                 } else {
                     resolve({
@@ -123,6 +137,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                         stderr,
                         duration,
                         resolvedCwd,
+                        ...capped,
                     });
                 }
             });
@@ -143,6 +158,8 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                     error: error.message,
                     duration: Date.now() - startTime,
                     resolvedCwd,
+                    stdoutCapped: stdoutCapped || undefined,
+                    stderrCapped: stderrCapped || undefined,
                 });
             });
         });

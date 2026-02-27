@@ -359,6 +359,15 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                         {formatDuration(input.timeout)}
                     </span>
                 )}
+                {input.fullOutput && (
+                    <span
+                        className="shell-execution-tool meta-item"
+                        title={nls.localize('theia/ai-terminal/fullOutput', 'Full output (no truncation)')}
+                    >
+                        <span className={codicon('unfold')} />
+                        {nls.localize('theia/ai-terminal/fullOutputLabel', 'Full Output')}
+                    </span>
+                )}
             </div>
 
             <ShellExecutionConfirmationActions
@@ -831,6 +840,11 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
                             {input.cwd}
                         </MetaRow>
                     )}
+                    {input.fullOutput && (
+                        <MetaRow icon="unfold" label={nls.localize('theia/ai-terminal/fullOutput', 'Full output (no truncation)')}>
+                            {nls.localize('theia/ai-terminal/fullOutputLabel', 'Full Output')}
+                        </MetaRow>
+                    )}
                     {canceledResult?.output && (
                         <OutputBox
                             title={nls.localize('theia/ai-terminal/partialOutput', 'Partial Output')}
@@ -882,6 +896,11 @@ const FinishedUI: React.FC<FinishedUIProps> = ({
                     {(result?.cwd || input.cwd) && (
                         <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
                             {result?.cwd || input.cwd}
+                        </MetaRow>
+                    )}
+                    {input.fullOutput && (
+                        <MetaRow icon="unfold" label={nls.localize('theia/ai-terminal/fullOutput', 'Full output (no truncation)')}>
+                            {nls.localize('theia/ai-terminal/fullOutputLabel', 'Full Output')}
                         </MetaRow>
                     )}
                     {result?.error && (
