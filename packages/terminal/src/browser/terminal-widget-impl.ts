@@ -458,7 +458,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         let output = '';
         if (startLine >= 0 && endLine >= 0) {
             output = this._buffer.getLines(startLine, endLine - startLine, true).join('\n');
-            this.logger.debug('Terminal command result captured:', this._buffer.getLines(0, this._buffer.length));
         }
 
         const block: TerminalBlock = {
