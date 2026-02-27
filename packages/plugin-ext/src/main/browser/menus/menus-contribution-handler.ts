@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher } from '@theia/core';
+import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher, environment } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
@@ -135,7 +135,8 @@ export class MenusContributionPointHandler {
                                         if (bindings.length) {
                                             const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
                                             if (binding) {
-                                                return this.keybindingRegistry.acceleratorFor(binding, '+', true);
+                                                const asciiOnly = environment.electron.is();
+                                                return this.keybindingRegistry.acceleratorFor(binding, '+', asciiOnly);
                                             }
                                         }
                                         return [];

@@ -16,7 +16,7 @@
 
 import { KeybindingRegistry } from '../keybinding';
 import { ContextKeyService } from '../context-key-service';
-import { DisposableCollection, isObject, CommandRegistry, Emitter } from '../../common';
+import { DisposableCollection, isObject, CommandRegistry, Emitter, environment } from '../../common';
 import { CommandMenu, ContextExpressionMatcher, MenuAction, MenuPath } from '../../common/menu/menu-types';
 
 export interface AcceleratorSource {
@@ -86,7 +86,8 @@ export class ActionMenuNode implements CommandMenu {
         if (bindings.length) {
             const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
             if (binding) {
-                return this.keybindingRegistry.acceleratorFor(binding, '+', true);
+                const asciiOnly = environment.electron.is();
+                return this.keybindingRegistry.acceleratorFor(binding, '+', asciiOnly);
             }
         }
         return [];
