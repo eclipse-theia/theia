@@ -595,7 +595,6 @@ export class DebugSession implements CompositeTreeElement {
         this.deferredOnDidConfigureCapabilities.resolve();
     }
 
-
     protected updatingBreakpoints = false;
 
     protected updateBreakpoint(body: DebugProtocol.BreakpointEvent['body']): void {
@@ -663,7 +662,7 @@ export class DebugSession implements CompositeTreeElement {
         const filters: string[] = [];
         const filterOptions: DebugProtocol.ExceptionFilterOptions[] | undefined = this.capabilities.supportsExceptionFilterOptions ? [] : undefined;
         const toSend = this.breakpoints.getExceptionBreakpoints().filter(candidate => candidate.origin.enabled);
-        const updates = new Map<string, DebugProtocol.Breakpoint>
+        const updates = new Map<string, DebugProtocol.Breakpoint>;
         for (const breakpoint of toSend) {
             if (filterOptions) {
                 filterOptions.push({

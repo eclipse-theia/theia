@@ -19,7 +19,6 @@ import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugViewModel } from './debug-view-model';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 
-
 @injectable()
 export class DebugBreakpointsSource extends TreeSource {
 

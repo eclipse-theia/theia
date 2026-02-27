@@ -27,7 +27,13 @@ import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { expect } from 'chai';
-import { BreakpointManager, SourceBreakpointsChangeEvent, FunctionBreakpointsChangeEvent, InstructionBreakpointsChangeEvent, DataBreakpointsChangeEvent } from './breakpoint-manager';
+import {
+    BreakpointManager,
+    SourceBreakpointsChangeEvent,
+    FunctionBreakpointsChangeEvent,
+    InstructionBreakpointsChangeEvent,
+    DataBreakpointsChangeEvent
+} from './breakpoint-manager';
 import {
     SourceBreakpoint, FunctionBreakpoint,
     DataBreakpoint, DataBreakpointSourceType
@@ -44,7 +50,11 @@ const FILE_A = new URI('file:///workspace/a.ts');
 const FILE_B = new URI('file:///workspace/b.ts');
 
 function makeSourceBreakpoint(uri: URI, line: number, opts?: Partial<DebugProtocol.SourceBreakpoint & { id: string; enabled: boolean; column: number }>): SourceBreakpoint {
-    return SourceBreakpoint.create(uri, { line, column: opts?.column, condition: opts?.condition, hitCondition: opts?.hitCondition, logMessage: opts?.logMessage }, opts?.id ? { id: opts.id, uri: uri.toString(), enabled: opts?.enabled ?? true, raw: { line } } as SourceBreakpoint : undefined);
+    return SourceBreakpoint.create(
+        uri,
+        { line, column: opts?.column, condition: opts?.condition, hitCondition: opts?.hitCondition, logMessage: opts?.logMessage },
+        opts?.id ? { id: opts.id, uri: uri.toString(), enabled: opts?.enabled ?? true, raw: { line } } as SourceBreakpoint : undefined
+    );
 }
 
 function makeFunctionBreakpoint(name: string): FunctionBreakpoint {
@@ -104,8 +114,6 @@ function createManager(): { manager: BreakpointManager; storageData: Record<stri
     container.bind(BreakpointManager).toSelf().inSingletonScope();
 
     const manager = container.get(BreakpointManager);
-    // Manually invoke @postConstruct since we're not using the full DI lifecycle
-    (manager as any).init();
 
     return { manager, storageData, fileChangeEmitter };
 }
@@ -836,7 +844,7 @@ describe('BreakpointManager — persistence', () => {
         // Create a fresh manager and load
         const { manager: manager2 } = createManager();
         // Copy stored data to the new manager's storage
-        const freshStorageData = (manager2 as any).storage as StorageService;
+        const freshStorageData = manager2['storage'];
         await freshStorageData.setData('breakpoints', storageData['breakpoints']);
         await manager2.load();
 

@@ -70,7 +70,7 @@ export namespace ExceptionBreakpoint {
             !!left.supportsCondition === !!right.supportsCondition &&
             left.conditionDescription === right.conditionDescription &&
             left.description === right.description
-        )
+        );
     }
 }
 

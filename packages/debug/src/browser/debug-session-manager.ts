@@ -117,7 +117,6 @@ export class DebugSessionManager {
     @inject(DebugService)
     protected readonly debug: DebugService;
 
-
     @inject(BreakpointManager)
     protected readonly breakpoints: BreakpointManager;
 
@@ -592,7 +591,6 @@ export class DebugSessionManager {
         const { currentThread } = this;
         return currentThread && currentThread.topFrame;
     }
-
 
     /**
      * Runs the given tasks.
