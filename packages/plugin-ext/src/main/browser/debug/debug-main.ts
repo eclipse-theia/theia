@@ -234,15 +234,9 @@ export class DebugMainImpl implements DebugMain, Disposable {
     async $addBreakpoints(breakpoints: Breakpoint[]): Promise<void> {
         const newBreakpoints = new Map<string, Breakpoint>();
         breakpoints.forEach(b => newBreakpoints.set(b.id, b));
-        this.breakpointsManager.findMarkers({
-            dataFilter: data => {
-                // install only new breakpoints
-                if (newBreakpoints.has(data.id)) {
-                    newBreakpoints.delete(data.id);
-                }
-                return false;
-            }
-        });
+        for (const bp of this.breakpointsManager.getBreakpoints()) {
+            newBreakpoints.delete(bp.id);
+        }
         const functionBreakpoints = this.breakpointsManager.getFunctionBreakpoints();
         for (const breakpoint of functionBreakpoints) {
             // install only new breakpoints

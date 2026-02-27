@@ -15,11 +15,9 @@
 // *****************************************************************************
 
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
-import { Marker } from '@theia/markers/lib/common/marker';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { isObject, isString, URI } from '@theia/core/lib/common';
 
-export const BREAKPOINT_KIND = 'breakpoint';
 export const DEBUG_BREAKPOINT_SCHEME = 'debug-breakpoint';
 
 export interface BaseBreakpoint {
@@ -43,15 +41,6 @@ export namespace SourceBreakpoint {
                 ...data
             }
         };
-    }
-}
-
-export interface BreakpointMarker extends Marker<SourceBreakpoint> {
-    kind: 'breakpoint'
-}
-export namespace BreakpointMarker {
-    export function is(node: Marker<object>): node is BreakpointMarker {
-        return 'kind' in node && node.kind === BREAKPOINT_KIND;
     }
 }
 

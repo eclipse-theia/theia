@@ -14,14 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as deepEqual from 'fast-deep-equal';
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandService, Emitter, MapUtils } from '@theia/core/lib/common';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { CommandService, Emitter, Event, MapUtils } from '@theia/core/lib/common';
 import { LabelProvider, OpenerService, StorageService } from '@theia/core/lib/browser';
-import { Marker } from '@theia/markers/lib/common/marker';
-import { MarkerManager } from '@theia/markers/lib/browser/marker-manager';
 import URI from '@theia/core/lib/common/uri';
-import { SourceBreakpoint, BREAKPOINT_KIND, ExceptionBreakpoint, FunctionBreakpoint, BaseBreakpoint, InstructionBreakpoint, DataBreakpoint } from './breakpoint-marker';
+import { SourceBreakpoint, ExceptionBreakpoint, FunctionBreakpoint, BaseBreakpoint, InstructionBreakpoint, DataBreakpoint } from './breakpoint-marker';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
@@ -29,6 +26,8 @@ import { DebugExceptionBreakpoint } from '../view/debug-exception-breakpoint';
 import { DebugDataBreakpoint } from '../model/debug-data-breakpoint';
 import { BPCapabilities, DebugBreakpoint, DebugBreakpointOptions } from '../model/debug-breakpoint';
 import { DebugProtocol } from '@vscode/debugprotocol';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileChangeType } from '@theia/filesystem/lib/common/files';
 
 export interface BreakpointsChangeEvent<T extends object> {
     uri: URI
@@ -43,7 +42,7 @@ export type InstructionBreakpointsChangeEvent = BreakpointsChangeEvent<DebugInst
 export type DataBreakpointsChangeEvent = BreakpointsChangeEvent<DebugDataBreakpoint>;
 
 @injectable()
-export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
+export class BreakpointManager {
 
     static EXCEPTION_URI = new URI('debug:exception://');
 
@@ -53,7 +52,11 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
 
     static DATA_URI = new URI('debug:data://');
 
-    protected readonly owner = 'breakpoint';
+    // ── Source breakpoints, keyed by URI string ──
+
+    protected readonly sourceBreakpoints = new Map<string, DebugSourceBreakpoint[]>();
+
+    // ── Injected services ──
 
     @inject(StorageService)
     protected readonly storage: StorageService;
@@ -63,9 +66,17 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
     protected readonly openerService: OpenerService;
     @inject(CommandService)
     protected readonly commandService: CommandService;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
-    getKind(): string {
-        return BREAKPOINT_KIND;
+    // ── Events ──
+
+    protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
+    get onDidChangeMarkers(): Event<URI> {
+        return this.onDidChangeMarkersEmitter.event;
+    }
+    protected fireOnDidChangeMarkers(uri: URI): void {
+        this.onDidChangeMarkersEmitter.fire(uri);
     }
 
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<SourceBreakpointsChangeEvent>();
@@ -80,113 +91,191 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
     protected readonly onDidChangeDataBreakpointsEmitter = new Emitter<DataBreakpointsChangeEvent>();
     readonly onDidChangeDataBreakpoints = this.onDidChangeDataBreakpointsEmitter.event;
 
-    override setMarkers(uri: URI, owner: string, newMarkers: DebugSourceBreakpoint[]): Marker<DebugSourceBreakpoint>[] {
-        const result = this.findMarkers({ uri, owner });
-        const added: DebugSourceBreakpoint[] = [];
-        const removed: DebugSourceBreakpoint[] = [];
-        const changed: DebugSourceBreakpoint[] = [];
-        const oldMarkers = new Map(result.map(({ data }) => [data.id, data]));
-        const ids = new Set<string>();
-        let didChangeMarkers = false;
-        for (const newMarker of newMarkers) {
-            ids.add(newMarker.id);
-            const oldMarker = oldMarkers.get(newMarker.id);
-            if (!oldMarker) {
-                added.push(newMarker);
-            } else {
-                // We emit all existing markers as 'changed', but we only fire an event if something really did change.
-                // We also fire an event if oldMarker === newMarker, as we cannot actually detect a change in this case
-                // (https://github.com/eclipse-theia/theia/issues/12546).
-                didChangeMarkers ||= !!added.length || oldMarker === newMarker || !deepEqual(oldMarker, newMarker);
-                changed.push(newMarker);
+    // ── Cached options object ──
+
+    protected _breakpointOptions: DebugBreakpointOptions | undefined;
+
+    // ── Initialization ──
+
+    @postConstruct()
+    protected init(): void {
+        this.fileService.onDidFilesChange(event => {
+            if (event.gotDeleted()) {
+                for (const uriString of this.sourceBreakpoints.keys()) {
+                    const uri = new URI(uriString);
+                    if (event.contains(uri, FileChangeType.DELETED)) {
+                        this.sourceBreakpoints.delete(uriString);
+                        this.fireOnDidChangeMarkers(uri);
+                    }
+                }
             }
+        });
+    }
+
+    // ── Source breakpoint storage ──
+
+    getBreakpoints(uri?: URI): readonly DebugSourceBreakpoint[] {
+        if (uri) {
+            return this.sourceBreakpoints.get(uri.toString()) ?? [];
         }
-        for (const [id, data] of oldMarkers.entries()) {
-            if (!ids.has(id)) {
-                removed.push(data);
-            }
-        }
-        if (added.length || removed.length || didChangeMarkers) {
-            super.setMarkers(uri, owner, newMarkers);
-            this.onDidChangeBreakpointsEmitter.fire({ uri, added, removed, changed });
+        const result: DebugSourceBreakpoint[] = [];
+        for (const bps of this.sourceBreakpoints.values()) {
+            result.push(...bps);
         }
         return result;
     }
 
-    getBreakpointById(id: string): DebugBreakpoint | undefined {
-        for (const bp of this.allBreakpoints()) {
-            if (bp.id === id) {
-                return bp;
-            }
-        }
+    getUris(): IterableIterator<string> {
+        return this.sourceBreakpoints.keys();
     }
 
-    getLineBreakpoints(uri: URI, line: number): DebugSourceBreakpoint[] {
-        return this.findMarkers({
-            uri,
-            dataFilter: breakpoint => breakpoint.line === line
-        }).map(({ data }) => data);
+    hasBreakpoints(): boolean {
+        return this.sourceBreakpoints.size > 0 || this.functionBreakpoints.length > 0 || this.instructionBreakpoints.length > 0;
     }
 
-    getInlineBreakpoint(uri: URI, line: number, column: number): DebugSourceBreakpoint | undefined {
-        const marker = this.findMarkers({
-            uri,
-            dataFilter: breakpoint => breakpoint.line === line && breakpoint.column === column
-        })[0];
-        return marker && marker.data;
-    }
-
-    getBreakpoints(uri?: URI): DebugSourceBreakpoint[] {
-        return this.findMarkers({ uri }).map(marker => marker.data);
-    }
-
+    /**
+     * Replace the source breakpoints for a URI. Incoming `breakpoints` are
+     * plain `SourceBreakpoint` data; existing `DebugSourceBreakpoint` wrappers
+     * are preserved by ID so that session data survives position changes.
+     */
     setBreakpoints(uri: URI, breakpoints: SourceBreakpoint[]): void {
         const current = this.getBreakpoints(uri);
-        const newBps = breakpoints
-            .sort((a, b) => (a.raw.line - b.raw.line) || ((a.raw.column || 0) - (b.raw.column || 0)))
-            .filter((candidate, index, self) => {
-                const duplicatesPrevious = self[index - 1]?.raw.line === candidate.raw.line && (self[index - 1]?.raw.column ?? 0) === (candidate.raw.column ?? 0);
-                return !duplicatesPrevious;
-            })
-            .map(bp => this.doAddBreakpoint(bp, current)[0]);
-        this.setMarkers(uri, this.owner, newBps);
+        const currentById = new Map(current.map(bp => [bp.id, bp]));
+
+        const sorted = breakpoints
+            .slice()
+            .sort((a, b) => (a.raw.line - b.raw.line) || ((a.raw.column || 0) - (b.raw.column || 0)));
+
+        const seen = new Set<string>();
+        const newBps: DebugSourceBreakpoint[] = [];
+        for (const bp of sorted) {
+            const posKey = `${bp.raw.line}:${bp.raw.column ?? 0}`;
+            if (seen.has(posKey)) { continue; }
+            seen.add(posKey);
+
+            // Prefer matching by ID (preserves identity across position changes).
+            const existing = currentById.get(bp.id);
+            if (existing) {
+                existing.origin.raw = bp.raw;
+                existing.origin.enabled = bp.enabled;
+                newBps.push(existing);
+            } else {
+                newBps.push(this.toDebugSourceBreakpoint(bp));
+            }
+        }
+
+        this.applySourceBreakpoints(uri, newBps, current);
     }
 
     addBreakpoint(breakpoint: SourceBreakpoint): DebugSourceBreakpoint {
         const uri = new URI(breakpoint.uri);
-        const breakpoints = this.getBreakpoints(uri);
-        const [bp, bps] = this.doAddBreakpoint(breakpoint, breakpoints);
-        if (bps !== breakpoints) {
-            this.setMarkers(uri, this.owner, bps);
-        }
+        const current = this.getBreakpoints(uri);
+
+        // Check for positional duplicate.
+        const duplicate = current.find(
+            c => c.line === breakpoint.raw.line && c.column === breakpoint.raw.column
+        );
+        if (duplicate) { return duplicate; }
+
+        const bp = this.toDebugSourceBreakpoint(breakpoint);
+        const newBps = [...current, bp];
+        this.applySourceBreakpoints(uri, newBps, current);
         return bp;
     }
 
-    protected doAddBreakpoint(breakpoint: SourceBreakpoint, current: DebugSourceBreakpoint[]): [DebugSourceBreakpoint, DebugSourceBreakpoint[]] {
-        const wouldDuplicate = current.find(candidate => candidate.line === breakpoint.raw.line && candidate.column === breakpoint.raw.column);
-        if (wouldDuplicate) {
-            return [wouldDuplicate, current];
+    removeBreakpoint(breakpoint: DebugSourceBreakpoint): void {
+        const current = this.getBreakpoints(breakpoint.uri);
+        const index = current.indexOf(breakpoint);
+        if (index === -1) { return; }
+        const retained = [...current.slice(0, index), ...current.slice(index + 1)];
+        this.applySourceBreakpoints(breakpoint.uri, retained, current);
+    }
+
+    /**
+     * Diff `oldBps` → `newBps`, store, fire markers and typed events.
+     * Both arrays must be for the same URI.
+     */
+    protected applySourceBreakpoints(uri: URI, newBps: readonly DebugSourceBreakpoint[], oldBps: readonly DebugSourceBreakpoint[]): void {
+        const oldById = new Map(oldBps.map(bp => [bp.id, bp]));
+        const added: DebugSourceBreakpoint[] = [];
+        const changed: DebugSourceBreakpoint[] = [];
+        let didChange = false;
+        for (const bp of newBps) {
+            const old = oldById.get(bp.id);
+            if (!old) {
+                added.push(bp);
+                didChange = true;
+            } else {
+                changed.push(bp);
+                // Identity match: the wrapper was mutated in place, or the same
+                // object was passed back (editor model position update).
+                // Either way we must re-fire to keep decorations in sync.
+                didChange = true;
+                oldById.delete(bp.id);
+            }
         }
-        const asDebugSource = this.toDebugSourceBreakpoint(breakpoint);
-        const newBreakpoints = [...current, asDebugSource];
-        return [asDebugSource, newBreakpoints];
+        const removed = Array.from(oldById.values());
+        didChange ||= removed.length > 0;
+
+        if (!didChange) { return; }
+
+        if (newBps.length > 0) {
+            this.sourceBreakpoints.set(uri.toString(), [...newBps]);
+        } else {
+            this.sourceBreakpoints.delete(uri.toString());
+        }
+        this.fireOnDidChangeMarkers(uri);
+        this.onDidChangeBreakpointsEmitter.fire({ uri, added, removed, changed });
+    }
+
+    removeBreakpoints(): void {
+        for (const uriString of [...this.sourceBreakpoints.keys()]) {
+            const uri = new URI(uriString);
+            const old = this.sourceBreakpoints.get(uriString) ?? [];
+            this.sourceBreakpoints.delete(uriString);
+            this.fireOnDidChangeMarkers(uri);
+            if (old.length) {
+                this.onDidChangeBreakpointsEmitter.fire({ uri, added: [], removed: old, changed: [] });
+            }
+        }
+        this.setFunctionBreakpoints([]);
+        this.setInstructionBreakpoints([]);
+        this.setDataBreakpoints([]);
+    }
+
+    // ── Query helpers ──
+
+    getLineBreakpoints(uri: URI, line: number): DebugSourceBreakpoint[] {
+        return this.getBreakpoints(uri).filter(bp => bp.line === line);
+    }
+
+    getInlineBreakpoint(uri: URI, line: number, column: number): DebugSourceBreakpoint | undefined {
+        return this.getBreakpoints(uri).find(bp => bp.line === line && bp.column === column);
+    }
+
+    getBreakpointById(id: string): DebugBreakpoint | undefined {
+        for (const bp of this.allBreakpoints()) {
+            if (bp.id === id) { return bp; }
+        }
     }
 
     * allBreakpoints(): IterableIterator<DebugBreakpoint> {
-        yield* this.getBreakpoints();
+        for (const bps of this.sourceBreakpoints.values()) {
+            yield* bps;
+        }
         yield* this.functionBreakpoints;
         yield* this.instructionBreakpoints;
         yield* this.exceptionBreakpoints;
         yield* this.dataBreakpoints;
     }
 
+    // ── Session data ──
+
     updateSessionData(sessionId: string, sessionCapabilities: DebugProtocol.Capabilities, bps?: Map<string, DebugProtocol.Breakpoint>): void {
         const bpCapabilities = this.toBpCapabilities(sessionCapabilities);
         const updatedUris = new Map<string, DebugBreakpoint[]>();
         for (const bp of this.allBreakpoints()) {
             if (!bps) {
-                // Clearing session data: bp.update will short-circuit if this
-                // session never contributed data, so iterating all is cheap.
                 bp.update(sessionId, undefined);
                 MapUtils.addOrInsertWith(updatedUris, bp.uri.toString(), bp);
             } else {
@@ -197,51 +286,71 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
             }
         }
         for (const changed of updatedUris.values()) {
-            const emitter = this.getEmitterForBreakpoint(changed[0]);
-            emitter?.fire({ uri: changed[0].uri, changed, added: [], removed: [] });
+            this.fireTypedBreakpointEvent(changed[0].uri, [], changed, []);
         }
     }
 
     protected toBpCapabilities(capabilities: DebugProtocol.Capabilities): BPCapabilities {
         return {
-            supportsConditionalBreakpoints:
-                !!capabilities.supportsConditionalBreakpoints,
-            supportsHitConditionalBreakpoints:
-                !!capabilities.supportsHitConditionalBreakpoints,
+            supportsConditionalBreakpoints: !!capabilities.supportsConditionalBreakpoints,
+            supportsHitConditionalBreakpoints: !!capabilities.supportsHitConditionalBreakpoints,
             supportsLogPoints: !!capabilities.supportsLogPoints,
-            supportsFunctionBreakpoints:
-                !!capabilities.supportsFunctionBreakpoints,
+            supportsFunctionBreakpoints: !!capabilities.supportsFunctionBreakpoints,
             supportsDataBreakpoints: !!capabilities.supportsDataBreakpoints,
-            supportsInstructionBreakpoints:
-                !!capabilities.supportsInstructionBreakpoints,
+            supportsInstructionBreakpoints: !!capabilities.supportsInstructionBreakpoints,
         };
     }
+
+    // ── Breakpoint construction ──
 
     protected toDebugSourceBreakpoint(source: SourceBreakpoint): DebugSourceBreakpoint {
         return DebugSourceBreakpoint.create(source, this.getBreakpointOptions());
     }
 
     getBreakpointOptions(): DebugBreakpointOptions {
-        return {
-            labelProvider: this.labelProvider,
-            openerService: this.openerService,
-            commandService: this.commandService,
-            breakpoints: this
-        };
+        if (!this._breakpointOptions) {
+            this._breakpointOptions = {
+                labelProvider: this.labelProvider,
+                openerService: this.openerService,
+                commandService: this.commandService,
+                breakpoints: this
+            };
+        }
+        return this._breakpointOptions;
+    }
+
+    // ── Enable / disable ──
+
+    protected _breakpointsEnabled = true;
+
+    get breakpointsEnabled(): boolean {
+        return this._breakpointsEnabled;
+    }
+
+    set breakpointsEnabled(breakpointsEnabled: boolean) {
+        if (this._breakpointsEnabled !== breakpointsEnabled) {
+            this._breakpointsEnabled = breakpointsEnabled;
+            for (const uri of this.getUris()) {
+                this.fireOnDidChangeMarkers(new URI(uri));
+            }
+            this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
+            this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
+            this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
+            this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
+        }
     }
 
     enableAllBreakpoints(enabled: boolean): void {
         for (const uriString of this.getUris()) {
             let didChange = false;
             const uri = new URI(uriString);
-            const markers = this.findMarkers({ uri });
-            for (const marker of markers) {
-                didChange ||= this.doEnableBreakpoint(marker.data, enabled);
+            const bps = this.getBreakpoints(uri);
+            for (const bp of bps) {
+                didChange ||= this.doEnableBreakpoint(bp, enabled);
             }
             if (didChange) {
-                const changed = markers.map(m => m.data);
                 this.fireOnDidChangeMarkers(uri);
-                this.onDidChangeBreakpointsEmitter.fire({ uri, added: [], removed: [], changed });
+                this.onDidChangeBreakpointsEmitter.fire({ uri, added: [], removed: [], changed: [...bps] });
             }
         }
         let didChangeFunction = false;
@@ -285,30 +394,6 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
         }
     }
 
-    updateBreakpoint<U extends BaseBreakpoint, T extends DebugBreakpoint<U>>(bp: T, update: Partial<U['raw']>): void {
-        bp.origin.raw = { ...bp.origin.raw, ...update };
-        this.fireBreakpointChanged(bp);
-    }
-
-    updateFunctionBreakpoint(bp: DebugFunctionBreakpoint, update: Partial<DebugProtocol.FunctionBreakpoint>): void {
-        if (!this.functionBreakpoints.includes(bp)) { return; }
-        const removed: DebugFunctionBreakpoint[] = [];
-        if ('name' in update && !update.name) {
-            throw new Error('Name field of function breakpoint must be populated.');
-        } else if ('name' in update) {
-            this.functionBreakpoints = this.functionBreakpoints.filter(candidate => {
-                if (candidate !== bp && candidate.origin.raw.name === update.name) {
-                    removed.push(candidate);
-                    return false;
-                }
-                return true;
-            });
-        }
-        bp.origin.raw = { ...bp.origin.raw, ...update };
-        this.fireOnDidChangeMarkers(bp.uri);
-        this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: bp.uri, changed: [bp], removed, added: [] });
-    }
-
     enableBreakpoint<T extends DebugBreakpoint>(breakpoint: T, enabled: boolean): void {
         const didChange = this.doEnableBreakpoint(breakpoint, enabled);
         if (didChange) {
@@ -324,16 +409,55 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
         return false;
     }
 
+    // ── Generic update / fire ──
+
+    updateBreakpoint<U extends BaseBreakpoint, T extends DebugBreakpoint<U>>(bp: T, update: Partial<U['raw']>): void {
+        bp.origin.raw = { ...bp.origin.raw, ...update };
+        this.fireBreakpointChanged(bp);
+    }
+
+    fireBreakpointChanged(breakpoint: DebugBreakpoint): void {
+        this.fireOnDidChangeMarkers(breakpoint.uri);
+        this.fireTypedBreakpointEvent(breakpoint.uri, [], [breakpoint], []);
+    }
+
+    protected fireTypedBreakpointEvent(uri: URI, added: DebugBreakpoint[], changed: DebugBreakpoint[], removed: DebugBreakpoint[]): void {
+        // All breakpoints in a single call are the same type (grouped by URI).
+        const sample = added[0] ?? changed[0] ?? removed[0];
+        if (!sample) { return; }
+        if (sample instanceof DebugSourceBreakpoint) {
+            this.onDidChangeBreakpointsEmitter.fire({ uri, added, changed, removed } as SourceBreakpointsChangeEvent);
+        } else if (sample instanceof DebugFunctionBreakpoint) {
+            this.onDidChangeFunctionBreakpointsEmitter.fire({ uri, added, changed, removed } as FunctionBreakpointsChangeEvent);
+        } else if (sample instanceof DebugInstructionBreakpoint) {
+            this.onDidChangeInstructionBreakpointsEmitter.fire({ uri, added, changed, removed } as InstructionBreakpointsChangeEvent);
+        } else if (sample instanceof DebugDataBreakpoint) {
+            this.onDidChangeDataBreakpointsEmitter.fire({ uri, added, changed, removed } as DataBreakpointsChangeEvent);
+        }
+    }
+
+    // ── Bulk remove by ID (plugin API) ──
+
     removeBreakpointsById(ids: string[]): void {
         const toRemove = new Set(ids);
-        const updatedSource = new Map<string, DebugSourceBreakpoint[]>();
-        for (const [uri, collection] of this.getMarkersByUri()) {
-            const current = collection.getMarkers(this.owner);
-            const afterDeletion = current.filter(({ data: { id } }) => !toRemove.has(id)).map(({ data }) => data);
-            if (afterDeletion.length !== current.length) {
-                updatedSource.set(uri, afterDeletion);
+
+        // Source breakpoints
+        for (const [uriString, bps] of this.sourceBreakpoints.entries()) {
+            const retained = bps.filter(bp => !toRemove.has(bp.id));
+            if (retained.length !== bps.length) {
+                const removed = bps.filter(bp => toRemove.has(bp.id));
+                const uri = new URI(uriString);
+                if (retained.length > 0) {
+                    this.sourceBreakpoints.set(uriString, retained);
+                } else {
+                    this.sourceBreakpoints.delete(uriString);
+                }
+                this.fireOnDidChangeMarkers(uri);
+                this.onDidChangeBreakpointsEmitter.fire({ uri, removed, added: [], changed: [] });
             }
         }
+
+        // Function breakpoints
         const functionRemoved: DebugFunctionBreakpoint[] = [];
         this.functionBreakpoints = this.functionBreakpoints.filter(bp => {
             if (toRemove.has(bp.id)) {
@@ -342,6 +466,12 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
             }
             return true;
         });
+        if (functionRemoved.length) {
+            this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
+            this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: BreakpointManager.FUNCTION_URI, removed: functionRemoved, added: [], changed: [] });
+        }
+
+        // Instruction breakpoints
         const instructionRemoved: DebugInstructionBreakpoint[] = [];
         this.instructionBreakpoints = this.instructionBreakpoints.filter(bp => {
             if (toRemove.has(bp.id)) {
@@ -350,6 +480,12 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
             }
             return true;
         });
+        if (instructionRemoved.length) {
+            this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
+            this.onDidChangeInstructionBreakpointsEmitter.fire({ uri: BreakpointManager.INSTRUCTION_URI, removed: instructionRemoved, added: [], changed: [] });
+        }
+
+        // Data breakpoints
         const dataRemoved: DebugDataBreakpoint[] = [];
         this.dataBreakpoints = this.dataBreakpoints.filter(bp => {
             if (toRemove.has(bp.id)) {
@@ -358,89 +494,13 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
             }
             return true;
         });
-        if (functionRemoved.length) {
-            this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
-            this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: BreakpointManager.FUNCTION_URI, removed: functionRemoved, added: [], changed: [] });
-        }
-        if (instructionRemoved.length) {
-            this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
-            this.onDidChangeInstructionBreakpointsEmitter.fire({ uri: BreakpointManager.INSTRUCTION_URI, removed: instructionRemoved, added: [], changed: [] });
-        }
         if (dataRemoved.length) {
             this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
             this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, removed: dataRemoved, added: [], changed: [] });
         }
-        for (const [uri, updatedBps] of updatedSource.entries()) {
-            this.setMarkers(new URI(uri), this.owner, updatedBps);
-        }
     }
 
-    fireBreakpointChanged<T extends DebugBreakpoint>(breakpoint: T): void {
-        this.fireOnDidChangeMarkers(breakpoint.uri);
-        const emitter = this.getEmitterForBreakpoint(breakpoint);
-        emitter?.fire({ uri: breakpoint.uri, changed: [breakpoint], added: [], removed: [] });
-    }
-
-    removeBreakpoint(breakpoint: DebugSourceBreakpoint): void {
-        const bps = this.getBreakpoints(breakpoint.uri);
-        const index = bps.indexOf(breakpoint);
-        if (index === -1) { return; }
-        const retained = [...bps.slice(0, index), ...bps.slice(index + 1)];
-        this.setMarkers(breakpoint.uri, this.owner, retained);
-    }
-
-    removeInstructionBreakpoint(breakpoint: DebugInstructionBreakpoint): void {
-        const index = this.instructionBreakpoints.indexOf(breakpoint);
-        if (index === -1) { return; }
-        const removed = this.instructionBreakpoints.splice(index, 1);
-        this.fireOnDidChangeMarkers(breakpoint.uri);
-        this.onDidChangeInstructionBreakpointsEmitter.fire({ uri: breakpoint.uri, removed, added: [], changed: [] });
-    }
-
-    removeInstructionBreakpointAt(address: string): void {
-        const match = this.instructionBreakpoints.find(candidate => candidate.origin.raw.instructionReference === address);
-        if (match) {
-            this.removeInstructionBreakpoint(match);
-        }
-    }
-
-    removeFunctionBreakpoint(breakpoint: DebugFunctionBreakpoint): void {
-        const index = this.functionBreakpoints.indexOf(breakpoint);
-        if (index === -1) { return; }
-        const removed = this.functionBreakpoints.splice(index, 1);
-        this.fireOnDidChangeMarkers(breakpoint.uri);
-        this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: breakpoint.uri, removed, added: [], changed: [] });
-    }
-
-    protected getEmitterForBreakpoint<T extends DebugBreakpoint>(breakpoint: T): Emitter<BreakpointsChangeEvent<T>> | undefined {
-        return ((this.instructionBreakpoints as DebugBreakpoint[]).includes(breakpoint)
-            ? this.onDidChangeInstructionBreakpointsEmitter
-            : (this.functionBreakpoints as DebugBreakpoint[]).includes(breakpoint)
-                ? this.onDidChangeFunctionBreakpointsEmitter
-                : (this.dataBreakpoints as DebugBreakpoint[]).includes(breakpoint)
-                    ? this.onDidChangeDataBreakpointsEmitter
-                    : (this.getBreakpoints(breakpoint.uri) as DebugBreakpoint[]).includes(breakpoint)
-                        ? this.onDidChangeBreakpointsEmitter
-                        : undefined) as Emitter<BreakpointsChangeEvent<T>> | undefined;
-    }
-
-    protected _breakpointsEnabled = true;
-    get breakpointsEnabled(): boolean {
-        return this._breakpointsEnabled;
-    }
-
-    set breakpointsEnabled(breakpointsEnabled: boolean) {
-        if (this._breakpointsEnabled !== breakpointsEnabled) {
-            this._breakpointsEnabled = breakpointsEnabled;
-            for (const uri of this.getUris()) {
-                this.fireOnDidChangeMarkers(new URI(uri));
-            }
-            this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
-            this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
-            this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
-            this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
-        }
-    }
+    // ── Exception breakpoints ──
 
     protected exceptionBreakpoints = new Array<DebugExceptionBreakpoint>();
 
@@ -483,16 +543,22 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
         }
     }
 
+    // ── Function breakpoints ──
+
     protected functionBreakpoints: DebugFunctionBreakpoint[] = [];
 
-    getFunctionBreakpoints(): DebugFunctionBreakpoint[] {
+    getFunctionBreakpoints(): readonly DebugFunctionBreakpoint[] {
         return this.functionBreakpoints;
     }
 
     setFunctionBreakpoints(functionBreakpoints: FunctionBreakpoint[]): void {
         const oldBreakpoints = new Map(this.functionBreakpoints.map(b => [b.id, b]));
 
-        this.functionBreakpoints = functionBreakpoints.map(bp => this.doAddFunctionBreakpoint(bp)[0]);
+        this.functionBreakpoints = functionBreakpoints.map(bp => {
+            const existing = oldBreakpoints.get(bp.id);
+            if (existing) { return existing; }
+            return DebugFunctionBreakpoint.create(bp, this.getBreakpointOptions());
+        });
         this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
 
         const added: DebugFunctionBreakpoint[] = [];
@@ -516,37 +582,58 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
     }
 
     addFunctionBreakpoint(bp: FunctionBreakpoint): void {
-        const [functionBp, functionBps] = this.doAddFunctionBreakpoint(bp);
-        if (functionBps === this.functionBreakpoints) { return; }
-        this.functionBreakpoints = functionBps;
-        this.fireOnDidChangeMarkers(functionBp.uri);
-        this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: functionBp.uri, added: [functionBp], changed: [], removed: [] });
+        const duplicate = this.functionBreakpoints.find(c => c.origin.raw.name === bp.raw.name);
+        if (duplicate) { return; }
+        const newBp = DebugFunctionBreakpoint.create(bp, this.getBreakpointOptions());
+        this.functionBreakpoints = [...this.functionBreakpoints, newBp];
+        this.fireOnDidChangeMarkers(newBp.uri);
+        this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: newBp.uri, added: [newBp], changed: [], removed: [] });
     }
 
-    protected doAddFunctionBreakpoint(functionBreakpoint: FunctionBreakpoint): [DebugFunctionBreakpoint, DebugFunctionBreakpoint[]] {
-        const wouldDuplicate = this.functionBreakpoints.find(candidate => candidate.origin.raw.name === functionBreakpoint.raw.name);
-        if (wouldDuplicate) {
-            return [wouldDuplicate, this.functionBreakpoints];
+    updateFunctionBreakpoint(bp: DebugFunctionBreakpoint, update: Partial<DebugProtocol.FunctionBreakpoint>): void {
+        if (!this.functionBreakpoints.includes(bp)) { return; }
+        const removed: DebugFunctionBreakpoint[] = [];
+        if ('name' in update && !update.name) {
+            throw new Error('Name field of function breakpoint must be populated.');
+        } else if ('name' in update) {
+            this.functionBreakpoints = this.functionBreakpoints.filter(candidate => {
+                if (candidate !== bp && candidate.origin.raw.name === update.name) {
+                    removed.push(candidate);
+                    return false;
+                }
+                return true;
+            });
         }
-        const newBreakpoint = DebugFunctionBreakpoint.create(functionBreakpoint, this.getBreakpointOptions());
-        return [newBreakpoint, this.functionBreakpoints.concat(newBreakpoint)];
+        bp.origin.raw = { ...bp.origin.raw, ...update };
+        this.fireOnDidChangeMarkers(bp.uri);
+        this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: bp.uri, changed: [bp], removed, added: [] });
     }
+
+    removeFunctionBreakpoint(breakpoint: DebugFunctionBreakpoint): void {
+        const index = this.functionBreakpoints.indexOf(breakpoint);
+        if (index === -1) { return; }
+        const removed = this.functionBreakpoints.splice(index, 1);
+        this.fireOnDidChangeMarkers(breakpoint.uri);
+        this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: breakpoint.uri, removed, added: [], changed: [] });
+    }
+
+    // ── Instruction breakpoints ──
 
     protected instructionBreakpoints: DebugInstructionBreakpoint[] = [];
 
     getInstructionBreakpoints(): ReadonlyArray<DebugInstructionBreakpoint> {
-        return Object.freeze(this.instructionBreakpoints.slice());
-    }
-
-    hasBreakpoints(): boolean {
-        return Boolean(this.getUris().next().value || this.functionBreakpoints.length || this.instructionBreakpoints.length);
+        return this.instructionBreakpoints;
     }
 
     protected setInstructionBreakpoints(newBreakpoints: InstructionBreakpoint[]): void {
-        const oldBreakpoints = new Map(this.instructionBreakpoints.map(breakpoint => [breakpoint.id, breakpoint]));
-        const currentBreakpoints = newBreakpoints.map(bp => this.doAddInstructionBreakpoint(bp, this.instructionBreakpoints)[0]);
-        const added = [];
-        const changed = [];
+        const oldBreakpoints = new Map(this.instructionBreakpoints.map(bp => [bp.id, bp]));
+        const currentBreakpoints = newBreakpoints.map(bp => {
+            const existing = oldBreakpoints.get(bp.id);
+            if (existing) { return existing; }
+            return DebugInstructionBreakpoint.create(bp, this.getBreakpointOptions());
+        });
+        const added: DebugInstructionBreakpoint[] = [];
+        const changed: DebugInstructionBreakpoint[] = [];
         for (const breakpoint of currentBreakpoints) {
             const old = oldBreakpoints.get(breakpoint.id);
             if (old) {
@@ -563,40 +650,55 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
     }
 
     addInstructionBreakpoint(address: string, offset: number, condition?: string, hitCondition?: string): void {
-        const [newBp, newCollection] = this.doAddInstructionBreakpoint(InstructionBreakpoint.create({
+        const duplicate = this.instructionBreakpoints.find(
+            c => c.origin.raw.instructionReference === address && (c.origin.raw.offset ?? 0) === (offset ?? 0)
+        );
+        if (duplicate) { return; }
+        const newBp = DebugInstructionBreakpoint.create(InstructionBreakpoint.create({
             instructionReference: address,
             offset,
             condition,
             hitCondition,
-        }), this.instructionBreakpoints);
-        if (newCollection !== this.instructionBreakpoints) {
-            this.instructionBreakpoints = newCollection;
-            this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
-            this.onDidChangeInstructionBreakpointsEmitter.fire({ uri: BreakpointManager.INSTRUCTION_URI, added: [newBp], removed: [], changed: [] });
-        }
+        }), this.getBreakpointOptions());
+        this.instructionBreakpoints = [...this.instructionBreakpoints, newBp];
+        this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
+        this.onDidChangeInstructionBreakpointsEmitter.fire({ uri: BreakpointManager.INSTRUCTION_URI, added: [newBp], removed: [], changed: [] });
     }
 
-    protected doAddInstructionBreakpoint(toAdd: InstructionBreakpoint, current: DebugInstructionBreakpoint[]): [DebugInstructionBreakpoint, DebugInstructionBreakpoint[]] {
-        const duplicate = this.instructionBreakpoints.find(candidate => candidate.origin.raw.instructionReference === toAdd.raw.instructionReference
-            && (candidate.origin.raw.offset ?? 0) === (toAdd.raw.offset ?? 0));
-        if (duplicate) { return [duplicate, current]; }
-        const newBp = DebugInstructionBreakpoint.create(toAdd, this.getBreakpointOptions());
-        return [newBp, current.concat(newBp)];
+    removeInstructionBreakpoint(breakpoint: DebugInstructionBreakpoint): void {
+        const index = this.instructionBreakpoints.indexOf(breakpoint);
+        if (index === -1) { return; }
+        const removed = this.instructionBreakpoints.splice(index, 1);
+        this.fireOnDidChangeMarkers(breakpoint.uri);
+        this.onDidChangeInstructionBreakpointsEmitter.fire({ uri: breakpoint.uri, removed, added: [], changed: [] });
+    }
+
+    removeInstructionBreakpointAt(address: string): void {
+        const match = this.instructionBreakpoints.find(candidate => candidate.origin.raw.instructionReference === address);
+        if (match) {
+            this.removeInstructionBreakpoint(match);
+        }
     }
 
     clearInstructionBreakpoints(): void {
         this.setInstructionBreakpoints([]);
     }
 
+    // ── Data breakpoints ──
+
     protected dataBreakpoints: DebugDataBreakpoint[] = [];
 
     getDataBreakpoints(): readonly DebugDataBreakpoint[] {
-        return Object.freeze(this.dataBreakpoints.slice());
+        return this.dataBreakpoints;
     }
 
     setDataBreakpoints(breakpoints: DataBreakpoint[]): void {
         const oldBreakpoints = new Map(this.dataBreakpoints.map(bp => [bp.id, bp]));
-        const newBreakpoints = breakpoints.map(bp => this.doAddDataBreakpoint(bp, this.dataBreakpoints)[0]);
+        const newBreakpoints = breakpoints.map(bp => {
+            const existing = oldBreakpoints.get(bp.id);
+            if (existing) { return existing; }
+            return DebugDataBreakpoint.create(bp, this.getBreakpointOptions());
+        });
         const added: DebugDataBreakpoint[] = [];
         const changed: DebugDataBreakpoint[] = [];
         for (const bp of newBreakpoints) {
@@ -614,19 +716,12 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
     }
 
     addDataBreakpoint(breakpoint: DataBreakpoint): void {
-        const [newBp, newCollection] = this.doAddDataBreakpoint(breakpoint, this.dataBreakpoints);
-        if (newCollection !== this.dataBreakpoints) {
-            this.dataBreakpoints = newCollection;
-            this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
-            this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, added: [newBp], removed: [], changed: [] });
-        }
-    }
-
-    protected doAddDataBreakpoint(toAdd: DataBreakpoint, current: DebugDataBreakpoint[]): [DebugDataBreakpoint, DebugDataBreakpoint[]] {
-        const duplicate = current.find(candidate => candidate.origin.raw.dataId === toAdd.raw.dataId);
-        if (duplicate) { return [duplicate, current]; }
-        const newBp = DebugDataBreakpoint.create(toAdd, this.getBreakpointOptions());
-        return [newBp, current.concat(newBp)];
+        const duplicate = this.dataBreakpoints.find(c => c.origin.raw.dataId === breakpoint.raw.dataId);
+        if (duplicate) { return; }
+        const newBp = DebugDataBreakpoint.create(breakpoint, this.getBreakpointOptions());
+        this.dataBreakpoints = [...this.dataBreakpoints, newBp];
+        this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
+        this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, added: [newBp], removed: [], changed: [] });
     }
 
     updateDataBreakpoint(bp: DebugDataBreakpoint, options: { enabled?: boolean; raw?: Partial<Omit<DebugProtocol.DataBreakpoint, 'dataId'>> }): void {
@@ -648,12 +743,7 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
         this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, added: [], removed, changed: [] });
     }
 
-    removeBreakpoints(): void {
-        this.cleanAllMarkers();
-        this.setFunctionBreakpoints([]);
-        this.setInstructionBreakpoints([]);
-        this.setDataBreakpoints([]);
-    }
+    // ── Persistence ──
 
     async load(): Promise<void> {
         const data = await this.storage.getData<BreakpointManager.Data>('breakpoints', {
@@ -685,9 +775,8 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
             breakpointsEnabled: this._breakpointsEnabled,
             breakpoints: {}
         };
-        const uris = this.getUris();
-        for (const uri of uris) {
-            data.breakpoints[uri] = this.findMarkers({ uri: new URI(uri) }).map(marker => marker.data.origin);
+        for (const uri of this.getUris()) {
+            data.breakpoints[uri] = (this.sourceBreakpoints.get(uri) ?? []).map(bp => bp.origin);
         }
         if (this.functionBreakpoints.length) {
             data.functionBreakpoints = this.functionBreakpoints.map(({ origin }) => origin);
@@ -705,8 +794,8 @@ export class BreakpointManager extends MarkerManager<DebugSourceBreakpoint> {
 
         this.storage.setData('breakpoints', data);
     }
-
 }
+
 export namespace BreakpointManager {
     export interface Data {
         breakpointsEnabled: boolean;

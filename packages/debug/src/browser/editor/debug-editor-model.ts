@@ -262,7 +262,7 @@ export class DebugEditorModel implements Disposable {
         this.breakpointDecorations = this.deltaDecorations(this.breakpointDecorations, decorations);
         this.updateBreakpointRanges(breakpoints);
     }
-    protected createBreakpointDecorations(breakpoints: DebugSourceBreakpoint[]): monaco.editor.IModelDeltaDecoration[] {
+    protected createBreakpointDecorations(breakpoints: readonly DebugSourceBreakpoint[]): monaco.editor.IModelDeltaDecoration[] {
         return breakpoints.map(breakpoint => this.createBreakpointDecoration(breakpoint));
     }
     protected createBreakpointDecoration(breakpoint: DebugSourceBreakpoint): monaco.editor.IModelDeltaDecoration {
@@ -277,7 +277,7 @@ export class DebugEditorModel implements Disposable {
         };
     }
 
-    protected updateBreakpointRanges(breakpoints: DebugSourceBreakpoint[]): void {
+    protected updateBreakpointRanges(breakpoints: readonly DebugSourceBreakpoint[]): void {
         this.breakpointRanges.clear();
         for (let i = 0; i < this.breakpointDecorations.length; i++) {
             const decoration = this.breakpointDecorations[i];

@@ -141,11 +141,11 @@ export class DebugViewModel implements Disposable {
         return currentThread && currentThread.currentFrame;
     }
 
-    get breakpoints(): DebugSourceBreakpoint[] {
+    get breakpoints(): readonly DebugSourceBreakpoint[] {
         return this.breakpointManager.getBreakpoints();
     }
 
-    get functionBreakpoints(): DebugFunctionBreakpoint[] {
+    get functionBreakpoints(): readonly DebugFunctionBreakpoint[] {
         return this.breakpointManager.getFunctionBreakpoints();
     }
 
