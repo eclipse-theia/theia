@@ -88,20 +88,22 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
             const toSet = { ...data, sessionId };
             this.sessionData.set(sessionId, toSet);
         }
-        const verifiedLocations = new Map<string, DebugProtocol.Breakpoint>();
+        const verifiedLocations = new Map<string, BPSessionData>();
         this.sessionData.forEach(bp => bp.verified && verifiedLocations.set(`${bp.line}:${bp.column}:${bp.instructionReference}`, bp));
         if (verifiedLocations.size === 1) {
+            // Exactly one verified location across all sessions — use it.
             this._raw = verifiedLocations.values().next().value;
         } else if (verifiedLocations.size === 0) {
             // No session has verified; pick the first session's data (if any) so
             // that capability flags and unverified messages are still available.
             this._raw = this.sessionData.values().next().value;
         } else {
-            // Multiple sessions verified at the same location collapse to one
-            // entry in verifiedLocations (size === 1 above). If we get here,
-            // sessions disagree on the verified location. Pick the first
-            // session's data rather than hiding everything.
-            this._raw = this.sessionData.values().next().value;
+            // Multiple sessions verified at different locations. Following
+            // VSCode, we set _raw to undefined so that the breakpoint falls
+            // back to its user-set position and shows as verified (the
+            // default when no resolved data exists). Callers that need a
+            // specific session's view can use getDebugProtocolBreakpoint().
+            this._raw = undefined;
         }
     }
 
@@ -140,12 +142,23 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         return this.breakpoints.breakpointsEnabled && this.origin.enabled;
     }
 
+    /**
+     * True when at least one session has sent data for this breakpoint
+     * (regardless of whether it was verified).
+     */
     get installed(): boolean {
-        return !!this.raw;
+        return this.sessionData.size > 0;
     }
 
+    /**
+     * When resolved session data exists, reflects the adapter's answer.
+     * Otherwise returns `true`: either no session has weighed in yet (we
+     * haven't been told otherwise) or multiple sessions verified at
+     * different locations (`_raw` was cleared to fall back to the user-set
+     * position). Matches VSCode's default-true semantics.
+     */
     get verified(): boolean {
-        return !!this.raw ? this.raw.verified : false;
+        return this._raw ? this._raw.verified : true;
     }
 
     get message(): string {

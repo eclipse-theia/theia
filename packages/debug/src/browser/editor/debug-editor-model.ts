@@ -295,7 +295,18 @@ export class DebugEditorModel implements Disposable {
     }
     protected createCurrentBreakpointDecorations(): monaco.editor.IModelDeltaDecoration[] {
         const breakpoints = this.breakpoints.getBreakpoints(this.uri);
-        return breakpoints.map(breakpoint => this.createCurrentBreakpointDecoration(breakpoint));
+        // Deduplicate by rendered position: when multiple breakpoints resolve
+        // to the same (line, column) — e.g. via source-map collapsing — only
+        // create one decoration to avoid double dots in the editor.
+        const seen = new Set<string>();
+        const result: monaco.editor.IModelDeltaDecoration[] = [];
+        for (const bp of breakpoints) {
+            const key = `${bp.line}:${bp.column ?? 0}`;
+            if (seen.has(key)) { continue; }
+            seen.add(key);
+            result.push(this.createCurrentBreakpointDecoration(bp));
+        }
+        return result;
     }
     protected createCurrentBreakpointDecoration(breakpoint: DebugSourceBreakpoint): monaco.editor.IModelDeltaDecoration {
         const lineNumber = breakpoint.line;
