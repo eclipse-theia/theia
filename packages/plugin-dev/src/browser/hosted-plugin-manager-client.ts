@@ -99,6 +99,9 @@ export class HostedPluginManagerClient {
     // URL to the running plugin instance
     protected pluginInstanceURL: string | undefined;
 
+    // Electron window ID of the hosted plugin window, for closing on shutdown
+    protected hostedWindowId: number | undefined;
+
     protected isDebug = false;
 
     protected readonly stateChanged = new Emitter<HostedInstanceData>();
@@ -225,6 +228,10 @@ export class HostedPluginManagerClient {
         try {
             this.stateChanged.fire({ state: HostedInstanceState.STOPPING, pluginLocation: this.pluginLocation! });
             await this.hostedPluginServer.terminateHostedPluginInstance();
+            if (this.hostedWindowId !== undefined) {
+                this.windowService.closeWindow(this.hostedWindowId);
+                this.hostedWindowId = undefined;
+            }
             this.messageService.info((this.pluginInstanceURL
                 ? nls.localize('theia/plugin-dev/instanceTerminated', '{0} has been terminated', this.pluginInstanceURL)
                 : nls.localize('theia/plugin-dev/unknownTerminated', 'The instance has been terminated')));
@@ -326,7 +333,7 @@ export class HostedPluginManagerClient {
                 // port, just like normal Electron windows. This ensures the origin is
                 // file:// which passes the ElectronWsOriginValidator.
                 const port = new URL(this.pluginInstanceURL).port;
-                this.windowService.openNewDefaultWindow({ search: { port } });
+                this.hostedWindowId = await this.windowService.openNewDefaultWindow({ search: { port } });
             } else {
                 try {
                     this.windowService.openNewWindow(this.pluginInstanceURL);

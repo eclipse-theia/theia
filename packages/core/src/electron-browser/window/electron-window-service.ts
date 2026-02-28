@@ -57,8 +57,12 @@ export class ElectronWindowService extends DefaultWindowService {
         return undefined;
     }
 
-    override openNewDefaultWindow(params?: WindowReloadOptions): void {
-        this.delegate.openNewDefaultWindow(params?.search);
+    override async openNewDefaultWindow(params?: WindowReloadOptions): Promise<number> {
+        return this.delegate.openNewDefaultWindow(params?.search);
+    }
+
+    override closeWindow(windowId: number): void {
+        this.delegate.closeWindow(windowId);
     }
 
     override focus(): void {

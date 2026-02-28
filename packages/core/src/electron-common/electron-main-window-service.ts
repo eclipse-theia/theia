@@ -20,5 +20,6 @@ export const electronMainWindowServicePath = '/services/electron-window';
 export const ElectronMainWindowService = Symbol('ElectronMainWindowService');
 export interface ElectronMainWindowService {
     openNewWindow(url: string, options?: NewWindowOptions): undefined;
-    openNewDefaultWindow(params?: WindowSearchParams): void;
+    openNewDefaultWindow(params?: WindowSearchParams): Promise<number>;
+    closeWindow(windowId: number): void;
 }

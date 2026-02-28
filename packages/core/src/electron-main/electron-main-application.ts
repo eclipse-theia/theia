@@ -502,6 +502,13 @@ export class ElectronMainApplication {
         };
     }
 
+    closeWindowById(webContentsId: number): void {
+        const window = this.windows.get(webContentsId);
+        if (window) {
+            window.close(StopReason.Close);
+        }
+    }
+
     async openDefaultWindow(params?: WindowSearchParams): Promise<BrowserWindow> {
         const options = this.getDefaultTheiaWindowOptions();
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(params), this.reuseOrCreateWindow(options)]);
