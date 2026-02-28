@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService, getProxyUrl } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
@@ -47,15 +47,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 }
                 return undefined;
             };
-            const proxyUrlProvider = () => {
-                // first check if the proxy url is provided via Theia settings
-                if (this._proxyUrl) {
-                    return this._proxyUrl;
-                }
-
-                // if not fall back to the environment variables
-                return process.env['https_proxy'];
-            };
+            const proxyUrlProvider = (url: string | undefined) => getProxyUrl(url, this._proxyUrl);
 
             // Determine status based on API key and custom url presence
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
@@ -88,7 +80,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.maxTokens,
                         modelDescription.maxRetries,
                         this.tokenUsageService,
-                        proxyUrlProvider()
+                        proxyUrlProvider(modelDescription.url)
                     )
                 ]);
             }

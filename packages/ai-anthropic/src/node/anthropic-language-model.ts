@@ -35,7 +35,7 @@ import {
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
-import * as undici from 'undici';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -461,14 +461,6 @@ export class AnthropicModel implements LanguageModel {
         // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
         const key = apiKey ?? 'no-key';
 
-        let fo;
-        if (this.proxy) {
-            const proxyAgent = new undici.ProxyAgent(this.proxy);
-            fo = {
-                dispatcher: proxyAgent,
-            };
-        }
-
-        return new Anthropic({ apiKey: key, baseURL: this.url, fetchOptions: fo });
+        return new Anthropic({ apiKey: key, baseURL: this.url, fetch: createProxyFetch(this.proxy) });
     }
 }

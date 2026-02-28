@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OllamaModel } from './ollama-language-model';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
@@ -23,6 +24,7 @@ import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
 export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsManager {
 
     protected _host: string | undefined;
+    protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -52,13 +54,17 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                 }
             } else {
                 const status = this.calculateStatus(hostProvider());
+                const host = hostProvider();
+                const normalizedHost = host && !host.includes('://') ? `http://${host}` : host;
+                const proxyUrl = getProxyUrl(normalizedHost, this._proxyUrl);
                 this.languageModelRegistry.addLanguageModels([
                     new OllamaModel(
                         modelDescription.id,
                         modelDescription.model,
                         status,
                         hostProvider,
-                        this.tokenUsageService
+                        this.tokenUsageService,
+                        proxyUrl
                     )
                 ]);
             }
@@ -67,6 +73,14 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
     removeLanguageModels(...modelIds: string[]): void {
         this.languageModelRegistry.removeLanguageModels(modelIds.map(id => `ollama/${id}`));
+    }
+
+    setProxyUrl(proxyUrl: string | undefined): void {
+        if (proxyUrl) {
+            this._proxyUrl = proxyUrl;
+        } else {
+            this._proxyUrl = undefined;
+        }
     }
 
     async setHost(host: string | undefined): Promise<void> {

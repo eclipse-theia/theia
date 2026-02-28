@@ -32,6 +32,7 @@ import {
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall, ChatResponse } from 'ollama';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
@@ -56,7 +57,8 @@ export class OllamaModel implements LanguageModel {
         protected readonly model: string,
         public status: LanguageModelStatus,
         protected host: () => string | undefined,
-        protected readonly tokenUsageService?: TokenUsageService
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected proxy?: string
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -426,7 +428,7 @@ export class OllamaModel implements LanguageModel {
         if (!host) {
             throw new Error('Please provide OLLAMA_HOST in preferences or via environment variable');
         }
-        return new Ollama({ host: host });
+        return new Ollama({ host: host, fetch: createProxyFetch(this.proxy) });
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
