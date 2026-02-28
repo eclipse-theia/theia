@@ -17,7 +17,6 @@
 import {
     LanguageModel,
     LanguageModelParsedResponse,
-    LanguageModelRequest,
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponse,
@@ -27,11 +26,13 @@ import {
     ToolRequest,
     ToolRequestParametersProperties,
     ImageContent,
-    TokenUsageService,
-    LanguageModelStatus
+    LanguageModelRequest,
+    LanguageModelStatus,
+    LanguageModelTextResponse,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall, ChatResponse } from 'ollama';
+import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
@@ -56,10 +57,9 @@ export class OllamaModel implements LanguageModel {
         protected readonly model: string,
         public status: LanguageModelStatus,
         protected host: () => string | undefined,
-        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
-    async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+    async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
         const ollama = this.initializeOllama();
         const stream = !(request.settings?.stream === false); // true by default, false only if explicitly specified
@@ -160,8 +160,9 @@ export class OllamaModel implements LanguageModel {
                         }
 
                         if (chunk.done) {
-                            that.recordTokenUsage(chunk);
-
+                            if (chunk.prompt_eval_count !== undefined && chunk.eval_count !== undefined) {
+                                yield { input_tokens: chunk.prompt_eval_count, output_tokens: chunk.eval_count };
+                            }
                             if (chunk.done_reason && chunk.done_reason !== 'stop') {
                                 throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
                             }
@@ -281,17 +282,25 @@ export class OllamaModel implements LanguageModel {
             stream: false,
         });
         try {
-            return {
+            const result: LanguageModelParsedResponse = {
                 content: response.message.content,
                 parsed: JSON.parse(response.message.content)
             };
+            if (response.prompt_eval_count !== undefined && response.eval_count !== undefined) {
+                result.usage = { input_tokens: response.prompt_eval_count, output_tokens: response.eval_count };
+            }
+            return result;
         } catch (error) {
             // TODO use ILogger
             console.log('Failed to parse structured response from the language model.', error);
-            return {
+            const result: LanguageModelParsedResponse = {
                 content: response.message.content,
                 parsed: {}
             };
+            if (response.prompt_eval_count !== undefined && response.eval_count !== undefined) {
+                result.usage = { input_tokens: response.prompt_eval_count, output_tokens: response.eval_count };
+            }
+            return result;
         }
     }
 
@@ -315,6 +324,8 @@ export class OllamaModel implements LanguageModel {
             const toolCalls: OllamaToolCall[] = [];
             let content = '';
             let lastUpdated: Date = new Date();
+            let inputTokenCount: number | undefined;
+            let outputTokenCount: number | undefined;
 
             // process the response stream
             for await (const chunk of responseStream) {
@@ -329,10 +340,11 @@ export class OllamaModel implements LanguageModel {
                     toolCalls.push(...chunk.message.tool_calls);
                 }
 
-                // if the response is done, record the token usage and check the done reason
+                // if the response is done, capture token usage and check the done reason
                 if (chunk.done) {
-                    this.recordTokenUsage(chunk);
                     lastUpdated = chunk.created_at;
+                    inputTokenCount = chunk.prompt_eval_count;
+                    outputTokenCount = chunk.eval_count;
                     if (chunk.done_reason && chunk.done_reason !== 'stop') {
                         throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
                     }
@@ -358,7 +370,11 @@ export class OllamaModel implements LanguageModel {
             }
 
             // if no tool calls are necessary, return the final response content
-            return { text: content };
+            const result: LanguageModelTextResponse = { text: content };
+            if (inputTokenCount !== undefined && outputTokenCount !== undefined) {
+                result.usage = { input_tokens: inputTokenCount, output_tokens: outputTokenCount };
+            }
+            return result;
         } catch (error) {
             console.error('Error in ollama call:', error.message);
             throw error;
@@ -409,16 +425,6 @@ export class OllamaModel implements LanguageModel {
             });
         }
         return toolCallsForResponse;
-    }
-
-    private recordTokenUsage(response: ChatResponse): void {
-        if (this.tokenUsageService && response.prompt_eval_count && response.eval_count) {
-            this.tokenUsageService.recordTokenUsage(this.id, {
-                inputTokens: response.prompt_eval_count,
-                outputTokens: response.eval_count,
-                requestId: `ollama_${response.created_at}`
-            }).catch(error => console.error('Error recording token usage:', error));
-        }
     }
 
     protected initializeOllama(): Ollama {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
@@ -30,9 +30,6 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
-
-    @inject(TokenUsageService)
-    protected readonly tokenUsageService: TokenUsageService;
 
     @inject(CopilotAuthServiceImpl)
     protected readonly authService: CopilotAuthServiceImpl;
@@ -91,8 +88,7 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
                         modelDescription.supportsStructuredOutput,
                         modelDescription.maxRetries,
                         () => this.authService.getAccessToken(),
-                        () => this.enterpriseUrl,
-                        this.tokenUsageService
+                        () => this.enterpriseUrl
                     )
                 ]);
             }

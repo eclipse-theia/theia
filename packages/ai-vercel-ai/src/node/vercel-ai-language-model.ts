@@ -25,7 +25,6 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageService,
     ToolCall,
     UserRequest,
 } from '@theia/ai-core';
@@ -33,11 +32,8 @@ import { CancellationToken, Disposable, ILogger } from '@theia/core';
 import {
     CoreMessage,
     generateObject,
-    GenerateObjectResult,
     generateText,
-    GenerateTextResult,
     jsonSchema,
-    StepResult,
     streamText,
     TextStreamPart,
     tool,
@@ -52,17 +48,6 @@ interface VercelCancellationToken extends Disposable {
     cancellationToken: CancellationToken;
     isCancellationRequested: boolean;
 }
-
-type StreamPart = ToolResultPart | {
-    type: string;
-    textDelta?: string;
-    toolCallId?: string;
-    toolName?: string;
-    args?: object | string;
-    argsTextDelta?: string;
-    usage?: { promptTokens: number; completionTokens: number };
-    signature?: string;
-};
 
 interface VercelAiStream extends AsyncIterable<TextStreamPart<ToolSet>> {
     cancel: () => void;
@@ -120,9 +105,17 @@ export class VercelAiStreamTransformer {
                         }
                         break;
 
+                    case 'step-finish': {
+                        const { usage } = part;
+                        if (usage && !isNaN(usage.promptTokens) && !isNaN(usage.completionTokens)) {
+                            yield { input_tokens: usage.promptTokens, output_tokens: usage.completionTokens };
+                        }
+                        break;
+                    }
+
                     default:
-                        if (this.isToolResultPart(part)) {
-                            toolCallUpdated = this.processToolResult(part);
+                        if ((part.type as string) === 'tool-result') {
+                            toolCallUpdated = this.processToolResult(part as unknown as ToolResultPart);
                         }
                         break;
                 }
@@ -134,10 +127,6 @@ export class VercelAiStreamTransformer {
         } catch (error) {
             this.context.logger.error('Error in AI SDK stream:', error);
         }
-    }
-
-    private isToolResultPart(part: StreamPart): part is ToolResultPart {
-        return part.type === 'tool-result';
     }
 
     private updateToolCall(id: string, name: string, args?: string): boolean {
@@ -189,7 +178,6 @@ export class VercelAiModel implements LanguageModel {
         protected readonly languageModelFactory: VercelAiLanguageModelFactory,
         protected providerConfig: () => VercelAiProviderConfig,
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
@@ -267,9 +255,14 @@ export class VercelAiModel implements LanguageModel {
             ...settings
         });
 
-        await this.recordTokenUsage(response, request);
-
-        return { text: response.text };
+        const result: LanguageModelTextResponse = { text: response.text };
+        if (!isNaN(response.usage.completionTokens) && !isNaN(response.usage.promptTokens)) {
+            result.usage = {
+                input_tokens: response.usage.promptTokens,
+                output_tokens: response.usage.completionTokens,
+            };
+        }
+        return result;
     }
 
     protected createTools(request: UserRequest): ToolSet | undefined {
@@ -323,28 +316,17 @@ export class VercelAiModel implements LanguageModel {
             ...settings
         });
 
-        await this.recordTokenUsage(response, request);
-
-        return {
+        const result: LanguageModelParsedResponse = {
             content: JSON.stringify(response.object),
             parsed: response.object
         };
-    }
-
-    private async recordTokenUsage(
-        result: GenerateObjectResult<unknown> | GenerateTextResult<ToolSet, unknown>,
-        request: UserRequest
-    ): Promise<void> {
-        if (this.tokenUsageService && !isNaN(result.usage.completionTokens) && !isNaN(result.usage.promptTokens)) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.promptTokens,
-                    outputTokens: result.usage.completionTokens,
-                    requestId: request.requestId
-                }
-            );
+        if (!isNaN(response.usage.completionTokens) && !isNaN(response.usage.promptTokens)) {
+            result.usage = {
+                input_tokens: response.usage.promptTokens,
+                output_tokens: response.usage.completionTokens,
+            };
         }
+        return result;
     }
 
     protected async handleStreamingRequest(
@@ -366,15 +348,6 @@ export class VercelAiModel implements LanguageModel {
             maxRetries: this.maxRetries,
             toolCallStreaming: true,
             abortSignal,
-            onStepFinish: (stepResult: StepResult<ToolSet>) => {
-                if (!isNaN(stepResult.usage.completionTokens) && !isNaN(stepResult.usage.promptTokens)) {
-                    this.tokenUsageService?.recordTokenUsage(this.id, {
-                        inputTokens: stepResult.usage.promptTokens,
-                        outputTokens: stepResult.usage.completionTokens,
-                        requestId: request.requestId
-                    });
-                }
-            },
             ...settings
         });
 

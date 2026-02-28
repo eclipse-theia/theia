@@ -59,6 +59,7 @@ import * as React from '@theia/core/shared/react';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { formatTokenCount } from '../chat-token-usage-indicator';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
@@ -599,9 +600,17 @@ export class ChatViewTreeWidget extends TreeWidget {
                 <h3 ref={agentLabel}
                     className='theia-AgentLabel'
                     onMouseEnter={() => {
-                        if (agentDescription) {
+                        const tokenUsage = isResponseNode(node) ? node.response.tokenUsage : undefined;
+                        const hasTokenInfo = tokenUsage && (tokenUsage.inputTokens > 0 || tokenUsage.outputTokens > 0);
+                        const tokenInfo = hasTokenInfo
+                            ? `Input: ${formatTokenCount(tokenUsage.inputTokens)} · Output: ${formatTokenCount(tokenUsage.outputTokens)}`
+                            : undefined;
+                        const hoverContent = agentDescription && tokenInfo
+                            ? agentDescription + '\n\n' + tokenInfo
+                            : agentDescription ?? tokenInfo;
+                        if (hoverContent) {
                             this.hoverService.requestHover({
-                                content: agentDescription,
+                                content: hoverContent,
                                 target: agentLabel.current!,
                                 position: 'right'
                             });

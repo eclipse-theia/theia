@@ -24,7 +24,6 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageService,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -147,7 +146,6 @@ export class GoogleModel implements LanguageModel {
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
         public retrySettings: () => GoogleLanguageModelRetrySettings,
-        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -319,15 +317,11 @@ export class GoogleModel implements LanguageModel {
                         }
 
                         // Report token usage if available
-                        if (chunk.usageMetadata && that.tokenUsageService && that.id) {
+                        if (chunk.usageMetadata) {
                             const promptTokens = chunk.usageMetadata.promptTokenCount;
                             const completionTokens = chunk.usageMetadata.candidatesTokenCount;
-                            if (promptTokens && completionTokens) {
-                                that.tokenUsageService.recordTokenUsage(that.id, {
-                                    inputTokens: promptTokens,
-                                    outputTokens: completionTokens,
-                                    requestId: request.requestId
-                                }).catch(error => console.error('Error recording token usage:', error));
+                            if (promptTokens !== undefined && completionTokens !== undefined) {
+                                yield { input_tokens: promptTokens, output_tokens: completionTokens };
                             }
                         }
                     }
@@ -457,19 +451,15 @@ export class GoogleModel implements LanguageModel {
                 responseText = model.text ?? '';
             }
 
-            // Record token usage if available
-            if (model.usageMetadata && this.tokenUsageService) {
+            const result: LanguageModelTextResponse = { text: responseText };
+            if (model.usageMetadata) {
                 const promptTokens = model.usageMetadata.promptTokenCount;
                 const completionTokens = model.usageMetadata.candidatesTokenCount;
-                if (promptTokens && completionTokens) {
-                    await this.tokenUsageService.recordTokenUsage(this.id, {
-                        inputTokens: promptTokens,
-                        outputTokens: completionTokens,
-                        requestId: request.requestId
-                    });
+                if (promptTokens !== undefined && completionTokens !== undefined) {
+                    result.usage = { input_tokens: promptTokens, output_tokens: completionTokens };
                 }
             }
-            return { text: responseText };
+            return result;
         } catch (error) {
             throw new Error(`Failed to get response from Gemini API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
