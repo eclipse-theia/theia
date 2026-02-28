@@ -30,7 +30,6 @@ import { ScmTreeWidget } from './scm-tree-widget';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmActionButtonWidget } from './scm-action-button-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
-import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmTreeModelProps } from './scm-tree-model';
 import { ScmGroupsTreeModel } from './scm-groups-tree-model';
 import { ScmQuickOpenService } from './scm-quick-open-service';
@@ -80,12 +79,6 @@ export default new ContainerModule(bind => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: ScmAmendWidget.ID,
         createWidget: () => container.get(ScmAmendWidget)
-    })).inSingletonScope();
-
-    bind(ScmNoRepositoryWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: ScmNoRepositoryWidget.ID,
-        createWidget: () => container.get(ScmNoRepositoryWidget)
     })).inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

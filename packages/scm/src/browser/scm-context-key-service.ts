@@ -38,11 +38,17 @@ export class ScmContextKeyService {
         return this._scmResourceGroupState;
     }
 
+    protected _scmProviderCount: ContextKey<number>;
+    get scmProviderCount(): ContextKey<number> {
+        return this._scmProviderCount;
+    }
+
     @postConstruct()
     protected init(): void {
         this._scmProvider = this.contextKeyService.createKey<string | undefined>('scmProvider', undefined);
         this._scmResourceGroup = this.contextKeyService.createKey<string | undefined>('scmResourceGroup', undefined);
         this._scmResourceGroupState = this.contextKeyService.createKey<string | undefined>('scmResourceGroupState', undefined);
+        this._scmProviderCount = this.contextKeyService.createKey<number>('scm.providerCount', 0);
     }
 
     match(expression: string | undefined): boolean {

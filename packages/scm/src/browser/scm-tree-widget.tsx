@@ -22,6 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
+import { TreeViewWelcomeWidget } from '@theia/core/lib/browser/tree/tree-view-welcome-widget';
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { MenuModelRegistry, CompoundMenuNode, MenuPath, CommandMenu } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
@@ -31,12 +32,13 @@ import { EditorWidget, EditorManager, DiffNavigatorProvider } from '@theia/edito
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
+import { ScmService } from './scm-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { CorePreferences } from '@theia/core/lib/common';
 
 @injectable()
-export class ScmTreeWidget extends TreeWidget {
+export class ScmTreeWidget extends TreeViewWelcomeWidget {
 
     static ID = 'scm-resource-widget';
 
@@ -57,6 +59,7 @@ export class ScmTreeWidget extends TreeWidget {
     @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
     @inject(ColorRegistry) protected readonly colors: ColorRegistry;
     @inject(ThemeService) protected readonly themeService: ThemeService;
+    @inject(ScmService) protected readonly scmService: ScmService;
 
     // TODO: Make TreeWidget generic to better type those fields.
     override readonly model: ScmTreeModel;
@@ -75,6 +78,11 @@ export class ScmTreeWidget extends TreeWidget {
     protected override init(): void {
         super.init();
         this.toDispose.push(this.themeService.onDidColorThemeChange(() => this.update()));
+        this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.update()));
+    }
+
+    protected override shouldShowWelcomeView(): boolean {
+        return this.scmService.selectedRepository === undefined;
     }
 
     set viewMode(id: 'tree' | 'list') {
