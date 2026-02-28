@@ -24,7 +24,9 @@ import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../commo
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
-import { SCM_VIEW_CONTAINER_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { EXPLORER_VIEW_CONTAINER_ID, FileNavigatorWidget, FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
@@ -187,6 +189,17 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 }));
                 disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
             }
+            if (event.widget instanceof ScmWidget) {
+                const disposable = new DisposableCollection();
+                disposable.push(this.registerViewWelcome({
+                    view: 'scm',
+                    content: nls.localizeByDefault('None of the registered source control providers work in Restricted Mode.')
+                        + `\n[${nls.localizeByDefault('Manage Workspace Trust')}](command:workspace:manageTrust)`,
+                    when: '!isWorkspaceTrusted',
+                    order: 0
+                }));
+                disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
+            }
         });
         this.contextKeyService.onDidChange(e => {
             for (const [, view] of this.views.values()) {
@@ -203,6 +216,12 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                         this.updateViewWelcomeVisibility(viewId);
                     }
                 }
+            }
+            // When workspace trust changes, re-evaluate SCM welcome content
+            // because getViewWelcomes() filters entries based on trust state.
+            // See https://github.com/eclipse-theia/theia/issues/12318
+            if (e.affects(new Set(['isWorkspaceTrusted']))) {
+                this.handleViewWelcomeChange('scm');
             }
         });
 
@@ -561,13 +580,25 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         switch (viewId) {
             case 'explorer':
                 return this.widgetManager.getWidget<TreeViewWelcomeWidget>(FILE_NAVIGATOR_ID);
+            case 'scm': {
+                const scmWidget = await this.widgetManager.getWidget<ScmWidget>(SCM_WIDGET_FACTORY_ID);
+                return scmWidget?.resourceWidget as ScmTreeWidget | undefined;
+            }
             default:
                 return this.widgetManager.getWidget<TreeViewWelcomeWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: viewId });
         }
     }
 
     getViewWelcomes(viewId: string): ViewWelcome[] {
-        return this.viewsWelcome.get(viewId) || [];
+        const viewWelcomes = this.viewsWelcome.get(viewId) || [];
+        // Workaround: suppress plugin-contributed SCM welcome entries in restricted mode.
+        // Plugins declaring `untrustedWorkspaces.supported: false` (e.g., vscode.git) should not
+        // contribute UI when the workspace is untrusted, but Theia does not yet read this capability.
+        // See https://github.com/eclipse-theia/theia/issues/12318
+        if (viewId === 'scm' && !this.contextKeyService.match('isWorkspaceTrusted')) {
+            return viewWelcomes.filter(w => w.when?.includes('isWorkspaceTrusted'));
+        }
+        return viewWelcomes;
     }
 
     async getView(viewId: string): Promise<PluginViewWidget | undefined> {
