@@ -25,6 +25,7 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { environment, isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/common/file-uri';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
@@ -114,6 +115,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     @inject(RequestService)
     protected readonly request: RequestService;
 
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
+
     isRunning(): boolean {
         return this.isPluginRunning;
     }
@@ -138,6 +142,15 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             processOptions = { ...PROCESS_OPTIONS, env: { ...process.env } };
             // get filesystem path that work cross operating systems
             processOptions.env!.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
+
+            // Use an isolated config directory for the hosted instance so that its
+            // workspace state (recentworkspace.json, etc.) does not overwrite the
+            // main application's state.
+            const configDirUri = await this.envVariablesServer.getConfigDirUri();
+            const configDirPath = FileUri.fsPath(configDirUri);
+            const hostedConfigDir = path.join(configDirPath, 'hosted-instance');
+            await fs.ensureDir(hostedConfigDir);
+            processOptions.env!.THEIA_CONFIG_DIR = hostedConfigDir;
 
             if (environment.electron.is()) {
                 // When running in Electron, the backend process uses the Electron binary as its
