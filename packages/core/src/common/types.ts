@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2017-2026 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -143,4 +143,23 @@ export function isDefined<T>(arg: T | null | undefined): arg is T {
 export function isUndefinedOrNull(obj: unknown): obj is undefined | null {
     // eslint-disable-next-line no-null/no-null
     return (isUndefined(obj) || obj === null);
+}
+
+export namespace MapUtils {
+    export function addOrInsertWith<K, V>(container: Map<K, V[]>, key: K, ...values: V[]): void {
+        const existing = container.get(key);
+        if (existing) {
+            existing.push(...values);
+        } else {
+            container.set(key, values);
+        }
+    }
+}
+
+export namespace IteratorUtils {
+    export function* filter<T>(input: Iterable<T>, condition: (candidate: T) => boolean): IterableIterator<T> {
+        for (const candidate of input) {
+            if (condition(candidate)) { yield candidate; }
+        }
+    }
 }

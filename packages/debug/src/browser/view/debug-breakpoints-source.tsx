@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2018-2026 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,8 +18,6 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugViewModel } from './debug-view-model';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DebugExceptionBreakpoint } from './debug-exception-breakpoint';
-import { CommandService } from '@theia/core/lib/common';
 
 @injectable()
 export class DebugBreakpointsSource extends TreeSource {
@@ -30,9 +28,6 @@ export class DebugBreakpointsSource extends TreeSource {
     @inject(BreakpointManager)
     protected readonly breakpoints: BreakpointManager;
 
-    @inject(CommandService)
-    protected readonly commandService: CommandService;
-
     @postConstruct()
     protected init(): void {
         this.fireDidChange();
@@ -40,12 +35,10 @@ export class DebugBreakpointsSource extends TreeSource {
     }
 
     *getElements(): IterableIterator<TreeElement> {
-        for (const exceptionBreakpoint of this.breakpoints.getExceptionBreakpoints()) {
-            yield new DebugExceptionBreakpoint(exceptionBreakpoint, this.breakpoints, this.commandService);
-        }
-        yield* this.model.dataBreakpoints;
+        yield* this.model.exceptionBreakpoints;
         yield* this.model.functionBreakpoints;
         yield* this.model.instructionBreakpoints;
+        yield* this.model.dataBreakpoints;
         yield* this.model.breakpoints;
     }
 }

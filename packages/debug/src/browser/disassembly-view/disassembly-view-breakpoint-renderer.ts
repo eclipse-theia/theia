@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2022 Ericsson and others.
+// Copyright (C) 2022-2026 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -69,7 +69,7 @@ export class BreakpointRenderer implements ITableRenderer<DisassembledInstructio
                     // click show hint while waiting for BP to resolve.
                     icon.classList.add(this._breakpointHintIcon);
                     if (currentElement.element.isBreakpointSet) {
-                        this._debugService.removeInstructionBreakpoint(currentElement.element.instruction.address);
+                        this._debugService.removeInstructionBreakpointAt(currentElement.element.instruction.address);
 
                     } else if (currentElement.element.allowBreakpoint && !currentElement.element.isBreakpointSet) {
                         this._debugService.addInstructionBreakpoint(currentElement.element.instruction.address, 0);

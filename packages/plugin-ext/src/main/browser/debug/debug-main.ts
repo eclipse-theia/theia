@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2018-2026 Red Hat, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -29,9 +29,8 @@ import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO, WorkspaceFolder } from 
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { BreakpointManager, BreakpointsChangeEvent } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
-import { DebugSourceBreakpoint } from '@theia/debug/lib/browser/model/debug-source-breakpoint';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
-import { SourceBreakpoint, FunctionBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
+import { SourceBreakpoint, FunctionBreakpoint, BaseBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from '@vscode/debugprotocol';
@@ -47,7 +46,6 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
 import { PluginDebugService } from './plugin-debug-service';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
-import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-function-breakpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
@@ -59,6 +57,20 @@ import { DebugSessionOptions as TheiaDebugSessionOptions } from '@theia/debug/li
 import { DebugStackFrame } from '@theia/debug/lib/browser/model/debug-stack-frame';
 import { DebugThread } from '@theia/debug/lib/browser/model/debug-thread';
 import { TestService } from '@theia/test/lib/browser/test-service';
+import { DebugBreakpoint } from '@theia/debug/lib/browser/model/debug-breakpoint';
+
+function toOrigin<T extends BaseBreakpoint>(input: DebugBreakpoint<T>): T {
+    return input.origin;
+}
+
+function eventToOrigins<T extends BaseBreakpoint>({ added, removed, changed, uri }: BreakpointsChangeEvent<DebugBreakpoint<T>>): BreakpointsChangeEvent<T> {
+    return {
+        uri,
+        added: added.map(toOrigin),
+        removed: removed.map(toOrigin),
+        changed: changed.map(toOrigin)
+    };
+}
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -114,12 +126,12 @@ export class DebugMainImpl implements DebugMain, Disposable {
                 this.toTheiaPluginApiBreakpoints(changed)
             );
         };
-        this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getBreakpoints()), [], []);
-        this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getFunctionBreakpoints()), [], []);
+        this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getBreakpoints().map(bp => bp.origin)), [], []);
+        this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getFunctionBreakpoints().map(bp => bp.origin)), [], []);
 
         this.toDispose.pushAll([
-            this.breakpointsManager.onDidChangeBreakpoints(fireDidChangeBreakpoints),
-            this.breakpointsManager.onDidChangeFunctionBreakpoints(fireDidChangeBreakpoints),
+            this.breakpointsManager.onDidChangeBreakpoints(e => fireDidChangeBreakpoints(eventToOrigins(e))),
+            this.breakpointsManager.onDidChangeFunctionBreakpoints(e => fireDidChangeBreakpoints(eventToOrigins(e))),
             this.sessionManager.onDidCreateDebugSession(debugSession => this.debugExt.$sessionDidCreate(debugSession.id)),
             this.sessionManager.onDidStartDebugSession(debugSession => this.debugExt.$sessionDidStart(debugSession.id)),
             this.sessionManager.onDidDestroyDebugSession(debugSession => this.debugExt.$sessionDidDestroy(debugSession.id)),
@@ -222,16 +234,9 @@ export class DebugMainImpl implements DebugMain, Disposable {
     async $addBreakpoints(breakpoints: Breakpoint[]): Promise<void> {
         const newBreakpoints = new Map<string, Breakpoint>();
         breakpoints.forEach(b => newBreakpoints.set(b.id, b));
-        this.breakpointsManager.findMarkers({
-            dataFilter: data => {
-                // install only new breakpoints
-                if (newBreakpoints.has(data.id)) {
-                    newBreakpoints.delete(data.id);
-                }
-                return false;
-            }
-        });
-        let addedFunctionBreakpoints = false;
+        for (const bp of this.breakpointsManager.getBreakpoints()) {
+            newBreakpoints.delete(bp.id);
+        }
         const functionBreakpoints = this.breakpointsManager.getFunctionBreakpoints();
         for (const breakpoint of functionBreakpoints) {
             // install only new breakpoints
@@ -256,8 +261,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
                     }
                 });
             } else if (breakpoint.functionName) {
-                addedFunctionBreakpoints = true;
-                functionBreakpoints.push({
+                this.breakpointsManager.addFunctionBreakpoint({
                     id: breakpoint.id,
                     enabled: breakpoint.enabled,
                     raw: {
@@ -266,35 +270,14 @@ export class DebugMainImpl implements DebugMain, Disposable {
                 });
             }
         }
-        if (addedFunctionBreakpoints) {
-            this.breakpointsManager.setFunctionBreakpoints(functionBreakpoints);
-        }
     }
 
     async $getDebugProtocolBreakpoint(sessionId: string, breakpointId: string): Promise<DebugProtocol.Breakpoint | undefined> {
-        const session = this.sessionManager.getSession(sessionId);
-        if (session) {
-            return session.getBreakpoint(breakpointId)?.raw;
-        } else {
-            throw new Error(`Debug session '${sessionId}' not found`);
-        }
+        return this.breakpointsManager.getBreakpointById(breakpointId)?.getDebugProtocolBreakpoint(sessionId);
     }
 
     async $removeBreakpoints(breakpoints: string[]): Promise<void> {
-        const { labelProvider, breakpointsManager, editorManager } = this;
-        const session = this.sessionManager.currentSession;
-
-        const ids = new Set<string>(breakpoints);
-        for (const origin of this.breakpointsManager.findMarkers({ dataFilter: data => ids.has(data.id) })) {
-            const breakpoint = new DebugSourceBreakpoint(origin.data, { labelProvider, breakpoints: breakpointsManager, editorManager, session }, this.commandService);
-            breakpoint.remove();
-        }
-        for (const origin of this.breakpointsManager.getFunctionBreakpoints()) {
-            if (ids.has(origin.id)) {
-                const breakpoint = new DebugFunctionBreakpoint(origin, { labelProvider, breakpoints: breakpointsManager, editorManager, session });
-                breakpoint.remove();
-            }
-        }
+        this.breakpointsManager.removeBreakpointsById(breakpoints);
     }
 
     async $customRequest(sessionId: string, command: string, args?: any): Promise<DebugProtocol.Response> {
