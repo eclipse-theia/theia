@@ -326,10 +326,7 @@ export class HostedPluginManagerClient {
                 // port, just like normal Electron windows. This ensures the origin is
                 // file:// which passes the ElectronWsOriginValidator.
                 const port = new URL(this.pluginInstanceURL).port;
-                // ElectronWindowService.openNewDefaultWindow takes flat WindowSearchParams
-                // (not WindowReloadOptions), passing them directly as URL search params.
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                this.windowService.openNewDefaultWindow({ port } as any);
+                this.windowService.openNewDefaultWindow({ search: { port } });
             } else {
                 try {
                     this.windowService.openNewWindow(this.pluginInstanceURL);

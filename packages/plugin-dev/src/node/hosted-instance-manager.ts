@@ -92,7 +92,6 @@ const HOSTED_INSTANCE_START_TIMEOUT_MS = 30000;
 const THEIA_INSTANCE_REGEX = /.*Theia app listening on (.*).*\./;
 const PROCESS_OPTIONS = {
     cwd: process.cwd(),
-    env: { ...process.env }
 };
 
 @injectable()
@@ -136,12 +135,10 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         let command: string[];
         let processOptions: cp.SpawnOptions;
         if (pluginUri.scheme === 'file') {
-            processOptions = { ...PROCESS_OPTIONS };
+            processOptions = { ...PROCESS_OPTIONS, env: { ...process.env } };
             // get filesystem path that work cross operating systems
             processOptions.env!.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
 
-            // Disable all the other plugins on this instance
-            processOptions.env!.THEIA_PLUGINS = '';
             if (environment.electron.is()) {
                 // When running in Electron, the backend process uses the Electron binary as its
                 // Node.js runtime. Set ELECTRON_RUN_AS_NODE so the spawned backend instance runs
@@ -251,15 +248,6 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         const command = processArguments.filter((arg, index, args) => {
             // remove --port=X and --port X arguments if set
             if (arg.startsWith('--port') || args[index - 1] === '--port') {
-                return false;
-            }
-            // remove --plugins=X and --plugins X arguments if set
-            // (the hosted instance should only load the hosted plugin via HOSTED_PLUGIN env var)
-            if (arg.startsWith('--plugins') || args[index - 1] === '--plugins') {
-                return false;
-            }
-            // remove --ovsx-router-config=X and --ovsx-router-config X arguments if set
-            if (arg.startsWith('--ovsx-router-config') || args[index - 1] === '--ovsx-router-config') {
                 return false;
             }
             return true;
