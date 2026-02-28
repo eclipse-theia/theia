@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { HuggingFaceModel } from './huggingface-language-model';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
@@ -23,6 +24,7 @@ import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '.
 export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguageModelsManager {
 
     protected _apiKey: string | undefined;
+    protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -48,6 +50,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
                 }
                 await this.languageModelRegistry.patchLanguageModel(modelDescription.id, { status });
             } else {
+                const proxyUrl = getProxyUrl('https://huggingface.co', this._proxyUrl);
                 this.languageModelRegistry.addLanguageModels([
                     new HuggingFaceModel(
                         modelDescription.id,
@@ -60,6 +63,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
                         undefined,
                         undefined,
                         undefined,
+                        proxyUrl,
                     )
                 ]);
             }
@@ -72,5 +76,13 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
 
     setApiKey(apiKey: string | undefined): void {
         this._apiKey = apiKey || undefined;
+    }
+
+    setProxyUrl(proxyUrl: string | undefined): void {
+        if (proxyUrl) {
+            this._proxyUrl = proxyUrl;
+        } else {
+            this._proxyUrl = undefined;
+        }
     }
 }

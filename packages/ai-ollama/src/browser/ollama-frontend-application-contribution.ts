@@ -37,6 +37,9 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
             const host = this.preferenceService.get<string>(HOST_PREF);
             this.manager.setHost(host || undefined);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOllamaModelDescription(modelId)));
             this.prevModels = [...models];
@@ -46,6 +49,8 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
                     this.manager.setHost(this.preferenceService.get<string>(HOST_PREF));
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
                 }
             });
         });

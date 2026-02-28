@@ -26,6 +26,7 @@ import {
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { InferenceClient } from '@huggingface/inference';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export const HuggingFaceModelIdentifier = Symbol('HuggingFaceModelIdentifier');
 
@@ -68,7 +69,8 @@ export class HuggingFaceModel implements LanguageModel {
         public readonly version?: string,
         public readonly family?: string,
         public readonly maxInputTokens?: number,
-        public readonly maxOutputTokens?: number
+        public readonly maxOutputTokens?: number,
+        protected readonly proxy?: string
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -143,6 +145,6 @@ export class HuggingFaceModel implements LanguageModel {
         if (!token) {
             throw new Error('Please provide a Hugging Face API token.');
         }
-        return new InferenceClient(token);
+        return new InferenceClient(token, { fetch: createProxyFetch(this.proxy) });
     }
 }
