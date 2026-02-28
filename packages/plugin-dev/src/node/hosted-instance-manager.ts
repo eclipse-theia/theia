@@ -142,6 +142,12 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
             // Disable all the other plugins on this instance
             processOptions.env!.THEIA_PLUGINS = '';
+            if (environment.electron.is()) {
+                // When running in Electron, the backend process uses the Electron binary as its
+                // Node.js runtime. Set ELECTRON_RUN_AS_NODE so the spawned backend instance runs
+                // as a plain Node.js process rather than launching a new Electron app window.
+                processOptions.env!.ELECTRON_RUN_AS_NODE = '1';
+            }
             command = await this.getStartCommand(port, debugConfig);
         } else {
             throw new Error('Not supported plugin location: ' + pluginUri.toString());
@@ -242,21 +248,22 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     protected async getStartCommand(port?: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
 
         const processArguments = process.argv;
-        let command: string[];
-        if (environment.electron.is()) {
-            command = ['npm', 'run', 'theia', 'start'];
-        } else {
-            command = processArguments.filter((arg, index, args) => {
-                // remove --port=X and --port X arguments if set
-                // remove --plugins arguments
-                if (arg.startsWith('--port') || args[index - 1] === '--port') {
-                    return;
-                } else {
-                    return arg;
-                }
-
-            });
-        }
+        const command = processArguments.filter((arg, index, args) => {
+            // remove --port=X and --port X arguments if set
+            if (arg.startsWith('--port') || args[index - 1] === '--port') {
+                return false;
+            }
+            // remove --plugins=X and --plugins X arguments if set
+            // (the hosted instance should only load the hosted plugin via HOSTED_PLUGIN env var)
+            if (arg.startsWith('--plugins') || args[index - 1] === '--plugins') {
+                return false;
+            }
+            // remove --ovsx-router-config=X and --ovsx-router-config X arguments if set
+            if (arg.startsWith('--ovsx-router-config') || args[index - 1] === '--ovsx-router-config') {
+                return false;
+            }
+            return true;
+        });
         if (process.env.HOSTED_PLUGIN_HOSTNAME) {
             command.push('--hostname=' + process.env.HOSTED_PLUGIN_HOSTNAME);
         }

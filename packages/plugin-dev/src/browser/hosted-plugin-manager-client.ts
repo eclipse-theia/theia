@@ -319,17 +319,24 @@ export class HostedPluginManagerClient {
      * Opens window with URL to the running plugin instance.
      */
     protected async openPluginWindow(): Promise<void> {
-        // do nothing for electron browser
-        if (isNative) {
-            return;
-        }
-
         if (this.pluginInstanceURL) {
-            try {
-                this.windowService.openNewWindow(this.pluginInstanceURL);
-            } catch (err) {
-                // browser blocked opening of a new tab
-                this.openNewTabAskDialog.showOpenNewTabAskDialog(this.pluginInstanceURL);
+            if (isNative) {
+                // In Electron, the hosted backend is a headless Node.js server process.
+                // Open a new default window (file:// URL) pointing to the hosted backend's
+                // port, just like normal Electron windows. This ensures the origin is
+                // file:// which passes the ElectronWsOriginValidator.
+                const port = new URL(this.pluginInstanceURL).port;
+                // ElectronWindowService.openNewDefaultWindow takes flat WindowSearchParams
+                // (not WindowReloadOptions), passing them directly as URL search params.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                this.windowService.openNewDefaultWindow({ port } as any);
+            } else {
+                try {
+                    this.windowService.openNewWindow(this.pluginInstanceURL);
+                } catch (err) {
+                    // browser blocked opening of a new tab
+                    this.openNewTabAskDialog.showOpenNewTabAskDialog(this.pluginInstanceURL);
+                }
             }
         }
     }
