@@ -75,6 +75,16 @@ export const debugPreferencesSchema: PreferenceSchema = {
             ],
             description: nls.localizeByDefault('Controls whether variables that are lazily resolved, such as getters, are automatically resolved and expanded by the debugger.')
         },
+        'debug.focusWindowOnBreak': {
+            type: 'boolean',
+            default: true,
+            description: nls.localizeByDefault('Controls whether the workbench window should be focused when the debugger breaks.')
+        },
+        'debug.focusEditorOnBreak': {
+            type: 'boolean',
+            default: true,
+            description: nls.localizeByDefault('Controls whether the editor should be focused when the debugger breaks.')
+        },
     }
 };
 
@@ -87,6 +97,8 @@ export class DebugConfiguration {
     'debug.confirmOnExit': 'never' | 'always';
     'debug.disassemblyView.showSourceCode': boolean;
     'debug.autoExpandLazyVariables': 'on' | 'off';
+    'debug.focusWindowOnBreak': boolean;
+    'debug.focusEditorOnBreak': boolean;
 }
 
 export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');

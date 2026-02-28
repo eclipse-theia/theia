@@ -39,8 +39,16 @@ export interface WindowService {
     /**
      * Opens a new default window.
      * - In electron and in the browser it will open the default window without a pre-defined content.
+     * @returns a window identifier that can be passed to {@link closeWindow}, or -1 if not supported.
      */
-    openNewDefaultWindow(params?: WindowReloadOptions): void;
+    openNewDefaultWindow(params?: WindowReloadOptions): Promise<number>;
+
+    /**
+     * Closes a window previously opened by {@link openNewDefaultWindow}.
+     * @param windowId the identifier returned by {@link openNewDefaultWindow}.
+     * No-op if the window does not exist or the platform does not support it.
+     */
+    closeWindow(windowId: number): void;
 
     /**
      * Reveal and focuses the current window

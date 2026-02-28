@@ -16,6 +16,7 @@
 
 import { CommandService, DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
 import { LabelProvider, ApplicationShell, ConfirmDialog } from '@theia/core/lib/browser';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
@@ -25,6 +26,7 @@ import { TaskService, TaskEndedInfo, TaskEndedTypes } from '@theia/task/lib/brow
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-common';
+import { DebugPreferences } from '../common/debug-preferences';
 import { DebugError, DebugService } from '../common/debug-service';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
@@ -172,6 +174,12 @@ export class DebugSessionManager {
 
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
+
+    @inject(DebugPreferences)
+    protected readonly debugPreferences: DebugPreferences;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
@@ -598,7 +606,14 @@ export class DebugSessionManager {
     open(revealOption: 'auto' | 'center' = 'center'): void {
         const { currentFrame } = this;
         if (currentFrame && currentFrame.thread.stopped) {
-            currentFrame.open({ revealOption });
+            const focusEditor = this.debugPreferences['debug.focusEditorOnBreak'];
+            currentFrame.open({
+                revealOption,
+                mode: focusEditor ? 'activate' : 'reveal',
+            });
+            if (this.debugPreferences['debug.focusWindowOnBreak']) {
+                this.windowService.focus();
+            }
         }
     }
     protected updateBreakpoints(previous: DebugSession | undefined, current: DebugSession | undefined): void {
