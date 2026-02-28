@@ -93,6 +93,9 @@ export class HostedPluginManagerClient {
 
     private connection: DebugSessionConnection;
 
+    // Session ID of the parent pwa-extensionHost debug session
+    protected hostedPluginSessionId: string | undefined;
+
     // path to the plugin on the file system
     protected pluginLocation: URI | undefined;
 
@@ -215,7 +218,9 @@ export class HostedPluginManagerClient {
                 name,
                 smartStep: true,
                 sourceMaps: !!outFiles,
-                outFiles
+                outFiles,
+                parentSessionId: this.hostedPluginSessionId,
+                lifecycleManagedByParent: true,
             }
         });
     }
@@ -231,6 +236,16 @@ export class HostedPluginManagerClient {
             if (this.hostedWindowId !== undefined) {
                 this.windowService.closeWindow(this.hostedWindowId);
                 this.hostedWindowId = undefined;
+            }
+            // Terminate the parent pwa-extensionHost debug session (and its children)
+            // so that stopping the hosted instance also ends all related debug sessions,
+            // matching VS Code's behavior where they are tightly coupled.
+            if (this.hostedPluginSessionId) {
+                const session = this.debugSessionManager.sessions.find(s => s.id === this.hostedPluginSessionId);
+                if (session) {
+                    this.debugSessionManager.terminateSession(session);
+                }
+                this.hostedPluginSessionId = undefined;
             }
             this.messageService.info((this.pluginInstanceURL
                 ? nls.localize('theia/plugin-dev/instanceTerminated', '{0} has been terminated', this.pluginInstanceURL)
@@ -313,11 +328,25 @@ export class HostedPluginManagerClient {
     register(configType: string, connection: DebugSessionConnection): void {
         if (configType === 'pwa-extensionHost') {
             this.connection = connection;
+            this.hostedPluginSessionId = connection.sessionId;
             this.connection.onRequest('launchVSCode', (request: LaunchVSCodeRequest) => this.launchVSCode(request));
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.connection.on('exited', async (args: any) => {
                 await this.stop();
+            });
+
+            // Stop the hosted instance when the parent pwa-extensionHost session or any
+            // of its child sessions (e.g. "Hosted Plugin: Remote Process") are destroyed.
+            // The 'exited' event may not fire because the hosted backend process is not a
+            // child of the debug adapter.
+            const onDestroy = this.debugSessionManager.onDidDestroyDebugSession(async session => {
+                const isParent = session.id === this.hostedPluginSessionId;
+                const isChild = session.parentSession?.id === this.hostedPluginSessionId;
+                if ((isParent || isChild) && await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+                    onDestroy.dispose();
+                    await this.stop(false);
+                }
             });
         }
     }
