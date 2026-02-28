@@ -108,33 +108,13 @@ describe('SCM', function () {
                 assert.isTrue(scmWidget.resourceWidget.isVisible);
             });
 
-            it('the view should not display the resource tree when no repository is present', () => {
+            it('the view should remain visible when no repository is present (shows welcome content)', () => {
 
                 // Store the current selected repository so it can be restored.
                 const cachedSelectedRepository = scmService.selectedRepository;
 
                 scmService.selectedRepository = undefined;
-                assert.isFalse(scmWidget.resourceWidget.isVisible);
-
-                // Restore the selected repository.
-                scmService.selectedRepository = cachedSelectedRepository;
-            });
-
-        });
-
-        describe('\'ScmNoRepositoryWidget\'', () => {
-
-            it('should not be visible when a repository is present', () => {
-                assert.isFalse(scmWidget.noRepositoryWidget.isVisible);
-            });
-
-            it('should be visible when no repository is present', () => {
-
-                // Store the current selected repository so it can be restored.
-                const cachedSelectedRepository = scmService.selectedRepository;
-
-                scmService.selectedRepository = undefined;
-                assert.isTrue(scmWidget.noRepositoryWidget.isVisible);
+                assert.isTrue(scmWidget.resourceWidget.isVisible);
 
                 // Restore the selected repository.
                 scmService.selectedRepository = cachedSelectedRepository;
