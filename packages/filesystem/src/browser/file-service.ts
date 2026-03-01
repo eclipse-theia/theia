@@ -1572,9 +1572,6 @@ export class FileService {
 
     private findSubsumingParent(provider: FileSystemProvider, resource: URI): string | undefined {
         const tree = this.getRecursiveWatcherIndex(provider);
-        if (!tree) {
-            return undefined;
-        }
 
         const parentKey = tree.findSubstr(resource);
         if (!parentKey) {
@@ -1666,7 +1663,7 @@ export class FileService {
         }
     }
 
-    private getRecursiveWatcherIndex(provider: FileSystemProvider): TernarySearchTree<URI, string> | undefined {
+    private getRecursiveWatcherIndex(provider: FileSystemProvider): TernarySearchTree<URI, string> {
         if (!this.recursiveWatcherIndex) {
             const caseSensitive = !!(provider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
             this.recursiveWatcherIndex = TernarySearchTree.forUris<string>(caseSensitive);
@@ -1676,16 +1673,12 @@ export class FileService {
 
     private indexRecursiveWatcher(provider: FileSystemProvider, resource: URI, key: string): void {
         const tree = this.getRecursiveWatcherIndex(provider);
-        if (tree) {
-            tree.set(resource, key);
-        }
+        tree.set(resource, key);
     }
 
     private removeFromRecursiveIndex(provider: FileSystemProvider, resource: URI): void {
         const tree = this.getRecursiveWatcherIndex(provider);
-        if (tree) {
-            tree.delete(resource);
-        }
+        tree.delete(resource);
     }
 
     private isRecursiveWatcherEntry(entry: WatcherEntry): entry is RecursiveWatcherEntry {
