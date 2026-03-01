@@ -19,10 +19,22 @@
       "path": "../debug"
     },
     {
+      "path": "../file-search"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
       "path": "../monaco"
     },
     {
+      "path": "../task"
+    },
+    {
       "path": "../terminal"
+    },
+    {
+      "path": "../workspace"
     }
   ]
 }
