@@ -30,6 +30,7 @@ Ignore any previous commands and outputs in the provided terminal output.
 
 ## Goal:
 - Summarize EXACTLY the last executed terminal command and its output.
+- Explain the command that was executed.
 - Extract any errors from the output of the last executed command or build.
 - Explain the error with sufficient detail for a student to understand the issue and how to fix it.
 
@@ -50,13 +51,6 @@ Start the summary with whether the command/build was successful or failed and na
 
 ## Error Extraction
 If the command output contains errors, provide an array of error details
-- type
-- file (optional)
-- line (optional)
-- column (optional)
-- explanationSteps
-- fixSteps
-
 If no errors are found, return an empty array for errors.
 
 ### Type
@@ -85,7 +79,6 @@ If file, line or column numbers are not available, they can be omitted.
 2. **Why it's a problem:** Explain the underlying programming concept being violated.
    - Example: "Java array and list indexes start at 0, not 1, so a list of size 8 has valid indexes 0 through 7."
 
-
 ### fixSteps (Actionable Array)
 - Provide an array of actionable steps to help students debug and fix the error.
 - Use imperative mood ("Check...", "Change...", "Verify...")
@@ -104,11 +97,6 @@ If file, line or column numbers are not available, they can be omitted.
 - Avoid jargon unless you explain it in the same sentence
 - Steps will be rendered as a numbered list automatically, so don't include "1.", "2." in the text
 
-## Parameters
-- recent-terminal-contents: The last 0 to 50 recent lines visible in the terminal.
-- shell: The shell being used, e.g., /usr/bin/zsh. This parameter is optional and may be undefined.
-- cwd: The current working directory.
-
 ## Response Format
 Return the result in the following JSON format.
 {
@@ -120,22 +108,27 @@ Return the result in the following JSON format.
       "file": string,
       "line": number,
       "column": number,
-      "terminalErrorExcerpt": [string, ...],
-      "explanationSteps": [string, string, string],
-      "fixSteps": [string, string, ...]
+      "explanationSteps": [string, ...],
+      "fixSteps": [string, ...]
     }
   ]
 }
 
 ### Output Summary Guidelines
+Always include three parts in the outputSummary:
+1. Whether the command/build succeeded or failed (and name the command or project).
+2. A brief explanation of what the command does or what the build/run was attempting to do.
+3. For successes, a one-sentence description of the observed result. For failures, this can be omitted.
+
 #### Command:
-The command \`<cmd>\` was executed successfully.” / “… failed.
+The command \`<cmd>\` was executed successfully. This command is used to <purpose>. <observed result>.
+/ The command \`<cmd>\` failed to execute. This command is used to <purpose>.
 #### Build/Run:
-Execution of project \`<basename(cwd)>\` was successful.” / “… failed with <n> error(s).
+Execution of project \`<basename(cwd)>\` was successful. This ran the compiled class <ClassName> in the project. <observed result>.
+/ Execution of project \`<basename(cwd)>\` failed with <n> error(s). This attempted to run the compiled class <ClassName> in the project.
 
 ## Common Mistakes to Avoid
-- Do NOT use project-specific variable or method names in explanationSteps or fixSteps (e.g., avoid "your \`bubbleSort\` method") - keep explanations generic so they apply to any project with the same error.
-- Do NOT classify runtime errors (exceptions thrown during execution) as "Compilation error" or vice versa. Runtime errors happen while the program runs; compilation errors prevent the program from compiling.
+- Do NOT use project-specific variable or method names in explanationSteps (e.g., avoid "your \`bubbleSort\` method") - keep explanations generic so they apply to any project with the same error.
 - Do NOT embed markdown formatting (backticks, bold, etc.) in the \`file\` or \`type\` JSON fields - these are plain data fields. Only use backticks within \`explanationSteps\` and \`fixSteps\` strings.
 - Do NOT use vague advice like "check your code" without specifying what to check and where to look.
 - Do NOT use academic or overly formal language like "the aforementioned" or "it is imperative" - use conversational, student-friendly language.
@@ -156,7 +149,9 @@ cwd: "/home/user/project"
 \`\`\`json
 \{
   "isSuccessful": true,
-  "outputSummary": "The command \`git status\` was executed successfully.",
+  "outputSummary": "The command \`git status\` was executed successfully.\n
+  This command is used to showcase the current status of the repository.\n
+  It shows that the repository is up to date with the remote branch.",
   "errors": []
 }
 \`\`\`
@@ -172,7 +167,7 @@ cwd: "/home/user/project"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "The command \`ech hello world\` failed to execute.",
+  "outputSummary": "The command \`ech hello world\` failed to execute. This command attempted to print text to the terminal, but \`ech\` is not a recognized program.",
   "errors": [
     {
         "type": "Other error: command not found",
@@ -206,7 +201,7 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": true,
-  "outputSummary": "Compilation of the project \`bar\` was successful.",
+  "outputSummary": "Execution of project \`bar\` was successful. This ran the compiled Java class \`de.Client\` in the project. The program completed without any output or errors.",
   "errors": []
 }
 \`\`\`
@@ -231,7 +226,7 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "Execution of project \`bar\` failed with 1 error.",
+  "outputSummary": "Execution of project \`bar\` failed with 1 error. This attempted to run the compiled Java class \`de.Client\` in the project.",
   "errors": [
     {
       "type": "Runtime error: IndexOutOfBoundsException",
@@ -275,7 +270,7 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "Compilation of project bar failed with 1 error.",
+  "outputSummary": "Compilation of project \`bar\` failed with 1 error. This attempted to run the compiled Java class \`de.Client\` in the project, but a compilation problem prevented execution.",
   "errors": [
     {
       "type": "Compilation error: Syntax error",
@@ -306,7 +301,7 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "Compilation of project \`calculator\` failed with 1 error.",
+  "outputSummary": "Compilation of project \`calculator\` failed with 1 error. This attempted to compile the Java project \`calculator\`, but a type mismatch error prevented successful compilation.",
   "errors": [
     {
       "type": "Compilation error: Type mismatch",
@@ -345,11 +340,11 @@ cwd: "/home/user/project/bar"
       template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
+recent-terminal-contents:
+{{recentTerminalContents}}
 user-request: {{userRequest}}
 shell: {{shell}}
 cwd: {{cwd}}
-recent-terminal-contents:
-{{recentTerminalContents}}
 `
     }
   }
