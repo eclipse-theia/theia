@@ -177,19 +177,24 @@ export class SummaryServiceImpl implements SummaryService {
 
         this.aiTerminalAssistantPreferences.onPreferenceChanged(async event => {
             if (event.preferenceName === 'terminal.aiAssistant.mode') {
-                if (event.newValue === 'dedicated' && this.hiddenTerminalContainer) {
+                const newMode = this.aiTerminalAssistantPreferences['terminal.aiAssistant.mode'];
+                this._isStandAlone = newMode === 'standalone';
+                if (newMode === 'dedicated') {
                     if (this.currentTerminal && !this.currentTerminal.isDisposed) {
                         this.currentTerminal.dispose();
                     }
                     this.removeHiddenTerminalContainer();
                 }
-                if (event.newValue === 'standalone' && !this.hiddenTerminalContainer) {
-                    this.initializeHiddenTerminal();
-                    this.createNewTerminal().catch(err => {
-                        console.error('Error creating terminal after mode switch:', err);
-                    });
+                if (newMode === 'standalone') {
+                    if (!this.hiddenTerminalContainer) {
+                        this.initializeHiddenTerminal();
+                    }
+                    if (!this.currentTerminal || this.currentTerminal.isDisposed) {
+                        this.createNewTerminal().catch(err => {
+                            console.error('Error creating terminal after mode switch:', err);
+                        });
+                    }
                 }
-                this._isStandAlone = event.newValue === 'standalone';
             }
         });
 
