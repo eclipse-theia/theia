@@ -146,7 +146,7 @@ export class AiTerminalSummaryAgent implements Agent {
                 json_schema: {
                     name: 'terminal-output-summary',
                     description: 'Structured summary of terminal output commands',
-                    schema: zodToJsonSchema(Summary)
+                    schema: zodToJsonSchema(Summary as any)
                 }
             },
             agentId: this.id,
