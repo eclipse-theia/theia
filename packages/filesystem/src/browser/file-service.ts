@@ -1533,10 +1533,11 @@ export class FileService {
             entry.subsumingParent = undefined;
         }
 
-        // If this is a recursive watcher with subsumed children, promote them
+        // If this is a recursive watcher with subsumed children, promote them.
+        // Remove from the index first so that promoted children don't re-parent to this dying entry.
         if (this.isRecursiveWatcherEntry(entry)) {
-            this.promoteSubsumedChildren(entry);
             this.removeFromRecursiveIndex(entry.provider, entry.resource);
+            this.promoteSubsumedChildren(entry);
         }
 
         // Dispose the real OS watcher if any
