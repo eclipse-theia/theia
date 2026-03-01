@@ -1,10 +1,65 @@
+/* ==========================================
+   Main view widget - full height with border
+   ========================================== */
+
+.ai-terminal-assistant-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.ai-terminal-assistant-view.success-border {
+    border-left: calc(var(--theia-border-width) * 4) solid var(--theia-successBackground);
+}
+
+.ai-terminal-assistant-view.error-border {
+    border-left: calc(var(--theia-border-width) * 4) solid var(--theia-errorForeground);
+}
+
+.ai-terminal-assistant-view.neutral-border {
+    border-left: calc(var(--theia-border-width) * 4) solid var(--theia-widget-shadow);
+}
+
+/* ==========================================
+   Summary widget - scrollable content area
+   ========================================== */
+
+.summary-view-widget {
+    flex: 1;
+    min-height: 0; /* Required for flex child scrolling */
+    overflow-y: auto;
+}
+
 .summary-view-container {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
     gap: calc(var(--theia-ui-padding) * 4/3);
-    /* padding: calc(var(--theia-ui-padding) * 8/3); */
+    padding: var(--theia-ui-padding);
+}
+
+.summary-loading {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+    padding: var(--theia-ui-padding);
+    color: var(--theia-descriptionForeground);
+}
+
+.summary-loading .codicon-loading {
+    color: var(--theia-progressBar-background);
+}
+
+/* ==========================================
+   Buffer widget - fixed to bottom with input
+   ========================================== */
+
+.ai-terminal-buffer-widget {
+    flex-shrink: 0;
+    border-top: var(--theia-border-width) solid var(--theia-widget-shadow);
 }
 
 .summary-view-header {
@@ -45,10 +100,12 @@
 
 .build-result-status {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-start;
     gap: calc(var(--theia-ui-padding) * 2/3);
     padding: 0px;
+    font-weight: 600;
+    font-size: 1.1em;
 }
 
 .build-result-header {
@@ -105,6 +162,24 @@
     justify-content: flex-start;
 }
 
+.error-detail-header-title {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+}
+
+.error-detail-header-title .error-type {
+    font-weight: 600;
+    color: var(--theia-foreground);
+}
+
+.error-detail-header-title .error-location {
+    font-weight: normal;
+    color: var(--theia-descriptionForeground);
+    font-family: var(--theia-editor-font-family);
+    font-size: 0.9em;
+}
+
 .error-detail-title {
     display: flex;
     flex-direction: column;
@@ -131,7 +206,8 @@
 }
 
 .error-detail-subheader {
-    font-weight: bold;
+    font-weight: 600;
+    color: var(--theia-foreground);
 }
 
 .error-detail-body {
@@ -168,19 +244,7 @@
 }
 
 .ai-summary-container {
-    border-top: var(--theia-border-width) solid var(--theia-widget-shadow);
-    border-right: var(--theia-border-width) solid var(--theia-widget-shadow);
-    border-bottom: var(--theia-border-width) solid var(--theia-widget-shadow);
-    /* border-radius: var(--theia-ui-padding) 0 0 var(--theia-ui-padding); */
     width: 100%;
-}
-
-.success-container-border {
-    border-left: calc(var(--theia-border-width) * 4) solid var(--theia-successBackground);
-}
-
-.error-container-border {
-    border-left: calc(var(--theia-border-width) * 4) solid var(--theia-errorForeground);
 }
 
 code {
@@ -194,21 +258,44 @@ code {
 
 .command-input-field {
     width: 100%;
-    padding: calc(var(--theia-ui-padding) * 2/3);
-    border: var(--theia-border-width) solid var(--theia-widget-shadow);
+    padding: calc(var(--theia-ui-padding));
+    border: var(--theia-border-width) solid var(--theia-input-border);
     border-radius: var(--theia-border-radius);
     box-sizing: border-box;
+    background-color: var(--theia-input-background);
+    color: var(--theia-input-foreground);
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.command-input-field:focus {
+    outline: none;
+    border-color: var(--theia-focusBorder);
+}
+
+.command-input-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.command-input-field::placeholder {
+    color: var(--theia-input-placeholderForeground);
 }
 
 .terminal-buffer-container {
     width: 100%;
-    height: 200px;
+    max-height: 150px;
     overflow-y: auto;
     background-color: var(--theia-editor-background);
     border: var(--theia-border-width) solid var(--theia-widget-shadow);
     border-radius: var(--theia-border-radius);
     padding: calc(var(--theia-ui-padding) * 2/3);
+    margin-bottom: var(--theia-ui-padding);
     box-sizing: border-box;
+}
+
+.ai-terminal-buffer-widget > div {
+    padding: var(--theia-ui-padding);
 }
 
 .error-lines-container {
@@ -239,4 +326,90 @@ code {
     padding: 0 calc(var(--theia-ui-padding) * 2);
     position: relative;
     padding-left: calc(var(--theia-ui-padding) * 6);
+}
+
+/* ==========================================
+   Typography: Paragraphs
+   ========================================== */
+
+.summary-view-container p,
+.summary-view-container .markdown-content p {
+    margin: 0;
+    padding: 0;
+}
+
+/* ==========================================
+   Typography: Lists (ul, ol)
+   ========================================== */
+
+.summary-view-container ul,
+.summary-view-container ol {
+    margin: 0;
+    padding: 0;
+    padding-left: calc(var(--theia-ui-padding) * 3);
+    list-style-position: outside;
+}
+
+.summary-view-container ul {
+    list-style-type: disc;
+}
+
+.summary-view-container ol {
+    list-style-type: decimal;
+}
+
+.summary-view-container li {
+    margin: 0;
+    padding: calc(var(--theia-ui-padding) * 0.5) 0;
+    line-height: 1.4;
+}
+
+/* Remove extra spacing for nested lists */
+.summary-view-container li > ul,
+.summary-view-container li > ol {
+    margin-top: calc(var(--theia-ui-padding) * 0.5);
+    margin-bottom: 0;
+}
+
+/* Nested list styling */
+.summary-view-container ul ul {
+    list-style-type: circle;
+}
+
+.summary-view-container ul ul ul {
+    list-style-type: square;
+}
+
+/* Ensure markdown content within list items has no extra spacing */
+.summary-view-container li .markdown-content,
+.summary-view-container li .markdown-content p {
+    margin: 0;
+    padding: 0;
+    display: inline;
+}
+
+/* ==========================================
+   Error explanation and fix steps
+   ========================================== */
+
+.error-explanation-steps,
+.error-fix-steps {
+    margin: 0;
+    padding: 0;
+    padding-left: calc(var(--theia-ui-padding) * 3);
+    width: 100%;
+    max-width: min(600px, 100%);
+}
+
+.error-explanation-steps li,
+.error-fix-steps li {
+    padding: calc(var(--theia-ui-padding) * 0.5) 0;
+}
+
+.error-explanation-steps {
+    list-style-type: disc;
+}
+
+.error-fix-steps {
+    list-style-type: decimal;
 }

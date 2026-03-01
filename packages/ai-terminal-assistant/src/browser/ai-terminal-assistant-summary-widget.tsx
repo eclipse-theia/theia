@@ -173,22 +173,21 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
         commandService.executeCommand(commandId, error);
     }, [commandService]);
 
-
     const renderMarkdown = React.useCallback((content: string) => {
-        return <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>
+        return <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>;
     }, [markdownRenderer]);
 
     const commands = commandService.commands;
 
     return (
         <div className='summary-view-container'>
-            {/* <div className='summary-view-header'>
-                {!summary && <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
-                <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
-            </div> */}
-            {loading ? <div>Loading...</div> :
+            {loading ?
+                <div className='summary-loading'>
+                    <span className={`${codicon('loading')} theia-animation-spin`}></span>
+                    <span>Analyzing terminal output...</span>
+                </div> :
                 summary ?
-                    <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
+                    <div className='ai-summary-container'>
                         <BuildResultOverview
                             summary={summary}
                             onRenderMarkdown={renderMarkdown}
@@ -206,8 +205,10 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
                             )}
                         </div>
                     </div> :
-                    // eslint-disable-next-line no-null/no-null
-                    null
+                    <div>
+                        <h3>Analyze Terminal Output with the AI Terminal Assistant</h3>
+                        <p>To start analyzing terminal output, simply run a command in the terminal or start a task in the task runner.</p>
+                    </div>
             }
         </div>
     );
@@ -264,15 +265,15 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
 const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> = ({ errorDetail, commands, onOpenError, onExecuteCommand, onRenderMarkdown, onDropdownToggle, isDropdownOpen }: ErrorDetailHeaderProps) => {
     const chevronDownIcon = codicon('chevron-down');
     const chevronRightIcon = codicon('chevron-right');
-    const lineText = typeof errorDetail.line === 'number' ? `, Line ${errorDetail.line}` : '';
+    const lineText = typeof errorDetail.line === 'number' ? `:${errorDetail.line}` : '';
 
     return (
         <div className='error-detail-header'>
             <div className='error-detail-dropdown' onClick={onDropdownToggle}>
                 {isDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
                 <div className='error-detail-header-title'>
-                    {errorDetail.type}
-                    {errorDetail.file && <>{onRenderMarkdown(`${errorDetail.file}${lineText}`)}</>}
+                    <span className='error-type'>{errorDetail.type}</span>
+                    {errorDetail.file && <span className='error-location'>{onRenderMarkdown(errorDetail.file + lineText)}</span>}
                 </div>
             </div>
             <div className='button-group'>
