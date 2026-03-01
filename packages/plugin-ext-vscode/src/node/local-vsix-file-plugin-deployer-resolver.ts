@@ -16,11 +16,12 @@
 
 import * as path from 'path';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PluginDeployerResolverContext } from '@theia/plugin-ext';
+import { PluginDeployerResolverContext, PluginDeployerHandler } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler';
-import { existsInDeploymentDir, unpackToDeploymentDir } from './plugin-vscode-utils';
+import { existsInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils';
+import { PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-identifiers';
 
 @injectable()
 export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerResolver {
@@ -28,6 +29,7 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
     static FILE_EXTENSION = '.vsix';
 
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
+    @inject(PluginDeployerHandler) protected readonly pluginDeployerHandler: PluginDeployerHandler;
 
     protected get supportedScheme(): string {
         return LocalVSIXFilePluginDeployerResolver.LOCAL_FILE;
@@ -38,14 +40,48 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
     }
 
     async resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string): Promise<void> {
-        const extensionId = path.basename(localPath, LocalVSIXFilePluginDeployerResolver.FILE_EXTENSION);
+        // Extract the true extension identity from the VSIX package.json
+        // This prevents duplicate installations when the same extension is installed from VSIX files with different filenames
+        // See: https://github.com/eclipse-theia/theia/issues/16845
+        const components = await extractExtensionIdentityFromVsix(localPath);
 
-        if (await existsInDeploymentDir(this.environment, extensionId)) {
-            console.log(`[${pluginResolverContext.getOriginId()}]: Target dir already exists in plugin deployment dir`);
+        if (!components) {
+            // Fallback to filename-based ID if package.json cannot be read
+            // This maintains backward compatibility for edge cases
+            const fallbackId = path.basename(localPath, LocalVSIXFilePluginDeployerResolver.FILE_EXTENSION);
+            console.warn(`[${pluginResolverContext.getOriginId()}]: Could not read extension identity from VSIX, falling back to filename: ${fallbackId}`);
+
+            if (await existsInDeploymentDir(this.environment, fallbackId)) {
+                console.log(`[${pluginResolverContext.getOriginId()}]: Target dir already exists in plugin deployment dir`);
+                return;
+            }
+
+            const fallbackDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, fallbackId);
+            pluginResolverContext.addPlugin(fallbackId, fallbackDeploymentDir);
             return;
         }
 
-        const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, extensionId);
-        pluginResolverContext.addPlugin(extensionId, extensionDeploymentDir);
+        const unversionedId = PluginIdentifiers.componentsToUnversionedId(components);
+        const versionedId = PluginIdentifiers.componentsToVersionedId(components);
+
+        // Check if an extension with this identity is already deployed in memory
+        const existingPlugins = this.pluginDeployerHandler.getDeployedPluginsById(unversionedId);
+        if (existingPlugins.length > 0) {
+            const existingVersions = existingPlugins.map(p => p.metadata.model.version);
+            // Throw an error with a user-facing message
+            throw new Error(
+                'Extension ' + unversionedId + ' (version(s): ' + existingVersions.join(', ') + ') is already installed.\n' +
+                'Uninstall the existing extension before installing a new version from VSIX.'
+            );
+        }
+
+        // Check if the deployment directory already exists on disk
+        if (await existsInDeploymentDir(this.environment, versionedId)) {
+            console.log(`[${pluginResolverContext.getOriginId()}]: Extension "${versionedId}" already exists in deployment dir`);
+            return;
+        }
+
+        const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, versionedId);
+        pluginResolverContext.addPlugin(versionedId, extensionDeploymentDir);
     }
 }
