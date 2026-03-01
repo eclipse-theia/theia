@@ -130,7 +130,8 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
     'files.autoSaveWhenNoErrors': {
         'type': 'boolean',
         'default': false,
-        'markdownDescription': nls.localizeByDefault('Controls whether auto save is enabled only when the file has no errors. Only applies when `#files.autoSave#` is not set to `{0}`.', 'off')
+        'markdownDescription': nls.localize('theia/editor/autoSaveWhenNoErrors',
+            'Controls whether auto save is enabled only when the file has no errors. Only applies when `#files.autoSave#` is not set to `{0}`.', 'off')
     },
     'files.refactoring.autoSave': {
         'type': 'boolean',
