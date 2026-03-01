@@ -1,13 +1,17 @@
 {
   "name": "@theia/ai-terminal-assistant",
-  "version": "1.66.0",
+  "version": "1.69.0",
   "description": "Theia - AI Terminal Assistant Extension",
   "dependencies": {
-    "@theia/ai-core": "1.66.0",
-    "@theia/core": "1.66.0",
-    "@theia/terminal": "1.66.0",
-    "@theia/debug": "1.66.0",
-    "@theia/monaco": "1.66.0",
+    "@theia/ai-core": "1.69.0",
+    "@theia/core": "1.69.0",
+    "@theia/terminal": "1.69.0",
+    "@theia/debug": "1.69.0",
+    "@theia/monaco": "1.69.0",
+    "@theia/task": "1.69.0",
+    "@theia/file-search": "1.69.0",
+    "@theia/filesystem": "1.69.0",
+    "@theia/workspace": "1.69.0",
     "@theia/monaco-editor-core": "1.96.302",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.23.2"
@@ -45,7 +49,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.66.0"
+    "@theia/ext-scripts": "1.69.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
