@@ -290,7 +290,7 @@ export class SummaryServiceImpl implements SummaryService {
     }
 
     async getBufferContent(): Promise<string[]> {
-        return this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
+        return this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length).reverse();
     }
 
     async writeToCurrentTerminal(command: string): Promise<void> {
@@ -335,6 +335,7 @@ export class SummaryServiceImpl implements SummaryService {
             const cwd = (await (lastUsedTerminal as TerminalWidgetImpl).cwd).toString();
             const shell = await this.getTerminalShell(lastUsedTerminal);
             const recentTerminalContents = this.getRecentTerminalCommands(lastUsedTerminal);
+            console.log('recent terminal contents:', recentTerminalContents);
             return this.agent.getSummary(
                 cwd,
                 recentTerminalContents,
@@ -343,6 +344,35 @@ export class SummaryServiceImpl implements SummaryService {
         }
         throw new Error('No active terminal found.');
     }
+
+    async openErrorInEditor(error: ErrorDetail): Promise<void> {
+        if (!error.file) {
+            throw new Error('Error does not contain file information.')
+        };
+        const terminal = this.terminalService.lastUsedTerminal;
+        if (!terminal) {
+            throw new Error('No active terminal found.');
+        }
+        const terminalLinks = await this.fileLinkProvider.provideLinks(`${error.file}${error.line ? ':' + error.line.toString() : ''}`, terminal);
+        const termminalLink = terminalLinks[0];
+        if (!termminalLink) {
+            throw new Error(`Could not find file link for ${error.file}`);
+        }
+        await termminalLink.handle();
+
+        const monacoEditor = this.monacoEditorService.getActiveCodeEditor();
+        if (monacoEditor) {
+            monacoEditor.createDecorationsCollection([{
+                range: new monaco.Range(error.line || 1, 1, error.line || 1, 1),
+                options: {
+                    className: 'error-line-decoration',
+                    description: 'error-line-decoration',
+                    hoverMessage: { value: `**Error**: ${error.fixSteps.join(' ')}` },
+                    isWholeLine: true,
+                }
+            }]);
+        }
+    };
 
     protected async enrichErrorsWithFileContent(summary: Summary): Promise<Summary> {
         const enrichedErrors = await Promise.all(summary.errors.map(async error => {
@@ -406,40 +436,13 @@ export class SummaryServiceImpl implements SummaryService {
         return results.length > 0 ? results[0] : undefined;
     }
 
-    async openErrorInEditor(error: ErrorDetail): Promise<void> {
-        if (!error.file) {
-            throw new Error('Error does not contain file information.')
-        };
-        const terminal = this.terminalService.lastUsedTerminal;
-        if (!terminal) {
-            throw new Error('No active terminal found.');
-        }
-        const terminalLinks = await this.fileLinkProvider.provideLinks(`${error.file}${error.line ? ':' + error.line.toString() : ''}`, terminal);
-        const termminalLink = terminalLinks[0];
-        if (!termminalLink) {
-            throw new Error(`Could not find file link for ${error.file}`);
-        }
-        await termminalLink.handle();
-
-        const monacoEditor = this.monacoEditorService.getActiveCodeEditor();
-        if (monacoEditor) {
-            monacoEditor.createDecorationsCollection([{
-                range: new monaco.Range(error.line || 1, 1, error.line || 1, 1),
-                options: {
-                    className: 'error-line-decoration',
-                    description: 'error-line-decoration',
-                    hoverMessage: { value: `**Error**: ${error.fixSteps.join(' ')}` },
-                    isWholeLine: true,
-                }
-            }]);
-        }
-    };
-
     protected getRecentTerminalCommands(terminal: TerminalWidget): string[] {
         const maxLines = 50;
-        return terminal.buffer.getLines(0,
-            terminal.buffer.length > maxLines ? maxLines : terminal.buffer.length
-        ).reverse();
+        return terminal.buffer.getLines(
+            Math.max(terminal.buffer.length - maxLines, 0),
+            maxLines,
+            true
+        );
     }
 
     // fetch shell if terminal process is still running
@@ -482,7 +485,7 @@ export class SummaryServiceImpl implements SummaryService {
         // Set up output listener BEFORE starting to catch early output
         this.currentTerminal.onOutput(output => {
             if (this._isTaskRunning) {
-                this._terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
+                this._terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length).reverse();
                 this.onCurrentTerminalBufferChangedEmitter.fire();
             }
         });

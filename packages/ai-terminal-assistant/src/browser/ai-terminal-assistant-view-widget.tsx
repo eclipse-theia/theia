@@ -88,7 +88,7 @@ export class AiTerminalAssistantViewWidget extends BaseWidget {
         this.toDispose.push(
             this.aiTerminalAssistantPreferences.onPreferenceChanged(event => {
                 if (event.preferenceName === 'terminal.aiAssistant.mode') {
-                    this._isStandAlone = event.newValue === 'standalone';
+                    this._isStandAlone = this.aiTerminalAssistantPreferences['terminal.aiAssistant.mode'] === 'standalone';
                     this.update();
                 }
             })
