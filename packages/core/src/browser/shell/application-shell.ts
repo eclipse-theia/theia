@@ -1240,6 +1240,10 @@ export class ApplicationShell extends Widget {
             // activate another widget if an active widget will be closed
             const onCloseRequest = newValue['onCloseRequest'];
             newValue['onCloseRequest'] = msg => {
+                const focusedElement = document.activeElement as HTMLElement;
+                if (focusedElement && focusedElement.blur) {
+                    focusedElement.blur();
+                }
                 const currentTabBar = this.currentTabBar;
                 if (currentTabBar) {
                     const recentlyUsedInTabBar = currentTabBar['_previousTitle'] as TabBar<Widget>['currentTitle'];
