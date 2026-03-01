@@ -30,10 +30,13 @@ export class SaveableService implements FrontendApplicationContribution {
     protected saveThrottles = new Map<Widget, AutoSaveThrottle>();
     protected saveMode: AutoSaveMode = 'off';
     protected saveDelay = 1000;
+    protected saveWhenNoErrors = false;
+    protected autoSaveErrorChecker?: (uri: URI) => boolean;
     protected shell: ApplicationShell;
 
     protected readonly onDidAutoSaveChangeEmitter = new Emitter<AutoSaveMode>();
     protected readonly onDidAutoSaveDelayChangeEmitter = new Emitter<number>();
+    protected readonly onDidAutoSaveConditionsChangeEmitter = new Emitter<void>();
 
     get onDidAutoSaveChange(): Event<AutoSaveMode> {
         return this.onDidAutoSaveChangeEmitter.event;
@@ -41,6 +44,10 @@ export class SaveableService implements FrontendApplicationContribution {
 
     get onDidAutoSaveDelayChange(): Event<number> {
         return this.onDidAutoSaveDelayChangeEmitter.event;
+    }
+
+    get onDidAutoSaveConditionsChange(): Event<void> {
+        return this.onDidAutoSaveConditionsChangeEmitter.event;
     }
 
     get autoSave(): AutoSaveMode {
@@ -57,6 +64,37 @@ export class SaveableService implements FrontendApplicationContribution {
 
     set autoSaveDelay(value: number) {
         this.updateAutoSaveDelay(value);
+    }
+
+    get autoSaveWhenNoErrors(): boolean {
+        return this.saveWhenNoErrors;
+    }
+
+    set autoSaveWhenNoErrors(value: boolean) {
+        this.saveWhenNoErrors = value;
+    }
+
+    /**
+     * Register a function that checks whether a given URI has errors.
+     * When `autoSaveWhenNoErrors` is enabled, auto-save will be suppressed
+     * for files where this checker returns `true`.
+     */
+    setAutoSaveErrorChecker(checker: (uri: URI) => boolean): Disposable {
+        this.autoSaveErrorChecker = checker;
+        return Disposable.create(() => {
+            if (this.autoSaveErrorChecker === checker) {
+                this.autoSaveErrorChecker = undefined;
+            }
+        });
+    }
+
+    /**
+     * Notify that conditions affecting auto-save decisions have changed
+     * (e.g., diagnostic markers were updated). This re-triggers the
+     * auto-save evaluation for all dirty widgets.
+     */
+    notifyAutoSaveConditionsChanged(): void {
+        this.onDidAutoSaveConditionsChangeEmitter.fire();
     }
 
     onDidInitializeLayout(app: FrontendApplication): void {
@@ -165,9 +203,16 @@ export class SaveableService implements FrontendApplicationContribution {
         if (uri?.scheme === UNTITLED_SCHEME) {
             // Never auto-save untitled documents
             return false;
-        } else {
-            return saveable.autosaveable !== false && saveable.dirty;
         }
+        if (saveable.autosaveable === false || !saveable.dirty) {
+            return false;
+        }
+        if (this.saveWhenNoErrors && this.autoSaveErrorChecker && uri) {
+            if (this.autoSaveErrorChecker(uri)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected applySaveableWidget(widget: Widget, saveable: Saveable): void {
@@ -314,6 +359,9 @@ export class AutoSaveThrottle implements Disposable {
             }),
             saveService.onDidAutoSaveDelayChange(() => {
                 this.throttledSave(true);
+            }),
+            saveService.onDidAutoSaveConditionsChange(() => {
+                this.throttledSave();
             })
         );
     }
