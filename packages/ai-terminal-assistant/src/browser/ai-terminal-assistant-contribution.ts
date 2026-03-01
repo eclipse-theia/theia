@@ -30,7 +30,7 @@ export const AI_TERMINAL_SUMMARY_TOGGLE_COMMAND_ID = 'aiTerminalSummary:toggle';
 
 const AI_TERMINAL_SUMMARY_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal-output-summary:toggle',
-    label: 'Terminal Output Summary',
+    label: nls.localize('', 'New AI Terminal Assistant'),
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/summarize');
 
@@ -64,6 +64,7 @@ export class AiTerminalAssistantContribution extends AbstractViewContribution<Ai
             widgetName: AiTerminalAssistantViewWidget.LABEL,
             defaultWidgetOptions: {
                 area: 'bottom',
+                mode: 'split-right',
                 rank: 500
             },
             toggleCommandId: AI_TERMINAL_SUMMARY_TOGGLE_COMMAND_ID,
@@ -90,7 +91,11 @@ export class AiTerminalAssistantContribution extends AbstractViewContribution<Ai
         menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_5'], {
             when: ENABLE_AI_CONTEXT_KEY,
             commandId: AI_TERMINAL_SUMMARY_COMMAND.id,
-            icon: AI_TERMINAL_SUMMARY_COMMAND.iconClass
+        });
+        menus.registerMenuAction([...TerminalMenus.TERMINAL_NEW], {
+            when: ENABLE_AI_CONTEXT_KEY,
+            commandId: AI_TERMINAL_SUMMARY_COMMAND.id,
+            order: '4'
         });
     }
 
@@ -100,7 +105,7 @@ export class AiTerminalAssistantContribution extends AbstractViewContribution<Ai
             execute: async () => {
                 const widget = await this.openView({ activate: true });
                 widget.title.closable = true;
-                widget.title.label = nls.localize('theia/ai/terminal/summaryTitle', 'AI Terminal Summary');
+                widget.title.label = nls.localize('theia/ai/terminal/summaryTitle', 'AI Terminal Assistant');
             },
             isEnabled: () => this.agentService.isEnabled(this.terminalAgent.id)
         }));
@@ -114,5 +119,6 @@ export class AiTerminalAssistantContribution extends AbstractViewContribution<Ai
             when: `terminalFocus && ${ENABLE_AI_CONTEXT_KEY}`
         });
     }
+
 
 }

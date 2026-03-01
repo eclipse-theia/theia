@@ -26,6 +26,7 @@ import { AiTerminalAssistantCommandService, AiTerminalAssistantCommandServiceImp
 import { AiTerminalAssistantViewWidget } from './ai-terminal-assistant-view-widget';
 import { SummaryViewWidget } from './ai-terminal-assistant-summary-widget';
 import { AiTerminalBufferWidget } from './ai-terminal-assistant-buffer-widget';
+import {  bindAiTerminalAssistantPreferences } from './ai-terminal-assistant-preferences';
 
 export default new ContainerModule(bind => {
     // Services
@@ -61,4 +62,6 @@ export default new ContainerModule(bind => {
     // View contribution (provides CommandContribution, MenuContribution, KeybindingContribution)
     bindViewContribution(bind, AiTerminalAssistantContribution);
     bind(FrontendApplicationContribution).toService(AiTerminalAssistantContribution);
+
+    bindAiTerminalAssistantPreferences(bind);
 });

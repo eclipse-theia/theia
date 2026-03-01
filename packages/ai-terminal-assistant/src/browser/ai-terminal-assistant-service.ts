@@ -30,6 +30,7 @@ import { TaskService } from '@theia/task/lib/browser/task-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { AiTerminalAssistantPreferences } from './ai-terminal-assistant-preferences';
 
 export interface SummaryRequest {
     cwd: string;
@@ -97,6 +98,9 @@ export class SummaryServiceImpl implements SummaryService {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(AiTerminalAssistantPreferences)
+    protected readonly aiTerminalAssistantPreferences: AiTerminalAssistantPreferences;
+
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
 
@@ -144,6 +148,7 @@ export class SummaryServiceImpl implements SummaryService {
         return this._isTaskRunning;
     }
 
+    protected _isStandAlone: boolean;
 
     @postConstruct()
     protected initialize(): void {
@@ -168,6 +173,26 @@ export class SummaryServiceImpl implements SummaryService {
         //     });
         // });
 
+        this._isStandAlone = this.aiTerminalAssistantPreferences['terminal.aiAssistant.mode'] === 'standalone';
+
+        this.aiTerminalAssistantPreferences.onPreferenceChanged(async event => {
+            if (event.preferenceName === 'terminal.aiAssistant.mode') {
+                if (event.newValue === 'dedicated' && this.hiddenTerminalContainer) {
+                    if (this.currentTerminal && !this.currentTerminal.isDisposed) {
+                        this.currentTerminal.dispose();
+                    }
+                    this.removeHiddenTerminalContainer();
+                }
+                if (event.newValue === 'standalone' && !this.hiddenTerminalContainer) {
+                    this.initializeHiddenTerminal();
+                    this.createNewTerminal().catch(err => {
+                        console.error('Error creating terminal after mode switch:', err);
+                    });
+                }
+                this._isStandAlone = event.newValue === 'standalone';
+            }
+        });
+
         this.debugSessionManager.onDidStartDebugSession(async () => {
             console.log('Debug session started.');
             this._isTaskRunning = true;
@@ -179,7 +204,7 @@ export class SummaryServiceImpl implements SummaryService {
             this._isTaskRunning = false;
             this.onTaskExitedEmitter.fire();
             await this.requestSummary();
-            this.createNewTerminal().catch(err => {
+                this.createNewTerminal().catch(err => {
                 console.error('Error recreating hidden terminal after task exit:', err);
             });
         });
@@ -231,6 +256,13 @@ export class SummaryServiceImpl implements SummaryService {
         document.body.appendChild(this.hiddenTerminalContainer);
     }
 
+    protected removeHiddenTerminalContainer(): void {
+        if (this.hiddenTerminalContainer) {
+            document.body.removeChild(this.hiddenTerminalContainer);
+            this.hiddenTerminalContainer = undefined;
+        }
+    }
+
     toggleTerminalVisibility(): void {
         if (this.hiddenTerminalContainer) {
             if (this.isTerminalVisible) {
@@ -265,7 +297,7 @@ export class SummaryServiceImpl implements SummaryService {
         }
     }
 
-    async openTerminal() {
+    async openTerminal(): Promise<TerminalWidget> {
         const terminal = await this.terminalService.newTerminal({});
         this.terminalService.open(terminal, { mode: 'activate' });
         await terminal.start();
@@ -274,7 +306,7 @@ export class SummaryServiceImpl implements SummaryService {
         return terminal;
     }
 
-    async requestSummary() {
+    async requestSummary(): Promise<void> {
         this.onSummaryRequestStartedEmitter.fire();
         const summary = await this.sendSummaryRequestForLastUsedTerminal();
         this._currentSummary = summary ? await this.enrichErrorsWithFileContent(summary) : undefined;
@@ -308,7 +340,7 @@ export class SummaryServiceImpl implements SummaryService {
     }
 
     protected async enrichErrorsWithFileContent(summary: Summary): Promise<Summary> {
-        const enrichedErrors = await Promise.all(summary.errors.map(async (error) => {
+        const enrichedErrors = await Promise.all(summary.errors.map(async error => {
             const errorLines = await this.getErrorLines(error);
             return {
                 ...error,
@@ -342,9 +374,7 @@ export class SummaryServiceImpl implements SummaryService {
         if (error.line && error.line > 0 && error.line <= lines.length) {
             const errorLines = lines.slice(start, end);
             // prefix each line with line number
-            const numberedLines = errorLines.map((line, index) => {
-                return `${start + index + 1}: ${line}`;
-            });
+            const numberedLines = errorLines.map((line, index) => `${start + index + 1}: ${line}`);
             return {
                 errorLines: numberedLines,
                 errorLinesStart: start + 1
@@ -372,7 +402,9 @@ export class SummaryServiceImpl implements SummaryService {
     }
 
     async openErrorInEditor(error: ErrorDetail): Promise<void> {
-        if (!error.file) throw new Error('Error does not contain file information.');
+        if (!error.file) {
+            throw new Error('Error does not contain file information.')
+        };
         const terminal = this.terminalService.lastUsedTerminal;
         if (!terminal) {
             throw new Error('No active terminal found.');
@@ -405,7 +437,7 @@ export class SummaryServiceImpl implements SummaryService {
         ).reverse();
     }
 
-    // fetch shell if terminal process is still running 
+    // fetch shell if terminal process is still running
     protected async getTerminalShell(terminal: TerminalWidget): Promise<string | undefined> {
         try {
             const processInfo = await terminal.processInfo;
@@ -422,7 +454,11 @@ export class SummaryServiceImpl implements SummaryService {
         }
         this._terminalBuffer = [];
 
-        const task = true;
+        if (!this._isStandAlone) {
+            return;
+        }
+        const task: boolean = true;
+
         if (task) {
             this._currentTerminal = await this.terminalService.newTerminal({
                 title: 'Hidden TaskTerminal',
@@ -439,7 +475,7 @@ export class SummaryServiceImpl implements SummaryService {
         }
 
         // Set up output listener BEFORE starting to catch early output
-        this.currentTerminal.onOutput((output) => {
+        this.currentTerminal.onOutput(output => {
             if (this._isTaskRunning) {
                 this._terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
                 this.onCurrentTerminalBufferChangedEmitter.fire();
