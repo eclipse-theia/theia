@@ -21,6 +21,7 @@ import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/res
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler';
 import { existsInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils';
+import { PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-identifiers';
 
 @injectable()
 export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerResolver {
