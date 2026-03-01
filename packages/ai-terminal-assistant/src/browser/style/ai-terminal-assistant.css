@@ -176,7 +176,7 @@
 .error-detail-header-title .error-location {
     font-weight: normal;
     color: var(--theia-descriptionForeground);
-    font-family: var(--theia-editor-font-family);
+    font-family: var(--theia-code-font-family);
     font-size: 0.9em;
 }
 
@@ -286,7 +286,8 @@ code {
     width: 100%;
     max-height: 150px;
     overflow-y: auto;
-    background-color: var(--theia-editor-background);
+    background-color: var(--theia-terminal-background);
+    color: var(--theia-terminal-foreground);
     border: var(--theia-border-width) solid var(--theia-widget-shadow);
     border-radius: var(--theia-border-radius);
     padding: calc(var(--theia-ui-padding) * 2/3);
@@ -305,7 +306,7 @@ code {
     border: var(--theia-border-width) solid var(--theia-editorWidget-border);
     border-radius: var(--theia-border-radius);
     overflow: hidden;
-    font-family: var(--theia-editor-font-family);
+    font-family: var(--theia-code-font-family);
     font-size: var(--theia-editor-font-size);
     line-height: var(--theia-editor-line-height);
     padding: calc(var(--theia-ui-padding) * 2/3) 0;
@@ -317,10 +318,10 @@ code {
 }
 
 .command-line {
-    font-family: var(--theia-editor-font-family);
+    font-family: var(--theia-code-font-family);
     font-size: var(--theia-editor-font-size);
     line-height: var(--theia-editor-line-height);
-    color: var(--theia-editor-foreground);
+    color: var(--theia-terminal-foreground);
     white-space: pre-wrap;
     margin: 0;
     padding: 0 calc(var(--theia-ui-padding) * 2);
