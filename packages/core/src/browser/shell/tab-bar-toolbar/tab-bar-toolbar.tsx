@@ -74,7 +74,9 @@ export class TabBarToolbar extends ReactWidget {
         this.toDispose.pushAll([
             this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()),
             this.contextKeyService.onDidChange(e => {
-                if (e.affects(this.keybindingContextKeys)) {
+                if (this.current) {
+                    this.updateTarget(this.current);
+                } else if (e.affects(this.keybindingContextKeys)) {
                     this.maybeUpdate();
                 }
             }),
