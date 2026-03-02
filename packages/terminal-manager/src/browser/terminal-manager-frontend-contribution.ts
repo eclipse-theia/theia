@@ -45,6 +45,14 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
 
     protected commandHandlerDisposables = new DisposableCollection();
 
+    /**
+     * Check if a terminal is a task terminal without creating a circular dependency.
+     * Task terminals have a 'kind' property set to 'task'.
+     */
+    protected isTaskTerminal(terminal: TerminalWidget): boolean {
+        return 'kind' in terminal && (terminal as { kind?: string }).kind === 'task';
+    }
+
     onStart(app: FrontendApplication): void {
         this.preferenceService.ready.then(() => {
             this.preferenceService.onPreferenceChanged(change => {
@@ -89,7 +97,11 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
 
         // Before terminal manager attachment to precede creation of default widget.
         for (const terminal of bottomTerminals) {
-            managerWidget.addTerminalPage(terminal);
+            if (this.isTaskTerminal(terminal)) {
+                managerWidget.addTerminalToTasksPage(terminal);
+            } else {
+                managerWidget.addTerminalPage(terminal);
+            }
             terminal.show(); // Clear hidden flag that may have been set by dock panel on removal.
         }
 
