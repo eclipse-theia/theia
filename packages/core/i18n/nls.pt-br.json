@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "Alterações propostas"
     },
     "ai-chat-ui": {
+      "confirm": "Confirmar",
       "deleteChat": "Excluir bate-papo",
       "initiate-session-task-context": "Contexto da tarefa: Iniciar sessão",
       "navigate-back": "Navegar para trás",

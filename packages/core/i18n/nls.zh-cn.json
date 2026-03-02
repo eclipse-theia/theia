@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "建议修改内容"
     },
     "ai-chat-ui": {
+      "confirm": "确认",
       "deleteChat": "删除聊天记录",
       "initiate-session-task-context": "任务背景:启动会话",
       "navigate-back": "返回导航",

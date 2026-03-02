@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "Предлагаемые изменения"
     },
     "ai-chat-ui": {
+      "confirm": "Подтвердить",
       "deleteChat": "Удалить чат",
       "initiate-session-task-context": "Контекст задачи: инициировать сессию",
       "navigate-back": "Вернуться назад",

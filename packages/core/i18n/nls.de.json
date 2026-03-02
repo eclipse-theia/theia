@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "Vorgeschlagene Änderungen"
     },
     "ai-chat-ui": {
+      "confirm": "Bestätigen",
       "deleteChat": "Chat löschen",
       "initiate-session-task-context": "Aufgabenkontext: Sitzung starten",
       "navigate-back": "Zurück navigieren",

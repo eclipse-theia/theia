@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "Navrhované změny"
     },
     "ai-chat-ui": {
+      "confirm": "Potvrdit",
       "deleteChat": "Smazat chat",
       "initiate-session-task-context": "Kontext úkolu: Zahájit relaci",
       "navigate-back": "Navigovat zpět",

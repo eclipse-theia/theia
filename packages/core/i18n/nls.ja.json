@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "変更案"
     },
     "ai-chat-ui": {
+      "confirm": "確認",
       "deleteChat": "チャットを削除",
       "initiate-session-task-context": "タスクコンテキスト: セッションの開始",
       "navigate-back": "戻る",

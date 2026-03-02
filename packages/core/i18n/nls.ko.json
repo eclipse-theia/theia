@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "제안된 변경 사항"
     },
     "ai-chat-ui": {
+      "confirm": "확인",
       "deleteChat": "채팅 삭제",
       "initiate-session-task-context": "작업 컨텍스트: 세션 시작",
       "navigate-back": "뒤로 가기",

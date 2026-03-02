@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "Javasolt változtatások"
     },
     "ai-chat-ui": {
+      "confirm": "Megerősítés",
       "deleteChat": "Csevegés törlése",
       "initiate-session-task-context": "Feladat kontextusa: Munkamenet indítása",
       "navigate-back": "Vissza",

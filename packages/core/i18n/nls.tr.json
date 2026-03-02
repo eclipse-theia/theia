@@ -1477,6 +1477,7 @@
       "fileChangeSetTitle": "Önerilen değişiklikler"
     },
     "ai-chat-ui": {
+      "confirm": "Onayla",
       "deleteChat": "Sohbeti Sil",
       "initiate-session-task-context": "Görev Bağlamı: Oturumu Başlat",
       "navigate-back": "Geri Dön",
