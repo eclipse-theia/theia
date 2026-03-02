@@ -26,7 +26,7 @@ import {
     noopWidgetStatusBarContribution,
     WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindRootContributionProvider, URI, generateUuid, PreferenceContribution } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindRootContributionProvider, URI, generateUuid, PreferenceContribution, nls } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -93,6 +93,7 @@ import { CustomEditorNavigationContribution } from './custom-editors/custom-edit
 import { bindWebviewPreferences } from '../common/webview-preferences';
 import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
 import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
+import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -297,5 +298,21 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(PluginExtToolbarItemArgumentProcessor).toSelf().inSingletonScope();
     bind(ArgumentProcessorContribution).toService(PluginExtToolbarItemArgumentProcessor);
+
+    bind(WorkspaceRestrictionContribution).toDynamicValue(ctx => {
+        const hostedPlugin = ctx.container.get(HostedPluginSupport);
+        return {
+            getRestrictions(): WorkspaceRestriction[] {
+                if (hostedPlugin.disabledByTrust.size === 0) {
+                    return [];
+                }
+                return [{
+                    label: nls.localize('theia/plugin-ext/extensionsRestrictedMode',
+                        'Some extensions are disabled in Restricted Mode'),
+                    details: Array.from(hostedPlugin.disabledByTrust)
+                }];
+            }
+        };
+    }).inSingletonScope();
 
 });
