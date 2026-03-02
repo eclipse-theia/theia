@@ -85,6 +85,7 @@ describe('FileService watcher deduplication', () => {
         sandbox.restore();
         fileService = new FileService();
         mockProvider = createMockProvider();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         sandbox.stub(fileService as any, 'withProvider').resolves(mockProvider);
     });
 
