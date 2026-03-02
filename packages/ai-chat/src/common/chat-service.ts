@@ -20,11 +20,10 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ChatAgentService } from './chat-agent-service';
+import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
     ChangeSetElement,
@@ -46,6 +45,9 @@ import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
 import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
 import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization';
 import debounce = require('@theia/core/shared/lodash.debounce');
+
+// Re-export for backward compatibility
+export { DefaultChatAgentId, FallbackChatAgentId };
 
 export interface ChatRequestInvocation {
     /**
@@ -102,24 +104,13 @@ export function isSessionDeletedEvent(obj: unknown): obj is SessionDeletedEvent 
     return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'deleted';
 }
 
+export interface SessionRenamedEvent {
+    type: 'renamed';
+    sessionId: string;
+}
+
 export interface SessionOptions {
     focus?: boolean;
-}
-
-/**
- * The default chat agent to invoke
- */
-export const DefaultChatAgentId = Symbol('DefaultChatAgentId');
-export interface DefaultChatAgentId {
-    id: string;
-}
-
-/**
- * In case no fitting chat agent is available, this one will be used (if it is itself available)
- */
-export const FallbackChatAgentId = Symbol('FallbackChatAgentId');
-export interface FallbackChatAgentId {
-    id: string;
 }
 
 export const PinChatAgent = Symbol('PinChatAgent');
@@ -128,12 +119,13 @@ export type PinChatAgent = boolean;
 export const ChatService = Symbol('ChatService');
 export const ChatServiceFactory = Symbol('ChatServiceFactory');
 export interface ChatService {
-    onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
+    onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent | SessionRenamedEvent>
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
     createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession;
     deleteSession(sessionId: string): Promise<void>;
+    renameSession(sessionId: string, title: string): Promise<void>;
     getActiveSession(): ChatSession | undefined;
     setActiveSession(sessionId: string, options?: SessionOptions): void;
 
@@ -170,17 +162,11 @@ interface ChatSessionInternal extends ChatSession {
 
 @injectable()
 export class ChatServiceImpl implements ChatService {
-    protected readonly onSessionEventEmitter = new Emitter<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>();
+    protected readonly onSessionEventEmitter = new Emitter<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent | SessionRenamedEvent>();
     onSessionEvent = this.onSessionEventEmitter.event;
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
-
-    @inject(DefaultChatAgentId) @optional()
-    protected defaultChatAgentId: DefaultChatAgentId | undefined;
-
-    @inject(FallbackChatAgentId) @optional()
-    protected fallbackChatAgentId: FallbackChatAgentId | undefined;
 
     @inject(ChatSessionNamingService) @optional()
     protected chatSessionNamingService: ChatSessionNamingService | undefined;
@@ -247,10 +233,10 @@ export class ChatServiceImpl implements ChatService {
             }
             session.model.dispose();
             this._sessions.splice(sessionIndex, 1);
-            this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
         }
 
-        // Always delete from persistent storage
+        // Always delete from persistent storage first, then fire the event so that
+        // listeners (e.g. the welcome screen) read an already-updated session index.
         if (this.sessionStore) {
             try {
                 await this.sessionStore.deleteSession(sessionId);
@@ -258,6 +244,22 @@ export class ChatServiceImpl implements ChatService {
                 this.logger.error('Failed to delete session from storage', { sessionId, error });
             }
         }
+
+        this.onSessionEventEmitter.fire({ type: 'deleted', sessionId });
+    }
+
+    async renameSession(sessionId: string, title: string): Promise<void> {
+        let session: ChatSession | undefined = this.getSession(sessionId);
+        if (!session) {
+            session = await this.getOrRestoreSession(sessionId);
+        }
+        if (!session) {
+            this.logger.warn('Session not found for rename', { sessionId });
+            return;
+        }
+        session.title = title;
+        await this.saveSession(sessionId);
+        this.onSessionEventEmitter.fire({ type: 'renamed', sessionId });
     }
 
     getActiveSession(): ChatSession | undefined {
@@ -284,7 +286,11 @@ export class ChatServiceImpl implements ChatService {
 
         this.cancelIncompleteRequests(session);
 
-        const resolutionContext: ChatSessionContext = { model: session.model };
+        const resolutionContext: ChatSessionContext = {
+            model: session.model,
+            capabilityOverrides: request.capabilityOverrides,
+            genericCapabilitySelections: request.genericCapabilitySelections
+        };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
@@ -413,17 +419,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
-        const agentPart = this.getMentionedAgent(parsedRequest);
-        if (agentPart) {
-            return this.chatAgentService.getAgent(agentPart.agentId);
-        }
-        if (this.defaultChatAgentId) {
-            return this.chatAgentService.getAgent(this.defaultChatAgentId.id);
-        }
-        if (this.fallbackChatAgentId) {
-            return this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
-        }
-        return undefined;
+        return this.chatAgentService.resolveAgent(parsedRequest);
     }
 
     protected getMentionedAgent(parsedRequest: ParsedChatRequest): ParsedChatRequestAgentPart | undefined {
@@ -439,26 +435,26 @@ export class ChatServiceImpl implements ChatService {
         this.getSession(sessionId)?.model.changeSet.removeElements(uri);
     }
 
-    protected saveSession(sessionId: string): void {
+    protected saveSession(sessionId: string): Promise<void> {
         if (!this.sessionStore) {
             this.logger.debug('Session store not available, skipping save');
-            return;
+            return Promise.resolve();
         }
 
         const session = this.getSession(sessionId);
         if (!session) {
             this.logger.debug('Session not found, skipping save', { sessionId });
-            return;
+            return Promise.resolve();
         }
 
         // Don't save empty sessions
         if (session.model.isEmpty()) {
             this.logger.debug('Session is empty, skipping save', { sessionId });
-            return;
+            return Promise.resolve();
         }
 
         // Store session with title and pinned agent info
-        this.sessionStore.storeSessions(
+        return this.sessionStore.storeSessions(
             { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id }
         ).catch(error => {
             this.logger.error('Failed to store chat sessions', error);

@@ -321,6 +321,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
         try {
             modelReference = await this.monacoTextModelService.createModelReference(this.uri);
             const model = modelReference.object;
+            model.suppressOpenEditorWhenDirty = true;
             const targetContent = contents ?? this.targetState;
             model.textEditorModel.setValue(targetContent);
 

@@ -22,6 +22,7 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
+    ThinkingModeSettings,
     ToolCall,
     ToolRequest,
     ToolRequestParametersProperties,
@@ -71,7 +72,7 @@ export class OllamaModel implements LanguageModel {
             stream
         };
         const structured = request.response_format?.type === 'json_schema';
-        return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken);
+        return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken, request.thinkingMode);
     }
 
     /**
@@ -86,7 +87,13 @@ export class OllamaModel implements LanguageModel {
         };
     }
 
-    protected async dispatchRequest(ollama: Ollama, ollamaRequest: ExtendedChatRequest, structured: boolean, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async dispatchRequest(
+        ollama: Ollama,
+        ollamaRequest: ExtendedChatRequest,
+        structured: boolean,
+        cancellation?: CancellationToken,
+        thinkingMode?: ThinkingModeSettings
+    ): Promise<LanguageModelResponse> {
 
         // Handle structured output request
         if (structured) {
@@ -95,18 +102,25 @@ export class OllamaModel implements LanguageModel {
 
         if (isNonStreaming(ollamaRequest)) {
             // handle non-streaming request
-            return this.handleNonStreamingRequest(ollama, ollamaRequest, cancellation);
+            return this.handleNonStreamingRequest(ollama, ollamaRequest, cancellation, thinkingMode);
         }
 
         // handle streaming request
-        return this.handleStreamingRequest(ollama, ollamaRequest, cancellation);
+        return this.handleStreamingRequest(ollama, ollamaRequest, cancellation, thinkingMode);
     }
 
-    protected async handleStreamingRequest(ollama: Ollama, chatRequest: ExtendedChatRequest, cancellation?: CancellationToken): Promise<LanguageModelStreamResponse> {
+    protected async handleStreamingRequest(
+        ollama: Ollama,
+        chatRequest: ExtendedChatRequest,
+        cancellation?: CancellationToken,
+        thinkingMode?: ThinkingModeSettings
+    ): Promise<LanguageModelStreamResponse> {
+        const supportsThinking = await this.checkThinkingSupport(ollama, chatRequest.model);
+        const thinkParam = supportsThinking ? this.getThinkingParameter(thinkingMode, chatRequest.model) : false;
         const responseStream = await ollama.chat({
             ...chatRequest,
             stream: true,
-            think: await this.checkThinkingSupport(ollama, chatRequest.model)
+            think: thinkParam
         });
 
         cancellation?.onCancellationRequested(() => {
@@ -162,14 +176,21 @@ export class OllamaModel implements LanguageModel {
                             tool_calls: toolCalls
                         });
 
-                        const toolCallsForResponse = await that.processToolCalls(toolCalls, chatRequest, lastUpdated);
+                        // Create tool call message parts and yield them.
+                        // This is required because when calling a tool, Theia AI expects the corresponding message part to exist.
+                        const toolCallsForResponse = that.createToolCalls(toolCalls, lastUpdated);
                         yield { tool_calls: toolCallsForResponse };
+
+                        // Now handle the tool calls
+                        const processedToolCallsForResponse = await that.processToolCalls(toolCallsForResponse, chatRequest);
+                        yield { tool_calls: processedToolCallsForResponse };
 
                         // Continue the conversation with tool results
                         const continuedResponse = await that.handleStreamingRequest(
                             ollama,
                             chatRequest,
-                            cancellation
+                            cancellation,
+                            thinkingMode
                         );
 
                         // Stream the continued response
@@ -201,6 +222,58 @@ export class OllamaModel implements LanguageModel {
         return result?.capabilities?.includes('thinking') || false;
     }
 
+    /**
+     * Determines the value for Ollama's 'think' parameter based on the request's thinking mode settings.
+     *
+     * Note: Most models support boolean values for 'think', but some models (e.g., GPT-OSS) require
+     * effort levels ('low', 'medium', 'high') and ignore boolean values.
+     *
+     * @param thinkingMode The thinking mode settings from the request.
+     * @param model The model name to check for special handling.
+     * @returns The appropriate 'think' parameter value for the model.
+     */
+    protected getThinkingParameter(thinkingMode: ThinkingModeSettings | undefined, model: string): boolean | 'low' | 'medium' | 'high' {
+        if (!thinkingMode?.enabled) {
+            return false;
+        }
+
+        if (this.requiresEffortLevel(model)) {
+            return this.budgetTokensToEffortLevel(thinkingMode.budgetTokens);
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if the model requires effort levels instead of boolean for the 'think' parameter.
+     *
+     * @param model The model name to check.
+     * @returns true if the model requires effort levels.
+     */
+    protected requiresEffortLevel(model: string): boolean {
+        return model.toLowerCase().includes('gpt-oss');
+    }
+
+    /**
+     * Maps budget tokens to Ollama effort levels.
+     *
+     * @param budgetTokens Optional budget tokens from thinking mode settings.
+     * @returns The effort level ('low', 'medium', or 'high').
+     */
+    protected budgetTokensToEffortLevel(budgetTokens: number | undefined): 'low' | 'medium' | 'high' {
+        if (budgetTokens === undefined) {
+            return 'medium';
+        }
+
+        if (budgetTokens <= 2000) {
+            return 'low';
+        } else if (budgetTokens <= 20000) {
+            return 'medium';
+        } else {
+            return 'high';
+        }
+    }
+
     protected async handleStructuredOutputRequest(ollama: Ollama, chatRequest: ChatRequest): Promise<LanguageModelParsedResponse> {
         const response = await ollama.chat({
             ...chatRequest,
@@ -222,12 +295,19 @@ export class OllamaModel implements LanguageModel {
         }
     }
 
-    protected async handleNonStreamingRequest(ollama: Ollama, chatRequest: ExtendedNonStreamingChatRequest, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async handleNonStreamingRequest(
+        ollama: Ollama,
+        chatRequest: ExtendedNonStreamingChatRequest,
+        cancellation?: CancellationToken,
+        thinkingMode?: ThinkingModeSettings
+    ): Promise<LanguageModelResponse> {
         try {
             // even though we have a non-streaming request, we still use the streaming version for two reasons:
             // 1. we can abort the stream if the request is cancelled instead of having to wait for the entire response
             // 2. we can use think: true so the Ollama API separates thinking from content and we can filter out the thoughts in the response
-            const responseStream = await ollama.chat({ ...chatRequest, stream: true, think: await this.checkThinkingSupport(ollama, chatRequest.model) });
+            const supportsThinking = await this.checkThinkingSupport(ollama, chatRequest.model);
+            const thinkParam = supportsThinking ? this.getThinkingParameter(thinkingMode, chatRequest.model) : false;
+            const responseStream = await ollama.chat({ ...chatRequest, stream: true, think: thinkParam });
             cancellation?.onCancellationRequested(() => {
                 responseStream.abort();
             });
@@ -267,13 +347,14 @@ export class OllamaModel implements LanguageModel {
                     tool_calls: toolCalls
                 });
 
-                await this.processToolCalls(toolCalls, chatRequest, lastUpdated);
+                const preparedToolCalls = this.createToolCalls(toolCalls, lastUpdated);
+                await this.processToolCalls(preparedToolCalls, chatRequest);
                 if (cancellation?.isCancellationRequested) {
                     return { text: '' };
                 }
 
                 // recurse to get the final response content (the intermediate content remains hidden, it is only part of the conversation)
-                return this.handleNonStreamingRequest(ollama, chatRequest);
+                return this.handleNonStreamingRequest(ollama, chatRequest, cancellation, thinkingMode);
             }
 
             // if no tool calls are necessary, return the final response content
@@ -284,15 +365,32 @@ export class OllamaModel implements LanguageModel {
         }
     }
 
-    private async processToolCalls(toolCalls: OllamaToolCall[], chatRequest: ExtendedChatRequest, lastUpdated: Date): Promise<ToolCall[]> {
-        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+    private createToolCalls(toolCalls: OllamaToolCall[], lastUpdated: Date): ToolCall[] {
         const toolCallsForResponse: ToolCall[] = [];
         for (const [idx, toolCall] of toolCalls.entries()) {
-            const functionToCall = tools.find(tool => tool.function.name === toolCall.function.name);
             const args = JSON.stringify(toolCall.function?.arguments);
+            toolCallsForResponse.push({
+                id: `ollama_${lastUpdated}_${idx}`,
+                function: {
+                    name: toolCall.function.name,
+                    arguments: args
+                },
+                finished: false
+            });
+        }
+        return toolCallsForResponse;
+    }
+
+    private async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest): Promise<ToolCall[]> {
+        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+        const toolCallsForResponse: ToolCall[] = [];
+
+        for (const call of toolCalls) {
+            const functionToCall = tools.find(tool => tool.function.name === call.function!.name);
             let funcResult: string;
+
             if (functionToCall) {
-                const rawResult = await functionToCall.handler(args);
+                const rawResult = await functionToCall.handler(call.function!.arguments!);
                 funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
             } else {
                 funcResult = 'error: Tool not found';
@@ -300,14 +398,12 @@ export class OllamaModel implements LanguageModel {
 
             chatRequest.messages.push({
                 role: 'tool',
-                content: `Tool call ${toolCall.function.name} returned: ${String(funcResult)}`,
+                content: `Tool call ${call.function!.name} returned: ${String(funcResult)}`,
             });
+
+            // update tool call message
             toolCallsForResponse.push({
-                id: `ollama_${lastUpdated}_${idx}`,
-                function: {
-                    name: toolCall.function.name,
-                    arguments: args
-                },
+                ...call,
                 result: String(funcResult),
                 finished: true
             });

@@ -44,6 +44,9 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
     private abortControllers = new Map<string, AbortController>();
     private pendingApprovals = new Map<string, (result: ToolApprovalResult) => void>();
 
+    // Tools that don't require approval - they are safe and non-intrusive
+    protected readonly autoApprovedTools = new Set<string>();
+
     setClient(client: ClaudeCodeClient): void {
         this.client = client;
     }
@@ -267,6 +270,14 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
     }
 
     protected async requestToolApproval(streamId: string, toolName: string, toolInput: unknown): Promise<{ behavior: 'allow' | 'deny', message?: string, updatedInput?: unknown }> {
+        if (this.autoApprovedTools.has(toolName)) {
+            // Ensure updatedInput is a valid object (Zod expects a record, not undefined)
+            const validInput = (toolInput && typeof toolInput === 'object') ? toolInput : {};
+            const res = { behavior: 'allow' as const, updatedInput: validInput };
+            this.logger.info('Auto-approving non-intrusive tool:', toolName);
+            return res;
+        }
+
         this.logger.info('Requesting tool approval:', toolName, toolInput);
 
         const requestId = generateUuid();

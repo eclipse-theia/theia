@@ -23,7 +23,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: "0 0 * * 1" # Publish next version (default) every monday at midnight
+    - cron: "0 0 * * 1-5" # Publish next version (default) every weekday at midnight
 
 jobs:
   publish:

@@ -79,6 +79,8 @@ import { TemplatePreferenceContribution } from './template-preference-contributi
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
+import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
+import { ChatSessionCardActionContribution, DefaultChatSessionCardActionContribution } from './chat-session-card-action-contribution';
 import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
@@ -86,7 +88,7 @@ import { TaskContextSummaryVariableContribution } from './task-background-summar
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { CommandContribution, PreferenceContribution } from '@theia/core';
+import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
@@ -97,7 +99,7 @@ import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
-import { TaskContextAgent } from './task-context-agent';
+
 import { ProjectInfoAgent } from './project-info-agent';
 import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
@@ -111,7 +113,9 @@ import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunct
 import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
 import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
 import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
-import { WithAppTesterCommandContribution } from './with-apptester-command-contribution';
+import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
+import { GitHubCapabilityContribution } from './github-capability-contribution';
+import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -129,8 +133,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CoderAgent);
     bind(ChatAgent).toService(CoderAgent);
 
-    bind(TaskContextAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(TaskContextAgent);
     bind(ProjectInfoAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ProjectInfoAgent);
     bind(ChatAgent).toService(ProjectInfoAgent);
@@ -164,6 +166,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatAgent).toService(CommandChatAgent);
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
+    bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
+    bindContributionProvider(bind, ChatSessionCardActionContribution);
+    bind(DefaultChatSessionCardActionContribution).toSelf().inSingletonScope();
+    bind(ChatSessionCardActionContribution).toService(DefaultChatSessionCardActionContribution);
     bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();
 
     bindToolProvider(GetWorkspaceFileList, bind);
@@ -315,5 +321,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(FixGitHubTicketCommandContribution);
     bind(FrontendApplicationContribution).to(AddressGhReviewCommandContribution);
     bind(FrontendApplicationContribution).to(AnalyzesGhTicketCommandContribution);
-    bind(FrontendApplicationContribution).to(WithAppTesterCommandContribution);
+    bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
+    bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
+    bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
 });

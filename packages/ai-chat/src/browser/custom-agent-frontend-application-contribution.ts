@@ -38,7 +38,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
     onStart(): void {
         this.customizationService?.getCustomAgents().then(customAgents => {
             customAgents.forEach(agent => {
-                this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM);
+                this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat);
                 this.knownCustomAgents.set(agent.id, agent);
             });
         }).catch(e => {
@@ -59,7 +59,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
                 });
                 customAgentsToAdd
                     .forEach(agent => {
-                        this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM);
+                        this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat);
                         this.knownCustomAgents.set(agent.id, agent);
                     });
             }).catch(e => {

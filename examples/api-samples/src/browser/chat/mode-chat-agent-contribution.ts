@@ -36,8 +36,8 @@ export function bindModeChatAgentContribution(bind: interfaces.Bind): void {
  */
 @injectable()
 export class ModeChatAgent extends AbstractStreamParsingChatAgent {
-    readonly id = 'ModeTest';
-    readonly name = 'ModeTest';
+    readonly id = 'ModeTestSample';
+    readonly name = 'ModeTestSample';
     readonly defaultLanguageModelPurpose = 'chat';
     override readonly description = 'A test agent that demonstrates different response modes (concise vs detailed).';
     override languageModelRequirements: LanguageModelRequirement[] = [];

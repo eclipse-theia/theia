@@ -393,3 +393,22 @@
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+.shell-execution-tool.configuration-link {
+    margin-top: var(--theia-ui-padding);
+    font-size: var(--theia-ui-font-size0);
+}
+
+.shell-execution-tool.configuration-link a {
+    color: var(--theia-textLink-foreground);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) / 2);
+    cursor: pointer;
+}
+
+.shell-execution-tool.configuration-link a:hover {
+    text-decoration: underline;
+    color: var(--theia-textLink-activeForeground);
+}

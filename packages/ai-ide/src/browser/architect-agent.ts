@@ -20,10 +20,10 @@ import {
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { architectSystemVariants, ARCHITECT_DEFAULT_PROMPT_ID, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID } from '../common/architect-prompt-template';
+import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID } from '../common/architect-prompt-template';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND, AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
+import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
 
 @injectable()
@@ -46,16 +46,12 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
 
     protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
         {
-            id: ARCHITECT_DEFAULT_PROMPT_ID,
-            name: nls.localize('theia/ai/ide/architectAgent/mode/default', 'Default Mode')
+            id: ARCHITECT_PLANNING_PROMPT_ID,
+            name: nls.localize('theia/ai/ide/architectAgent/mode/plan', 'Plan Mode')
         },
         {
             id: ARCHITECT_SIMPLE_PROMPT_ID,
             name: nls.localize('theia/ai/ide/architectAgent/mode/simple', 'Simple Mode')
-        },
-        {
-            id: ARCHITECT_PLANNING_PROMPT_ID,
-            name: nls.localize('theia/ai/ide/architectAgent/mode/plan', 'Plan Mode')
         },
     ];
 
@@ -72,26 +68,13 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === model.id);
         if (!(model instanceof MutableChatModel) || !session) { return; }
         if (!model.isEmpty()) {
-            // Check if we're using the next prompt variant, if so, we show different actions
-            const lastRequest = model.getRequests().at(-1);
-            const isNextVariant = lastRequest?.response?.promptVariantId === ARCHITECT_PLANNING_PROMPT_ID;
-
-            if (isNextVariant) {
-                const taskContexts = this.taskContextStorageService.getAll().filter(s => s.sessionId === session.id);
-                if (taskContexts.length > 0) {
-                    const suggestions = taskContexts.map(tc =>
-                        new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/executePlanWithCoder',
-                            'Execute "{0}" with Coder', tc.label)}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}?${encodeURIComponent(JSON.stringify(tc.id))}).`)
-                    );
-                    model.setSuggestions(suggestions);
-                }
-            } else {
-                model.setSuggestions([
-                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/summarizeSessionAsTaskForCoder',
-                        'Summarize this session as a task for Coder')}](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
-                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/updateTaskContext',
-                        'Update current task context')}](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
-                ]);
+            const taskContexts = this.taskContextStorageService.getAll().filter(s => s.sessionId === session.id);
+            if (taskContexts.length > 0) {
+                const suggestions = taskContexts.map(tc =>
+                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/executePlanWithCoder',
+                        'Execute "{0}" with Coder', tc.label)}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}?${encodeURIComponent(JSON.stringify(tc.id))}).`)
+                );
+                model.setSuggestions(suggestions);
             }
         }
     }

@@ -72,9 +72,9 @@ export abstract class AbstractModeAwareChatAgent extends AbstractStreamParsingCh
             return undefined;
         }
 
-        const isEdited = this.isPromptVariantCustomized(effectiveVariantId);
+        const isCustomized = this.promptService.getPromptVariantInfo(effectiveVariantId)?.isCustomized ?? false;
         const resolvedPrompt = await this.promptService.getResolvedPromptFragment(effectiveVariantId, undefined, context);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, effectiveVariantId, isEdited) : undefined;
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, effectiveVariantId, isCustomized) : undefined;
     }
 
     /**

@@ -93,11 +93,13 @@ export class AgentServiceImpl implements AgentService {
                     this.disabledAgents.add(agentId);
                 }
             });
+            this.onDidChangeAgentsEmitter.fire();
         });
     }
 
     registerAgent(agent: Agent): void {
         this._agents.push(agent);
+        this._agents.sort((a, b) => a.name.localeCompare(b.name));
         agent.prompts.forEach(
             prompt => {
                 this.promptService.addBuiltInPromptFragment(prompt.defaultVariant, prompt.id, true);

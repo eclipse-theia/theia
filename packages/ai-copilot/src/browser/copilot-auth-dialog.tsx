@@ -62,7 +62,7 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
 
     @postConstruct()
     protected init(): void {
-        this.titleNode.textContent = nls.localize('theia/ai/copilot/auth/title', 'Sign in to GitHub Copilot');
+        this.titleNode.textContent = this.props.title;
         this.appendAcceptButton(nls.localize('theia/ai/copilot/auth/authorize', 'I have authorized'));
         this.appendCloseButton(nls.localizeByDefault('Cancel'));
     }

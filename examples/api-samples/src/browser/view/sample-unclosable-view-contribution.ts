@@ -23,7 +23,8 @@ import { SampleViewUnclosableView } from './sample-unclosable-view';
 
 export const SampleToolBarCommand: Command = {
     id: 'sample.toggle.toolbarCommand',
-    iconClass: codicon('add')
+    iconClass: codicon('add'),
+    category: 'API Samples'
 };
 
 @injectable()
@@ -63,7 +64,7 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
         toolbarRegistry.registerItem({
             id: SampleToolBarCommand.id,
             command: SampleToolBarCommand.id,
-            tooltip: 'Click to Toggle Toolbar Item',
+            tooltip: 'API Samples: Click to Toggle Toolbar Item',
             priority: 0
         });
     }

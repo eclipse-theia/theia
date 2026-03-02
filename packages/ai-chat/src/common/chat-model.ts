@@ -21,11 +21,13 @@
 
 import {
     AIVariableResolutionRequest,
+    GenericCapabilitySelections,
     LanguageModelMessage,
     ResolvedAIContextVariable,
     ResolvedAIVariable,
     TextMessage,
     ThinkingMessage,
+    ThinkingModeSettings,
     ToolCallResult,
     ToolRequest,
     ToolResultMessage,
@@ -209,13 +211,36 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
     readonly next?: ChatHierarchyBranch<TRequest>;
 }
 
+export interface CommonChatSessionSettings {
+    /**
+     * Theia-specific settings for extended thinking mode.
+     * These are processed by Theia and converted to provider-specific formats.
+     */
+    thinkingMode?: ThinkingModeSettings;
+}
+
+export interface ChatSessionSettings {
+    /**
+     * Theia-specific common settings processed by Theia.
+     * This key is excluded when passing settings to LLM providers.
+     */
+    commonSettings?: CommonChatSessionSettings;
+
+    /**
+     * Allow arbitrary provider-specific settings.
+     * These correspond to the "Advanced Settings (JSON)" in the UI
+     * and are passed directly to the LLM.
+     */
+    [key: string]: unknown;
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
     readonly location: ChatAgentLocation;
     readonly context: ChatContextManager;
     readonly suggestions: readonly ChatSuggestion[];
-    readonly settings?: { [key: string]: unknown };
+    readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
@@ -265,6 +290,19 @@ export interface ChatRequest {
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
     readonly modeId?: string;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     * Only includes capabilities that differ from their default value.
+     */
+    readonly capabilityOverrides?: Record<string, boolean>;
+
+    /**
+     * Generic capability selections for this request.
+     * Contains user-selected skills, functions, MCP tools, etc.
+     * from the capabilities panel dropdowns.
+     */
+    readonly genericCapabilitySelections?: GenericCapabilitySelections;
 }
 
 export interface ChatContext {
@@ -447,8 +485,11 @@ export interface ErrorContentData {
  */
 export interface QuestionContentData {
     question: string;
-    options: { text: string; value?: string }[];
+    header?: string;
+    options: { text: string; value?: string; description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
 }
 
 export interface TextChatResponseContent
@@ -489,11 +530,15 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     finished: boolean;
     result?: ToolCallResult;
     confirmed: Promise<boolean>;
+    /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
+    needsUserConfirmation: Promise<void>;
     whenFinished: Promise<void>;
     data?: Record<string, string>;
     confirm(): void;
     deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
+    /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
+    requestUserConfirmation(): void;
     /**
      * Mark the tool call as completed with the given result.
      *
@@ -748,12 +793,21 @@ export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
 
+export type MultiSelectQuestionResponseHandler = (
+    selectedOptions: { text: string, value?: string }[],
+) => void;
+
 export interface QuestionResponseContent extends ChatResponseContent {
     kind: 'question';
     question: string;
-    options: { text: string, value?: string }[];
+    header?: string;
+    options: { text: string, value?: string, description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string, value?: string };
-    handler?: QuestionResponseHandler;
+    selectedOptions?: { text: string, value?: string }[];
+    handler?: QuestionResponseHandler | MultiSelectQuestionResponseHandler;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -869,7 +923,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
     protected _changeSet: ChatTreeChangeSet;
-    protected _settings: { [key: string]: unknown };
+    protected _settings: ChatSessionSettings;
     protected _location: ChatAgentLocation;
 
     get location(): ChatAgentLocation {
@@ -978,11 +1032,11 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._contextManager;
     }
 
-    get settings(): { [key: string]: unknown } {
+    get settings(): ChatSessionSettings {
         return this._settings;
     }
 
-    setSettings(settings: { [key: string]: unknown }): void {
+    setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
     }
 
@@ -1636,7 +1690,11 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         respData?: SerializableChatResponseData
     ): void {
         this._id = reqData.id;
-        this._request = { text: reqData.text };
+        this._request = {
+            text: reqData.text,
+            capabilityOverrides: reqData.capabilityOverrides,
+            genericCapabilitySelections: reqData.genericCapabilitySelections
+        };
         this._agentId = reqData.agentId;
         this._data = {};
         this._context = { variables: [] };
@@ -1877,7 +1935,9 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
             } : undefined,
-            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
+            capabilityOverrides: this.request.capabilityOverrides,
+            genericCapabilitySelections: this.request.genericCapabilitySelections
         };
     }
 
@@ -2172,6 +2232,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
     protected _data?: Record<string, string>;
+    protected _needsUserConfirmation: Promise<void>;
+    protected _needsUserConfirmationResolver?: () => void;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
@@ -2187,6 +2249,9 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._data = data;
         this._confirmed = this.createConfirmationPromise();
         this._whenFinished = this.createFinishedPromise();
+        this._needsUserConfirmation = new Promise<void>(resolve => {
+            this._needsUserConfirmationResolver = resolve;
+        });
     }
 
     get id(): string | undefined {
@@ -2214,6 +2279,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
 
     get confirmed(): Promise<boolean> {
         return this._confirmed;
+    }
+
+    get needsUserConfirmation(): Promise<void> {
+        return this._needsUserConfirmation;
     }
 
     get whenFinished(): Promise<void> {
@@ -2257,6 +2326,13 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._result = { denied: true, reason };
             this._confirmationResolver(false);
             this.resolveFinished();
+        }
+    }
+
+    requestUserConfirmation(): void {
+        if (this._needsUserConfirmationResolver) {
+            this._needsUserConfirmationResolver();
+            this._needsUserConfirmationResolver = undefined;
         }
     }
 
@@ -2451,52 +2527,108 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
 }
 
 /**
+ * Options bag for constructing a {@link QuestionResponseContentImpl}.
+ */
+export interface QuestionResponseContentOptions {
+    selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
+    multiSelect?: boolean;
+    header?: string;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
+}
+
+/**
  * Default implementation for the QuestionResponseContent.
  * Can be created with or without handler/request for read-only (restored) mode.
  */
 export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
-    protected _selectedOption: { text: string; value?: string } | undefined;
+    public multiSelect?: boolean;
+    public header?: string;
+    public onSkip?: () => void;
+    protected _selectedOptions: { text: string; value?: string }[] | undefined;
 
     constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: QuestionResponseHandler | undefined,
+        questionOptions?: Omit<QuestionResponseContentOptions, 'multiSelect'> & { multiSelect?: false }
+    );
+    constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: MultiSelectQuestionResponseHandler | undefined,
+        questionOptions: QuestionResponseContentOptions & { multiSelect: true }
+    );
+    constructor(
         public question: string,
-        public options: { text: string, value?: string }[],
+        public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
-        public handler: QuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string }
+        public handler: QuestionResponseHandler | MultiSelectQuestionResponseHandler | undefined,
+        questionOptions?: QuestionResponseContentOptions
     ) {
-        this._selectedOption = selectedOption;
+        this.multiSelect = questionOptions?.multiSelect;
+        this.header = questionOptions?.header;
+        this.onSkip = questionOptions?.onSkip;
+        this._selectedOptions = questionOptions?.selectedOptions ??
+            (questionOptions?.selectedOption ? [questionOptions.selectedOption] : undefined);
     }
 
     get isReadOnly(): boolean {
         return !this.handler || !this.request;
     }
 
-    set selectedOption(option: { text: string; value?: string; } | undefined) {
-        this._selectedOption = option;
-        // Only trigger change notification if request is available (not in read-only mode)
+    set selectedOption(option: { text: string; value?: string } | undefined) {
+        this._selectedOptions = option ? [option] : undefined;
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
     }
-    get selectedOption(): { text: string; value?: string; } | undefined {
-        return this._selectedOption;
+    get selectedOption(): { text: string; value?: string } | undefined {
+        return this._selectedOptions?.[0];
     }
+
+    set selectedOptions(options: { text: string; value?: string }[] | undefined) {
+        this._selectedOptions = options;
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
+    }
+    get selectedOptions(): { text: string; value?: string }[] | undefined {
+        return this._selectedOptions;
+    }
+
     asString?(): string | undefined {
-        return `Question: ${this.question}
-${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
+        const answer = this._selectedOptions && this._selectedOptions.length > 0
+            ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
+            : 'No answer';
+        return `Question: ${this.question}\n${answer}`;
     }
     merge?(): boolean {
         return false;
     }
     toSerializable(): SerializableChatResponseContentData<QuestionContentData> {
+        const data: QuestionContentData = {
+            question: this.question,
+            options: this.options,
+        };
+        if (this.multiSelect) {
+            data.selectedOptions = this._selectedOptions;
+        } else if (this._selectedOptions?.[0]) {
+            data.selectedOption = this._selectedOptions[0];
+        }
+        if (this.header !== undefined) {
+            data.header = this.header;
+        }
+        if (this.multiSelect !== undefined) {
+            data.multiSelect = this.multiSelect;
+        }
         return {
             kind: 'question',
-            data: {
-                question: this.question,
-                options: this.options,
-                selectedOption: this._selectedOption
-            }
+            data
         };
     }
 }

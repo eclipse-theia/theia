@@ -24,6 +24,7 @@ export * from './language-model';
 export * from './language-model-alias';
 export * from './prompt-service';
 export * from './prompt-service-util';
+
 export * from './prompt-text';
 export * from './protocol';
 export * from './today-variable-contribution';
@@ -35,3 +36,5 @@ export * from './ai-variable-resource';
 export * from './configurable-in-memory-resources';
 export * from './notification-types';
 export * from './skill';
+export * from './capability-utils';
+export * from './tool-constants';

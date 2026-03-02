@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
-import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
+import { Agent, AgentService, AISettingsService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
+import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
@@ -56,6 +56,7 @@ import { TaskContextService, TaskContextStorageService } from './task-context-se
 import { InMemoryTaskContextStorage } from './task-context-storage-service';
 import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
 import { ImageContextVariableContribution } from './image-context-variable-contribution';
+import { DefaultPendingImageRegistry, PendingImageRegistry } from './pending-image-registry';
 import { AgentDelegationTool } from './agent-delegation-tool';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 import { bindChatToolPreferences } from '../common/chat-tool-preferences';
@@ -73,23 +74,19 @@ import {
     ChangeSetElementDeserializerRegistryImpl
 } from '../common/change-set-element-deserializer';
 import { ChangeSetFileElementDeserializerContribution } from './change-set-file-element-deserializer';
-import { AIChatPreferenceContribution } from './ai-chat-preference-contribution';
-import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, ChatAgent);
+    bindRootContributionProvider(bind, ChatAgent);
 
     bind(ChatContentDeserializerRegistryImpl).toSelf().inSingletonScope();
     bind(ChatContentDeserializerRegistry).toService(ChatContentDeserializerRegistryImpl);
-    bindContributionProvider(bind, ChatContentDeserializerContribution);
+    bindRootContributionProvider(bind, ChatContentDeserializerContribution);
     bind(ChatContentDeserializerContribution).to(DefaultChatContentDeserializerContribution).inSingletonScope();
 
     bind(ChangeSetElementDeserializerRegistryImpl).toSelf().inSingletonScope();
     bind(ChangeSetElementDeserializerRegistry).toService(ChangeSetElementDeserializerRegistryImpl);
-    bindContributionProvider(bind, ChangeSetElementDeserializerContribution);
+    bindRootContributionProvider(bind, ChangeSetElementDeserializerContribution);
     bind(ChangeSetElementDeserializerContribution).to(ChangeSetFileElementDeserializerContribution).inSingletonScope();
-
-    bind(SessionStorageDefaultsProvider).toSelf().inSingletonScope();
 
     bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
     bind(ChatSessionStore).toService(ChatSessionStoreImpl);
@@ -105,7 +102,7 @@ export default new ContainerModule(bind => {
     bind(ChatSessionNamingAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ChatSessionNamingAgent);
 
-    bindContributionProvider(bind, ResponseContentMatcherProvider);
+    bindRootContributionProvider(bind, ResponseContentMatcherProvider);
     bind(DefaultResponseContentMatcherProvider).toSelf().inSingletonScope();
     bind(ResponseContentMatcherProvider).toService(DefaultResponseContentMatcherProvider);
     bind(DefaultResponseContentFactory).toSelf().inSingletonScope();
@@ -127,16 +124,13 @@ export default new ContainerModule(bind => {
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 
-    bind(AIChatPreferenceContribution).toSelf().inSingletonScope();
-    bind(PreferenceContribution).toService(AIChatPreferenceContribution);
-
     // Tool confirmation preferences
     bindChatToolPreferences(bind);
     bind(ToolConfirmationManager).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();
-    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string]>(
-        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string) => {
+    bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string, boolean | undefined]>(
+        ctx => (id: string, name: string, description: string, prompt: string, defaultLLM: string, showInChat?: boolean) => {
             const agent = ctx.container.get<CustomChatAgent>(CustomChatAgent);
             agent.id = id;
             agent.name = name;
@@ -148,6 +142,17 @@ export default new ContainerModule(bind => {
             }];
             ctx.container.get<ChatAgentService>(ChatAgentService).registerChatAgent(agent);
             ctx.container.get<AgentService>(AgentService).registerAgent(agent);
+
+            // Initialize showInChat preference from YAML if not already set
+            if (showInChat === false) {
+                const settingsService = ctx.container.get<AISettingsService>(AISettingsService);
+                settingsService.getAgentSettings(id).then(settings => {
+                    if (settings?.showInChat === undefined) {
+                        settingsService.updateAgentSettings(id, { showInChat: false });
+                    }
+                });
+            }
+
             return agent;
         });
     bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
@@ -167,7 +172,7 @@ export default new ContainerModule(bind => {
 
     bind(ChangeSetDecoratorService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ChangeSetDecoratorService);
-    bindContributionProvider(bind, ChangeSetDecorator);
+    bindRootContributionProvider(bind, ChangeSetDecorator);
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
@@ -185,6 +190,9 @@ export default new ContainerModule(bind => {
     bind(ImageContextVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(ImageContextVariableContribution);
     bind(LabelProviderContribution).toService(ImageContextVariableContribution);
+
+    bind(DefaultPendingImageRegistry).toSelf().inSingletonScope();
+    bind(PendingImageRegistry).toService(DefaultPendingImageRegistry);
 
     bind(TaskContextService).toSelf().inSingletonScope();
     bind(InMemoryTaskContextStorage).toSelf().inSingletonScope();

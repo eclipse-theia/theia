@@ -48,7 +48,8 @@ export default new ContainerModule(bind => {
             showContext: true,
             showPinnedAgent: true,
             showChangeSet: false,
-            showSuggestions: false
+            showSuggestions: false,
+            showCapabilities: false
         } satisfies AskAIInputConfiguration);
         container.bind(AskAIInputWidget).toSelf().inSingletonScope();
         return container.get(AskAIInputWidget);

@@ -17,6 +17,7 @@
 import { nls, PreferenceSchema } from '@theia/core';
 
 export const MCP_SERVERS_PREF = 'ai-features.mcp.mcpServers';
+export const MCP_USE_WORKSPACE_AS_ROOT_PREF = 'ai-features.mcp.useWorkspaceAsRoot';
 
 export const McpServersPreferenceSchema: PreferenceSchema = {
     properties: {
@@ -112,6 +113,15 @@ Example configuration:\n\
                 },
                 required: []
             }
+        },
+        [MCP_USE_WORKSPACE_AS_ROOT_PREF]: {
+            title: nls.localize('theia/ai/mcp/useWorkspaceAsRoot/title', 'Use Workspace as Root'),
+            markdownDescription: nls.localize('theia/ai/mcp/useWorkspaceAsRoot/mdDescription',
+                'Roots define the boundaries of where servers can operate within the filesystem. \
+If enabled, the workspace folders will be used as roots, otherwise the MCP servers will have access to the entire filesystem. \
+Changing this setting will restart all running MCP servers to apply the new roots configuration.'),
+            type: 'boolean',
+            default: true
         }
     }
 };

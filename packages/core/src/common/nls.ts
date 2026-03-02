@@ -68,6 +68,31 @@ export namespace nls {
     export function setLocale(id: string): void {
         window.localStorage.setItem(localeId, id);
     }
+
+    /**
+     * Sets the 'lang' attribute on the given HTML element based on the current locale.
+     * If no locale is set, defaults to 'en' (English).
+     * Typically used with document.documentElement (the <html> tag) to set the page language.
+     *
+     * @param element The HTML element to set the language attribute on
+     */
+    export function setHtmlLang(element: HTMLElement): void {
+        const lang = locale?.split('_').at(0) || 'en';
+        element.setAttribute('lang', lang);
+    }
+
+    /**
+     * Sets the 'translate' attribute to 'no' and adds the 'notranslate' class
+     * to the given HTML element. This prevents translation tools from translating
+     * the content of the element.
+     * Typically used with document.documentElement (the <html> tag) to disable page translation.
+     *
+     * @param element The HTML element to set translation attributes on
+     */
+    export function setHtmlNoTranslate(element: HTMLElement): void {
+        element.setAttribute('translate', 'no');
+        element.classList.add('notranslate');
+    }
 }
 
 interface NlsKeys {

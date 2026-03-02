@@ -29,7 +29,7 @@ import {
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
 import '../../src/browser/styles/index.css';
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { OutlineDecoratorService, OutlineTreeDecorator } from './outline-decorator-service';
 import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { BreadcrumbPopupOutlineView, BreadcrumbPopupOutlineViewFactory, OutlineBreadcrumbsContribution } from './outline-breadcrumbs-contribution';
@@ -64,7 +64,7 @@ function createOutlineViewWidgetContainer(parent: interfaces.Container): interfa
         model: OutlineViewTreeModel,
         decoratorService: OutlineDecoratorService,
     });
-    bindContributionProvider(child, OutlineTreeDecorator);
+    bindRootContributionProvider(child, OutlineTreeDecorator);
     return child;
 }
 

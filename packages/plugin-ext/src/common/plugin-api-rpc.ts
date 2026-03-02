@@ -694,6 +694,8 @@ export interface TransferQuickInputButton {
     handle?: number;
     readonly iconUrl?: string | { light: string; dark: string } | ThemeIcon;
     readonly tooltip?: string | undefined;
+    readonly location?: number;
+    readonly toggle?: { checked: boolean };
 }
 
 export type TransferQuickInput = TransferQuickPick | TransferInputBox;
@@ -731,6 +733,7 @@ export interface TransferInputBox extends BaseTransferQuickInput {
     buttons?: TransferQuickInputButton[];
     prompt?: string;
     validationMessage?: string;
+    severity?: Severity;
 }
 
 export interface IInputBoxOptions {

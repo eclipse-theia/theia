@@ -23,6 +23,7 @@ import { Emitter } from '../common/event';
 import { isSecondaryWindow, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
 import { KeybindingRegistry } from './keybinding';
 import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
+import { nls } from '../common/nls';
 
 /** Widgets to be contained inside a DockPanel in the secondary window. */
 class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
@@ -180,6 +181,8 @@ export class SecondaryWindowHandler {
             // See https://html.spec.whatwg.org/multipage/dom.html#document.title
             newWindow.document.title = `${widget.title.label} — ${mainWindowTitle}`;
 
+            this.setupHtmlLanguageAttributes(newWindow.document.documentElement);
+
             const element = newWindow.document.getElementById('widget-host');
             if (!element) {
                 console.error('Could not find dom element to attach to in secondary window');
@@ -216,6 +219,11 @@ export class SecondaryWindowHandler {
             });
             widget.activate();
         });
+    }
+
+    protected setupHtmlLanguageAttributes(element: HTMLElement): void {
+        nls.setHtmlLang(element);
+        nls.setHtmlNoTranslate(element);
     }
 
     private onWidgetRemove(widget: Widget, newWindow: Window, rootWidget: SecondaryWindowRootWidget): void {

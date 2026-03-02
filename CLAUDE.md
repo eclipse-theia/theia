@@ -64,6 +64,7 @@ For more information also look at:
 - Main-Ext pattern for plugin API (browser Main ↔ plugin host Ext)
 - Services as classes with DI, avoid exported functions
 - ContributionProvider instead of @multiInject
+- Use `bindRootContributionProvider` (not `bindContributionProvider`) when binding contribution providers in top-level modules. `bindContributionProvider` retains a reference to whichever child container first resolves it, causing memory leaks. Only use `bindContributionProvider` when contributions are intentionally scoped to a child container (e.g. connection-scoped containers via `ConnectionContainerModule`).
 - URI strings for cross-platform file paths, never raw paths
 
 **Testing:**

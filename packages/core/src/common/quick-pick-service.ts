@@ -18,6 +18,7 @@ import * as fuzzy from 'fuzzy';
 import { Event } from './event';
 import { KeySequence } from './keys';
 import { CancellationToken } from './cancellation';
+import { Severity } from './severity';
 
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');
@@ -98,6 +99,15 @@ export interface QuickInputButton {
      * Whether the button should be visible even when the user is not hovering.
      */
     alwaysVisible?: boolean;
+    /**
+     * The location where the button should be rendered.
+     * @monaco-uplift: consider using a typed enum matching Monaco's QuickInputButtonLocation instead of number.
+     */
+    location?: number;
+    /**
+     * When present, indicates that the button is a toggle button.
+     */
+    toggle?: { checked: boolean };
 }
 
 export interface QuickInputButtonHandle extends QuickInputButton {
@@ -146,6 +156,7 @@ export interface InputBox extends QuickInput {
     readonly onDidTriggerButton: Event<QuickInputButton>;
     prompt: string | undefined;
     validationMessage: string | undefined;
+    severity?: Severity;
 }
 
 export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInput {
@@ -190,7 +201,7 @@ export interface InputOptions {
     placeHolder?: string;
     password?: boolean;
     ignoreFocusLost?: boolean;
-    validateInput?(input: string): Promise<string | { content: string; severity: number; } | null | undefined> | undefined;
+    validateInput?(input: string): Promise<string | { content: string; severity: Severity; } | null | undefined> | undefined;
 }
 
 export interface QuickPickItemButtonEvent<T extends QuickPickItemOrSeparator> {

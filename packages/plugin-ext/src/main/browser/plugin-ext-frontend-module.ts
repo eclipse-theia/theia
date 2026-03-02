@@ -26,7 +26,7 @@ import {
     noopWidgetStatusBarContribution,
     WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid, PreferenceContribution } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindRootContributionProvider, URI, generateUuid, PreferenceContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -89,6 +89,7 @@ import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './noteb
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
+import { CustomEditorNavigationContribution } from './custom-editors/custom-editor-navigation-contribution';
 import { bindWebviewPreferences } from '../common/webview-preferences';
 import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
 import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
@@ -204,6 +205,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CustomEditorUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(CustomEditorUndoRedoHandler);
 
+    bind(CustomEditorNavigationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(CustomEditorNavigationContribution);
+
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: CustomEditorWidget.SIDE_BY_SIDE_FACTORY_ID,
         createWidget: (arg: { uri: string, viewType: string }) => {
@@ -258,7 +262,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(TextContentResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(TextContentResourceResolver);
-    bindContributionProvider(bind, MainPluginApiProvider);
+    bindRootContributionProvider(bind, MainPluginApiProvider);
 
     bind(PluginDebugService).toSelf().inSingletonScope();
     rebind(DebugService).toService(PluginDebugService);
@@ -289,7 +293,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CellOutputWebviewFactory).toFactory(ctx => () =>
         createCellOutputWebviewContainer(ctx.container).get(CellOutputWebviewImpl)
     );
-    bindContributionProvider(bind, ArgumentProcessorContribution);
+    bindRootContributionProvider(bind, ArgumentProcessorContribution);
 
     bind(PluginExtToolbarItemArgumentProcessor).toSelf().inSingletonScope();
     bind(ArgumentProcessorContribution).toService(PluginExtToolbarItemArgumentProcessor);

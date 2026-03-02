@@ -156,7 +156,18 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             this.titleBarStyle = style;
             this.setMenu(app);
             this.preferenceService.ready.then(() => {
-                this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
+                const current = this.preferenceService.inspect('window.titleBarStyle');
+                const defaultActive = current?.globalValue === undefined;
+                const currentValueActive = !current // Preference undefined -> current value only source of truth.
+                    || (defaultActive && this.titleBarStyle === current?.defaultValue)
+                    || (!defaultActive && this.titleBarStyle === current.globalValue);
+                if (!currentValueActive) {
+                    this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
+                }
+                // Enable the change flag after initialization is complete.
+                // This ensures that user-initiated changes will trigger a restart,
+                // while the synchronization change above (if any) is ignored.
+                this.titleBarStyleChangeFlag = true;
             });
         });
 
@@ -171,7 +182,6 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
                     window.electronTheiaCore.setTitleBarStyle(newTitleBarStyle);
                     this.handleRequiredRestart();
                 }
-                this.titleBarStyleChangeFlag = true;
             }
         });
     }

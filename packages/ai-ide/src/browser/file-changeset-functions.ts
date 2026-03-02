@@ -36,6 +36,18 @@ import {
     WRITE_FILE_REPLACEMENTS_SIMPLE_ID
 } from '../common/file-changeset-function-ids';
 
+function createPathShortLabel(args: string, hasMore: boolean): { label: string; hasMore: boolean } | undefined {
+    try {
+        const parsed = JSON.parse(args);
+        if (parsed && typeof parsed === 'object' && 'path' in parsed) {
+            return { label: String(parsed.path), hasMore };
+        }
+    } catch {
+        // ignore parse errors
+    }
+    return undefined;
+}
+
 export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
 
 export interface FileChangeSetTitleProvider {
@@ -111,7 +123,8 @@ export class SuggestFileContent implements ToolProvider {
 
                 ctx.request.session.changeSet.setTitle(this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
                 return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }
@@ -191,7 +204,8 @@ export class WriteFileContent implements ToolProvider {
                 } catch (error) {
                     return `Failed to write content to file ${path}: ${error.message}`;
                 }
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }
@@ -252,8 +266,7 @@ export class ReplaceContentInFileFunctionHelper {
                         properties: replacementProperties,
                         required: ['oldContent', 'newContent']
                     },
-                    description: `An array of replacement objects, each containing oldContent and newContent strings.
-                    Ensure these strings are valid JSON string values, escaping quotes only as required.`
+                    description: 'An array of replacement objects, each containing oldContent and newContent strings.'
                 },
                 reset: {
                     type: 'boolean',
@@ -467,7 +480,8 @@ export class SimpleSuggestFileReplacements implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }
@@ -491,7 +505,8 @@ export class SimpleWriteFileReplacements implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }
@@ -515,7 +530,8 @@ export class SuggestFileReplacements_Simple implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }
@@ -543,7 +559,8 @@ export class WriteFileReplacements_Simple implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }
@@ -578,7 +595,8 @@ export class ClearFileChanges implements ToolProvider {
                 }
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.clearFileChanges(path, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, false),
         };
     }
 }
@@ -614,7 +632,8 @@ export class GetProposedFileState implements ToolProvider {
                 }
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.getProposedFileState(path, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, false),
         };
     }
 }
@@ -659,7 +678,8 @@ export class SuggestFileReplacements implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }
@@ -684,7 +704,8 @@ export class WriteFileReplacements implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
-            }
+            },
+            getArgumentsShortLabel: (args: string) => createPathShortLabel(args, true),
         };
     }
 }

@@ -18,8 +18,9 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { AIViewContribution } from '@theia/ai-core/lib/browser';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { FrontendApplication } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIConfigurationContainerWidget } from './ai-configuration-widget';
+import { AIConfigurationSelectionService } from './ai-configuration-service';
 
 export const AI_CONFIGURATION_TOGGLE_COMMAND_ID = 'aiConfiguration:toggle';
 export const OPEN_AI_CONFIG_VIEW = Command.toLocalizedCommand({
@@ -29,6 +30,9 @@ export const OPEN_AI_CONFIG_VIEW = Command.toLocalizedCommand({
 
 @injectable()
 export class AIAgentConfigurationViewContribution extends AIViewContribution<AIConfigurationContainerWidget> implements TabBarToolbarContribution {
+
+    @inject(AIConfigurationSelectionService)
+    protected readonly aiConfigurationSelectionService: AIConfigurationSelectionService;
 
     constructor() {
         super({
@@ -49,7 +53,12 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
     override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(OPEN_AI_CONFIG_VIEW, {
-            execute: () => this.openView({ activate: true }),
+            execute: async (tabId?: string) => {
+                await this.openView({ activate: true });
+                if (typeof tabId === 'string') {
+                    this.aiConfigurationSelectionService.selectConfigurationTab(tabId);
+                }
+            },
         });
     }
 

@@ -26,7 +26,6 @@ import {
 } from '../common/workspace-functions';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
-import { OpenerService, open } from '@theia/core/lib/browser';
 import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
@@ -297,6 +296,18 @@ export class FileContentFunction implements ToolProvider {
                 const file = this.parseArg(arg_string);
                 return this.getFileContent(file, ctx?.cancellationToken);
             },
+            providerName: undefined,
+            getArgumentsShortLabel: (args: string): { label: string; hasMore: boolean } | undefined => {
+                try {
+                    const parsed = JSON.parse(args);
+                    if (parsed && typeof parsed === 'object' && 'file' in parsed) {
+                        return { label: String(parsed.file), hasMore: false };
+                    }
+                } catch {
+                    // ignore parse errors
+                }
+                return undefined;
+            },
         };
     }
 
@@ -458,9 +469,6 @@ export class FileDiagnosticProvider implements ToolProvider {
     @inject(MonacoTextModelService)
     protected readonly modelService: MonacoTextModelService;
 
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
-
     getTool(): ToolRequest {
         return {
             id: FileDiagnosticProvider.ID,
@@ -508,8 +516,10 @@ export class FileDiagnosticProvider implements ToolProvider {
 
             let markers = this.problemManager.findMarkers({ uri });
             if (markers.length === 0) {
-                // Open editor to ensure that the language services are active.
-                await open(this.openerService, uri);
+                // Create a model reference to ensure that the language services are active.
+                const modelRef = await this.modelService.createModelReference(uri);
+                modelRef.object.suppressOpenEditorWhenDirty = true;
+                toDispose.push(modelRef);
 
                 // Give some time to fetch problems in a newly opened editor.
                 await new Promise<void>((res, rej) => {
@@ -540,6 +550,7 @@ export class FileDiagnosticProvider implements ToolProvider {
 
             if (markers.length) {
                 const editor = await this.modelService.createModelReference(uri);
+                editor.object.suppressOpenEditorWhenDirty = true;
                 toDispose.push(editor);
                 return JSON.stringify(markers.filter(marker => marker.data.severity !== DiagnosticSeverity.Information && marker.data.severity !== DiagnosticSeverity.Hint)
                     .map(marker => {
@@ -638,6 +649,19 @@ export class FindFilesByPattern implements ToolProvider {
             handler: (arg_string: string, ctx?: ToolInvocationContext) => {
                 const args = JSON.parse(arg_string);
                 return this.findFiles(args.pattern, args.exclude, ctx?.cancellationToken);
+            },
+            providerName: undefined,
+            getArgumentsShortLabel: (args: string): { label: string; hasMore: boolean } | undefined => {
+                try {
+                    const parsed = JSON.parse(args);
+                    if (parsed && typeof parsed === 'object' && 'pattern' in parsed) {
+                        const keys = Object.keys(parsed);
+                        return { label: String(parsed.pattern), hasMore: keys.length > 1 };
+                    }
+                } catch {
+                    // ignore parse errors
+                }
+                return undefined;
             },
         };
     }

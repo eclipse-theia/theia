@@ -234,6 +234,36 @@ describe('DefaultAIVariableService', () => {
             expect(result).to.be.undefined;
         });
 
+        it('should preserve the resolver\'s arg when the resolver provides one', async () => {
+            const varE: AIVariable = {
+                id: 'provider.e',
+                name: 'e',
+                description: 'Variable E'
+            };
+            const enrichedArg = JSON.stringify({ id: 'short-id', data: 'enriched-data' });
+            variableService.registerResolver(varE, {
+                canResolve: () => 1,
+                resolve: async () => ({
+                    variable: varE,
+                    value: 'E value',
+                    arg: enrichedArg
+                })
+            });
+
+            const result = await variableService.resolveVariable({ variable: 'e', arg: 'short-id' }, {});
+
+            expect(result).to.not.be.undefined;
+            expect(result!.arg).to.equal(enrichedArg);
+            expect(result!.value).to.equal('E value');
+        });
+
+        it('should fall back to original arg when the resolver does not set arg', async () => {
+            const result = await variableService.resolveVariable({ variable: 'd', arg: 'test-arg' }, {});
+
+            expect(result).to.not.be.undefined;
+            expect(result!.arg).to.equal('test-arg');
+        });
+
         it('should properly populate cache when resolving variables with dependencies', async () => {
             // Create a cache to pass into the resolver
             const cache = createAIResolveVariableCache();

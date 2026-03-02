@@ -30,6 +30,7 @@ describe('AnthropicModel', () => {
                 true,
                 true,
                 () => 'test-api-key',
+                undefined,
                 DEFAULT_MAX_TOKENS
             );
 
@@ -47,6 +48,7 @@ describe('AnthropicModel', () => {
                 true,
                 true,
                 () => 'test-api-key',
+                undefined,
                 DEFAULT_MAX_TOKENS,
                 customMaxRetries
             );
@@ -64,6 +66,7 @@ describe('AnthropicModel', () => {
                 true,
                 true,
                 () => 'test-api-key',
+                undefined,
                 DEFAULT_MAX_TOKENS,
                 5
             );
@@ -73,6 +76,24 @@ describe('AnthropicModel', () => {
             expect(model.enableStreaming).to.be.true;
             expect(model.maxTokens).to.equal(DEFAULT_MAX_TOKENS);
             expect(model.maxRetries).to.equal(5);
+        });
+
+        it('should set custom url when provided', () => {
+            const model = new AnthropicModel(
+                'test-id',
+                'claude-3-opus-20240229',
+                {
+                    status: 'ready'
+                },
+                true,
+                true,
+                () => 'test-api-key',
+                'custom-url',
+                DEFAULT_MAX_TOKENS,
+                5
+            );
+
+            expect(model.url).to.equal('custom-url');
         });
     });
 

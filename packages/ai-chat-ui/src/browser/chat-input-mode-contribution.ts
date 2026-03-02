@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
-import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
+import { ChatInputFocusService } from './chat-input-focus-service';
 
 const CHAT_INPUT_CYCLE_MODE_COMMAND = Command.toLocalizedCommand({
     id: 'chat-input:cycle-mode',
@@ -27,8 +28,8 @@ const CHAT_INPUT_CYCLE_MODE_COMMAND = Command.toLocalizedCommand({
 @injectable()
 export class ChatInputModeContribution implements CommandContribution, KeybindingContribution {
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    @inject(ChatInputFocusService)
+    protected readonly chatInputFocusService: ChatInputFocusService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CHAT_INPUT_CYCLE_MODE_COMMAND, {
@@ -59,17 +60,10 @@ export class ChatInputModeContribution implements CommandContribution, Keybindin
     }
 
     protected findFocusedChatInput(): AIChatInputWidget | undefined {
-        const activeElement = document.activeElement;
-        if (!(activeElement instanceof HTMLElement)) {
-            return;
+        const widget = this.chatInputFocusService.getFocused();
+        if (widget?.editor?.getControl().hasWidgetFocus()) {
+            return widget;
         }
-        const activeWidget = this.shell.findWidgetForElement(activeElement);
-        if (!(activeWidget instanceof AIChatInputWidget)) {
-            return;
-        }
-        if (!activeWidget.editor?.getControl().hasWidgetFocus()) {
-            return;
-        }
-        return activeWidget;
+        return undefined;
     }
 }

@@ -72,11 +72,23 @@ class TerminalBufferImpl implements TerminalBuffer {
     get length(): number {
         return this.term.buffer.active.length;
     };
-    getLines(start: number, length: number): string[] {
+    getLines(start: number, length: number, trimRight: boolean = false): string[] {
         const result: string[] = [];
-        for (let i = 0; i < length && this.length - 1 - i >= 0; i++) {
-            result.push(this.term.buffer.active.getLine(this.length - 1 - i)!.translateToString());
+        const activeBuffer = this.term.buffer.active;
+
+        if (start < 0) {
+            return [];
         }
+
+        const end = Math.min(start + length, activeBuffer.length);
+        for (let i = start; i < end; i++) {
+            const line = activeBuffer.getLine(i);
+            if (!line) {
+                continue;
+            }
+            result.push(line.translateToString(trimRight));
+        }
+
         return result;
     }
 
@@ -170,6 +182,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this._buffer;
     }
 
+    private _currentTerminalOutput: string[];
+
     @postConstruct()
     protected init(): void {
         this.id = this._terminalDOMId;
@@ -207,6 +221,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             theme: this.themeService.theme
         });
         this._buffer = new TerminalBufferImpl(this.term);
+        this._currentTerminalOutput = [];
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
@@ -317,6 +332,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.term.onKey(data => {
             this.onKeyEmitter.fire(data);
+        }));
+
+        this.toDispose.push(this.term.onWriteParsed(() => {
+            if (this._currentTerminalOutput.length > 0) {
+                const terminalOutput = this._currentTerminalOutput.join('');
+                this._currentTerminalOutput = [];
+                this.onOutputEmitter.fire(terminalOutput);
+            }
         }));
 
         for (const contribution of this.terminalContributionProvider.getContributions()) {
@@ -780,7 +803,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
-            this.onOutputEmitter.fire(data);
+            this._currentTerminalOutput.push(data);
         } else {
             this.initialData += data;
         }
@@ -832,7 +855,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     writeLine(text: string): void {
         this.term.writeln(text);
-        this.onOutputEmitter.fire(text + '\n');
+        this._currentTerminalOutput.push(text + '\n');
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {

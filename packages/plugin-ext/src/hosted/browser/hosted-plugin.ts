@@ -198,8 +198,12 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
         this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
-        // Activate all providers of dynamic configurations, i.e. Let the user pick a configuration from all the available ones.
-        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', ALL_ACTIVATION_EVENT));
+        // Activate providers of dynamic configurations. When a specific debugType is provided,
+        // only activate that type's extension. Otherwise, activate all providers.
+        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => {
+            const debugType = 'debugType' in event ? event.debugType : undefined;
+            this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', debugType ?? ALL_ACTIVATION_EVENT);
+        });
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));

@@ -315,6 +315,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                     ref={ref => { this.filterInputRef = ref ?? undefined; }}
                     onChange={this.handleFilterInputChange}
                     onMouseEnter={this.handleFilterMouseEnter}
+                    spellCheck={false}
                 />
                 {this.currentFilterValue && <span
                     className="debug-console-filter-btn codicon codicon-close action-label"

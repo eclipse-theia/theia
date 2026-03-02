@@ -417,6 +417,29 @@ export namespace DirtyDiffModel {
 > * Multi-inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness.
 > * `ContributionProvider` supports filtering. See `ContributionFilterRegistry`.
 
+<a name="bind-root-contribution-provider"></a>
+
+* [6.](#bind-root-contribution-provider) Use `bindRootContributionProvider` instead of `bindContributionProvider` when binding contribution providers in the main (root) container.
+
+`bindContributionProvider` captures a reference to whichever container first resolves the provider. If that container is a child (e.g. created for a widget or a transient binding), the provider will permanently retain that child container and everything cached in it, causing a memory leak.
+
+`bindRootContributionProvider` avoids this by walking to the root container before constructing the provider, ensuring that only the long-lived root container is retained.
+
+```ts
+// bad — risks retaining a child container reference
+bindContributionProvider(bind, MyContribution);
+
+// good — always resolves against the root container
+bindRootContributionProvider(bind, MyContribution);
+```
+
+`bindContributionProvider` is still appropriate when the contributions themselves are scoped to a child container rather than the main application container, for example:
+
+* **Connection-scoped containers** created by `ConnectionContainerModule.create(...)`, where services are bound per-connection.
+* **Test containers**, where a standalone container is constructed for a unit test.
+
+See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-1107000223>
+
 ## CSS
 
 <a name="css-use-lower-case-with-dashes"></a>
