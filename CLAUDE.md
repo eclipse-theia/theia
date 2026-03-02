@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint:fix` - Run ESLint with auto-fix
 - `npm run test` - Run all tests
 
+**Important:** `npm run compile` only compiles TypeScript. Before UI testing, you must also run `npm run build:browser` to bundle the frontend via webpack — otherwise the running browser app won't include your latest changes.
+
 **Application commands:**
 - `npm run start:browser` - Start browser example at localhost:3000
 - `npm run start:electron` - Start electron application
@@ -63,6 +65,7 @@ For more information also look at:
 - @doc/coding-guidelines.md
 - @doc/Testing.md
 - @doc/Plugin-API.md (VS Code extension plugin API)
+- @.prompts/project-info.prompttemplate (practical patterns for contributions, widgets, commands, preferences, plugin API, styling)
 
 **Code Style:**
 - 4 spaces indentation, single quotes, `undefined` over `null`
