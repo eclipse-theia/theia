@@ -24,8 +24,8 @@ import * as fuzzy from '@theia/core/shared/fuzzy';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/editor/lib/browser';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceSearchFilterService } from '@theia/workspace/lib/browser';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 
 export interface FilterAndRange {
@@ -71,10 +71,10 @@ export class QuickFileSelectService {
     protected readonly navigationLocationService: NavigationLocationService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
-    @inject(FileSystemPreferences)
-    protected readonly fsPreferences: FileSystemPreferences;
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
+    @inject(WorkspaceSearchFilterService)
+    protected readonly searchFilterService: WorkspaceSearchFilterService;
 
     /**
      * The score constants when comparing file search results.
@@ -155,12 +155,16 @@ export class QuickFileSelectService {
                 limit: 200,
                 useGitIgnore: options.hideIgnoredFiles,
                 excludePatterns: options.hideIgnoredFiles
-                    ? Object.keys(this.fsPreferences['files.exclude'])
+                    ? this.getExcludePatterns()
                     : undefined,
             }, token).then(handler);
         } else {
             return roots.length !== 0 ? recentlyUsedItems : [];
         }
+    }
+
+    protected getExcludePatterns(): string[] {
+        return this.searchFilterService.getExclusionGlobs();
     }
 
     protected compareItems(
