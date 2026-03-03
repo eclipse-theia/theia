@@ -37,6 +37,7 @@ import { OPFSInitialization } from './opfs-filesystem-initialization';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { readFileIntoStream } from '../common/io';
 import { FileUri } from '@theia/core/lib/common/file-uri';
+import { isWindows } from '@theia/core/lib/common/os';
 
 @injectable()
 export class OPFSFileSystemProvider implements Disposable,
@@ -516,9 +517,38 @@ export class OPFSFileSystemProvider implements Disposable,
 
 /**
  * Formats a URI or string resource to a file system path
+ * 
+ * For browser-only mode with OPFS, we need POSIX-style paths regardless of the platform.
+ * On Windows, FileUri.fsPath() returns Windows-style paths (e.g., "\\workspace") which
+ * are not valid names for OPFS getFileHandle(). This function converts Windows paths to
+ * POSIX format for OPFS compatibility.
  */
 function formatPath(resource: URI | string): string {
-    return FileUri.fsPath(resource);
+    const fsPath = FileUri.fsPath(resource);
+    
+    // In browser-only mode with OPFS, we always need POSIX-style paths.
+    // Convert Windows paths (e.g., "\\workspace" or "C:\\workspace") to POSIX format.
+    if (isWindows) {
+        // Replace backslashes with forward slashes
+        let posixPath = fsPath.replace(/\\/g, '/');
+        
+        // Remove Windows drive letter prefix (e.g., "C:/" -> "/")
+        // Match patterns like "C:/", "D:/", etc.
+        posixPath = posixPath.replace(/^[A-Za-z]:\//, '/');
+        
+        // Remove leading double slashes (e.g., "//workspace" -> "/workspace")
+        // but keep a single leading slash for absolute paths
+        posixPath = posixPath.replace(/^\/+/, '/');
+        
+        // Remove trailing slashes except for root
+        if (posixPath.length > 1 && posixPath.endsWith('/')) {
+            posixPath = posixPath.slice(0, -1);
+        }
+        
+        return posixPath;
+    }
+    
+    return fsPath;
 }
 
 /**
