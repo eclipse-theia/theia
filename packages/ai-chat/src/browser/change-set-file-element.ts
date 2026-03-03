@@ -327,7 +327,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
             if (currentContent !== targetContent) {
                 // Compute minimal edits using Monaco's diff service
                 // Use Monaco's IEditorWorkerService directly for minimal edits
-                const IEditorWorkerService = await import('@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker').then(m => m.IEditorWorkerService);
+                const { IEditorWorkerService } = await import('@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker');
                 const workerService = StandaloneServices.get(IEditorWorkerService);
                 const minimalEdits = await workerService.computeMoreMinimalEdits(
                     model.textEditorModel.uri,
