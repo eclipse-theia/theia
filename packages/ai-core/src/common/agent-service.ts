@@ -37,12 +37,12 @@ export interface AgentService {
      * Enable the agent with the specified id.
      * @param agentId the agent id.
      */
-    enableAgent(agentId: string): void;
+    enableAgent(agentId: string): Promise<void>;
     /**
      * disable the agent with the specified id.
      * @param agentId the agent id.
      */
-    disableAgent(agentId: string): void;
+    disableAgent(agentId: string): Promise<void>;
     /**
      * query whether this agent is currently enabled or disabled.
      * @param agentId the agent id.
@@ -93,11 +93,13 @@ export class AgentServiceImpl implements AgentService {
                     this.disabledAgents.add(agentId);
                 }
             });
+            this.onDidChangeAgentsEmitter.fire();
         });
     }
 
     registerAgent(agent: Agent): void {
         this._agents.push(agent);
+        this._agents.sort((a, b) => a.name.localeCompare(b.name));
         agent.prompts.forEach(
             prompt => {
                 this.promptService.addBuiltInPromptFragment(prompt.defaultVariant, prompt.id, true);
@@ -131,14 +133,16 @@ export class AgentServiceImpl implements AgentService {
         return this._agents;
     }
 
-    enableAgent(agentId: string): void {
+    async enableAgent(agentId: string): Promise<void> {
         this.disabledAgents.delete(agentId);
-        this.aiSettingsService?.updateAgentSettings(agentId, { enable: true });
+        await this.aiSettingsService?.updateAgentSettings(agentId, { enable: true });
+        this.onDidChangeAgentsEmitter.fire();
     }
 
-    disableAgent(agentId: string): void {
+    async disableAgent(agentId: string): Promise<void> {
         this.disabledAgents.add(agentId);
-        this.aiSettingsService?.updateAgentSettings(agentId, { enable: false });
+        await this.aiSettingsService?.updateAgentSettings(agentId, { enable: false });
+        this.onDidChangeAgentsEmitter.fire();
     }
 
     isEnabled(agentId: string): boolean {

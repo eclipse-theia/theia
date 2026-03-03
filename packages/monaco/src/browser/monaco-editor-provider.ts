@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
+import { TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection, deepClone, Disposable, CancellationToken } from '@theia/core/lib/common';
@@ -44,8 +44,9 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SimpleMonacoEditor } from './simple-monaco-editor';
 import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
 import { timeoutReject } from '@theia/core/lib/common/promise-util';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { insertFinalNewline } from './monaco-utilities';
+import { EditorPreferenceChange, EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -125,7 +126,7 @@ export class MonacoEditorProvider {
         return this.doCreateEditor(uri, (override, toDispose) => this.createEditor(uri, override, toDispose));
     }
 
-    protected async doCreateEditor<T>(uri: URI, factory: (
+    protected async doCreateEditor<T extends MonacoEditor | SimpleMonacoEditor>(uri: URI, factory: (
         override: EditorServiceOverrides, toDispose: DisposableCollection) => Promise<T>
     ): Promise<T> {
         const domNode = document.createElement('div');
@@ -138,9 +139,7 @@ export class MonacoEditorProvider {
         ];
         const toDispose = new DisposableCollection();
         const editor = await factory(overrides, toDispose);
-        if (editor instanceof SimpleMonacoEditor || editor instanceof MonacoEditor) {
-            editor.onDispose(() => toDispose.dispose());
-        }
+        editor.onDispose(() => toDispose.dispose());
         if (editor instanceof MonacoEditor) {
 
             this.injectKeybindingResolver(editor);
@@ -237,7 +236,8 @@ export class MonacoEditorProvider {
 
     protected createMonacoEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
         const options = this.createOptions(this.preferencePrefixes, model.uri, model.languageId);
-        options.model = model.textEditorModel;
+        // eslint-disable-next-line no-null/no-null
+        options.model = null; // explicitly set to null to avoid creating an initial model automatically
         options.readOnly = model.readOnly;
         this.updateReadOnlyMessage(options, model.readOnly);
         options.lineNumbersMinChars = model.lineNumbersMinChars;

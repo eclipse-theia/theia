@@ -25,14 +25,18 @@ import {
     SuggestFileContent,
     WriteFileContent,
     SuggestFileReplacements,
+    SuggestFileReplacements_Simple,
     WriteFileReplacements,
+    WriteFileReplacements_Simple,
     ClearFileChanges,
     GetProposedFileState,
     ReplaceContentInFileFunctionHelper,
     FileChangeSetTitleProvider,
-    DefaultFileChangeSetTitleProvider
+    DefaultFileChangeSetTitleProvider,
+    ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
-import { MutableChatRequestModel, MutableChatResponseModel, ChangeSet, ChangeSetElement, MutableChatModel } from '@theia/ai-chat';
+import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
+import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -43,7 +47,7 @@ disableJSDOM();
 
 describe('File Changeset Functions Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
-    let mockCtx: Partial<MutableChatRequestModel>;
+    let mockCtx: ChatToolContext;
     let container: Container;
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -64,15 +68,17 @@ describe('File Changeset Functions Cancellation Tests', () => {
         };
 
         // Setup mock context
-        mockCtx = {
+        const mockRequest = {
             id: 'test-request-id',
-            response: {
-                cancellationToken: cancellationTokenSource.token
-            } as MutableChatResponseModel,
             session: {
                 id: 'test-session-id',
                 changeSet: mockChangeSet as ChangeSet
             } as MutableChatModel
+        } as MutableChatRequestModel;
+        mockCtx = {
+            cancellationToken: cancellationTokenSource.token,
+            request: mockRequest,
+            response: {} as MutableChatResponseModel
         };
 
         // Create a new container for each test
@@ -104,10 +110,13 @@ describe('File Changeset Functions Cancellation Tests', () => {
         container.bind(ReplaceContentInFileFunctionHelper).toSelf();
         container.bind(SuggestFileContent).toSelf();
         container.bind(WriteFileContent).toSelf();
+        container.bind(SuggestFileReplacements_Simple).toSelf();
         container.bind(SuggestFileReplacements).toSelf();
+        container.bind(WriteFileReplacements_Simple).toSelf();
         container.bind(WriteFileReplacements).toSelf();
         container.bind(ClearFileChanges).toSelf();
         container.bind(GetProposedFileState).toSelf();
+        container.bind(ReplaceContentInFileFunctionHelperV2).toSelf();
     });
 
     afterEach(() => {
@@ -119,7 +128,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = suggestFileContent.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -130,30 +139,47 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = writeFileContent.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
     });
 
-    it('SuggestFileReplacements should respect cancellation token', async () => {
-        const suggestFileReplacements = container.get(SuggestFileReplacements);
+    it('SuggestFileReplacements_Simple should respect cancellation token', async () => {
+        const suggestFileReplacementsSimple = container.get(SuggestFileReplacements_Simple);
         cancellationTokenSource.cancel();
 
-        const handler = suggestFileReplacements.getTool().handler;
+        const handler = suggestFileReplacementsSimple.getTool().handler;
         const result = await handler(
             JSON.stringify({
                 path: 'test.txt',
                 replacements: [{ oldContent: 'old', newContent: 'new' }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
     });
 
-    it('WriteFileReplacements should respect cancellation token', async () => {
+    it('WriteFileReplacements_Simple should respect cancellation token', async () => {
+        const writeFileReplacementsSimple = container.get(WriteFileReplacements_Simple);
+        cancellationTokenSource.cancel();
+
+        const handler = writeFileReplacementsSimple.getTool().handler;
+        const result = await handler(
+            JSON.stringify({
+                path: 'test.txt',
+                replacements: [{ oldContent: 'old', newContent: 'new' }]
+            }),
+            mockCtx
+        );
+
+        const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+        expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+
+    it('WriteFileReplacements should respect cancellation token with V2 implementation', async () => {
         const writeFileReplacements = container.get(WriteFileReplacements);
         cancellationTokenSource.cancel();
 
@@ -161,13 +187,19 @@ describe('File Changeset Functions Cancellation Tests', () => {
         const result = await handler(
             JSON.stringify({
                 path: 'test.txt',
-                replacements: [{ oldContent: 'old', newContent: 'new' }]
+                replacements: [{ oldContent: 'old', newContent: 'new', multiple: true }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+
+    it('WriteFileReplacements should have correct ID', () => {
+        const writeFileReplacements = container.get(WriteFileReplacements);
+        expect(WriteFileReplacements.ID).to.equal('writeFileReplacements');
+        expect(writeFileReplacements.getTool().id).to.equal('writeFileReplacements');
     });
 
     it('ClearFileChanges should respect cancellation token', async () => {
@@ -175,7 +207,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = clearFileChanges.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -186,7 +218,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = getProposedFileState.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -203,10 +235,33 @@ describe('File Changeset Functions Cancellation Tests', () => {
                 path: 'test.txt',
                 replacements: [{ oldContent: 'old', newContent: 'new' }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
 
+    });
+
+    it('SuggestFileReplacements should respect cancellation token with V2 implementation', async () => {
+        const suggestFileReplacements = container.get(SuggestFileReplacements);
+        cancellationTokenSource.cancel();
+
+        const handler = suggestFileReplacements.getTool().handler;
+        const result = await handler(
+            JSON.stringify({
+                path: 'test.txt',
+                replacements: [{ oldContent: 'old', newContent: 'new', multiple: true }]
+            }),
+            mockCtx
+        );
+
+        const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+        expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+
+    it('SuggestFileReplacements should have correct ID', () => {
+        const suggestFileReplacements = container.get(SuggestFileReplacements);
+        expect(SuggestFileReplacements.ID).to.equal('suggestFileReplacements');
+        expect(suggestFileReplacements.getTool().id).to.equal('suggestFileReplacements');
     });
 });

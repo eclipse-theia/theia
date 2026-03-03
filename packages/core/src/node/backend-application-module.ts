@@ -18,8 +18,21 @@ import { ContainerModule, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 import { REQUEST_SERVICE_PATH } from '@theia/request';
 import {
-    bindContributionProvider, MessageService, MessageClient, ConnectionHandler, RpcConnectionHandler,
-    CommandService, commandServicePath, messageServicePath, OSBackendProvider, OSBackendProviderPath
+    bindRootContributionProvider, MessageService, MessageClient, ConnectionHandler, RpcConnectionHandler,
+    CommandService, commandServicePath, messageServicePath, OSBackendProvider, OSBackendProviderPath,
+    bindPreferenceConfigurations,
+    DefaultsPreferenceProvider,
+    PreferenceContribution,
+    PreferenceLanguageOverrideService,
+    PreferenceSchemaService,
+    PreferenceSchemaServiceImpl,
+    PreferenceScope,
+    ValidPreferenceScopes,
+    PreferenceServiceImpl,
+    PreferenceService,
+    bindTreePreferences,
+    PreferenceProviderProvider,
+    PreferenceProvider
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer, BackendApplicationPath } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -44,6 +57,7 @@ import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 import { BackendRemoteService } from './remote/backend-remote-service';
 import { RemoteCliContribution } from './remote/remote-cli-contribution';
 import { SettingService, SettingServiceImpl } from './setting-service';
+import { bindCorePreferences } from '../common/core-preferences';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -67,13 +81,13 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ConnectionContainerModule).toConstantValue(quickPickConnectionModule);
 
     bind(CliManager).toSelf().inSingletonScope();
-    bindContributionProvider(bind, CliContribution);
+    bindRootContributionProvider(bind, CliContribution);
 
     bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(BackendApplicationCliContribution);
 
     bind(BackendApplication).toSelf().inSingletonScope();
-    bindContributionProvider(bind, BackendApplicationContribution);
+    bindRootContributionProvider(bind, BackendApplicationContribution);
     // Bind the BackendApplicationServer as a BackendApplicationContribution
     // and fallback to an empty contribution if never bound.
     bind(BackendApplicationContribution).toDynamicValue(ctx => {
@@ -106,7 +120,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ApplicationPackage).toConstantValue(new ApplicationPackage({ projectPath: BackendApplicationPath }));
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
-    bindContributionProvider(bind, WsRequestValidatorContribution);
+    bindRootContributionProvider(bind, WsRequestValidatorContribution);
     bind(KeyStoreService).to(KeyStoreServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(keyStoreServicePath, () => ctx.container.get<KeyStoreService>(KeyStoreService))
@@ -126,7 +140,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ProxyCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(ProxyCliContribution);
 
-    bindContributionProvider(bind, RemoteCliContribution);
+    bindRootContributionProvider(bind, RemoteCliContribution);
     bind(BackendRemoteService).toSelf().inSingletonScope();
     bind(BackendRequestFacade).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(
@@ -140,4 +154,17 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(SettingServiceImpl).toSelf().inSingletonScope();
     bind(SettingService).toService(SettingServiceImpl);
+
+    bindPreferenceConfigurations(bind);
+    bind(ValidPreferenceScopes).toConstantValue([PreferenceScope.Default, PreferenceScope.User]);
+    bindRootContributionProvider(bind, PreferenceContribution);
+    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
+    bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
+    bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
+    bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
+    bind(PreferenceServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceService).toService(PreferenceServiceImpl);
+    bindCorePreferences(bind);
+    bindTreePreferences(bind);
 });

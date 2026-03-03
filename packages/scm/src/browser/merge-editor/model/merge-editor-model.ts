@@ -21,18 +21,21 @@
 // https://github.com/microsoft/vscode/blob/1.96.3/src/vs/workbench/contrib/mergeEditor/browser/view/viewModel.ts
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ArrayUtils, Disposable, DisposableCollection } from '@theia/core';
+import { ArrayUtils, Disposable, DisposableCollection, nls } from '@theia/core';
 import { Autorun, DerivedObservable, Observable, ObservableUtils, SettableObservable } from '@theia/core/lib/common/observable';
 import { DiffComputer } from '@theia/core/lib/common/diff';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-protocol-converter';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IUndoRedoService, UndoRedoElementType } from '@theia/monaco-editor-core/esm/vs/platform/undoRedo/common/undoRedo';
 import { MergeRange, MergeRangeAcceptedState, MergeRangeResultState, MergeSide } from './merge-range';
 import { DetailedLineRangeMapping, DocumentLineRangeMap, DocumentRangeMap, LineRangeMapping, RangeMapping } from './range-mapping';
 import { LiveDiff, LiveDiffState } from './live-diff';
 import { LineRange } from './line-range';
 import { LineRangeEdit } from './range-editing';
+import { RangeUtils } from './range-utils';
 
 export const MergeEditorModelProps = Symbol('MergeEditorModelProps');
 export interface MergeEditorModelProps {
@@ -298,8 +301,10 @@ export class MergeEditorModel implements Disposable {
                 const mergeRanges: MergeRange[] = [];
 
                 for (const change of event.changes) {
-                    const { start, end } = this.translateResultRangeToBase(this.m2p.asRange(change.range));
-                    const affectedMergeRanges = this.findMergeRanges(new LineRange(start.line, end.line - start.line));
+                    const changeBaseRange = this.translateResultRangeToBase(this.m2p.asRange(change.range));
+                    const affectedMergeRanges = this.mergeRanges.filter(mergeRange =>
+                        RangeUtils.touches(mergeRange.baseRange.toRange(), changeBaseRange)
+                    );
                     for (const mergeRange of affectedMergeRanges) {
                         if (!this.isMergeRangeHandled(mergeRange)) {
                             mergeRanges.push(mergeRange);
@@ -338,7 +343,12 @@ export class MergeEditorModel implements Disposable {
 
     protected computeMergeRangeStateFromResult(mergeRange: MergeRange): MergeRangeResultState {
 
-        const resultRange = this.getLineRangeInResult(mergeRange);
+        const { originalRange: baseRange, modifiedRange: resultRange } = this.getResultLineRangeMapping(mergeRange);
+
+        if (!mergeRange.baseRange.equals(baseRange)) {
+            return 'Unrecognized';
+        }
+
         const existingLines = resultRange.getLines(this.resultDocument);
 
         const states: MergeRangeAcceptedState[] = [
@@ -469,6 +479,50 @@ export class MergeEditorModel implements Disposable {
         return this.getMergeRangeData(mergeRange).isHandledObservable.get();
     }
 
+    markMergeRangeAsHandled(mergeRange: MergeRange, options?: {
+        undoRedo?: false | {
+            callback?: {
+                didUndo(): void;
+                didRedo(): void;
+            }
+        }
+    }): void {
+        const mergeRangeData = this.getMergeRangeData(mergeRange);
+        if (mergeRangeData.isHandledObservable.get()) {
+            return;
+        }
+        mergeRangeData.isHandledObservable.set(true);
+
+        if (options?.undoRedo === false) {
+            return;
+        }
+        const undoRedoCallback = options?.undoRedo?.callback;
+        const modelRef = new WeakRef(this);
+        const dataRef = new WeakRef(mergeRangeData);
+        StandaloneServices.get(IUndoRedoService).pushElement({
+            type: UndoRedoElementType.Resource,
+            resource: this.resultDocument.textEditorModel.uri,
+            label: nls.localizeByDefault('Undo Mark As Handled'),
+            code: 'markMergeRangeAsHandled',
+            undo(): void {
+                const model = modelRef.deref();
+                const data = dataRef.deref();
+                if (model && !model.isDisposed() && data) {
+                    data.isHandledObservable.set(false);
+                    undoRedoCallback?.didUndo();
+                }
+            },
+            redo(): void {
+                const model = modelRef.deref();
+                const data = dataRef.deref();
+                if (model && !model.isDisposed() && data) {
+                    data.isHandledObservable.set(true);
+                    undoRedoCallback?.didRedo();
+                }
+            }
+        });
+    }
+
     getLineRangeInResult(mergeRange: MergeRange): LineRange {
         return this.getResultLineRangeMapping(mergeRange).modifiedRange;
     }
@@ -520,10 +574,6 @@ export class MergeEditorModel implements Disposable {
 
     translateResultRangeToBase(range: Range): Range {
         return this.resultToBaseRangeMap.projectRange(range).modifiedRange;
-    }
-
-    findMergeRanges(baseRange: LineRange): MergeRange[] {
-        return this.mergeRanges.filter(mergeRange => mergeRange.baseRange.touches(baseRange));
     }
 
     protected computeSideToResultDiff(sideChanges: readonly LineRangeMapping[], resultChanges: readonly LineRangeMapping[]): readonly LineRangeMapping[] {

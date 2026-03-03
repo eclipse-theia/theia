@@ -141,11 +141,11 @@ export class PluginDeployerImpl implements PluginDeployer {
         await this.pluginDeployerHandler.uninstallPlugin(pluginId);
     }
 
-    enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+    enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
         return this.pluginDeployerHandler.enablePlugin(pluginId);
     }
 
-    disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+    disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
         return this.pluginDeployerHandler.disablePlugin(pluginId);
     }
 

@@ -131,13 +131,14 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         commands.registerCommand(NotebookCommands.ADD_NEW_CELL_COMMAND, {
             execute: (notebookModel: NotebookModel, cellKind: CellKind = CellKind.Markup, index?: number | 'above' | 'below', focusContainer?: boolean) => {
                 notebookModel = notebookModel ?? this.notebookEditorWidgetService.focusedEditor?.model;
+                const viewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel;
 
                 let insertIndex: number = 0;
                 if (typeof index === 'number' && index >= 0) {
                     insertIndex = index;
-                } else if (notebookModel.selectedCell && typeof index === 'string') {
+                } else if (viewModel?.selectedCell && typeof index === 'string') {
                     // if index is -1 insert below otherwise at the index of the selected cell which is above the selected.
-                    insertIndex = notebookModel.cells.indexOf(notebookModel.selectedCell) + (index === 'below' ? 1 : 0);
+                    insertIndex = notebookModel.cells.indexOf(viewModel.selectedCell) + (index === 'below' ? 1 : 0);
                 }
 
                 let cellLanguage: string = 'markdown';
@@ -158,7 +159,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                     }]
                 }], true);
                 if (focusContainer) {
-                    notebookModel.selectedCell?.requestBlurEditor();
+                    viewModel?.cellViewModels.get(viewModel.selectedCell?.handle ?? -1)?.requestBlurEditor();
                 }
             }
         });
@@ -191,27 +192,28 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 execute: (change: number | CellChangeDirection) => {
                     const focusedEditor = this.notebookEditorWidgetService.focusedEditor;
                     const model = focusedEditor?.model;
+                    const viewModel = focusedEditor?.viewModel;
                     if (model && typeof change === 'number') {
-                        model.setSelectedCell(model.cells[change]);
-                    } else if (model && model.selectedCell) {
-                        const currentIndex = model.cells.indexOf(model.selectedCell);
+                        viewModel?.setSelectedCell(model.cells[change]);
+                    } else if (model && viewModel?.selectedCell) {
+                        const currentIndex = model.cells.indexOf(viewModel?.selectedCell);
                         const shouldFocusEditor = this.contextKeyService.match('editorTextFocus');
 
                         if (change === CellChangeDirection.Up && currentIndex > 0) {
-                            model.setSelectedCell(model.cells[currentIndex - 1]);
-                            if ((model.selectedCell?.cellKind === CellKind.Code
-                                || (model.selectedCell?.cellKind === CellKind.Markup && model.selectedCell?.editing)) && shouldFocusEditor) {
-                                model.selectedCell.requestFocusEditor('lastLine');
+                            viewModel?.setSelectedCell(model.cells[currentIndex - 1]);
+                            if ((viewModel?.selectedCell?.cellKind === CellKind.Code
+                                || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCellViewModel?.editing)) && shouldFocusEditor) {
+                                viewModel?.cellViewModels.get(viewModel.selectedCell.handle)?.requestFocusEditor('lastLine');
                             }
                         } else if (change === CellChangeDirection.Down && currentIndex < model.cells.length - 1) {
-                            model.setSelectedCell(model.cells[currentIndex + 1]);
-                            if ((model.selectedCell?.cellKind === CellKind.Code
-                                || (model.selectedCell?.cellKind === CellKind.Markup && model.selectedCell?.editing)) && shouldFocusEditor) {
-                                model.selectedCell.requestFocusEditor();
+                            viewModel?.setSelectedCell(model.cells[currentIndex + 1]);
+                            if ((viewModel?.selectedCell?.cellKind === CellKind.Code
+                                || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCellViewModel?.editing)) && shouldFocusEditor) {
+                                viewModel?.cellViewModels.get(viewModel.selectedCell.handle)?.requestFocusEditor();
                             }
                         }
 
-                        if (model.selectedCell.cellKind === CellKind.Markup) {
+                        if (viewModel?.selectedCell.cellKind === CellKind.Markup) {
                             // since were losing focus from the cell editor, we need to focus the notebook editor again
                             focusedEditor?.node.focus();
                         }
@@ -229,8 +231,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         commands.registerCommand(NotebookCommands.CUT_SELECTED_CELL, this.editableCommandHandler(
             () => {
                 const model = this.notebookEditorWidgetService.focusedEditor?.model;
-                const selectedCell = model?.selectedCell;
-                if (selectedCell) {
+                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
+                if (selectedCell && model) {
                     model.applyEdits([{ editType: CellEditType.Replace, index: model.cells.indexOf(selectedCell), count: 1, cells: [] }], true);
                     this.notebookClipboardService.copyCell(selectedCell);
                 }
@@ -238,8 +240,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
         commands.registerCommand(NotebookCommands.COPY_SELECTED_CELL, {
             execute: () => {
-                const model = this.notebookEditorWidgetService.focusedEditor?.model;
-                const selectedCell = model?.selectedCell;
+                const viewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel;
+                const selectedCell = viewModel?.selectedCell;
                 if (selectedCell) {
                     this.notebookClipboardService.copyCell(selectedCell);
                 }
@@ -253,7 +255,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                 const copiedCell = this.notebookClipboardService.getCell();
                 if (copiedCell) {
                     const model = this.notebookEditorWidgetService.focusedEditor?.model;
-                    const insertIndex = model?.selectedCell ? model.cells.indexOf(model.selectedCell) + (position === 'above' ? 0 : 1) : 0;
+                    const viewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel;
+                    const insertIndex = viewModel?.selectedCell && model ? model.cells.indexOf(viewModel?.selectedCell) + (position === 'above' ? 0 : 1) : 0;
                     model?.applyEdits([{ editType: CellEditType.Replace, index: insertIndex, count: 0, cells: [copiedCell] }], true);
                 }
             }
@@ -267,8 +270,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
         commands.registerCommand(NotebookCommands.CENTER_ACTIVE_CELL, {
             execute: (editor?: NotebookEditorWidget) => {
-                const model = editor ? editor.model : this.notebookEditorWidgetService.focusedEditor?.model;
-                model?.selectedCell?.requestCenterEditor();
+                const viewModel = editor ? editor.viewModel : this.notebookEditorWidgetService.focusedEditor?.viewModel;
+                viewModel?.selectedCell?.requestCenterEditor();
             }
         });
 

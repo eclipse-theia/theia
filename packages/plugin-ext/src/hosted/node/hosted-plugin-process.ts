@@ -25,7 +25,7 @@ import { HostedPluginClient, PLUGIN_HOST_BACKEND, PluginHostEnvironmentVariable,
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { ProcessTerminateMessage, ProcessTerminatedMessage } from './hosted-plugin-protocol';
-import psTree = require('ps-tree');
+import { ProcessUtils } from '@theia/core/lib/node/process-utils';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -60,6 +60,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     @inject(HostedPluginLocalizationService)
     protected readonly localizationService: HostedPluginLocalizationService;
+
+    @inject(ProcessUtils)
+    protected readonly processUtils: ProcessUtils;
 
     private childProcess: cp.ChildProcess | undefined;
     private messagePipe?: BinaryMessagePipe;
@@ -130,12 +133,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
     }
 
     killProcessTree(parentPid: number): void {
-        psTree(parentPid, (_, childProcesses) => {
-            childProcesses.forEach(childProcess =>
-                this.killProcess(parseInt(childProcess.PID))
-            );
-            this.killProcess(parentPid);
-        });
+        this.processUtils.terminateProcessTree(parentPid);
     }
 
     protected killProcess(pid: number): void {

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPointStrategy": "merge",
+  "entryPoints": [
+    "../gh-pages/packages/*.json"
+  ],
+  "out": "../gh-pages/docs/next",
+  "readme": "../README.md",
+  "favicon": "../logo/favicon.png",
+  "hideGenerator": true,
+  "navigation": {
+    "includeFolders": false,
+  },
+  "navigationLinks": {
+    "Eclipse Theia Website": "https://theia-ide.org/",
+    "GitHub": "https://github.com/eclipse-theia/theia"
+  },
+  "searchInDocuments": true,
+  "projectDocuments": [
+    "../doc/Migration.md",
+    "../doc/Plugin-API.md",
+    "../doc/api-management.md",
+    "../doc/api-testing.md",
+    "../doc/Developing.md",
+    "../doc/Testing.md",
+    "../doc/code-organization.md",
+    "../doc/coding-guidelines.md",
+  ],
+  "headings": {
+    "document": true
+  }
+}

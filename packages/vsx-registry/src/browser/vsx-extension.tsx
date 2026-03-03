@@ -175,15 +175,16 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get installed(): boolean {
-        return this.model.isInstalled(this.id);
+        return !!this.version && this.model
+            .isInstalledAtSpecificVersion(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
     }
 
     get uninstalled(): boolean {
-        return this.model.isUninstalled(this.id);
+        return !!this.version && this.model.isUninstalled(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
     }
 
     get deployed(): boolean {
-        return this.model.isDeployed(this.id);
+        return !!this.version && this.model.isDeployed(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
     }
 
     get disabled(): boolean {
@@ -374,7 +375,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
             await this.runTask(nls.localize('vsx.disabling', 'Disabling'), async () => {
                 await this.progressService.withProgress(
                     nls.localize('vsx.disabling.extensions', 'Disabling {0}...', this.id), 'extensions',
-                    () => this.pluginServer.disablePlugin(PluginIdentifiers.idAndVersionToVersionedId({ id: (id as PluginIdentifiers.UnversionedId), version: installedVersion }))
+                    () => this.pluginServer.disablePlugin(id as PluginIdentifiers.UnversionedId)
                 );
             });
         }
@@ -386,7 +387,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
             await this.runTask(nls.localize('vsx.enabling', 'Enabling'), async () => {
                 await this.progressService.withProgress(
                     nls.localize('vsx.enabling.extension', 'Enabling {0}...', this.id), 'extensions',
-                    () => this.pluginServer.enablePlugin(PluginIdentifiers.idAndVersionToVersionedId({ id: (id as PluginIdentifiers.UnversionedId), version: installedVersion }))
+                    () => this.pluginServer.enablePlugin(id as PluginIdentifiers.UnversionedId)
                 );
             });
         }
@@ -494,7 +495,8 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
         const { builtin, currentTask, disabled, uninstalled, installed, deployed } = this.props.extension;
         const isFocused = (host?.model.getFocusedNode() as TreeElementNode)?.element === this.props.extension;
         const tabIndex = (!host || isFocused) ? 0 : undefined;
-        const outOfSync = installed && (deployed ? (disabled || uninstalled) : !(disabled || uninstalled));
+        const inactive = disabled || uninstalled || !installed;
+        const outOfSync = (installed && uninstalled) || deployed === inactive;
         if (currentTask) {
             return <button className="theia-button action prominent theia-mod-disabled">{currentTask}</button>;
         }
@@ -503,9 +505,10 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
                 outOfSync && <button className="theia-button action" onClick={this.reloadWindow}>{nls.localizeByDefault('Reload Window')}</button>
             }
             {
-                !builtin && ((installed && !uninstalled) ?
-                    <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button> :
-                    <button className="theia-button prominent action" onClick={this.install}>{nls.localizeByDefault('Install')}</button>)
+                !builtin && installed && !uninstalled && <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button>
+            }
+            {
+                !builtin && !installed && <button className="theia-button prominent action" onClick={this.install}>{nls.localizeByDefault('Install')}</button>
             }
             <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div>
         </div>;
@@ -534,7 +537,7 @@ export namespace VSXExtensionComponent {
 
 export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = VSXExtensionComponent.Props> extends AbstractVSXExtensionComponent<Props> {
     override render(): React.ReactNode {
-        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltip, verified, disabled } = this.props.extension;
+        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltip, verified, disabled, installed } = this.props.extension;
 
         return <div
             className='theia-vsx-extension noselect'
@@ -559,7 +562,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                     <div className='noWrapInfo'>
                         <span className='name'>{displayName}</span>&nbsp;
                         <span className='version'>{VSXExtension.formatVersion(version)}&nbsp;
-                        </span>{disabled && <span className='disabled'>({nls.localizeByDefault('disabled')})</span>}
+                        </span>{disabled && installed && <span className='disabled'>({nls.localizeByDefault('disabled')})</span>}
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}

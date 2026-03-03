@@ -36,7 +36,7 @@ export class MetadataScanner {
             host: PLUGIN_HOST_BACKEND,
             model: scanner.getModel(plugin),
             lifecycle: scanner.getLifecycle(plugin),
-            outOfSync: this.uninstallationManager.isUninstalled(id) || await this.uninstallationManager.isDisabled(id),
+            outOfSync: this.uninstallationManager.isUninstalled(id) || await this.uninstallationManager.isDisabled(PluginIdentifiers.toUnversioned(id)),
         };
     }
 

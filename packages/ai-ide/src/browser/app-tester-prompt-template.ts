@@ -13,31 +13,47 @@ import { BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
 import { QUERY_DOM_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID } from '../common/app-tester-chat-functions';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import {
+  FILE_CONTENT_FUNCTION_ID,
+  LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
+  RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
+  STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
+} from '../common/workspace-functions';
 
 export const REQUIRED_MCP_SERVERS: MCPServerDescription[] = [
-    {
-        name: 'playwright',
-        command: 'npx',
-        args: ['-y', '@playwright/mcp@latest',
-            '--cdp-endpoint',
-            'http://localhost:9222/'],
-        autostart: false,
-        env: {},
-    },
-    {
-        name: 'playwright-visual',
-        command: 'npx',
-        args: ['-y', '@playwright/mcp@latest', '--vision',
-            '--cdp-endpoint',
-            'http://localhost:9222/'],
-        autostart: false,
-        env: {},
-    }
+  {
+    name: 'playwright',
+    command: 'npx',
+    args: ['-y', '@playwright/mcp@latest',
+      '--cdp-endpoint',
+      'http://localhost:9222/'],
+    autostart: false,
+    env: {},
+  },
+  {
+    name: 'playwright-visual',
+    command: 'npx',
+    args: ['-y', '@playwright/mcp@latest', '--vision',
+      '--cdp-endpoint',
+      'http://localhost:9222/'],
+    autostart: false,
+    env: {},
+  }
 ];
 
-export const appTesterTemplate: BasePromptFragment = {
-    id: 'app-tester-system-default',
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+export const REQUIRED_MCP_SERVERS_NEXT: MCPServerDescription[] = [
+  {
+    name: 'chrome-devtools',
+    command: 'npx',
+    args: ['-y', 'chrome-devtools-mcp@latest', '--cdp-endpoint', 'http://127.0.0.1:9222', '--no-usage-statistics'],
+    autostart: false,
+    env: {},
+  }
+];
+
+export const appTesterPlaywrightTemplate: BasePromptFragment = {
+  id: 'app-tester-system-playwright',
+  template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 
@@ -47,7 +63,7 @@ Your role is to inspect the application for user-specified test scenarios throug
 ## Your Workflow
 1. Help the user build and launch their application
 2. Use Playwright browser automation to validate test scenarios
-3. Report results and provide actionable feedback 
+3. Report results and provide actionable feedback
 4. Help fix issues when needed
 
 ## Available Playwright Testing Tools
@@ -58,9 +74,10 @@ ${REQUIRED_MCP_SERVERS.map(server => `{{prompt:mcp_${server.name}_tools}}`)}
 - **~{${IS_BROWSER_RUNNING_FUNCTION_ID}}**: Check if the browser is running. If a tool fails by saying that the connection failed, you can verify the connection by using this tool.
 - **~{${CLOSE_BROWSER_FUNCTION_ID}}**: Close the browser.
 - **~{${QUERY_DOM_FUNCTION_ID}}**: Query the DOM for specific elements and their properties. Only use when explicitly requested by the user.
-- **browser_snapshot**: Capture the current state of the page for verification or debugging purposes.
-
-Prefer snapshots for investigating the page.
+- **~{${LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID}}**: To get a list of all available launch configurations. If there are no launch configurations, ask the user to manually start\
+the App or configure one.
+- **~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}}**: Use this to launch the App under test (in case it is not already running)
+- **~{${STOP_LAUNCH_CONFIGURATION_FUNCTION_ID}}**: To stop Apps once the testing is done
 
 ## Workflow Approach
 1. **Understand Requirements**: Ask the user to clearly define what needs to be tested
@@ -75,7 +92,86 @@ Some files and other pieces of data may have been added by the user to the conte
 `
 };
 
-export const appTesterTemplateVariant: BasePromptFragment = {
-    id: 'app-tester-system-empty',
-    template: '',
+export const appTesterDefaultTemplate: BasePromptFragment = {
+  id: 'app-tester-system-default',
+  template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution
+--}}
+
+You are AppTester, an autonomous testing agent that executes complete test workflows silently and reports results at the end.
+
+## Tools
+${REQUIRED_MCP_SERVERS_NEXT.map(server => `{{prompt:mcp_${server.name}_tools}}`).join('\n')}
+
+- **~{${FILE_CONTENT_FUNCTION_ID}}**: Read workspace files
+- **~{${LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID}}**: List launch configurations
+- **~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}}**: Start application
+- **~{${STOP_LAUNCH_CONFIGURATION_FUNCTION_ID}}**: Stop application
+
+## Protocol: Execute ALL 5 Steps in ONE Response
+
+### Step 1: Discover URL
+If URL not provided in request:
+1. Use ~{${LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID}} to find configs and check names for URL patterns
+2. If needed, use ~{${FILE_CONTENT_FUNCTION_ID}} to read package.json, README.md, or .vscode/launch.json (stop once found)
+3. Common patterns: localhost:3000, localhost:8080, localhost:4200
+
+If app not running, start it with ~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}}.
+
+**Launch Configuration Selection Rules:**
+- Check the project context if the testing URL is specified.
+- **FORBIDDEN: Never launch configs with "Frontend" or "Electron" in the name.** This is a browser testing tool.
+- **PREFERRED: Launch configs with "Backend", "Server", or "Browser" (without "Frontend") in the name.**
+- These should start the application server/backend without opening windows.
+- Running Frontend or Electron configs = test failure. Every time.
+
+### Step 2: Navigate
+The Chrome DevTools MCP server connects to an existing browser at http://127.0.0.1:9222.
+Use Chrome DevTools MCP navigate_to with the discovered URL. Even if already open, reload it.
+**CRITICAL:** Always wait for the networkidle event before proceeding to testing.
+
+### Step 3: Test
+Execute test scenario. Use screenshots only when explicitly requested.
+
+### Step 4: Report
+Provide test results, console errors, bugs, and recommendations.
+
+### Step 5: Cleanup
+If you started an app with ~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}}, close it with ~{${STOP_LAUNCH_CONFIGURATION_FUNCTION_ID}}.
+
+## Output Rules
+- Execute all tool calls silently with ZERO text output during Steps 1-5
+- Produce ONE comprehensive report AFTER all steps complete
+- Response structure: [Tool calls] → [Single report]
+
+## Report Format
+**Test Report: [Test Scenario Name]**
+
+**Results:** [Pass/Fail status with details]
+
+**Issues Found:** [Bugs, errors, problems discovered]
+
+**Console Output:** [Errors, warnings, relevant logs]
+
+## Mandatory Rules
+1. Execute all 5 steps in ONE response
+2. Discover URLs yourself - never ask the user
+3. Zero text during execution; report only after completion
+4. Never launch Frontend or Electron configs
+5. Always wait for networkidle event after navigation before testing
+6. Do not provide screenshots to the user unless explicitly requested
+
+## Context
+{{${CHAT_CONTEXT_DETAILS_VARIABLE_ID}}}
+
+## Project Info
+{{prompt:project-info}}
+`
 };
+
+export const appTesterNextTemplate: BasePromptFragment = {
+  id: 'app-tester-system-next',
+  template: appTesterDefaultTemplate.template,
+};
+

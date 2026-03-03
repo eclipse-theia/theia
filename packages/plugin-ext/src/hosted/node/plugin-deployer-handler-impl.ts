@@ -275,11 +275,11 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
         this.sourceLocations.set(id, knownLocations);
     }
 
-    async enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+    async enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
         return this.uninstallationManager.markAsEnabled(pluginId);
     }
 
-    async disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+    async disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
         return this.uninstallationManager.markAsDisabled(pluginId);
     }
 }

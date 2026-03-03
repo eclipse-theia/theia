@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - Google EXTENSION</h2>
+<h2>ECLIPSE THEIA - AI GOOGLE EXTENSION</h2>
 
 <hr />
 
@@ -18,6 +18,7 @@ Alternatively the API key can also be handed in via the `GOOGLE_API_KEY` environ
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-google`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-google.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

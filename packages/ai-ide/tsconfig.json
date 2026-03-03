@@ -25,10 +25,16 @@
       "path": "../ai-mcp"
     },
     {
+      "path": "../ai-terminal"
+    },
+    {
       "path": "../core"
     },
     {
       "path": "../debug"
+    },
+    {
+      "path": "../editor"
     },
     {
       "path": "../filesystem"
@@ -41,6 +47,12 @@
     },
     {
       "path": "../navigator"
+    },
+    {
+      "path": "../preferences"
+    },
+    {
+      "path": "../scm"
     },
     {
       "path": "../search-in-workspace"

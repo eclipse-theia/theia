@@ -16,7 +16,7 @@ The `@theia/callhierarchy` extension contributes a `call hierarchy` view which d
 
 ## Additional Information
 
-- [API documentation for `@theia/callhierarchy`](https://eclipse-theia.github.io/theia/docs/next/modules/callhierarchy.html)
+- [API documentation for `@theia/callhierarchy`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_callhierarchy.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

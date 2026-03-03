@@ -16,6 +16,7 @@
 
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import { WebglAddon } from 'xterm-addon-webgl';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS, generateUuid } from '@theia/core';
 import {
@@ -34,7 +35,7 @@ import {
     TerminalBuffer
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences } from './terminal-preferences';
+import { TerminalPreferences } from '../common/terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
 import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
@@ -71,11 +72,23 @@ class TerminalBufferImpl implements TerminalBuffer {
     get length(): number {
         return this.term.buffer.active.length;
     };
-    getLines(start: number, length: number): string[] {
+    getLines(start: number, length: number, trimRight: boolean = false): string[] {
         const result: string[] = [];
-        for (let i = 0; i < length && this.length - 1 - i >= 0; i++) {
-            result.push(this.term.buffer.active.getLine(this.length - 1 - i)!.translateToString());
+        const activeBuffer = this.term.buffer.active;
+
+        if (start < 0) {
+            return [];
         }
+
+        const end = Math.min(start + length, activeBuffer.length);
+        for (let i = start; i < end; i++) {
+            const line = activeBuffer.getLine(i);
+            if (!line) {
+                continue;
+            }
+            result.push(line.translateToString(trimRight));
+        }
+
         return result;
     }
 
@@ -95,6 +108,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected _terminalId = -1;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected fitAddon: FitAddon;
+    protected webglAddon: WebglAddon;
     protected term: Terminal;
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
@@ -168,6 +182,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this._buffer;
     }
 
+    private _currentTerminalOutput: string[];
+
     @postConstruct()
     protected init(): void {
         this.id = this._terminalDOMId;
@@ -205,9 +221,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             theme: this.themeService.theme
         });
         this._buffer = new TerminalBufferImpl(this.term);
+        this._currentTerminalOutput = [];
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
+
+        this.webglAddon = new WebglAddon();
+        this.term.loadAddon(this.webglAddon);
 
         this.initializeLinkHover();
 
@@ -312,6 +332,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.term.onKey(data => {
             this.onKeyEmitter.fire(data);
+        }));
+
+        this.toDispose.push(this.term.onWriteParsed(() => {
+            if (this._currentTerminalOutput.length > 0) {
+                const terminalOutput = this._currentTerminalOutput.join('');
+                this._currentTerminalOutput = [];
+                this.onOutputEmitter.fire(terminalOutput);
+            }
         }));
 
         for (const contribution of this.terminalContributionProvider.getContributions()) {
@@ -775,7 +803,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
-            this.onOutputEmitter.fire(data);
+            this._currentTerminalOutput.push(data);
         } else {
             this.initialData += data;
         }
@@ -827,7 +855,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     writeLine(text: string): void {
         this.term.writeln(text);
-        this.onOutputEmitter.fire(text + '\n');
+        this._currentTerminalOutput.push(text + '\n');
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {
@@ -850,6 +878,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.enhancedPreviewNode = undefined;
         }
         this.styleElement?.remove();
+        this.webglAddon?.dispose();
         super.dispose();
     }
 
@@ -974,13 +1003,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 const processInfo = values[2];
 
                 const markdown = new MarkdownStringImpl();
-                markdown.appendMarkdown('Process ID: ' + processId + '\\\n');
-                markdown.appendMarkdown('Command line: ' +
+                markdown.appendMarkdown(nls.localizeByDefault('Process ID ({0}): {1}', 'PID', processId) + '\\\n');
+                markdown.appendMarkdown(nls.localizeByDefault('Command line: {0}',
                     processInfo.executable +
                     ' ' +
                     processInfo.arguments.join(' ') +
-                    '\n\n---\n\n');
-                markdown.appendMarkdown('The following extensions have contributed to this terminal\'s environment:\n');
+                    '\n\n---\n\n'));
+                markdown.appendMarkdown(nls.localizeByDefault("The following extensions have contributed to this terminal's environment:") + '\n');
                 extensions.forEach((arr, key) => {
                     arr.forEach(value => {
                         if (value === undefined) {

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { Anchor, ContextMenuAccess, KeybindingRegistry, PreferenceService, Widget, WidgetManager } from '@theia/core/lib/browser';
+import { Anchor, ContextMenuAccess, KeybindingRegistry, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { TabBarToolbar, TabBarToolbarFactory } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection, MenuPath, ProgressService } from '@theia/core';
+import { DisposableCollection, MenuPath, PreferenceService, ProgressService } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { Deferred } from '@theia/core/lib/common/promise-util';

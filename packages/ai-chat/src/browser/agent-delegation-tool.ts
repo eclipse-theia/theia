@@ -14,22 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { AGENT_DELEGATION_FUNCTION_ID, ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
+    assertChatContext,
     ChatAgentService,
     ChatAgentServiceFactory,
     ChatRequest,
     ChatService,
     ChatServiceFactory,
-    MutableChatRequestModel,
+    ChatToolContext,
     MutableChatModel,
+    MutableChatRequestModel,
     ChatSession,
     ChatRequestInvocation,
 } from '../common';
 import { DelegationResponseContent } from './delegation-response-content';
-
-export const AGENT_DELEGATION_FUNCTION_ID = 'delegateToAgent';
 
 @injectable()
 export class AgentDelegationTool implements ToolProvider {
@@ -46,7 +46,10 @@ export class AgentDelegationTool implements ToolProvider {
             id: AgentDelegationTool.ID,
             name: AgentDelegationTool.ID,
             description:
-                'Delegate a task or question to a specific AI agent. This tool allows you to submit requests to specialized agents based on their capabilities.',
+                'Delegate a task or question to a specific AI agent. IMPORTANT: When you delegate a task or question to a specific AI agent using this tool, ' +
+                'remember that each sub-agent operates solely within its specialized capabilities and tools and does not have access to previous conversation context ' +
+                ' or external systems. Therefore, it is crucial to provide all necessary context and detailed information directly within your request to ensure accurate ' +
+                'and effective task completion.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -63,16 +66,18 @@ export class AgentDelegationTool implements ToolProvider {
                 },
                 required: ['agentId', 'prompt'],
             },
-            handler: (arg_string: string, ctx: MutableChatRequestModel) =>
-                this.delegateToAgent(arg_string, ctx),
+            handler: (arg_string: string, ctx?: ToolInvocationContext) => {
+                assertChatContext(ctx);
+                return this.delegateToAgent(arg_string, ctx);
+            },
         };
     }
 
     private async delegateToAgent(
         arg_string: string,
-        ctx: MutableChatRequestModel
+        ctx: ChatToolContext
     ): Promise<string> {
-        if (ctx.response.cancellationToken.isCancellationRequested) {
+        if (ctx.cancellationToken?.isCancellationRequested) {
             return 'Operation cancelled by user';
         }
 
@@ -118,7 +123,7 @@ export class AgentDelegationTool implements ToolProvider {
                 }
 
                 // Setup ChangeSet bubbling from delegated session to parent session
-                this.setupChangeSetBubbling(newSession, ctx.session);
+                this.setupChangeSetBubbling(newSession, ctx.request.session);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
@@ -127,12 +132,12 @@ export class AgentDelegationTool implements ToolProvider {
 
             // Send the request
             const chatRequest: ChatRequest = {
-                text: prompt,
+                text: `@${agentId} ${prompt}`,
             };
 
             let response: ChatRequestInvocation | undefined;
             try {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return 'Operation cancelled by user';
                 }
 
@@ -142,8 +147,8 @@ export class AgentDelegationTool implements ToolProvider {
                     chatRequest
                 );
 
-                if (ctx?.response?.cancellationToken) {
-                    ctx.response.cancellationToken.onCancellationRequested(
+                if (ctx.cancellationToken) {
+                    ctx.cancellationToken.onCancellationRequested(
                         async () => {
                             if (response) {
                                 ((await response?.requestCompleted) as MutableChatRequestModel).cancel();
@@ -169,9 +174,11 @@ export class AgentDelegationTool implements ToolProvider {
                     const result = await response.responseCompleted;
                     const stringResult = result.response.asString();
 
-                    // Clean up the session after completion
+                    // Clean up the session after completion (no need to await)
                     const chatService = this.getChatService();
-                    chatService.deleteSession(newSession.id);
+                    chatService.deleteSession(newSession.id).catch(error => {
+                        console.error('Failed to delete delegated session', error);
+                    });
 
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;

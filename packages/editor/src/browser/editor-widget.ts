@@ -35,7 +35,6 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
             lock(this.title);
         }
         this.toDispose.push(this.editor);
-        this.toDispose.push(this.toDisposeOnTabbarChange);
         this.toDispose.push(this.editor.onSelectionChanged(() => this.setSelection()));
         this.toDispose.push(this.editor.onFocusChanged(() => this.setSelection()));
         this.toDispose.push(this.editor.onDidChangeReadOnly(isReadonly => {
@@ -44,6 +43,9 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
             } else {
                 unlock(this.title);
             }
+        }));
+        this.toDispose.push(Disposable.create(() => {
+            this.toDisposeOnTabbarChange.dispose();
         }));
         this.toDispose.push(Disposable.create(() => {
             if (this.selectionService.selection === this.editor) {

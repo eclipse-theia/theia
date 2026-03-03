@@ -28,7 +28,6 @@ import { generateUuid, ILogger, nls } from '@theia/core';
 import { terminalPrompts } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
-import zodToJsonSchema from 'zod-to-json-schema';
 
 const Commands = z.object({
     commands: z.array(z.string()),
@@ -46,10 +45,26 @@ export class AiTerminalAgent implements Agent {
     variables = [];
     functions = [];
     agentSpecificVariables = [
-        { name: 'userRequest', usedInPrompt: true, description: 'The user\'s question or request.' },
-        { name: 'shell', usedInPrompt: true, description: 'The shell being used, e.g., /usr/bin/zsh.' },
-        { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
-        { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
+        {
+            name: 'userRequest',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/userRequest/description', 'The user\'s question or request.')
+        },
+        {
+            name: 'shell',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/shell/description', 'The shell being used, e.g., /usr/bin/zsh.')
+        },
+        {
+            name: 'cwd',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/cwd/description', 'The current working directory.')
+        },
+        {
+            name: 'recentTerminalContents',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/recentTerminalContents/description', 'The last 0 to 50 recent lines visible in the terminal.')
+        }
     ];
     prompts = terminalPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
@@ -100,6 +115,8 @@ export class AiTerminalAgent implements Agent {
             return [];
         }
 
+        const variantInfo = this.promptService.getPromptVariantInfo('terminal-system');
+
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
@@ -121,12 +138,14 @@ export class AiTerminalAgent implements Agent {
                 json_schema: {
                     name: 'terminal-commands',
                     description: 'Suggested terminal commands based on the user request',
-                    schema: zodToJsonSchema(Commands)
+                    schema: Commands.toJSONSchema()
                 }
             },
             agentId: this.id,
             requestId,
-            sessionId
+            sessionId,
+            promptVariantId: variantInfo?.variantId,
+            isPromptVariantCustomized: variantInfo?.isCustomized
         };
 
         try {

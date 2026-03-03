@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from './openai-preferences';
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { PreferenceService } from '@theia/core';
 
 @injectable()
 export class OpenAiFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -40,6 +41,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
             this.prevModels = [...models];
@@ -50,12 +54,16 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue);
+                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(event.newValue as string[]);
+                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-                    this.handleCustomModelChanges(event.newValue as Partial<OpenAiModelDescription>[]);
+                    this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+                } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
+                    this.updateAllModels();
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
                 }
             });
 
@@ -89,11 +97,13 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.id === newModel.id &&
                 model.model === newModel.model &&
                 model.url === newModel.url &&
+                model.deployment === newModel.deployment &&
                 model.apiKey === newModel.apiKey &&
                 model.apiVersion === newModel.apiVersion &&
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
-                model.enableStreaming === newModel.enableStreaming));
+                model.enableStreaming === newModel.enableStreaming &&
+                model.useResponseApi === newModel.useResponseApi));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -111,6 +121,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
         return {
             id: id,
             model: modelId,
@@ -119,7 +130,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             developerMessageSettings: openAIModelsNotSupportingDeveloperMessages.includes(modelId) ? 'user' : 'developer',
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
-            maxRetries: maxRetries
+            maxRetries: maxRetries,
+            useResponseApi: useResponseApi
         };
     }
 
@@ -138,12 +150,14 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     id: pref.id && typeof pref.id === 'string' ? pref.id : pref.model,
                     model: pref.model,
                     url: pref.url,
+                    deployment: typeof pref.deployment === 'string' && pref.deployment ? pref.deployment : undefined,
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     apiVersion: typeof pref.apiVersion === 'string' || pref.apiVersion === true ? pref.apiVersion : undefined,
                     developerMessageSettings: pref.developerMessageSettings ?? 'developer',
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
-                    maxRetries: pref.maxRetries ?? maxRetries
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    useResponseApi: pref.useResponseApi ?? false
                 }
             ];
         }, []);

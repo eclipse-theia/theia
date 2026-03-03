@@ -127,10 +127,15 @@ export class JsonSchemaDataStore {
 
 @injectable()
 export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
+
+    private static excludedSchemaUrls = [
+        'https://www.schemastore.org/task.json'
+    ];
+
     async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
         const catalog = require('./catalog.json') as { schemas: DefaultJsonSchemaContribution.SchemaData[] };
         for (const s of catalog.schemas) {
-            if (s.fileMatch) {
+            if (s.fileMatch && this.shouldRegisterSchema(s)) {
                 context.registerSchema({
                     fileMatch: s.fileMatch,
                     url: s.url
@@ -139,6 +144,9 @@ export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
         }
     }
 
+    protected shouldRegisterSchema(s: DefaultJsonSchemaContribution.SchemaData): boolean {
+        return !DefaultJsonSchemaContribution.excludedSchemaUrls.includes(s.url);
+    }
 }
 export namespace DefaultJsonSchemaContribution {
     export interface SchemaData {

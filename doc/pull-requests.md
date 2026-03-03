@@ -53,6 +53,9 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [3.](#checklist-breaking-changes) Breaking changes are justified and recorded in the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md).
 <a name="checklist-dependencies"></a>
 - [4.](#checklist-dependencies) New dependencies are justified and [verified](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#wip---new-ecd-theia-intellectual-property-clearance-approach-experimental).
+  - For newly added dependencies, we run the [license check workflow](../.github/workflows/license-check.yml), but not in review mode.
+    - If the license check reveals that a review is needed for the new dependency (i.e., `ERROR: Found results that aren't part of the baseline! X some-dependency, some-license`), we need to run the license check in review mode (`npm run license:check:review`).
+    - Since we have no PAT secret defined for the repo at the moment, the license check in review mode needs to be done locally, either by the contributor (if they are a Theia committer) or by the reviewer.
 <a name="checklist-copied-code"></a>
 - [5.](#checklist-copied-code) Copied code is justified and [approved via a CQ](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#case-3rd-party-project-code-copiedforked-from-another-project-into-eclipse-theia-maintained-by-us).
   - Look closely at the GitHub actions running for your PR: the 3pp/dash license check should be green.
@@ -66,6 +69,9 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="checklist-commit-history"></a>
 - [9.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
   - For example, use `git pull -r` or `git fetch && git rebase` to pick up changes from the master.
+<a name="checklist-i18n"></a>
+- [10.](#checklist-i18n) User-facing text is internationalized using the `nls` service.
+  - For details, please see the [Internationalization/Localization section](./coding-guidelines.md#internationalizationlocalization) in the Coding Guidelines.
 
 ## Reviewing
 

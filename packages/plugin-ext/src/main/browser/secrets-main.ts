@@ -79,4 +79,29 @@ export class SecretsMainImpl implements SecretsMain {
             throw new Error('Cannot delete password');
         }
     }
+
+    async $getKeys(extensionId: string): Promise<string[]> {
+        return this.doGetKeys(extensionId);
+    }
+
+    private async doGetKeys(extensionId: string): Promise<string[]> {
+        if (!this.credentialsService.keys) {
+            throw new Error('CredentialsProvider does not support keys() method');
+        }
+        const fullKey = SecretsMainImpl.getFullKey(extensionId);
+        const allKeys = await this.credentialsService.keys(fullKey);
+        const keys = allKeys
+            .map(key => this.parseKey(key))
+            .filter((parsedKey): parsedKey is { extensionId: string; key: string } => parsedKey !== undefined && parsedKey.extensionId === extensionId)
+            .map(({ key }) => key);
+        return keys;
+    }
+
+    private parseKey(key: string): { extensionId: string; key: string } | undefined {
+        try {
+            return JSON.parse(key);
+        } catch {
+            return undefined;
+        }
+    }
 }

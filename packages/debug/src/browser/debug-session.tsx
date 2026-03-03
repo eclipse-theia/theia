@@ -19,13 +19,13 @@
 import * as React from '@theia/core/shared/react';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider } from '@theia/core/lib/common';
+import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider, CommandService } from '@theia/core/lib/common';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugSessionConnection, DebugRequestTypes, DebugEventTypes } from './debug-session-connection';
 import { DebugThread, StoppedDetails, DebugThreadData } from './model/debug-thread';
-import { DebugScope } from './console/debug-console-items';
+import { DebugScope, DebugVariable } from './console/debug-console-items';
 import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugSource } from './model/debug-source';
 import { DebugBreakpoint, DebugBreakpointOptions } from './model/debug-breakpoint';
@@ -46,6 +46,8 @@ import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint
 import { nls } from '@theia/core';
 import { TestService, TestServices } from '@theia/test/lib/browser/test-service';
 import { DebugSessionManager } from './debug-session-manager';
+import { DebugDataBreakpoint } from './model/debug-data-breakpoint';
+import { DebugPreferences } from '../common/debug-preferences';
 
 export enum DebugState {
     Inactive,
@@ -64,6 +66,17 @@ export function debugStateContextValue(state: DebugState): string {
         case DebugState.Running: return 'running';
         default: return 'inactive';
     }
+}
+
+const formatMessageRegexp = /\{([^}]+)\}/g;
+
+/**
+ * Returns a formatted message string. The format is compatible with {@link DebugProtocol.Message.format}.
+ * @param format A format string for the message. Embedded variables have the form `{name}`.
+ * @param variables An object used as a dictionary for looking up the variables in the format string.
+ */
+export function formatMessage(format: string, variables?: { [key: string]: string; }): string {
+    return variables ? format.replace(formatMessageRegexp, (match, group) => variables.hasOwnProperty(group) ? variables[group] : match) : format;
 }
 
 // FIXME: make injectable to allow easily inject services
@@ -91,6 +104,9 @@ export class DebugSession implements CompositeTreeElement {
         this.onDidChangeBreakpointsEmitter.fire(uri);
     }
 
+    protected readonly onDidResolveLazyVariableEmitter = new Emitter<DebugVariable>();
+    readonly onDidResolveLazyVariable: Event<DebugVariable> = this.onDidResolveLazyVariableEmitter.event;
+
     protected readonly childSessions = new Map<string, DebugSession>();
     protected readonly toDispose = new DisposableCollection();
 
@@ -112,6 +128,8 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly fileService: FileService,
         protected readonly debugContributionProvider: ContributionProvider<DebugContribution>,
         protected readonly workspaceService: WorkspaceService,
+        protected readonly debugPreferences: DebugPreferences,
+        protected readonly commandService: CommandService,
         /**
          * Number of millis after a `stop` request times out. It's 5 seconds by default.
          */
@@ -145,7 +163,10 @@ export class DebugSession implements CompositeTreeElement {
         this.connection.onDidClose(() => this.toDispose.dispose());
         this.toDispose.pushAll([
             this.onDidChangeEmitter,
+            this.onDidFocusStackFrameEmitter,
+            this.onDidFocusThreadEmitter,
             this.onDidChangeBreakpointsEmitter,
+            this.onDidResolveLazyVariableEmitter,
             Disposable.create(() => {
                 this.clearBreakpoints();
                 this.doUpdateThreads([]);
@@ -172,6 +193,10 @@ export class DebugSession implements CompositeTreeElement {
     protected _capabilities: DebugProtocol.Capabilities = {};
     get capabilities(): DebugProtocol.Capabilities {
         return this._capabilities;
+    }
+
+    get autoExpandLazyVariables(): boolean {
+        return this.debugPreferences['debug.autoExpandLazyVariables'] === 'on';
     }
 
     protected readonly sources = new Map<string, DebugSource>();
@@ -331,7 +356,7 @@ export class DebugSession implements CompositeTreeElement {
         try {
             const response = await this.connection.sendRequest('initialize', {
                 clientID: 'Theia',
-                clientName: 'Theia IDE',
+                clientName: nls.localize('theia/debug/TheiaIDE', 'Theia IDE'),
                 adapterID: this.configuration.type,
                 locale: 'en-US',
                 linesStartAt1: true,
@@ -353,7 +378,8 @@ export class DebugSession implements CompositeTreeElement {
         try {
             await this.sendRequest((this.configuration.request as keyof DebugRequestTypes), this.configuration);
         } catch (reason) {
-            this.showMessage(MessageType.Error, reason.message || 'Debug session initialization failed. See console for details.');
+            this.showMessage(MessageType.Error, reason.message || nls.localize('theia/debug/debugSessionInitializationFailed',
+                'Debug session initialization failed. See console for details.'));
             throw reason;
         }
     }
@@ -612,6 +638,14 @@ export class DebugSession implements CompositeTreeElement {
         return this.breakpoints.getInstructionBreakpoints().map(origin => new DebugInstructionBreakpoint(origin, this.asDebugBreakpointOptions()));
     }
 
+    getDataBreakpoints(): DebugDataBreakpoint[] {
+        if (this.capabilities.supportsDataBreakpoints) {
+            return this.getBreakpoints(BreakpointManager.DATA_URI)
+                .filter((breakpoint): breakpoint is DebugDataBreakpoint => breakpoint instanceof DebugDataBreakpoint);
+        }
+        return this.breakpoints.getDataBreakpoints().map(origin => new DebugDataBreakpoint(origin, this.asDebugBreakpointOptions()));
+    }
+
     getBreakpoints(uri?: URI): DebugBreakpoint[] {
         if (uri) {
             return this._breakpoints.get(uri.toString()) || [];
@@ -654,7 +688,7 @@ export class DebugSession implements CompositeTreeElement {
                     const origin = SourceBreakpoint.create(uri, { line: raw.line, column: raw.column });
                     if (this.breakpoints.addBreakpoint(origin)) {
                         const breakpoints = this.getSourceBreakpoints(uri);
-                        const breakpoint = new DebugSourceBreakpoint(origin, this.asDebugBreakpointOptions());
+                        const breakpoint = new DebugSourceBreakpoint(origin, this.asDebugBreakpointOptions(), this.commandService);
                         breakpoint.update({ raw });
                         breakpoints.push(breakpoint);
                         this.setSourceBreakpoints(uri, breakpoints);
@@ -718,6 +752,8 @@ export class DebugSession implements CompositeTreeElement {
                 await this.sendFunctionBreakpoints(affectedUri);
             } else if (affectedUri.toString() === BreakpointManager.INSTRUCTION_URI.toString()) {
                 await this.sendInstructionBreakpoints();
+            } else if (affectedUri.isEqual(BreakpointManager.DATA_URI)) {
+                await this.sendDataBreakpoints();
             } else {
                 await this.sendSourceBreakpoints(affectedUri, sourceModified);
             }
@@ -786,8 +822,10 @@ export class DebugSession implements CompositeTreeElement {
 
     protected async sendSourceBreakpoints(affectedUri: URI, sourceModified?: boolean): Promise<void> {
         const source = await this.toSource(affectedUri);
+        const known = this._breakpoints.get(affectedUri.toString());
         const all = this.breakpoints.findMarkers({ uri: affectedUri }).map(({ data }) =>
-            new DebugSourceBreakpoint(data, this.asDebugBreakpointOptions())
+            known?.find((candidate): candidate is DebugSourceBreakpoint => candidate instanceof DebugSourceBreakpoint && candidate.origin.id === data.id) ??
+            new DebugSourceBreakpoint(data, this.asDebugBreakpointOptions(), this.commandService)
         );
         const enabled = all.filter(b => b.enabled);
         try {
@@ -841,6 +879,25 @@ export class DebugSession implements CompositeTreeElement {
         this.setBreakpoints(BreakpointManager.INSTRUCTION_URI, all);
     }
 
+    protected async sendDataBreakpoints(): Promise<void> {
+        if (!this.capabilities.supportsDataBreakpoints) { return; }
+        const known = this._breakpoints.get(BreakpointManager.DATA_URI.toString());
+        const all = this.breakpoints.getDataBreakpoints().map<DebugDataBreakpoint>(bp =>
+            known?.find((candidate): candidate is DebugDataBreakpoint => candidate instanceof DebugDataBreakpoint && candidate.id === bp.id)
+            ?? new DebugDataBreakpoint(bp, this.asDebugBreakpointOptions())
+        );
+        const enabled = all.filter(bp => bp.enabled);
+        try {
+            const response = await this.sendRequest('setDataBreakpoints', {
+                breakpoints: enabled.map(({ origin }) => origin.raw)
+            });
+            response.body.breakpoints.forEach((raw, index) => enabled[index].update({ raw }));
+        } catch {
+            enabled.forEach(breakpoint => breakpoint.update({ raw: { verified: false } }));
+        }
+        this.setBreakpoints(BreakpointManager.DATA_URI, all);
+    }
+
     protected setBreakpoints(uri: URI, breakpoints: DebugBreakpoint[]): void {
         this._breakpoints.set(uri.toString(), breakpoints);
         this.fireDidChangeBreakpoints(uri);
@@ -876,6 +933,7 @@ export class DebugSession implements CompositeTreeElement {
             }
             yield BreakpointManager.FUNCTION_URI;
             yield BreakpointManager.EXCEPTION_URI;
+            yield BreakpointManager.DATA_URI;
         }
     }
 

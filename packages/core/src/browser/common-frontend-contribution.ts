@@ -19,10 +19,14 @@
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
 import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNode, CommandMenu, Group, Submenu } from '../common/menu';
+import { CommonMenus } from './common-menus';
+export { CommonMenus };
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication } from './frontend-application';
 import { FrontendApplicationContribution, OnWillStopAction } from './frontend-application-contribution';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
+import { CommonCommands } from './common-commands';
+export { CommonCommands };
 import { UriAwareCommandHandler } from '../common/uri-command-handler';
 import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
@@ -44,9 +48,8 @@ import { IconTheme, IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry } from './color-registry';
 import { Color } from '../common/color';
-import { CoreConfiguration, CorePreferences } from './core-preferences';
+import { CoreConfiguration, CorePreferences } from '../common/core-preferences';
 import { ThemeService } from './theming';
-import { PreferenceService, PreferenceChangeEvent, PreferenceScope } from './preferences';
 import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
@@ -64,317 +67,11 @@ import { DecorationStyle } from './decoration-style';
 import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveableService } from './saveable-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
+import { PreferenceChangeEvent, PreferenceScope, PreferenceService, UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 import { SidebarMenu } from './shell/sidebar-menu-widget';
 import { UndoRedoHandlerService } from './undo-redo-handler';
 import { timeout } from '../common/promise-util';
-
-export namespace CommonMenus {
-
-    export const FILE = [...MAIN_MENU_BAR, '1_file'];
-    export const FILE_NEW_TEXT = [...FILE, '1_new_text'];
-    export const FILE_NEW = [...FILE, '1_new'];
-    export const FILE_OPEN = [...FILE, '2_open'];
-    export const FILE_SAVE = [...FILE, '3_save'];
-    export const FILE_AUTOSAVE = [...FILE, '4_autosave'];
-    export const FILE_SETTINGS = [...FILE, '5_settings'];
-    export const FILE_SETTINGS_SUBMENU = [...FILE_SETTINGS, '1_settings_submenu'];
-    export const FILE_SETTINGS_SUBMENU_OPEN = [...FILE_SETTINGS_SUBMENU, '1_settings_submenu_open'];
-    export const FILE_SETTINGS_SUBMENU_THEME = [...FILE_SETTINGS_SUBMENU, '2_settings_submenu_theme'];
-    export const FILE_CLOSE = [...FILE, '6_close'];
-
-    export const FILE_NEW_CONTRIBUTIONS = ['file', 'newFile'];
-
-    export const EDIT = [...MAIN_MENU_BAR, '2_edit'];
-    export const EDIT_UNDO = [...EDIT, '1_undo'];
-    export const EDIT_CLIPBOARD = [...EDIT, '2_clipboard'];
-    export const EDIT_FIND = [...EDIT, '3_find'];
-
-    export const VIEW = [...MAIN_MENU_BAR, '4_view'];
-    export const VIEW_PRIMARY = [...VIEW, '0_primary'];
-    export const VIEW_APPEARANCE = [...VIEW, '1_appearance'];
-    export const VIEW_APPEARANCE_SUBMENU = [...VIEW_APPEARANCE, '1_appearance_submenu'];
-    export const VIEW_APPEARANCE_SUBMENU_SCREEN = [...VIEW_APPEARANCE_SUBMENU, '2_appearance_submenu_screen'];
-    export const VIEW_APPEARANCE_SUBMENU_BAR = [...VIEW_APPEARANCE_SUBMENU, '3_appearance_submenu_bar'];
-    export const VIEW_EDITOR_SUBMENU = [...VIEW_APPEARANCE, '2_editor_submenu'];
-    export const VIEW_EDITOR_SUBMENU_SPLIT = [...VIEW_EDITOR_SUBMENU, '1_editor_submenu_split'];
-    export const VIEW_EDITOR_SUBMENU_ORTHO = [...VIEW_EDITOR_SUBMENU, '2_editor_submenu_ortho'];
-    export const VIEW_VIEWS = [...VIEW, '2_views'];
-    export const VIEW_LAYOUT = [...VIEW, '3_layout'];
-    export const VIEW_TOGGLE = [...VIEW, '4_toggle'];
-
-    export const MANAGE_GENERAL = [...MANAGE_MENU, '1_manage_general'];
-    export const MANAGE_SETTINGS = [...MANAGE_MENU, '2_manage_settings'];
-    export const MANAGE_SETTINGS_THEMES = [...MANAGE_SETTINGS, '1_manage_settings_themes'];
-
-    // last menu item
-    export const HELP = [...MAIN_MENU_BAR, '9_help'];
-
-}
-
-export namespace CommonCommands {
-
-    export const FILE_CATEGORY = 'File';
-    export const VIEW_CATEGORY = 'View';
-    export const CREATE_CATEGORY = 'Create';
-    export const PREFERENCES_CATEGORY = 'Preferences';
-    export const MANAGE_CATEGORY = 'Manage';
-    export const FILE_CATEGORY_KEY = nls.getDefaultKey(FILE_CATEGORY);
-    export const VIEW_CATEGORY_KEY = nls.getDefaultKey(VIEW_CATEGORY);
-    export const PREFERENCES_CATEGORY_KEY = nls.getDefaultKey(PREFERENCES_CATEGORY);
-
-    export const OPEN: Command = {
-        id: 'core.open',
-    };
-
-    export const CUT = Command.toDefaultLocalizedCommand({
-        id: 'core.cut',
-        label: 'Cut'
-    });
-    export const COPY = Command.toDefaultLocalizedCommand({
-        id: 'core.copy',
-        label: 'Copy'
-    });
-    export const PASTE = Command.toDefaultLocalizedCommand({
-        id: 'core.paste',
-        label: 'Paste'
-    });
-
-    export const COPY_PATH = Command.toDefaultLocalizedCommand({
-        id: 'core.copy.path',
-        label: 'Copy Path'
-    });
-
-    export const UNDO = Command.toDefaultLocalizedCommand({
-        id: 'core.undo',
-        label: 'Undo'
-    });
-    export const REDO = Command.toDefaultLocalizedCommand({
-        id: 'core.redo',
-        label: 'Redo'
-    });
-    export const SELECT_ALL = Command.toDefaultLocalizedCommand({
-        id: 'core.selectAll',
-        label: 'Select All'
-    });
-
-    export const FIND = Command.toDefaultLocalizedCommand({
-        id: 'core.find',
-        label: 'Find'
-    });
-    export const REPLACE = Command.toDefaultLocalizedCommand({
-        id: 'core.replace',
-        label: 'Replace'
-    });
-
-    export const NEXT_TAB = Command.toDefaultLocalizedCommand({
-        id: 'core.nextTab',
-        category: VIEW_CATEGORY,
-        label: 'Show Next Tab'
-    });
-    export const PREVIOUS_TAB = Command.toDefaultLocalizedCommand({
-        id: 'core.previousTab',
-        category: VIEW_CATEGORY,
-        label: 'Show Previous Tab'
-    });
-    export const NEXT_TAB_IN_GROUP = Command.toLocalizedCommand({
-        id: 'core.nextTabInGroup',
-        category: VIEW_CATEGORY,
-        label: 'Switch to Next Tab in Group'
-    }, 'theia/core/common/showNextTabInGroup', VIEW_CATEGORY_KEY);
-    export const PREVIOUS_TAB_IN_GROUP = Command.toLocalizedCommand({
-        id: 'core.previousTabInGroup',
-        category: VIEW_CATEGORY,
-        label: 'Switch to Previous Tab in Group'
-    }, 'theia/core/common/showPreviousTabInGroup', VIEW_CATEGORY_KEY);
-    export const NEXT_TAB_GROUP = Command.toLocalizedCommand({
-        id: 'core.nextTabGroup',
-        category: VIEW_CATEGORY,
-        label: 'Switch to Next Tab Group'
-    }, 'theia/core/common/showNextTabGroup', VIEW_CATEGORY_KEY);
-    export const PREVIOUS_TAB_GROUP = Command.toLocalizedCommand({
-        id: 'core.previousTabBar',
-        category: VIEW_CATEGORY,
-        label: 'Switch to Previous Tab Group'
-    }, 'theia/core/common/showPreviousTabGroup', VIEW_CATEGORY_KEY);
-    export const CLOSE_TAB = Command.toLocalizedCommand({
-        id: 'core.close.tab',
-        category: VIEW_CATEGORY,
-        label: 'Close Tab'
-    }, 'theia/core/common/closeTab', VIEW_CATEGORY_KEY);
-    export const CLOSE_OTHER_TABS = Command.toLocalizedCommand({
-        id: 'core.close.other.tabs',
-        category: VIEW_CATEGORY,
-        label: 'Close Other Tabs'
-    }, 'theia/core/common/closeOthers', VIEW_CATEGORY_KEY);
-    export const CLOSE_SAVED_TABS = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.closeUnmodifiedEditors',
-        category: VIEW_CATEGORY,
-        label: 'Close Saved Editors in Group',
-    });
-    export const CLOSE_RIGHT_TABS = Command.toLocalizedCommand({
-        id: 'core.close.right.tabs',
-        category: VIEW_CATEGORY,
-        label: 'Close Tabs to the Right'
-    }, 'theia/core/common/closeRight', VIEW_CATEGORY_KEY);
-    export const CLOSE_ALL_TABS = Command.toLocalizedCommand({
-        id: 'core.close.all.tabs',
-        category: VIEW_CATEGORY,
-        label: 'Close All Tabs'
-    }, 'theia/core/common/closeAll', VIEW_CATEGORY_KEY);
-    export const CLOSE_MAIN_TAB = Command.toLocalizedCommand({
-        id: 'core.close.main.tab',
-        category: VIEW_CATEGORY,
-        label: 'Close Tab in Main Area'
-    }, 'theia/core/common/closeTabMain', VIEW_CATEGORY_KEY);
-    export const CLOSE_OTHER_MAIN_TABS = Command.toLocalizedCommand({
-        id: 'core.close.other.main.tabs',
-        category: VIEW_CATEGORY,
-        label: 'Close Other Tabs in Main Area'
-    }, 'theia/core/common/closeOtherTabMain', VIEW_CATEGORY_KEY);
-    export const CLOSE_ALL_MAIN_TABS = Command.toLocalizedCommand({
-        id: 'core.close.all.main.tabs',
-        category: VIEW_CATEGORY,
-        label: 'Close All Tabs in Main Area'
-    }, 'theia/core/common/closeAllTabMain', VIEW_CATEGORY_KEY);
-    export const COLLAPSE_PANEL = Command.toLocalizedCommand({
-        id: 'core.collapse.tab',
-        category: VIEW_CATEGORY,
-        label: 'Collapse Side Panel'
-    }, 'theia/core/common/collapseTab', VIEW_CATEGORY_KEY);
-    export const COLLAPSE_ALL_PANELS = Command.toLocalizedCommand({
-        id: 'core.collapse.all.tabs',
-        category: VIEW_CATEGORY,
-        label: 'Collapse All Side Panels'
-    }, 'theia/core/common/collapseAllTabs', VIEW_CATEGORY_KEY);
-    export const TOGGLE_BOTTOM_PANEL = Command.toLocalizedCommand({
-        id: 'core.toggle.bottom.panel',
-        category: VIEW_CATEGORY,
-        label: 'Toggle Bottom Panel'
-    }, 'theia/core/common/collapseBottomPanel', VIEW_CATEGORY_KEY);
-    export const TOGGLE_LEFT_PANEL = Command.toLocalizedCommand({
-        id: 'core.toggle.left.panel',
-        category: VIEW_CATEGORY,
-        label: 'Toggle Left Panel'
-    }, 'theia/core/common/collapseLeftPanel', VIEW_CATEGORY_KEY);
-    export const TOGGLE_RIGHT_PANEL = Command.toLocalizedCommand({
-        id: 'core.toggle.right.panel',
-        category: VIEW_CATEGORY,
-        label: 'Toggle Right Panel'
-    }, 'theia/core/common/collapseRightPanel', VIEW_CATEGORY_KEY);
-    export const TOGGLE_STATUS_BAR = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.toggleStatusbarVisibility',
-        category: VIEW_CATEGORY,
-        label: 'Toggle Status Bar Visibility'
-    });
-    export const PIN_TAB = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.pinEditor',
-        category: VIEW_CATEGORY,
-        label: 'Pin Editor'
-    });
-    export const UNPIN_TAB = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.unpinEditor',
-        category: VIEW_CATEGORY,
-        label: 'Unpin Editor'
-    });
-    export const TOGGLE_MAXIMIZED = Command.toLocalizedCommand({
-        id: 'core.toggleMaximized',
-        category: VIEW_CATEGORY,
-        label: 'Toggle Maximized'
-    }, 'theia/core/common/toggleMaximized', VIEW_CATEGORY_KEY);
-    export const OPEN_VIEW = Command.toDefaultLocalizedCommand({
-        id: 'core.openView',
-        category: VIEW_CATEGORY,
-        label: 'Open View...'
-    });
-    export const SHOW_MENU_BAR = Command.toDefaultLocalizedCommand({
-        id: 'window.menuBarVisibility',
-        category: VIEW_CATEGORY,
-        label: 'Toggle Menu Bar'
-    });
-    /**
-     * Command Parameters:
-     * - `fileName`: string
-     * - `directory`: URI
-     */
-    export const NEW_FILE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.files.newFile',
-        category: FILE_CATEGORY
-    });
-    // This command immediately opens a new untitled text file
-    // Some VS Code extensions use this command to create new files
-    export const NEW_UNTITLED_TEXT_FILE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.files.newUntitledFile',
-        category: FILE_CATEGORY,
-        label: 'New Untitled Text File'
-    });
-    // This command opens a quick pick to select a file type to create
-    export const PICK_NEW_FILE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.files.pickNewFile',
-        category: CREATE_CATEGORY,
-        label: 'New File...'
-    });
-    export const SAVE = Command.toDefaultLocalizedCommand({
-        id: 'core.save',
-        category: FILE_CATEGORY,
-        label: 'Save',
-    });
-    export const SAVE_AS = Command.toDefaultLocalizedCommand({
-        id: 'file.saveAs',
-        category: FILE_CATEGORY,
-        label: 'Save As...',
-    });
-    export const SAVE_WITHOUT_FORMATTING = Command.toDefaultLocalizedCommand({
-        id: 'core.saveWithoutFormatting',
-        category: FILE_CATEGORY,
-        label: 'Save without Formatting',
-    });
-    export const SAVE_ALL = Command.toDefaultLocalizedCommand({
-        id: 'core.saveAll',
-        category: FILE_CATEGORY,
-        label: 'Save All',
-    });
-
-    export const AUTO_SAVE = Command.toDefaultLocalizedCommand({
-        id: 'textEditor.commands.autosave',
-        category: FILE_CATEGORY,
-        label: 'Auto Save',
-    });
-
-    export const ABOUT_COMMAND = Command.toDefaultLocalizedCommand({
-        id: 'core.about',
-        label: 'About'
-    });
-
-    export const OPEN_PREFERENCES = Command.toDefaultLocalizedCommand({
-        id: 'preferences:open',
-        category: PREFERENCES_CATEGORY,
-        label: 'Open Settings (UI)',
-    });
-
-    export const SELECT_COLOR_THEME = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.selectTheme',
-        label: 'Color Theme',
-        category: PREFERENCES_CATEGORY
-    });
-    export const SELECT_ICON_THEME = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.selectIconTheme',
-        label: 'File Icon Theme',
-        category: PREFERENCES_CATEGORY
-    });
-
-    export const CONFIGURE_DISPLAY_LANGUAGE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.configureLanguage',
-        label: 'Configure Display Language'
-    });
-
-    export const TOGGLE_BREADCRUMBS = Command.toDefaultLocalizedCommand({
-        id: 'breadcrumbs.toggle',
-        label: 'Toggle Breadcrumbs',
-        category: VIEW_CATEGORY
-    });
-}
 
 export const supportCut = environment.electron.is() || document.queryCommandSupported('cut');
 export const supportCopy = environment.electron.is() || document.queryCommandSupported('copy');
@@ -560,9 +257,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 break;
             }
             case 'window.menuBarVisibility': {
-                const { newValue } = e;
+                const menuBarVisibility = this.preferences['window.menuBarVisibility'];
                 const mainMenuId = 'main-menu';
-                if (newValue === 'compact') {
+                if (menuBarVisibility === 'compact') {
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
                         iconClass: `theia-compact-menu ${codicon('menu')}`,
@@ -594,8 +291,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     onStart(): void {
+        this.setupHtmlLanguageAttributes(document.documentElement);
         this.storageService.getData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent: [] })
             .then(tasks => this.commandRegistry.recent = tasks.recent);
+    }
+
+    protected setupHtmlLanguageAttributes(element: HTMLElement): void {
+        nls.setHtmlLang(element);
+        nls.setHtmlNoTranslate(element);
     }
 
     onStop(): void {
@@ -1589,12 +1292,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 description: 'The color used for the border of the window when it is inactive.'
             },
 
-            // Buttons should be aligned with https://code.visualstudio.com/api/references/theme-color#button-control
-            // if not yet contributed by Monaco, check runtime css variables to learn
-            { id: 'button.foreground', defaults: { dark: Color.white, light: Color.white, hcDark: Color.white, hcLight: Color.white }, description: 'Button foreground color.' },
-            { id: 'button.background', defaults: { dark: '#0E639C', light: '#007ACC', hcDark: undefined, hcLight: '#0F4A85' }, description: 'Button background color.' },
-            { id: 'button.hoverBackground', defaults: { dark: Color.lighten('button.background', 0.2), light: Color.darken('button.background', 0.2) }, description: 'Button background color when hovering.' },
-
             // Activity Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#activity-bar
             {
                 id: 'activityBar.background', defaults: {
@@ -1874,8 +1571,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
 
             // Status bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#status-bar-colors
-            // Not yet supported:
-            // statusBarItem.prominentForeground, statusBarItem.prominentBackground, statusBarItem.prominentHoverBackground
             {
                 id: 'statusBar.foreground', defaults: {
                     dark: '#FFFFFF',
@@ -1935,6 +1630,30 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Status bar item background color when hovering. The status bar is shown in the bottom of the window.'
             },
             {
+                id: 'statusBarItem.hoverForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar item foreground color when hovering. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.compactHoverBackground', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.20),
+                    light: Color.rgba(255, 255, 255, 0.20),
+                    hcDark: Color.rgba(255, 255, 255, 0.20),
+                    hcLight: Color.rgba(0, 0, 0, 0.20)
+                }, description: 'Status bar item background color when hovering an item that contains two hovers. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.focusBorder', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar item border color when focused on keyboard navigation. The status bar is shown in the bottom of the window.'
+            },
+            {
                 id: 'statusBarItem.errorBackground', defaults: {
                     dark: Color.darken('errorBackground', 0.4),
                     light: Color.darken('errorBackground', 0.4),
@@ -1951,6 +1670,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Status bar error items foreground color. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
             },
             {
+                id: 'statusBarItem.errorHoverBackground', defaults: {
+                    dark: Color.lighten('statusBarItem.errorBackground', 0.2),
+                    light: Color.lighten('statusBarItem.errorBackground', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
+                }, description: 'Status bar error items background color when hovering. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.errorHoverForeground', defaults: {
+                    dark: 'statusBarItem.errorForeground',
+                    light: 'statusBarItem.errorForeground',
+                    hcDark: 'statusBarItem.errorForeground',
+                    hcLight: 'statusBarItem.errorForeground'
+                }, description: 'Status bar error items foreground color when hovering. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
                 id: 'statusBarItem.warningBackground', defaults: {
                     dark: Color.darken('warningBackground', 0.4),
                     light: Color.darken('warningBackground', 0.4),
@@ -1965,6 +1700,54 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcDark: Color.white,
                     hcLight: Color.white
                 }, description: 'Status bar warning items foreground color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningHoverBackground', defaults: {
+                    dark: Color.lighten('statusBarItem.warningBackground', 0.2),
+                    light: Color.lighten('statusBarItem.warningBackground', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
+                }, description: 'Status bar warning items background color when hovering. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningHoverForeground', defaults: {
+                    dark: 'statusBarItem.warningForeground',
+                    light: 'statusBarItem.warningForeground',
+                    hcDark: 'statusBarItem.warningForeground',
+                    hcLight: 'statusBarItem.warningForeground'
+                }, description: 'Status bar warning items foreground color when hovering. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar prominent items foreground color. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentBackground', defaults: {
+                    dark: Color.rgba(0, 0, 0, .5),
+                    light: Color.rgba(0, 0, 0, .5),
+                    hcDark: Color.rgba(0, 0, 0, .5),
+                    hcLight: Color.rgba(0, 0, 0, .5),
+                }, description: 'Status bar prominent items background color. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentHoverForeground', defaults: {
+                    dark: 'statusBarItem.hoverForeground',
+                    light: 'statusBarItem.hoverForeground',
+                    hcDark: 'statusBarItem.hoverForeground',
+                    hcLight: 'statusBarItem.hoverForeground'
+                }, description: 'Status bar prominent items foreground color when hovering. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentHoverBackground', defaults: {
+                    dark: 'statusBarItem.hoverBackground',
+                    light: 'statusBarItem.hoverBackground',
+                    hcDark: 'statusBarItem.hoverBackground',
+                    hcLight: 'statusBarItem.hoverBackground'
+                }, description: 'Status bar prominent items background color when hovering. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
             },
 
             // editor find
@@ -2580,14 +2363,83 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcLight: 'activityBarBadge.foreground'
                 }, description: 'Foreground color for the remote indicator on the status bar.'
             },
+            {
+                id: 'statusBarItem.remoteHoverBackground',
+                defaults: {
+                    dark: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    light: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    hcDark: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    hcLight: Color.lighten('statusBarItem.remoteBackground', 0.2)
+                }, description: 'Background color for the remote indicator on the status bar when hovering.'
+            },
+            {
+                id: 'statusBarItem.remoteHoverForeground',
+                defaults: {
+                    dark: 'statusBarItem.remoteForeground',
+                    light: 'statusBarItem.remoteForeground',
+                    hcDark: 'statusBarItem.remoteForeground',
+                    hcLight: 'statusBarItem.remoteForeground'
+                }, description: 'Foreground color for the remote indicator on the status bar when hovering.'
+            },
             // Buttons
+            // https://github.com/microsoft/vscode/blob/release/1.108/src/vs/platform/theme/common/colors/inputColors.ts#L112
+            {
+                id: 'button.foreground',
+                defaults: Color.white,
+                description: 'Button foreground color.'
+            },
+            {
+                id: 'button.disabledForeground',
+                defaults: {
+                    dark: Color.transparent('button.foreground', 0.5),
+                    light: Color.transparent('button.foreground', 0.5),
+                    hcDark: Color.transparent('button.foreground', 0.5)
+                }, description: 'Foreground color of disabled buttons.'
+            },
+            {
+                id: 'button.separator',
+                defaults: Color.transparent('button.foreground', .4),
+                description: 'Button separator color.'
+            },
+            {
+                id: 'button.background',
+                defaults: {
+                    dark: '#0E639C',
+                    light: '#007ACC',
+                    hcDark: Color.black,
+                    hcLight: '#0F4A85'
+                },
+                description: 'Button background color.'
+            },
+            {
+                id: 'button.disabledBackground',
+                defaults: {
+                    dark: Color.transparent('button.background', 0.5),
+                    light: Color.transparent('button.background', 0.5)
+                }, description: 'Background color of disabled buttons.'
+            },
+            {
+                id: 'button.hoverBackground',
+                defaults: {
+                    dark: Color.lighten('button.background', 0.2),
+                    light: Color.darken('button.background', 0.2),
+                    hcDark: 'button.background',
+                    hcLight: 'button.background'
+                },
+                description: 'Button background color when hovering.'
+            },
+            {
+                id: 'button.border',
+                defaults: 'contrastBorder',
+                description: 'Button border color.'
+            },
             {
                 id: 'secondaryButton.foreground',
                 defaults: {
-                    dark: 'dropdown.foreground',
-                    light: 'dropdown.foreground',
-                    hcDark: 'dropdown.foreground',
-                    hcLight: 'dropdown.foreground'
+                    dark: Color.white,
+                    light: Color.white,
+                    hcDark: Color.white,
+                    hcLight: 'foreground'
                 }, description: 'Foreground color of secondary buttons.'
             },
             {
@@ -2597,20 +2449,24 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: Color.transparent('secondaryButton.foreground', 0.5),
                     hcDark: Color.transparent('secondaryButton.foreground', 0.5),
                     hcLight: Color.transparent('secondaryButton.foreground', 0.5),
-                }, description: 'Foreground color of secondary buttons.'
+                }, description: 'Foreground color of disabled secondary buttons.'
             },
             {
                 id: 'secondaryButton.background',
                 defaults: {
-                    dark: Color.lighten('dropdown.background', 0.5),
-                    light: Color.lighten('dropdown.background', 0.5)
+                    dark: '#3A3D41',
+                    light: '#5F6A79',
+                    hcDark: undefined,
+                    hcLight: Color.white
                 }, description: 'Background color of secondary buttons.'
             },
             {
                 id: 'secondaryButton.hoverBackground',
                 defaults: {
                     dark: Color.lighten('secondaryButton.background', 0.2),
-                    light: Color.lighten('secondaryButton.background', 0.2)
+                    light: Color.lighten('secondaryButton.background', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
                 }, description: 'Background color when hovering secondary buttons.'
             },
             {
@@ -2618,22 +2474,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 defaults: {
                     dark: Color.transparent('secondaryButton.background', 0.6),
                     light: Color.transparent('secondaryButton.background', 0.6)
-                }, description: 'Background color when hovering secondary buttons.'
-            },
-            {
-                id: 'button.disabledForeground',
-                defaults: {
-                    dark: Color.transparent('button.foreground', 0.5),
-                    light: Color.transparent('button.foreground', 0.5),
-                    hcDark: Color.transparent('button.foreground', 0.5)
-                }, description: 'Foreground color of secondary buttons.'
-            },
-            {
-                id: 'button.disabledBackground',
-                defaults: {
-                    dark: Color.transparent('button.background', 0.5),
-                    light: Color.transparent('button.background', 0.5)
-                }, description: 'Background color of secondary buttons.'
+                }, description: 'Background color of disabled secondary buttons.'
             },
             {
                 id: 'editorGutter.commentRangeForeground',

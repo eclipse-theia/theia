@@ -30,6 +30,7 @@ export class DebugWatchSource extends TreeSource {
     protected init(): void {
         this.refresh();
         this.toDispose.push(this.model.onDidChangeWatchExpressions(() => this.refresh()));
+        this.toDispose.push(this.model.onDidResolveLazyVariable(() => this.refresh()));
     }
 
     protected readonly refresh = debounce(() => this.fireDidChange(), 100);

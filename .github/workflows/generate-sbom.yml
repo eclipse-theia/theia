@@ -1,0 +1,77 @@
+name: Generate NPM SBOM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version"
+        default: "master"
+        required: true
+
+env:
+  NODE_VERSION: "20.x"
+  REGISTRY_URL: "https://registry.npmjs.org"
+  PRODUCT_PATH: "./"
+  CDXGEN_VERSION: "11.7.0"
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-22.04
+    outputs:
+      project-version: ${{ steps.version.outputs.PROJECT_VERSION }}
+    permissions:
+      packages: read
+
+    steps:
+      - name: Extract version
+        id: version
+        run: |
+          VERSION="${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.version }}"
+          echo "PROJECT_VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Product version: $VERSION"
+
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.version.outputs.PROJECT_VERSION }}
+
+      - name: Setup Node SDK
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.REGISTRY_URL }}
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Install cdxgen
+        run: |
+          npm install -g @cyclonedx/cdxgen@${{ env.CDXGEN_VERSION }}
+
+      - name: Generate SBOM
+        run: |
+          cdxgen -r -o ${{ env.PRODUCT_PATH }}bom.json
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: sbom
+          path: ${{ env.PRODUCT_PATH }}/bom.json
+
+  store-sbom-data: # stores sbom and metadata in a predefined format for otterdog to pick up
+    needs: ["generate-sbom"]
+    uses: eclipse-csi/workflows/.github/workflows/store-sbom-data.yml@main
+    with:
+      projectName: "theia"
+      projectVersion: ${{ needs.generate-sbom.outputs.project-version }}
+      bomArtifact: "sbom"
+      bomFilename: "bom.json"
+      parentProject: "2b55dbe6-7a7e-4659-a803-babf4138e03f"

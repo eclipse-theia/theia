@@ -16,6 +16,7 @@
 
 import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
+import { codicon } from '@theia/core/lib/browser';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { InstructionBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from './debug-breakpoint';
@@ -44,8 +45,22 @@ export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreak
     }
 
     protected doRender(): React.ReactNode {
-        return <span className="line-info">{this.origin.instructionReference}</span>;
+        return <React.Fragment>
+            <span className="line-info">{this.origin.instructionReference}</span>;
+            {this.renderActions()}
+        </React.Fragment>;
     }
+
+    protected renderActions(): React.ReactNode {
+        return <div className='theia-debug-breakpoint-actions'>
+            <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Breakpoint')} onClick={this.onRemove} />
+        </div>;
+    }
+
+    protected onRemove = async () => {
+        await this.selectInTree();
+        this.remove();
+    };
 
     protected getBreakpointDecoration(message?: string[]): DebugBreakpointDecoration {
         if (!this.isSupported()) {
@@ -57,7 +72,7 @@ export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreak
         if (this.origin.condition || this.origin.hitCondition) {
             return {
                 className: 'codicon-debug-breakpoint-conditional',
-                message: message || [nls.localizeByDefault('Conditional Breakpoint...')]
+                message: message || [nls.localize('theia/debug/conditionalBreakpoint', 'Conditional Breakpoint')]
             };
         }
         return {

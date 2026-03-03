@@ -21,11 +21,15 @@
 
 import {
     AIVariableResolutionRequest,
+    GenericCapabilitySelections,
     LanguageModelMessage,
     ResolvedAIContextVariable,
+    ResolvedAIVariable,
     TextMessage,
     ThinkingMessage,
+    ThinkingModeSettings,
     ToolCallResult,
+    ToolRequest,
     ToolResultMessage,
     ToolUseMessage
 } from '@theia/ai-core';
@@ -34,7 +38,26 @@ import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markd
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChangeSet, ChangeSetElement, ChangeSetImpl, ChatUpdateChangeSetEvent } from './change-set';
 import { ChatAgentLocation } from './chat-agents';
-import { ParsedChatRequest } from './parsed-chat-request';
+import {
+    SerializedChatModel,
+    SerializableChatRequestData,
+    SerializableChatResponseContentData,
+    SerializableChatResponseData,
+    SerializableHierarchy,
+    SerializableHierarchyBranch,
+    SerializableHierarchyBranchItem,
+    SerializableChangeSetElement,
+    SerializableParsedRequest,
+    SerializableParsedRequestPart
+} from './chat-model-serialization';
+import {
+    ParsedChatRequest,
+    ParsedChatRequestTextPart,
+    ParsedChatRequestVariablePart,
+    ParsedChatRequestFunctionPart,
+    ParsedChatRequestAgentPart,
+    ParsedChatRequestPart
+} from './parsed-chat-request';
 import debounce = require('@theia/core/shared/lodash.debounce');
 export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
@@ -54,6 +77,7 @@ export type ChatChangeEvent =
     | ChatEditRequestEvent
     | ChatEditCancelEvent
     | ChatEditSubmitEvent
+    | ChatResponseChangedEvent
     | ChatChangeHierarchyBranchEvent;
 
 export interface ChatAddRequestEvent {
@@ -107,6 +131,10 @@ export interface ChatSuggestionsChangedEvent {
     suggestions: ChatSuggestion[];
 }
 
+export interface ChatResponseChangedEvent {
+    kind: 'responseChanged';
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatUpdateChangeSetEvent {
         return event.kind === 'updateChangeSet';
@@ -141,7 +169,8 @@ export interface ChatRequestHierarchy<TRequest extends ChatRequestModel = ChatRe
     findRequest(requestId: string): TRequest | undefined;
     findBranch(requestId: string): ChatHierarchyBranch<TRequest> | undefined;
 
-    notifyChange(event: ChangeActiveBranchEvent<TRequest>): void
+    notifyChange(event: ChangeActiveBranchEvent<TRequest>): void;
+    toSerializable(): SerializableHierarchy;
 }
 
 export interface ChangeActiveBranchEvent<TRequest extends ChatRequestModel = ChatRequestModel> {
@@ -182,17 +211,41 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
     readonly next?: ChatHierarchyBranch<TRequest>;
 }
 
+export interface CommonChatSessionSettings {
+    /**
+     * Theia-specific settings for extended thinking mode.
+     * These are processed by Theia and converted to provider-specific formats.
+     */
+    thinkingMode?: ThinkingModeSettings;
+}
+
+export interface ChatSessionSettings {
+    /**
+     * Theia-specific common settings processed by Theia.
+     * This key is excluded when passing settings to LLM providers.
+     */
+    commonSettings?: CommonChatSessionSettings;
+
+    /**
+     * Allow arbitrary provider-specific settings.
+     * These correspond to the "Advanced Settings (JSON)" in the UI
+     * and are passed directly to the LLM.
+     */
+    [key: string]: unknown;
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
     readonly location: ChatAgentLocation;
     readonly context: ChatContextManager;
     readonly suggestions: readonly ChatSuggestion[];
-    readonly settings?: { [key: string]: unknown };
+    readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
+    toSerializable(): SerializedChatModel;
 }
 
 export interface ChatSuggestionCallback {
@@ -236,6 +289,20 @@ export interface ChatRequest {
      */
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
+    readonly modeId?: string;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     * Only includes capabilities that differ from their default value.
+     */
+    readonly capabilityOverrides?: Record<string, boolean>;
+
+    /**
+     * Generic capability selections for this request.
+     * Contains user-selected skills, functions, MCP tools, etc.
+     * from the capabilities panel dropdowns.
+     */
+    readonly genericCapabilitySelections?: GenericCapabilitySelections;
 }
 
 export interface ChatContext {
@@ -251,6 +318,7 @@ export interface ChatRequestModel {
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
+    toSerializable(): SerializableChatRequestData;
 }
 
 export namespace ChatRequestModel {
@@ -321,6 +389,7 @@ export interface ChatResponseContent {
     asDisplayString?(): string | undefined;
     merge?(nextChatResponseContent: ChatResponseContent): boolean;
     toLanguageModelMessage?(): LanguageModelMessage | LanguageModelMessage[];
+    toSerializable?(): SerializableChatResponseContentData;
 }
 
 export namespace ChatResponseContent {
@@ -352,6 +421,75 @@ export namespace ChatResponseContent {
     ): obj is Required<Pick<ChatResponseContent, 'toLanguageModelMessage'>> & ChatResponseContent {
         return typeof obj.toLanguageModelMessage === 'function';
     }
+}
+
+/**
+ * Data interfaces for chat response content serialization.
+ * These define the structure of the data property in SerializableChatResponseContentData.
+ */
+
+export interface TextContentData {
+    content: string;
+}
+
+export interface ThinkingContentData {
+    content: string;
+    signature: string;
+}
+
+export interface MarkdownContentData {
+    content: string;
+}
+
+export interface InformationalContentData {
+    content: string;
+}
+
+export interface CodeContentData {
+    code: string;
+    language?: string;
+    location?: Location;
+}
+
+export interface ToolCallContentData {
+    id?: string;
+    name?: string;
+    arguments?: string;
+    finished?: boolean;
+    result?: ToolCallResult;
+    data?: Record<string, string>;
+}
+
+export interface CommandContentData {
+    commandId?: string;
+    commandLabel?: string;
+    arguments?: unknown[];
+}
+
+export interface HorizontalLayoutContentData {
+    content: SerializableChatResponseContentData[];
+}
+
+export interface ProgressContentData {
+    message: string;
+}
+
+export interface ErrorContentData {
+    message: string;
+    stack?: string;
+}
+
+/**
+ * Restored questions display the question, options, and any previously selected answer,
+ * but do not allow new selections.
+ */
+export interface QuestionContentData {
+    question: string;
+    header?: string;
+    options: { text: string; value?: string; description?: string }[];
+    multiSelect?: boolean;
+    selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
 }
 
 export interface TextChatResponseContent
@@ -392,8 +530,26 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     finished: boolean;
     result?: ToolCallResult;
     confirmed: Promise<boolean>;
+    /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
+    needsUserConfirmation: Promise<void>;
+    whenFinished: Promise<void>;
+    data?: Record<string, string>;
     confirm(): void;
-    deny(): void;
+    deny(reason?: string): void;
+    cancelConfirmation(reason?: unknown): void;
+    /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
+    requestUserConfirmation(): void;
+    /**
+     * Mark the tool call as completed with the given result.
+     *
+     * This is used to update the UI immediately when a tool finishes execution,
+     * without waiting for all parallel tool calls to complete. The language model
+     * batches tool results (via Promise.all) before yielding them to the stream,
+     * so without this early completion signal, the UI wouldn't update until all
+     * tools finish. The values set here will be overwritten by merge() when the
+     * language model eventually yields the results, but they should be identical.
+     */
+    complete(result: ToolCallResult): void;
 }
 
 export interface ThinkingChatResponseContent
@@ -521,6 +677,83 @@ export namespace ToolCallChatResponseContent {
     export function is(obj: unknown): obj is ToolCallChatResponseContent {
         return ChatResponseContent.is(obj) && obj.kind === 'toolCall';
     }
+
+    export interface DenialResult {
+        denied: true;
+        /** User-provided reason for the denial */
+        reason?: string;
+    }
+
+    export function isDenialResult(result: unknown): result is DenialResult {
+        return typeof result === 'object' && !!result &&
+            'denied' in result && (result as DenialResult).denied === true;
+    }
+
+    /**
+     * Checks if a tool call result contains an error.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function isErrorResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string }> }).content.some(item => item.type === 'error');
+        }
+        return 'error' in result && (result as { error: boolean }).error === true;
+    }
+
+    /**
+     * Extracts the error message from a tool call result.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function getErrorMessage(result: unknown): string | undefined {
+        if (!result || typeof result !== 'object') {
+            return undefined;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            const errorItem = (result as { content: Array<{ type?: string; data?: string }> }).content.find(item => item.type === 'error');
+            return errorItem?.data;
+        }
+        if ('error' in result && (result as { error: boolean }).error === true) {
+            return (result as { message?: string }).message;
+        }
+        return undefined;
+    }
+
+    /**
+     * Checks if a tool call result indicates the tool was not available.
+     * This happens when the LLM tries to call a tool that wasn't provided in the request.
+     */
+    export function isNotAvailableResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string; errorKind?: string }> }).content
+                .some(item => item.type === 'error' && item.errorKind === 'tool-not-available');
+        }
+        return false;
+    }
+}
+
+/**
+ * Represents a streaming delta update for tool call arguments.
+ * This content type is used during streaming to append argument fragments
+ * to an existing ToolCallChatResponseContent rather than replacing the full arguments.
+ */
+export interface ToolCallArgumentsDeltaContent extends ChatResponseContent {
+    kind: 'toolCallArgumentsDelta';
+    /** The tool call ID this delta belongs to */
+    id: string;
+    /** The argument fragment to append */
+    delta: string;
+}
+
+export namespace ToolCallArgumentsDeltaContent {
+    export function is(obj: unknown): obj is ToolCallArgumentsDeltaContent {
+        return ChatResponseContent.is(obj) && obj.kind === 'toolCallArgumentsDelta';
+    }
 }
 
 export namespace ErrorChatResponseContent {
@@ -560,13 +793,27 @@ export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
 
+export type MultiSelectQuestionResponseHandler = (
+    selectedOptions: { text: string, value?: string }[],
+) => void;
+
 export interface QuestionResponseContent extends ChatResponseContent {
     kind: 'question';
     question: string;
-    options: { text: string, value?: string }[];
+    header?: string;
+    options: { text: string, value?: string, description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string, value?: string };
-    handler: QuestionResponseHandler;
-    request: MutableChatRequestModel;
+    selectedOptions?: { text: string, value?: string }[];
+    handler?: QuestionResponseHandler | MultiSelectQuestionResponseHandler;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
+    request?: MutableChatRequestModel;
+    /**
+     * Whether this question is read-only (restored from persistence without handler).
+     * When true, the UI should disable option selection.
+     */
+    readonly isReadOnly: boolean;
 }
 
 export namespace QuestionResponseContent {
@@ -584,10 +831,9 @@ export namespace QuestionResponseContent {
                 typeof (option as { text: unknown }).text === 'string' &&
                 ('value' in option ? typeof (option as { value: unknown }).value === 'string' || typeof (option as { value: unknown }).value === 'undefined' : true)
             ) &&
-            'handler' in obj &&
-            typeof (obj as { handler: unknown }).handler === 'function' &&
-            'request' in obj &&
-            obj.request instanceof MutableChatRequestModel
+            // handler and request are optional (undefined for restored/read-only questions)
+            ('handler' in obj ? (obj as { handler: unknown }).handler === undefined || typeof (obj as { handler: unknown }).handler === 'function' : true) &&
+            ('request' in obj ? (obj as { request: unknown }).request === undefined || (obj as { request: unknown }).request instanceof MutableChatRequestModel : true)
         );
     }
 }
@@ -651,6 +897,15 @@ export interface ChatResponseModel {
      * This can be used to store and retrieve such data.
      */
     readonly data: { [key: string]: unknown };
+    /**
+     * The ID of the prompt variant used to generate this response
+     */
+    readonly promptVariantId?: string;
+    /**
+     * Indicates whether the prompt variant was customized/edited
+     */
+    readonly isPromptVariantEdited?: boolean;
+    toSerializable(): SerializableChatResponseData;
 }
 
 /**********************
@@ -667,16 +922,29 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _id: string;
     protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
-    protected readonly _changeSet: ChatTreeChangeSet;
-    protected _settings: { [key: string]: unknown };
+    protected _changeSet: ChatTreeChangeSet;
+    protected _settings: ChatSessionSettings;
+    protected _location: ChatAgentLocation;
 
-    constructor(public readonly location = ChatAgentLocation.Panel) {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatModel
-        this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>();
-        this._changeSet = new ChatTreeChangeSet(this._hierarchy);
-        this.toDispose.push(this._changeSet);
-        this._changeSet.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
-        this._id = generateUuid();
+    get location(): ChatAgentLocation {
+        return this._location;
+    }
+
+    constructor(
+        locationOrSerializedData: ChatAgentLocation | SerializedChatModel = ChatAgentLocation.Panel
+    ) {
+        // Check if we're restoring from serialized data
+        if (this.isSerializedChatModel(locationOrSerializedData)) {
+            this.restoreFromSerializedData(locationOrSerializedData);
+        } else {
+            // Normal creation path
+            this._location = locationOrSerializedData;
+            this._id = generateUuid();
+            this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>();
+            this._changeSet = new ChatTreeChangeSet(this._hierarchy);
+            this.toDispose.push(this._changeSet);
+            this._changeSet.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+        }
 
         this.toDispose.pushAll([
             this._onDidChangeEmitter,
@@ -688,6 +956,48 @@ export class MutableChatModel implements ChatModel, Disposable {
                 });
             }),
         ]);
+    }
+
+    /**
+     * Type guard to determine if we're receiving serialized data
+     */
+    protected isSerializedChatModel(data: ChatAgentLocation | SerializedChatModel): data is SerializedChatModel {
+        return typeof data === 'object' && 'sessionId' in data && 'requests' in data && 'responses' in data;
+    }
+
+    /**
+     * Restore this chat model from serialized data
+     *
+     * Does not restore response content or changesets.
+     * This handled by the chat service using the deserializer registries.
+     */
+    protected restoreFromSerializedData(data: SerializedChatModel): void {
+        this._id = data.sessionId;
+        this._location = data.location;
+
+        // First, create all request models and build a map
+        const requestMap = new Map<string, MutableChatRequestModel>();
+        for (const reqData of data.requests) {
+            const respData = data.responses.find(r => r.requestId === reqData.id);
+            const requestModel = new MutableChatRequestModel(
+                this,
+                reqData,
+                respData
+            );
+            requestMap.set(requestModel.id, requestModel);
+        }
+
+        // Restore the hierarchy structure with all alternatives
+        this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>(data.hierarchy, requestMap);
+
+        // Register all requests with changeset
+        this._changeSet = new ChatTreeChangeSet(this._hierarchy);
+        this.toDispose.push(this._changeSet);
+        this._changeSet.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+
+        for (const requestModel of requestMap.values()) {
+            this._changeSet.registerRequest(requestModel);
+        }
     }
 
     get id(): string {
@@ -722,17 +1032,22 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._contextManager;
     }
 
-    get settings(): { [key: string]: unknown } {
+    get settings(): ChatSessionSettings {
         return this._settings;
     }
 
-    setSettings(settings: { [key: string]: unknown }): void {
+    setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
     }
 
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
         const add = this.getTargetForRequestAddition(parsedChatRequest);
-        const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
+        const requestModel = new MutableChatRequestModel(
+            this,
+            parsedChatRequest,
+            agentId,
+            context
+        );
         requestModel.onDidChange(event => {
             if (!ChatChangeEvent.isChangeSetEvent(event)) {
                 this._onDidChangeEmitter.fire(event);
@@ -766,6 +1081,52 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     isEmpty(): boolean {
         return this.getRequests().length === 0;
+    }
+
+    toSerializable(): SerializedChatModel {
+        const hierarchy = this._hierarchy.toSerializable();
+
+        const allRequests = this.getAllRequests();
+
+        const serializedRequests: SerializableChatRequestData[] = allRequests.map(req => req.toSerializable());
+        const serializedResponses: SerializableChatResponseData[] = allRequests
+            .filter(req => req.response)
+            .map(req => req.response.toSerializable());
+
+        return {
+            sessionId: this._id,
+            location: this.location,
+            hierarchy,
+            requests: serializedRequests,
+            responses: serializedResponses
+        };
+    }
+
+    /**
+     * Get all requests from the hierarchy.
+     * This is used for operations that need to process all requests, such as serialization.
+     */
+    getAllRequests(): MutableChatRequestModel[] {
+        const allRequests: MutableChatRequestModel[] = [];
+        const visited = new Set<string>();
+
+        const collectFromBranch = (branch: ChatHierarchyBranch<MutableChatRequestModel>): void => {
+            for (const item of branch.items) {
+                // Avoid duplicates
+                if (!visited.has(item.element.id)) {
+                    visited.add(item.element.id);
+                    allRequests.push(item.element);
+                }
+
+                // Recursively collect from next branches
+                if (item.next) {
+                    collectFromBranch(item.next);
+                }
+            }
+        };
+
+        collectFromBranch(this._hierarchy.branch);
+        return allRequests;
     }
 
     dispose(): void {
@@ -901,7 +1262,89 @@ export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRe
     protected readonly onDidChangeActiveBranchEmitter = new Emitter<ChangeActiveBranchEvent<TRequest>>();
     readonly onDidChange = this.onDidChangeActiveBranchEmitter.event;
 
-    readonly branch: ChatHierarchyBranch<TRequest> = new ChatRequestHierarchyBranchImpl<TRequest>(this);
+    readonly branch: ChatHierarchyBranch<TRequest>;
+
+    constructor(
+        serializedHierarchy?: SerializableHierarchy,
+        requestMap?: Map<string, TRequest>) {
+        this.branch = new ChatRequestHierarchyBranchImpl<TRequest>(this);
+        if (serializedHierarchy && requestMap) {
+            this.restoreFromSerialized(serializedHierarchy, requestMap);
+        }
+    }
+
+    /**
+     * Restore the hierarchy from serialized data.
+     */
+    protected restoreFromSerialized(
+        serializedHierarchy: SerializableHierarchy,
+        requestMap: Map<string, TRequest>
+    ): void {
+        // Build a map of branch IDs to restored branch objects
+        const branchMap = new Map<string, ChatHierarchyBranch<TRequest>>();
+
+        // Function to restore a branch and its descendants
+        const restoreBranch = (branchId: string): ChatHierarchyBranch<TRequest> => {
+            // Check if already restored
+            if (branchMap.has(branchId)) {
+                return branchMap.get(branchId)!;
+            }
+
+            const serializedBranch = serializedHierarchy.branches[branchId];
+            if (!serializedBranch) {
+                throw new Error(`Cannot find serialized branch with id: ${branchId}`);
+            }
+
+            // Restore items in this branch
+            const items: ChatHierarchyBranchItem<TRequest>[] = serializedBranch.items.map(serializedItem => {
+                const request = requestMap.get(serializedItem.requestId);
+                if (!request) {
+                    throw new Error(`Cannot find request with id: ${serializedItem.requestId}`);
+                }
+
+                // Restore next branch if present
+                const next = serializedItem.nextBranchId
+                    ? restoreBranch(serializedItem.nextBranchId)
+                    : undefined;
+
+                return {
+                    element: request,
+                    next
+                };
+            });
+
+            // Determine if this is the root branch
+            const isRoot = branchId === serializedHierarchy.rootBranchId;
+
+            if (isRoot) {
+                // For root branch, we need to replace the existing branch's internals
+                // Cast is safe here as we know this.branch is a ChatRequestHierarchyBranchImpl
+                const rootBranch = this.branch as ChatRequestHierarchyBranchImpl<TRequest>;
+                // Use Object.assign to update the readonly properties
+                Object.assign(rootBranch, {
+                    id: branchId,
+                    items,
+                    _activeIndex: serializedBranch.activeBranchIndex
+                });
+                branchMap.set(branchId, rootBranch);
+                return rootBranch;
+            } else {
+                // For non-root branches, use constructor-based deserialization
+                const restoredBranch = new ChatRequestHierarchyBranchImpl<TRequest>(
+                    this,
+                    undefined, // previous will be set by parent
+                    items,
+                    serializedBranch.activeBranchIndex,
+                    branchId
+                );
+                branchMap.set(branchId, restoredBranch);
+                return restoredBranch;
+            }
+        };
+
+        // Start restoration from the root branch
+        restoreBranch(serializedHierarchy.rootBranchId);
+    }
 
     append(request: TRequest): ChatHierarchyBranch<TRequest> {
         const branches = this.activeBranches();
@@ -964,6 +1407,39 @@ export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRe
         this.onDidChangeActiveBranchEmitter.fire(event);
     }
 
+    toSerializable(): SerializableHierarchy {
+        const branches: { [branchId: string]: SerializableHierarchyBranch } = {};
+
+        // Recursively serialize all branches starting from the root
+        this.serializeBranch(this.branch, branches);
+
+        return {
+            rootBranchId: this.branch.id,
+            branches
+        };
+    }
+
+    protected serializeBranch(
+        branch: ChatHierarchyBranch<TRequest>,
+        branches: { [branchId: string]: SerializableHierarchyBranch }
+    ): void {
+        const items: SerializableHierarchyBranchItem[] = branch.items.map(item => {
+            if (item.next) {
+                this.serializeBranch(item.next, branches);
+            }
+            return {
+                requestId: item.element.id,
+                nextBranchId: item.next?.id
+            };
+        });
+
+        branches[branch.id] = {
+            id: branch.id,
+            items,
+            activeBranchIndex: branch.activeBranchIndex
+        };
+    }
+
     dispose(): void {
         this.onDidChangeActiveBranchEmitter.dispose();
         this.branch.dispose();
@@ -971,14 +1447,17 @@ export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRe
 }
 
 export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> implements ChatHierarchyBranch<TRequest> {
-    readonly id = generateUuid();
+    readonly id: string;
 
     constructor(
         readonly hierarchy: ChatRequestHierarchy<TRequest>,
         readonly previous?: ChatHierarchyBranch<TRequest>,
         readonly items: ChatHierarchyBranchItem<TRequest>[] = [],
-        protected _activeIndex = -1
-    ) { }
+        protected _activeIndex = -1,
+        id?: string
+    ) {
+        this.id = id ?? generateUuid();
+    }
 
     get activeBranchIndex(): number {
         return this._activeIndex;
@@ -1146,7 +1625,7 @@ export class ChatContextManagerImpl implements ChatContextManager {
 export class MutableChatRequestModel implements ChatRequestModel, EditableChatRequestModel, Disposable {
     protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
     onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
-    protected readonly _id: string;
+    protected _id: string;
     protected _session: MutableChatModel;
     protected _request: ChatRequest;
     protected _response: MutableChatResponseModel;
@@ -1155,24 +1634,207 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
     protected _isEditing = false;
+    protected _message: ParsedChatRequest;
 
     protected readonly toDispose = new DisposableCollection();
     readonly editContextManager: ChatContextManagerImpl;
 
-    constructor(session: MutableChatModel, public readonly message: ParsedChatRequest, agentId?: string,
-        context: ChatContext = { variables: [] }, data: { [key: string]: unknown } = {}) {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
-        this._request = message.request;
-        this._id = generateUuid();
+    constructor(
+        session: MutableChatModel,
+        messageOrData: ParsedChatRequest | SerializableChatRequestData,
+        agentIdOrResponseData?: string | SerializableChatResponseData,
+        context: ChatContext = { variables: [] },
+        data: { [key: string]: unknown } = {}
+    ) {
         this._session = session;
-        this._response = new MutableChatResponseModel(this._id, agentId);
-        this._context = context;
-        this._agentId = agentId;
-        this._data = data;
 
-        this.editContextManager = new ChatContextManagerImpl(context);
+        // Check if we're restoring from serialized data
+        if (this.isSerializedRequestData(messageOrData)) {
+            this.restoreFromSerializedData(messageOrData, agentIdOrResponseData as SerializableChatResponseData | undefined);
+        } else {
+            // Normal creation path
+            this._request = messageOrData.request;
+            this._id = generateUuid();
+            this._response = new MutableChatResponseModel(this._id, agentIdOrResponseData as string | undefined);
+            this._context = context;
+            this._agentId = agentIdOrResponseData as string | undefined;
+            this._data = data;
+            // Store the parsed message
+            this._message = messageOrData;
+        }
+
+        this.editContextManager = new ChatContextManagerImpl(this._context);
         this.editContextManager.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+
+        // Wire response changes to propagate through request to session
+        this._response.onDidChange(() => {
+            // Fire a generic addVariable event to propagate response changes
+            this._onDidChangeEmitter.fire({ kind: 'responseChanged' });
+        }, this, this.toDispose);
+
         this.toDispose.push(this._onDidChangeEmitter);
+    }
+
+    /**
+     * Type guard to determine if we're receiving serialized data
+     */
+    protected isSerializedRequestData(data: ParsedChatRequest | SerializableChatRequestData): data is SerializableChatRequestData {
+        return 'id' in data && 'text' in data && !('request' in data);
+    }
+
+    /**
+     * Restore this request model from serialized data
+     */
+    protected restoreFromSerializedData(
+        reqData: SerializableChatRequestData,
+        respData?: SerializableChatResponseData
+    ): void {
+        this._id = reqData.id;
+        this._request = {
+            text: reqData.text,
+            capabilityOverrides: reqData.capabilityOverrides,
+            genericCapabilitySelections: reqData.genericCapabilitySelections
+        };
+        this._agentId = reqData.agentId;
+        this._data = {};
+        this._context = { variables: [] };
+
+        if (reqData.parsedRequest) {
+            this._message = this.deserializeParsedRequest(
+                reqData.parsedRequest,
+                this._request
+            );
+        } else {
+            this._message = {
+                request: this._request,
+                parts: [new ParsedChatRequestTextPart(
+                    { start: 0, endExclusive: reqData.text.length },
+                    reqData.text
+                )],
+                toolRequests: new Map(),
+                variables: []
+            };
+        }
+
+        // Restore response if present
+        if (respData) {
+            this._response = new MutableChatResponseModel(this._id, this._agentId, respData);
+        } else {
+            this._response = new MutableChatResponseModel(this._id, this._agentId);
+        }
+    }
+
+    /**
+     * Deserialize ParsedChatRequest from serialized data.
+     * Creates placeholder tool requests - actual tools will be restored by ChatService.
+     */
+    protected deserializeParsedRequest(
+        data: SerializableParsedRequest,
+        request: ChatRequest
+    ): ParsedChatRequest {
+        const parts: ParsedChatRequestPart[] = data.parts.map(partData => {
+            switch (partData.kind) {
+                case 'text':
+                    return new ParsedChatRequestTextPart(
+                        partData.range,
+                        partData.text
+                    );
+                case 'var': {
+                    const varPart = new ParsedChatRequestVariablePart(
+                        partData.range,
+                        partData.variableName,
+                        partData.variableArg
+                    );
+                    if (partData.variableValue !== undefined) {
+                        varPart.resolution = {
+                            variable: {
+                                id: partData.variableId,
+                                name: partData.variableName,
+                                description: partData.variableDescription
+                            },
+                            arg: partData.variableArg,
+                            value: partData.variableValue
+                        };
+                    }
+                    return varPart;
+                }
+                case 'function':
+                    // Create placeholder - will be restored by ChatService
+                    return new ParsedChatRequestFunctionPart(
+                        partData.range,
+                        this.createPlaceholderToolRequest(partData.toolRequestId)
+                    );
+                case 'agent':
+                    return new ParsedChatRequestAgentPart(
+                        partData.range,
+                        partData.agentId,
+                        partData.agentName
+                    );
+                default:
+                    throw new Error(`Unknown part kind: ${(partData as SerializableParsedRequestPart).kind}`);
+            }
+        });
+
+        // Create placeholder tool requests map - will be via restoreToolRequests later
+        const toolRequests = new Map<string, ToolRequest>();
+        for (const toolData of data.toolRequests) {
+            toolRequests.set(toolData.id, this.createPlaceholderToolRequest(toolData.id));
+        }
+
+        const variables: ResolvedAIVariable[] = data.variables.map(varData => ({
+            variable: {
+                id: varData.variableId,
+                name: varData.variableName,
+                description: varData.variableDescription
+            },
+            arg: varData.arg,
+            value: varData.value
+        }));
+
+        return {
+            request,
+            parts,
+            toolRequests,
+            variables
+        };
+    }
+
+    /**
+     * Creates a placeholder tool request that will be replaced during restoration.
+     */
+    protected createPlaceholderToolRequest(toolId: string): ToolRequest {
+        return {
+            id: toolId,
+            name: toolId,
+            parameters: { type: 'object' as const, properties: {} },
+            handler: async () => {
+                throw new Error(`Tool request '${toolId}' not yet restored. This is a placeholder.`);
+            }
+        };
+    }
+
+    /**
+     * Restores the tool requests in the parsed request by replacing placeholders with actual tools.
+     * Called after deserialization to upgrade placeholder tools to real tools from the registry.
+     */
+    restoreToolRequests(toolRequests: Map<string, ToolRequest>): void {
+        this._message.toolRequests.clear();
+        for (const [id, tool] of toolRequests) {
+            this._message.toolRequests.set(id, tool);
+        }
+
+        for (const part of this._message.parts) {
+            if (part instanceof ParsedChatRequestFunctionPart) {
+                const actualTool = toolRequests.get(part.toolRequest.id);
+                if (actualTool) {
+                    Object.assign(part, { toolRequest: actualTool });
+                }
+            }
+        }
+    }
+
+    get message(): ParsedChatRequest {
+        return this._message;
     }
 
     get changeSet(): ChangeSetImpl | undefined {
@@ -1264,6 +1926,21 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this.response.cancel();
     }
 
+    toSerializable(): SerializableChatRequestData {
+        return {
+            id: this.id,
+            text: this.request.text,
+            agentId: this.agentId,
+            changeSet: this._changeSet ? {
+                title: this._changeSet.title,
+                elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
+            } : undefined,
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
+            capabilityOverrides: this.request.capabilityOverrides,
+            genericCapabilitySelections: this.request.genericCapabilitySelections
+        };
+    }
+
     dispose(): void {
         this.toDispose.dispose();
     }
@@ -1322,6 +1999,18 @@ export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
     asString(): string | undefined {
         return undefined;
     }
+    asDisplayString(): string | undefined {
+        return this._error.message;
+    }
+    toSerializable(): SerializableChatResponseContentData<ErrorContentData> {
+        return {
+            kind: 'error',
+            data: {
+                message: this._error.message,
+                stack: this._error.stack
+            }
+        };
+    }
 }
 
 export class TextChatResponseContentImpl implements TextChatResponseContent {
@@ -1348,11 +2037,19 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         this._content += nextChatResponseContent.content;
         return true;
     }
+
     toLanguageModelMessage(): TextMessage {
         return {
             actor: 'ai',
             type: 'text',
             text: this.content
+        };
+    }
+
+    toSerializable(): SerializableChatResponseContentData<TextContentData> {
+        return {
+            kind: 'text',
+            data: { content: this._content }
         };
     }
 }
@@ -1400,6 +2097,16 @@ export class ThinkingChatResponseContentImpl implements ThinkingChatResponseCont
             signature: this.signature
         };
     }
+
+    toSerializable(): SerializableChatResponseContentData<ThinkingContentData> {
+        return {
+            kind: 'thinking',
+            data: {
+                content: this._content,
+                signature: this._signature
+            }
+        };
+    }
 }
 
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
@@ -1434,6 +2141,13 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
             text: this.content.value
         };
     }
+
+    toSerializable(): SerializableChatResponseContentData<MarkdownContentData> {
+        return {
+            kind: 'markdownContent',
+            data: { content: this._content.value }
+        };
+    }
 }
 
 export class InformationalChatResponseContentImpl implements InformationalChatResponseContent {
@@ -1455,6 +2169,13 @@ export class InformationalChatResponseContentImpl implements InformationalChatRe
     merge(nextChatResponseContent: InformationalChatResponseContent): boolean {
         this._content.appendMarkdown(nextChatResponseContent.content.value);
         return true;
+    }
+
+    toSerializable(): SerializableChatResponseContentData<InformationalContentData> {
+        return {
+            kind: 'informational',
+            data: { content: this._content.value }
+        };
     }
 }
 
@@ -1490,6 +2211,17 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
         this._code += `${nextChatResponseContent.code}`;
         return true;
     }
+
+    toSerializable(): SerializableChatResponseContentData<CodeContentData> {
+        return {
+            kind: 'code',
+            data: {
+                code: this._code,
+                language: this._language,
+                location: this._location
+            }
+        };
+    }
 }
 
 export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent {
@@ -1499,18 +2231,27 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _arguments?: string;
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
+    protected _data?: Record<string, string>;
+    protected _needsUserConfirmation: Promise<void>;
+    protected _needsUserConfirmationResolver?: () => void;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
+    protected _whenFinished: Promise<void>;
+    protected _finishedResolver?: () => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult) {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult, data?: Record<string, string>) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
-        // Initialize the confirmation promise immediately
+        this._data = data;
         this._confirmed = this.createConfirmationPromise();
+        this._whenFinished = this.createFinishedPromise();
+        this._needsUserConfirmation = new Promise<void>(resolve => {
+            this._needsUserConfirmationResolver = resolve;
+        });
     }
 
     get id(): string | undefined {
@@ -1532,15 +2273,23 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._result;
     }
 
+    get data(): Record<string, string> | undefined {
+        return this._data;
+    }
+
     get confirmed(): Promise<boolean> {
         return this._confirmed;
     }
 
-    /**
-     * Create a confirmation promise that can be resolved/rejected later
-     */
+    get needsUserConfirmation(): Promise<void> {
+        return this._needsUserConfirmation;
+    }
+
+    get whenFinished(): Promise<void> {
+        return this._whenFinished;
+    }
+
     createConfirmationPromise(): Promise<boolean> {
-        // The promise is always created, just ensure we have resolution handlers
         if (!this._confirmationResolver) {
             this._confirmed = new Promise<boolean>((resolve, reject) => {
                 this._confirmationResolver = resolve;
@@ -1548,6 +2297,18 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             });
         }
         return this._confirmed;
+    }
+
+    createFinishedPromise(): Promise<void> {
+        if (this._finished) {
+            return Promise.resolve();
+        }
+        if (!this._finishedResolver) {
+            this._whenFinished = new Promise<void>(resolve => {
+                this._finishedResolver = resolve;
+            });
+        }
+        return this._whenFinished;
     }
 
     /**
@@ -1559,23 +2320,38 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         }
     }
 
-    /**
-     * Deny the tool execution
-     */
-    deny(): void {
+    deny(reason?: string): void {
         if (this._confirmationResolver) {
-            this._confirmationResolver(false);
             this._finished = true;
-            this._result = 'Tool execution denied by user';
+            this._result = { denied: true, reason };
+            this._confirmationResolver(false);
+            this.resolveFinished();
         }
     }
 
-    /**
-     * Cancel the confirmation (reject the promise)
-     */
+    requestUserConfirmation(): void {
+        if (this._needsUserConfirmationResolver) {
+            this._needsUserConfirmationResolver();
+            this._needsUserConfirmationResolver = undefined;
+        }
+    }
+
     cancelConfirmation(reason?: unknown): void {
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
+        }
+    }
+
+    complete(result: ToolCallResult): void {
+        this._finished = true;
+        this._result = result;
+        this.resolveFinished();
+    }
+
+    protected resolveFinished(): void {
+        if (this._finishedResolver) {
+            this._finishedResolver();
+            this._finishedResolver = undefined;
         }
     }
 
@@ -1587,13 +2363,29 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return `Tool call: ${this._name}(${this._arguments ?? ''})`;
     }
 
-    merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
+    merge(nextChatResponseContent: ToolCallChatResponseContent | ToolCallArgumentsDeltaContent): boolean {
+        // Handle argument delta updates
+        if (ToolCallArgumentsDeltaContent.is(nextChatResponseContent)) {
+            if (nextChatResponseContent.id === this.id) {
+                this._arguments = (this._arguments ?? '') + nextChatResponseContent.delta;
+                return true;
+            }
+            return false;
+        }
+
+        // Handle full tool call updates
         if (nextChatResponseContent.id === this.id) {
+            const wasFinished = this._finished;
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
-            this._arguments = (args && args.length > 0) ? args : this._arguments;
-            // Don't merge confirmation promises - they should be managed separately
+            if (args && args.length > 0) {
+                this._arguments = args;
+            }
+            this._data = { ...nextChatResponseContent.data, ...this._data };
+            if (!wasFinished && this._finished) {
+                this.resolveFinished();
+            }
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
@@ -1606,20 +2398,51 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return true;
     }
 
+    protected parseArgumentsSafe(): object {
+        try {
+            return JSON.parse(this._arguments!);
+        } catch (error) {
+            console.warn(`Failed to parse tool call arguments for tool '${this._name}': ${error instanceof Error ? error.message : String(error)}`);
+            return {};
+        }
+    }
+
     toLanguageModelMessage(): [ToolUseMessage, ToolResultMessage] {
+        // Format denial results as a human-readable message for the LLM
+        let content = this.result;
+        if (ToolCallChatResponseContent.isDenialResult(this.result)) {
+            content = this.result.reason
+                ? `The user denied the tool with reason: ${this.result.reason}.`
+                : 'The user denied the tool.';
+        }
+
         return [{
             actor: 'ai',
             type: 'tool_use',
             id: this.id ?? '',
-            input: this.arguments && this.arguments.length !== 0 ? JSON.parse(this.arguments) : {},
-            name: this.name ?? ''
+            input: this.arguments && this.arguments.length !== 0 ? this.parseArgumentsSafe() : {},
+            name: this.name ?? '',
+            data: this.data
         }, {
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
-            content: this.result,
+            content,
             name: this.name ?? ''
         }];
+    }
+
+    toSerializable(): SerializableChatResponseContentData<ToolCallContentData> {
+        return {
+            kind: 'toolCall',
+            data: {
+                id: this._id,
+                name: this._name,
+                arguments: this._arguments,
+                finished: this._finished,
+                result: this._result
+            }
+        };
     }
 }
 
@@ -1637,6 +2460,17 @@ export class CommandChatResponseContentImpl implements CommandChatResponseConten
 
     asString(): string {
         return this.command?.id || this.customCallback?.label || 'command';
+    }
+
+    toSerializable(): SerializableChatResponseContentData<CommandContentData> {
+        return {
+            kind: 'command',
+            data: {
+                commandId: this.command?.id,
+                commandLabel: this.customCallback?.label,
+                arguments: this.args
+            }
+        };
     }
 }
 
@@ -1668,30 +2502,134 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
         }
         return true;
     }
+
+    toSerializable(): SerializableChatResponseContentData<HorizontalLayoutContentData> {
+        return {
+            kind: 'horizontal',
+            data: {
+                content: this._content.map(child => {
+                    const serialized = child.toSerializable?.();
+                    if (!serialized) {
+                        return {
+                            kind: child.kind,
+                            fallbackMessage: child.asString?.(),
+                            data: undefined
+                        };
+                    }
+                    return {
+                        ...serialized,
+                        fallbackMessage: child.asString?.()
+                    };
+                })
+            }
+        };
+    }
+}
+
+/**
+ * Options bag for constructing a {@link QuestionResponseContentImpl}.
+ */
+export interface QuestionResponseContentOptions {
+    selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
+    multiSelect?: boolean;
+    header?: string;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
 }
 
 /**
  * Default implementation for the QuestionResponseContent.
+ * Can be created with or without handler/request for read-only (restored) mode.
  */
 export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
-    protected _selectedOption: { text: string; value?: string } | undefined;
-    constructor(public question: string, public options: { text: string, value?: string }[],
-        public request: MutableChatRequestModel, public handler: QuestionResponseHandler) {
+    public multiSelect?: boolean;
+    public header?: string;
+    public onSkip?: () => void;
+    protected _selectedOptions: { text: string; value?: string }[] | undefined;
+
+    constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: QuestionResponseHandler | undefined,
+        questionOptions?: Omit<QuestionResponseContentOptions, 'multiSelect'> & { multiSelect?: false }
+    );
+    constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: MultiSelectQuestionResponseHandler | undefined,
+        questionOptions: QuestionResponseContentOptions & { multiSelect: true }
+    );
+    constructor(
+        public question: string,
+        public options: { text: string, value?: string, description?: string }[],
+        public request: MutableChatRequestModel | undefined,
+        public handler: QuestionResponseHandler | MultiSelectQuestionResponseHandler | undefined,
+        questionOptions?: QuestionResponseContentOptions
+    ) {
+        this.multiSelect = questionOptions?.multiSelect;
+        this.header = questionOptions?.header;
+        this.onSkip = questionOptions?.onSkip;
+        this._selectedOptions = questionOptions?.selectedOptions ??
+            (questionOptions?.selectedOption ? [questionOptions.selectedOption] : undefined);
     }
-    set selectedOption(option: { text: string; value?: string; } | undefined) {
-        this._selectedOption = option;
-        this.request.response.response.responseContentChanged();
+
+    get isReadOnly(): boolean {
+        return !this.handler || !this.request;
     }
-    get selectedOption(): { text: string; value?: string; } | undefined {
-        return this._selectedOption;
+
+    set selectedOption(option: { text: string; value?: string } | undefined) {
+        this._selectedOptions = option ? [option] : undefined;
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
     }
+    get selectedOption(): { text: string; value?: string } | undefined {
+        return this._selectedOptions?.[0];
+    }
+
+    set selectedOptions(options: { text: string; value?: string }[] | undefined) {
+        this._selectedOptions = options;
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
+    }
+    get selectedOptions(): { text: string; value?: string }[] | undefined {
+        return this._selectedOptions;
+    }
+
     asString?(): string | undefined {
-        return `Question: ${this.question}
-${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
+        const answer = this._selectedOptions && this._selectedOptions.length > 0
+            ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
+            : 'No answer';
+        return `Question: ${this.question}\n${answer}`;
     }
     merge?(): boolean {
         return false;
+    }
+    toSerializable(): SerializableChatResponseContentData<QuestionContentData> {
+        const data: QuestionContentData = {
+            question: this.question,
+            options: this.options,
+        };
+        if (this.multiSelect) {
+            data.selectedOptions = this._selectedOptions;
+        } else if (this._selectedOptions?.[0]) {
+            data.selectedOption = this._selectedOptions[0];
+        }
+        if (this.header !== undefined) {
+            data.header = this.header;
+        }
+        if (this.multiSelect !== undefined) {
+            data.multiSelect = this.multiSelect;
+        }
+        return {
+            kind: 'question',
+            data
+        };
     }
 }
 
@@ -1703,7 +2641,6 @@ class ChatResponseImpl implements ChatResponse {
     protected _responseRepresentationForDisplay: string;
 
     constructor() {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatResponse
         this._content = [];
     }
 
@@ -1731,7 +2668,14 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     protected doAddContent(nextContent: ChatResponseContent): void {
-        if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
+        if (ToolCallArgumentsDeltaContent.is(nextContent)) {
+            // Delta content targets an existing tool call by ID
+            const targetTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
+            if (targetTool !== undefined && ChatResponseContent.hasMerge(targetTool)) {
+                targetTool.merge(nextContent);
+            }
+            // If no matching tool call found, silently drop the delta (the tool call might not exist yet)
+        } else if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             const fittingTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
             if (fittingTool !== undefined) {
                 fittingTool.merge?.(nextContent);
@@ -1813,19 +2757,57 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _isError: boolean;
     protected _errorObject: Error | undefined;
     protected _cancellationToken: CancellationTokenSource;
+    protected _promptVariantId?: string;
+    protected _isPromptVariantEdited?: boolean;
 
-    constructor(requestId: string, agentId?: string) {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatResponseModel
+    constructor(
+        requestId: string,
+        agentId?: string,
+        serializedData?: SerializableChatResponseData
+    ) {
         this._requestId = requestId;
-        this._id = generateUuid();
-        this._progressMessages = [];
+        this._agentId = agentId;
+        this._cancellationToken = new CancellationTokenSource();
+
+        // Check if we're restoring from serialized data
+        if (serializedData) {
+            this.restoreFromSerializedData(serializedData);
+        } else {
+            // Normal creation path
+            this._id = generateUuid();
+            this._progressMessages = [];
+            this._isComplete = false;
+            this._isWaitingForInput = false;
+            this._isError = false;
+        }
+
         const response = new ChatResponseImpl();
         response.onDidChange(() => this._onDidChangeEmitter.fire());
         this._response = response;
-        this._isComplete = false;
+    }
+
+    /**
+     * Restore this response model from serialized data
+     */
+    protected restoreFromSerializedData(data: SerializableChatResponseData): void {
+        this._id = data.id;
+        // Always mark restored responses as complete since there's no active agent
+        this._isComplete = true;
+        this._isError = data.isError;
+
+        // Do not restore waitingForInput state - when a session is restored,
+        // the agent that was waiting for input is no longer running
         this._isWaitingForInput = false;
-        this._agentId = agentId;
-        this._cancellationToken = new CancellationTokenSource();
+        // TODO: Restore progressMessages?
+        this._progressMessages = [];
+        this._promptVariantId = data.promptVariantId;
+        this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
+
+        if (data.errorMessage) {
+            this._errorObject = new Error(data.errorMessage);
+        }
+
+        // Note: Content restoration will be handled by ChatService using deserializer registry
     }
 
     get id(): string {
@@ -1891,6 +2873,20 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._agentId;
     }
 
+    get promptVariantId(): string | undefined {
+        return this._promptVariantId;
+    }
+
+    get isPromptVariantEdited(): boolean {
+        return this._isPromptVariantEdited ?? false;
+    }
+
+    setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
+        this._promptVariantId = variantId;
+        this._isPromptVariantEdited = isEdited;
+        this._onDidChangeEmitter.fire();
+    }
+
     overrideAgentId(agentId: string): void {
         this._agentId = agentId;
     }
@@ -1905,6 +2901,19 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._cancellationToken.cancel();
         this._isComplete = true;
         this._isWaitingForInput = false;
+
+        // Ensure any pending tool confirmations are canceled when the chat is canceled
+        try {
+            const content = this._response.content;
+            for (const item of content) {
+                if (ToolCallChatResponseContent.is(item)) {
+                    item.cancelConfirmation(new Error('Chat request canceled'));
+                }
+            }
+        } catch (e) {
+            // best-effort: ignore errors while canceling confirmations
+        }
+
         this._onDidChangeEmitter.fire();
     }
 
@@ -1934,6 +2943,33 @@ export class MutableChatResponseModel implements ChatResponseModel {
     }
     get isError(): boolean {
         return this._isError;
+    }
+
+    toSerializable(): SerializableChatResponseData {
+        return {
+            id: this.id,
+            requestId: this.requestId,
+            isComplete: this.isComplete,
+            isError: this.isError,
+            errorMessage: this.errorObject?.message,
+            promptVariantId: this._promptVariantId,
+            isPromptVariantEdited: this._isPromptVariantEdited,
+            content: this.response.content.map(c => {
+                const serialized = c.toSerializable?.();
+                if (!serialized) {
+                    // Fallback if toSerializable not implemented
+                    return {
+                        kind: c.kind,
+                        fallbackMessage: c.asString?.(),
+                        data: undefined
+                    };
+                }
+                return {
+                    ...serialized,
+                    fallbackMessage: c.asString?.()
+                };
+            })
+        };
     }
 }
 
@@ -1977,6 +3013,44 @@ export class ProgressChatResponseContentImpl implements ProgressChatResponseCont
             actor: 'ai',
             type: 'text',
             text: this.message
+        };
+    }
+    toSerializable(): SerializableChatResponseContentData<ProgressContentData> {
+        return {
+            kind: 'progress',
+            data: { message: this._message }
+        };
+    }
+}
+
+/**
+ * Fallback content for unknown content types.
+ * Used when a deserializer is not available (e.g., content from removed extension).
+ */
+export interface UnknownChatResponseContent extends ChatResponseContent {
+    kind: 'unknown';
+    originalKind: string;
+    fallbackMessage?: string;
+    data: unknown;
+}
+
+export class UnknownChatResponseContentImpl implements UnknownChatResponseContent {
+    readonly kind = 'unknown';
+
+    constructor(
+        public readonly originalKind: string,
+        public readonly fallbackMessage: string | undefined,
+        public readonly data: unknown
+    ) { }
+
+    asString(): string | undefined {
+        return this.fallbackMessage;
+    }
+
+    toSerializable(): SerializableChatResponseContentData {
+        return {
+            kind: 'unknown',
+            data: this.data
         };
     }
 }

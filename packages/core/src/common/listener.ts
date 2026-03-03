@@ -37,7 +37,7 @@ export namespace Listener {
      * @param list the listener list to invoke
      * @returns the return values from the listener invocation
      */
-    export async function await<T, U>(value: T, list: ListenerList<T, Promise<U>>): Promise<U[]> {
+    export async function awaitAll<T, U>(value: T, list: ListenerList<T, Promise<U>>): Promise<U[]> {
         const promises: Promise<U>[] = [];
         list.invoke(value, promise => {
             promises.push(promise);

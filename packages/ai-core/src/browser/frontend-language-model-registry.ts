@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CancellationToken, ILogger } from '@theia/core';
+import { CancellationToken } from '@theia/core';
 import {
     inject,
     injectable,
@@ -26,6 +26,7 @@ import {
 } from '@theia/output/lib/browser/output-channel';
 import {
     AISettingsService,
+    createToolCallError,
     DefaultLanguageModelRegistryImpl,
     FrontendLanguageModelRegistry,
     isLanguageModelParsedResponse,
@@ -44,7 +45,8 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
-    ToolCallResult
+    ToolCallResult,
+    ToolInvocationContext
 } from '../common';
 
 @injectable()
@@ -63,8 +65,8 @@ export class LanguageModelDelegateClientImpl
         this.receiver.send(id, token);
     }
 
-    toolCall(requestId: string, toolId: string, args_string: string): Promise<ToolCallResult> {
-        return this.receiver.toolCall(requestId, toolId, args_string);
+    toolCall(requestId: string, toolId: string, args_string: string, toolCallId?: string): Promise<ToolCallResult> {
+        return this.receiver.toolCall(requestId, toolId, args_string, toolCallId);
     }
 
     error(id: string, error: Error): void {
@@ -133,9 +135,6 @@ export class FrontendLanguageModelRegistryImpl
 
     @inject(LanguageModelDelegateClientImpl)
     protected client: LanguageModelDelegateClientImpl;
-
-    @inject(ILogger)
-    protected override logger: ILogger;
 
     @inject(OutputChannelManager)
     protected outputChannelManager: OutputChannelManager;
@@ -312,21 +311,21 @@ export class FrontendLanguageModelRegistryImpl
     }
 
     // called by backend once tool is invoked
-    async toolCall(id: string, toolId: string, arg_string: string): Promise<ToolCallResult> {
+    async toolCall(id: string, toolId: string, arg_string: string, toolCallId?: string): Promise<ToolCallResult> {
         if (!this.requests.has(id)) {
-            return { error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` };
+            return createToolCallError(`No request found for ID '${id}'. The request may have been cancelled or completed.`);
         }
         const request = this.requests.get(id)!;
         const tool = request.tools?.find(t => t.id === toolId);
         if (tool) {
             try {
-                return await tool.handler(arg_string);
+                return await tool.handler(arg_string, ToolInvocationContext.create(toolCallId));
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                return { error: true, message: `Error executing tool '${toolId}': ${errorMessage}` };
-            };
+                return createToolCallError(`Error executing tool '${toolId}': ${errorMessage}`);
+            }
         }
-        return { error: true, message: `Tool '${toolId}' not found in the available tools for this request.` };
+        return createToolCallError(`Tool '${toolId}' not found in the available tools for this request.`, 'tool-not-available');
     }
 
     // called by backend via the "delegate client" with the error to use for rejection

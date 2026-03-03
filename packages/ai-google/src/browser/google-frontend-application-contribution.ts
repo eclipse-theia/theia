@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
-import { API_KEY_PREF, MODELS_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from './google-preferences';
+import { API_KEY_PREF, MODELS_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from '../common/google-preferences';
+import { PreferenceService } from '@theia/core';
 
 const GOOGLE_PROVIDER_ID = 'google';
 
@@ -47,16 +48,17 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue);
-                    this.handleKeyChange(event.newValue);
+                    const newApiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+                    this.manager.setApiKey(newApiKey);
+                    this.handleKeyChange(newApiKey);
                 } else if (event.preferenceName === MAX_RETRIES) {
-                    this.manager.setMaxRetriesOnErrors(event.newValue);
+                    this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
                 } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
-                    this.manager.setRetryDelayOnRateLimitError(event.newValue);
+                    this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
                 } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
-                    this.manager.setRetryDelayOnOtherErrors(event.newValue);
+                    this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(event.newValue as string[]);
+                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 }
             });
         });

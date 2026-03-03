@@ -22,7 +22,7 @@ import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-me
 import { LabelParser } from '../../label-parser';
 import { codicon, ReactWidget, Widget } from '../../widgets';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
-import { TabBarDelegator, TabBarToolbarAction } from './tab-bar-toolbar-types';
+import { TAB_BAR_TOOLBAR_CONTEXT_MENU, TabBarDelegator, TabBarToolbarAction } from './tab-bar-toolbar-types';
 import { KeybindingRegistry } from '../..//keybinding';
 import { TabBarToolbarItem } from './tab-toolbar-item';
 import { GroupImpl, MenuModelRegistry } from '../../../common/menu';
@@ -71,13 +71,18 @@ export class TabBarToolbar extends ReactWidget {
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()));
-
-        this.toDispose.push(this.contextKeyService.onDidChange(e => {
-            if (e.affects(this.keybindingContextKeys)) {
-                this.maybeUpdate();
-            }
-        }));
+        this.toDispose.pushAll([
+            this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()),
+            this.contextKeyService.onDidChange(e => {
+                if (e.affects(this.keybindingContextKeys)) {
+                    this.maybeUpdate();
+                }
+            }),
+            Disposable.create(() => {
+                this.toDisposeOnUpdateItems.dispose();
+                this.toDisposeOnSetCurrent.dispose();
+            })
+        ]);
     }
 
     updateItems(items: Array<TabBarToolbarItem>, current: Widget | undefined): void {
@@ -173,11 +178,12 @@ export class TabBarToolbar extends ReactWidget {
         }
         return this.contextMenuRenderer.render({
             menu: MenuModelRegistry.removeSingleRootNodes(menu),
-            menuPath: ['contextMenu'],
+            menuPath: TAB_BAR_TOOLBAR_CONTEXT_MENU,
             args: [this.current],
             anchor,
             context: this.current?.node || this.node,
             contextKeyService: this.contextKeyService,
+            includeAnchorArg: false,
             onHide: () => toDisposeOnHide.dispose()
         });
     }

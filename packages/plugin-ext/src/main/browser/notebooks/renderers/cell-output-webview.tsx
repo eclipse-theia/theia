@@ -526,7 +526,7 @@ export class CellOutputWebviewImpl implements CellOutputWebview, Disposable {
             case 'cellFocusChanged':
                 const selectedCell = this.notebook.getCellByHandle(message.cellHandle);
                 if (selectedCell) {
-                    this.notebook.setSelectedCell(selectedCell);
+                    this.editor.viewModel.setSelectedCell(selectedCell);
                 }
                 break;
             case 'webviewFocusChanged':

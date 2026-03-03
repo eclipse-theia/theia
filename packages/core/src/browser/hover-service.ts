@@ -15,11 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { Disposable, DisposableCollection, disposableTimeout, isOSX } from '../common';
+import { Disposable, DisposableCollection, disposableTimeout, isOSX, PreferenceService } from '../common';
 import { MarkdownString } from '../common/markdown-rendering/markdown-string';
 import { animationFrame } from './browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from './markdown-rendering/markdown-renderer';
-import { PreferenceService } from './preferences';
 
 import '../../src/browser/style/hover-service.css';
 
@@ -76,6 +75,16 @@ export interface HoverRequest {
      * When true, the hover will register a click handler to allow interaction with elements in the hover area.
      */
     interactive?: boolean;
+    /**
+     * If implemented, this method will be called when the hover is no longer shown or no longer scheduled to be shown.
+     */
+    onHide?(): void;
+    /**
+     * When true, the hover will be shown immediately without any delay.
+     * Useful for explicitly triggered hovers (e.g., on click) where the user expects instant feedback.
+     * @default false
+     */
+    skipHoverDelay?: boolean;
 }
 
 @injectable()
@@ -108,7 +117,8 @@ export class HoverService {
 
     requestHover(request: HoverRequest): void {
         this.cancelHover();
-        this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
+        const delay = request.skipHoverDelay ? 0 : this.getHoverDelay();
+        this.pendingTimeout = disposableTimeout(() => this.renderHover(request), delay);
         this.hoverTarget = request.target;
         this.listenForMouseOut();
         this.listenForMouseClick(request);
@@ -123,7 +133,10 @@ export class HoverService {
     protected async renderHover(request: HoverRequest): Promise<void> {
         const host = this.hoverHost;
         let firstChild: HTMLElement | undefined;
-        const { target, content, position, cssClasses, interactive } = request;
+        const { target, content, position, cssClasses, interactive, onHide } = request;
+        if (onHide) {
+            this.disposeOnHide.push({ dispose: onHide.bind(request) });
+        }
         if (cssClasses) {
             host.classList.add(...cssClasses);
         }
@@ -217,17 +230,21 @@ export class HoverService {
     }
 
     protected listenForMouseOut(): void {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (e.target instanceof Node && !this.hoverHost.contains(e.target) && !this.hoverTarget?.contains(e.target)) {
-                this.disposeOnHide.push(disposableTimeout(() => {
-                    if (!this.hoverHost.matches(':hover') && !this.hoverTarget?.matches(':hover')) {
-                        this.cancelHover();
-                    }
-                }, quickMouseThresholdMillis));
-            }
+        const handleMouseLeave = (e: MouseEvent) => {
+            this.disposeOnHide.push(disposableTimeout(() => {
+                if (!this.hoverHost.matches(':hover') && !this.hoverTarget?.matches(':hover')) {
+                    this.cancelHover();
+                }
+            }, quickMouseThresholdMillis));
         };
-        document.addEventListener('mousemove', handleMouseMove);
-        this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousemove', handleMouseMove) });
+        this.hoverTarget?.addEventListener('mouseout', handleMouseLeave);
+        this.hoverHost.addEventListener('mouseout', handleMouseLeave);
+        this.disposeOnHide.push({
+            dispose: () => {
+                this.hoverTarget?.removeEventListener('mouseout', handleMouseLeave);
+                this.hoverHost.removeEventListener('mouseout', handleMouseLeave);
+            }
+        });
     }
 
     cancelHover(): void {

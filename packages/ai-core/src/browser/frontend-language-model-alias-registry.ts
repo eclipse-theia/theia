@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Emitter, Event } from '@theia/core';
+import { Emitter, Event, nls } from '@theia/core';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
-import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from './ai-core-preferences';
+import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
+import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from '../common/ai-core-preferences';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()
@@ -28,38 +28,38 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code',
             defaultModelIds: [
-                'anthropic/claude-3-7-sonnet-latest',
-                'openai/gpt-4.1',
-                'google/gemini-2.5-pro-exp-03-25'
+                'anthropic/claude-opus-4-6',
+                'openai/gpt-5.2',
+                'google/gemini-3.1-pro-preview'
             ],
-            description: 'Optimized for code understanding and generation tasks.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/code/description', 'Optimized for code understanding and generation tasks.')
         },
         {
             id: 'default/universal',
             defaultModelIds: [
-                'openai/gpt-4o',
-                'anthropic/claude-3-7-sonnet-latest',
-                'google/gemini-2.5-pro-exp-03-25'
+                'anthropic/claude-opus-4-6',
+                'openai/gpt-5.2',
+                'google/gemini-3.1-pro-preview'
             ],
-            description: 'Well-balanced for both code and general language use.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/universal/description', 'Well-balanced for both code and general language use.')
         },
         {
             id: 'default/code-completion',
             defaultModelIds: [
                 'openai/gpt-4.1',
-                'anthropic/claude-3-7-sonnet-latest',
-                'google/gemini-2.5-pro-exp-03-25'
+                'anthropic/claude-opus-4-6',
+                'google/gemini-3.1-pro-preview'
             ],
-            description: 'Best suited for code autocompletion scenarios.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/code-completion/description', 'Best suited for code autocompletion scenarios.')
         },
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'openai/gpt-4.1',
-                'anthropic/claude-3-7-sonnet-latest',
-                'google/gemini-2.5-pro-exp-03-25'
+                'anthropic/claude-opus-4-6',
+                'openai/gpt-5.2',
+                'google/gemini-3.1-pro-preview'
             ],
-            description: 'Models prioritized for summarization and condensation of content.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/summarize/description', 'Models prioritized for summarization and condensation of content.')
         }
     ];
     protected readonly onDidChangeEmitter = new Emitter<void>();
@@ -163,4 +163,3 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         this.preferenceService.set(LANGUAGE_MODEL_ALIASES_PREFERENCE, map, PreferenceScope.User);
     }
 }
-

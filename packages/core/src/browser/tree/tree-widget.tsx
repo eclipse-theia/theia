@@ -41,11 +41,11 @@ import { ElementExt } from '@lumino/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
 import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { TreeFocusService } from './tree-focus-service';
 import { useEffect } from 'react';
-import { PreferenceService, PreferenceChange } from '../preferences';
-import { PREFERENCE_NAME_TREE_INDENT } from './tree-preference';
+import { PREFERENCE_NAME_TREE_INDENT } from '../../common/tree-preference';
+import { PreferenceService, PreferenceChange } from '../../common/preferences';
 
 const debounce = require('lodash.debounce');
 
@@ -306,7 +306,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }),
             this.preferenceService.onPreferenceChanged((event: PreferenceChange) => {
                 if (event.preferenceName === PREFERENCE_NAME_TREE_INDENT) {
-                    this.treeIndent = event.newValue;
+                    this.treeIndent = this.preferenceService.get<number>(PREFERENCE_NAME_TREE_INDENT, 8);
                     this.update();
                 }
             })
@@ -391,6 +391,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         this.rows = new Map(rowsToUpdate);
         this.update();
+        this.scheduleUpdateScrollToRow();
     }
 
     protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
@@ -1442,9 +1443,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             if (contextMenuPath) {
                 const { x, y } = event.nativeEvent;
                 const args = this.toContextMenuArgs(node);
+                const target = event.currentTarget;
                 setTimeout(() => this.contextMenuRenderer.render({
                     menuPath: contextMenuPath,
-                    context: event.currentTarget,
+                    context: target,
                     anchor: { x, y },
                     args
                 }), 10);
@@ -1660,18 +1662,35 @@ export namespace TreeWidget {
     export class View extends React.Component<ViewProps> {
         list: VirtuosoHandle | undefined;
         private lastScrollState: TreeScrollState = { scrollTop: 0, isAtBottom: true, scrollHeight: 0, clientHeight: 0 };
+        /**
+         * Ensure the selected row is scrolled into view when virtualization finishes updating.
+         */
+        protected readonly scrollIntoViewIfNeeded = () => {
+            const { scrollToRow } = this.props;
+            if (this.list && scrollToRow !== undefined) {
+                this.list.scrollIntoView({
+                    index: scrollToRow,
+                    align: 'center'
+                });
+            }
+        };
+
+        override componentDidMount(): void {
+            this.scrollIntoViewIfNeeded();
+        }
+
+        override componentDidUpdate(prevProps: ViewProps): void {
+            if (this.props.scrollToRow !== prevProps.scrollToRow) {
+                this.scrollIntoViewIfNeeded();
+            }
+        }
 
         override render(): React.ReactNode {
             const { rows, width, height, scrollToRow, renderNodeRow, onScrollEmitter, ...other } = this.props;
             return <Virtuoso
                 ref={list => {
                     this.list = (list || undefined);
-                    if (this.list && scrollToRow !== undefined) {
-                        this.list.scrollIntoView({
-                            index: scrollToRow,
-                            align: 'center'
-                        });
-                    }
+                    this.scrollIntoViewIfNeeded();
                 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onScroll={(e: any) => {

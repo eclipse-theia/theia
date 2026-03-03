@@ -36,7 +36,8 @@ import {
     PluginInfo,
     LanguageStatus as LanguageStatusDTO,
     InlayHintDto,
-    IdentifiableInlineCompletions
+    IdentifiableInlineCompletions,
+    HoverWithId
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
@@ -84,7 +85,7 @@ import {
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind } from '../../plugin/types-impl';
 import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
-import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
+import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
 
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
@@ -360,8 +361,14 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     }
 
     protected provideHover(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
-        token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.Hover> {
-        return this.proxy.$provideHover(handle, model.uri, position, token);
+        token: monaco.CancellationToken, context?: monaco.languages.HoverContext<HoverWithId>): monaco.languages.ProviderResult<monaco.languages.Hover> {
+        const serializedContext: monaco.languages.HoverContext<{ id: number }> = {
+            verbosityRequest: context?.verbosityRequest ? {
+                verbosityDelta: context.verbosityRequest.verbosityDelta,
+                previousHover: { id: context.verbosityRequest.previousHover.id }
+            } : undefined,
+        };
+        return this.proxy.$provideHover(handle, model.uri, position, serializedContext, token);
     }
 
     $registerEvaluatableExpressionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
@@ -1176,14 +1183,23 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }
     }
 
-    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void {
+    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend,
+        eventHandle: number | undefined): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const provider = this.createDocumentRangeSemanticTokensProvider(handle, legend);
+        let event: Event<void> | undefined = undefined;
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<void>();
+            this.register(eventHandle, emitter);
+            event = emitter.event;
+        }
+        const provider = this.createDocumentRangeSemanticTokensProvider(handle, legend, event);
         this.register(handle, (monaco.languages.registerDocumentRangeSemanticTokensProvider as RegistrationFunction<monaco.languages.DocumentRangeSemanticTokensProvider>)
             (languageSelector, provider));
     }
 
-    protected createDocumentRangeSemanticTokensProvider(handle: number, legend: theia.SemanticTokensLegend): monaco.languages.DocumentRangeSemanticTokensProvider {
+    protected createDocumentRangeSemanticTokensProvider(
+        handle: number, legend: theia.SemanticTokensLegend, _onDidChangeEvent?: Event<void>
+    ): monaco.languages.DocumentRangeSemanticTokensProvider {
         return {
             getLegend: () => legend,
             provideDocumentRangeSemanticTokens: async (model, range, token) => {
@@ -1202,7 +1218,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     };
                 }
                 throw new Error('Unexpected');
-            }
+            },
+            // @monaco-uplift onDidChange property is not yet available with the current monaco version, probably with the next monaco update then
         };
     }
 
@@ -1273,7 +1290,8 @@ function reviveMarker(marker: MarkerData): vst.Diagnostic {
         range: reviveRange(marker.startLineNumber, marker.startColumn, marker.endLineNumber, marker.endColumn),
         message: marker.message,
         source: marker.source,
-        relatedInformation: undefined
+        relatedInformation: undefined,
+        data: marker.data
     };
 
     if (marker.relatedInformation) {

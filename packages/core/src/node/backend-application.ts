@@ -132,7 +132,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         conf.option(APP_PROJECT_PATH, { description: 'Sets the application project directory', deprecated: true });
         conf.option('dnsDefaultResultOrder', {
             type: 'string',
-            description: 'Configure Node\'s DNS resolver default behavior, see https://nodejs.org/docs/latest-v18.x/api/dns.html#dnssetdefaultresultorderorder',
+            description: 'Configure Node\'s DNS resolver default behavior, see https://nodejs.org/docs/latest-v22.x/api/dns.html#dnssetdefaultresultorderorder',
             choices: ['ipv4first', 'verbatim', 'nodeDefault'],
             default: DEFAULT_DNS_DEFAULT_RESULT_ORDER
         });

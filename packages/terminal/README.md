@@ -16,7 +16,7 @@ The `@theia/terminal` extension contributes the ability to spawn integrated term
 
 ## Additional Information
 
-- [API documentation for `@theia/terminal`](https://eclipse-theia.github.io/theia/docs/next/modules/terminal.html)
+- [API documentation for `@theia/terminal`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_terminal.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

@@ -21,7 +21,7 @@ import { Emitter } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Md5 } from 'ts-md5';
 import throttle = require('@theia/core/shared/lodash.throttle');
-import { NotificationPreferences } from './notification-preferences';
+import { NotificationPreferences } from '../common/notification-preferences';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { OpenerService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -229,7 +229,7 @@ export class NotificationManager extends MessageClient {
             // Ignore the timeout if at least one action is set, and we wait for user interaction.
             return 0;
         }
-        return plainMessage.options && plainMessage.options.timeout || this.preferences['notification.timeout'];
+        return plainMessage.options?.timeout !== undefined ? plainMessage.options.timeout : this.preferences['notification.timeout'];
     }
     protected isExpandable(message: string, source: string | undefined, actions: string[]): boolean {
         if (!actions.length && source) {

@@ -56,11 +56,19 @@ export namespace PluginIdentifiers {
      * @returns a string in the format `<publisher>.<name>`.
      */
     export function unversionedFromVersioned(id: VersionedId): UnversionedId {
-        const endOfId = id.indexOf('@');
-        return id.slice(0, endOfId) as UnversionedId;
+        return toUnversioned(id);
     }
     /**
-     * @returns `undefined` if it looks like the string passed in does not have the format of {@link PluginIdentifiers.VersionedId}.
+     * @returns a string in the format `<publisher>.<name>`.
+     *
+     * If the supplied ID does not include `@`, it will be returned in whole.
+     */
+    export function toUnversioned(id: VersionedId | UnversionedId): UnversionedId {
+        const endOfId = id.indexOf('@');
+        return endOfId === -1 ? id : id.slice(0, endOfId) as UnversionedId;
+    }
+    /**
+     * @returns `undefined` if it looks like the string passed in does not have the format of {@link VersionedId}.
      */
     export function identifiersFromVersionedId(probablyId: string): Components | undefined {
         const endOfPublisher = probablyId.indexOf('.');
@@ -71,7 +79,7 @@ export namespace PluginIdentifiers {
         return { publisher: probablyId.slice(0, endOfPublisher), name: probablyId.slice(endOfPublisher + 1, endOfName), version: probablyId.slice(endOfName + 1) };
     }
     /**
-     * @returns `undefined` if it looks like the string passed in does not have the format of {@link PluginIdentifiers.VersionedId}.
+     * @returns `undefined` if it looks like the string passed in does not have the format of {@link VersionedId}.
      */
     export function idAndVersionFromVersionedId(probablyId: string): IdAndVersion | undefined {
         const endOfPublisher = probablyId.indexOf('.');

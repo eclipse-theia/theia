@@ -21,8 +21,8 @@ import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
 import { ContentLines } from '@theia/scm/lib/browser/dirty-diff/content-lines';
 import { DirtyDiffUpdate } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-decorator';
 import { DiffComputer, DirtyDiff } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
-import { GitPreferences, GitConfiguration } from '../git-preferences';
-import { PreferenceChangeEvent } from '@theia/core/lib/browser';
+import { GitPreferences, GitConfiguration } from '../../common/git-preferences';
+import { PreferenceChangeEvent } from '@theia/core/lib/common';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { GitResourceResolver } from '../git-resource-resolver';
 import { WorkingDirectoryStatus, GitFileStatus, GitFileChange, Repository, Git, GitStatusChangeEvent } from '../../common';
@@ -162,10 +162,9 @@ export class DirtyDiffModel implements Disposable {
     }
 
     protected async handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): Promise<void> {
-        const { preferenceName, newValue } = event;
+        const { preferenceName } = event;
         if (preferenceName === 'git.editor.decorations.enabled') {
-            const enabled = !!newValue;
-            this.enabled = enabled;
+            this.enabled = !!this.preferences.get('git.editor.decorations.enabled');
             this.update();
         }
         if (preferenceName === 'git.editor.dirtyDiff.linesLimit') {

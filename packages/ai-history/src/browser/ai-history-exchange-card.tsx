@@ -93,7 +93,7 @@ export const ExchangeCard: React.FC<ExchangeCardProps> = ({ exchange, selectedAg
             aria-label={`Exchange ${exchange.id}`}>
             <div className='theia-card-meta'>
                 <span className='theia-card-request-id'>
-                    {nls.localize('theia/ai/history/exchange-card/exchangeId', 'ID')}: {exchange.id}
+                    {nls.localizeByDefault('ID')}: {exchange.id}
                 </span>
                 {exchange.metadata.agent && (
                     <span className='theia-card-agent-id'>
@@ -208,6 +208,16 @@ const RequestCard: React.FC<RequestCardProps> = ({ request, index, totalRequests
                     <span className='request-model'>
                         {nls.localize('theia/ai/history/request-card/model', 'Model')}: {request.languageModel}
                     </span>
+                    {!!request.metadata.promptVariantId && (
+                        <span className={`request-prompt-variant ${request.metadata.isPromptVariantCustomized ? 'customized' : ''}`}>
+                            {!!request.metadata.isPromptVariantCustomized && (
+                                <span className='customized-prefix'>
+                                    [{nls.localize('theia/ai/history/edited', 'edited')}]{' '}
+                                </span>
+                            )}
+                            {nls.localize('theia/ai/history/request-card/promptVariant', 'Prompt Variant')}: {request.metadata.promptVariantId as string}
+                        </span>
+                    )}
                 </div>
             </div>
 

@@ -299,6 +299,9 @@ class EditorAndDocumentStateComputer implements Disposable {
     }
 
     private onTextEditorAdd(widget: EditorWidget): void {
+        if (widget.isDisposed) {
+            return;
+        }
         const editor = MonacoEditor.get(widget);
         if (!editor) {
             return;

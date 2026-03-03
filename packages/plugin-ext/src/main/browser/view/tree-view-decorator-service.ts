@@ -16,7 +16,7 @@
 
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { AbstractTreeDecoratorService, TreeDecorator } from '@theia/core/lib/browser/tree/tree-decorator';
-import { bindContributionProvider, ContributionProvider, isObject } from '@theia/core';
+import { bindRootContributionProvider, ContributionProvider, isObject } from '@theia/core';
 import { TreeNode } from '@theia/core/lib/browser';
 import { TreeItem } from '@theia/plugin';
 import URI from '@theia/core/lib/common/uri';
@@ -46,6 +46,6 @@ export class TreeViewDecoratorService extends AbstractTreeDecoratorService {
 
 export function bindTreeViewDecoratorUtilities(bind: interfaces.Bind): void {
     bind(TreeViewDecoratorAdapter).toSelf().inSingletonScope();
-    bindContributionProvider(bind, TreeViewDecorator);
+    bindRootContributionProvider(bind, TreeViewDecorator);
     bind(TreeViewDecorator).toService(TreeViewDecoratorAdapter);
 }

@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - AI Core UI EXTENSION</h2>
+<h2>ECLIPSE THEIA - AI CORE UI EXTENSION</h2>
 
 <hr />
 
@@ -20,6 +20,7 @@ Provided UI:
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-core-ui`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-core-ui.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

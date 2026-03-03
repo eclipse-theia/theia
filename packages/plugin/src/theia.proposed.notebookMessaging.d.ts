@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
 
     // https://github.com/microsoft/vscode/issues/123601
 

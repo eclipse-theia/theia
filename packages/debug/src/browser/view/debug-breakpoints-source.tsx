@@ -19,6 +19,7 @@ import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugViewModel } from './debug-view-model';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugExceptionBreakpoint } from './debug-exception-breakpoint';
+import { CommandService } from '@theia/core/lib/common';
 
 @injectable()
 export class DebugBreakpointsSource extends TreeSource {
@@ -29,6 +30,9 @@ export class DebugBreakpointsSource extends TreeSource {
     @inject(BreakpointManager)
     protected readonly breakpoints: BreakpointManager;
 
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
     @postConstruct()
     protected init(): void {
         this.fireDidChange();
@@ -37,17 +41,11 @@ export class DebugBreakpointsSource extends TreeSource {
 
     *getElements(): IterableIterator<TreeElement> {
         for (const exceptionBreakpoint of this.breakpoints.getExceptionBreakpoints()) {
-            yield new DebugExceptionBreakpoint(exceptionBreakpoint, this.breakpoints);
+            yield new DebugExceptionBreakpoint(exceptionBreakpoint, this.breakpoints, this.commandService);
         }
-        for (const functionBreakpoint of this.model.functionBreakpoints) {
-            yield functionBreakpoint;
-        }
-        for (const instructionBreakpoint of this.model.instructionBreakpoints) {
-            yield instructionBreakpoint;
-        }
-        for (const breakpoint of this.model.breakpoints) {
-            yield breakpoint;
-        }
+        yield* this.model.dataBreakpoints;
+        yield* this.model.functionBreakpoints;
+        yield* this.model.instructionBreakpoints;
+        yield* this.model.breakpoints;
     }
-
 }

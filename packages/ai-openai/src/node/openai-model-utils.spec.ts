@@ -13,31 +13,36 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-const { expect } = require('chai');
-const { OpenAiModelUtils } = require('./openai-language-model');
+import { expect } from 'chai';
+import { OpenAiModelUtils } from './openai-language-model';
+import { LanguageModelMessage } from '@theia/ai-core';
+import { OpenAiResponseApiUtils, recursiveStrictJSONSchema } from './openai-response-api-utils';
+import type { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
+
 const utils = new OpenAiModelUtils();
+const responseUtils = new OpenAiResponseApiUtils();
 
 describe('OpenAiModelUtils - processMessages', () => {
     describe("when developerMessageSettings is 'skip'", () => {
         it('should remove all system messages', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'system', type: 'text', text: 'system message' },
                 { actor: 'user', type: 'text', text: 'user message' },
                 { actor: 'system', type: 'text', text: 'another system message' },
             ];
-            const result = utils.processMessages(messages, 'skip');
+            const result = utils.processMessages(messages, 'skip', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'user message' }
             ]);
         });
 
         it('should do nothing if there is no system message', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'user', type: 'text', text: 'user message' },
                 { actor: 'user', type: 'text', text: 'another user message' },
                 { actor: 'ai', type: 'text', text: 'ai message' }
             ];
-            const result = utils.processMessages(messages, 'skip');
+            const result = utils.processMessages(messages, 'skip', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'user message' },
                 { role: 'user', content: 'another user message' },
@@ -48,12 +53,12 @@ describe('OpenAiModelUtils - processMessages', () => {
 
     describe("when developerMessageSettings is 'mergeWithFollowingUserMessage'", () => {
         it('should merge the system message with the next user message, assign role user, and remove the system message', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'system', type: 'text', text: 'system msg' },
                 { actor: 'user', type: 'text', text: 'user msg' },
                 { actor: 'ai', type: 'text', text: 'ai message' }
             ];
-            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage');
+            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'system msg\nuser msg' },
                 { role: 'assistant', content: 'ai message' }
@@ -61,11 +66,11 @@ describe('OpenAiModelUtils - processMessages', () => {
         });
 
         it('should create a new user message if no user message exists, and remove the system message', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'system', type: 'text', text: 'system only msg' },
                 { actor: 'ai', type: 'text', text: 'ai message' }
             ];
-            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage');
+            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'system only msg' },
                 { role: 'assistant', content: 'ai message' }
@@ -73,14 +78,14 @@ describe('OpenAiModelUtils - processMessages', () => {
         });
 
         it('should create a merge multiple system message with the next user message', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'user', type: 'text', text: 'user message' },
                 { actor: 'system', type: 'text', text: 'system message' },
                 { actor: 'system', type: 'text', text: 'system message2' },
                 { actor: 'user', type: 'text', text: 'user message2' },
                 { actor: 'ai', type: 'text', text: 'ai message' }
             ];
-            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage');
+            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'user message' },
                 { role: 'user', content: 'system message\nsystem message2\nuser message2' },
@@ -89,13 +94,13 @@ describe('OpenAiModelUtils - processMessages', () => {
         });
 
         it('should create a new user message from several system messages if the next message is not a user message', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'user', type: 'text', text: 'user message' },
                 { actor: 'system', type: 'text', text: 'system message' },
                 { actor: 'system', type: 'text', text: 'system message2' },
                 { actor: 'ai', type: 'text', text: 'ai message' }
             ];
-            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage');
+            const result = utils.processMessages(messages, 'mergeWithFollowingUserMessage', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'user message' },
                 { role: 'user', content: 'system message\nsystem message2' },
@@ -106,13 +111,13 @@ describe('OpenAiModelUtils - processMessages', () => {
 
     describe('when no special merging or skipping is needed', () => {
         it('should leave messages unchanged in ordering and assign roles based on developerMessageSettings', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'user', type: 'text', text: 'user message' },
                 { actor: 'system', type: 'text', text: 'system message' },
                 { actor: 'ai', type: 'text', text: 'ai message' }
             ];
             // Using a developerMessageSettings that is not merge/skip, e.g., 'developer'
-            const result = utils.processMessages(messages, 'developer');
+            const result = utils.processMessages(messages, 'developer', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'user message' },
                 { role: 'developer', content: 'system message' },
@@ -123,12 +128,12 @@ describe('OpenAiModelUtils - processMessages', () => {
 
     describe('role assignment for system messages when developerMessageSettings is one of the role strings', () => {
         it('should assign role as specified for a system message when developerMessageSettings is "user"', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'system', type: 'text', text: 'system msg' },
                 { actor: 'ai', type: 'text', text: 'ai msg' }
             ];
             // Since the first message is system and developerMessageSettings is not merge/skip, ordering is not adjusted
-            const result = utils.processMessages(messages, 'user');
+            const result = utils.processMessages(messages, 'user', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'user', content: 'system msg' },
                 { role: 'assistant', content: 'ai msg' }
@@ -136,11 +141,11 @@ describe('OpenAiModelUtils - processMessages', () => {
         });
 
         it('should assign role as specified for a system message when developerMessageSettings is "system"', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'system', type: 'text', text: 'system msg' },
                 { actor: 'ai', type: 'text', text: 'ai msg' }
             ];
-            const result = utils.processMessages(messages, 'system');
+            const result = utils.processMessages(messages, 'system', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'system', content: 'system msg' },
                 { role: 'assistant', content: 'ai msg' }
@@ -148,12 +153,12 @@ describe('OpenAiModelUtils - processMessages', () => {
         });
 
         it('should assign role as specified for a system message when developerMessageSettings is "developer"', () => {
-            const messages = [
+            const messages: LanguageModelMessage[] = [
                 { actor: 'system', type: 'text', text: 'system msg' },
                 { actor: 'user', type: 'text', text: 'user msg' },
                 { actor: 'ai', type: 'text', text: 'ai msg' }
             ];
-            const result = utils.processMessages(messages, 'developer');
+            const result = utils.processMessages(messages, 'developer', 'gpt-4');
             expect(result).to.deep.equal([
                 { role: 'developer', content: 'system msg' },
                 { role: 'user', content: 'user msg' },
@@ -161,4 +166,337 @@ describe('OpenAiModelUtils - processMessages', () => {
             ]);
         });
     });
+});
+
+describe('OpenAiModelUtils - processMessagesForResponseApi', () => {
+    describe("when developerMessageSettings is 'skip'", () => {
+        it('should remove all system messages and return no instructions', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'system', type: 'text', text: 'system message' },
+                { actor: 'user', type: 'text', text: 'user message' },
+                { actor: 'system', type: 'text', text: 'another system message' },
+            ];
+            const result = responseUtils.processMessages(messages, 'skip', 'gpt-4');
+            expect(result.instructions).to.be.undefined;
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'user message' }]
+                }
+            ]);
+        });
+    });
+
+    describe("when developerMessageSettings is 'mergeWithFollowingUserMessage'", () => {
+        it('should merge system message with user message and return no instructions', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'system', type: 'text', text: 'system msg' },
+                { actor: 'user', type: 'text', text: 'user msg' },
+                { actor: 'ai', type: 'text', text: 'ai message' }
+            ];
+            const result = responseUtils.processMessages(messages, 'mergeWithFollowingUserMessage', 'gpt-4');
+            expect(result.instructions).to.be.undefined;
+            expect(result.input).to.have.lengthOf(2);
+            expect(result.input[0]).to.deep.equal({
+                type: 'message',
+                role: 'user',
+                content: [{ type: 'input_text', text: 'system msg\nuser msg' }]
+            });
+            const assistantMessage = result.input[1];
+            expect(assistantMessage).to.deep.include({
+                type: 'message',
+                role: 'assistant',
+                status: 'completed',
+                content: [{ type: 'output_text', text: 'ai message', annotations: [] }]
+            });
+            if (assistantMessage.type === 'message' && 'id' in assistantMessage) {
+                expect(assistantMessage.id).to.be.a('string').and.to.match(/^msg_/);
+            } else {
+                throw new Error('Expected assistant message to have an id');
+            }
+        });
+    });
+
+    describe('when system messages should be converted to instructions', () => {
+        it('should extract system messages as instructions and convert other messages to input items', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'system', type: 'text', text: 'You are a helpful assistant' },
+                { actor: 'user', type: 'text', text: 'Hello!' },
+                { actor: 'ai', type: 'text', text: 'Hi there!' }
+            ];
+            const result = responseUtils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result.instructions).to.equal('You are a helpful assistant');
+            expect(result.input).to.have.lengthOf(2);
+            expect(result.input[0]).to.deep.equal({
+                type: 'message',
+                role: 'user',
+                content: [{ type: 'input_text', text: 'Hello!' }]
+            });
+            const assistantMessage = result.input[1];
+            expect(assistantMessage).to.deep.include({
+                type: 'message',
+                role: 'assistant',
+                status: 'completed',
+                content: [{ type: 'output_text', text: 'Hi there!', annotations: [] }]
+            });
+            if (assistantMessage.type === 'message' && 'id' in assistantMessage) {
+                expect(assistantMessage.id).to.be.a('string').and.to.match(/^msg_/);
+            } else {
+                throw new Error('Expected assistant message to have an id');
+            }
+        });
+
+        it('should combine multiple system messages into instructions', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'system', type: 'text', text: 'You are helpful' },
+                { actor: 'system', type: 'text', text: 'Be concise' },
+                { actor: 'user', type: 'text', text: 'What is 2+2?' }
+            ];
+            const result = responseUtils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result.instructions).to.equal('You are helpful\nBe concise');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'What is 2+2?' }]
+                }
+            ]);
+        });
+    });
+
+    describe('tool use and tool result messages', () => {
+        it('should convert tool use messages to function calls', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'user', type: 'text', text: 'Calculate 2+2' },
+                {
+                    actor: 'ai',
+                    type: 'tool_use',
+                    id: 'call_123',
+                    name: 'calculator',
+                    input: { expression: '2+2' }
+                }
+            ];
+            const result = responseUtils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'Calculate 2+2' }]
+                },
+                {
+                    type: 'function_call',
+                    call_id: 'call_123',
+                    name: 'calculator',
+                    arguments: '{"expression":"2+2"}'
+                }
+            ]);
+        });
+
+        it('should convert tool result messages to function call outputs', () => {
+            const messages: LanguageModelMessage[] = [
+                {
+                    actor: 'user',
+                    type: 'tool_result',
+                    name: 'calculator',
+                    tool_use_id: 'call_123',
+                    content: '4'
+                }
+            ];
+            const result = responseUtils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'function_call_output',
+                    call_id: 'call_123',
+                    output: '4'
+                }
+            ]);
+        });
+
+        it('should stringify non-string tool result content', () => {
+            const messages: LanguageModelMessage[] = [
+                {
+                    actor: 'user',
+                    type: 'tool_result',
+                    name: 'data_processor',
+                    tool_use_id: 'call_456',
+                    content: { result: 'success', data: [1, 2, 3] }
+                }
+            ];
+            const result = responseUtils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'function_call_output',
+                    call_id: 'call_456',
+                    output: '{"result":"success","data":[1,2,3]}'
+                }
+            ]);
+        });
+    });
+
+    describe('image messages', () => {
+        it('should convert base64 image messages to input image items', () => {
+            const messages: LanguageModelMessage[] = [
+                {
+                    actor: 'user',
+                    type: 'image',
+                    image: {
+                        mimeType: 'image/png',
+                        base64data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                    }
+                }
+            ];
+            const result = responseUtils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{
+                        type: 'input_image',
+                        detail: 'auto',
+                        image_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                    }]
+                }
+            ]);
+        });
+
+        it('should convert URL image messages to input image items', () => {
+            const messages: LanguageModelMessage[] = [
+                {
+                    actor: 'user',
+                    type: 'image',
+                    image: {
+                        url: 'https://example.com/image.png'
+                    }
+                }
+            ];
+            const result = responseUtils.processMessages(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{
+                        type: 'input_image',
+                        detail: 'auto',
+                        image_url: 'https://example.com/image.png'
+                    }]
+                }
+            ]);
+        });
+    });
+
+    describe('error handling', () => {
+        it('should throw error for unknown message types', () => {
+            const invalidMessage = {
+                actor: 'user',
+                type: 'unknown_type',
+                someProperty: 'value'
+            };
+            const messages = [invalidMessage] as unknown as LanguageModelMessage[];
+            expect(() => responseUtils.processMessages(messages, 'developer', 'gpt-4'))
+                .to.throw('unhandled case');
+        });
+    });
+
+    describe('recursiveStrictJSONSchema', () => {
+        it('should return the same object and not modify it when schema has no properties to strictify', () => {
+            const schema: JSONSchema = { type: 'string', description: 'Simple string' };
+            const originalJson = JSON.stringify(schema);
+
+            const result = recursiveStrictJSONSchema(schema);
+
+            expect(result).to.equal(schema);
+            expect(JSON.stringify(schema)).to.equal(originalJson);
+            const resultObj = result as JSONSchema;
+            expect(resultObj).to.not.have.property('additionalProperties');
+            expect(resultObj).to.not.have.property('required');
+        });
+
+        it('should not mutate original but return a new strictified schema when branching applies (properties/items)', () => {
+            const original: JSONSchema = {
+                type: 'object',
+                properties: {
+                    path: { type: 'string' },
+                    data: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                a: { type: 'string' }
+                            }
+                        }
+                    }
+                }
+            };
+            const originalClone = JSON.parse(JSON.stringify(original));
+
+            const resultDef = recursiveStrictJSONSchema(original);
+            const result = resultDef as JSONSchema;
+
+            expect(result).to.not.equal(original);
+            expect(original).to.deep.equal(originalClone);
+
+            expect(result.additionalProperties).to.equal(false);
+            expect(result.required).to.have.members(['path', 'data']);
+
+            const itemsDef = (result.properties?.data as JSONSchema).items as JSONSchemaDefinition;
+            expect(itemsDef).to.be.ok;
+            const itemsObj = itemsDef as JSONSchema;
+            expect(itemsObj.additionalProperties).to.equal(false);
+            expect(itemsObj.required).to.have.members(['a']);
+
+            const originalItems = ((original.properties!.data as JSONSchema).items) as JSONSchema;
+            expect(originalItems).to.not.have.property('additionalProperties');
+            expect(originalItems).to.not.have.property('required');
+        });
+
+        it('should strictify nested parameters schema and not mutate the original', () => {
+            const replacementProperties: Record<string, JSONSchema> = {
+                oldContent: { type: 'string', description: 'The exact content to be replaced. Must match exactly, including whitespace, comments, etc.' },
+                newContent: { type: 'string', description: 'The new content to insert in place of matched old content.' },
+                multiple: { type: 'boolean', description: 'Set to true if multiple occurrences of the oldContent are expected to be replaced.' }
+            };
+
+            const parameters: JSONSchema = {
+                type: 'object',
+                properties: {
+                    path: { type: 'string', description: 'The path of the file where content will be replaced.' },
+                    replacements: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: replacementProperties,
+                            required: ['oldContent', 'newContent']
+                        },
+                        description: 'An array of replacement objects, each containing oldContent and newContent strings.'
+                    },
+                    reset: {
+                        type: 'boolean',
+                        description: 'Set to true to clear any existing pending changes for this file and start fresh. Default is false, which merges with existing changes.'
+                    }
+                },
+                required: ['path', 'replacements']
+            };
+
+            const originalClone = JSON.parse(JSON.stringify(parameters));
+
+            const strictifiedDef = recursiveStrictJSONSchema(parameters);
+            const strictified = strictifiedDef as JSONSchema;
+
+            expect(strictified).to.not.equal(parameters);
+            expect(parameters).to.deep.equal(originalClone);
+
+            expect(strictified.additionalProperties).to.equal(false);
+            expect(strictified.required).to.have.members(['path', 'replacements', 'reset']);
+
+            const items = (strictified.properties!.replacements as JSONSchema).items as JSONSchema;
+            expect(items.additionalProperties).to.equal(false);
+            expect(items.required).to.have.members(['oldContent', 'newContent', 'multiple']);
+
+            const origItems = ((parameters.properties!.replacements as JSONSchema).items) as JSONSchema;
+            expect(origItems.required).to.deep.equal(['oldContent', 'newContent']);
+            expect(origItems).to.not.have.property('additionalProperties');
+        });
+    });
+
 });

@@ -15,24 +15,27 @@
 // *****************************************************************************
 
 import {
+    createToolCallError,
+    ImageContent,
+    ImageMimeType,
     LanguageModel,
-    LanguageModelRequest,
     LanguageModelMessage,
+    LanguageModelRequest,
     LanguageModelResponse,
+    LanguageModelStatus,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageService,
     TokenUsageParams,
-    UserRequest,
-    ImageContent,
+    TokenUsageService,
     ToolCallResult,
-    ImageMimeType,
-    LanguageModelStatus
+    ToolInvocationContext,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
+import * as undici from 'undici';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -119,23 +122,30 @@ function transformToAnthropicParams(
  * @returns A new messages array with the last message adapted to include cache control. If no cache control can be added, the original messages are returned.
  * In any case, the original messages are not modified
  */
-function addCacheControlToLastMessage(messages: Anthropic.Messages.MessageParam[]): Anthropic.Messages.MessageParam[] {
+export function addCacheControlToLastMessage(messages: Anthropic.Messages.MessageParam[]): Anthropic.Messages.MessageParam[] {
     const clonedMessages = [...messages];
     const latestMessage = clonedMessages.pop();
     if (latestMessage) {
-        let content: NonThinkingParam | undefined = undefined;
         if (typeof latestMessage.content === 'string') {
-            content = { type: 'text', text: latestMessage.content };
-        } else if (Array.isArray(latestMessage.content)) {
-            // we can't set cache control on thinking messages, so we only set it on the last non-thinking block
-            const filteredContent = latestMessage.content.filter(isNonThinkingParam);
-            if (filteredContent.length) {
-                content = filteredContent[filteredContent.length - 1];
-            }
-        }
-        if (content) {
-            const cachedContent: NonThinkingParam = { ...content, cache_control: { type: 'ephemeral' } };
+            // Wrap the string content into a content block with cache control
+            const cachedContent: NonThinkingParam = {
+                type: 'text',
+                text: latestMessage.content,
+                cache_control: { type: 'ephemeral' }
+            };
             return [...clonedMessages, { ...latestMessage, content: [cachedContent] }];
+        } else if (Array.isArray(latestMessage.content)) {
+            // Update the last non-thinking content block to include cache control
+            const updatedContent = [...latestMessage.content];
+            for (let i = updatedContent.length - 1; i >= 0; i--) {
+                if (isNonThinkingParam(updatedContent[i])) {
+                    updatedContent[i] = {
+                        ...updatedContent[i],
+                        cache_control: { type: 'ephemeral' }
+                    } as NonThinkingParam;
+                    return [...clonedMessages, { ...latestMessage, content: updatedContent }];
+                }
+            }
         }
     }
     return messages;
@@ -193,13 +203,31 @@ export class AnthropicModel implements LanguageModel {
         public enableStreaming: boolean,
         public useCaching: boolean,
         public apiKey: () => string | undefined,
+        public url: string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected proxy?: string
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        return request.settings ?? {};
+        const baseSettings = request.settings ?? {};
+
+        if (request.thinkingMode?.enabled) {
+            return {
+                ...baseSettings,
+                thinking: {
+                    type: 'enabled',
+                    budget_tokens: request.thinkingMode.budgetTokens ?? this.defaultThinkingBudget
+                }
+            };
+        }
+
+        return baseSettings;
+    }
+
+    protected get defaultThinkingBudget(): number {
+        return 10000;
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -326,8 +354,11 @@ export class AnthropicModel implements LanguageModel {
                     const toolResult = await Promise.all(toolCalls.map(async tc => {
                         const tool = request.tools?.find(t => t.name === tc.name);
                         const argsObject = tc.args.length === 0 ? '{}' : tc.args;
+                        const handlerResult = tool
+                            ? await tool.handler(argsObject, ToolInvocationContext.create(tc.id))
+                            : createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
 
-                        return { name: tc.name, result: (await tool?.handler(argsObject)), id: tc.id, arguments: argsObject };
+                        return { name: tc.name, result: handlerResult, id: tc.id, arguments: argsObject };
 
                     }));
 
@@ -423,10 +454,21 @@ export class AnthropicModel implements LanguageModel {
 
     protected initializeAnthropic(): Anthropic {
         const apiKey = this.apiKey();
-        if (!apiKey) {
+        if (!apiKey && !(this.url)) {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
 
-        return new Anthropic({ apiKey });
+        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
+        const key = apiKey ?? 'no-key';
+
+        let fo;
+        if (this.proxy) {
+            const proxyAgent = new undici.ProxyAgent(this.proxy);
+            fo = {
+                dispatcher: proxyAgent,
+            };
+        }
+
+        return new Anthropic({ apiKey: key, baseURL: this.url, fetchOptions: fo });
     }
 }

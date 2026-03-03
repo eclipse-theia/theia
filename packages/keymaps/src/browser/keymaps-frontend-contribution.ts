@@ -22,9 +22,8 @@ import {
     MenuContribution,
     MenuModelRegistry
 } from '@theia/core/lib/common';
-import { AbstractViewContribution, codicon, Widget } from '@theia/core/lib/browser';
+import { AbstractViewContribution, codicon, Widget, CommonCommands, CommonMenus } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { CommonCommands, CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
 import { Keybinding } from '@theia/core/lib/common/keybinding';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';

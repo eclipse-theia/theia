@@ -21,7 +21,6 @@ import {
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelTextResponse,
-    TextMessage,
     TokenUsageService,
     UserRequest,
     ImageContent,
@@ -37,23 +36,28 @@ import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
+import { OpenAiResponseApiUtils, processSystemMessages } from './openai-response-api-utils';
+import * as undici from 'undici';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
-        (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
-            if (m.role === 'assistant' && m.tool_calls) {
-                // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
-                // eslint-disable-next-line no-null/no-null
-                if (m.refusal === null) {
-                    m.refusal = undefined;
+        const messages = (options.body as { messages: Array<ChatCompletionMessageParam> }).messages;
+        if (Array.isArray(messages)) {
+            (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+                if (m.role === 'assistant' && m.tool_calls) {
+                    // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
+                    // eslint-disable-next-line no-null/no-null
+                    if (m.refusal === null) {
+                        m.refusal = undefined;
+                    }
+                    // Mistral OpenAI Endpoint expects parsed to be undefined and not null for optional properties
+                    // eslint-disable-next-line no-null/no-null
+                    if ((m as unknown as { parsed: null | undefined }).parsed === null) {
+                        (m as unknown as { parsed: null | undefined }).parsed = undefined;
+                    }
                 }
-                // Mistral OpenAI Endpoint expects parsed to be undefined and not null for optional properties
-                // eslint-disable-next-line no-null/no-null
-                if ((m as unknown as { parsed: null | undefined }).parsed === null) {
-                    (m as unknown as { parsed: null | undefined }).parsed = undefined;
-                }
-            }
-        });
+            });
+        }
         return super.prepareOptions(options);
     };
 }
@@ -83,6 +87,7 @@ export class OpenAiModel implements LanguageModel {
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param maxRetries the maximum number of retry attempts when a request fails
+     * @param useResponseApi whether to use the newer OpenAI Response API instead of the Chat Completion API
      */
     constructor(
         public readonly id: string,
@@ -93,19 +98,91 @@ export class OpenAiModel implements LanguageModel {
         public apiVersion: () => string | undefined,
         public supportsStructuredOutput: boolean,
         public url: string | undefined,
+        public deployment: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
+        public responseApiUtils: OpenAiResponseApiUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService
+        public useResponseApi: boolean = false,
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected proxy?: string
     ) { }
 
-    protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
-        return request.settings ?? {};
+    /**
+     * Checks if the model is an o-series model that supports reasoning.
+     * Models like o1, o1-mini, o1-preview, o3, o3-mini, o4-mini support the reasoning_effort parameter.
+     * These models use: reasoning_effort: 'low' | 'medium' | 'high'
+     */
+    protected supportsReasoning(): boolean {
+        return /^o[134](-|$)/i.test(this.model);
+    }
+
+    /**
+     * Checks if the model is a GPT-5 series model (gpt-5, gpt-5.1, gpt-5.2).
+     * These models use a different reasoning parameter format: reasoning: { effort: 'none' | 'low' | 'medium' | 'high' }
+     */
+    protected supportsGPT5Reasoning(): boolean {
+        return /^gpt-5(\.?[012])?(-|$)/i.test(this.model);
+    }
+
+    /**
+     * Gets the settings for a request, optionally including reasoning parameters.
+     * @param request The language model request
+     * @param forResponseApi Whether the settings are for the Response API (true) or Chat Completions API (false).
+     *                       GPT-5 reasoning parameters are only supported with the Response API.
+     */
+    protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
+        const baseSettings = request.settings ?? {};
+
+        if (request.thinkingMode?.enabled && forResponseApi && this.supportsGPT5Reasoning()) {
+            const budgetTokens = request.thinkingMode.budgetTokens ?? 10000;
+            let effort: 'none' | 'low' | 'medium' | 'high';
+            if (budgetTokens <= 0) {
+                effort = 'none';
+            } else if (budgetTokens <= 2000) {
+                effort = 'low';
+            } else if (budgetTokens <= 20000) {
+                effort = 'medium';
+            } else {
+                effort = 'high';
+            }
+
+            return {
+                ...baseSettings,
+                reasoning: { effort }
+            };
+        }
+
+        if (request.thinkingMode?.enabled && this.supportsReasoning()) {
+            const budgetTokens = request.thinkingMode.budgetTokens ?? 10000;
+            let reasoningEffort: 'low' | 'medium' | 'high';
+            if (budgetTokens <= 2000) {
+                reasoningEffort = 'low';
+            } else if (budgetTokens <= 20000) {
+                reasoningEffort = 'medium';
+            } else {
+                reasoningEffort = 'high';
+            }
+
+            return {
+                ...baseSettings,
+                reasoning_effort: reasoningEffort
+            };
+        }
+
+        return baseSettings;
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
+
+        return this.useResponseApi ?
+            this.handleResponseApiRequest(openai, request, cancellationToken)
+            : this.handleChatCompletionsRequest(openai, request, cancellationToken);
+    }
+
+    protected async handleChatCompletionsRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const settings = this.getSettings(request);
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
             return this.handleStructuredOutputRequest(openai, request);
@@ -167,7 +244,6 @@ export class OpenAiModel implements LanguageModel {
                     outputTokens: response.usage.completion_tokens,
                     requestId: request.requestId
                 }
-
             );
         }
 
@@ -234,10 +310,46 @@ export class OpenAiModel implements LanguageModel {
         // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
         const key = apiKey ?? 'no-key';
 
+        let fo;
+        if (this.proxy) {
+            const proxyAgent = new undici.ProxyAgent(this.proxy);
+            fo = {
+                dispatcher: proxyAgent,
+            };
+        }
+
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion });
+            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetchOptions: fo });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetchOptions: fo });
+        }
+    }
+
+    protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const settings = this.getSettings(request, true);
+        const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
+
+        try {
+            return await this.responseApiUtils.handleRequest(
+                openai,
+                request,
+                settings,
+                this.model,
+                this.openAiModelUtils,
+                this.developerMessageSettings,
+                this.runnerOptions,
+                this.id,
+                isStreamingRequest,
+                this.tokenUsageService,
+                cancellationToken
+            );
+        } catch (error) {
+            // If Response API fails, fall back to Chat Completions API
+            if (error instanceof Error) {
+                console.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
+                return this.handleChatCompletionsRequest(openai, request, cancellationToken);
+            }
+            throw error;
         }
     }
 
@@ -258,31 +370,7 @@ export class OpenAiModelUtils {
         messages: LanguageModelMessage[],
         developerMessageSettings: DeveloperMessageSettings
     ): LanguageModelMessage[] {
-        if (developerMessageSettings === 'skip') {
-            return messages.filter(message => message.actor !== 'system');
-        } else if (developerMessageSettings === 'mergeWithFollowingUserMessage') {
-            const updated = messages.slice();
-            for (let i = updated.length - 1; i >= 0; i--) {
-                if (updated[i].actor === 'system') {
-                    const systemMessage = updated[i] as TextMessage;
-                    if (i + 1 < updated.length && updated[i + 1].actor === 'user') {
-                        // Merge system message with the next user message
-                        const userMessage = updated[i + 1] as TextMessage;
-                        updated[i + 1] = {
-                            ...updated[i + 1],
-                            text: systemMessage.text + '\n' + userMessage.text
-                        } as TextMessage;
-                        updated.splice(i, 1);
-                    } else {
-                        // The message directly after is not a user message (or none exists), so create a new user message right after
-                        updated.splice(i + 1, 0, { actor: 'user', type: 'text', text: systemMessage.text });
-                        updated.splice(i, 1);
-                    }
-                }
-            }
-            return updated;
-        }
-        return messages;
+        return processSystemMessages(messages, developerMessageSettings);
     }
 
     protected toOpenAiRole(
@@ -356,9 +444,10 @@ export class OpenAiModelUtils {
     processMessages(
         messages: LanguageModelMessage[],
         developerMessageSettings: DeveloperMessageSettings,
-        model: string
+        model?: string
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
-        return processed.map(m => this.toOpenAIMessage(m, developerMessageSettings));
+        return processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
     }
+
 }

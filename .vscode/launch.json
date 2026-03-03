@@ -67,6 +67,18 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Start Theia Default (Browser backend, no debug)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start:browser"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Launch Browser Backend",
       "program": "${workspaceFolder}/examples/browser/lib/backend/main.js",
       "cwd": "${workspaceFolder}/examples/browser",

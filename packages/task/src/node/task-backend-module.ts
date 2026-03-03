@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module';
@@ -26,6 +26,7 @@ import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
 import { TaskServerImpl } from './task-server';
 import { createCommonBindings } from '../common/task-common-module';
 import { TaskClient, TaskServer, taskPath } from '../common';
+import { bindTaskPreferences } from '../common/task-preferences';
 
 export default new ContainerModule(bind => {
 
@@ -48,10 +49,11 @@ export default new ContainerModule(bind => {
     createCommonBindings(bind);
 
     bind(TaskRunnerRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, TaskRunnerContribution);
+    bindRootContributionProvider(bind, TaskRunnerContribution);
     bind(TaskBackendApplicationContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(TaskBackendApplicationContribution);
 
     bindProcessTaskRunnerModule(bind);
     bindCustomTaskRunnerModule(bind);
+    bindTaskPreferences(bind);
 });

@@ -44,7 +44,7 @@
   display: flex;
   align-items: center;
   flex: 0 1 auto;
-  white-space: nowrap;
+  white-space: pre;
   align-self: center;
   height: 100%;
   color: var(--theia-breadcrumb-foreground);
@@ -118,7 +118,7 @@
   display: flex;
   align-items: center;
   flex: 0 1 auto;
-  white-space: nowrap;
+  white-space: pre;
   cursor: pointer;
   outline: none;
   padding: 0.25rem 0.25rem 0.25rem 0.25rem;

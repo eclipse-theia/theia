@@ -1,0 +1,487 @@
+/* Base container and structure */
+.claude-code-tool.container {
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  border-radius: var(--theia-ui-padding);
+  margin: var(--theia-ui-padding) 0;
+  background-color: var(--theia-sideBar-background);
+  overflow: hidden;
+}
+
+.claude-code-tool.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px;
+  background-color: var(--theia-editorGroupHeader-tabsBackground);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.claude-code-tool.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.claude-code-tool.header-right {
+  flex-shrink: 0;
+}
+
+.claude-code-tool.icon {
+  color: var(--theia-charts-blue);
+}
+
+.claude-code-tool.icon.theia-file-icons-js::before {
+  margin-right: 0px;
+}
+
+.claude-code-tool.title {
+  font-weight: 600;
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.claude-code-tool.file-name {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+  flex-shrink: 0;
+}
+
+.claude-code-tool.relative-path {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  font-family: var(--theia-ui-font-family-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.claude-code-tool.badge {
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+  padding: 2px 6px;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  font-family: var(--theia-ui-font-family-mono);
+}
+
+.claude-code-tool.badge.added {
+  background-color: var(--theia-editorOverviewRuler-addedForeground);
+  color: var(--theia-foreground);
+}
+
+.claude-code-tool.badge.deleted {
+  background-color: var(--theia-editorOverviewRuler-deletedForeground);
+  color: var(--theia-foreground);
+}
+
+.claude-code-tool.content {
+  padding: var(--theia-ui-padding);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 2 / 3);
+}
+
+.claude-code-tool.parameters {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 3);
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  background-color: var(--theia-editorWidget-background);
+  border-radius: calc(var(--theia-ui-padding) / 2);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.claude-code-tool.parameter {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+}
+
+.claude-code-tool.parameter-label {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.claude-code-tool.parameter-value {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+  padding: 2px 6px;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  font-family: var(--theia-ui-font-family-mono);
+}
+
+.claude-code-tool.error {
+  padding: var(--theia-ui-padding);
+  color: var(--theia-errorForeground);
+  background-color: var(--theia-errorBackground);
+  border-radius: var(--theia-ui-padding);
+  margin: var(--theia-ui-padding) 0;
+  border: var(--theia-border-width) solid var(--theia-errorBorder);
+}
+
+/* Collapsible section styles */
+.claude-code-tool.expand-icon {
+  margin-right: calc(var(--theia-ui-padding) / 2);
+}
+
+.claude-code-tool.expanded-content {
+  padding: var(--theia-ui-padding);
+}
+
+/* Clickable elements within headers */
+.clickable-element {
+  cursor: pointer;
+  border-radius: calc(var(--theia-ui-padding) / 4);
+  transition: background-color 0.15s ease;
+}
+
+.clickable-element:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+  text-decoration: underline;
+}
+
+/* Hover effects */
+.claude-code-tool.container:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+/* Tool-specific styles */
+
+/* Bash Tool */
+.claude-code-tool.command {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+  font-family: var(--theia-ui-font-family-mono);
+  flex-shrink: 0;
+}
+
+.claude-code-tool.description {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+}
+
+/* Edit Tool */
+.claude-code-tool.edit-changes {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.claude-code-tool.edit-change {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 3);
+}
+
+.claude-code-tool.edit-label {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+}
+
+.claude-code-tool.edit-old {
+  color: var(--theia-textCodeBlock-foreground);
+  background-color: var(--theia-merge-incomingContentBackground);
+  padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding) * 2 / 3);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  font-family: var(--theia-ui-font-family-mono);
+  font-size: var(--theia-ui-font-size0);
+  border-left: 3px solid var(--theia-merge-incomingHeaderBackground);
+}
+
+.claude-code-tool.edit-new {
+  color: var(--theia-textCodeBlock-foreground);
+  background-color: var(--theia-merge-currentContentBackground);
+  padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding) * 2 / 3);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  font-family: var(--theia-ui-font-family-mono);
+  font-size: var(--theia-ui-font-size0);
+  border-left: 3px solid var(--theia-merge-currentHeaderBackground);
+}
+
+/* Grep Tool */
+.claude-code-tool.pattern {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+  font-family: var(--theia-ui-font-family-mono);
+  font-weight: 600;
+  background-color: var(--theia-textCodeBlock-background);
+  padding: 2px 6px;
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.claude-code-tool.scope {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  font-style: italic;
+}
+
+/* Glob Tool */
+.claude-code-tool.glob-pattern {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+  font-family: var(--theia-ui-font-family-mono);
+  font-weight: 600;
+  background-color: var(--theia-textCodeBlock-background);
+  padding: 2px 6px;
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+/* TodoWrite Renderer Styles */
+.claude-code-tool.todo-list-container {
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  border-radius: var(--theia-ui-padding);
+  margin: var(--theia-ui-padding) 0;
+  background-color: var(--theia-sideBar-background);
+  overflow: hidden;
+}
+
+.claude-code-tool.todo-list-header {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: 6px;
+  background-color: var(--theia-editorGroupHeader-tabsBackground);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.claude-code-tool.todo-list-icon {
+  color: var(--theia-button-background);
+  font-size: var(--theia-icon-size);
+}
+
+.claude-code-tool.todo-list-title {
+  font-weight: 600;
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.claude-code-tool.todo-list-progress {
+  margin-left: auto;
+  color: var(--theia-badge-foreground);
+  font-size: var(--theia-ui-font-size0);
+  padding: 2px 6px;
+  background-color: var(--theia-badge-background);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  line-height: 1;
+}
+
+.claude-code-tool.todo-list-empty {
+  padding: var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+  text-align: center;
+}
+
+.claude-code-tool.todo-list-items {
+  padding: 0;
+}
+
+.claude-code-tool.todo-item {
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  transition: background-color 0.2s ease;
+}
+
+.claude-code-tool.todo-item:last-child {
+  border-bottom: none;
+}
+
+.claude-code-tool.todo-item:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.claude-code-tool.todo-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--theia-ui-padding) * 2 / 3);
+  padding: 6px;
+}
+
+.claude-code-tool.todo-item-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--theia-icon-size);
+  height: var(--theia-icon-size);
+  margin-top: 2px;
+}
+
+.claude-code-tool.todo-status-icon {
+  font-size: var(--theia-icon-size);
+}
+
+.claude-code-tool.todo-status-icon.completed {
+  color: var(--theia-charts-green);
+}
+
+.claude-code-tool.todo-status-icon.in-progress {
+  color: var(--theia-progressBar-background);
+}
+
+.claude-code-tool.todo-status-icon.pending {
+  color: var(--theia-descriptionForeground);
+}
+
+.claude-code-tool.todo-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) * 2 / 3);
+}
+
+.claude-code-tool.todo-item-text {
+  flex: 1;
+  color: var(--theia-foreground);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.claude-code-tool.todo-item.status-completed .claude-code-tool.todo-item-text {
+  text-decoration: line-through;
+  color: var(--theia-descriptionForeground);
+}
+
+.claude-code-tool.todo-priority {
+  padding: 2px 6px;
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.claude-code-tool.todo-priority.priority-high {
+  background-color: rgba(var(--theia-charts-red-rgb, 204, 0, 0), 0.8);
+  color: var(--theia-button-foreground);
+}
+
+.claude-code-tool.todo-priority.priority-medium {
+  background-color: rgba(var(--theia-charts-orange-rgb, 255, 165, 0), 0.8);
+  color: var(--theia-button-foreground);
+}
+
+.claude-code-tool.todo-priority.priority-low {
+  background-color: rgba(var(--theia-charts-blue-rgb, 0, 122, 204), 0.8);
+  color: var(--theia-button-foreground);
+}
+
+.claude-code-tool.todo-list-error {
+  padding: var(--theia-ui-padding);
+  color: var(--theia-errorForeground);
+  background-color: var(--theia-errorBackground);
+  border-radius: var(--theia-ui-padding);
+  margin: var(--theia-ui-padding) 0;
+}
+
+/* Progress bar for completed items */
+.claude-code-tool.todo-item.status-completed {
+  opacity: 0.8;
+}
+
+/* Animation for in-progress items */
+.claude-code-tool.todo-item.status-in-progress {
+  background-color: rgba(var(--theia-progressBar-background-rgb, 0, 122, 204),
+      0.05);
+}
+
+.claude-code-tool.todo-item.status-in-progress .claude-code-tool.todo-item-text {
+  font-weight: 500;
+}
+
+/* Detail section styles */
+.claude-code-tool.details {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.claude-code-tool.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: calc(var(--theia-ui-padding) / 3);
+}
+
+.claude-code-tool.detail-label {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 500;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.claude-code-tool.detail-label::after {
+  content: " ";
+  margin-left: 2px;
+}
+
+.claude-code-tool.detail-value {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.claude-code-tool.detail-value.code-preview {
+  background-color: var(--theia-textCodeBlock-background);
+  padding: calc(var(--theia-ui-padding) / 2);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  font-family: var(--theia-ui-font-family-mono);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* MultiEdit specific styles */
+.claude-code-tool.edit-preview {
+  background-color: var(--theia-editorWidget-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  margin: calc(var(--theia-ui-padding) / 2) 0;
+}
+
+.claude-code-tool.edit-preview-header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
+  padding-bottom: calc(var(--theia-ui-padding) / 3);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.claude-code-tool.edit-preview-title {
+  font-weight: 600;
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.claude-code-tool.edit-preview-badge {
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+  padding: 1px 4px;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+  border-radius: calc(var(--theia-ui-padding) / 4);
+  font-family: var(--theia-ui-font-family-mono);
+}

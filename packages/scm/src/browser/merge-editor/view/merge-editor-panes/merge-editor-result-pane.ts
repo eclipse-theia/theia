@@ -53,7 +53,7 @@ export class MergeEditorResultPane extends MergeEditorPane {
     reset(): void {
         new ConfirmDialog({
             title: nls.localize('theia/scm/mergeEditor/resetConfirmationTitle', 'Do you really want to reset the merge result in this editor?'),
-            msg: nls.localize('theia/scm/mergeEditor/resetConfirmationMessage', 'This action cannot be undone.'),
+            msg: nls.localizeByDefault('This action cannot be undone.'),
             ok: Dialog.YES,
             cancel: Dialog.NO,
         }).open().then(async confirmed => {

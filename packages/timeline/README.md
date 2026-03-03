@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>THEIA - TIMELINE EXTENSION</h2>
+<h2>ECLIPSE THEIA - TIMELINE EXTENSION</h2>
 
 <hr />
 
@@ -16,6 +16,7 @@ The `@theia/timeline` extension adds Timeline view for visualizing time-series e
 
 ## Additional Information
 
+- [API documentation for `@theia/timeline`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_timeline.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 - [VS Code Timeline Documentation](https://code.visualstudio.com/updates/v1_44#_timeline-view)

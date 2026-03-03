@@ -21,7 +21,7 @@ function performNlsExtract() {
         'theia', 'nls-extract',
         '-o', './packages/core/i18n/nls.json',
         '-e', 'vscode',
-        '-f', './packages/**/{browser,electron-browser}/**/*.{ts,tsx}'
+        '-f', './packages/**/{browser,electron-browser,common}/**/*.{ts,tsx}'
     ], {
         shell: true,
         stdio: 'inherit'

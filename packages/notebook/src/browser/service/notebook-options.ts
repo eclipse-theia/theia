@@ -16,10 +16,10 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common';
 import { Emitter } from '@theia/core';
-import { NotebookPreferences, notebookPreferenceSchema } from '../contributions/notebook-preferences';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { NotebookPreferences, notebookPreferenceSchema } from '../../common/notebook-preferences';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
 import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/pixelRatio';
 

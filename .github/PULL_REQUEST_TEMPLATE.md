@@ -32,6 +32,7 @@ vulnerabilities.
 #### Review checklist
 
 - [ ] As an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#requesting-a-review)
+- [ ] User-facing text is internationalized using the `nls` service (for details, please see the [Internationalization/Localization section](https://github.com/theia-ide/theia/blob/master/doc/coding-guidelines.md#internationalizationlocalization) in the Coding Guidelines)
 
 #### Reminder for reviewers
 

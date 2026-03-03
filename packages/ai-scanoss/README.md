@@ -19,6 +19,7 @@ Via the preferences the user can switch between manual and automatic scanning.
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-scanoss`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-scanoss.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 - [SCAN OSS Website](https://www.scanoss.com/)

@@ -15,17 +15,16 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MaybePromise, ProgressService, URI, generateUuid, Event, EOL } from '@theia/core';
+import { MaybePromise, ProgressService, URI, generateUuid, Event, nls } from '@theia/core';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
-import { PreferenceService } from '@theia/core/lib/browser';
+
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
 import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
-import { ChangeSetFileElementFactory } from './change-set-file-element';
-import * as yaml from 'js-yaml';
 
 export interface SummaryMetadata {
+    id?: string;
     label: string;
     uri?: URI;
     sessionId?: string;
@@ -41,7 +40,7 @@ export interface TaskContextStorageService {
     onDidChange: Event<void>;
     store(summary: Summary): MaybePromise<void>;
     getAll(): Summary[];
-    get(identifier: string): Summary | undefined;
+    get(identifier: string): MaybePromise<Summary | undefined>;
     delete(identifier: string): MaybePromise<boolean>;
     open(identifier: string): Promise<void>;
 }
@@ -56,9 +55,6 @@ export class TaskContextService {
     @inject(PromptService) protected readonly promptService: PromptService;
     @inject(TaskContextStorageService) protected readonly storageService: TaskContextStorageService;
     @inject(ProgressService) protected readonly progressService: ProgressService;
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(ChangeSetFileElementFactory)
-    protected readonly fileChangeFactory: ChangeSetFileElementFactory;
 
     get onDidChange(): Event<void> {
         return this.storageService.onDidChange;
@@ -69,7 +65,7 @@ export class TaskContextService {
     }
 
     async getSummary(sessionIdOrFilePath: string): Promise<string> {
-        const existing = this.storageService.get(sessionIdOrFilePath);
+        const existing = await this.storageService.get(sessionIdOrFilePath);
         if (existing) { return existing.summary; }
         const pending = this.pendingSummaries.get(sessionIdOrFilePath);
         if (pending) {
@@ -90,7 +86,10 @@ export class TaskContextService {
         if (existing && !override) { return existing.id; }
         const summaryId = generateUuid();
         const summaryDeferred = new Deferred<Summary>();
-        const progress = await this.progressService.showProgress({ text: `Summarize: ${session.title || session.id}`, options: { location: 'ai-chat' } });
+        const progress = await this.progressService.showProgress({
+            text: nls.localize('theia/ai/chat/taskContextService/summarizeProgressMessage', 'Summarize: {0}', session.title || session.id),
+            options: { location: 'ai-chat' }
+        });
         this.pendingSummaries.set(session.id, summaryDeferred.promise);
         try {
             const prompt = await this.getSystemPrompt(session, promptId);
@@ -115,93 +114,6 @@ export class TaskContextService {
         } finally {
             progress.cancel();
             this.pendingSummaries.delete(session.id);
-        }
-    }
-
-    async update(session: ChatSession, promptId?: string, agent?: ChatAgent, override = true): Promise<string> {
-        // Get the existing summary for the session
-        const existingSummary = this.getSummaryForSession(session);
-        if (!existingSummary) {
-            // If no summary exists, create one instead
-            // TODO: Maybe we could also look into the task context folder and ask for the existing ones with an additional menu to create a new one?
-            return this.summarize(session, promptId, agent, override);
-        }
-
-        const progress = await this.progressService.showProgress({ text: `Updating: ${session.title || session.id}`, options: { location: 'ai-chat' } });
-        try {
-            const prompt = await this.getSystemPrompt(session, promptId);
-            if (!prompt) {
-                return '';
-            }
-
-            // Get the task context file path
-            const taskContextStorageDirectory = this.preferenceService.get(
-                // preference key is defined in TASK_CONTEXT_STORAGE_DIRECTORY_PREF in @theia/ai-ide
-                'ai-features.promptTemplates.taskContextStorageDirectory',
-                '.prompts/task-contexts'
-            );
-            const taskContextFileVariable = session.model.context.getVariables().find(variableReq => variableReq.variable.id === 'file-provider' &&
-                typeof variableReq.arg === 'string' &&
-                (variableReq.arg.startsWith(taskContextStorageDirectory)));
-
-            // Check if we have a document path to update
-            if (taskContextFileVariable && typeof taskContextFileVariable.arg === 'string') {
-                // Set document path in prompt template
-                const documentPath = taskContextFileVariable.arg;
-
-                // Modify prompt to include the document path and content
-                prompt.text = prompt.text + '\nThe document to update is: ' + documentPath + '\n\n## Current Document Content\n\n' + existingSummary.summary;
-
-                // Get updated document content from LLM
-                const updatedDocumentContent = await this.getLlmSummary(session, prompt, agent);
-
-                if (existingSummary.uri) {
-                    // updated document metadata shall be updated.
-                    // otherwise, frontmatter won't be set
-                    const frontmatter = {
-                        sessionId: existingSummary.sessionId,
-                        date: new Date().toISOString(),
-                        label: existingSummary.label,
-                    };
-                    const content = yaml.dump(frontmatter).trim() + `${EOL}---${EOL}` + updatedDocumentContent;
-
-                    session.model.changeSet.addElements(this.fileChangeFactory({
-                        uri: existingSummary.uri,
-                        type: 'modify',
-                        state: 'pending',
-                        targetState: content,
-                        requestId: session.model.id, // not a request id, as no changeRequest made yet.
-                        chatSessionId: session.id
-                    }));
-                } else {
-                    const updatedSummary: Summary = {
-                        ...existingSummary,
-                        summary: updatedDocumentContent
-                    };
-
-                    // Store the updated summary
-                    await this.storageService.store(updatedSummary);
-                }
-                return existingSummary.id;
-            } else {
-                // Fall back to standard update if no document path is found
-                const updatedSummaryText = await this.getLlmSummary(session, prompt, agent);
-                const updatedSummary: Summary = {
-                    ...existingSummary,
-                    summary: updatedSummaryText
-                };
-                await this.storageService.store(updatedSummary);
-                return updatedSummary.id;
-            }
-        } catch (err) {
-            const errorSummary: Summary = {
-                ...existingSummary,
-                summary: `Summary update failed: ${err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error'}`
-            };
-            await this.storageService.store(errorSummary);
-            throw err;
-        } finally {
-            progress.cancel();
         }
     }
 
@@ -241,7 +153,8 @@ export class TaskContextService {
     }
 
     getLabel(id: string): string | undefined {
-        return this.storageService.get(id)?.label;
+        // Labels are metadata that don't need fresh file reads
+        return this.storageService.getAll().find(s => s.id === id)?.label;
     }
 
     open(id: string): Promise<void> {

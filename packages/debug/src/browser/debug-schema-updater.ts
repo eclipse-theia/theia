@@ -20,10 +20,11 @@ import { deepClone, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { DebugService } from '../common/debug-service';
-import { debugPreferencesSchema } from './debug-preferences';
+import { debugPreferencesSchema } from '../common/debug-preferences';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { defaultCompound } from '../common/debug-compound';
+import { launchSchemaId } from '../common/launch-preferences';
 
 @injectable()
 export class DebugSchemaUpdater implements JsonSchemaContribution {
@@ -68,7 +69,6 @@ export class DebugSchemaUpdater implements JsonSchemaContribution {
     }
 }
 
-export const launchSchemaId = 'vscode://schemas/launch';
 const launchSchema: IJSONSchema = {
     $id: launchSchemaId,
     type: 'object',

@@ -54,8 +54,9 @@ export interface TerminalBuffer {
     /**
      * @param start zero based index of the first line to return
      * @param length the max number or lines to return
+     * @param trimRight if true, removes trailing whitespaces used for terminal grid alignment
      */
-    getLines(start: number, length: number): string[];
+    getLines(start: number, length: number, trimRight?: boolean): string[];
 }
 
 /**
@@ -268,4 +269,18 @@ export interface TerminalWidgetOptions {
      * When enabled, the terminal will not be persisted across window reloads.
      */
     readonly isTransient?: boolean;
+
+    /**
+     * The nonce to use to verify shell integration sequences are coming from a trusted source.
+     * An example impact of UX of this is if the command line is reported with a nonce, it will
+     * not need to verify with the user that the command line is correct before rerunning it
+     * via the [shell integration command decoration](https://code.visualstudio.com/docs/terminal/shell-integration#_command-decorations-and-the-overview-ruler).
+     *
+     * This should be used if the terminal includes [custom shell integration support](https://code.visualstudio.com/docs/terminal/shell-integration#_supported-escape-sequences).
+     * It should be set to a random GUID which will then set the `VSCODE_NONCE` environment
+     * variable. Inside the shell, this should then be removed from the environment so as to
+     * protect it from general access. Once that is done it can be passed through in the
+     * relevant sequences to make them trusted.
+     */
+    readonly shellIntegrationNonce?: string;
 }

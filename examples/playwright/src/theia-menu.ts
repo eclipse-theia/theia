@@ -46,6 +46,9 @@ export class TheiaMenu extends TheiaPageObject {
     }
 
     async menuItems(): Promise<TheiaMenuItem[]> {
+        if (!await this.isOpen()) {
+            throw new Error('Menu must be open before accessing menu items');
+        }
         const menuHandle = await this.menuElementHandle();
         if (!menuHandle) {
             return [];
@@ -55,10 +58,16 @@ export class TheiaMenu extends TheiaPageObject {
     }
 
     async clickMenuItem(name: string): Promise<void> {
+        if (!await this.isOpen()) {
+            throw new Error('Menu must be open before clicking menu items');
+        }
         return (await this.page.waitForSelector(this.menuItemSelector(name))).click();
     }
 
     async menuItemByName(name: string): Promise<TheiaMenuItem | undefined> {
+        if (!await this.isOpen()) {
+            throw new Error('Menu must be open before accessing menu items by name');
+        }
         const menuItems = await this.menuItems();
         for (const item of menuItems) {
             const label = await item.label();
@@ -70,10 +79,18 @@ export class TheiaMenu extends TheiaPageObject {
     }
 
     async menuItemByNamePath(...names: string[]): Promise<TheiaMenuItem | undefined> {
+        if (!await this.isOpen()) {
+            throw new Error('Menu must be open before accessing menu items by path');
+        }
+
         let item;
         for (let index = 0; index < names.length; index++) {
             item = await this.page.waitForSelector(this.menuItemSelector(names[index]), { state: 'visible' });
-            await item.hover();
+            // For all items except the last one, hover to open submenu
+            if (index < names.length - 1) {
+                await item.scrollIntoViewIfNeeded();
+                await item.hover();
+            }
         }
 
         const menuItemHandle = await item?.$('xpath=..');
@@ -88,6 +105,9 @@ export class TheiaMenu extends TheiaPageObject {
     }
 
     async visibleMenuItems(): Promise<string[]> {
+        if (!await this.isOpen()) {
+            return [];
+        }
         const menuItems = await this.menuItems();
         const labels = await Promise.all(menuItems.map(item => item.label()));
         return labels.filter(isDefined);

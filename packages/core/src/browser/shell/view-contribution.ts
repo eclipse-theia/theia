@@ -22,7 +22,7 @@ import {
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
 import { WidgetManager } from '../widget-manager';
-import { CommonMenus } from '../common-frontend-contribution';
+import { CommonMenus } from '../common-menus';
 import { ApplicationShell } from './application-shell';
 import { QuickViewService } from '../quick-input';
 

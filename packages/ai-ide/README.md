@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - AI IDE Agents EXTENSION</h2>
+<h2>ECLIPSE THEIA - AI IDE AGENTS EXTENSION</h2>
 
 <hr />
 
@@ -34,6 +34,7 @@ The package provides a configuration view that enables you to adjust settings re
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-ide`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-ide.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

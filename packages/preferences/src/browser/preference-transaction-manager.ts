@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationError, Emitter, Event, MaybePromise, MessageService, nls, WaitUntilEvent } from '@theia/core';
+import { CancellationError, Listener, ListenerList, MaybePromise, MessageService, nls } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
@@ -25,10 +25,6 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { MonacoJSONCEditor } from './monaco-jsonc-editor';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-
-export interface OnWillConcludeEvent<T> extends WaitUntilEvent {
-    status: T | false;
-}
 
 @injectable()
 /**
@@ -54,14 +50,12 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
      * The transaction will self-dispose when the queue is empty, once at least one action has been processed.
      */
     protected readonly queue = new Mutex(new CancellationError());
-    protected readonly onWillConcludeEmitter = new Emitter<OnWillConcludeEvent<Status>>();
+    protected readonly onWillConcludeListeners = new ListenerList<(Status | false), Promise<void>>();
     /**
      * An event fired when the transaction is wrapping up.
      * Consumers can call `waitUntil` on the event to delay the resolution of the `result` Promise.
      */
-    get onWillConclude(): Event<OnWillConcludeEvent<Status>> {
-        return this.onWillConcludeEmitter.event;
-    }
+    onWillConclude = this.onWillConcludeListeners.registration;
 
     protected status = new Deferred<Status>();
     /**
@@ -141,9 +135,8 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
                 this._open = false;
                 this.queue.cancel();
                 const result = await this.tearDown();
-                const status = this.status.state === 'unresolved' || this.status.state === 'rejected' ? false : await this.status.promise;
-                await WaitUntilEvent.fire(this.onWillConcludeEmitter, { status });
-                this.onWillConcludeEmitter.dispose();
+                const status: Status | boolean = (this.status.state === 'unresolved' || this.status.state === 'rejected') ? false : await this.status.promise;
+                await Listener.awaitAll(status, this.onWillConcludeListeners);
                 this._result.resolve(result);
             } catch {
                 this._result.resolve(false);
@@ -179,12 +172,13 @@ export interface PreferenceContext {
     getConfigUri(): URI;
     getScope(): PreferenceScope;
 }
+
 export const PreferenceContext = Symbol('PreferenceContext');
 export const PreferenceTransactionPreludeProvider = Symbol('PreferenceTransactionPreludeProvider');
 export type PreferenceTransactionPreludeProvider = () => Promise<unknown>;
 
 @injectable()
-export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean> {
+export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean, boolean> {
     reference: IReference<MonacoEditorModel> | undefined;
     @inject(PreferenceContext) protected readonly context: PreferenceContext;
     @inject(PreferenceTransactionPreludeProvider) protected readonly prelude?: PreferenceTransactionPreludeProvider;
@@ -285,3 +279,4 @@ export const preferenceTransactionFactoryCreator: interfaces.FactoryCreator<Pref
         child.bind(PreferenceTransactionPreludeProvider).toConstantValue(() => waitFor);
         return child.get(PreferenceTransaction);
     };
+

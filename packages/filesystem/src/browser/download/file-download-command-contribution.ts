@@ -21,7 +21,7 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { FileDownloadService } from './file-download-service';
+import { FileDownloadService } from '../../common/download/file-download';
 import { CommonCommands } from '@theia/core/lib/browser';
 
 @injectable()

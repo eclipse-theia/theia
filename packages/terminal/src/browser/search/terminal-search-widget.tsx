@@ -21,6 +21,7 @@ import '../../../src/browser/style/terminal-search.css';
 import { Terminal } from 'xterm';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { codicon, Key } from '@theia/core/lib/browser';
+import { nls } from '@theia/core';
 
 export const TERMINAL_SEARCH_WIDGET_FACTORY_ID = 'terminal-search';
 export const TerminalSearchWidgetFactory = Symbol('TerminalSearchWidgetFactory');
@@ -52,22 +53,37 @@ export class TerminalSearchWidget extends ReactWidget {
         return <div className='theia-search-terminal-widget'>
             <div className='theia-search-elem-box' ref={searchBox => this.searchBox = searchBox} >
                 <input
-                    title='Find'
+                    title={nls.localizeByDefault('Find')}
                     type='text'
                     spellCheck='false'
-                    placeholder='Find'
+                    placeholder={nls.localizeByDefault('Find')}
                     ref={ip => this.searchInput = ip}
                     onKeyUp={this.onInputChanged}
                     onFocus={this.onSearchInputFocus}
                     onBlur={this.onSearchInputBlur}
                 />
-                <div title='Match case' tabIndex={0} className={'search-elem ' + codicon('case-sensitive')} onClick={this.handleCaseSensitiveOptionClicked}></div>
-                <div title='Match whole word' tabIndex={0} className={'search-elem ' + codicon('whole-word')} onClick={this.handleWholeWordOptionClicked}></div>
-                <div title='Use regular expression' tabIndex={0} className={'search-elem ' + codicon('regex')} onClick={this.handleRegexOptionClicked}></div>
+                <div
+                    title={nls.localizeByDefault('Match Case')}
+                    tabIndex={0}
+                    className={'search-elem ' + codicon('case-sensitive')}
+                    onClick={this.handleCaseSensitiveOptionClicked}
+                />
+                <div
+                    title={nls.localizeByDefault('Match Whole Word')}
+                    tabIndex={0}
+                    className={'search-elem ' + codicon('whole-word')}
+                    onClick={this.handleWholeWordOptionClicked}
+                />
+                <div
+                    title={nls.localizeByDefault('Use Regular Expression')}
+                    tabIndex={0}
+                    className={'search-elem ' + codicon('regex')}
+                    onClick={this.handleRegexOptionClicked}
+                />
             </div>
-            <button title='Previous match' className={'search-elem ' + codicon('arrow-up')} onClick={this.handlePreviousButtonClicked}></button>
-            <button title='Next match' className={'search-elem ' + codicon('arrow-down')} onClick={this.handleNextButtonClicked}></button>
-            <button title='Close' className={'search-elem ' + codicon('close')} onClick={this.handleHide}></button>
+            <button title={nls.localizeByDefault('Previous Match')} className={'search-elem ' + codicon('arrow-up')} onClick={this.handlePreviousButtonClicked}></button>
+            <button title={nls.localizeByDefault('Next Match')} className={'search-elem ' + codicon('arrow-down')} onClick={this.handleNextButtonClicked}></button>
+            <button title={nls.localizeByDefault('Close')} className={'search-elem ' + codicon('close')} onClick={this.handleHide}></button>
         </div>;
     }
 

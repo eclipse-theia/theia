@@ -27,6 +27,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { codeCompletionPrompts } from './code-completion-prompt-template';
 import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 import { CodeCompletionVariableContext } from './code-completion-variable-context';
+import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -77,6 +78,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 this.logger.error('No prompt found for code-completion-agent');
                 return undefined;
             }
+
+            const variantInfo = this.promptService.getPromptVariantInfo('code-completion-system');
+
             // since we do not actually hold complete conversions, the request/response pair is considered a session
             const sessionId = generateUuid();
             const requestId = generateUuid();
@@ -88,7 +92,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 agentId: this.id,
                 sessionId,
                 requestId,
-                cancellationToken: token
+                cancellationToken: token,
+                promptVariantId: variantInfo?.variantId,
+                isPromptVariantCustomized: variantInfo?.isCustomized
             };
             if (token.isCancellationRequested) {
                 return undefined;
@@ -150,5 +156,10 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     ];
     readonly variables: string[] = [];
     readonly functions: string[] = [];
-    readonly agentSpecificVariables: AgentSpecificVariables[] = [];
+    readonly agentSpecificVariables: AgentSpecificVariables[] = [
+        { name: FILE.id, description: nls.localize('theia/ai/completion/agent/vars/file/description', 'The URI of the file being edited'), usedInPrompt: true },
+        { name: PREFIX.id, description: nls.localize('theia/ai/completion/agent/vars/prefix/description', 'The code before the current cursor position'), usedInPrompt: true },
+        { name: SUFFIX.id, description: nls.localize('theia/ai/completion/agent/vars/suffix/description', 'The code after the current cursor position'), usedInPrompt: true },
+        { name: LANGUAGE.id, description: nls.localize('theia/ai/completion/agent/vars/language/description', 'The languageId of the file being edited'), usedInPrompt: true }
+    ];
 }

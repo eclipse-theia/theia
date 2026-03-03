@@ -30,7 +30,7 @@ import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler';
 import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler';
 import { GithubPluginDeployerResolver } from './plugin-github-resolver';
 import { HttpPluginDeployerResolver } from './plugin-http-resolver';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '@theia/core';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core';
 import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
 import { PluginPathsServiceImpl } from './paths/plugin-paths-service';
 import { PluginServerImpl } from './plugin-server-impl';
@@ -46,13 +46,14 @@ import { PluginRemoteCliContribution } from './plugin-remote-cli-contribution';
 import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { PluginRemoteCopyContribution } from './plugin-remote-copy-contribution';
 import { RemoteCopyContribution } from '@theia/core/lib/node/remote/remote-copy-contribution';
+import { bindWebviewPreferences } from '../common/webview-preferences';
 
 export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginApiContribution);
     bind(WsRequestValidatorContribution).toService(PluginApiContribution);
 
-    bindContributionProvider(bind, PluginDeployerParticipant);
+    bindRootContributionProvider(bind, PluginDeployerParticipant);
     bind(PluginDeployer).to(PluginDeployerImpl).inSingletonScope();
     bind(PluginDeployerContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginDeployerContribution);
@@ -102,5 +103,6 @@ export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(BackendApplicationContribution).toService(WebviewBackendSecurityWarnings);
 
     rebind(LocalizationServerImpl).to(PluginLocalizationServer).inSingletonScope();
+    bindWebviewPreferences(bind);
 
 }

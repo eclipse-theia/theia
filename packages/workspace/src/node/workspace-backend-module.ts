@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '@theia/core/lib/common';
-import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService } from '../common';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core/lib/common';
+import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService, bindWorkspacePreferences } from '../common';
 import { DefaultWorkspaceServer, FileWorkspaceHandlerContribution, WorkspaceCliContribution, WorkspaceHandlerContribution } from './default-workspace-server';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences';
 
 export default new ContainerModule(bind => {
     bind(WorkspaceCliContribution).toSelf().inSingletonScope();
@@ -30,7 +31,7 @@ export default new ContainerModule(bind => {
     bind(UntitledWorkspaceService).toSelf().inSingletonScope();
     bind(WorkspaceFileService).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, WorkspaceHandlerContribution);
+    bindRootContributionProvider(bind, WorkspaceHandlerContribution);
 
     bind(FileWorkspaceHandlerContribution).toSelf().inSingletonScope();
     bind(WorkspaceHandlerContribution).toService(FileWorkspaceHandlerContribution);
@@ -40,4 +41,6 @@ export default new ContainerModule(bind => {
             ctx.container.get(WorkspaceServer)
         )
     ).inSingletonScope();
+    bindWorkspacePreferences(bind);
+    bindWorkspaceTrustPreferences(bind);
 });

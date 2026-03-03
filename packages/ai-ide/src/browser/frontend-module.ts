@@ -17,16 +17,22 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
+import { ChatAgent, ChatAgentRecommendationService } from '@theia/ai-chat/lib/common';
 import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
-import { FileContentFunction, FileDiagnosticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
+import {
+    FileContentFunction,
+    FileDiagnosticProvider,
+    FindFilesByPattern,
+    GetWorkspaceDirectoryStructure,
+    GetWorkspaceFileList,
+    WorkspaceFunctionScope
+} from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import {
     FrontendApplicationContribution,
-    PreferenceContribution,
     WidgetFactory,
     bindViewContribution,
     RemoteConnectionProvider,
@@ -38,23 +44,27 @@ import {
     LaunchRunnerProvider,
     LaunchStopProvider,
 } from './workspace-launch-provider';
-import { WorkspacePreferencesSchema } from './workspace-preferences';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 import {
     ClearFileChanges,
     GetProposedFileState,
     ReplaceContentInFileFunctionHelper,
     SuggestFileReplacements,
+    SuggestFileReplacements_Simple,
     SimpleSuggestFileReplacements,
     SuggestFileContent,
     WriteFileContent,
     WriteFileReplacements,
+    WriteFileReplacements_Simple,
     SimpleWriteFileReplacements,
     FileChangeSetTitleProvider,
-    DefaultFileChangeSetTitleProvider
+    DefaultFileChangeSetTitleProvider,
+    ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
-import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
-import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
+import { OrchestratorChatAgent } from '../common/orchestrator-chat-agent';
+import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { AppTesterChatAgent } from './app-tester-chat-agent';
+import { GitHubChatAgent } from './github-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
@@ -65,23 +75,47 @@ import { AIVariableConfigurationWidget } from './ai-configuration/variable-confi
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
+import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
+import { ChatSessionCardActionContribution, DefaultChatSessionCardActionContribution } from './chat-session-card-action-contribution';
+import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
+import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
+import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { CommandContribution } from '@theia/core';
+import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
+import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { GetSkillFileContent } from './skill-file-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
-import { aiIdePreferenceSchema } from './ai-ide-preferences';
+import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
+
+import { ProjectInfoAgent } from './project-info-agent';
+import { CreateSkillAgent } from './create-skill-agent';
+import { SuggestTerminalCommand } from './ai-terminal-functions';
+import { TodoWriteTool } from './todo-tool';
+import { TodoToolRenderer } from './todo-tool-renderer';
+import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
+import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
+import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
+import { RememberCommandContribution } from './remember-command-contribution';
+import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunction, ListTaskContextsFunction, RewriteTaskContextFunction } from './task-context-functions';
+import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
+import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
+import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
+import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
+import { GitHubCapabilityContribution } from './github-capability-contribution';
+import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -99,6 +133,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CoderAgent);
     bind(ChatAgent).toService(CoderAgent);
 
+    bind(ProjectInfoAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(ProjectInfoAgent);
+    bind(ChatAgent).toService(ProjectInfoAgent);
+
+    bind(CreateSkillAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CreateSkillAgent);
+    bind(ChatAgent).toService(CreateSkillAgent);
+
     bind(OrchestratorChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(OrchestratorChatAgent);
     bind(ChatAgent).toService(OrchestratorChatAgent);
@@ -110,6 +152,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AppTesterChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(AppTesterChatAgent);
     bind(ChatAgent).toService(AppTesterChatAgent);
+
+    bind(GitHubChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(GitHubChatAgent);
+    bind(ChatAgent).toService(GitHubChatAgent);
     bind(BrowserAutomation).toDynamicValue(ctx => {
         const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         return provider.createProxy<BrowserAutomation>(browserAutomationPath);
@@ -119,15 +165,19 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CommandChatAgent);
     bind(ChatAgent).toService(CommandChatAgent);
 
-    bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
-    bind(FallbackChatAgentId).toConstantValue({ id: UniversalChatAgentId });
-
-    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider);
+    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
+    bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
+    bindContributionProvider(bind, ChatSessionCardActionContribution);
+    bind(DefaultChatSessionCardActionContribution).toSelf().inSingletonScope();
+    bind(ChatSessionCardActionContribution).toService(DefaultChatSessionCardActionContribution);
+    bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();
 
     bindToolProvider(GetWorkspaceFileList, bind);
     bindToolProvider(FileContentFunction, bind);
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagnosticProvider, bind);
+    bindToolProvider(FindFilesByPattern, bind);
+    bindToolProvider(GetSkillFileContent, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
@@ -140,8 +190,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(LaunchStopProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
+    bind(ReplaceContentInFileFunctionHelperV2).toSelf().inSingletonScope();
     bindToolProvider(SuggestFileReplacements, bind);
+    bindToolProvider(SuggestFileReplacements_Simple, bind);
     bindToolProvider(WriteFileReplacements, bind);
+    bindToolProvider(WriteFileReplacements_Simple, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
@@ -199,6 +252,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         }))
         .inSingletonScope();
 
+    bind(AISkillsConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AISkillsConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AISkillsConfigurationWidget)
+        }))
+        .inSingletonScope();
+
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
@@ -222,6 +283,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(TaskContextSummaryVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TaskContextSummaryVariableContribution);
+
+    bind(GitHubRepoService).toDynamicValue(ctx => {
+        const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        return provider.createProxy<GitHubRepoService>(githubRepoServicePath);
+    }).inSingletonScope();
+
+    bind(GitHubRepoVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(GitHubRepoVariableContribution);
     bind(TaskContextFileStorageService).toSelf().inSingletonScope();
     rebind(TaskContextStorageService).toService(TaskContextFileStorageService);
 
@@ -233,4 +302,26 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
             createWidget: () => ctx.container.get(AIPromptFragmentsConfigurationWidget)
         }))
         .inSingletonScope();
+
+    bindToolProvider(SuggestTerminalCommand, bind);
+
+    // Task context functions for Architect planning mode
+    bindToolProvider(CreateTaskContextFunction, bind);
+    bindToolProvider(GetTaskContextFunction, bind);
+    bindToolProvider(EditTaskContextFunction, bind);
+    bindToolProvider(ListTaskContextsFunction, bind);
+    bindToolProvider(RewriteTaskContextFunction, bind);
+    bindToolProvider(TodoWriteTool, bind);
+    bind(ChatResponsePartRenderer).to(TodoToolRenderer).inSingletonScope();
+
+    bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
+    bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
+
+    bind(FrontendApplicationContribution).to(RememberCommandContribution);
+    bind(FrontendApplicationContribution).to(FixGitHubTicketCommandContribution);
+    bind(FrontendApplicationContribution).to(AddressGhReviewCommandContribution);
+    bind(FrontendApplicationContribution).to(AnalyzesGhTicketCommandContribution);
+    bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
+    bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
+    bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
 });

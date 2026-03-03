@@ -30,6 +30,7 @@ export interface CredentialsProvider {
     deletePassword(service: string, account: string): Promise<boolean>;
     findPassword(service: string): Promise<string | undefined>;
     findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
+    keys(service: string): Promise<string[]>;
 }
 
 export const CredentialsService = Symbol('CredentialsService');
@@ -78,6 +79,10 @@ export class CredentialsServiceImpl implements CredentialsService {
     findCredentials(service: string): Promise<Array<{ account: string, password: string; }>> {
         return this.credentialsProvider.findCredentials(service);
     }
+
+    async keys(service: string): Promise<string[]> {
+        return this.credentialsProvider.keys(service);
+    }
 }
 
 class KeytarCredentialsProvider implements CredentialsProvider {
@@ -102,5 +107,9 @@ class KeytarCredentialsProvider implements CredentialsProvider {
 
     setPassword(service: string, account: string, password: string): Promise<void> {
         return this.keytarService.setPassword(service, account, password);
+    }
+
+    keys(service: string): Promise<string[]> {
+        return this.keytarService.keys(service);
     }
 }

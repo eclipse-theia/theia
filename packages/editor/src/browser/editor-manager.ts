@@ -18,12 +18,13 @@ import { injectable, postConstruct, inject, named } from '@theia/core/shared/inv
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
 import {
-    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority, DiffUris
+    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, CommonCommands, getDefaultHandler, defaultHandlerPriority, DiffUris
 } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { NavigationLocationService } from './navigation/navigation-location-service';
+import { PreferenceService } from '@theia/core/lib/common/preferences';
 
 export interface WidgetId {
     id: number;
@@ -32,6 +33,7 @@ export interface WidgetId {
 
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
+    revealOption?: 'auto' | 'center' | 'centerIfOutsideViewport'; // defaults to 'center'
     preview?: boolean;
     counter?: number;
 }
@@ -299,11 +301,11 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             const editor = widget.editor;
             if (Position.is(selection)) {
                 editor.cursor = selection;
-                editor.revealPosition(selection);
+                editor.revealPosition(selection, { vertical: options?.revealOption ?? 'center' });
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
                 editor.selection = { ...selection, direction: 'ltr' };
-                editor.revealRange(selection);
+                editor.revealRange(selection, { at: options?.revealOption ?? 'center' });
             }
         }
     }

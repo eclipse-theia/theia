@@ -16,7 +16,7 @@
 import { injectable, inject, optional } from 'inversify';
 import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry, nls } from '../../common';
 import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
-import { CommonMenus } from '../common-frontend-contribution';
+import { CommonMenus } from '../common-menus';
 import { CLOSE_QUICK_OPEN, CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
 import { QuickInputService } from './quick-input-service';
 import { ConfirmDialog, Dialog } from '../dialogs';

@@ -189,7 +189,7 @@ export interface TaskRunnerContribution {
 
 ## Additional Information
 
-- [API documentation for `@theia/task`](https://eclipse-theia.github.io/theia/docs/next/modules/task.html)
+- [API documentation for `@theia/task`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_task.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

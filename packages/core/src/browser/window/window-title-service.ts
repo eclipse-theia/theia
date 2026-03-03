@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { escapeRegExpCharacters } from '../../common/strings';
 import { Emitter, Event } from '../../common/event';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { ContributionProvider } from '../../common';
 
@@ -66,10 +66,10 @@ export class WindowTitleService {
         this.updateTitle();
         this.preferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'window.title') {
-                this.titleTemplate = e.newValue;
+                this.titleTemplate = this.preferences['window.title'];
                 this.updateTitle();
             } else if (e.preferenceName === 'window.titleSeparator') {
-                this.separator = e.newValue;
+                this.separator = this.preferences['window.titleSeparator'];
                 this.updateTitle();
             }
         });

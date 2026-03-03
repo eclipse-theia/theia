@@ -16,10 +16,12 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/openai-language-models-manager';
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { OpenAiModelUtils } from './openai-language-model';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OpenAiPreferencesSchema } from '../common/openai-preferences';
 
 export const OpenAiModelFactory = Symbol('OpenAiModelFactory');
 
@@ -33,6 +35,8 @@ const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: OpenAiPreferencesSchema });
     bind(OpenAiModelUtils).toSelf().inSingletonScope();
+    bind(OpenAiResponseApiUtils).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(openAiConnectionModule);
 });

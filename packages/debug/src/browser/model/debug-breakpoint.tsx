@@ -18,11 +18,13 @@ import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { LabelProvider, DISABLED_CLASS } from '@theia/core/lib/browser';
+import { LabelProvider, DISABLED_CLASS, TreeWidget } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
+import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
 import { DebugSession } from '../debug-session';
 import { BaseBreakpoint } from '../breakpoint/breakpoint-marker';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
+import { nls } from '@theia/core';
 
 export class DebugBreakpointData {
     readonly raw?: DebugProtocol.Breakpoint;
@@ -43,6 +45,7 @@ export class DebugBreakpointDecoration {
 export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint> extends DebugBreakpointOptions implements TreeElement {
 
     readonly raw?: DebugProtocol.Breakpoint;
+    protected treeWidget?: TreeWidget;
 
     constructor(
         readonly uri: URI,
@@ -75,7 +78,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
     }
 
     get verified(): boolean {
-        return !!this.raw ? this.raw.verified : true;
+        return !!this.raw ? this.raw.verified : false;
     }
 
     get message(): string {
@@ -90,7 +93,8 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         this.setEnabled(event.target.checked);
     };
 
-    render(): React.ReactNode {
+    render(host: TreeWidget): React.ReactNode {
+        this.treeWidget = host;
         const classNames = ['theia-source-breakpoint'];
         if (!this.isEnabled()) {
             classNames.push(DISABLED_CLASS);
@@ -123,7 +127,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         const decoration = this.getBreakpointDecoration();
         return {
             className: decoration.className + '-unverified',
-            message: [this.message || 'Unverified ' + decoration.message[0]]
+            message: [this.message || nls.localize('theia/debug/unverifiedBreakpoint', 'Unverified {0}', decoration.message[0])]
         };
     }
 
@@ -131,7 +135,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         const decoration = this.getBreakpointDecoration();
         return {
             className: decoration.className + '-disabled',
-            message: [message || ('Disabled ' + decoration.message[0])]
+            message: [message || nls.localize('theia/debug/disabledBreakpoint', 'Disabled {0}', decoration.message[0])]
         };
     }
 
@@ -147,5 +151,11 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
     }
 
     protected abstract getBreakpointDecoration(message?: string[]): DebugBreakpointDecoration;
+
+    protected async selectInTree(): Promise<void> {
+        if (this.treeWidget?.model && SelectableTreeNode.is(this)) {
+            this.treeWidget.model.selectNode(this);
+        }
+    }
 
 }

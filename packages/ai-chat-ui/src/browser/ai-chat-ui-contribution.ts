@@ -14,15 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CommandRegistry, Emitter, isOSX, MessageService, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
-import { Widget } from '@theia/core/lib/browser';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { ConfirmDialog, Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
-import { ChatAgent, ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
+import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
@@ -30,13 +32,13 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
-import { formatDistance } from 'date-fns';
-import * as locales from 'date-fns/locale';
+import { formatTimeAgo } from './chat-date-utils';
 import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
 import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
+import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -57,6 +59,16 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly editorManager: EditorManager;
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
+    @inject(ILogger) @named('AIChatContribution')
+    protected readonly logger: ILogger;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    /**
+     * Store whether there are persisted sessions to make this information available in
+     * command enablement checks which are synchronous.
+     */
+    protected hasPersistedSessions = false;
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
@@ -66,6 +78,9 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         iconClass: 'codicon-remove-close',
         tooltip: nls.localize('theia/ai/chat-ui/removeChat', 'Remove Chat'),
     };
+
+    @inject(AIChatNavigationService)
+    protected readonly navigationService: AIChatNavigationService;
 
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
@@ -92,8 +107,25 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             if (event.focus) {
                 this.openView({ activate: true });
             }
+        });
+
+        // Re-check persisted sessions when storage preferences change
+        this.preferenceService.onPreferenceChanged(event => {
+            if (event.preferenceName === SESSION_STORAGE_PREF) {
+                this.checkPersistedSessions();
+            }
+        });
+
+        this.checkPersistedSessions();
+    }
+
+    protected async checkPersistedSessions(): Promise<void> {
+        try {
+            this.hasPersistedSessions = await this.chatService.hasPersistedSessions();
+        } catch (e) {
+            this.logger.error('Failed to check persisted AI sessions', e);
+            this.hasPersistedSessions = false;
         }
-        );
     }
 
     override registerCommands(registry: CommandRegistry): void {
@@ -116,8 +148,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
             execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
-            isVisible: widget => this.activationService.isActive && this.withWidget(widget, () => true),
-            isEnabled: widget => this.activationService.isActive && this.withWidget(widget, () => true),
+            isVisible: widget => this.activationService.isActive,
+            isEnabled: widget => this.activationService.isActive,
         });
         registry.registerCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT, {
             execute: async () => {
@@ -178,9 +210,39 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             isEnabled: () => this.activationService.isActive
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
-            execute: () => this.selectChat(),
-            isEnabled: widget => this.activationService.isActive && this.withWidget(widget) && this.chatService.getSessions().some(session => !!session.title),
-            isVisible: widget => this.activationService.isActive && this.withWidget(widget)
+            execute: async () => {
+                await this.openView();
+                return this.selectChat();
+            },
+            isEnabled: () => {
+                if (!this.activationService.isActive) {
+                    return false;
+                }
+                // Enable if there are active sessions with titles OR persisted sessions
+                return this.chatService.getSessions().some(session => !!session.title) || this.hasPersistedSessions;
+            },
+            isVisible: () => this.activationService.isActive
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_RENAME_SESSION, {
+            execute: (session: ChatSessionMetadata | string) => this.renameSession(typeof session === 'string' ? session : session.sessionId),
+            isVisible: () => this.activationService.isActive,
+            isEnabled: () => this.activationService.isActive
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_DELETE_SESSION, {
+            execute: (session: ChatSessionMetadata | string, confirm?: boolean) =>
+                this.deleteSession(typeof session === 'string' ? session : session.sessionId, typeof session === 'string' ? confirm : true),
+            isVisible: () => this.activationService.isActive,
+            isEnabled: () => this.activationService.isActive
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_BACK, {
+            execute: () => this.navigationService.back(),
+            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoBack),
+            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_FORWARD, {
+            execute: () => this.navigationService.forward(),
+            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoForward),
+            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -204,14 +266,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     // Get the session for this response node
                     const session = this.chatService.getActiveSession();
                     if (!session) {
-                        this.messageService.error('Session not found for retry');
+                        this.messageService.error(nls.localize('theia/ai/chat-ui/sessionNotFoundForRetry', 'Session not found for retry'));
                         return;
                     }
 
                     // Find the request associated with this response
                     const request = session.model.getRequests().find(req => req.response.id === node.response.id);
                     if (!request) {
-                        this.messageService.error('Request not found for retry');
+                        this.messageService.error(nls.localize('theia/ai/chat-ui/requestNotFoundForRetry', 'Request not found for retry'));
                         return;
                     }
 
@@ -219,24 +281,43 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     await this.chatService.sendRequest(node.sessionId, request.request);
                 } catch (error) {
                     console.error('Failed to retry chat message:', error);
-                    this.messageService.error('Failed to retry message');
+                    this.messageService.error(nls.localize('theia/ai/chat-ui/failedToRetry', 'Failed to retry message'));
                 }
             }
         });
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        const navigationChangedEmitter = new Emitter<void>();
+        this.navigationService.onDidChange(() => navigationChangedEmitter.fire());
+
+        registry.registerItem({
+            id: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
+            command: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
+            tooltip: nls.localize('theia/ai-chat-ui/navigate-back', 'Navigate Back'),
+            onDidChange: navigationChangedEmitter.event,
+            priority: 0,
+            when: ENABLE_AI_CONTEXT_KEY
+        });
+        registry.registerItem({
+            id: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
+            command: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
+            tooltip: nls.localize('theia/ai-chat-ui/navigate-forward', 'Navigate Forward'),
+            onDidChange: navigationChangedEmitter.event,
+            priority: 0,
+            when: ENABLE_AI_CONTEXT_KEY
+        });
         registry.registerItem({
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
-            tooltip: nls.localizeByDefault('New Chat'),
+            tooltip: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.label,
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
-            tooltip: nls.localizeByDefault('Show Chats...'),
+            tooltip: AI_CHAT_SHOW_CHATS_COMMAND.label,
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });
@@ -281,62 +362,157 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.chatService.setActiveSession(activeSessionId!, { focus: true });
     }
 
-    protected askForChatSession(): Promise<QuickPickItem | undefined> {
-        const getItems = () =>
-            this.chatService.getSessions()
+    protected async askForChatSession(): Promise<QuickPickItem | undefined> {
+        const getItems = async (): Promise<QuickPickItem[]> => {
+            const activeSessions = this.chatService.getSessions()
                 .filter(session => session.title)
-                .sort((a, b) => {
-                    if (!a.lastInteraction) { return 1; }
-                    if (!b.lastInteraction) { return -1; }
-                    return b.lastInteraction.getTime() - a.lastInteraction.getTime();
-                })
-                .map(session => <QuickPickItem>({
-                    label: session.title,
-                    description: session.lastInteraction ? formatDistance(session.lastInteraction, new Date(), { addSuffix: false, locale: getDateFnsLocale() }) : undefined,
-                    detail: session.model.getRequests().at(0)?.request.text,
+                .map(session => ({
+                    session,
+                    isActive: true,
+                    lastDate: session.lastInteraction ? session.lastInteraction.getTime() : 0
+                }));
+
+            // Try to load persisted sessions, but don't fail if it doesn't work
+            let persistedSessions: Array<{ metadata: { sessionId: string; title: string; saveDate: number }; isActive: false; lastDate: number }> = [];
+            try {
+                const persistedIndex = await this.chatService.getPersistedSessions();
+                const activeIds = new Set(activeSessions.map(s => s.session.id));
+                persistedSessions = Object.values(persistedIndex)
+                    .filter(metadata => !activeIds.has(metadata.sessionId))
+                    .map(metadata => ({
+                        metadata,
+                        isActive: false,
+                        lastDate: metadata.saveDate
+                    }));
+            } catch (error) {
+                this.logger.error('Failed to load persisted sessions, showing only active sessions', error);
+                // Continue with just active sessions
+            }
+
+            // Combine and sort by last interaction/message date
+            const allSessions = [
+                ...activeSessions.map(s => ({
+                    isActive: true,
+                    id: s.session.id,
+                    title: s.session.title!,
+                    lastDate: s.lastDate,
+                    firstRequestText: s.session.model.getRequests().at(0)?.request.text
+                })),
+                ...persistedSessions.map(s => ({
+                    isActive: false,
+                    id: s.metadata.sessionId,
+                    title: s.metadata.title,
+                    lastDate: s.lastDate,
+                    firstRequestText: undefined
+                }))
+            ].sort((a, b) => b.lastDate - a.lastDate);
+
+            return allSessions.map(session => {
+                // Add icon for persisted sessions to visually distinguish them
+                const icon = session.isActive ? '' : '$(archive) ';
+                const label = `${icon}${session.title}`;
+
+                return <QuickPickItem>({
+                    label,
+                    description: formatTimeAgo(session.lastDate, false),
+                    detail: session.firstRequestText || (session.isActive ? undefined : nls.localize('theia/ai/chat-ui/persistedSession', 'Persisted session (click to restore)')),
                     id: session.id,
                     buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]
-                }));
+                });
+            });
+        };
 
         const defer = new Deferred<QuickPickItem | undefined>();
         const quickPick = this.quickInputService.createQuickPick();
         quickPick.placeholder = nls.localize('theia/ai/chat-ui/selectChat', 'Select chat');
         quickPick.canSelectMany = false;
-        quickPick.items = getItems();
+        quickPick.busy = true;
+        quickPick.show();
+
+        // Load items asynchronously
+        getItems().then(items => {
+            quickPick.items = items;
+            quickPick.busy = false;
+        }).catch(error => {
+            this.logger.error('Failed to load chat sessions', error);
+            quickPick.busy = false;
+            quickPick.placeholder = nls.localize('theia/ai/chat-ui/failedToLoadChats', 'Failed to load chat sessions');
+        });
 
         quickPick.onDidTriggerItemButton(async context => {
             if (context.button === AIChatContribution.RENAME_CHAT_BUTTON) {
                 quickPick.hide();
-                this.quickInputService.input({
-                    placeHolder: nls.localize('theia/ai/chat-ui/enterChatName', 'Enter chat name')
-                }).then(name => {
-                    if (name && name.length > 0) {
-                        const session = this.chatService.getSession(context.item.id!);
-                        if (session) {
-                            session.title = name;
-                        }
-                    }
-                });
+                await this.renameSession(context.item.id!);
             } else if (context.button === AIChatContribution.REMOVE_CHAT_BUTTON) {
-                this.chatService.deleteSession(context.item.id!);
-                quickPick.items = getItems();
-                if (this.chatService.getSessions().length <= 1) {
+                await this.deleteSession(context.item.id!);
+                const items = await getItems();
+                quickPick.items = items;
+                if (items.length === 0) {
                     quickPick.hide();
                 }
             }
         });
 
-        quickPick.onDidAccept(() => {
+        quickPick.onDidAccept(async () => {
             const selectedItem = quickPick.selectedItems[0];
+            if (selectedItem) {
+                // Restore session if not already loaded
+                const session = this.chatService.getSession(selectedItem.id!);
+                if (!session) {
+                    try {
+                        await this.chatService.getOrRestoreSession(selectedItem.id!);
+                        // Update persisted sessions flag after restoration
+                        this.checkPersistedSessions();
+                    } catch (error) {
+                        this.logger.error('Failed to restore chat session', error);
+                        this.messageService.error(nls.localize('theia/ai/chat-ui/failedToRestoreSession', 'Failed to restore chat session'));
+                        defer.resolve(undefined);
+                        quickPick.hide();
+                        return;
+                    }
+                }
+            }
             defer.resolve(selectedItem);
             quickPick.hide();
         });
 
         quickPick.onDidHide(() => defer.resolve(undefined));
 
-        quickPick.show();
-
         return defer.promise;
+    }
+
+    protected async renameSession(sessionId: string): Promise<void> {
+        const name = await this.quickInputService.input({
+            placeHolder: nls.localize('theia/ai/chat-ui/enterChatName', 'Enter chat name')
+        });
+        if (name && name.length > 0) {
+            await this.chatService.renameSession(sessionId, name);
+        }
+    }
+
+    protected async deleteSession(sessionId: string, confirm = false): Promise<void> {
+        if (confirm) {
+            const confirmed = await new ConfirmDialog({
+                title: nls.localize('theia/ai/chat-ui/deleteChat', 'Delete Chat'),
+                msg: nls.localize('theia/ai/chat-ui/confirmDeleteChatMsg', 'Are you sure you want to delete this chat?')
+            }).open();
+            if (!confirmed) {
+                return;
+            }
+        }
+        const activeSession = this.chatService.getActiveSession();
+        try {
+            await this.chatService.deleteSession(sessionId);
+            this.checkPersistedSessions();
+            if (activeSession && activeSession.id === sessionId) {
+                this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+            }
+        } catch (error) {
+            this.logger.error('Failed to delete chat session', error);
+            this.messageService.error(
+                nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session')
+            );
+        }
     }
 
     protected withWidget(
@@ -359,7 +535,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         if (!activeSession) { return; }
         return this.taskContextService.summarize(activeSession).catch(err => {
             console.warn('Error while summarizing session:', err);
-            this.messageService.error('Unable to summarize current session. Please confirm that the summary agent is not disabled.');
+            this.messageService.error(nls.localize('theia/ai/chat-ui/unableToSummarizeCurrentSession',
+                'Unable to summarize current session. Please confirm that the summary agent is not disabled.'));
             return undefined;
         });
     }
@@ -376,7 +553,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected async selectAgent(defaultAgentId?: string): Promise<ChatAgent | undefined> {
         const agents = this.chatAgentService.getAgents();
         if (agents.length === 0) {
-            this.messageService.warn('No chat agents available.');
+            this.messageService.warn(nls.localize('theia/ai/chat-ui/noChatAgentsAvailable', 'No chat agents available.'));
             return undefined;
         }
 
@@ -392,7 +569,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         }
 
         const selected = await this.quickInputService.showQuickPick(items, {
-            placeholder: 'Select an agent for the new session',
+            placeholder: nls.localize('theia/ai/chat-ui/selectAgentQuickPickPlaceholder', 'Select an agent for the new session'),
             activeItem: preselected
         });
 
@@ -416,7 +593,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             const isOpened = openedFilesInfo.openedIds.includes(summary.id);
             const isActive = openedFilesInfo.activeId === summary.id;
             return {
-                label: isOpened ? `📄 ${summary.label} (currently open)` : summary.label,
+                label: isOpened ? `📄 ${summary.label} (${nls.localize('theia/ai/chat-ui/selectTaskContextQuickPickItem/currentlyOpen', 'currently open')})` : summary.label,
                 description: summary.id,
                 id: summary.id,
                 // We'll sort active file first, then opened files, then others
@@ -425,7 +602,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         }).sort((a, b) => a.sortText!.localeCompare(b.sortText!));
 
         const selected = await this.quickInputService.showQuickPick(items, {
-            placeholder: 'Select a task context to attach'
+            placeholder: nls.localize('theia/ai/chat-ui/selectTaskContextQuickPickPlaceholder', 'Select a task context to attach')
         });
 
         return selected?.id;
@@ -468,9 +645,4 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
         return { openedIds: openedContextIds, activeId: activeContextId };
     }
-}
-
-function getDateFnsLocale(): locales.Locale {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return nls.locale ? (locales as any)[nls.locale] ?? locales.enUS : locales.enUS;
 }

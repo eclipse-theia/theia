@@ -25,6 +25,10 @@ export interface AnthropicModelDescription {
      */
     model: string;
     /**
+     * The Anthropic API compatible endpoint where the model is hosted. If not provided the default Anthropic endpoint will be used.
+     */
+    url?: string;
+    /**
      * The key for the model. If 'true' is provided the global Anthropic API key will be used.
      */
     apiKey: string | true | undefined;
@@ -49,6 +53,7 @@ export interface AnthropicModelDescription {
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
+    setProxyUrl(proxyUrl: string | undefined): void;
     createOrUpdateLanguageModels(...models: AnthropicModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void
 }

@@ -21,8 +21,8 @@
 // Based on https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/common/debugModel.ts
 
 import * as React from '@theia/core/shared/react';
-import { WidgetOpenerOptions, DISABLED_CLASS } from '@theia/core/lib/browser';
-import { EditorWidget, Range, Position } from '@theia/editor/lib/browser';
+import { DISABLED_CLASS } from '@theia/core/lib/browser';
+import { EditorWidget, Range, Position, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugScope } from '../console/debug-console-items';
@@ -31,6 +31,7 @@ import { RecursivePartial } from '@theia/core';
 import { DebugSession } from '../debug-session';
 import { DebugThread } from './debug-thread';
 import * as monaco from '@theia/monaco-editor-core';
+import { stringHash } from '@theia/core/lib/common/hash';
 
 export class DebugStackFrameData {
     readonly raw: DebugProtocol.StackFrame;
@@ -40,13 +41,10 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
 
     constructor(
         readonly thread: DebugThread,
-        readonly session: DebugSession
+        readonly session: DebugSession,
+        readonly id: string
     ) {
         super();
-    }
-
-    get id(): string {
-        return this.session.id + ':' + this.thread.id + ':' + this.raw.id;
     }
 
     /**
@@ -71,7 +69,7 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         }));
     }
 
-    async open(options?: WidgetOpenerOptions): Promise<EditorWidget | undefined> {
+    async open(options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         if (!this.source) {
             return undefined;
         }
@@ -115,7 +113,16 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         if (!response) {
             return [];
         }
-        return response.body.scopes.map(raw => new DebugScope(raw, () => this.session));
+        const scopeIds = new Set<number>();
+        return response.body.scopes.map(raw => {
+            // just as in VS Code, the id is based on the name and location to retain expansion state across multiple pauses
+            let id = 0;
+            do {
+                id = stringHash(`${raw.name}:${raw.line}:${raw.column}`, id);
+            } while (scopeIds.has(id));
+            scopeIds.add(id);
+            return new DebugScope(raw, () => this.session, id);
+        });
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/common/debugModel.ts#L324-L335

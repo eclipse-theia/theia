@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
-import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution, bindRootContributionProvider, nls } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { QuickOpenTask, TaskTerminateQuickOpen, TaskRestartRunningQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
@@ -33,7 +33,7 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { ProblemPatternRegistry } from './task-problem-pattern-registry';
 import { TaskConfigurationManager } from './task-configuration-manager';
-import { bindTaskPreferences } from './task-preferences';
+import { bindTaskPreferences } from '../common/task-preferences';
 import '../../src/browser/style/index.css';
 import './tasks-monaco-contribution';
 import { TaskNameResolver } from './task-name-resolver';
@@ -43,6 +43,7 @@ import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 import { TaskContextKeyService } from './task-context-key-service';
+import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -74,7 +75,7 @@ export default new ContainerModule(bind => {
 
     bind(TaskProviderRegistry).toSelf().inSingletonScope();
     bind(TaskResolverRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, TaskContribution);
+    bindRootContributionProvider(bind, TaskContribution);
     bind(TaskSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(TaskSchemaUpdater);
     bind(TaskNameResolver).toSelf().inSingletonScope();
@@ -85,4 +86,12 @@ export default new ContainerModule(bind => {
 
     bindProcessTaskModule(bind);
     bindTaskPreferences(bind);
+
+    bind(WorkspaceRestrictionContribution).toConstantValue({
+        getRestrictions(): WorkspaceRestriction[] {
+            return [{
+                label: nls.localize('theia/task/taskRestricted', 'Task execution is disabled in Restricted Mode')
+            }];
+        }
+    });
 });

@@ -25,7 +25,7 @@ import {
 import { TestTree, TestTreeWidget } from './test-tree-widget';
 import { TestViewContribution, TEST_VIEW_CONTAINER_ID, TEST_VIEW_CONTAINER_TITLE_OPTIONS, TEST_VIEW_CONTEXT_MENU } from './test-view-contribution';
 import { TestService, TestContribution, DefaultTestService } from '../test-service';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TestExecutionStateManager } from './test-execution-state-manager';
 import { TestResultWidget } from './test-result-widget';
@@ -37,11 +37,11 @@ import { TestResultViewContribution } from './test-result-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU, TestRunViewContribution } from './test-run-view-contribution';
 import { TestContextKeyService } from './test-context-key-service';
 import { DefaultTestExecutionProgressService, TestExecutionProgressService } from '../test-execution-progress-service';
-import { bindTestPreferences } from '../test-preferences';
+import { bindTestPreferences } from '../../common/test-preferences';
 
 export default new ContainerModule(bind => {
     bindTestPreferences(bind);
-    bindContributionProvider(bind, TestContribution);
+    bindRootContributionProvider(bind, TestContribution);
     bind(TestContextKeyService).toSelf().inSingletonScope();
     bind(TestService).to(DefaultTestService).inSingletonScope();
 

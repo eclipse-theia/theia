@@ -90,7 +90,7 @@ export class MergeEditorFactory {
         if (!editor) {
             throw new Error('The merge editor only supports Monaco editors as its parts');
         }
-        editor.getControl().updateOptions({ folding: false, codeLens: false, minimap: { enabled: false } });
+        editor.getControl().updateOptions({ folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false } });
         editor.setShouldDisplayDirtyDiff(false);
         return editorWidget;
     }

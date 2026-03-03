@@ -18,10 +18,10 @@ import { ChatAgentLocation, ChatService } from '@theia/ai-chat/lib/common';
 import { CommandContribution, CommandRegistry, CommandService } from '@theia/core';
 import { TaskContextStorageService, TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
+import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { CoderAgent } from './coder-agent';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
-import { ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID, ARCHITECT_TASK_SUMMARY_UPDATE_PROMPT_TEMPLATE_ID } from '../common/architect-prompt-template';
+
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -55,58 +55,42 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
     protected readonly commandHandlerFactory: AICommandHandlerFactory;
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(AI_UPDATE_TASK_CONTEXT_COMMAND, this.commandHandlerFactory({
-            execute: async () => {
+        registry.registerCommand(AI_EXECUTE_PLAN_WITH_CODER, this.commandHandlerFactory({
+            execute: async (taskContextId?: string) => {
                 const activeSession = this.chatService.getActiveSession();
 
                 if (!activeSession) {
                     return;
                 }
 
-                // Check if there is an existing summary for this session
-                if (!this.taskContextService.hasSummary(activeSession)) {
-                    // If no summary exists, create one first
-                    await this.taskContextService.summarize(activeSession, ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID);
+                // Find the task context by ID or fall back to most recent for this session
+                let existingTaskContext;
+                if (taskContextId) {
+                    existingTaskContext = this.taskContextService.getAll().find(s => s.id === taskContextId);
                 } else {
-                    // Update existing summary
-                    await this.taskContextService.update(activeSession, ARCHITECT_TASK_SUMMARY_UPDATE_PROMPT_TEMPLATE_ID);
+                    const sessionContexts = this.taskContextService.getAll().filter(s => s.sessionId === activeSession.id);
+                    existingTaskContext = sessionContexts[sessionContexts.length - 1];
                 }
-            }
-        }));
 
-        registry.registerCommand(AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, this.commandHandlerFactory({
-            execute: async () => {
-                const activeSession = this.chatService.getActiveSession();
-
-                if (!activeSession) {
+                if (!existingTaskContext) {
+                    console.warn('No task context found. Use createTaskContext to create a plan first.');
                     return;
                 }
 
-                const summaryId = await this.taskContextService.summarize(activeSession, ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID);
-
-                // Open the summary in a new editor
-                await this.taskContextStorageService.open(summaryId);
-
-                // Add the summary file to the context of the active Architect session
-                const summary = this.taskContextService.getAll().find(s => s.id === summaryId);
-                if (summary?.uri) {
-                    if (await this.fileService.exists(summary?.uri)) {
-                        const wsRelativePath = await this.wsService.getWorkspaceRelativePath(summary?.uri);
-                        // Create a file variable for the summary
+                if (existingTaskContext.uri) {
+                    if (await this.fileService.exists(existingTaskContext.uri)) {
+                        const wsRelativePath = await this.wsService.getWorkspaceRelativePath(existingTaskContext.uri);
                         const fileVariable: AIVariableResolutionRequest = {
                             variable: FILE_VARIABLE,
                             arg: wsRelativePath
                         };
-
-                        // Add the file to the active session's context
                         activeSession.model.context.addVariables(fileVariable);
                     }
-
-                    // Create a new session with the coder agent
-                    const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, this.coderAgent);
-                    const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: summaryId };
-                    newSession.model.context.addVariables(summaryVariable);
                 }
+
+                const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, this.coderAgent);
+                const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: existingTaskContext.id };
+                newSession.model.context.addVariables(summaryVariable);
             }
         }));
     }

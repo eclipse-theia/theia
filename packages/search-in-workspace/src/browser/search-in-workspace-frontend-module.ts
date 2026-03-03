@@ -20,19 +20,21 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
 import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import {
-    WebSocketConnectionProvider, WidgetFactory, createTreeContainer, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
+    WidgetFactory, createTreeContainer, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
     ApplicationShellLayoutMigration,
-    StylingParticipant
+    StylingParticipant, RemoteConnectionProvider, ServiceConnectionProvider
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceFrontendContribution } from './search-in-workspace-frontend-contribution';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { bindSearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { bindSearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
 import { SearchInWorkspaceLabelProvider } from './search-in-workspace-label-provider';
 import { SearchInWorkspaceFactory } from './search-in-workspace-factory';
 import { SearchLayoutVersion3Migration } from './search-layout-migrations';
+import { WorkspaceSearchFilterProvider } from '@theia/workspace/lib/browser';
+import { SearchExcludeFilterProvider } from './search-exclude-filter-provider';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceContextKeyService).toSelf().inSingletonScope();
@@ -60,13 +62,17 @@ export default new ContainerModule(bind => {
     // The object to call methods on the backend.
     bind(SearchInWorkspaceServer).toDynamicValue(ctx => {
         const client = ctx.container.get(SearchInWorkspaceClientImpl);
-        return WebSocketConnectionProvider.createProxy(ctx.container, SIW_WS_PATH, client);
+        const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        return provider.createProxy<SearchInWorkspaceServer>(SIW_WS_PATH, client);
     }).inSingletonScope();
 
     bindSearchInWorkspacePreferences(bind);
 
     bind(SearchInWorkspaceLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(SearchInWorkspaceLabelProvider);
+
+    bind(SearchExcludeFilterProvider).toSelf().inSingletonScope();
+    bind(WorkspaceSearchFilterProvider).toService(SearchExcludeFilterProvider);
 });
 
 export function createSearchTreeWidget(parent: interfaces.Container): SearchInWorkspaceResultTreeWidget {

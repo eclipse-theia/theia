@@ -42,6 +42,7 @@ export abstract class ReactDialog<T> extends AbstractDialog<T> {
         super.onUpdateRequest(msg);
         if (!this.isMounted) {
             this.contentNodeRoot = createRoot(this.contentNode);
+            this.isMounted = true;
         }
         this.contentNodeRoot?.render(<>{this.render()}</>);
     }

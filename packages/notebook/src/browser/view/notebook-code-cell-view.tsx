@@ -30,7 +30,7 @@ import { NotebookCellExecutionState } from '../../common';
 import { CancellationToken, CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { NotebookOptionsService } from '../service/notebook-options';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
@@ -38,6 +38,7 @@ import { NotebookCellEditorService } from '../service/notebook-cell-editor-servi
 import { CellOutputWebview } from '../renderers/cell-output-webview';
 import { NotebookCellStatusBarItem, NotebookCellStatusBarItemList, NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
+import { NotebookViewModel } from '../view-model/notebook-view-model';
 
 @injectable()
 export class NotebookCodeCellRenderer implements CellRenderer {
@@ -83,10 +84,14 @@ export class NotebookCodeCellRenderer implements CellRenderer {
     @inject(LabelParser)
     protected readonly labelParser: LabelParser;
 
+    @inject(NotebookViewModel)
+    protected readonly notebookViewModel: NotebookViewModel;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel, handle: number): React.ReactNode {
         return <div className='theia-notebook-cell-with-sidebar' ref={ref => observeCellHeight(ref, cell)}>
             <div className='theia-notebook-cell-editor-container'>
                 <CellEditor notebookModel={notebookModel} cell={cell}
+                    notebookViewModel={this.notebookViewModel}
                     monacoServices={this.monacoServices}
                     notebookContextManager={this.notebookContextManager}
                     notebookViewportService={this.notebookViewportService}
@@ -97,7 +102,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                     executionStateService={this.executionStateService}
                     cellStatusBarService={this.notebookCellStatusBarService}
                     labelParser={this.labelParser}
-                    onClick={() => cell.requestFocusEditor()} />
+                    onClick={() => this.notebookViewModel.cellViewModels.get(cell.handle)?.requestFocusEditor()} />
             </div >
         </div >;
     }

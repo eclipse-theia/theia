@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 import '../../src/browser/style/index.css';
-import { bindContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { AIChatContribution } from './ai-chat-ui-contribution';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
@@ -34,17 +35,20 @@ import {
     InsertCodeAtCursorButtonAction,
     MarkdownPartRenderer,
     ToolCallPartRenderer,
+    NotAvailableToolCallRenderer,
     ThinkingPartRenderer,
     ProgressPartRenderer,
     DelegationResponseRenderer,
+    TextPartRenderer,
 } from './chat-response-renderer';
+import { UnknownPartRenderer } from './chat-response-renderer/unknown-part-renderer';
 import {
     GitHubSelectionResolver,
     TextFragmentSelectionResolver,
     TypeDocSymbolSelectionResolver,
 } from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
-import { createChatViewTreeWidget } from './chat-tree-view';
+import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
@@ -55,12 +59,49 @@ import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-ac
 import { ChangeSetAcceptAction } from './change-set-actions/change-set-accept-action';
 import { AIChatTreeInputArgs, AIChatTreeInputConfiguration, AIChatTreeInputFactory, AIChatTreeInputWidget } from './chat-tree-view/chat-view-tree-input-widget';
 import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-widget';
+import { ChatInputHistoryService } from './chat-input-history';
+import { ChatInputHistoryContribution } from './chat-input-history-contribution';
+import { ChatInputModeContribution } from './chat-input-mode-contribution';
+import { ChatInputFocusService } from './chat-input-focus-service';
+import { ChatFocusContribution } from './chat-focus-contribution';
+import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
+import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
+import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    bind(AIChatNavigationService).toSelf().inSingletonScope();
+
     bindViewContribution(bind, AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
 
-    bindContributionProvider(bind, ChatResponsePartRenderer);
+    bind(ChatInputHistoryService).toSelf().inSingletonScope();
+    bind(ChatInputHistoryContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputHistoryContribution);
+    bind(KeybindingContribution).toService(ChatInputHistoryContribution);
+
+    bind(ChatInputFocusService).toSelf().inSingletonScope();
+
+    bind(ChatInputModeContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputModeContribution);
+    bind(KeybindingContribution).toService(ChatInputModeContribution);
+
+    bind(ChatFocusContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatFocusContribution);
+    bind(KeybindingContribution).toService(ChatFocusContribution);
+
+    bind(ChatCapabilitiesServiceImpl).toSelf().inSingletonScope();
+    bind(ChatCapabilitiesService).toService(ChatCapabilitiesServiceImpl);
+
+    bindRootContributionProvider(bind, GenericCapabilitiesContribution);
+    bind(GenericCapabilitiesServiceImpl).toSelf().inSingletonScope();
+    bind(GenericCapabilitiesService).toService(GenericCapabilitiesServiceImpl);
+
+    bind(ChatInputCapabilitiesContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputCapabilitiesContribution);
+    bind(KeybindingContribution).toService(ChatInputCapabilitiesContribution);
+
+    bindRootContributionProvider(bind, ChatResponsePartRenderer);
+    bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
 
     bindChatViewWidget(bind);
 
@@ -68,7 +109,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIChatInputConfiguration).toConstantValue({
         showContext: true,
         showPinnedAgent: true,
-        showChangeSet: true
+        showChangeSet: true,
+        showCapabilities: true,
+        enablePromptHistory: true
     } satisfies AIChatInputConfiguration);
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: AIChatInputWidget.ID,
@@ -91,6 +134,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
             showPinnedAgent: true,
             showChangeSet: false,
             showSuggestions: false,
+            showCapabilities: true,
+            enablePromptHistory: false
         } satisfies AIChatInputConfiguration);
         container.bind(AIChatTreeInputWidget).toSelf().inSingletonScope();
         const widget = container.get(AIChatTreeInputWidget);
@@ -116,17 +161,20 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(CodePartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(CommandPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ToolCallPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(NotAvailableToolCallRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ProgressPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(DelegationResponseRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(UnknownPartRenderer).inSingletonScope();
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );
 
-    bindContributionProvider(bind, CodePartRendererAction);
-    bindContributionProvider(bind, ChangeSetActionRenderer);
+    bindRootContributionProvider(bind, CodePartRendererAction);
+    bindRootContributionProvider(bind, ChangeSetActionRenderer);
     bind(CopyToClipboardButtonAction).toSelf().inSingletonScope();
     bind(CodePartRendererAction).toService(CopyToClipboardButtonAction);
     bind(InsertCodeAtCursorButtonAction).toSelf().inSingletonScope();
@@ -144,7 +192,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChangeSetAcceptAction).toSelf().inSingletonScope();
     bind(ChangeSetActionRenderer).toService(ChangeSetAcceptAction);
 
-    bindContributionProvider(bind, ChatNodeToolbarActionContribution);
+    bindRootContributionProvider(bind, ChatNodeToolbarActionContribution);
     bind(DefaultChatNodeToolbarActionContribution).toSelf().inSingletonScope();
     bind(ChatNodeToolbarActionContribution).toService(DefaultChatNodeToolbarActionContribution);
 

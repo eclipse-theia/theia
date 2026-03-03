@@ -1,0 +1,7 @@
+{
+    "project": "ecd.theia",
+    "inputFile": "package-lock.json",
+    "batch": 50,
+    "timeout": 240,
+    "summary": "license-check-summary.txt"
+}

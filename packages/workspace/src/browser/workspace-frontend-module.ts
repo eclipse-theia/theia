@@ -14,8 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '../../src/browser/style/index.css';
+
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution, bindRootContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import {
     OpenFileDialogFactory,
@@ -37,7 +39,7 @@ import { WorkspaceCommandContribution, FileMenuContribution, EditMenuContributio
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
-import { bindWorkspacePreferences } from './workspace-preferences';
+import { bindWorkspacePreferences } from '../common/workspace-preferences';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
@@ -48,18 +50,22 @@ import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-stor
 import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contribution';
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
-import { WorkspaceTrustService } from './workspace-trust-service';
-import { bindWorkspaceTrustPreferences } from './workspace-trust-preferences';
+import { WorkspaceTrustService, WorkspaceRestrictionContribution } from './workspace-trust-service';
+import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
 import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
 import { CanonicalUriService } from './canonical-uri-service';
+import { WorkspaceMetadataStorageService, WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './metadata-storage';
+import { WorkspaceMetadataStoreImpl } from './metadata-storage/workspace-metadata-store';
+import { WorkspaceSearchFilterService, WorkspaceSearchFilterProvider } from './workspace-search-filter-service';
+import { WorkspaceFilesExcludeFilterProvider } from './workspace-files-exclude-filter-provider';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
     bindWorkspaceTrustPreferences(bind);
-    bindContributionProvider(bind, WorkspaceOpenHandlerContribution);
+    bindRootContributionProvider(bind, WorkspaceOpenHandlerContribution);
 
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WorkspaceService);
@@ -99,6 +105,11 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(WorkspaceStorageService).toSelf().inSingletonScope();
     rebind(StorageService).toService(WorkspaceStorageService);
 
+    bind(WorkspaceMetadataStoreImpl).toSelf();
+    bind(WorkspaceMetadataStoreFactory).toFactory(ctx => () => ctx.container.get(WorkspaceMetadataStoreImpl));
+    bind(WorkspaceMetadataStorageServiceImpl).toSelf().inSingletonScope();
+    bind(WorkspaceMetadataStorageService).toService(WorkspaceMetadataStorageServiceImpl);
+
     bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
     bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     bind(VariableContribution).toService(WorkspaceVariableContribution);
@@ -113,8 +124,14 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 
+    bindRootContributionProvider(bind, WorkspaceRestrictionContribution);
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 
     rebind(WindowTitleUpdater).to(WorkspaceWindowTitleUpdater).inSingletonScope();
+
+    bindRootContributionProvider(bind, WorkspaceSearchFilterProvider);
+    bind(WorkspaceSearchFilterService).toSelf().inSingletonScope();
+    bind(WorkspaceFilesExcludeFilterProvider).toSelf().inSingletonScope();
+    bind(WorkspaceSearchFilterProvider).toService(WorkspaceFilesExcludeFilterProvider);
 });

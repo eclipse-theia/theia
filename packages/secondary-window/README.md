@@ -27,6 +27,7 @@ If the patches are not applied, the secondary window will show empty.
 
 ## Additional Information
 
+- [API documentation for `@theia/secondary-window`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_secondary-window.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

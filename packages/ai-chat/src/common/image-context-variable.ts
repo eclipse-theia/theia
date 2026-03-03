@@ -19,25 +19,58 @@ import {
     AIVariableResolutionRequest,
     ResolvedAIContextVariable
 } from '@theia/ai-core';
+import { nls } from '@theia/core';
+import { ParsedChatRequestPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
 
 export const IMAGE_CONTEXT_VARIABLE: AIVariable = {
     id: 'imageContext',
-    description: 'Provides context information for an image',
+    description: nls.localize('theia/ai/chat/imageContextVariable/description', 'Provides context information for an image'),
     name: 'imageContext',
-    label: 'Image File',
+    label: nls.localize('theia/ai/chat/imageContextVariable/label', 'Image File'),
     iconClasses: ['codicon', 'codicon-file-media'],
     isContextVariable: true,
     args: [
-        { name: 'name', description: 'The name of the image file if available.', isOptional: true },
-        { name: 'wsRelativePath', description: 'The workspace-relative path of the image file if available.', isOptional: true },
-        { name: 'data', description: 'The image data in base64.' },
-        { name: 'mimeType', description: 'The mimetype of the image.' }
+        {
+            name: 'name',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/name/description', 'The name of the image file if available.'),
+            isOptional: true
+        },
+        {
+            name: 'wsRelativePath',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/wsRelativePath/description', 'The workspace-relative path of the image file if available.'),
+            isOptional: true
+        },
+        {
+            name: 'data',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/data/description', 'The image data in base64.'),
+            isOptional: true
+        },
+        {
+            name: 'mimeType',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/mimeType/description', 'The mimetype of the image.'),
+            isOptional: true
+        }
     ]
 };
 
+/**
+ * Represents an image context variable. Can be either:
+ * - Pre-processed: Contains base64 data (from clipboard paste)
+ * - Path-based: Contains only wsRelativePath, data is resolved on-demand (from file drop)
+ */
 export interface ImageContextVariable {
     name?: string;
     wsRelativePath?: string;
+    /** Base64-encoded image data. Optional for path-based references that are resolved on-demand. */
+    data?: string;
+    /** MIME type of the image. Optional for path-based references that are resolved on-demand. */
+    mimeType?: string;
+}
+
+/**
+ * A fully resolved image context variable with all data present.
+ */
+export interface ResolvedImageContextVariable extends ImageContextVariable {
     data: string;
     mimeType: string;
 }
@@ -74,8 +107,16 @@ export namespace ImageContextVariable {
         };
     }
 
-    export function parseResolved(resolved: ResolvedAIContextVariable): undefined | ImageContextVariable {
-        return isResolvedImageContext(resolved) ? parseArg(resolved.arg) : undefined;
+    export function parseResolved(resolved: ResolvedAIContextVariable): undefined | ResolvedImageContextVariable {
+        if (!isResolvedImageContext(resolved)) {
+            return undefined;
+        }
+        const parsed = parseArg(resolved.arg);
+        // Resolved context should always have data and mimeType
+        if (isResolved(parsed)) {
+            return parsed;
+        }
+        return undefined;
     }
 
     export function createRequest(content: ImageContextVariable): ImageContextVariableRequest {
@@ -89,6 +130,10 @@ export namespace ImageContextVariable {
         return JSON.stringify(args);
     }
 
+    /**
+     * Parse an argument string into an ImageContextVariable.
+     * The variable may be path-based (no data) or pre-processed (with data).
+     */
     export function parseArg(argString: string): ImageContextVariable {
         const result: Partial<ImageContextVariable> = {};
 
@@ -103,14 +148,76 @@ export namespace ImageContextVariable {
             throw new Error(`Failed to parse JSON argument string: ${error.message}`);
         }
 
-        if (!result.data) {
-            throw new Error(`Missing required argument: ${data}`);
-        }
-
-        if (!result.mimeType) {
-            throw new Error(`Missing required argument: ${mimeType}`);
+        // For path-based references, we only need wsRelativePath
+        // For pre-processed references, we need data and mimeType
+        if (!result.data && !result.wsRelativePath) {
+            throw new Error('Image variable must have either data or wsRelativePath');
         }
 
         return result as ImageContextVariable;
+    }
+
+    /**
+     * Check if an ImageContextVariable has been fully resolved (has data and mimeType).
+     */
+    export function isResolved(variable: ImageContextVariable): variable is ResolvedImageContextVariable {
+        return !!variable.data && !!variable.mimeType;
+    }
+
+    /**
+     * Create a path-based image request that will be resolved on-demand.
+     */
+    export function createPathBasedRequest(path: string, imageName?: string): ImageContextVariableRequest {
+        return {
+            variable: IMAGE_CONTEXT_VARIABLE,
+            arg: createArgString({ wsRelativePath: path, name: imageName })
+        };
+    }
+
+    /**
+     * Extract all resolved inline image variables from a list of parsed chat request parts.
+     * Parts that fail to parse are silently skipped.
+     */
+    export function extractInlineImages(parts: ParsedChatRequestPart[]): ResolvedImageContextVariable[] {
+        const result: ResolvedImageContextVariable[] = [];
+        for (const part of parts) {
+            if (part instanceof ParsedChatRequestVariablePart
+                && part.variableName === 'imageContext'
+                && part.resolution?.arg) {
+                try {
+                    const parsed = parseArg(part.resolution.arg);
+                    if (isResolved(parsed)) {
+                        result.push(parsed);
+                    }
+                } catch {
+                    // arg might not be valid JSON, skip
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Extract resolved inline image variables from a list of parsed chat request parts,
+     * keyed by the index of the part in the original array.
+     * Parts that fail to parse are silently skipped.
+     */
+    export function extractInlineImagesWithIndices(parts: ParsedChatRequestPart[]): Map<number, ResolvedImageContextVariable> {
+        const result = new Map<number, ResolvedImageContextVariable>();
+        parts.forEach((part, index) => {
+            if (part instanceof ParsedChatRequestVariablePart
+                && part.variableName === 'imageContext'
+                && part.resolution?.arg) {
+                try {
+                    const parsed = parseArg(part.resolution.arg);
+                    if (isResolved(parsed)) {
+                        result.set(index, parsed);
+                    }
+                } catch {
+                    // arg might not be valid JSON, skip
+                }
+            }
+        });
+        return result;
     }
 }

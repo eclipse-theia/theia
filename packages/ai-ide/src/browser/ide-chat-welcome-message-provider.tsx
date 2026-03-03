@@ -14,138 +14,404 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatWelcomeMessageProvider, isEnterKey } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry } from '@theia/core';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { codicon, CommonCommands, LocalizedMarkdown, MarkdownRenderer } from '@theia/core/lib/browser';
+import { CommandRegistry, DisposableCollection, Emitter, Event, PreferenceScope } from '@theia/core';
+import { AgentService, FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
+import { PreferenceService } from '@theia/core/lib/common';
+import { DEFAULT_CHAT_AGENT_PREF, BYPASS_MODEL_REQUIREMENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
+import { ChatAgentRecommendationService, ChatAgentService } from '@theia/ai-chat/lib/common';
+import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
 
-const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
+const TheiaIdeAiLogo = ({ width = 120, height = 120, className = '' }) =>
     <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 200 200"
+        viewBox="0 0 100 100"
         width={width}
         height={height}
         className={className}
     >
-        <rect x="55" y="45" width="90" height="85" rx="30" fill="var(--theia-disabledForeground)" />
-
-        <line x1="100" y1="45" x2="100" y2="30" stroke="var(--theia-foreground)" strokeWidth="4" />
-        <circle cx="100" cy="25" r="6" fill="var(--theia-foreground)" />
-
-        <rect x="40" y="75" width="15" height="30" rx="5" fill="var(--theia-foreground)" />
-        <rect x="145" y="75" width="15" height="30" rx="5" fill="var(--theia-foreground)" />
-
-        <circle cx="80" cy="80" r="10" fill="var(--theia-editor-background)" />
-        <circle cx="120" cy="80" r="10" fill="var(--theia-editor-background)" />
-
-        <path d="M85 105 Q100 120 115 105" fill="none" stroke="var(--theia-editor-background)" strokeWidth="4" strokeLinecap="round" />
-
-        <rect x="55" y="135" width="90" height="30" rx="5" fill="var(--theia-foreground)" />
-
-        <rect x="60" y="140" width="10" height="8" rx="2" fill="var(--theia-editor-background)" />
-        <rect x="75" y="140" width="10" height="8" rx="2" fill="var(--theia-editor-background)" />
-        <rect x="90" y="140" width="10" height="8" rx="2" fill="var(--theia-editor-background)" />
-        <rect x="105" y="140" width="10" height="8" rx="2" fill="var(--theia-editor-background)" />
-        <rect x="120" y="140" width="10" height="8" rx="2" fill="var(--theia-editor-background)" />
-
-        <rect x="65" y="152" width="50" height="8" rx="2" fill="var(--theia-editor-background)" />
-        <rect x="120" y="152" width="10" height="8" rx="2" fill="var(--theia-editor-background)" />
+        {/* Head: outline only */}
+        <rect x="22" y="24" width="56" height="44" rx="16"
+            fill="none" stroke="var(--theia-disabledForeground)" strokeWidth="2.5" />
+        {/* Antenna */}
+        <line x1="50" y1="24" x2="50" y2="16" stroke="var(--theia-disabledForeground)" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="50" cy="13" r="3" fill="var(--theia-disabledForeground)" />
+        {/* Ears: small strokes */}
+        <line x1="17" y1="39" x2="17" y2="53" stroke="var(--theia-disabledForeground)" strokeWidth="3" strokeLinecap="round" />
+        <line x1="83" y1="39" x2="83" y2="53" stroke="var(--theia-disabledForeground)" strokeWidth="3" strokeLinecap="round" />
+        {/* Eyes: small dots */}
+        <circle cx="39" cy="44" r="3.5" fill="var(--theia-disabledForeground)" />
+        <circle cx="61" cy="44" r="3.5" fill="var(--theia-disabledForeground)" />
+        {/* Mouth: subtle line */}
+        <path d="M42 55 Q50 60 58 55" fill="none" stroke="var(--theia-disabledForeground)" strokeWidth="2" strokeLinecap="round" />
+        {/* Chat dots */}
+        <circle cx="38" cy="84" r="1.5" fill="var(--theia-disabledForeground)" opacity="0.35" />
+        <circle cx="50" cy="84" r="2" fill="var(--theia-disabledForeground)" opacity="0.5" />
+        <circle cx="62" cy="84" r="2.5" fill="var(--theia-disabledForeground)" opacity="0.65" />
     </svg>;
 
 @injectable()
 export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider {
 
-    @inject(CommandRegistry)
-    protected commandRegistry: CommandRegistry;
+    readonly priority = 100;
 
-    renderWelcomeMessage?(): React.ReactNode {
-        return <div className={'theia-WelcomeMessage'}>
-            <TheiaIdeAiLogo width={200} height={200} className="theia-WelcomeMessage-Logo" />
-            <div className="theia-WelcomeMessage-Content">
-                <h1>Ask the Theia IDE AI</h1>
-                <p>
-                    To talk to a specialized agent, simply start your message with <em>@</em> followed by the agent's name:{' '}
-                    <em>@Coder</em>, <em>@Architect</em>, <em>@Universal</em>, and more.
-                </p>
-                <p>
-                    Attach context:  use variables, like <em>#file</em>, <em>#_f</em> (current file), <em>#selectedText</em>{' '}
-                    or click <span className="codicon codicon-add" />.
-                </p>
-                <p>
-                    Lean more in the <a target='_blank' href="https://theia-ide.org/docs/user_ai/#chat">documentation</a>.
-                </p>
+    @inject(MarkdownRenderer)
+    protected readonly markdownRenderer: MarkdownRenderer;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(FrontendLanguageModelRegistry)
+    protected languageModelRegistry: FrontendLanguageModelRegistry;
+
+    @inject(PreferenceService)
+    protected preferenceService: PreferenceService;
+
+    @inject(ChatAgentRecommendationService)
+    protected recommendationService: ChatAgentRecommendationService;
+
+    @inject(ChatAgentService)
+    protected chatAgentService: ChatAgentService;
+
+    @inject(AgentService)
+    protected agentService: AgentService;
+
+    protected readonly toDispose = new DisposableCollection();
+    protected _hasReadyModels = false;
+    protected _modelRequirementBypassed = false;
+    protected _defaultAgent = '';
+    protected modelConfig: { hasModels: boolean; errorMessages: string[] } | undefined;
+
+    protected readonly onStateChangedEmitter = new Emitter<void>();
+
+    get onStateChanged(): Event<void> {
+        return this.onStateChangedEmitter.event;
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.checkLanguageModelStatus();
+        this.toDispose.push(
+            this.languageModelRegistry.onChange(() => {
+                this.checkLanguageModelStatus();
+            })
+        );
+        this.toDispose.push(
+            this.preferenceService.onPreferenceChanged(e => {
+                if (e.preferenceName === DEFAULT_CHAT_AGENT_PREF) {
+                    const effectiveValue = this.preferenceService.get<string>(DEFAULT_CHAT_AGENT_PREF, '');
+                    if (this._defaultAgent !== effectiveValue) {
+                        this._defaultAgent = effectiveValue;
+                        this.notifyStateChanged();
+                    }
+                } else if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
+                    const effectiveValue = this.preferenceService.get<boolean>(BYPASS_MODEL_REQUIREMENT_PREF, false);
+                    if (this._modelRequirementBypassed !== effectiveValue) {
+                        this._modelRequirementBypassed = effectiveValue;
+                        this.notifyStateChanged();
+                    }
+                }
+            })
+        );
+        this.toDispose.push(
+            this.agentService.onDidChangeAgents(() => {
+                this.notifyStateChanged();
+            })
+        );
+        this.analyzeModelConfiguration().then(config => {
+            this.modelConfig = config;
+            this.notifyStateChanged();
+        });
+        this.preferenceService.ready.then(() => {
+            const defaultAgentValue = this.preferenceService.get(DEFAULT_CHAT_AGENT_PREF, '');
+            const bypassValue = this.preferenceService.get(BYPASS_MODEL_REQUIREMENT_PREF, false);
+            this._defaultAgent = defaultAgentValue;
+            this._modelRequirementBypassed = bypassValue;
+            this.notifyStateChanged();
+        });
+    }
+
+    protected async checkLanguageModelStatus(): Promise<void> {
+        const models = await this.languageModelRegistry.getLanguageModels();
+        this._hasReadyModels = models.some(model => model.status.status === 'ready');
+        this.modelConfig = await this.analyzeModelConfiguration();
+        this.notifyStateChanged();
+    }
+
+    protected async analyzeModelConfiguration(): Promise<{ hasModels: boolean; errorMessages: string[] }> {
+        const models = await this.languageModelRegistry.getLanguageModels();
+        const hasModels = models.length > 0;
+        const unavailableModels = models.filter(model => model.status.status === 'unavailable');
+        const errorMessages = unavailableModels
+            .map(model => model.status.message)
+            .filter((msg): msg is string => !!msg);
+        const uniqueErrorMessages = [...new Set(errorMessages)];
+        return { hasModels, errorMessages: uniqueErrorMessages };
+    }
+
+    protected notifyStateChanged(): void {
+        this.onStateChangedEmitter.fire();
+    }
+
+    get hasReadyModels(): boolean {
+        return this._hasReadyModels;
+    }
+
+    get modelRequirementBypassed(): boolean {
+        return this._modelRequirementBypassed;
+    }
+
+    get defaultAgent(): string {
+        return this._defaultAgent;
+    }
+
+    protected setModelRequirementBypassed(bypassed: boolean): void {
+        this.preferenceService.set(BYPASS_MODEL_REQUIREMENT_PREF, bypassed, PreferenceScope.User);
+    }
+
+    protected setDefaultAgent(agentId: string): void {
+        this.preferenceService.set(DEFAULT_CHAT_AGENT_PREF, agentId, PreferenceScope.User);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+        this.onStateChangedEmitter.dispose();
+    }
+
+    renderWelcomeMessage(): React.ReactNode {
+        if (!this._hasReadyModels && !this._modelRequirementBypassed) {
+            return this.renderModelConfigurationScreen();
+        }
+        if (!this._defaultAgent) {
+            return this.renderAgentSelectionScreen();
+        }
+        return this.renderWelcomeScreen();
+    }
+
+    protected renderWelcomeScreen(): React.ReactNode {
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main'} key="normal-welcome">
+            <TheiaIdeAiLogo className="theia-WelcomeMessage-Logo" />
+            <LocalizedMarkdown
+                localizationKey="theia/ai/ide/chatWelcomeMessage"
+                defaultMarkdown={`
+## Ask the Theia IDE AI
+
+Use *@AgentName* to talk to a specialized agent, like *@{0}*, *@{1}*, or *@{2}*.
+
+Attach context with *#{3}*, *#{4}*, *#{5}*, or click {6}. [Learn more](https://theia-ide.org/docs/user_ai/#chat).
+`}
+                args={['Coder', 'Architect', 'Universal', 'file', '_f', 'selectedText', '<span class="codicon codicon-attach"></span>']}
+                markdownRenderer={this.markdownRenderer}
+                className="theia-WelcomeMessage-Content"
+                markdownOptions={{ supportHtml: true }}
+            />
+        </div>;
+    }
+
+    protected renderModelConfigurationScreen(): React.ReactNode {
+        const config = this.modelConfig ?? { hasModels: false, errorMessages: [] };
+        const { hasModels, errorMessages } = config;
+
+        if (!hasModels) {
+            return <div className={'theia-WelcomeMessage'} key="setup-state">
+                <div className="theia-WelcomeMessage-ErrorIcon">⚠️</div>
+                <LocalizedMarkdown
+                    localizationKey="theia/ai/ide/noLanguageModelProviders"
+                    defaultMarkdown={`
+## No Language Model Providers Available
+
+No language model provider packages are installed in this IDE.
+
+This typically happens in custom IDE distributions where Theia AI language model packages have been omitted.
+
+**To resolve this:**
+
+- Install one or more language model provider packages (e.g., '@theia/ai-openai', '@theia/ai-anthropic', '@theia/ai-ollama')
+- Or use agents that don't require Theia Language Models (e.g., Claude Code)
+                `}
+                    markdownRenderer={this.markdownRenderer}
+                    className="theia-WelcomeMessage-Content"
+                />
+                <div className="theia-WelcomeMessage-Actions">
+                    <button
+                        className="theia-button main"
+                        onClick={() => this.setModelRequirementBypassed(true)}>
+                        {nls.localize('theia/ai/ide/continueAnyway', 'Continue Anyway')}
+                    </button>
+                </div>
+                <small className="theia-WelcomeMessage-Hint">
+                    {nls.localize('theia/ai/ide/bypassHint', 'Some agents like Claude Code don\'t require Theia Language Models')}
+                </small>
+            </div>;
+        }
+
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main'} key="setup-state">
+            <TheiaIdeAiLogo className="theia-WelcomeMessage-Logo" />
+            <LocalizedMarkdown
+                key="configure-provider-hasmodels"
+                localizationKey="theia/ai/ide/configureProvider"
+                defaultMarkdown={`
+## Configure a Language Model
+
+Set up an API key for [OpenAI]({0}), [Anthropic]({1}), or [GoogleAI]({2}) or configure another provider like Ollama in the settings.
+
+Some agents (e.g. Claude Code) work without a provider. [Learn more](https://theia-ide.org/docs/user_ai/).
+`}
+                args={[
+                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.openAiOfficial.openAiApiKey`,
+                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.anthropic.AnthropicApiKey`,
+                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.google.apiKey`
+                ]}
+                markdownRenderer={this.markdownRenderer}
+                className="theia-WelcomeMessage-Content"
+                markdownOptions={{
+                    supportHtml: true,
+                    isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] }
+                }}
+            />
+            {errorMessages.length > 0 && (
+                <div className="theia-alert theia-warning-alert theia-WelcomeMessage-Alert">
+                    <div className="theia-message-header">
+                        <span className={codicon('warning')}></span>
+                        <span>{nls.localize('theia/ai/ide/configurationState', 'Configuration issues')}</span>
+                    </div>
+                    <div className="theia-message-content">
+                        <ul className="theia-WelcomeMessage-IssuesList">
+                            {errorMessages.map((msg, idx) => <li key={idx}>{msg}</li>)}
+                        </ul>
+                    </div>
+                </div>
+            )}
+            <div className="theia-WelcomeMessage-Actions">
+                <button
+                    className="theia-button main"
+                    onClick={() => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}>
+                    {nls.localize('theia/ai/ide/openSettings', 'Open AI Settings')}
+                </button>
+                <button
+                    className="theia-button secondary"
+                    onClick={() => this.setModelRequirementBypassed(true)}>
+                    {nls.localize('theia/ai/ide/continueAnyway', 'Continue Anyway')}
+                </button>
             </div>
         </div>;
     }
 
-    renderDisabledMessage?(): React.ReactNode {
-        return <div className={'theia-ResponseNode'}>
-            <div className='theia-ResponseNode-Content' key={'disabled-message'}>
-                <div className="disable-message">
-                    <span className="section-header">{
-                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Beta Version)!')}
-                    </span>
-                    <div className="section-title">
-                        <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
-                    </div>
-                    <div className="section-title">
-                        <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable the AI Features:')}</p>
-                    </div>
-                    <div className="section-content">
-                        <p>To enable the AI features, please go to the AI features section of the&nbsp;
-                            {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'),
-                                CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
-                        </p>
-                        <ol>
-                            <li>Toggle the switch for <strong>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeaturesEnable', 'Ai-features: Enable')}</strong>.</li>
-                            <li>Provide at least one LLM provider (e.g. OpenAI). See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
-                                &nbsp;for more information.</li>
-                        </ol>
-                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in a beta state</strong>,
-                            so they may change and we are working on improving them 🚧.<br></br>
-                            Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
-                            </a>!</p>
-                    </div>
+    protected renderAgentSelectionScreen(): React.ReactNode {
+        const recommendedAgents = this.recommendationService.getRecommendedAgents()
+            .filter(agent => this.chatAgentService.getAgent(agent.id) !== undefined);
 
-                    <div className="section-title">
-                        <p>Currently Supported Views and Features:</p>
-                    </div>
-                    <div className="section-content">
-                        <p>Once the AI features are enabled, you can access the following views and features:</p>
-                        <ul>
-                            <li>Code Completion</li>
-                            <li>Terminal Assistance (via CTRL+I in a terminal)</li>
-                            <li>This Chat View (features the following agents):
-                                <ul>
-                                    <li>Universal Chat Agent</li>
-                                    <li>Coder Chat Agent</li>
-                                    <li>Architect Chat Agent</li>
-                                    <li>Command Chat Agent</li>
-                                    <li>Orchestrator Chat Agent</li>
-                                </ul>
-                            </li>
-                            <li>{this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiHistoryView', 'AI History View'), 'aiHistory:open')}</li>
-                            <li>{this.renderLinkButton(
-                                nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiConfigurationView', 'AI Configuration View'), 'aiConfiguration:open')}
-                            </li>
-                        </ul>
-                        <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information.</p>
-                    </div>
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main theia-WelcomeMessage-AgentSelection'} key="agent-selection">
+            <TheiaIdeAiLogo className="theia-WelcomeMessage-Logo" />
+            <LocalizedMarkdown
+                localizationKey="theia/ai/ide/selectDefaultAgent"
+                defaultMarkdown={`
+## Select a Default Chat Agent
+
+Choose the agent to use by default. You can always override this by mentioning *@AgentName* in your message.
+`}
+                markdownRenderer={this.markdownRenderer}
+                className="theia-WelcomeMessage-Content"
+            />
+            {recommendedAgents.length > 0 ? (
+                <div className="theia-WelcomeMessage-AgentButtons">
+                    {recommendedAgents.map(agent => (
+                        <button
+                            key={agent.id}
+                            className="theia-WelcomeMessage-AgentButton"
+                            onClick={() => this.setDefaultAgent(agent.id)}
+                            title={agent.description}>
+                            <span className={`theia-WelcomeMessage-AgentButton-Icon ${codicon('mention')}`}></span>
+                            <span className="theia-WelcomeMessage-AgentButton-Label">{agent.label}</span>
+                        </button>
+                    ))}
+                </div>
+            ) : (
+                <p className="theia-WelcomeMessage-SubNote">
+                    {nls.localize('theia/ai/ide/noRecommendedAgents', 'No recommended agents are available.')}
+                </p>
+            )}
+            <div className="theia-alert theia-info-alert theia-WelcomeMessage-Alert">
+                <div className="theia-message-header">
+                    <span className={codicon('info')}></span>
+                    <span>
+                        {recommendedAgents.length > 0
+                            ? nls.localize('theia/ai/ide/moreAgentsAvailable/header', 'More agents are available')
+                            : nls.localize('theia/ai/ide/configureAgent/header', 'Configure a default agent')}
+                    </span>
+                </div>
+                <div className="theia-message-content">
+                    <LocalizedMarkdown
+                        localizationKey="theia/ai/ide/moreAgentsAvailable"
+                        defaultMarkdown='Use @AgentName to try others or configure a different default in [preferences]({0}).'
+                        args={[`command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.chat.defaultChatAgent`]}
+                        markdownRenderer={this.markdownRenderer}
+                        markdownOptions={{ isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] } }}
+                    />
                 </div>
             </div>
-        </div >;
+        </div>;
     }
 
-    protected renderLinkButton(title: string, openCommandId: string, ...commandArgs: unknown[]): React.ReactNode {
-        return <a
-            role={'button'}
-            tabIndex={0}
-            onClick={() => this.commandRegistry.executeCommand(openCommandId, ...commandArgs)}
-            onKeyDown={e => isEnterKey(e) && this.commandRegistry.executeCommand(openCommandId)}>
-            {title}
-        </a>;
-    }
+    renderDisabledMessage(): React.ReactNode {
+        const openAiHistory = 'aiHistory:open';
 
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main theia-WelcomeMessage-Disabled'} key="disabled-message">
+            <TheiaIdeAiLogo className="theia-WelcomeMessage-Logo" />
+            <div className="theia-WelcomeMessage-Content">
+                <h2>{nls.localize('theia/ai/ide/chatDisabledMessage/title', 'AI Features are Disabled')}</h2>
+            </div>
+            <div className="theia-alert theia-info-alert theia-WelcomeMessage-Alert">
+                <div className="theia-message-header">
+                    <span className={codicon('lightbulb')}></span>
+                    <span>{nls.localize('theia/ai/ide/howToGetStarted', 'How to get started')}</span>
+                </div>
+                <div className="theia-message-content">
+                    <LocalizedMarkdown
+                        localizationKey="theia/ai/ide/chatDisabledMessage/steps"
+                        defaultMarkdown={`1. Enable AI features in the settings
+2. Configure at least one LLM provider (e.g. OpenAI, Anthropic, GoogleAI or Ollama)
+3. Start chatting with powerful AI agents`}
+                        markdownRenderer={this.markdownRenderer}
+                    />
+                </div>
+            </div>
+            <div className="theia-WelcomeMessage-Actions">
+                <button
+                    className="theia-button main"
+                    onClick={() => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}>
+                    {nls.localize('theia/ai/ide/openSettings', 'Open AI Settings')}
+                </button>
+            </div>
+            <LocalizedMarkdown
+                localizationKey="theia/ai/ide/chatDisabledMessage/features"
+                defaultMarkdown={`This will activate the AI features in the app. Please remember, these features are **in a beta state**,
+so they may change and we are working on improving them.
+
+Please support us by [providing feedback](https://github.com/eclipse-theia/theia)!
+
+Once the AI features are enabled, you can access the following views and features:
+- Code Completion
+- Terminal Assistance (via CTRL+I in a terminal)
+- This Chat View - available agents include:
+  - Coder Chat Agent
+  - Architect Chat Agent
+  - Universal Chat Agent
+- [AI History View]({0})
+- [AI Configuration View]({1})
+
+See [the documentation](https://theia-ide.org/docs/user_ai/) for more information.`}
+                args={[`command:${openAiHistory}`, `command:${OPEN_AI_CONFIG_VIEW.id}`]}
+                markdownRenderer={this.markdownRenderer}
+                className="theia-WelcomeMessage-Content"
+                markdownOptions={{
+                    isTrusted: { enabledCommands: [openAiHistory, OPEN_AI_CONFIG_VIEW.id] }
+                }}
+            />
+        </div>;
+    }
 }

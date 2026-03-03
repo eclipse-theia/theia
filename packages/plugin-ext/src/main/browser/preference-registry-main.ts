@@ -19,7 +19,7 @@ import {
     PreferenceServiceImpl,
     PreferenceScope,
     PreferenceProviderProvider
-} from '@theia/core/lib/browser/preferences';
+} from '@theia/core/lib/common/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     MAIN_RPC_CONTEXT,
@@ -40,13 +40,15 @@ export function getPreferences(preferenceProviderProvider: PreferenceProviderPro
     return PreferenceScope.getScopes().reduce((result: { [key: number]: any }, scope: PreferenceScope) => {
         result[scope] = {};
         const provider = preferenceProviderProvider(scope);
-        if (scope === PreferenceScope.Folder) {
-            for (const f of folders) {
-                const folderPrefs = provider.getPreferences(f);
-                result[scope][f] = folderPrefs;
+        if (provider) {
+            if (scope === PreferenceScope.Folder) {
+                for (const f of folders) {
+                    const folderPrefs = provider.getPreferences(f);
+                    result[scope][f] = folderPrefs;
+                }
+            } else {
+                result[scope] = provider.getPreferences();
             }
-        } else {
-            result[scope] = provider.getPreferences();
         }
         return result;
     }, {} as PreferenceData);
@@ -70,8 +72,9 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
 
             const roots = workspaceService.tryGetRoots();
             const data = getPreferences(preferenceProviderProvider, roots);
-            const eventData = Object.values(changes).map<PreferenceChangeExt>(({ scope, newValue, domain, preferenceName }) => {
+            const eventData = Object.values(changes).map<PreferenceChangeExt>(({ scope, domain, preferenceName }) => {
                 const extScope = scope === PreferenceScope.User ? undefined : domain?.[0];
+                const newValue = this.preferenceService.get(preferenceName);
                 return { preferenceName, newValue, scope: extScope };
             });
             this.proxy.$acceptConfigurationChanged(data, eventData);

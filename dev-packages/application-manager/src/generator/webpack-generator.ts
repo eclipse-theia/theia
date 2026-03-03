@@ -415,6 +415,9 @@ const config = {
         __filename: false,
         __dirname: false
     },
+    resolve: {
+        extensions: ['.js', '.json', '.wasm', '.node'],
+    },
     output: {
         filename: '[name].js',
         path: path.resolve(__dirname, 'lib', 'backend'),

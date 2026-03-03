@@ -33,10 +33,8 @@ export class NotebookStatusBarContribution implements WidgetStatusBarContributio
     }
 
     activate(statusBar: StatusBar, widget: NotebookEditorWidget): void {
-        widget.ready.then(model => {
-            this.onDeactivate = model.onDidChangeSelectedCell(() => {
-                this.updateStatusbar(statusBar, widget);
-            });
+        this.onDeactivate = widget.viewModel.onDidChangeSelectedCell(() => {
+            this.updateStatusbar(statusBar, widget);
         });
         this.updateStatusbar(statusBar, widget);
     }
@@ -48,12 +46,12 @@ export class NotebookStatusBarContribution implements WidgetStatusBarContributio
 
     protected async updateStatusbar(statusBar: StatusBar, editor?: NotebookEditorWidget): Promise<void> {
         const model = await editor?.ready;
-        if (!model || model.cells.length === 0 || !model.selectedCell) {
+        if (!model || model.cells.length === 0 || !editor?.viewModel.selectedCell) {
             statusBar.removeElement(NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID);
             return;
         }
 
-        const selectedCellIndex = model.cells.indexOf(model.selectedCell) + 1;
+        const selectedCellIndex = model.cells.indexOf(editor.viewModel.selectedCell) + 1;
 
         statusBar.setElement(NOTEBOOK_CELL_SELECTION_STATUS_BAR_ID, {
             text: nls.localizeByDefault('Cell {0} of {1}', selectedCellIndex, model.cells.length),

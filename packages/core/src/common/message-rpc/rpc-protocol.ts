@@ -132,7 +132,9 @@ export class RpcProtocol {
             this.pendingRequests.delete(id);
             replyHandler.resolve(value);
         } else {
-            throw new Error(`No reply handler for reply with id: ${id}`);
+            // Late replies for cancelled/timed-out requests are non-critical - just warn
+            console.warn(`No reply handler for reply with id: ${id}`);
+            return;
         }
         this.disposeCancellationEventListener(id);
     }
@@ -143,7 +145,9 @@ export class RpcProtocol {
             this.pendingRequests.delete(id);
             replyHandler.reject(error);
         } else {
-            throw new Error(`No reply handler for error reply with id: ${id}`);
+            // Late error replies for cancelled/timed-out requests are non-critical - just warn
+            console.warn(`No reply handler for error reply with id: ${id}`);
+            return;
         }
         this.disposeCancellationEventListener(id);
     }

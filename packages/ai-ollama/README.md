@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - Ollama EXTENSION</h2>
+<h2>ECLIPSE THEIA - OLLAMA EXTENSION</h2>
 
 <hr />
 
@@ -21,6 +21,7 @@ The `@theia/ai-ollama` integrates Ollama's models with Theia AI.
 
 ## License
 
+- [API documentation for `@theia/ai-ollama`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-ollama.html)
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [(Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 

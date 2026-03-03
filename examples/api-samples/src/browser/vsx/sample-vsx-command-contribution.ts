@@ -29,7 +29,8 @@ export class VSXCommandContribution implements CommandContribution {
 
     protected readonly command: Command = {
         id: 'vsx.echo-api-version',
-        label: 'VS Code API Version'
+        label: 'Show VS Code API Version',
+        category: 'API Samples'
     };
 
     registerCommands(commands: CommandRegistry): void {

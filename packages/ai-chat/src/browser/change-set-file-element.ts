@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
-import { CancellationToken, DisposableCollection, Emitter, URI } from '@theia/core';
+import { CancellationToken, DisposableCollection, Emitter, nls, URI } from '@theia/core';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { Replacement } from '@theia/core/lib/common/content-replacer';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { EditorPreferences } from '@theia/editor/lib/browser';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { TrimTrailingWhitespaceCommand } from '@theia/monaco-editor-core/esm/vs/editor/common/commands/trimTrailingWhitespaceCommand';
@@ -33,6 +33,7 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { insertFinalNewline } from '@theia/monaco/lib/browser/monaco-utilities';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { ChangeSetElement } from '../common';
+import { SerializableChangeSetElement } from '../common/chat-model-serialization';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -320,6 +321,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
         try {
             modelReference = await this.monacoTextModelService.createModelReference(this.uri);
             const model = modelReference.object;
+            model.suppressOpenEditorWhenDirty = true;
             const targetContent = contents ?? this.targetState;
             model.textEditorModel.setValue(targetContent);
 
@@ -448,14 +450,38 @@ export class ChangeSetFileElement implements ChangeSetElement {
         }
     }
 
-    async confirm(verb: string): Promise<boolean> {
+    async confirm(verb: 'Apply' | 'Revert'): Promise<boolean> {
         if (this._state !== 'stale') { return true; }
         await this.openChange();
         const answer = await new ConfirmDialog({
-            title: `${verb} suggestion.`,
-            msg: `The file ${this.uri.path.toString()} has changed since this suggestion was created. Are you certain you wish to ${verb.toLowerCase()} the change?`
+            title: verb === 'Apply'
+                ? nls.localize('theia/ai/chat/applySuggestion', 'Apply suggestion')
+                : nls.localize('theia/ai/chat/revertSuggestion', 'Revert suggestion'),
+            msg: verb === 'Apply'
+                ? nls.localize('theia/ai/chat/confirmApplySuggestion',
+                    'The file {0} has changed since this suggestion was created. Are you certain you wish to apply the change?', this.uri.path.toString())
+                : nls.localize('theia/ai/chat/confirmRevertSuggestion',
+                    'The file {0} has changed since this suggestion was created. Are you certain you wish to revert the change?', this.uri.path.toString())
         }).open(true);
         return !!answer;
+    }
+
+    toSerializable(): SerializableChangeSetElement {
+        return {
+            kind: 'file',
+            uri: this.uri.toString(),
+            name: this.name,
+            icon: this.icon,
+            additionalInfo: this.additionalInfo,
+            state: this.state,
+            type: this.type,
+            data: {
+                ...this.data,
+                targetState: this.elementProps.targetState,
+                originalState: this._originalContent,
+                replacements: this.replacements
+            }
+        };
     }
 
     dispose(): void {

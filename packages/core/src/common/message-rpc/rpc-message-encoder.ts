@@ -91,7 +91,7 @@ export class ResponseError extends Error {
  * object could not be written to the given {@link WriteBuffer}
  */
 export class EncodingError extends Error {
-    constructor(msg: string, public cause?: Error) {
+    constructor(msg: string, public override cause?: Error) {
         super(msg);
     }
 }

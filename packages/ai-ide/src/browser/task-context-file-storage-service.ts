@@ -17,13 +17,13 @@
 import { Summary, SummaryMetadata, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection, EOL, Emitter, ILogger, Path, URI, unreachable } from '@theia/core';
-import { PreferenceService, OpenerService, open } from '@theia/core/lib/browser';
+import { DisposableCollection, EOL, Emitter, ILogger, Path, PreferenceService, URI, unreachable } from '@theia/core';
+import { OpenerService, open } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import * as yaml from 'js-yaml';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/files';
-import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from './workspace-preferences';
+import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from '../common/workspace-preferences';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 @injectable()
@@ -38,7 +38,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     readonly onDidChange = this.onDidChangeEmitter.event;
 
     protected sanitizeLabel(label: string): string {
-        return label.replace(/^[^\p{L}\p{N}]+/vg, '');
+        return label.replace(/^[^\p{L}\p{N}]+/ug, '');
     }
 
     protected getStorageLocation(): URI | undefined {
@@ -67,16 +67,16 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         this.watchStorage();
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === TASK_CONTEXT_STORAGE_DIRECTORY_PREF) {
-                this.watchStorage();
+                this.watchStorage().catch(error => this.logger.error(error));
             }
         });
     }
 
     protected toDisposeOnStorageChange?: DisposableCollection;
-    protected watchStorage(): void {
+    protected async watchStorage(): Promise<void> {
+        const newStorage = await this.getStorageLocation();
         this.toDisposeOnStorageChange?.dispose();
         this.toDisposeOnStorageChange = undefined;
-        const newStorage = this.getStorageLocation();
         if (!newStorage) { return; }
         this.toDisposeOnStorageChange = new DisposableCollection(
             this.fileService.watch(newStorage, { recursive: true, excludes: [] }),
@@ -134,9 +134,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             summary: body,
             label: this.sanitizeLabel(rawLabel),
             uri,
-            id: frontmatter?.sessionId || uri.path.base
+            id: frontmatter?.id || frontmatter?.sessionId || uri.path.base
         };
-        const existingSummary = summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
+        const existingSummary = !frontmatter?.id && summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
         if (existingSummary) {
             summary.id = existingSummary.id;
         }
@@ -149,11 +149,12 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         const storageLocation = this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
+                id: summary.id,
                 sessionId: summary.sessionId,
                 date: new Date().toISOString(),
                 label,
             };
-            const derivedName = label.trim().replace(/[^\p{L}\p{N}]/vg, '-').replace(/^-+|-+$/g, '');
+            const derivedName = label.trim().replace(/[^\p{L}\p{N}]/ug, '-').replace(/^-+|-+$/g, '');
             const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
             const content = yaml.dump(frontmatter).trim() + `${EOL}---${EOL}` + summary.summary;
             const uri = storageLocation.resolve(filename);
@@ -168,8 +169,21 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         return this.inMemoryStorage.getAll();
     }
 
-    get(identifier: string): Summary | undefined {
-        return this.inMemoryStorage.get(identifier);
+    async get(identifier: string): Promise<Summary | undefined> {
+        const cached = this.inMemoryStorage.get(identifier);
+        if (!cached?.uri) {
+            return cached;
+        }
+        // Read fresh content from disk
+        const content = await this.fileService.read(cached.uri).then(read => read.value).catch(reason => {
+            this.logger.error(`Failed to read file ${cached.uri}: ${reason}`);
+            return undefined;
+        });
+        if (content === undefined) {
+            return cached; // Fall back to cache if read fails
+        }
+        const { body } = this.maybeReadFrontmatter(content);
+        return { ...cached, summary: body };
     }
 
     async delete(identifier: string): Promise<boolean> {
@@ -202,7 +216,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async open(identifier: string): Promise<void> {
-        const summary = this.get(identifier);
+        const summary = await this.get(identifier);
         if (!summary) {
             throw new Error('Unable to open requested task context: none found with specified identifier.');
         }

@@ -16,12 +16,11 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { GitFileChange, GitFileStatus, GitStatusChangeEvent } from '../common';
-import { CancellationToken, Emitter, Event } from '@theia/core/lib/common';
+import { CancellationToken, Emitter, Event, PreferenceChangeEvent } from '@theia/core/lib/common';
 import { Decoration, DecorationsProvider } from '@theia/core/lib/browser/decorations-service';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import URI from '@theia/core/lib/common/uri';
-import { GitConfiguration, GitPreferences } from './git-preferences';
-import { PreferenceChangeEvent } from '@theia/core/lib/browser';
+import { GitConfiguration, GitPreferences } from '../common/git-preferences';
 
 @injectable()
 export class GitDecorationProvider implements DecorationsProvider {
@@ -90,18 +89,18 @@ export class GitDecorationProvider implements DecorationsProvider {
     }
 
     protected handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): void {
-        const { preferenceName, newValue } = event;
+        const { preferenceName } = event;
         let updateDecorations = false;
         if (preferenceName === 'git.decorations.enabled') {
             updateDecorations = true;
-            const decorationsEnabled = !!newValue;
+            const decorationsEnabled = !!this.preferences.get('git.decorations.enabled');
             if (this.decorationsEnabled !== decorationsEnabled) {
                 this.decorationsEnabled = decorationsEnabled;
             }
         }
         if (preferenceName === 'git.decorations.colors') {
             updateDecorations = true;
-            const colorsEnabled = !!newValue;
+            const colorsEnabled = !!this.preferences.get('git.decorations.colors');
             if (this.colorsEnabled !== colorsEnabled) {
                 this.colorsEnabled = colorsEnabled;
             }
@@ -119,4 +118,3 @@ export class GitDecorationProvider implements DecorationsProvider {
     }
 
 }
-

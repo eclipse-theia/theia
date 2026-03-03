@@ -39,72 +39,111 @@ module.exports = {
                 if (callee.type === 'Super') {
                     return;
                 }
-                const { value, byDefault, node: localizeNode } = evaluateLocalize(node);
-                if (value !== undefined && localizeNode) {
-                    if (byDefault && !messages.has(value)) {
-                        let lowestDistance = Number.MAX_VALUE;
-                        let lowestMessage = '';
-                        for (const message of messages) {
-                            const distance = levenshtein(value, message);
-                            if (distance < lowestDistance) {
-                                lowestDistance = distance;
-                                lowestMessage = message;
+                const localizeResults = evaluateLocalize(node);
+                for (const { value, byDefault, node: localizeNode } of localizeResults) {
+                    if (value !== undefined && localizeNode) {
+                        if (byDefault && !messages.has(value)) {
+                            let lowestDistance = Number.MAX_VALUE;
+                            let lowestMessage = '';
+                            for (const message of messages) {
+                                const distance = levenshtein(value, message);
+                                if (distance < lowestDistance) {
+                                    lowestDistance = distance;
+                                    lowestMessage = message;
+                                }
                             }
-                        }
-                        if (lowestMessage) {
-                            const replacementValue = `'${lowestMessage.replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
+                            if (lowestMessage) {
+                                const replacementValue = `'${lowestMessage.replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
+                                context.report({
+                                    node: localizeNode,
+                                    message: `'${value}' is not a valid default value. Did you mean ${replacementValue}?`,
+                                    fix: function (fixer) {
+                                        return fixer.replaceText(localizeNode, replacementValue);
+                                    }
+                                });
+                            } else {
+                                context.report({
+                                    node: localizeNode,
+                                    message: `'${value}' is not a valid default value.`
+                                });
+                            }
+                        } else if (!byDefault && messages.has(value)) {
                             context.report({
-                                node: localizeNode,
-                                message: `'${value}' is not a valid default value. Did you mean ${replacementValue}?`,
+                                node,
+                                message: `'${value}' can be translated using the 'nls.localizeByDefault' function.`,
                                 fix: function (fixer) {
-                                    return fixer.replaceText(localizeNode, replacementValue);
+                                    const code = context.getSourceCode();
+                                    const args = node.arguments.slice(1);
+                                    const argsCode = args.map(e => code.getText(e)).join(', ');
+                                    const updatedCall = `nls.localizeByDefault(${argsCode})`;
+                                    return fixer.replaceText(node, updatedCall);
                                 }
                             });
-                        } else {
-                            context.report({
-                                node: localizeNode,
-                                message: `'${value}' is not a valid default value.`
-                            });
                         }
-                    } else if (!byDefault && messages.has(value)) {
-                        context.report({
-                            node,
-                            message: `'${value}' can be translated using the 'nls.localizeByDefault' function.`,
-                            fix: function (fixer) {
-                                const code = context.getSourceCode();
-                                const args = node.arguments.slice(1);
-                                const argsCode = args.map(e => code.getText(e)).join(', ');
-                                const updatedCall = `nls.localizeByDefault(${argsCode})`;
-                                return fixer.replaceText(node, updatedCall);
-                            }
-                        });
                     }
                 }
             }
         };
+
+        /**
+         * Evaluates a call expression and returns localization info.
+         * @param {import('estree').CallExpression} node
+         * @returns {Array<{value?: string, byDefault: boolean, node?: import('estree').Node}>}
+         */
         function evaluateLocalize(/** @type {import('estree').CallExpression} */ node) {
             const callee = node.callee;
             if ('object' in callee && 'name' in callee.object && 'property' in callee && 'name' in callee.property && callee.object.name === 'nls') {
                 if (callee.property.name === 'localize') {
                     const defaultTextNode = node.arguments[1]; // The default text node is the second argument for `nls.localize`
                     if (defaultTextNode && defaultTextNode.type === 'Literal' && typeof defaultTextNode.value === 'string') {
-                        return {
+                        return [{
+                            node: defaultTextNode,
                             value: defaultTextNode.value,
                             byDefault: false
-                        };
+                        }];
                     }
                 } else if (callee.property.name === 'localizeByDefault') {
-                    const defaultTextNode = node.arguments[0]; // The default text node is the first argument for ``nls.localizeByDefault`
+                    const defaultTextNode = node.arguments[0]; // The default text node is the first argument for `nls.localizeByDefault`
                     if (defaultTextNode && defaultTextNode.type === 'Literal' && typeof defaultTextNode.value === 'string') {
-                        return {
+                        return [{
                             node: defaultTextNode,
                             value: defaultTextNode.value,
                             byDefault: true
-                        };
+                        }];
                     }
                 }
             }
-            return {};
+            // Check for Command.toDefaultLocalizedCommand
+            if ('object' in callee && 'name' in callee.object && 'property' in callee && 'name' in callee.property
+                && callee.object.name === 'Command' && callee.property.name === 'toDefaultLocalizedCommand') {
+                const commandArg = node.arguments[0];
+                if (commandArg && commandArg.type === 'ObjectExpression') {
+                    return extractDefaultLocalizedProperties(commandArg);
+                }
+            }
+            return [];
+        }
+
+        /**
+         * Extracts label and category properties from a Command object that will be passed to localizeByDefault.
+         * @param {import('estree').ObjectExpression} objectNode
+         * @returns {Array<{value?: string, byDefault: boolean, node?: import('estree').Node}>}
+         */
+        function extractDefaultLocalizedProperties(objectNode) {
+            const results = [];
+            for (const property of objectNode.properties) {
+                if (property.type === 'Property' && property.key.type === 'Identifier') {
+                    const keyName = property.key.name;
+                    if ((keyName === 'label' || keyName === 'category') && property.value.type === 'Literal' && typeof property.value.value === 'string') {
+                        results.push({
+                            node: property.value,
+                            value: property.value.value,
+                            byDefault: true
+                        });
+                    }
+                }
+            }
+            return results;
         }
     }
 };

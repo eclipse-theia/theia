@@ -58,7 +58,19 @@ export class TaskContextSummaryVariableContribution implements AIVariableContrib
         const allSummaryRequests = context.model.context.getVariables().filter(candidate => candidate.variable.id === TASK_CONTEXT_VARIABLE.id);
         if (!allSummaryRequests.length) { return { ...request, value: '' }; }
         const allSummaries = await Promise.all(allSummaryRequests.map(summaryRequest => resolveDependency(summaryRequest).then(resolved => resolved?.value)));
-        const value = `# Current Task Context\n\n${allSummaries.map((content, index) => `## Task ${index + 1}\n\n${content}`).join('\n\n')}`;
+        const value = `# Current Task Context
+
+The following task context defines the task you are expected to work on. It was explicitly provided by the user and represents your primary objective.
+This context is authoritative: follow it unless you identify issues (e.g., outdated assumptions, technical conflicts, or unclear steps).
+The task context may contain errors or outdated assumptions. You are expected to identify and report these, not blindly execute incorrect instructions.
+Note: This context is a snapshot from the start of the conversation and will not update during this run.
+When deviating from the plan:
+- Explain the deviation and your reasoning before proceeding
+- Summarize all deviations at the end of your response, and suggest updates to the task context if the plan needs revision
+
+---
+
+${allSummaries.map((content, index) => `## Task ${index + 1}\n\n${content}`).join('\n\n')}`;
         return {
             ...request,
             value

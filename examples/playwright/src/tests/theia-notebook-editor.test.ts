@@ -23,7 +23,7 @@ import { TheiaNotebookEditor } from '../theia-notebook-editor';
 import { TheiaWorkspace } from '../theia-workspace';
 
 // See .github/workflows/playwright.yml for preferred python version
-const preferredKernel = process.env.CI ? 'Python 3.11' : 'Python 3';
+const preferredKernel = process.env.CI ? 'Python 3.13' : 'Python 3';
 
 async function ensureKernelSelected(editor: TheiaNotebookEditor): Promise<void> {
     const selectedKernel = await editor.selectedKernel();

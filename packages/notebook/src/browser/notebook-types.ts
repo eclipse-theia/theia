@@ -105,6 +105,7 @@ export type SelectionState = SelectionHandleState | SelectionIndexState;
 export interface NotebookModelWillAddRemoveEvent {
     readonly newCellIds?: number[];
     readonly rawEvent: NotebookCellsModelChangedEvent<CellData>;
+    readonly externalEvent?: boolean;
 };
 
 export interface CellOutputEdit {

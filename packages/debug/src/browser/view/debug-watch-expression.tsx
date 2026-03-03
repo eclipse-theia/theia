@@ -23,7 +23,7 @@ import { nls } from '@theia/core';
 
 export class DebugWatchExpression extends ExpressionItem {
 
-    readonly id: number;
+    override readonly id: number;
     protected isError: boolean;
     protected isNotAvailable: boolean;
 
@@ -34,12 +34,12 @@ export class DebugWatchExpression extends ExpressionItem {
         remove: () => void,
         onDidChange: () => void
     }) {
-        super(options.expression, options.session);
-        this.id = options.id;
+        super(options.expression, options.session, options.id);
     }
 
     override async evaluate(): Promise<void> {
         await super.evaluate('watch');
+        this.options.onDidChange();
     }
 
     protected override setResult(body?: DebugProtocol.EvaluateResponse['body'], error?: string): void {
@@ -56,14 +56,13 @@ export class DebugWatchExpression extends ExpressionItem {
             super.setResult(body, error);
             this.isError = !!error;
         }
-        this.options.onDidChange();
     }
 
     override render(): React.ReactNode {
         const valueClass = this.valueClass();
         return <div className='theia-debug-console-variable theia-debug-watch-expression'>
             <div className={TREE_NODE_SEGMENT_GROW_CLASS}>
-                <span title={this.type || this._expression} className='name'>{this._expression}: </span>
+                <span title={this.type || this._expression} className='name'>{this._expression}:</span>
                 <span title={this._value} ref={this.setValueRef} className={valueClass}>{this._value}</span>
             </div>
             <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Expression')} onClick={this.options.remove} />
@@ -77,7 +76,7 @@ export class DebugWatchExpression extends ExpressionItem {
         if (this.isNotAvailable) {
             return 'watch-not-available';
         }
-        return '';
+        return 'value';
     }
 
     async open(): Promise<void> {

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ScmService } from './scm-service';
 import { ScmTreeModel } from './scm-tree-model';
 import { ScmResourceGroup, ScmProvider } from './scm-provider';
@@ -31,9 +31,12 @@ export class ScmGroupsTreeModel extends ScmTreeModel {
     protected override init(): void {
         super.init();
         this.refreshOnRepositoryChange();
-        this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => {
-            this.refreshOnRepositoryChange();
-        }));
+        this.toDispose.pushAll([
+            Disposable.create(() => this.toDisposeOnRepositoryChange.dispose()),
+            this.scmService.onDidChangeSelectedRepository(() => {
+                this.refreshOnRepositoryChange();
+            })
+        ]);
     }
 
     protected refreshOnRepositoryChange(): void {

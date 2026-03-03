@@ -19,7 +19,7 @@ Note that the project is still in a beta phase and can be subject to unexpected 
 
 ## Additional Information
 
-- [API documentation for `@theia/collaboration`](https://eclipse-theia.github.io/theia/docs/next/modules/collaboration.html)
+- [API documentation for `@theia/collaboration`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_collaboration.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

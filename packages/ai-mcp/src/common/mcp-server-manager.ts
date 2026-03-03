@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CallToolResult, ListResourcesResult, ListToolsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
+import type { CallToolResult, ListResourcesResult, ListToolsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
 import { Event } from '@theia/core/lib/common/event';
 
 export const MCPFrontendService = Symbol('MCPFrontendService');
@@ -60,6 +60,7 @@ export interface MCPServerManager {
     disconnectClient(client: MCPFrontendNotificationService): void;
     readResource(serverName: string, resourceId: string): Promise<ReadResourceResult>;
     getResources(serverName: string): Promise<ListResourcesResult>;
+    setWorkspaceRoots(roots: string[] | undefined): void;
 }
 
 export interface ToolInformation {
@@ -102,6 +103,17 @@ export interface BaseMCPServerDescription {
      * List of available tools for the server. Returns the name and description if available.
      */
     tools?: ToolInformation[];
+
+    /**
+     * Optional resolve function that gets called during server definition resolution.
+     * This function can be used to dynamically modify server configurations,
+     * resolve environment variables, validate configurations, or perform any
+     * necessary preprocessing before the server starts.
+     *
+     * @param description The current server description
+     * @returns A promise that resolves to the processed server description
+     */
+    resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription>;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {

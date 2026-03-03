@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { SelectionService, UriSelection } from '@theia/core';
+import { MenuPath, SelectionService, UriSelection } from '@theia/core';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
@@ -29,7 +29,7 @@ import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../
 import { TestItemReference, TestMessageArg } from '../../../common/test-types';
 import { PluginScmProvider, PluginScmResource, PluginScmResourceGroup } from '../scm-main';
 import { TreeViewWidget } from '../view/tree-view-widget';
-import { CodeEditorWidgetUtil, ContributionPoint } from './vscode-theia-menu-mappings';
+import { CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint } from './vscode-theia-menu-mappings';
 import { TestItem, TestMessage } from '@theia/test/lib/browser/test-service';
 
 export type ArgumentAdapter = (...args: unknown[]) => unknown[];
@@ -85,8 +85,27 @@ export class PluginMenuCommandAdapter {
         });
     }
 
-    getArgumentAdapter(contributionPoint: string): ArgumentAdapter {
-        return this.argumentAdapters.get(contributionPoint) || identity;
+    getArgumentAdapter(menuPath: MenuPath): ArgumentAdapter {
+        for (const [contributionPoint, menuPaths] of codeToTheiaMappings) {
+            for (const theiaPath of menuPaths) {
+                if (this.isPrefixOf(theiaPath, menuPath)) {
+                    return this.argumentAdapters.get(contributionPoint) || identity;
+                }
+            }
+        }
+        return identity;
+    }
+
+    private isPrefixOf(candidate: string[], menuPath: MenuPath): boolean {
+        if (candidate.length > menuPath.length) {
+            return false;
+        }
+        for (let i = 0; i < candidate.length; i++) {
+            if (candidate[i] !== menuPath[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /* eslint-disable @typescript-eslint/no-explicit-any */

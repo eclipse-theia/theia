@@ -17,15 +17,16 @@
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
 import debounce = require('lodash.debounce');
-import { CommandService } from '../../common';
+import { CancellationTokenSource, CommandService, nls } from '../../common';
 import { ReactWidget } from '../widgets/react-widget';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { LabelParser, LabelIcon } from '../label-parser';
-import { PreferenceService } from '../preferences';
 import { StatusBar, StatusBarEntry, StatusBarAlignment, StatusBarViewEntry } from './status-bar-types';
 import { StatusBarViewModel } from './status-bar-view-model';
 import { HoverService } from '../hover-service';
 import { codicon } from '../widgets';
+import { PreferenceService } from '../../common/preferences';
+import { MarkdownString } from '../../common/markdown-rendering';
 export { StatusBar, StatusBarAlignment, StatusBarEntry };
 
 @injectable()
@@ -55,7 +56,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         this.toDispose.push(
             this.preferences.onPreferenceChanged(preference => {
                 if (preference.preferenceName === 'workbench.statusBar.visible') {
-                    this.setHidden(!preference.newValue);
+                    this.setHidden(!this.preferences.get('workbench.statusBar.visible', true));
                 }
             })
         );
@@ -117,12 +118,33 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         };
     }
 
-    protected requestHover(e: React.MouseEvent<HTMLElement, MouseEvent>, entry: StatusBarEntry): void {
+    /**
+     * Request a hover to be displayed for a status bar entry.
+     * @param e The mouse event that triggered the hover request
+     * @param entry The status bar entry to display hover for
+     * @param skipDelay When true, requests the hover immediately without delay (for click-triggered hovers)
+     */
+    protected requestHover(e: React.MouseEvent<HTMLElement, MouseEvent>, entry: StatusBarEntry, skipDelay = false): void {
+        const target = e.currentTarget;
+        if (typeof entry.tooltip === 'function') {
+            const cancellationSource = new CancellationTokenSource();
+            this.doRequestHover(target, nls.localizeByDefault('Loading...'), skipDelay, () => cancellationSource.dispose());
+            Promise.resolve(entry.tooltip(cancellationSource.token))
+                .catch(() => undefined)
+                .then(res => res && !cancellationSource.token.isCancellationRequested && this.doRequestHover(target, res, skipDelay));
+        } else {
+            this.doRequestHover(target, entry.tooltip!, skipDelay);
+        }
+    }
+
+    protected doRequestHover(target: HTMLElement, content: string | HTMLElement | MarkdownString, skipDelay = false, onHide?: () => void): void {
         this.hoverService.requestHover({
-            content: entry.tooltip!,
-            target: e.currentTarget,
+            content,
+            target,
             position: 'top',
-            interactive: entry.tooltip instanceof HTMLElement,
+            interactive: content instanceof HTMLElement || MarkdownString.is(content),
+            onHide,
+            skipHoverDelay: skipDelay
         });
     }
 
@@ -139,7 +161,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         } else if (entry.onclick) {
             attrs.onClick = e => entry.onclick?.(e.nativeEvent);
         } else {
-            attrs.onClick = e => this.requestHover(e, entry);
+            attrs.onClick = e => this.requestHover(e, entry, true);
         }
 
         if (viewEntry.compact && viewEntry.alignment !== undefined) {

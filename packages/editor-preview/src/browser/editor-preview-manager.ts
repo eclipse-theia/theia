@@ -16,7 +16,7 @@
 
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { EditorPreviewPreferences } from './editor-preview-preferences';
+import { EditorPreviewPreferences } from '../common/editor-preview-preferences';
 import { MaybePromise } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
@@ -50,7 +50,7 @@ export class EditorPreviewManager extends EditorManager {
         });
 
         this.preferences.onPreferenceChanged(change => {
-            if (change.preferenceName === 'editor.enablePreview' && !change.newValue) {
+            if (change.preferenceName === 'editor.enablePreview' && !this.preferences['editor.enablePreview']) {
                 this.all.forEach((editor: EditorPreviewWidget) => {
                     if (editor.isPreview) {
                         editor.convertToNonPreview();

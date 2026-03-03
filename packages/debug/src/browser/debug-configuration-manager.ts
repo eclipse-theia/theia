@@ -26,24 +26,33 @@ import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { LabelProvider, PreferenceScope, PreferenceService, QuickPickValue, StorageService } from '@theia/core/lib/browser';
+import { LabelProvider, QuickPickValue, StorageService } from '@theia/core/lib/browser';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugConfigurationModel } from './debug-configuration-model';
 import { DebugSessionOptions, DynamicDebugConfigurationSessionOptions } from './debug-session-options';
-import { DebugService } from '../common/debug-service';
+import { DebugService, DynamicDebugConfigurationProvider } from '../common/debug-service';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugConfiguration } from '../common/debug-common';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import * as monaco from '@theia/monaco-editor-core';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { nls } from '@theia/core';
+import { nls, PreferenceConfigurations, PreferenceScope, PreferenceService } from '@theia/core';
 import { DebugCompound } from '../common/debug-compound';
 
+/**
+ * Event fired before providing debug configurations.
+ * When `debugType` is specified, only extensions providing that type should be activated.
+ * When `debugType` is undefined, all configuration providers should be activated.
+ */
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
+    /**
+     * The debug type to provide configurations for.
+     * If undefined, configurations for all types should be provided.
+     */
+    readonly debugType?: string;
 }
 
 @injectable()
@@ -91,6 +100,13 @@ export class DebugConfigurationManager {
         return this.debug.onDidChangeDebugConfigurationProviders;
     }
 
+    protected readonly onDidChangeDynamicConfigurationsEmitter = new Emitter<void>();
+    /**
+     * Fires when the set of dynamic debug configuration providers changes
+     * (i.e., when providers are registered or unregistered).
+     */
+    readonly onDidChangeDynamicConfigurations: Event<void> = this.onDidChangeDynamicConfigurationsEmitter.event;
+
     protected debugConfigurationTypeKey: ContextKey<string>;
 
     protected initialized: Promise<void>;
@@ -100,6 +116,10 @@ export class DebugConfigurationManager {
     @postConstruct()
     protected init(): void {
         this.doInit();
+        // Notify when configuration providers change
+        this.debug.onDidChangeDebugConfigurationProviders(() => {
+            this.onDidChangeDynamicConfigurationsEmitter.fire();
+        });
     }
 
     protected async doInit(): Promise<void> {
@@ -468,6 +488,23 @@ export class DebugConfigurationManager {
         await WaitUntilEvent.fire(this.onWillProvideDebugConfigurationEmitter, {});
     }
 
+    /**
+     * Returns dynamic debug configuration providers grouped by label.
+     * Each entry contains a label and all the types that share that label.
+     */
+    getDynamicDebugConfigurationProviders(): DynamicDebugConfigurationProvider[] {
+        return this.debug.getDynamicDebugConfigurationProviders?.() ?? [];
+    }
+
+    /**
+     * Returns the types of registered dynamic debug configuration providers
+     * without invoking them.
+     * @deprecated Use getDynamicDebugConfigurationProviders() instead for proper label support.
+     */
+    getDynamicDebugConfigurationProviderTypes(): string[] {
+        return this.debug.getDynamicDebugConfigurationProviderTypes?.() ?? [];
+    }
+
     async provideDynamicDebugConfigurations(): Promise<Record<string, DynamicDebugConfigurationSessionOptions[]>> {
         await this.fireWillProvideDynamicDebugConfiguration();
         const roots = this.workspaceService.tryGetRoots();
@@ -500,19 +537,43 @@ export class DebugConfigurationManager {
     }
 
     async fetchDynamicDebugConfiguration(name: string, type: string, folder?: string): Promise<DebugConfiguration | undefined> {
-        await this.fireWillProvideDynamicDebugConfiguration();
+        await this.fireWillProvideDynamicDebugConfiguration(type);
         return this.debug.fetchDynamicDebugConfiguration(name, type, folder);
     }
 
-    protected async fireWillProvideDynamicDebugConfiguration(): Promise<void> {
+    /**
+     * Provides dynamic debug configurations for a specific provider type only.
+     * This activates only the extension for the specified type, making it more
+     * efficient than `provideDynamicDebugConfigurations()` which activates all providers.
+     */
+    async provideDynamicDebugConfigurationsByType(providerType: string): Promise<DynamicDebugConfigurationSessionOptions[]> {
+        await this.fireWillProvideDynamicDebugConfiguration(providerType);
+        const roots = this.workspaceService.tryGetRoots();
+        const allOptions: DynamicDebugConfigurationSessionOptions[] = [];
+
+        await Promise.all(roots.map(async root => {
+            const configs = await this.debug.provideDynamicDebugConfigurationsByType?.(providerType, root.resource.toString()) ?? [];
+            const options = configs.map(config => ({
+                name: config.name,
+                providerType,
+                configuration: config,
+                workspaceFolderUri: root.resource.toString()
+            }));
+            allOptions.push(...options);
+        }));
+
+        return allOptions;
+    }
+
+    protected async fireWillProvideDynamicDebugConfiguration(debugType?: string): Promise<void> {
         await this.initialized;
-        await WaitUntilEvent.fire(this.onWillProvideDynamicDebugConfigurationEmitter, {});
+        await WaitUntilEvent.fire(this.onWillProvideDynamicDebugConfigurationEmitter, { debugType });
     }
 
     protected getInitialConfigurationContent(initialConfigurations: DebugConfiguration[]): string {
         return `{
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
+  // ${nls.localizeByDefault('Use IntelliSense to learn about possible attributes.')}
+  // ${nls.localizeByDefault('Hover to view descriptions of existing attributes.')}
   "version": "0.2.0",
   "configurations": ${JSON.stringify(initialConfigurations, undefined, '  ').split('\n').map(line => '  ' + line).join('\n').trim()}
 }
@@ -530,7 +591,7 @@ export class DebugConfigurationManager {
             return undefined;
         }
         const items: Array<QuickPickValue<string>> = debuggers.map(({ label, type }) => ({ label, value: type }));
-        const selectedItem = await this.quickPickService.show(items, { placeholder: 'Select Environment' });
+        const selectedItem = await this.quickPickService.show(items, { placeholder: nls.localizeByDefault('Select debugger') });
         return selectedItem?.value;
     }
 

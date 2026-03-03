@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - AI Code Completion</h2>
+<h2>ECLIPSE THEIA - AI CODE COMPLETION EXTENSION</h2>
 
 <hr />
 
@@ -17,6 +17,7 @@ The user can separately enable code completion items as well as inline code comp
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-code-completion`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-code-completion.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

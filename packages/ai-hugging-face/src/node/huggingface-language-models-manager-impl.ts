@@ -46,9 +46,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
                     console.warn(`Hugging Face: model ${modelDescription.id} is not a Hugging Face model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.apiKey = apiKeyProvider;
-                model.status = status;
+                await this.languageModelRegistry.patchLanguageModel(modelDescription.id, { status });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new HuggingFaceModel(

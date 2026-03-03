@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommonMenus, LabelProvider, PreferenceService, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+import { CommonMenus, LabelProvider, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -34,7 +35,7 @@ import { OVSXApiFilterProvider, VSXExtensionRaw } from '@theia/ovsx-client';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
 import { DateTime } from 'luxon';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
-import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
+import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution';
 import { VSXExtension, VSXExtensionsContextMenu } from './vsx-extension';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
 import { VSXExtensionsModel } from './vsx-extensions-model';
@@ -292,7 +293,42 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         if (latestCompatible) {
             compatibleExtensions = extensions.slice(extensions.findIndex(ext => ext.version === latestCompatible.version));
         }
-        const items: QuickPickItem[] = compatibleExtensions.map(ext => {
+
+        // Group extensions by version
+        const extensionsByVersion = new Map<string, VSXExtensionRaw[]>();
+        for (const ext of compatibleExtensions) {
+            if (!extensionsByVersion.has(ext.version)) {
+                extensionsByVersion.set(ext.version, []);
+            }
+            extensionsByVersion.get(ext.version)!.push(ext);
+        }
+
+        // Filter extensions to one per version, preferring the current platform or universal
+        const filteredExtensions: VSXExtensionRaw[] = [];
+        for (const exts of extensionsByVersion.values()) {
+            if (exts.length === 1) {
+                // Only one extension for this version, use it directly
+                filteredExtensions.push(exts[0]);
+            } else {
+                // Multiple extensions for this version with different platforms
+                // Try to find one matching the current platform
+                const matchingPlatform = exts.find(e => e.targetPlatform === targetPlatform);
+                if (matchingPlatform) {
+                    filteredExtensions.push(matchingPlatform);
+                } else {
+                    // No match for current platform, try to find universal
+                    const universal = exts.find(e => e.targetPlatform === 'universal');
+                    if (universal) {
+                        filteredExtensions.push(universal);
+                    } else {
+                        // No universal either, just use the first one
+                        filteredExtensions.push(exts[0]);
+                    }
+                }
+            }
+        }
+
+        const items: QuickPickItem[] = filteredExtensions.map(ext => {
             const item = {
                 label: ext.version,
                 description: DateTime.fromISO(ext.timestamp).toRelative({ locale: nls.locale }) ?? ''
@@ -351,9 +387,11 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
     protected async showRecommendedToast(): Promise<void> {
         if (!this.preferenceService.get(IGNORE_RECOMMENDATIONS_ID, false)) {
-            const recommended = new Set([...this.model.recommended]);
-            for (const installed of this.model.installed) {
-                recommended.delete(installed);
+            const recommended = new Set<string>();
+            for (const recommendation of this.model.recommended) {
+                if (!this.model.isInstalled(recommendation)) {
+                    recommended.add(recommendation);
+                }
             }
             if (recommended.size) {
                 const install = nls.localizeByDefault('Install');

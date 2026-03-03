@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { MenuPath } from '@theia/core';
-import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
+import { CommonMenus, SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
@@ -88,6 +88,7 @@ export const codeToTheiaMappings = new Map<string, MenuPath[]>([
     ['editor/title/run', [PLUGIN_EDITOR_TITLE_RUN_MENU]],
     ['editor/lineNumber/context', [EDITOR_LINENUMBER_CONTEXT_MENU]],
     ['explorer/context', [NAVIGATOR_CONTEXT_MENU]],
+    ['file/newFile', [CommonMenus.FILE_NEW_CONTRIBUTIONS]],
     ['scm/change/title', [PLUGIN_SCM_CHANGE_TITLE_MENU]],
     ['scm/resourceFolder/context', [ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU]],
     ['scm/resourceGroup/context', [ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU]],

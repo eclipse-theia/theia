@@ -17,7 +17,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager, MCPFrontendNotificationService } from '../common/mcp-server-manager';
 import { MCPServer } from './mcp-server';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
+import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {
@@ -25,6 +25,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     protected servers: Map<string, MCPServer> = new Map();
     protected clients: Array<MCPFrontendNotificationService> = [];
     protected serverListeners: Map<string, Disposable> = new Map();
+    protected roots: string[] | undefined;
 
     async stopServer(serverName: string): Promise<void> {
         const server = this.servers.get(serverName);
@@ -39,7 +40,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     async getRunningServers(): Promise<string[]> {
         const runningServers: string[] = [];
         for (const [name, server] of this.servers.entries()) {
-            if (server.isRunnning()) {
+            if (server.isRunning()) {
                 runningServers.push(name);
             }
         }
@@ -58,6 +59,14 @@ export class MCPServerManagerImpl implements MCPServerManager {
         const server = this.servers.get(serverName);
         if (!server) {
             throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        const description = await server.getDescription();
+        if (description.resolve) {
+            const resolved = await description.resolve(description);
+            const isEqual = JSON.stringify(description) === JSON.stringify(resolved);
+            if (!isEqual) {
+                server.update(resolved);
+            }
         }
         await server.start();
         this.notifyClients();
@@ -87,6 +96,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
             existingServer.update(description);
         } else {
             const newServer = new MCPServer(description);
+            newServer.setWorkspaceRoots(this.roots);
             this.servers.set(description.name, newServer);
 
             // Subscribe to status updates from the new server
@@ -150,5 +160,12 @@ export class MCPServerManagerImpl implements MCPServerManager {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
         return server.getResources();
+    }
+
+    setWorkspaceRoots(roots: string[] | undefined): void {
+        this.roots = roots;
+        this.servers.forEach(server => {
+            server.setWorkspaceRoots(roots);
+        });
     }
 }

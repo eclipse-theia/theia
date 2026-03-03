@@ -89,7 +89,7 @@ sure everything still works, then make a PR.
 
 ## Additional Information
 
-- [API documentation for `@theia/monaco`](https://eclipse-theia.github.io/theia/docs/next/modules/monaco.html)
+- [API documentation for `@theia/monaco`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_monaco.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

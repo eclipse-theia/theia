@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { exec } from 'child_process';
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -35,6 +36,11 @@ interface SerializedExtensionEnvironmentVariableCollection {
     extensionIdentifier: string,
     rootUri: string,
     collection: SerializableEnvironmentVariableCollection,
+}
+
+interface WindowsProcess {
+    ProcessId: number;
+    ParentProcessId: number;
 }
 
 @injectable()
@@ -90,10 +96,26 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
         if (processId) {
             // if shell has at least one child process, assume that shell is busy
             if (isWindows) {
-                return this.spawnAsPromised('wmic', ['process', 'get', 'ParentProcessId']).then(stdout => {
-                    const pids = stdout.split('\r\n');
-                    return pids.some(p => parseInt(p) === processId);
-                }, error => true);
+                return new Promise(resolve => {
+                    exec(
+                        'powershell -Command "Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId | ConvertTo-Json"',
+                        (error, stdout) => {
+                            if (error) {
+                                this.logger.error(`Failed to get Windows process list: ${error}`);
+                                return resolve(true); // assume busy on error
+                            }
+
+                            try {
+                                const processes: WindowsProcess[] = JSON.parse(stdout);
+                                const hasChild = processes.some(proc => proc.ParentProcessId === processId);
+                                return resolve(hasChild);
+                            } catch (parseError) {
+                                this.logger.error(`Failed to parse process list JSON: ${parseError}`);
+                                return resolve(true); // assume busy on parse error
+                            }
+                        },
+                    );
+                });
             } else {
                 return this.spawnAsPromised('/usr/bin/pgrep', ['-lP', String(processId)]).then(stdout => {
                     const r = stdout.trim();

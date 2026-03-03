@@ -69,7 +69,13 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
         this.languageModelRegistry.removeLanguageModels(modelIds.map(id => `ollama/${id}`));
     }
 
-    setHost(host: string | undefined): void {
+    async setHost(host: string | undefined): Promise<void> {
         this._host = host || undefined;
+        const models = await this.languageModelRegistry.getLanguageModels();
+        const ollamaModels = models.filter(model => model instanceof OllamaModel) as OllamaModel[];
+        const status = this.calculateStatus(this.host);
+        for (const model of ollamaModels) {
+            model.status = status;
+        }
     }
 }

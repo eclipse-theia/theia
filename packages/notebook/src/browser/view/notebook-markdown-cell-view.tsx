@@ -32,6 +32,7 @@ import * as mark from 'advanced-mark.js';
 import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
 import { NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
+import { NotebookViewModel } from '../view-model/notebook-view-model';
 
 @injectable()
 export class NotebookMarkdownCellRenderer implements CellRenderer {
@@ -59,6 +60,9 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
     @inject(LabelParser)
     protected readonly labelParser: LabelParser;
 
+    @inject(NotebookViewModel)
+    protected readonly notebookViewModel: NotebookViewModel;
+
     render(notebookModel: NotebookModel, cell: NotebookCellModel): React.ReactNode {
         return <MarkdownCell
             markdownRenderer={this.markdownRenderer}
@@ -67,6 +71,7 @@ export class NotebookMarkdownCellRenderer implements CellRenderer {
             notebookOptionsService={this.notebookOptionsService}
             cell={cell}
             notebookModel={notebookModel}
+            notebookViewModel={this.notebookViewModel}
             notebookContextManager={this.notebookContextManager}
             notebookCellEditorService={this.notebookCellEditorService}
             notebookCellStatusBarService={this.notebookCellStatusBarService}
@@ -95,6 +100,7 @@ interface MarkdownCellProps {
     commandRegistry: CommandRegistry;
     cell: NotebookCellModel;
     notebookModel: NotebookModel;
+    notebookViewModel: NotebookViewModel;
     notebookContextManager: NotebookContextManager;
     notebookOptionsService: NotebookOptionsService;
     notebookCellEditorService: NotebookCellEditorService;
@@ -103,17 +109,30 @@ interface MarkdownCellProps {
 }
 
 function MarkdownCell({
-    markdownRenderer, monacoServices, cell, notebookModel, notebookContextManager,
+    markdownRenderer, monacoServices, cell, notebookModel, notebookViewModel, notebookContextManager,
     notebookOptionsService, commandRegistry, notebookCellEditorService, notebookCellStatusBarService,
     labelParser
 }: MarkdownCellProps): React.JSX.Element {
-    const [editMode, setEditMode] = React.useState(cell.editing);
+    const [editMode, setEditMode] = React.useState(notebookViewModel.cellViewModels.get(cell.handle)?.editing || false);
+    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
     let empty = false;
 
     React.useEffect(() => {
-        const listener = cell.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));
-        return () => listener.dispose();
-    }, [editMode]);
+        if (!editMode) {
+            const listener = cell.onDidChangeContent(type => {
+                if (type === 'content') {
+                    forceUpdate();
+                }
+            });
+            return () => listener.dispose();
+        }
+    }, [editMode, cell]);
+
+    React.useEffect(() => {
+        const cellViewModel = notebookViewModel.cellViewModels.get(cell.handle);
+        const listener = cellViewModel?.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));
+        return () => listener?.dispose();
+    }, [editMode, notebookViewModel, cell]);
 
     React.useEffect(() => {
         if (!editMode) {
@@ -156,6 +175,7 @@ function MarkdownCell({
     return editMode ?
         (<div className='theia-notebook-markdown-editor-container' key="code" ref={ref => observeCellHeight(ref, cell)}>
             <CellEditor notebookModel={notebookModel} cell={cell}
+                notebookViewModel={notebookViewModel}
                 monacoServices={monacoServices}
                 notebookContextManager={notebookContextManager}
                 notebookCellEditorService={notebookCellEditorService}
@@ -164,10 +184,10 @@ function MarkdownCell({
                 commandRegistry={commandRegistry}
                 cellStatusBarService={notebookCellStatusBarService}
                 labelParser={labelParser}
-                onClick={() => cell.requestFocusEditor()} />
+                onClick={() => notebookViewModel.cellViewModels.get(cell.handle)?.requestFocusEditor()} />
         </div >) :
         (<div className='theia-notebook-markdown-content' key="markdown"
-            onDoubleClick={() => cell.requestEdit()}
+            onDoubleClick={() => notebookViewModel.cellViewModels.get(cell.handle)?.requestEdit()}
             ref={node => {
                 node?.replaceChildren(...markdownContent);
                 observeCellHeight(node, cell);

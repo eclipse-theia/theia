@@ -71,6 +71,14 @@ interface KernelPreloadModule {
 }
 
 export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
+    // workaround to allow rendering of links in outputs for non chromium browsers
+    // see https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API#cross-browser_support_for_trusted_types
+    if (!window.trustedTypes) {
+        window.trustedTypes = {
+            createPolicy: (name: string, rules: unknown) => rules
+        } as unknown as typeof window.trustedTypes;
+    }
+
     const theia = acquireVsCodeApi();
     const renderFallbackErrorName = 'vscode.fallbackToNextRenderer';
 
@@ -633,7 +641,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                         return JSON.parse(this.text());
                     },
                     blob(): Blob {
-                        return new Blob([this.data()], { type: this.mime });
+                        return new Blob([new Uint8Array(this.data())], { type: this.mime });
                     },
 
                 }));

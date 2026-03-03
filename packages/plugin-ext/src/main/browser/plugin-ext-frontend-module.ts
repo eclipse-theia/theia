@@ -26,7 +26,7 @@ import {
     noopWidgetStatusBarContribution,
     WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindRootContributionProvider, URI, generateUuid, PreferenceContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -60,7 +60,6 @@ import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 import { WebviewWidget } from './webview/webview';
 import { WebviewEnvironment } from './webview/webview-environment';
 import { WebviewThemeDataProvider } from './webview/webview-theme-data-provider';
-import { bindWebviewPreferences } from './webview/webview-preferences';
 import { WebviewResourceCache } from './webview/webview-resource-cache';
 import { PluginIconThemeService, PluginIconThemeFactory, PluginIconThemeDefinition, PluginIconTheme } from './plugin-icon-theme-service';
 import { PluginTreeViewNodeLabelProvider } from './view/plugin-tree-view-node-label-provider';
@@ -90,6 +89,10 @@ import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './noteb
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
+import { CustomEditorNavigationContribution } from './custom-editors/custom-editor-navigation-contribution';
+import { bindWebviewPreferences } from '../common/webview-preferences';
+import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
+import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -180,6 +183,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     })).inSingletonScope();
 
     bindWebviewPreferences(bind);
+    bind(WebviewFrontendPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(WebviewFrontendPreferenceContribution);
     bind(WebviewEnvironment).toSelf().inSingletonScope();
     bind(WebviewThemeDataProvider).toSelf().inSingletonScope();
     bind(WebviewResourceCache).toSelf().inSingletonScope();
@@ -199,6 +204,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WidgetFactory).toService(CustomEditorWidgetFactory);
     bind(CustomEditorUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(CustomEditorUndoRedoHandler);
+
+    bind(CustomEditorNavigationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(CustomEditorNavigationContribution);
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: CustomEditorWidget.SIDE_BY_SIDE_FACTORY_ID,
@@ -254,7 +262,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(TextContentResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(TextContentResourceResolver);
-    bindContributionProvider(bind, MainPluginApiProvider);
+    bindRootContributionProvider(bind, MainPluginApiProvider);
 
     bind(PluginDebugService).toSelf().inSingletonScope();
     rebind(DebugService).toService(PluginDebugService);
@@ -285,6 +293,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CellOutputWebviewFactory).toFactory(ctx => () =>
         createCellOutputWebviewContainer(ctx.container).get(CellOutputWebviewImpl)
     );
-    bindContributionProvider(bind, ArgumentProcessorContribution);
+    bindRootContributionProvider(bind, ArgumentProcessorContribution);
+
+    bind(PluginExtToolbarItemArgumentProcessor).toSelf().inSingletonScope();
+    bind(ArgumentProcessorContribution).toService(PluginExtToolbarItemArgumentProcessor);
 
 });

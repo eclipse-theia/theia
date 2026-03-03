@@ -14,21 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceItem } from '../../common/preferences/preference-schema';
 import { JSONObject, JSONValue } from '../../../shared/@lumino/coreutils';
-import { PreferenceSchemaProvider } from './preference-contribution';
-import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { inject, injectable } from '../../../shared/inversify';
 import { IJSONSchema, JsonType } from '../../common/json-schema';
 import { deepClone, unreachable } from '../../common';
-import { PreferenceProvider } from './preference-provider';
+import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
+import { PreferenceSchemaService, PreferenceScope, PreferenceUtils, PreferenceDataProperty } from '../../common/preferences';
 
 export interface PreferenceValidator<T> {
     name: string;
     validate(value: unknown): T;
 }
 
-export interface ValidatablePreference extends IJSONSchema, Pick<PreferenceItem, 'defaultValue'> { }
 export type ValueValidator = (value: JSONValue) => JSONValue;
 
 export interface PreferenceValidationResult<T extends JSONValue> {
@@ -37,11 +34,11 @@ export interface PreferenceValidationResult<T extends JSONValue> {
     messages: string[];
 }
 
-type ValidatablePreferenceTuple = ValidatablePreference & ({ items: ValidatablePreference[] } | { prefixItems: ValidatablePreference[] });
+type ValidatablePreferenceTuple = IJSONSchema & ({ items: IJSONSchema[] } | { prefixItems: IJSONSchema[] });
 
 @injectable()
 export class PreferenceValidationService {
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaService: PreferenceSchemaService;
     @inject(PreferenceLanguageOverrideService) protected readonly languageOverrideService: PreferenceLanguageOverrideService;
 
     validateOptions(options: Record<string, JSONValue>): Record<string, JSONValue> {
@@ -71,30 +68,30 @@ export class PreferenceValidationService {
         return this.validateBySchema(preferenceName, value, schema);
     }
 
-    validateBySchema(key: string, value: JSONValue, schema: ValidatablePreference | undefined): JSONValue {
+    validateBySchema(key: string, value: JSONValue, schema: IJSONSchema | undefined): JSONValue {
         try {
             if (!schema) {
                 console.warn('Request to validate preference with no schema registered:', key);
                 return value;
             }
             if (schema.const !== undefined) {
-                return this.validateConst(key, value, schema as ValidatablePreference & { const: JSONValue });
+                return this.validateConst(key, value, schema as IJSONSchema & { const: JSONValue });
             }
             if (Array.isArray(schema.enum)) {
-                return this.validateEnum(key, value, schema as ValidatablePreference & { enum: JSONValue[] });
+                return this.validateEnum(key, value, schema as IJSONSchema & { enum: JSONValue[] });
             }
             if (Array.isArray(schema.anyOf)) {
-                return this.validateAnyOf(key, value, schema as ValidatablePreference & { anyOf: ValidatablePreference[] });
+                return this.validateAnyOf(key, value, schema as IJSONSchema & { anyOf: IJSONSchema[] });
             }
             if (Array.isArray(schema.oneOf)) {
-                return this.validateOneOf(key, value, schema as ValidatablePreference & { oneOf: ValidatablePreference[] });
+                return this.validateOneOf(key, value, schema as IJSONSchema & { oneOf: IJSONSchema[] });
             }
             if (schema.type === undefined) {
                 console.warn('Request to validate preference with no type information:', key);
                 return value;
             }
             if (Array.isArray(schema.type)) {
-                return this.validateMultiple(key, value, schema as ValidatablePreference & { type: JsonType[] });
+                return this.validateMultiple(key, value, schema as IJSONSchema & { type: JsonType[] });
             }
             switch (schema.type) {
                 case 'array':
@@ -120,8 +117,8 @@ export class PreferenceValidationService {
         }
     }
 
-    protected getSchema(name: string): ValidatablePreference | undefined {
-        const combinedSchema = this.schemaProvider.getCombinedSchema().properties;
+    protected getSchema(name: string): IJSONSchema | undefined {
+        const combinedSchema = this.schemaService.getJSONSchema(PreferenceScope.Folder).properties!;
         if (combinedSchema[name]) {
             return combinedSchema[name];
         }
@@ -129,35 +126,35 @@ export class PreferenceValidationService {
         return baseName !== undefined ? combinedSchema[baseName] : undefined;
     }
 
-    protected validateMultiple(key: string, value: JSONValue, schema: ValidatablePreference & { type: JsonType[] }): JSONValue {
-        const validation: ValidatablePreference = deepClone(schema);
+    protected validateMultiple(key: string, value: JSONValue, schema: IJSONSchema & { type: JsonType[] }): JSONValue {
+        const validation: IJSONSchema = deepClone(schema);
         const candidate = this.mapValidators(key, value, (function* (this: PreferenceValidationService): Iterable<ValueValidator> {
             for (const type of schema.type) {
                 validation.type = type as JsonType;
                 yield toValidate => this.validateBySchema(key, toValidate, validation);
             }
         }).bind(this)());
-        if (candidate !== value && (schema.default !== undefined || schema.defaultValue !== undefined)) {
+        if (candidate !== value && (schema.default !== undefined || schema.default !== undefined)) {
             const configuredDefault = this.getDefaultFromSchema(schema);
-            return this.validateMultiple(key, configuredDefault, { ...schema, default: undefined, defaultValue: undefined });
+            return this.validateMultiple(key, configuredDefault, { ...schema, default: undefined });
         }
         return candidate;
     }
 
-    protected validateAnyOf(key: string, value: JSONValue, schema: ValidatablePreference & { anyOf: ValidatablePreference[] }): JSONValue {
+    protected validateAnyOf(key: string, value: JSONValue, schema: IJSONSchema & { anyOf: IJSONSchema[] }): JSONValue {
         const candidate = this.mapValidators(key, value, (function* (this: PreferenceValidationService): Iterable<ValueValidator> {
             for (const option of schema.anyOf) {
                 yield toValidate => this.validateBySchema(key, toValidate, option);
             }
         }).bind(this)());
-        if (candidate !== value && (schema.default !== undefined || schema.defaultValue !== undefined)) {
+        if (candidate !== value && (schema.default !== undefined)) {
             const configuredDefault = this.getDefaultFromSchema(schema);
-            return this.validateAnyOf(key, configuredDefault, { ...schema, default: undefined, defaultValue: undefined });
+            return this.validateAnyOf(key, configuredDefault, { ...schema, default: undefined });
         }
         return candidate;
     }
 
-    protected validateOneOf(key: string, value: JSONValue, schema: ValidatablePreference & { oneOf: ValidatablePreference[] }): JSONValue {
+    protected validateOneOf(key: string, value: JSONValue, schema: IJSONSchema & { oneOf: IJSONSchema[] }): JSONValue {
         let passed = false;
         for (const subSchema of schema.oneOf) {
             const validValue = this.validateBySchema(key, value, subSchema);
@@ -171,9 +168,9 @@ export class PreferenceValidationService {
         if (passed) {
             return value;
         }
-        if (schema.default !== undefined || schema.defaultValue !== undefined) {
+        if (schema.default !== undefined) {
             const configuredDefault = this.getDefaultFromSchema(schema);
-            return this.validateOneOf(key, configuredDefault, { ...schema, default: undefined, defaultValue: undefined });
+            return this.validateOneOf(key, configuredDefault, { ...schema, default: undefined });
         }
         console.log(`While validating ${key}, failed to find a valid value or default value. Using configured value ${value}.`);
         return value;
@@ -190,7 +187,7 @@ export class PreferenceValidationService {
         }
         return candidates[0];
     }
-    protected validateArray(key: string, value: JSONValue, schema: ValidatablePreference): JSONValue[] {
+    protected validateArray(key: string, value: JSONValue, schema: IJSONSchema): JSONValue[] {
         const candidate = Array.isArray(value) ? value : this.getDefaultFromSchema(schema);
         if (!Array.isArray(candidate)) {
             return [];
@@ -211,11 +208,11 @@ export class PreferenceValidationService {
         const defaultValue = this.getDefaultFromSchema(schema);
         const maybeCandidate = Array.isArray(value) ? value : defaultValue;
         // If we find that the provided value is not valid, we immediately bail and try the default value instead.
-        const shouldTryDefault = Array.isArray(schema.defaultValue ?? schema.default) && !PreferenceProvider.deepEqual(defaultValue, maybeCandidate);
+        const shouldTryDefault = Array.isArray(schema.default) && !PreferenceUtils.deepEqual(defaultValue, maybeCandidate);
         const tryDefault = () => this.validateTuple(key, defaultValue, schema);
         const candidate = Array.isArray(maybeCandidate) ? maybeCandidate : [];
         // Only `prefixItems` is officially part of the JSON Schema spec, but `items` as array was part of a draft and was used by VSCode.
-        const tuple = (schema.prefixItems ?? schema.items) as Required<ValidatablePreference>['prefixItems'];
+        const tuple = (schema.prefixItems ?? schema.items) as Required<IJSONSchema>['prefixItems'];
         const lengthIsWrong = candidate.length < tuple.length || (candidate.length > tuple.length && !schema.additionalItems);
         if (lengthIsWrong && shouldTryDefault) { return tryDefault(); }
         let valid = true;
@@ -250,26 +247,26 @@ export class PreferenceValidationService {
         return valid ? candidate : validItems;
     }
 
-    protected validateConst(key: string, value: JSONValue, schema: ValidatablePreference & { const: JSONValue }): JSONValue {
-        if (PreferenceProvider.deepEqual(value, schema.const)) {
+    protected validateConst(key: string, value: JSONValue, schema: IJSONSchema & { const: JSONValue }): JSONValue {
+        if (PreferenceUtils.deepEqual(value, schema.const)) {
             return value;
         }
         return schema.const;
     }
 
-    protected validateEnum(key: string, value: JSONValue, schema: ValidatablePreference & { enum: JSONValue[] }): JSONValue {
+    protected validateEnum(key: string, value: JSONValue, schema: IJSONSchema & { enum: JSONValue[] }): JSONValue {
         const options = schema.enum;
-        if (options.some(option => PreferenceProvider.deepEqual(option, value))) {
+        if (options.some(option => PreferenceUtils.deepEqual(option, value))) {
             return value;
         }
         const configuredDefault = this.getDefaultFromSchema(schema);
-        if (options.some(option => PreferenceProvider.deepEqual(option, configuredDefault))) {
+        if (options.some(option => PreferenceUtils.deepEqual(option, configuredDefault))) {
             return configuredDefault;
         }
         return options[0];
     }
 
-    protected validateBoolean(key: string, value: JSONValue, schema: ValidatablePreference): boolean {
+    protected validateBoolean(key: string, value: JSONValue, schema: IJSONSchema): boolean {
         if (value === true || value === false) {
             return value;
         }
@@ -282,11 +279,11 @@ export class PreferenceValidationService {
         return Boolean(this.getDefaultFromSchema(schema));
     }
 
-    protected validateInteger(key: string, value: JSONValue, schema: ValidatablePreference): number {
+    protected validateInteger(key: string, value: JSONValue, schema: IJSONSchema): number {
         return Math.round(this.validateNumber(key, value, schema));
     }
 
-    protected validateNumber(key: string, value: JSONValue, schema: ValidatablePreference): number {
+    protected validateNumber(key: string, value: JSONValue, schema: IJSONSchema): number {
         let validated = Number(value);
         if (isNaN(validated)) {
             const configuredDefault = Number(this.getDefaultFromSchema(schema));
@@ -301,7 +298,7 @@ export class PreferenceValidationService {
         return validated;
     }
 
-    protected validateObject(key: string, value: JSONValue, schema: ValidatablePreference): JSONObject {
+    protected validateObject(key: string, value: JSONValue, schema: IJSONSchema): JSONObject {
         if (this.objectMatchesSchema(key, value, schema)) {
             return value;
         }
@@ -313,7 +310,7 @@ export class PreferenceValidationService {
     }
 
     // This evaluates most of the fields that commonly appear on PreferenceItem, but it could be improved to evaluate all possible JSON schema specifications.
-    protected objectMatchesSchema(key: string, value: JSONValue, schema: ValidatablePreference): value is JSONObject {
+    protected objectMatchesSchema(key: string, value: JSONValue, schema: IJSONSchema): value is JSONObject {
         if (!value || typeof value !== 'object') {
             return false;
         }
@@ -341,7 +338,7 @@ export class PreferenceValidationService {
         return true;
     }
 
-    protected validateString(key: string, value: JSONValue, schema: ValidatablePreference): string {
+    protected validateString(key: string, value: JSONValue, schema: IJSONSchema): string {
         if (typeof value === 'string') {
             return value;
         }
@@ -352,7 +349,29 @@ export class PreferenceValidationService {
         return (configuredDefault ?? '').toString();
     }
 
-    protected getDefaultFromSchema(schema: ValidatablePreference): JSONValue {
-        return this.schemaProvider.getDefaultValue(schema as PreferenceItem);
+    protected getDefaultFromSchema(schema: IJSONSchema): JSONValue {
+        return this.getDefaultValue(schema);
+    }
+
+    getDefaultValue(property: PreferenceDataProperty): JSONValue {
+        if (property.default !== undefined) {
+            return property.default;
+        }
+        const type = Array.isArray(property.type) ? property.type[0] : property.type;
+        switch (type) {
+            case 'boolean':
+                return false;
+            case 'integer':
+            case 'number':
+                return 0;
+            case 'string':
+                return '';
+            case 'array':
+                return [];
+            case 'object':
+                return {};
+        }
+        // eslint-disable-next-line no-null/no-null
+        return null;
     }
 }

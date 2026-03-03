@@ -21,7 +21,7 @@ import { MenuPath } from '@theia/core';
 export class DebugAction extends React.Component<DebugAction.Props> {
 
     override render(): React.ReactNode {
-        const { enabled, label, iconClass } = this.props;
+        const { enabled, label, tooltip, iconClass } = this.props;
         const classNames = ['debug-action'];
         if (iconClass) {
             classNames.push(...codiconArray(iconClass, true));
@@ -31,7 +31,7 @@ export class DebugAction extends React.Component<DebugAction.Props> {
         }
         return <span tabIndex={0}
             className={classNames.join(' ')}
-            title={label}
+            title={tooltip || label}
             onClick={() => { this.props.run([]); }}
             ref={this.setRef} >
             {!iconClass && <div>{label}</div>}
@@ -51,6 +51,7 @@ export class DebugAction extends React.Component<DebugAction.Props> {
 export namespace DebugAction {
     export interface Props {
         label: string
+        tooltip?: string
         iconClass: string
         run: (effectiveMenuPath: MenuPath) => void
         enabled?: boolean

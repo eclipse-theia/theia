@@ -16,14 +16,15 @@
 
 import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
-import { RecursivePartial } from '@theia/core';
+import { CommandService, nls, RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { EditorWidget, Range } from '@theia/editor/lib/browser';
-import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions, codicon } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugSource } from './debug-source';
 import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointData, DebugBreakpointDecoration } from './debug-breakpoint';
+import { DebugCommands } from '../debug-commands';
 
 export class DebugSourceBreakpointData extends DebugBreakpointData {
     readonly origins: SourceBreakpoint[];
@@ -31,11 +32,13 @@ export class DebugSourceBreakpointData extends DebugBreakpointData {
 
 export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> implements TreeElement {
 
+    protected readonly commandService: CommandService;
     readonly origins: SourceBreakpoint[];
 
-    constructor(origin: SourceBreakpoint, options: DebugBreakpointOptions) {
+    constructor(origin: SourceBreakpoint, options: DebugBreakpointOptions, commandService: CommandService) {
         super(new URI(origin.uri), options);
         this.origins = [origin];
+        this.commandService = commandService;
     }
 
     override update(data: Partial<DebugSourceBreakpointData>): void {
@@ -49,7 +52,9 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
     setEnabled(enabled: boolean): void {
         const { uri, raw } = this;
         let shouldUpdate = false;
-        let breakpoints = raw && this.doRemove(this.origins.filter(origin => !(origin.raw.line === raw.line && origin.raw.column === raw.column)));
+        const originLine = this.origin.raw.line;
+        const originColumn = this.origin.raw.column;
+        let breakpoints = raw && this.doRemove(this.origins.filter(origin => !(origin.raw.line === originLine && origin.raw.column === originColumn)));
         // Check for breakpoints array with at least one entry
         if (breakpoints && breakpoints.length) {
             shouldUpdate = true;
@@ -150,9 +155,27 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
                 <span className='name'>{this.labelProvider.getName(this.uri)} </span>
                 <span className={'path ' + TREE_NODE_INFO_CLASS}>{this.labelProvider.getLongName(this.uri.parent)} </span>
             </span>
+            {this.renderActions()}
             <span className='line'>{this.renderPosition()}</span>
         </React.Fragment>;
     }
+
+    protected renderActions(): React.ReactNode {
+        return <div className='theia-debug-breakpoint-actions'>
+            <div className={codicon('edit', true)} title={nls.localizeByDefault('Edit Breakpoint')} onClick={this.onEdit} />
+            <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Breakpoint')} onClick={this.onRemove} />
+        </div>;
+    }
+
+    protected onEdit = async () => {
+        await this.selectInTree();
+        this.commandService.executeCommand(DebugCommands.EDIT_BREAKPOINT.id, this);
+    };
+
+    protected onRemove = async () => {
+        await this.selectInTree();
+        this.remove();
+    };
 
     renderPosition(): string {
         return this.line + (typeof this.column === 'number' ? ':' + this.column : '');
@@ -163,21 +186,24 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
             const { session } = this;
             if (this.logMessage) {
                 if (session && !session.capabilities.supportsLogPoints) {
-                    return this.getUnsupportedBreakpointDecoration('Logpoints not supported by this debug type');
+                    return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/logpointsNotSupported',
+                        'Logpoints not supported by this debug type'));
                 }
-                messages.push('Log Message: ' + this.logMessage);
+                messages.push(nls.localizeByDefault('Log Message: {0}', this.logMessage));
             }
             if (this.condition) {
                 if (session && !session.capabilities.supportsConditionalBreakpoints) {
-                    return this.getUnsupportedBreakpointDecoration('Conditional breakpoints not supported by this debug type');
+                    return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/conditionalBreakpointsNotSupported',
+                        'Conditional breakpoints not supported by this debug type'));
                 }
-                messages.push('Expression: ' + this.condition);
+                messages.push(nls.localizeByDefault('Condition: {0}', this.condition));
             }
             if (this.hitCondition) {
                 if (session && !session.capabilities.supportsHitConditionalBreakpoints) {
-                    return this.getUnsupportedBreakpointDecoration('Hit conditional breakpoints not supported by this debug type');
+                    return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/htiConditionalBreakpointsNotSupported',
+                        'Hit conditional breakpoints not supported by this debug type'));
                 }
-                messages.push('Hit Count: ' + this.hitCondition);
+                messages.push(nls.localizeByDefault('Hit Count: {0}', this.hitCondition));
             }
         }
         return super.doGetDecoration(messages);
@@ -194,18 +220,18 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         if (this.logMessage) {
             return {
                 className: 'codicon-debug-breakpoint-log',
-                message: message || ['Logpoint']
+                message: message || [nls.localizeByDefault('Logpoint')]
             };
         }
         if (this.condition || this.hitCondition) {
             return {
                 className: 'codicon-debug-breakpoint-conditional',
-                message: message || ['Conditional Breakpoint']
+                message: message || [nls.localize('theia/debug/conditionalBreakpoint', 'Conditional Breakpoint')]
             };
         }
         return {
             className: 'codicon-debug-breakpoint',
-            message: message || ['Breakpoint']
+            message: message || [nls.localizeByDefault('Breakpoint')]
         };
     }
 

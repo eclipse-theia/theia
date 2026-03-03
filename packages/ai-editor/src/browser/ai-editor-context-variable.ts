@@ -22,12 +22,13 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import * as monaco from '@theia/monaco-editor-core';
+import { nls } from '@theia/core';
 
 export const EDITOR_CONTEXT_VARIABLE: AIVariable = {
     id: 'editorContext',
-    description: 'Resolves editor specific context information',
+    description: nls.localize('theia/ai/editor/editorContextVariable/description', 'Resolves editor specific context information'),
     name: 'editorContext',
-    label: 'EditorContext',
+    label: nls.localize('theia/ai/editor/editorContextVariable/label', 'EditorContext'),
     iconClasses: codiconArray('file'),
     isContextVariable: true,
     args: []

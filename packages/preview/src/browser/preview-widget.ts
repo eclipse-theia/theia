@@ -23,7 +23,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Range, Location } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -83,7 +83,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         this.scrollBeyondLastLine = !!this.editorPreferences['editor.scrollBeyondLastLine'];
         this.toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'editor.scrollBeyondLastLine') {
-                this.scrollBeyondLastLine = Boolean(e.newValue);
+                this.scrollBeyondLastLine = !!this.editorPreferences['editor.scrollBeyondLastLine'];
                 this.forceUpdate();
             }
         }));

@@ -84,7 +84,8 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
         findCredentials: () => Promise.resolve([]),
         findPassword: () => Promise.resolve(undefined),
         setPassword: () => Promise.resolve(),
-        getPassword: () => Promise.resolve(undefined)
+        getPassword: () => Promise.resolve(undefined),
+        keys: () => Promise.resolve([]),
     };
     if (isBound(KeyStoreService)) {
         rebind<KeyStoreService>(KeyStoreService).toConstantValue(keyStoreService);

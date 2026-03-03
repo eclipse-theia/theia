@@ -18,8 +18,9 @@ import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TaskCustomization, TaskConfiguration, TaskConfigurationScope } from '../common/task-protocol';
-import { PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderDataChange } from '@theia/core/lib/browser';
-import { isObject } from '@theia/core/lib/common';
+import { PreferenceProviderDataChanges, PreferenceProviderDataChange, isObject } from '@theia/core/lib/common';
+import { PreferenceProvider } from '@theia/core/lib/common/preferences/preference-provider';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 
 /**
  * Holds the task configurations associated with a particular file. Uses an editor model to facilitate
@@ -38,15 +39,17 @@ export class TaskConfigurationModel implements Disposable {
 
     constructor(
         protected readonly scope: TaskConfigurationScope,
-        readonly preferences: PreferenceProvider
+        readonly preferences: PreferenceProvider | undefined
     ) {
         this.reconcile();
-        this.toDispose.push(this.preferences.onDidPreferencesChanged((e: PreferenceProviderDataChanges) => {
-            const change = e['tasks'];
-            if (change && PreferenceProviderDataChange.affects(change, this.getWorkspaceFolder())) {
-                this.reconcile();
-            }
-        }));
+        if (this.preferences) {
+            this.toDispose.push(this.preferences.onDidPreferencesChanged((e: PreferenceProviderDataChanges) => {
+                const change = e['tasks'];
+                if (change && PreferenceProviderDataChange.affects(change, this.getWorkspaceFolder())) {
+                    this.reconcile();
+                }
+            }));
+        }
     }
 
     get uri(): URI | undefined {
@@ -73,21 +76,21 @@ export class TaskConfigurationModel implements Disposable {
         this.onDidChangeEmitter.fire(undefined);
     }
 
-    setConfigurations(value: object): Promise<boolean> {
-        return this.preferences.setPreference('tasks.tasks', value, this.getWorkspaceFolder());
+    async setConfigurations(value: JSONValue): Promise<boolean> {
+        return this.preferences?.setPreference('tasks.tasks', value, this.getWorkspaceFolder()) || false;
     }
 
     protected parseConfigurations(): TaskConfigurationModel.JsonContent {
         const configurations: (TaskCustomization | TaskConfiguration)[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { configUri, value } = this.preferences.resolve<any>('tasks', this.getWorkspaceFolder());
-        if (isObject(value) && Array.isArray(value.tasks)) {
-            for (const taskConfig of value.tasks) {
+        const res = this.preferences?.resolve<any>('tasks', this.getWorkspaceFolder());
+        if (isObject(res?.value) && Array.isArray(res.value.tasks)) {
+            for (const taskConfig of res.value.tasks) {
                 configurations.push(taskConfig);
             }
         }
         return {
-            uri: configUri,
+            uri: res?.configUri,
             configurations
         };
     }

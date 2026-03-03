@@ -41,7 +41,7 @@ At the back-end we start a debug adapter using `DebugAdapterFactory` and then a 
 
 ## Additional Information
 
-* [API documentation for `@theia/debug`](https://eclipse-theia.github.io/theia/docs/next/modules/debug.html)
+* [API documentation for `@theia/debug`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_debug.html)
 * [Theia - GitHub](https://github.com/eclipse-theia/theia)
 * [Theia - Website](https://theia-ide.org/)
 * [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts)

@@ -47,7 +47,7 @@ import { ScmCommand, ScmResource } from '@theia/scm/lib/browser/scm-provider';
 import { LineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
 import { DirtyDiffWidget, SCM_CHANGE_TITLE_MENU } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
-import { GitPreferences } from './git-preferences';
+import { GitPreferences } from '../common/git-preferences';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ScmInputIssueType } from '@theia/scm/lib/browser/scm-input';
@@ -271,12 +271,12 @@ export namespace GIT_MENUS {
 
     export const SUBMENU_COMMIT = {
         group: COMMANDS_GROUP,
-        label: nls.localize('vscode.git/package/submenu.commit', 'Commit'),
+        label: nls.localizeByDefault('Commit'),
         menuGroups: ['1_commit'],
     };
     export const SUBMENU_CHANGES = {
         group: COMMANDS_GROUP,
-        label: nls.localize('vscode.git/package/submenu.changes', 'Changes'),
+        label: nls.localizeByDefault('Changes'),
         menuGroups: ['1_changes']
     };
     export const SUBMENU_PULL_PUSH = {
@@ -286,7 +286,7 @@ export namespace GIT_MENUS {
     };
     export const SUBMENU_STASH = {
         group: COMMANDS_GROUP,
-        label: nls.localize('vscode.git/package/submenu.stash', 'Stash'),
+        label: nls.localizeByDefault('Stash'),
         menuGroups: ['1_stash']
     };
 }

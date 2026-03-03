@@ -34,6 +34,10 @@ import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/ser
 import { PreferenceFrontendContribution } from './preference-frontend-contribution';
 import { PreferenceLayoutProvider } from './util/preference-layout';
 import { PreferencesWidget } from './views/preference-widget';
+import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider';
+import { FrontendPreferenceStorage } from './frontend-preference-storage';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { PreferenceScope, URI } from '@theia/core';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
@@ -56,6 +60,12 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(MonacoJSONCEditor).toSelf().inSingletonScope();
     bind(PreferenceTransaction).toSelf();
     bind(PreferenceTransactionFactory).toFactory(preferenceTransactionFactoryCreator);
+    bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new FrontendPreferenceStorage(
+        container.get(PreferenceTransactionFactory),
+        container.get(FileService),
+        uri,
+        scope
+    ));
 
     bind(CliPreferences).toDynamicValue(ctx => ServiceConnectionProvider.createProxy<CliPreferences>(ctx.container, CliPreferencesPath)).inSingletonScope();
     bind(PreferenceFrontendContribution).toSelf().inSingletonScope();

@@ -43,7 +43,14 @@ export namespace RangeUtils {
         return true;
     }
 
-    export function isBeforeOrTouching(range: Range, other: Range): boolean {
+    /**
+     * Returns `false` iff there is at least one character between `range` and `other`.
+     */
+    export function touches(range: Range, other: Range): boolean {
+        return PositionUtils.isBeforeOrEqual(range.start, other.end) && PositionUtils.isBeforeOrEqual(other.start, range.end);
+    }
+
+    export function isBefore(range: Range, other: Range): boolean {
         return (
             range.end.line < other.start.line ||
             (range.end.line === other.start.line &&

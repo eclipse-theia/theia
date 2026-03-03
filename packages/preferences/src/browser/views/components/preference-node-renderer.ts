@@ -16,13 +16,12 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
-    PreferenceService, ContextMenuRenderer, PreferenceInspection,
-    PreferenceScope, PreferenceProvider, codicon, OpenerService, open, PreferenceDataProperty
+    ContextMenuRenderer, codicon, OpenerService, open
 } from '@theia/core/lib/browser';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
 import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
-import { Disposable, nls } from '@theia/core/lib/common';
+import { Disposable, nls, PreferenceDataProperty, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
@@ -169,7 +168,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected gutter: HTMLDivElement;
     protected interactable: InteractableType;
     protected inspection: PreferenceInspection<ValueType> | undefined;
-    protected isModifiedFromDefault = false;
+    protected isSet = false;
 
     get schema(): PreferenceDataProperty {
         return this.preferenceNode.preference.data;
@@ -260,7 +259,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     }
 
     protected handleCogAction({ currentTarget }: KeyboardEvent | MouseEvent): void {
-        const value = Preference.getValueInScope(this.inspection, this.scopeTracker.currentScope.scope) ?? this.inspection?.defaultValue;
+        const value = Preference.getValueInScope(this.inspection, this.scopeTracker.currentScope.scope) ?? this.getDefaultValue();
         const target = currentTarget as HTMLElement | undefined;
         if (target && value !== undefined) {
             this.showCog();
@@ -291,13 +290,13 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         this.gutter.classList.remove('show-cog');
     }
 
-    protected updateModificationStatus(knownCurrentValue?: JSONValue): void {
-        const wasModified = this.isModifiedFromDefault;
+    protected updateModificationStatus(): void {
+        const wasSet = this.isSet;
         const { inspection } = this;
-        const valueInCurrentScope = knownCurrentValue ?? Preference.getValueInScope(inspection, this.scopeTracker.currentScope.scope);
-        this.isModifiedFromDefault = valueInCurrentScope !== undefined && !PreferenceProvider.deepEqual(valueInCurrentScope, inspection?.defaultValue);
-        if (wasModified !== this.isModifiedFromDefault) {
-            this.gutter.classList.toggle('theia-mod-item-modified', this.isModifiedFromDefault);
+        const valueInCurrentScope = Preference.getValueInScope(inspection, this.scopeTracker.currentScope.scope);
+        this.isSet = valueInCurrentScope !== undefined;
+        if (wasSet !== this.isSet) {
+            this.gutter.classList.toggle('theia-mod-item-modified', this.isSet);
         }
     }
 
@@ -309,6 +308,29 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             nameWrapper.classList.add('preference-leaf-headline-name');
             nameWrapper.textContent = name;
             headlineWrapper.appendChild(nameWrapper);
+
+            const tags = this.schema.tags;
+            if (tags && tags.length > 0) {
+                const tagsWrapper = document.createElement('span');
+                tagsWrapper.classList.add('preference-leaf-headline-tags');
+                const PREVIEW_INDICATOR_DESCRIPTION = nls.localizeByDefault(
+                    'Preview setting: this setting controls a new feature that is still under refinement yet ready to use. Feedback is welcome.');
+                const EXPERIMENTAL_INDICATOR_DESCRIPTION = nls.localizeByDefault(
+                    'Experimental setting: this setting controls a new feature that is actively being developed and may be unstable. It is subject to change or removal.');
+
+                tags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    const isExperimentalSetting = tag === 'experimental';
+                    const isPreviewSetting = tag === 'preview';
+                    tagElement.classList.add('preference-tag');
+                    tagElement.textContent = isExperimentalSetting ? nls.localizeByDefault('Experimental') :
+                        isPreviewSetting ? nls.localizeByDefault('Preview') : tag;
+                    tagElement.title = isExperimentalSetting ? EXPERIMENTAL_INDICATOR_DESCRIPTION :
+                        isPreviewSetting ? PREVIEW_INDICATOR_DESCRIPTION : tag;
+                    tagsWrapper.appendChild(tagElement);
+                });
+                headlineWrapper.appendChild(tagsWrapper);
+            }
         }
         const prefix = this.labelProvider.getPrefix(this.preferenceNode, filtered);
         const currentFirstChild = headlineWrapper.children[0];
@@ -395,7 +417,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     }
 
     protected getModifiedMessagePrefix(): string {
-        return (this.isModifiedFromDefault ? nls.localizeByDefault('Also modified in') : nls.localizeByDefault('Modified in')) + ': ';
+        return (this.isSet ? nls.localizeByDefault('Also modified in') : nls.localizeByDefault('Modified in')) + ': ';
     }
 
     protected addEventHandlerToModifiedScope(scope: PreferenceScope, scopeWrapper: HTMLElement): void {
@@ -422,7 +444,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             for (const otherScope of [PreferenceScope.User, PreferenceScope.Workspace]) {
                 if (otherScope !== currentScopeInView) {
                     const valueInOtherScope = Preference.getValueInScope(inspection, otherScope);
-                    if (valueInOtherScope !== undefined && !PreferenceProvider.deepEqual(valueInOtherScope, inspection.defaultValue)) {
+                    if (valueInOtherScope !== undefined) {
                         modifiedScopes.push(otherScope);
                     }
                 }
@@ -435,9 +457,9 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected getValue(): ValueType | null {
         let currentValue = Preference.getValueInScope(this.inspection, this.scopeTracker.currentScope.scope);
         if (currentValue === undefined) {
-            currentValue = this.inspection?.defaultValue;
+            currentValue = this.getDefaultValue();
         }
-        return currentValue !== undefined ? currentValue : this.getFallbackValue();
+        return currentValue;
     }
 
     protected setPreferenceWithDebounce = debounce(this.setPreferenceImmediately.bind(this), 500, { leading: false, trailing: true });
@@ -459,6 +481,14 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     handleValueChange(): void {
         this.doHandleValueChange();
         this.updateHeadline();
+    }
+
+    /**
+     * Returns the default value for this preference.
+     * @returns The default value from the inspection or the fallback value if no default is specified.
+     */
+    protected getDefaultValue(): ValueType {
+        return this.inspection?.defaultValue ?? this.getFallbackValue();
     }
 
     /**

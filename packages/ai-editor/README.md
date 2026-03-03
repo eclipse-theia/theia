@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - AI Editor</h2>
+<h2>ECLIPSE THEIA - AI EDITOR EXTENSION</h2>
 
 <hr />
 
@@ -16,6 +16,7 @@ The `@theia/ai-editor` extension brings AI-powered code actions and editor conte
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-editor`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-editor.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

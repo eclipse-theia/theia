@@ -15,14 +15,21 @@
 // *****************************************************************************
 import {
     ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatHierarchyBranch,
-    ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel
+    ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel,
+    ChatRequestParser, ChatMode, ChatSession
 } from '@theia/ai-chat';
+import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
+import { ParsedChatRequest } from '@theia/ai-chat/lib/common/parsed-chat-request';
+import { GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapability } from '@theia/ai-core';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
-import { DisposableCollection, Emitter, InMemoryResources, URI, nls } from '@theia/core';
-import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
+import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -35,8 +42,17 @@ import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution'
 import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
+import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
+import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
+import { ChatCapabilitiesService } from './chat-capabilities-service';
+import { CapabilityChip, CapabilityChipsRow } from './chat-capabilities-panel';
+import { ChatInputFocusService } from './chat-input-focus-service';
+import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service';
+import { GenericCapabilitiesSection } from './generic-capabilities-section';
 
-type Query = (query: string) => Promise<void>;
+type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
 type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
@@ -49,6 +65,8 @@ export interface AIChatInputConfiguration {
     showPinnedAgent?: boolean;
     showChangeSet?: boolean;
     showSuggestions?: boolean;
+    showCapabilities?: boolean;
+    enablePromptHistory?: boolean;
 }
 
 @injectable()
@@ -92,14 +110,260 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
+
     @inject(AIActivationService)
     protected readonly aiActivationService: AIActivationService;
+
+    @inject(ChatInputHistoryService)
+    protected readonly historyService: ChatInputHistoryService;
+
+    @inject(ChatRequestParser)
+    protected readonly chatRequestParser: ChatRequestParser;
+
+    @inject(ContextFileValidationService) @optional()
+    protected readonly validationService: ContextFileValidationService | undefined;
+
+    @inject(PendingImageRegistry)
+    protected readonly pendingImageRegistry: PendingImageRegistry;
+
+    @inject(ChatCapabilitiesService)
+    protected readonly capabilitiesService: ChatCapabilitiesService;
+
+    @inject(GenericCapabilitiesService) @optional()
+    protected readonly genericCapabilitiesService: GenericCapabilitiesService | undefined;
+
+    protected fileValidationState = new Map<string, FileValidationResult>();
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ApplicationShell)
+    protected readonly applicationShell: ApplicationShell;
+
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
+
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
+
+    @inject(ChatInputFocusService)
+    protected readonly chatInputFocusService: ChatInputFocusService;
+
+    protected navigationState: ChatInputNavigationState;
 
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
 
+    get editor(): SimpleMonacoEditor | undefined {
+        return this.editorRef;
+    }
+
+    get inputConfiguration(): AIChatInputConfiguration | undefined {
+        return this.configuration;
+    }
+
+    getPreviousPrompt(currentInput: string): string | undefined {
+        if (!this.navigationState) {
+            return undefined;
+        }
+        return this.navigationState.getPreviousPrompt(currentInput);
+    }
+
+    getNextPrompt(): string | undefined {
+        if (!this.navigationState) {
+            return undefined;
+        }
+        return this.navigationState.getNextPrompt();
+    }
+
+    toggleCapabilities(): void {
+        this.capabilitiesOpen = !this.capabilitiesOpen;
+        this.update();
+    }
+
+    protected getKeybindingHint(commandId: string): string | undefined {
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+        if (bindings.length > 0) {
+            const parts = this.keybindingRegistry.acceleratorFor(bindings[0], '+');
+            return parts.join(' ');
+        }
+        return undefined;
+    }
+
+    protected getCapabilitiesKeybindingHint(): string | undefined {
+        return this.getKeybindingHint('chat-input:toggle-capabilities');
+    }
+
+    protected getModeKeybindingHint(): string | undefined {
+        return this.getKeybindingHint('chat-input:cycle-mode');
+    }
+
+    cycleMode(): void {
+        if (!this.receivingAgent || !this.receivingAgent.modes || this.receivingAgent.modes.length <= 1) {
+            return;
+        }
+        const currentIndex = this.receivingAgent.modes.findIndex(mode => mode.id === this.receivingAgent!.currentModeId);
+        const nextIndex = currentIndex === -1 ? 1 : (currentIndex + 1) % this.receivingAgent.modes.length;
+        const nextModeId = this.receivingAgent.modes[nextIndex].id;
+        this.handleModeChange(nextModeId);
+    }
+
+    protected handleModeChange = async (mode: string): Promise<void> => {
+        if (this.receivingAgent) {
+            this.receivingAgent = { ...this.receivingAgent, currentModeId: mode };
+            await this.updateCapabilitiesForAgent(this.receivingAgent.agentId, mode);
+        }
+    };
+
+    protected handleCapabilityChange = (fragmentId: string, enabled: boolean): void => {
+        const defaultCapability = this.capabilityDefaults.find(c => c.fragmentId === fragmentId);
+        const sessionOverrides = new Map(this.userCapabilityOverrides);
+
+        if (enabled === defaultCapability?.defaultEnabled) {
+            // User set it back to default, remove the override
+            sessionOverrides.delete(fragmentId);
+        } else {
+            // User explicitly changed from default, add as override
+            sessionOverrides.set(fragmentId, enabled);
+        }
+
+        this.userCapabilityOverrides = sessionOverrides;
+        this.update();
+    };
+
+    protected handleGenericCapabilityChange = (type: keyof GenericCapabilitySelections, ids: string[]): void => {
+        this.genericCapabilitySelections = {
+            ...this.genericCapabilitySelections,
+            [type]: ids
+        };
+        this.update();
+    };
+
+    protected async updateCapabilitiesForAgent(agentId: string, modeId?: string, preserveOverrides?: boolean): Promise<void> {
+        const capabilities = await this.capabilitiesService.getCapabilitiesForAgent(agentId, modeId);
+        this.capabilityDefaults = capabilities;
+        if (!preserveOverrides) {
+            // Start fresh with no overrides when agent/mode changes
+            this.userCapabilityOverrides = new Map<string, boolean>;
+            // Reset generic capability selections when agent changes
+            this.genericCapabilitySelections = {};
+        }
+
+        // Update disabled generic capabilities (already used in agent prompt)
+        this.disabledGenericCapabilities = await this.capabilitiesService.getUsedGenericCapabilitiesForAgent(agentId, modeId);
+
+        this.update();
+    }
+
+    protected async updateAvailableGenericCapabilities(): Promise<void> {
+        if (!this.genericCapabilitiesService) {
+            return;
+        }
+
+        const mcpFunctions = await this.genericCapabilitiesService.getAvailableMCPFunctions();
+
+        this.availableGenericCapabilities = {
+            skills: this.genericCapabilitiesService.getAvailableSkills(),
+            mcpFunctions,
+            functions: this.genericCapabilitiesService.getAvailableFunctions(),
+            promptFragments: this.genericCapabilitiesService.getAvailablePromptFragments(),
+            agentDelegation: this.genericCapabilitiesService.getAvailableAgents(this.receivingAgent?.agentId),
+            variables: this.genericCapabilitiesService.getAvailableVariables()
+        };
+
+        this.update();
+    }
+
+    /**
+     * Extracts capability overrides from the last request in the chat model.
+     * Used to restore user's capability choices when switching sessions or on reload.
+     */
+    protected getLastCapabilityOverridesFromModel(chatModel: ChatModel): Map<string, boolean> {
+        const requests = chatModel.getRequests();
+        if (requests.length === 0) {
+            return new Map();
+        }
+        const lastRequest = requests[requests.length - 1];
+        const overrides = lastRequest.request.capabilityOverrides;
+        if (!overrides) {
+            return new Map();
+        }
+        return new Map(Object.entries(overrides));
+    }
+
+    /**
+     * Extracts generic capability selections from the last request in the chat model.
+     * Used to restore user's selections when switching sessions or on reload.
+     */
+    protected getLastGenericCapabilitySelectionsFromModel(chatModel: ChatModel): GenericCapabilitySelections {
+        const requests = chatModel.getRequests();
+        if (requests.length === 0) {
+            return {};
+        }
+        const lastRequest = requests[requests.length - 1];
+        return lastRequest.request.genericCapabilitySelections ?? {};
+    }
+
+    /**
+     * Refreshes capabilities for the current receiving agent.
+     * Called when prompt fragments change to ensure capabilities reflect the latest template.
+     */
+    protected async refreshCapabilities(): Promise<void> {
+        if (this.receivingAgent) {
+            await this.updateCapabilitiesForAgent(this.receivingAgent.agentId, this.receivingAgent.currentModeId);
+        }
+    }
+
+    protected chatInputFocusKey: ContextKey<boolean>;
+    protected chatInputFirstLineKey: ContextKey<boolean>;
+    protected chatInputLastLineKey: ContextKey<boolean>;
+    protected chatInputReceivingAgentKey: ContextKey<string>;
+    protected chatInputHasModesKey: ContextKey<boolean>;
+    protected capabilitiesOpen = false;
+
     protected isEnabled = false;
     protected heightInLines = 12;
+
+    protected updateReceivingAgentTimeout: number | undefined;
+    protected forceCapabilitiesRefresh = false;
+    protected receivingAgent: {
+        agentId: string;
+        modes: ChatMode[];
+        currentModeId?: string;
+    } | undefined;
+    /**
+     * Tracks the default enabled state for each capability.
+     * This is initialized from the agent's capabilities and used to display the initial chip state.
+     */
+    protected capabilityDefaults: ParsedCapability[] = [];
+    /**
+     * Tracks user's generic capability selections from the dropdowns.
+     */
+    protected genericCapabilitySelections: GenericCapabilitySelections = {};
+    /**
+     * Available generic capabilities from all sources.
+     */
+    protected availableGenericCapabilities: AvailableGenericCapabilities = {
+        skills: [],
+        mcpFunctions: [],
+        functions: [],
+        promptFragments: [],
+        agentDelegation: [],
+        variables: []
+    };
+    /**
+     * Generic capabilities that are already used in the agent's prompt (should be disabled).
+     */
+    protected disabledGenericCapabilities: GenericCapabilitySelections = {};
+    /**
+     * Tracks user's explicit capability overrides for the current chat input session.
+     * Only contains capabilities the user has explicitly changed from their defaults.
+     * These overrides are not persisted but reset when the receiving agent changes or a new chat is started.
+     * Or restored when an existing chat session can provide a previous capability override from the last request.
+     */
+    protected userCapabilityOverrides: Map<string, boolean> = new Map();
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -110,8 +374,22 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected _onQuery: Query;
+    /** Suppresses capability updates while a query is in flight to prevent race conditions */
+    protected queryInFlight = false;
     set onQuery(query: Query) {
-        this._onQuery = query;
+        this._onQuery = async (prompt: string, mode?: string, capabilityOverrides?: Record<string, boolean>,
+            genericCapabilitySelections?: GenericCapabilitySelections) => {
+            if (this.configuration?.enablePromptHistory !== false && prompt.trim()) {
+                this.historyService.addToHistory(prompt);
+                this.navigationState.stopNavigation();
+            }
+            this.queryInFlight = true;
+            try {
+                await query(prompt, mode, capabilityOverrides, genericCapabilitySelections);
+            } finally {
+                this.queryInFlight = false;
+            }
+        };
     }
     protected _onUnpin: Unpin;
     set onUnpin(unpin: Unpin) {
@@ -137,20 +415,59 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected onDisposeForChatModel = new DisposableCollection();
     protected _chatModel: ChatModel;
+
+    /**
+     * Disposables for pending image registrations, keyed by short ID.
+     * These are cleared after the message is sent.
+     */
+    protected pendingImageDisposables = new Map<string, Disposable>();
     set chatModel(chatModel: ChatModel) {
         this.onDisposeForChatModel.dispose();
         this.onDisposeForChatModel = new DisposableCollection();
+        // Register mapping from editor URI to model ID for hover provider lookups
+        this.onDisposeForChatModel.push(
+            this.pendingImageRegistry.registerEditorMapping(this.getResourceUri().toString(), chatModel.id)
+        );
+
+        // Reset capabilities panel state for each session switch
+        this.capabilitiesOpen = false;
+        // Force capabilities refresh on next agent update, even if the same agent is resolved
+        this.forceCapabilitiesRefresh = true;
+
+        // Restore capability overrides and generic selections from the last request in this session (if any)
+        this.userCapabilityOverrides = this.getLastCapabilityOverridesFromModel(chatModel);
+        this.genericCapabilitySelections = this.getLastGenericCapabilitySelectionsFromModel(chatModel);
         this.onDisposeForChatModel.push(chatModel.onDidChange(event => {
-            if (event.kind === 'addVariable' || event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
+            if (event.kind === 'addVariable') {
+                // Validate files added via any path (including LLM tool calls)
+                // Get the current variables and validate any new file variables
+                const variables = chatModel.context.getVariables();
+                variables.forEach(variable => {
+                    if (variable.variable.name === 'file' && variable.arg) {
+                        const pathKey = variable.arg; // Use the original path as the key
+                        // Revalidate the file each time someone (User or LLM) adds it to the context,
+                        // as the state may change over time.
+                        if (this.validationService) {
+                            this.validationService.validateFile(pathKey).then(result => {
+                                this.fileValidationState.set(pathKey, result);
+                                this.update();
+                            });
+                        }
+                    }
+                });
+                this.update();
+            } else if (event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
                 this.update();
             }
         }));
         this._chatModel = chatModel;
+        this.scheduleUpdateReceivingAgent();
         this.update();
     }
     protected _pinnedAgent: ChatAgent | undefined;
     set pinnedAgent(pinnedAgent: ChatAgent | undefined) {
         this._pinnedAgent = pinnedAgent;
+        this.scheduleUpdateReceivingAgent();
         this.update();
     }
 
@@ -165,9 +482,227 @@ export class AIChatInputWidget extends ReactWidget {
         this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
             this.setEnabled(this.aiActivationService.isActive);
         }));
+        this.toDispose.push(this.chatAgentService.onDefaultAgentChanged(() => {
+            this.scheduleUpdateReceivingAgent();
+        }));
         this.toDispose.push(this.onDidResizeEmitter);
+        this.toDispose.push(Disposable.create(() => {
+            if (this.updateReceivingAgentTimeout !== undefined) {
+                clearTimeout(this.updateReceivingAgentTimeout);
+                this.updateReceivingAgentTimeout = undefined;
+            }
+        }));
         this.setEnabled(this.aiActivationService.isActive);
+        this.historyService.init().then(() => {
+            this.navigationState = new ChatInputNavigationState(this.historyService);
+        });
+        this.initializeContextKeys();
+        // Listen for prompt fragment changes to refresh capabilities
+        this.toDispose.push(this.capabilitiesService.onDidChangeCapabilities(() => {
+            this.refreshCapabilities();
+        }));
+
+        // Listen for generic capabilities changes
+        if (this.genericCapabilitiesService) {
+            this.updateAvailableGenericCapabilities();
+            this.toDispose.push(this.genericCapabilitiesService.onDidChangeAvailableCapabilities(() => {
+                this.updateAvailableGenericCapabilities();
+            }));
+        }
+
         this.update();
+    }
+
+    protected initializeContextKeys(): void {
+        this.chatInputFocusKey = this.contextKeyService.createKey<boolean>('chatInputFocus', false);
+        this.chatInputFirstLineKey = this.contextKeyService.createKey<boolean>('chatInputFirstLine', false);
+        this.chatInputLastLineKey = this.contextKeyService.createKey<boolean>('chatInputLastLine', false);
+        this.chatInputReceivingAgentKey = this.contextKeyService.createKey<string>('chatInputReceivingAgent', '');
+        this.chatInputHasModesKey = this.contextKeyService.createKey<boolean>('chatInputHasModes', false);
+    }
+
+    updateCursorPositionKeys(): void {
+        if (!this.editorRef) {
+            this.chatInputFirstLineKey.set(false);
+            this.chatInputLastLineKey.set(false);
+            return;
+        }
+
+        const editor = this.editorRef.getControl();
+        const position = editor.getPosition();
+        const model = editor.getModel();
+
+        if (!position || !model) {
+            this.chatInputFirstLineKey.set(false);
+            this.chatInputLastLineKey.set(false);
+            return;
+        }
+
+        const line = position.lineNumber;
+        const col = position.column;
+
+        const topAtPos = editor.getTopForPosition(line, col);
+        const topAtLineStart = editor.getTopForLineNumber(line);
+        const topAtLineEnd = editor.getTopForPosition(line, model.getLineMaxColumn(line));
+        const lineHeight = editor.getOption(EditorOption.lineHeight);
+        const toleranceValue = 0.5;
+
+        const isFirstVisualOfThisLine = Math.abs(topAtPos - topAtLineStart) < toleranceValue;
+        const isLastVisualOfThisLine = Math.abs(topAtPos - topAtLineEnd) < toleranceValue || (topAtPos > topAtLineEnd - lineHeight + toleranceValue);
+        const isFirstVisualOverall = line === 1 && isFirstVisualOfThisLine;
+
+        const isLastVisualOverall = line === model.getLineCount() && isLastVisualOfThisLine;
+
+        this.chatInputFirstLineKey.set(isFirstVisualOverall);
+        this.chatInputLastLineKey.set(isLastVisualOverall);
+    }
+
+    protected scheduleUpdateReceivingAgent(): void {
+        if (this.queryInFlight) {
+            // Don't update capabilities while a query is being sent — the editor is being
+            // cleared and the async sendRequest hasn't set session.pinnedAgent yet,
+            // which would cause a stale resolution to the default agent.
+            return;
+        }
+        if (this.updateReceivingAgentTimeout !== undefined) {
+            clearTimeout(this.updateReceivingAgentTimeout);
+        }
+        this.updateReceivingAgentTimeout = window.setTimeout(() => {
+            this.updateReceivingAgent();
+            this.updateReceivingAgentTimeout = undefined;
+        }, 200);
+    }
+
+    protected async updateReceivingAgent(): Promise<void> {
+        if (!this.editorRef || !this._chatModel) {
+            if (this.receivingAgent !== undefined) {
+                this.chatInputReceivingAgentKey.set('');
+                this.chatInputHasModesKey.set(false);
+                this.receivingAgent = undefined;
+                this.update();
+            }
+            return;
+        }
+
+        try {
+            const inputText = this.editorRef.getControl().getValue();
+            const request = { text: inputText };
+            const resolvedContext = { variables: [] };
+            const parsedRequest = await this.chatRequestParser.parseChatRequest(request, this._chatModel.location, resolvedContext);
+            const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel.id);
+
+            if (session) {
+                const resolvedAgent = this.resolveAgentFromParsedRequest(parsedRequest, session);
+                // Prefer the widget's pinned agent over the resolved agent, because
+                // chatService.getAgent() may return the default preference agent
+                // instead of the session's pinned agent (e.g. after sending a message
+                // when the input is empty).
+                const agent = this._pinnedAgent ?? resolvedAgent;
+                await this.updateAgentState(agent);
+            } else if (this.receivingAgent !== undefined) {
+                this.chatInputReceivingAgentKey.set('');
+                this.chatInputHasModesKey.set(false);
+                this.receivingAgent = undefined;
+                this.update();
+            }
+        } catch (error) {
+            console.warn('Failed to determine receiving agent:', error);
+            if (this.receivingAgent !== undefined) {
+                this.chatInputReceivingAgentKey.set('');
+                this.chatInputHasModesKey.set(false);
+                this.receivingAgent = undefined;
+                this.update();
+            }
+        }
+    }
+
+    /**
+     * Resolves the agent to use for the given parsed request.
+     * If a session is provided, uses session-based logic including pinned agents.
+     * Otherwise, delegates to ChatAgentService.
+     */
+    protected resolveAgentFromParsedRequest(
+        parsedRequest: ParsedChatRequest,
+        session?: ChatSession
+    ): ChatAgent | undefined {
+        if (session) {
+            return this.chatService.getAgent(parsedRequest, session);
+        }
+        return this.chatAgentService.resolveAgent(parsedRequest);
+    }
+
+    /**
+     * Updates the receiving agent state and triggers re-render if the agent changed.
+     */
+    protected async updateAgentState(agent: ChatAgent | undefined): Promise<void> {
+        const agentId = agent?.id ?? '';
+        const previousAgentId = this.receivingAgent?.agentId;
+
+        this.chatInputReceivingAgentKey.set(agentId);
+
+        // Only update and re-render when the agent changes (or on forced refresh after session switch)
+        const needsRefresh = this.forceCapabilitiesRefresh;
+        this.forceCapabilitiesRefresh = false;
+        if (agent && (agentId !== previousAgentId || needsRefresh)) {
+            const modes = agent.modes ?? [];
+            const defaultMode = modes.find(m => m.isDefault);
+            const initialModeId = defaultMode?.id;
+            this.receivingAgent = {
+                agentId: agentId,
+                modes,
+                currentModeId: initialModeId
+            };
+            this.chatInputHasModesKey.set(modes.length > 1);
+            // On forced refresh (session switch), preserve restored overrides from the session
+            await this.updateCapabilitiesForAgent(agentId, initialModeId, needsRefresh);
+        } else if (!agent && this.receivingAgent !== undefined) {
+            this.receivingAgent = undefined;
+            this.capabilityDefaults = [];
+            this.userCapabilityOverrides = new Map();
+            this.chatInputHasModesKey.set(false);
+            this.update();
+        }
+    }
+
+    protected setupEditorEventListeners(): void {
+        if (!this.editorRef) {
+            return;
+        }
+
+        const editor = this.editorRef.getControl();
+
+        this.toDispose.push(editor.onDidFocusEditorWidget(() => {
+            this.chatInputFocusKey.set(true);
+            this.chatInputFocusService.setFocused(this);
+            this.updateCursorPositionKeys();
+        }));
+
+        this.toDispose.push(editor.onDidBlurEditorWidget(() => {
+            this.chatInputFocusService.clearFocused(this);
+            if (this.chatInputFocusService.getFocused() === undefined) {
+                this.chatInputFocusKey.set(false);
+                this.chatInputFirstLineKey.set(false);
+                this.chatInputLastLineKey.set(false);
+            }
+        }));
+
+        this.toDispose.push(editor.onDidChangeCursorPosition(() => {
+            if (editor.hasWidgetFocus()) {
+                this.updateCursorPositionKeys();
+            }
+        }));
+
+        this.toDispose.push(editor.onDidChangeModelContent(() => {
+            if (editor.hasWidgetFocus()) {
+                this.updateCursorPositionKeys();
+            }
+            this.scheduleUpdateReceivingAgent();
+        }));
+
+        if (editor.hasWidgetFocus()) {
+            this.chatInputFocusKey.set(true);
+            this.updateCursorPositionKeys();
+        }
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -182,13 +717,43 @@ export class AIChatInputWidget extends ReactWidget {
     protected async handleAgentCompletion(request: ChatRequestModel): Promise<void> {
         try {
             const agentId = request.agentId;
+            const sessionId = request.session.id;
 
-            if (agentId) {
-                await this.agentNotificationService.showCompletionNotification(agentId);
+            if (agentId && sessionId) {
+                // Get the session title for display in the notification
+                const session = this.chatService.getSession(sessionId);
+                const sessionTitle = session?.title;
+
+                const options: CompletionNotificationOptions = {
+                    shouldSuppress: () => this.isChatSessionFocused(sessionId),
+                    onActivate: () => this.focusChatSession(sessionId),
+                    sessionTitle,
+                };
+                await this.agentNotificationService.showCompletionNotification(agentId, options);
             }
         } catch (error) {
             console.error('Failed to handle agent completion notification:', error);
         }
+    }
+
+    /**
+     * Check if the specific chat session is currently focused.
+     * Returns true only if the chat widget is focused AND viewing the same session.
+     */
+    protected isChatSessionFocused(sessionId: string): boolean {
+        const activeWidget = this.applicationShell.activeWidget;
+        if (!activeWidget || activeWidget.id !== 'chat-view-widget') {
+            return false;
+        }
+        const activeSession = this.chatService.getActiveSession();
+        return activeSession?.id === sessionId;
+    }
+
+    /**
+     * Focus the chat session by setting it as active with focus.
+     */
+    protected focusChatSession(sessionId: string): void {
+        this.chatService.setActiveSession(sessionId, { focus: true });
     }
 
     protected getResourceUri(): URI {
@@ -223,6 +788,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
                 onOpenContextElement={this.openContextElement.bind(this)}
                 context={this.getContext()}
+                fileValidationState={this.fileValidationState}
                 onAgentCompletion={this.handleAgentCompletion.bind(this)}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
@@ -232,12 +798,16 @@ export class AIChatInputWidget extends ReactWidget {
                 isEnabled={this.isEnabled}
                 setEditorRef={editor => {
                     this.editorRef = editor;
+                    this.setupEditorEventListeners();
                     this.editorReady.resolve();
+                    this.scheduleUpdateReceivingAgent();
                 }}
                 showContext={this.configuration?.showContext}
                 showPinnedAgent={this.configuration?.showPinnedAgent}
                 showChangeSet={this.configuration?.showChangeSet}
                 showSuggestions={this.configuration?.showSuggestions}
+                showCapabilities={this.configuration?.showCapabilities}
+                hasPromptHistory={this.configuration?.enablePromptHistory}
                 labelProvider={this.labelProvider}
                 actionService={this.changeSetActionService}
                 decoratorService={this.changeSetDecoratorService}
@@ -254,6 +824,28 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 }}
                 onResize={() => this.onDidResizeEmitter.fire()}
+                hoverService={this.hoverService}
+                modeSelectorProps={{
+                    receivingAgentModes: this.receivingAgent?.modes,
+                    currentMode: this.receivingAgent?.currentModeId,
+                    onModeChange: this.handleModeChange,
+                    keybindingHint: this.getModeKeybindingHint(),
+                }}
+                capabilitiesProps={{
+                    capabilities: this.capabilityDefaults,
+                    overrides: this.userCapabilityOverrides,
+                    onCapabilityChange: this.handleCapabilityChange,
+                    isOpen: this.capabilitiesOpen,
+                    onToggle: () => this.toggleCapabilities(),
+                    keybindingHint: this.getCapabilitiesKeybindingHint(),
+                }}
+                genericCapabilitiesProps={{
+                    genericCapabilities: this.genericCapabilitySelections,
+                    onGenericCapabilityChange: this.handleGenericCapabilityChange,
+                    availableCapabilities: this.availableGenericCapabilities,
+                    disabledCapabilities: this.disabledGenericCapabilities,
+                    hoverService: this.hoverService,
+                }}
             />
         );
     }
@@ -276,9 +868,27 @@ export class AIChatInputWidget extends ReactWidget {
         const dataTransferText = event.dataTransfer?.getData('text/plain');
         const position = this.editorRef?.getControl().getTargetAtClientPoint(event.clientX, event.clientY)?.position;
         this.variableService.getDropResult(event.nativeEvent, { type: 'ai-chat-input-widget' }).then(result => {
-            result.variables.forEach(variable => this.addContext(variable));
-            const text = result.text ?? dataTransferText;
-            if (position && text) {
+            const textsToInsert: string[] = [];
+
+            result.variables.forEach(variable => {
+                if (ImageContextVariable.isImageContextRequest(variable)) {
+                    // Register with short ID and insert short reference at drop position
+                    const shortId = this.registerPendingImage(variable);
+                    textsToInsert.push(`#${variable.variable.name}:${shortId}`);
+                } else {
+                    this.addContext(variable);
+                }
+            });
+
+            // Add any text from drop result or data transfer
+            if (result.text) {
+                textsToInsert.push(result.text);
+            } else if (dataTransferText && textsToInsert.length === 0) {
+                // Only use dataTransferText if we have nothing else to insert
+                textsToInsert.push(dataTransferText);
+            }
+
+            if (position && textsToInsert.length > 0) {
                 this.editorRef?.getControl().executeEdits('drag-and-drop', [{
                     range: {
                         startLineNumber: position.lineNumber,
@@ -286,7 +896,7 @@ export class AIChatInputWidget extends ReactWidget {
                         endLineNumber: position.lineNumber,
                         endColumn: position.column
                     },
-                    text
+                    text: textsToInsert.join(' ')
                 }]);
             }
         });
@@ -294,20 +904,35 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected onPaste(event: ClipboardEvent): void {
         this.variableService.getPasteResult(event, { type: 'ai-chat-input-widget' }).then(result => {
-            result.variables.forEach(variable => this.addContext(variable));
-            if (result.text) {
-                const position = this.editorRef?.getControl().getPosition();
-                if (position && result.text) {
-                    this.editorRef?.getControl().executeEdits('paste', [{
-                        range: {
-                            startLineNumber: position.lineNumber,
-                            startColumn: position.column,
-                            endLineNumber: position.lineNumber,
-                            endColumn: position.column
-                        },
-                        text: result.text
-                    }]);
+            const position = this.editorRef?.getControl().getPosition();
+            const textsToInsert: string[] = [];
+
+            result.variables.forEach(variable => {
+                if (ImageContextVariable.isImageContextRequest(variable)) {
+                    // Register with short ID and insert short reference at cursor position
+                    const shortId = this.registerPendingImage(variable);
+                    textsToInsert.push(`#${variable.variable.name}:${shortId}`);
+                } else {
+                    this.addContext(variable);
                 }
+            });
+
+            // Insert any text from the paste result
+            if (result.text) {
+                textsToInsert.push(result.text);
+            }
+
+            // Insert all collected text at cursor position
+            if (position && textsToInsert.length > 0) {
+                this.editorRef?.getControl().executeEdits('paste', [{
+                    range: {
+                        startLineNumber: position.lineNumber,
+                        startColumn: position.column,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column
+                    },
+                    text: textsToInsert.join(' ')
+                }]);
             }
         });
     }
@@ -320,6 +945,14 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
+        // Re-validate file before opening
+        if (request.variable.name === 'file' && request.arg) {
+            if (this.validationService) {
+                const result = await this.validationService.validateFile(request.arg);
+                this.fileValidationState.set(request.arg, result);
+                this.update();
+            }
+        }
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === this._chatModel.id);
         const context = { session };
         await this.variableService.open(request, context);
@@ -338,10 +971,6 @@ export class AIChatInputWidget extends ReactWidget {
         });
     }
 
-    protected deleteContextElement(index: number): void {
-        this._chatModel.context.deleteVariables(index);
-    }
-
     protected handleContextMenu(event: IMouseEvent): void {
         this.contextMenuRenderer.render({
             menuPath: AIChatInputWidget.CONTEXT_MENU,
@@ -353,18 +982,97 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     addContext(variable: AIVariableResolutionRequest): void {
+        // Validation happens in the chatModel.onDidChange listener
         this._chatModel.context.addVariables(variable);
+    }
+
+    /**
+     * Get the scope URI used for registering pending images.
+     * Uses the chat model ID for scoping, not the editor URI.
+     */
+    protected getScopeUri(): string {
+        const modelId = this._chatModel?.id ?? 'default';
+        return this.pendingImageRegistry.getScopeUriForModel(modelId);
+    }
+
+    /**
+     * Register a pending image attachment with a short ID.
+     * @returns The short ID that can be used in the text.
+     */
+    registerPendingImage(variable: AIVariableResolutionRequest): string {
+        const parsed = ImageContextVariable.parseRequest(variable);
+        if (!parsed || !variable.arg) {
+            throw new Error('Invalid image context variable');
+        }
+
+        const scopeUri = this.getScopeUri();
+        const baseName = this.getImageBaseName(parsed);
+        const shortId = this.pendingImageRegistry.generateShortId(baseName, scopeUri);
+
+        const disposable = this.pendingImageRegistry.register(
+            scopeUri,
+            shortId,
+            parsed,
+            variable.arg
+        );
+        this.pendingImageDisposables.set(shortId, disposable);
+
+        return shortId;
+    }
+
+    /**
+     * Clear all pending image attachments. Called after a message is sent.
+     */
+    clearPendingImageAttachments(): void {
+        // Dispose all registrations
+        for (const disposable of this.pendingImageDisposables.values()) {
+            disposable.dispose();
+        }
+        this.pendingImageDisposables.clear();
+
+        // Also clear the scope in the registry (belt and suspenders)
+        this.pendingImageRegistry.clearScope(this.getScopeUri());
+    }
+
+    /**
+     * Get a meaningful base name for an image variable.
+     * For dropped files (with wsRelativePath), use the workspace-relative path (like file variables).
+     * For pasted images, use "pasted_image".
+     */
+    protected getImageBaseName(imageVariable: ImageContextVariable): string {
+        // For file-based images, use the workspace-relative path (consistent with #file: variables)
+        if (imageVariable.wsRelativePath) {
+            return imageVariable.wsRelativePath;
+        }
+
+        // For pasted images, use a generic name
+        return 'pasted_image';
+    }
+
+    /**
+     * Get all variables to be sent with the request.
+     * Note: Image variables in text use short IDs that get resolved via the pending image registry.
+     */
+    getAllVariablesForRequest(): AIVariableResolutionRequest[] {
+        return [...this._chatModel.context.getVariables()];
     }
 
     protected getContext(): readonly AIVariableResolutionRequest[] {
         return this._chatModel.context.getVariables();
+    }
+
+    /**
+     * Delete a context element by index.
+     */
+    protected deleteContextElement(index: number): void {
+        this._chatModel.context.deleteVariables(index);
     }
 }
 
 interface ChatInputProperties {
     branch?: ChatHierarchyBranch;
     onCancel: (requestModel: ChatRequestModel) => void;
-    onQuery: (query: string) => void;
+    onQuery: (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => void;
     onUnpin: () => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
@@ -377,6 +1085,7 @@ interface ChatInputProperties {
     onOpenContextElement: OpenContextElement;
     onAgentCompletion: (request: ChatRequestModel) => void;
     context?: readonly AIVariableResolutionRequest[];
+    fileValidationState: Map<string, FileValidationResult>;
     isEnabled?: boolean;
     chatModel: ChatModel;
     pinnedAgent?: ChatAgent;
@@ -388,6 +1097,8 @@ interface ChatInputProperties {
     showPinnedAgent?: boolean;
     showChangeSet?: boolean;
     showSuggestions?: boolean;
+    showCapabilities?: boolean;
+    hasPromptHistory?: boolean;
     labelProvider: LabelProvider;
     actionService: ChangeSetActionService;
     decoratorService: ChangeSetDecoratorService;
@@ -400,6 +1111,28 @@ interface ChatInputProperties {
     heightInLines?: number;
     onResponseChanged: () => void;
     onResize: () => void;
+    hoverService: HoverService;
+    modeSelectorProps: {
+        receivingAgentModes?: ChatMode[];
+        currentMode?: string;
+        onModeChange: (mode: string) => void;
+        keybindingHint?: string;
+    };
+    capabilitiesProps: {
+        capabilities: ParsedCapability[];
+        overrides: Map<string, boolean>;
+        onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
+        isOpen: boolean;
+        onToggle: () => void;
+        keybindingHint?: string;
+    };
+    genericCapabilitiesProps: {
+        genericCapabilities: GenericCapabilitySelections;
+        onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+        availableCapabilities: AvailableGenericCapabilities;
+        disabledCapabilities: GenericCapabilitySelections;
+        hoverService: HoverService;
+    };
 }
 
 // Utility to check if we have task context in the chat model
@@ -412,6 +1145,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const onDeleteChangeSetElement = (uri: URI) => props.onDeleteChangeSetElement(props.chatModel.id, uri);
 
     const [isInputEmpty, setIsInputEmpty] = React.useState(true);
+    const [isInputFocused, setIsInputFocused] = React.useState(false);
+    const [placeholderText, setPlaceholderText] = React.useState('');
     const [changeSetUI, setChangeSetUI] = React.useState(
         () => buildChangeSetUI(
             props.chatModel.changeSet,
@@ -435,11 +1170,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const isFirstRequest = props.chatModel.getRequests().length === 0;
     const shouldUseTaskPlaceholder = isFirstRequest && props.pinnedAgent && hasTaskContext(props.chatModel);
     const taskPlaceholder = nls.localize('theia/ai/chat-ui/performThisTask', 'Perform this task.');
-    const placeholderText = !props.isEnabled
-        ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
-        : shouldUseTaskPlaceholder
-            ? taskPlaceholder
-            : nls.localizeByDefault('Ask a question');
+
+    // Update placeholder text when focus state or other dependencies change
+    React.useEffect(() => {
+        const newPlaceholderText = !props.isEnabled
+            ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+            : shouldUseTaskPlaceholder
+                ? taskPlaceholder
+                : nls.localize('theia/ai/chat-ui/askQuestion', 'Ask a question') +
+                (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
+        setPlaceholderText(newPlaceholderText);
+    }, [props.isEnabled, shouldUseTaskPlaceholder, taskPlaceholder, props.hasPromptHistory, isInputFocused]);
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {
@@ -467,10 +1208,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
             const editor = await props.editorProvider.createSimpleInline(uri, editorContainerRef.current!, {
                 language: CHAT_VIEW_LANGUAGE_EXTENSION,
-                // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
+                // Disable code lens and inlay hints to avoid console errors from other contributions
                 codeLens: false,
                 inlayHints: { enabled: 'off' },
-                hover: { enabled: false },
+                hover: { enabled: true },
                 autoSizing: false, // we handle the sizing ourselves
                 scrollBeyondLastLine: false,
                 scrollBeyondLastColumn: 0,
@@ -494,6 +1235,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 bracketPairColorization: { enabled: false },
                 wrappingStrategy: 'advanced',
                 stickyScroll: { enabled: false },
+                ariaLabel: nls.localize('theia/ai/chat-ui/chatInputAriaLabel', 'Type your message here'),
             });
 
             if (editorContainerRef.current) {
@@ -648,6 +1390,24 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     }, [editorRef]);
 
+    // Convert capability overrides map to a plain record - always send all capability states
+    const getCapabilityOverridesRecord = React.useCallback((): Record<string, boolean> | undefined => {
+        if (props.capabilitiesProps.overrides.size === 0) {
+            return undefined;
+        }
+        const record: Record<string, boolean> = {};
+        for (const [key, value] of props.capabilitiesProps.overrides) {
+            record[key] = value;
+        }
+        return record;
+    }, [props.capabilitiesProps.overrides]);
+
+    // Get generic capability selections if any are set
+    const getGenericCapabilitySelections = React.useCallback((): GenericCapabilitySelections | undefined => {
+        const selections = props.genericCapabilitiesProps.genericCapabilities;
+        return GenericCapabilitySelections.hasSelections(selections) ? selections : undefined;
+    }, [props.genericCapabilitiesProps.genericCapabilities]);
+
     // Without user input, if we can default to "Perform this task.", do so
     const submit = React.useCallback(function submit(value: string): void {
         let effectiveValue = value;
@@ -657,12 +1417,18 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         if (!effectiveValue || effectiveValue.trim().length === 0) {
             return;
         }
-        props.onQuery(effectiveValue);
+        const capabilityOverrides = getCapabilityOverridesRecord();
+        const genericCapabilitySelections = getGenericCapabilitySelections();
+        props.onQuery(effectiveValue, props.modeSelectorProps.currentMode, capabilityOverrides, genericCapabilitySelections);
         setValue('');
         if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
+            editorRef.current.focus();
         }
-    }, [props.context, props.onQuery, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
+    }, [
+        props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue,
+        shouldUseTaskPlaceholder, taskPlaceholder, getCapabilityOverridesRecord, getGenericCapabilitySelections
+    ]);
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (!props.isEnabled) {
@@ -680,6 +1446,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.isEnabled, submit]);
 
     const handleInputFocus = () => {
+        setIsInputFocused(true);
         hidePlaceholderIfEditorFilled();
     };
 
@@ -689,6 +1456,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     };
 
     const handleInputBlur = () => {
+        setIsInputFocused(false);
         showPlaceholderIfEditorEmpty();
     };
 
@@ -726,7 +1494,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? [{
                 title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
                 handler: () => props.onAddContextElement(),
-                className: 'codicon-add',
+                className: 'codicon-attach',
                 disabled: !props.isEnabled
             }]
             : []),
@@ -734,7 +1502,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? [{
                 title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/agent', 'Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
-                className: 'at-icon',
+                className: 'codicon-mention',
                 disabled: !props.isEnabled,
                 text: {
                     align: 'right',
@@ -787,26 +1555,327 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }];
     }
 
-    const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
+    const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement, props.fileValidationState);
+
+    // Show mode selector if agent has multiple modes
+    const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
 
     return (
-        <div className='theia-ChatInput' data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
+        <div className="theia-ChatInput" data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
             {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
             {props.showChangeSet && changeSetUI?.elements &&
                 <ChangeSetBox changeSet={changeSetUI} />
             }
             <div className='theia-ChatInput-Editor-Box'>
+                {props.showCapabilities !== false && (
+                    <CapabilitiesBar
+                        isOpen={props.capabilitiesProps.isOpen}
+                        capabilities={props.capabilitiesProps.capabilities}
+                        overrides={props.capabilitiesProps.overrides}
+                        onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
+                        genericCapabilities={props.genericCapabilitiesProps.genericCapabilities}
+                        onGenericCapabilityChange={props.genericCapabilitiesProps.onGenericCapabilityChange}
+                        availableCapabilities={props.genericCapabilitiesProps.availableCapabilities}
+                        disabledCapabilities={props.genericCapabilitiesProps.disabledCapabilities}
+                        disabled={!props.isEnabled}
+                        hoverService={props.hoverService}
+                    />
+                )}
                 <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
                     <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{placeholderText}</div>
                 </div>
                 {props.context && props.context.length > 0 &&
                     <ChatContext context={contextUI.context} />
                 }
-                <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
+                <ChatInputOptions
+                    leftOptions={leftOptions}
+                    rightOptions={rightOptions}
+                    isEnabled={props.isEnabled}
+                    hoverService={props.hoverService}
+                    modeSelectorProps={{
+                        show: showModeSelector,
+                        modes: props.modeSelectorProps.receivingAgentModes,
+                        currentMode: props.modeSelectorProps.currentMode,
+                        onModeChange: props.modeSelectorProps.onModeChange,
+                        keybindingHint: props.modeSelectorProps.keybindingHint,
+                    }}
+                    capabilitiesToggle={{
+                        show: props.showCapabilities !== false,
+                        isOpen: props.capabilitiesProps.isOpen,
+                        hasActiveSelections: props.capabilitiesProps.overrides.size > 0
+                            || GenericCapabilitySelections.hasSelections(props.genericCapabilitiesProps.genericCapabilities),
+                        onToggle: props.capabilitiesProps.onToggle,
+                        keybindingHint: props.capabilitiesProps.keybindingHint,
+                    }}
+                />
             </div>
         </div>
     );
 };
+
+/**
+ * Returns an onMouseEnter handler that shows a hover tooltip via HoverService.
+ */
+function hoverHandler(hoverService: HoverService, content: string): (e: React.MouseEvent) => void {
+    return (e: React.MouseEvent) => {
+        hoverService.requestHover({
+            content,
+            target: e.currentTarget as HTMLElement,
+            position: 'bottom'
+        });
+    };
+}
+
+interface ChatInputOptionsProps {
+    leftOptions: Option[];
+    rightOptions: Option[];
+    isEnabled?: boolean;
+    hoverService: HoverService;
+    modeSelectorProps: {
+        show: boolean;
+        modes?: ChatMode[];
+        currentMode?: string;
+        onModeChange: (mode: string) => void;
+        keybindingHint?: string;
+    };
+    capabilitiesToggle: {
+        show: boolean;
+        isOpen: boolean;
+        hasActiveSelections: boolean;
+        onToggle: () => void;
+        keybindingHint?: string;
+    };
+}
+
+const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
+    leftOptions,
+    rightOptions,
+    isEnabled,
+    hoverService,
+    modeSelectorProps,
+    capabilitiesToggle
+}) => {
+    const capabilitiesLabel = nls.localize('theia/ai/chat-ui/toggleCapabilitiesConfig', 'Toggle Capabilities Configuration');
+    const capabilitiesTitle = capabilitiesToggle.keybindingHint
+        ? `${capabilitiesLabel} (${capabilitiesToggle.keybindingHint})`
+        : capabilitiesLabel;
+
+    return (
+        // Right options are rendered first in DOM for tab order (send button first when enabled)
+        // CSS order property positions them visually (left on left, right on right)
+        <div className="theia-ChatInputOptions">
+            <div className="theia-ChatInputOptions-right">
+                {rightOptions.map((option, index) => (
+                    <span
+                        key={index}
+                        className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                        aria-label={option.title}
+                        role='button'
+                        tabIndex={option.disabled ? -1 : 0}
+                        onClick={option.handler}
+                        onMouseEnter={hoverHandler(hoverService, option.title)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                option.handler();
+                            }
+                        }}
+                    >
+                        <span>{option.text?.content}</span>
+                        <span className={`codicon ${option.className}`} />
+                    </span>
+                ))}
+            </div>
+            <div className="theia-ChatInputOptions-left">
+                {leftOptions.map((option, index) => (
+                    <span
+                        key={index}
+                        className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                        aria-label={option.title}
+                        role='button'
+                        tabIndex={option.disabled ? -1 : 0}
+                        onClick={option.handler}
+                        onMouseEnter={hoverHandler(hoverService, option.title)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                option.handler();
+                            }
+                        }}
+                    >
+                        <span>{option.text?.content}</span>
+                        <span className={`codicon ${option.className}`} />
+                    </span>
+                ))}
+                {modeSelectorProps.show && modeSelectorProps.modes && (
+                    <ChatModeSelector
+                        modes={modeSelectorProps.modes}
+                        currentMode={modeSelectorProps.currentMode}
+                        onModeChange={modeSelectorProps.onModeChange}
+                        disabled={!isEnabled}
+                        keybindingHint={modeSelectorProps.keybindingHint}
+                        hoverService={hoverService}
+                    />
+                )}
+                {capabilitiesToggle.show && (
+                    <span
+                        className={`option${capabilitiesToggle.isOpen ? ' toggled' : ''}`}
+                        aria-label={capabilitiesLabel}
+                        aria-expanded={capabilitiesToggle.isOpen}
+                        aria-pressed={capabilitiesToggle.isOpen}
+                        role='button'
+                        tabIndex={0}
+                        onClick={capabilitiesToggle.onToggle}
+                        onMouseEnter={hoverHandler(hoverService, capabilitiesTitle)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                capabilitiesToggle.onToggle();
+                            }
+                        }}
+                    >
+                        <span className="codicon codicon-tools" />
+                        {!capabilitiesToggle.isOpen && capabilitiesToggle.hasActiveSelections && (
+                            <span className="theia-capabilities-badge-dot" />
+                        )}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+};
+
+interface ChatModeSelectorProps {
+    modes: ChatMode[];
+    currentMode?: string;
+    onModeChange: (mode: string) => void;
+    disabled?: boolean;
+    keybindingHint?: string;
+    hoverService: HoverService;
+}
+
+/**
+ * Props for the CapabilitiesBar component.
+ */
+interface CapabilitiesBarProps {
+    isOpen: boolean;
+    capabilities: ParsedCapability[];
+    overrides: Map<string, boolean>;
+    onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
+    genericCapabilities: GenericCapabilitySelections;
+    onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+    availableCapabilities: AvailableGenericCapabilities;
+    disabledCapabilities: GenericCapabilitySelections;
+    disabled?: boolean;
+    hoverService: HoverService;
+}
+
+/**
+ * Combined capabilities bar that shows:
+ * - Collapsed state: horizontal scrollable row of capability chips
+ * - Expanded state: full panel with capabilities and generic capabilities
+ */
+const CapabilitiesBar: React.FunctionComponent<CapabilitiesBarProps> = ({
+    isOpen,
+    capabilities,
+    overrides,
+    onCapabilityChange,
+    genericCapabilities,
+    onGenericCapabilityChange,
+    availableCapabilities,
+    disabledCapabilities,
+    disabled,
+    hoverService
+}) => {
+    if (isOpen) {
+        // Expanded state: full panel
+        const hasCapabilities = capabilities.length > 0;
+        return (
+            <div className="theia-ChatInput-CapabilitiesPanel">
+                {hasCapabilities && (
+                    <>
+                        <div className="theia-ChatInput-CapabilitiesPanel-Left">
+                            <CapabilityChipsRow
+                                capabilities={capabilities}
+                                overrides={overrides}
+                                onCapabilityChange={onCapabilityChange}
+                                disabled={disabled}
+                                hoverService={hoverService} />
+                        </div>
+                        <div className="theia-ChatInput-CapabilitiesPanel-Divider" />
+                    </>
+                )}
+                <div className="theia-ChatInput-CapabilitiesPanel-Right">
+                    <GenericCapabilitiesSection
+                        genericCapabilities={genericCapabilities}
+                        onGenericCapabilityChange={onGenericCapabilityChange}
+                        availableCapabilities={availableCapabilities}
+                        disabledCapabilities={disabledCapabilities}
+                        disabled={disabled}
+                        hoverService={hoverService} />
+                </div>
+            </div>
+        );
+    }
+
+    // Collapsed state: horizontal scrollable row of capability chips
+    if (capabilities.length === 0) {
+        return undefined;
+    }
+    return (
+        <div className="theia-capabilities-collapsed-bar">
+            <div className="theia-capabilities-collapsed-scrollbar">
+                {capabilities.map((capability, index) => {
+                    const isChecked = overrides.get(capability.fragmentId) ?? capability.defaultEnabled;
+                    return (
+                        <CapabilityChip
+                            key={capability.fragmentId}
+                            fragmentId={capability.fragmentId}
+                            name={capability.name}
+                            description={capability.description}
+                            checked={isChecked}
+                            disabled={disabled}
+                            tabIndex={disabled ? -1 : 0}
+                            onToggle={onCapabilityChange}
+                            onFocus={() => { }}
+                            hoverService={hoverService}
+                        />
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.memo(({ modes, currentMode, onModeChange, disabled, keybindingHint, hoverService }) => {
+    const options: SelectOption[] = React.useMemo(
+        () => modes.map(mode => ({ value: mode.id, label: mode.name })),
+        [modes]
+    );
+
+    const handleChange = React.useCallback(
+        (option: SelectOption) => {
+            if (option.value) {
+                onModeChange(option.value);
+            }
+        },
+        [onModeChange]
+    );
+
+    const label = nls.localize('theia/ai/chat-ui/switchAgentMode', 'Switch Agent Mode');
+    const title = keybindingHint ? `${label} (${keybindingHint})` : label;
+
+    return (
+        <span onMouseEnter={hoverHandler(hoverService, title)}>
+            <SelectComponent
+                className={`theia-ChatInput-ModeSelector${disabled ? ' disabled' : ''}`}
+                options={options}
+                defaultValue={currentMode ?? modes[0]?.id ?? ''}
+                onChange={handleChange}
+            />
+        </span>
+    );
+});
 
 const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
     handler();
@@ -854,22 +1923,68 @@ interface ChangeSetUI {
 }
 
 /** Memo because the parent element rerenders on every key press in the chat widget. */
-const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo(({ changeSet: { changeSet, title, deleteChangeSet, elements, actions } }) => (
-    <div className='theia-ChatInput-ChangeSet-Box'>
-        <div className='theia-ChatInput-ChangeSet-Header'>
-            <h3>{title}</h3>
-            <div className='theia-ChatInput-ChangeSet-Header-Actions'>
-                {actions.map(action => <div key={action.id} className='theia-changeSet-Action'>{action.render(changeSet)}</div>)}
-                <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => deleteChangeSet()} />
+const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo(({ changeSet: { changeSet, title, deleteChangeSet, elements, actions } }) => {
+    const [isCollapsed, setIsCollapsed] = React.useState(false);
+
+    const toggleCollapse = React.useCallback(() => {
+        setIsCollapsed(prev => !prev);
+    }, []);
+
+    const handleToggleKeyDown = React.useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleCollapse();
+            }
+        },
+        [toggleCollapse]
+    );
+
+    return (
+        <div className='theia-ChatInput-ChangeSet-Box'>
+            <div className='theia-ChatInput-ChangeSet-Header'>
+                <div className='theia-ChatInput-ChangeSet-Header-Title'>
+                    <span
+                        className={`codicon ${isCollapsed ? 'codicon-chevron-right' : 'codicon-chevron-down'} theia-ChatInput-ChangeSet-Toggle`}
+                        onClick={toggleCollapse}
+                        onKeyDown={handleToggleKeyDown}
+                        role='button'
+                        tabIndex={0}
+                        aria-expanded={!isCollapsed}
+                        aria-label={
+                            isCollapsed
+                                ? nls.localize('theia/ai/chat-ui/expandChangeSet', 'Expand Change Set')
+                                : nls.localize('theia/ai/chat-ui/collapseChangeSet', 'Collapse Change Set')
+                        }
+                        title={
+                            isCollapsed
+                                ? nls.localize('theia/ai/chat-ui/expandChangeSet', 'Expand Change Set')
+                                : nls.localize('theia/ai/chat-ui/collapseChangeSet', 'Collapse Change Set')
+                        }
+                    />
+                    <h3>{title}</h3>
+                </div>
+                <div className='theia-ChatInput-ChangeSet-Header-Actions'>
+                    {actions.map(action => (
+                        <div key={action.id} className='theia-changeSet-Action'>
+                            {action.render(changeSet)}
+                        </div>
+                    ))}
+                    <span
+                        className='codicon codicon-close action'
+                        title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')}
+                        onClick={() => deleteChangeSet()}
+                    />
+                </div>
+            </div>
+            <div className={`theia-ChatInput-ChangeSet-List ${isCollapsed ? 'collapsed' : 'expanded'}`}>
+                <ul>
+                    {elements.map(element => ChangeSetElement(element))}
+                </ul>
             </div>
         </div>
-        <div className='theia-ChatInput-ChangeSet-List'>
-            <ul>
-                {elements.map(element => ChangeSetElement(element))}
-            </ul>
-        </div>
-    </div>
-));
+    );
+});
 
 function toUiElement(element: ChangeSetElement,
     onDeleteChangeSetElement: (uri: URI) => void,
@@ -929,11 +2044,6 @@ const ChangeSetElement: React.FC<ChangeSetUIElement> = element => (
     </li>
 );
 
-interface ChatInputOptionsProps {
-    leftOptions: Option[];
-    rightOptions: Option[];
-}
-
 interface Option {
     title: string;
     handler: () => void;
@@ -945,57 +2055,47 @@ interface Option {
     };
 }
 
-const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ leftOptions, rightOptions }) => (
-    <div className="theia-ChatInputOptions">
-        <div className="theia-ChatInputOptions-left">
-            {leftOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    onClick={option.handler}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
-        </div>
-        <div className="theia-ChatInputOptions-right">
-            {rightOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    onClick={option.handler}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
-        </div>
-    </div>
-);
-
 function buildContextUI(
     context: readonly AIVariableResolutionRequest[] | undefined,
     labelProvider: LabelProvider,
     onDeleteContextElement: (index: number) => void,
-    onOpen: OpenContextElement
+    onOpen: OpenContextElement,
+    fileValidationState: Map<string, FileValidationResult>
 ): ChatContextUI {
     if (!context) {
         return { context: [] };
     }
     return {
-        context: context.map((element, index) => ({
-            variable: element,
-            name: labelProvider.getName(element),
-            iconClass: labelProvider.getIcon(element),
-            nameClass: element.variable.name,
-            additionalInfo: labelProvider.getDetails(element),
-            details: labelProvider.getLongName(element),
-            delete: () => onDeleteContextElement(index),
-            open: () => onOpen(element)
-        }))
+        context: context.map((element, index) => {
+            // Check if this is an invalid file
+            let className: string | undefined;
+            let validationMessage: string | undefined;
+            if (element.variable.name === 'file' && element.arg) {
+                // Use the path directly as the key (same as storage)
+                const validationResult = fileValidationState.get(element.arg);
+                if (validationResult) {
+                    if (validationResult.state === FileValidationState.INVALID_SECONDARY) {
+                        className = 'warning-file';
+                        validationMessage = validationResult.message;
+                    } else if (validationResult.state === FileValidationState.INVALID_NOT_FOUND) {
+                        className = 'invalid-file';
+                        validationMessage = validationResult.message;
+                    }
+                }
+            }
+            return {
+                variable: element,
+                name: labelProvider.getName(element),
+                iconClass: labelProvider.getIcon(element),
+                nameClass: element.variable.name,
+                className,
+                validationMessage,
+                additionalInfo: labelProvider.getDetails(element),
+                details: labelProvider.getLongName(element),
+                delete: () => onDeleteContextElement(index),
+                open: () => onOpen(element)
+            };
+        })
     };
 }
 
@@ -1005,6 +2105,8 @@ interface ChatContextUI {
         name: string;
         iconClass: string;
         nameClass: string;
+        className?: string;
+        validationMessage?: string;
         additionalInfo?: string;
         details?: string;
         delete: () => void;
@@ -1017,14 +2119,19 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
         <ul>
             {context.map((element, index) => {
                 if (ImageContextVariable.isImageContextRequest(element.variable)) {
-                    const variable = ImageContextVariable.parseRequest(element.variable)!;
+                    const variable = ImageContextVariable.parseRequest(element.variable);
+                    const displayName = variable?.name ?? variable?.wsRelativePath?.split('/').pop() ?? element.name;
+                    const title = variable?.name ?? variable?.wsRelativePath ?? element.details ?? element.name;
+                    // Check if we have the actual image data (pre-processed) or just a path reference
+                    const hasImageData = variable && ImageContextVariable.isResolved(variable);
+
                     return <li key={index} className="theia-ChatInput-ChatContext-Element theia-ChatInput-ImageContext-Element"
-                        title={variable.name ?? variable.wsRelativePath} onClick={() => element.open?.()}>
+                        title={title} onClick={() => element.open?.()}>
                         <div className="theia-ChatInput-ChatContext-Row">
                             <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
                             <div className="theia-ChatInput-ChatContext-labelParts">
                                 <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
-                                    {variable.name ?? variable.wsRelativePath?.split('/').pop()}
+                                    {displayName}
                                 </span>
                                 <span className='theia-ChatInput-ChatContext-additionalInfo'>
                                     {element.additionalInfo}
@@ -1032,15 +2139,20 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                             </div>
                             <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
                         </div>
-                        <div className="theia-ChatInput-ChatContext-ImageRow">
+                        {hasImageData && <div className="theia-ChatInput-ChatContext-ImageRow">
                             <div className='theia-ChatInput-ImagePreview-Item'>
-                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name} />
+                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name ?? displayName} />
                             </div>
-                        </div>
+                        </div>}
                     </li>;
                 }
-                return <li key={index} className="theia-ChatInput-ChatContext-Element" title={element.details} onClick={() => element.open?.()}>
+                const isWarning = element.className === 'warning-file';
+                const isInvalid = element.className === 'invalid-file';
+                const tooltipTitle = element.validationMessage ?? element.details;
+                return <li key={index} className={`theia-ChatInput-ChatContext-Element ${element.className || ''}`} title={tooltipTitle} onClick={() => element.open?.()}>
                     <div className="theia-ChatInput-ChatContext-Row">
+                        {isWarning && <span className="codicon codicon-warning warning-file-icon" />}
+                        {isInvalid && <span className="codicon codicon-error invalid-file-icon" />}
                         <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
                         <div className="theia-ChatInput-ChatContext-labelParts">
                             <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>

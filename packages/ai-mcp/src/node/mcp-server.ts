@@ -13,14 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
-import { Emitter } from '@theia/core/lib/common/event';
-import { CallToolResult, CallToolResultSchema, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
-import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
+import { Emitter } from '@theia/core/lib/common/event.js';
+import { CallToolResult, CallToolResultSchema, ListResourcesResult, ListRootsRequestSchema, ListRootsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 
 export class MCPServer {
     private description: MCPServerDescription;
@@ -28,6 +28,7 @@ export class MCPServer {
     private client: Client;
     private error?: string;
     private status: MCPServerStatus;
+    private workspaceRoots: string[] | undefined;
 
     private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
     readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
@@ -45,14 +46,26 @@ export class MCPServer {
         this.onDidUpdateStatusEmitter.fire(status);
     }
 
-    isRunnning(): boolean {
+    isRunning(): boolean {
         return this.status === MCPServerStatus.Running
             || this.status === MCPServerStatus.Connected;
     }
 
+    isStopped(): boolean {
+        return this.status === MCPServerStatus.NotRunning
+            || this.status === MCPServerStatus.NotConnected;
+    }
+
+    setWorkspaceRoots(roots: string[] | undefined): void {
+        this.workspaceRoots = roots;
+        if (this.isRunning() && this.workspaceRoots) {
+            this.client.sendRootsListChanged();
+        }
+    }
+
     async getDescription(): Promise<MCPServerDescription> {
         let toReturnTools: ToolInformation[] | undefined = undefined;
-        if (this.isRunnning()) {
+        if (this.isRunning()) {
             try {
                 const { tools } = await this.getTools();
                 toReturnTools = tools.map(tool => ({
@@ -73,21 +86,48 @@ export class MCPServer {
     }
 
     async start(): Promise<void> {
-        if (this.isRunnning()
-            && (this.status === MCPServerStatus.Starting || this.status === MCPServerStatus.Connecting)) {
+        if (this.isRunning()
+            || (this.status === MCPServerStatus.Starting || this.status === MCPServerStatus.Connecting)) {
             return;
         }
 
         let connected = false;
-        this.client = new Client(
-            {
-                name: 'theia-client',
-                version: '1.0.0',
-            },
-            {
-                capabilities: {}
-            }
-        );
+
+        // if the preference useWorkspaceRoots is set to false, we will receive undefined here
+        // in that case the MCP server should have access to the entire filesystem, i.e. we don't configure roots
+        if (!this.workspaceRoots) {
+            this.client = new Client(
+                {
+                    name: 'theia-client',
+                    version: '1.0.0',
+                },
+                {
+                    capabilities: {}
+                }
+            );
+        } else {
+            this.client = new Client(
+                {
+                    name: 'theia-client',
+                    version: '1.0.0',
+                },
+                {
+                    capabilities: {
+                        roots: {
+                            listChanged: true
+                        }
+                    }
+                }
+            );
+            // Register request handler to provide workspace roots when server requests them
+            this.client.setRequestHandler(ListRootsRequestSchema, async () => {
+                const roots = this.workspaceRoots?.map(uri => ({
+                    uri,
+                    name: uri.split('/').pop() || uri
+                }));
+                return { roots } as ListRootsResult;
+            });
+        }
         this.error = undefined;
 
         if (isLocalMCPServerDescription(this.description)) {
@@ -163,6 +203,9 @@ export class MCPServer {
         }
 
         this.transport.onerror = error => {
+            if (this.isStopped()) {
+                return;
+            }
             console.error('Error: ', error);
             this.error = 'Error: ' + error;
             this.setStatus(MCPServerStatus.Errored);
@@ -206,7 +249,7 @@ export class MCPServer {
     }
 
     async getTools(): ReturnType<Client['listTools']> {
-        if (this.isRunnning()) {
+        if (this.isRunning()) {
             return this.client.listTools();
         }
         return { tools: [] };
@@ -223,7 +266,7 @@ export class MCPServer {
     }
 
     async stop(): Promise<void> {
-        if (!this.isRunnning() || !this.client) {
+        if (!this.isRunning() || !this.client) {
             return;
         }
         if (isLocalMCPServerDescription(this.description)) {

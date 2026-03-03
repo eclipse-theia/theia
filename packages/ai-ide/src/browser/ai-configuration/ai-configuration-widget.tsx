@@ -20,6 +20,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AIToolsConfigurationWidget } from './tools-configuration-widget';
+import { AISkillsConfigurationWidget } from './skills-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { nls } from '@theia/core';
 import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
@@ -47,12 +48,14 @@ export class AIConfigurationContainerWidget extends BaseWidget {
     protected tokenUsageWidget: AITokenUsageConfigurationWidget;
     protected promptFragmentsWidget: AIPromptFragmentsConfigurationWidget;
     protected toolsWidget: AIToolsConfigurationWidget;
+    protected skillsWidget: AISkillsConfigurationWidget;
     protected modelAliasesWidget: ModelAliasesConfigurationWidget;
 
     @postConstruct()
     protected init(): void {
         this.id = AIConfigurationContainerWidget.ID;
         this.title.label = AIConfigurationContainerWidget.LABEL;
+        this.title.caption = AIConfigurationContainerWidget.LABEL;
         this.title.closable = true;
         this.addClass('theia-settings-container');
         this.title.iconClass = codicon('hubot');
@@ -76,6 +79,7 @@ export class AIConfigurationContainerWidget extends BaseWidget {
         this.tokenUsageWidget = await this.widgetManager.getOrCreateWidget(AITokenUsageConfigurationWidget.ID);
         this.promptFragmentsWidget = await this.widgetManager.getOrCreateWidget(AIPromptFragmentsConfigurationWidget.ID);
         this.toolsWidget = await this.widgetManager.getOrCreateWidget(AIToolsConfigurationWidget.ID);
+        this.skillsWidget = await this.widgetManager.getOrCreateWidget(AISkillsConfigurationWidget.ID);
         this.modelAliasesWidget = await this.widgetManager.getOrCreateWidget(ModelAliasesConfigurationWidget.ID);
 
         this.dockpanel.addWidget(this.agentsWidget);
@@ -84,7 +88,8 @@ export class AIConfigurationContainerWidget extends BaseWidget {
         this.dockpanel.addWidget(this.tokenUsageWidget, { mode: 'tab-after', ref: this.mcpWidget });
         this.dockpanel.addWidget(this.promptFragmentsWidget, { mode: 'tab-after', ref: this.tokenUsageWidget });
         this.dockpanel.addWidget(this.toolsWidget, { mode: 'tab-after', ref: this.promptFragmentsWidget });
-        this.dockpanel.addWidget(this.modelAliasesWidget, { mode: 'tab-after', ref: this.toolsWidget });
+        this.dockpanel.addWidget(this.skillsWidget, { mode: 'tab-after', ref: this.toolsWidget });
+        this.dockpanel.addWidget(this.modelAliasesWidget, { mode: 'tab-after', ref: this.skillsWidget });
 
         this.update();
     }
@@ -103,6 +108,8 @@ export class AIConfigurationContainerWidget extends BaseWidget {
                 this.dockpanel.activateWidget(this.promptFragmentsWidget);
             } else if (widgetId === AIToolsConfigurationWidget.ID) {
                 this.dockpanel.activateWidget(this.toolsWidget);
+            } else if (widgetId === AISkillsConfigurationWidget.ID) {
+                this.dockpanel.activateWidget(this.skillsWidget);
             } else if (widgetId === ModelAliasesConfigurationWidget.ID) {
                 this.dockpanel.activateWidget(this.modelAliasesWidget);
             }

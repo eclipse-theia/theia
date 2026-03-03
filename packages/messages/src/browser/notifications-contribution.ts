@@ -19,9 +19,10 @@ import {
     FrontendApplicationContribution, StatusBar, FrontendApplication, StatusBarAlignment,
     KeybindingContribution, KeybindingRegistry, StylingParticipant, ColorTheme, CssStyleCollector
 } from '@theia/core/lib/browser';
-import { NotificationsCommands } from './notifications-commands';
-import { CommandContribution, CommandRegistry } from '@theia/core';
-import { NotificationManager } from './notifications-manager';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+import { NotificationsCommands, NOTIFICATION_CONTEXT_MENU } from './notifications-commands';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { Notification, NotificationManager } from './notifications-manager';
 import { NotificationsRenderer } from './notifications-renderer';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -30,7 +31,8 @@ import { nls } from '@theia/core/lib/common/nls';
 import { isHighContrast } from '@theia/core/lib/common/theme';
 
 @injectable()
-export class NotificationsContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, ColorContribution, StylingParticipant {
+export class NotificationsContribution implements FrontendApplicationContribution, CommandContribution,
+    KeybindingContribution, ColorContribution, StylingParticipant, MenuContribution {
 
     protected readonly id = 'theia-notification-center';
 
@@ -42,6 +44,9 @@ export class NotificationsContribution implements FrontendApplicationContributio
 
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
 
     onStart(_app: FrontendApplication): void {
         this.createStatusBarItem();
@@ -92,6 +97,33 @@ export class NotificationsContribution implements FrontendApplicationContributio
         commands.registerCommand(NotificationsCommands.CLEAR_ALL, {
             execute: () => this.manager.clearAll()
         });
+        commands.registerCommand(NotificationsCommands.COPY_MESSAGE, {
+            execute: (notification?: Notification) => {
+                if (!notification || !notification.message) {
+                    return;
+                }
+                const plainText = this.notificationToPlainText(notification.message);
+                if (plainText) {
+                    this.clipboardService.writeText(plainText);
+                }
+            },
+            isEnabled: (notification?: Notification) => !!notification && !!notification.message
+        });
+    }
+
+    protected notificationToPlainText(html: string): string {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        return doc.body.textContent || '';
+    }
+
+    registerMenus(menus: MenuModelRegistry): void {
+        menus.registerMenuAction(
+            [...NOTIFICATION_CONTEXT_MENU, '_copy'],
+            {
+                commandId: NotificationsCommands.COPY_MESSAGE.id
+            }
+        );
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {

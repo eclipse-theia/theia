@@ -32,7 +32,7 @@ import { RemoteNodeSetupService } from './setup/remote-node-setup-service';
 import { RemotePosixScriptStrategy, RemoteSetupScriptService, RemoteWindowsScriptStrategy } from './setup/remote-setup-script-service';
 import { RemoteStatusService, RemoteStatusServicePath } from '../electron-common/remote-status-service';
 import { RemoteStatusServiceImpl } from './remote-status-service';
-import { ConnectionHandler, RpcConnectionHandler, bindContributionProvider } from '@theia/core';
+import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core';
 import { RemoteCopyRegistryImpl } from './setup/remote-copy-contribution';
 import { RemoteCopyContribution } from '@theia/core/lib/node/remote/remote-copy-contribution';
 import { MainCopyContribution } from './setup/main-copy-contribution';
@@ -40,6 +40,7 @@ import { RemoteNativeDependencyContribution } from './setup/remote-native-depend
 import { AppNativeDependencyContribution } from './setup/app-native-dependency-contribution';
 import { RemotePortForwardingProviderImpl } from './remote-port-forwarding-provider';
 import { RemotePortForwardingProvider, RemoteRemotePortForwardingProviderPath } from '../electron-common/remote-port-forwarding-provider';
+import { bindRemotePreferences } from '../electron-common/remote-preferences';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
@@ -70,8 +71,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(RemoteSetupScriptService).toSelf().inSingletonScope();
     bind(RemoteNativeDependencyService).toSelf().inSingletonScope();
     bind(RemoteCopyRegistryImpl).toSelf().inSingletonScope();
-    bindContributionProvider(bind, RemoteCopyContribution);
-    bindContributionProvider(bind, RemoteNativeDependencyContribution);
+    bindRootContributionProvider(bind, RemoteCopyContribution);
+    bindRootContributionProvider(bind, RemoteNativeDependencyContribution);
     bind(MainCopyContribution).toSelf().inSingletonScope();
     bind(RemoteCopyContribution).toService(MainCopyContribution);
     bind(AppNativeDependencyContribution).toSelf().inSingletonScope();
@@ -84,4 +85,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CliContribution).toService(BackendRemoteServiceImpl);
 
     bind(SSHIdentityFileCollector).toSelf().inSingletonScope();
+    bindRemotePreferences(bind);
 });

@@ -28,6 +28,7 @@ import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW
 import { ScmWidget } from './scm-widget';
 import { ScmTreeWidget } from './scm-tree-widget';
 import { ScmCommitWidget } from './scm-commit-widget';
+import { ScmActionButtonWidget } from './scm-action-button-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmTreeModelProps } from './scm-tree-model';
@@ -42,9 +43,7 @@ import { ScmTreeLabelProvider } from './scm-tree-label-provider';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
-import { bindScmPreferences } from './scm-preferences';
-import { ScmTabBarDecorator } from './decorations/scm-tab-bar-decorator';
-import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
+import { bindScmPreferences } from '../common/scm-preferences';
 import { bindMergeEditor } from './merge-editor/merge-editor-module';
 
 export default new ContainerModule(bind => {
@@ -64,6 +63,12 @@ export default new ContainerModule(bind => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: ScmCommitWidget.ID,
         createWidget: () => container.get(ScmCommitWidget)
+    })).inSingletonScope();
+
+    bind(ScmActionButtonWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: ScmActionButtonWidget.ID,
+        createWidget: () => container.get(ScmActionButtonWidget)
     })).inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
@@ -119,9 +124,6 @@ export default new ContainerModule(bind => {
     bind(LabelProviderContribution).toService(ScmTreeLabelProvider);
 
     bindScmPreferences(bind);
-
-    bind(ScmTabBarDecorator).toSelf().inSingletonScope();
-    bind(TabBarDecorator).toService(ScmTabBarDecorator);
 
     bindMergeEditor(bind);
 });

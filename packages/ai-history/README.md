@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - AI History EXTENSION</h2>
+<h2>ECLIPSE THEIA - AI HISTORY EXTENSION</h2>
 
 <hr />
 
@@ -17,6 +17,7 @@ It also offers a view to inspect the history.
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-history`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-history.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

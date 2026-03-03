@@ -17,3 +17,31 @@
 #debugConsoleSeverity {
   margin-right: 4px;
 }
+
+.debug-console-filter-container {
+  display: flex;
+  align-items: center;
+  background: var(--theia-input-background);
+  border: solid var(--theia-border-width) var(--theia-dropdown-border);
+  border-radius: var(--theia-search-box-radius);
+  height: var(--theia-content-line-height);
+}
+
+.debug-console-filter-container:focus-within {
+  border-color: var(--theia-focusBorder);
+}
+
+.debug-console-filter-container input.theia-input {
+  flex: 1;
+  min-width: 175px;
+  box-sizing: border-box;
+  background: none;
+  border: none !important;
+  outline: none;
+  text-overflow: ellipsis;
+}
+
+.debug-console-filter-btn {
+  box-sizing: border-box;
+  align-items: center;
+}

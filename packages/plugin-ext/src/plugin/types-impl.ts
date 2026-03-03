@@ -33,6 +33,7 @@ import * as paths from 'path';
 import { es5ClassCompat } from '../common/types';
 import { isObject, isStringArray } from '@theia/core/lib/common';
 import { CellEditType, CellMetadataEdit, NotebookDocumentMetadataEdit } from '@theia/notebook/lib/common';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
@@ -1491,6 +1492,29 @@ export class Hover {
 }
 
 @es5ClassCompat
+export class VerboseHover extends Hover {
+
+    public canIncreaseVerbosity: boolean | undefined;
+    public canDecreaseVerbosity: boolean | undefined;
+
+    constructor(
+        contents: theia.MarkdownString | theia.MarkedString | (theia.MarkdownString | theia.MarkedString)[],
+        range?: Range,
+        canIncreaseVerbosity?: boolean,
+        canDecreaseVerbosity?: boolean,
+    ) {
+        super(contents, range);
+        this.canIncreaseVerbosity = canIncreaseVerbosity;
+        this.canDecreaseVerbosity = canDecreaseVerbosity;
+    }
+}
+
+export enum HoverVerbosityAction {
+    Increase = 0,
+    Decrease = 1
+}
+
+@es5ClassCompat
 export class EvaluatableExpression {
 
     public range: Range;
@@ -2201,6 +2225,12 @@ export enum CommentThreadState {
 export enum CommentThreadCollapsibleState {
     Collapsed = 0,
     Expanded = 1
+}
+
+export enum QuickInputButtonLocation {
+    Title = 1,
+    Inline = 2,
+    Input = 3
 }
 
 @es5ClassCompat
@@ -3445,9 +3475,10 @@ export class TimelineItem {
     id?: string;
     iconPath?: theia.Uri | { light: theia.Uri; dark: theia.Uri } | ThemeIcon;
     description?: string;
-    detail?: string;
+    tooltip?: string | theia.MarkdownString | undefined;
     command?: theia.Command;
     contextValue?: string;
+    accessibilityInformation?: AccessibilityInformation;
     constructor(label: string, timestamp: number) {
         this.label = label;
         this.timestamp = timestamp;
@@ -3850,7 +3881,7 @@ export enum EditSessionIdentityMatch {
 // #region terminalCompletionProvider
 export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
 
-    resourceRequestConfig?: theia.TerminalResourceRequestConfig;
+    resourceOptions?: theia.TerminalCompletionResourceOptions;
 
     items: T[];
 
@@ -3858,19 +3889,46 @@ export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
      * Creates a new completion list.
      *
      * @param items The completion items.
-     * @param resourceRequestConfig Indicates which resources should be shown as completions for the cwd of the terminal.
+     * @param resourceOptions Indicates which resources should be shown as completions for the cwd of the terminal.
+     */
+    constructor(items: T[], resourceOptions?: theia.TerminalCompletionResourceOptions) {
+    }
+}
+
+export class TerminalCompletionItem {
+    label: string | theia.CompletionItemLabel;
+    replacementRange: readonly [number, number];
+    detail?: string;
+    documentation?: string | theia.MarkdownString;
+    kind?: TerminalCompletionItemKind;
+    /**
      * @stubbed
      */
-    constructor(items?: T[], resourceRequestConfig?: theia.TerminalResourceRequestConfig) {
-    }
+    constructor(
+        label: string | theia.CompletionItemLabel,
+        replacementRange: readonly [number, number],
+        kind?: TerminalCompletionItemKind
+    ) { }
 }
 
 export enum TerminalCompletionItemKind {
     File = 0,
     Folder = 1,
-    Flag = 2,
-    Method = 3,
-    Argument = 4
+    Method = 2,
+    Alias = 3,
+    Argument = 4,
+    Option = 5,
+    OptionValue = 6,
+    Flag = 7,
+    SymbolicLinkFile = 8,
+    SymbolicLinkFolder = 9,
+    ScmCommit = 10,
+    ScmBranch = 11,
+    ScmTag = 12,
+    ScmStash = 13,
+    ScmRemote = 14,
+    PullRequest = 15,
+    PullRequestDone = 16,
 }
 // #endregion
 
@@ -4009,17 +4067,27 @@ export enum LanguageModelChatMessageRole {
  * @stubbed
  */
 export class LanguageModelChatMessage {
-    static User(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
+    static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart>, name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.User, content, name);
     }
 
-    static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
+    static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart)[], name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
     }
 
-    constructor(public role: LanguageModelChatMessageRole, public content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[],
+    constructor(public role: LanguageModelChatMessageRole, public content: string | LanguageModelInputPart[],
         public name?: string) { }
 }
+
+/**
+ * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
+ */
+export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
+
+/**
+ * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
+ */
+export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
 export class LanguageModelError extends Error {
 
@@ -4065,9 +4133,9 @@ export class LanguageModelToolCallPart {
  */
 export class LanguageModelToolResultPart {
     callId: string;
-    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+    content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(callId: string, content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[]) { }
+    constructor(callId: string, content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
 }
 
 /**
@@ -4082,9 +4150,9 @@ export class LanguageModelTextPart {
  * @stubbed
  */
 export class LanguageModelToolResult {
-    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+    content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart)[]) { }
+    constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
 }
 
 /**
@@ -4095,6 +4163,85 @@ export class LanguageModelPromptTsxPart {
 
     constructor(value: unknown) { }
 }
+
+/**
+ * @stubbed
+ */
+export class LanguageModelDataPart {
+    static image(data: Uint8Array, mime: string): LanguageModelDataPart {
+        return new LanguageModelDataPart(data, mime);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static json(value: any, mime: string = 'text/x-json'): LanguageModelDataPart {
+        const rawStr = JSON.stringify(value, undefined, '\t');
+        return new LanguageModelDataPart(BinaryBuffer.fromString(rawStr).buffer, mime);
+    }
+    static text(value: string, mime: string = 'text/plain'): LanguageModelDataPart {
+        return new LanguageModelDataPart(BinaryBuffer.fromString(value).buffer, mime);
+    }
+    mimeType: string;
+    data: Uint8Array;
+    constructor(data: Uint8Array, mimeType: string) { }
+}
+
+/**
+ * @stubbed
+ */
+export interface ProvideLanguageModelChatResponseOptions {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly modelOptions?: { readonly [name: string]: any };
+    readonly tools?: readonly theia.LanguageModelChatTool[];
+    readonly toolMode: LanguageModelChatToolMode;
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatInformation {
+    readonly id: string;
+    readonly name: string;
+    readonly family: string;
+    readonly tooltip?: string;
+    readonly detail?: string;
+    readonly version: string;
+    readonly maxInputTokens: number;
+    readonly maxOutputTokens: number;
+    readonly capabilities: {
+        readonly imageInput?: boolean;
+        readonly toolCalling?: boolean | number;
+    };
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatRequestMessage {
+    readonly role: LanguageModelChatMessageRole;
+    readonly content: ReadonlyArray<LanguageModelInputPart | unknown>;
+    readonly name: string | undefined;
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatProvider<T extends LanguageModelChatInformation = LanguageModelChatInformation> {
+    readonly onDidChangeLanguageModelChatInformation?: theia.Event<void>;
+
+    provideLanguageModelChatInformation(options: PrepareLanguageModelChatModelOptions, token: theia.CancellationToken): theia.ProviderResult<T[]>;
+
+    provideLanguageModelChatResponse(model: T, messages: readonly theia.LanguageModelChatRequestMessage[],
+        options: ProvideLanguageModelChatResponseOptions, progress: Progress<LanguageModelResponsePart>, token: theia.CancellationToken): Thenable<void>;
+
+    provideTokenCount(model: T, text: string | LanguageModelChatRequestMessage, token: theia.CancellationToken): Thenable<number>;
+}
+
+/**
+ * @stubbed
+ */
+export interface PrepareLanguageModelChatModelOptions {
+    readonly silent: boolean;
+}
+
 // #endregion
 
 // #region Port Attributes
@@ -4239,3 +4386,40 @@ export class McpHttpServerDefinition {
  */
 export type McpServerDefinition = McpStdioServerDefinition | McpHttpServerDefinition;
 
+// #region textEditorDiffInformation
+
+export enum TextEditorChangeKind {
+    Addition = 1,
+    Deletion = 2,
+    Modification = 3
+}
+
+export interface TextEditorLineRange {
+    readonly startLineNumber: number;
+    readonly endLineNumberExclusive: number;
+}
+
+export interface TextEditorChange {
+    readonly original: TextEditorLineRange;
+    readonly modified: TextEditorLineRange;
+    readonly kind: TextEditorChangeKind;
+}
+
+export interface TextEditorDiffInformation {
+    readonly documentVersion: number;
+    readonly original: theia.Uri | undefined;
+    readonly modified: theia.Uri;
+    readonly changes: readonly TextEditorChange[];
+    readonly isStale: boolean;
+}
+
+export interface TextEditorDiffInformationChangeEvent {
+    readonly textEditor: TextEditor;
+    readonly diffInformation: TextEditorDiffInformation[] | undefined;
+}
+
+export interface TextEditor {
+    readonly diffInformation: TextEditorDiffInformation[] | undefined;
+}
+
+// #endregion

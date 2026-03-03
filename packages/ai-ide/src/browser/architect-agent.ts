@@ -13,18 +13,23 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
+import {
+    ChatMode, ChatRequestModel, ChatService, ChatSession,
+    MutableChatModel, MutableChatRequestModel
+} from '@theia/ai-chat/lib/common';
+import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { architectSystemVariants, architectTaskSummaryVariants } from '../common/architect-prompt-template';
-import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
+import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID } from '../common/architect-prompt-template';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
+import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
+import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
 
 @injectable()
-export class ArchitectAgent extends AbstractStreamParsingChatAgent {
+export class ArchitectAgent extends AbstractModeAwareChatAgent {
     @inject(ChatService) protected readonly chatService: ChatService;
+    @inject(TaskContextStorageService) protected readonly taskContextStorageService: TaskContextStorageService;
 
     name = 'Architect';
     id = 'Architect';
@@ -38,8 +43,19 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
          and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the \
          workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.');
-    override prompts = [architectSystemVariants, architectTaskSummaryVariants];
-    override functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
+
+    protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
+        {
+            id: ARCHITECT_PLANNING_PROMPT_ID,
+            name: nls.localize('theia/ai/ide/architectAgent/mode/plan', 'Plan Mode')
+        },
+        {
+            id: ARCHITECT_SIMPLE_PROMPT_ID,
+            name: nls.localize('theia/ai/ide/architectAgent/mode/simple', 'Simple Mode')
+        },
+    ];
+
+    override prompts = [architectSystemVariants];
     protected override systemPromptId: string | undefined = architectSystemVariants.id;
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
@@ -52,10 +68,14 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === model.id);
         if (!(model instanceof MutableChatModel) || !session) { return; }
         if (!model.isEmpty()) {
-            model.setSuggestions([
-                new MarkdownStringImpl(`[Summarize this session as a task for Coder](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
-                new MarkdownStringImpl(`[Update current task context](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
-            ]);
+            const taskContexts = this.taskContextStorageService.getAll().filter(s => s.sessionId === session.id);
+            if (taskContexts.length > 0) {
+                const suggestions = taskContexts.map(tc =>
+                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/executePlanWithCoder',
+                        'Execute "{0}" with Coder', tc.label)}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}?${encodeURIComponent(JSON.stringify(tc.id))}).`)
+                );
+                model.setSuggestions(suggestions);
+            }
         }
     }
 }

@@ -19,7 +19,7 @@ import 'xterm/css/xterm.css';
 
 import { ContainerModule, Container } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution, nls } from '@theia/core/lib/common';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
@@ -29,7 +29,7 @@ import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { TerminalService } from './base/terminal-service';
-import { bindTerminalPreferences } from './terminal-preferences';
+import { bindTerminalPreferences } from '../common/terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
 import { TerminalSearchWidgetFactory } from './search/terminal-search-widget';
 import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';
@@ -61,7 +61,7 @@ export default new ContainerModule(bind => {
             const counter = terminalNum++;
             const domId = options.id || 'terminal-' + counter;
             const widgetOptions: TerminalWidgetOptions = {
-                title: `${nls.localizeByDefault('Terminal')} ${counter}`,
+                title: nls.localizeByDefault('Terminal {0}', counter),
                 useServerTitle: true,
                 destroyTermOnClose: true,
                 ...options
@@ -103,10 +103,10 @@ export default new ContainerModule(bind => {
     }).inSingletonScope();
     bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
 
-    bindContributionProvider(bind, TerminalContribution);
+    bindRootContributionProvider(bind, TerminalContribution);
 
     // terminal link provider contribution point
-    bindContributionProvider(bind, TerminalLinkProvider);
+    bindRootContributionProvider(bind, TerminalLinkProvider);
     bind(TerminalLinkProviderContribution).toSelf().inSingletonScope();
     bind(TerminalContribution).toService(TerminalLinkProviderContribution);
     bind(XtermLinkFactory).toFactory(createXtermLinkFactory);

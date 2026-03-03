@@ -19,11 +19,11 @@ import '../../src/browser/style/index.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { MessageClient } from '@theia/core/lib/common';
 import { NotificationManager } from './notifications-manager';
-import { bindNotificationPreferences } from './notification-preferences';
+import { bindNotificationPreferences } from '../common/notification-preferences';
 import { NotificationsRenderer } from './notifications-renderer';
 import { NotificationsContribution } from './notifications-contribution';
 import { FrontendApplicationContribution, KeybindingContribution, StylingParticipant } from '@theia/core/lib/browser';
-import { CommandContribution } from '@theia/core';
+import { CommandContribution, MenuContribution } from '@theia/core';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { NotificationContentRenderer } from './notification-content-renderer';
 
@@ -36,6 +36,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeybindingContribution).toService(NotificationsContribution);
     bind(ColorContribution).toService(NotificationsContribution);
     bind(StylingParticipant).toService(NotificationsContribution);
+    bind(MenuContribution).toService(NotificationsContribution);
     bind(NotificationManager).toSelf().inSingletonScope();
     rebind(MessageClient).toService(NotificationManager);
     bindNotificationPreferences(bind);

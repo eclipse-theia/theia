@@ -16,15 +16,18 @@
 
 import { interfaces } from 'inversify';
 import {
-    bindContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
+    bindRootContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
     MessageService, ResourceProvider, ResourceResolver
 } from '../common';
+import { PreferenceProvider } from '../common/preferences/preference-provider';
 import {
-    bindPreferenceSchemaProvider, PreferenceProvider,
-    PreferenceProviderProvider, PreferenceProxyOptions, PreferenceSchema, PreferenceSchemaProvider, PreferenceScope,
-    PreferenceService, PreferenceServiceImpl, PreferenceValidationService
+    bindPreferenceSchemaProvider,
+    PreferenceValidationService
 } from './preferences';
-import { InjectablePreferenceProxy, PreferenceProxyFactory, PreferenceProxySchema } from './preferences/injectable-preference-proxy';
+import {
+    InjectablePreferenceProxy, PreferenceProviderProvider, PreferenceProxyFactory,
+    PreferenceProxyOptions, PreferenceProxySchema, PreferenceSchema, PreferenceScope, PreferenceService, PreferenceServiceImpl
+} from '../common/preferences';
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
     bind(MessageClient).toSelf().inSingletonScope();
@@ -32,15 +35,7 @@ export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhe
 }
 
 export function bindPreferenceService(bind: interfaces.Bind): void {
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
-    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
-        if (scope === PreferenceScope.Default) {
-            return ctx.container.get(PreferenceSchemaProvider);
-        }
-        return ctx.container.getNamed(PreferenceProvider, scope);
-    });
+    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);
     bindPreferenceSchemaProvider(bind);
@@ -58,5 +53,5 @@ export function bindPreferenceService(bind: interfaces.Bind): void {
 export function bindResourceProvider(bind: interfaces.Bind): void {
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context => uri => context.container.get(DefaultResourceProvider).get(uri));
-    bindContributionProvider(bind, ResourceResolver);
+    bindRootContributionProvider(bind, ResourceResolver);
 }

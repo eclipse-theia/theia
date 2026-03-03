@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { KeybindingRegistry, OpenerService, PreferenceService, QuickAccessRegistry } from '@theia/core/lib/browser';
+import { KeybindingRegistry, OpenerService, QuickAccessRegistry } from '@theia/core/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
-import { CancellationToken, nls, QuickPickSeparator } from '@theia/core/lib/common';
+import { CancellationToken, nls, PreferenceService, QuickPickSeparator } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/editor/lib/browser';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceSearchFilterService } from '@theia/workspace/lib/browser';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 
 export interface FilterAndRange {
@@ -71,10 +71,10 @@ export class QuickFileSelectService {
     protected readonly navigationLocationService: NavigationLocationService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
-    @inject(FileSystemPreferences)
-    protected readonly fsPreferences: FileSystemPreferences;
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
+    @inject(WorkspaceSearchFilterService)
+    protected readonly searchFilterService: WorkspaceSearchFilterService;
 
     /**
      * The score constants when comparing file search results.
@@ -155,12 +155,16 @@ export class QuickFileSelectService {
                 limit: 200,
                 useGitIgnore: options.hideIgnoredFiles,
                 excludePatterns: options.hideIgnoredFiles
-                    ? Object.keys(this.fsPreferences['files.exclude'])
+                    ? this.getExcludePatterns()
                     : undefined,
             }, token).then(handler);
         } else {
             return roots.length !== 0 ? recentlyUsedItems : [];
         }
+    }
+
+    protected getExcludePatterns(): string[] {
+        return this.searchFilterService.getExclusionGlobs();
     }
 
     protected compareItems(

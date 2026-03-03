@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Event, Emitter } from '@theia/core/lib/common';
+import { Event, Emitter, nls } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     ApplyToKind, FileLocationKind, NamedProblemMatcher,
@@ -223,7 +223,7 @@ export class ProblemMatcherRegistry {
     private fillDefaults(): void {
         this.add({
             name: 'msCompile',
-            label: 'Microsoft compiler problems',
+            label: nls.localizeByDefault('Microsoft compiler problems'),
             owner: 'msCompile',
             applyTo: ApplyToKind.allDocuments,
             fileLocation: FileLocationKind.Absolute,
@@ -232,7 +232,7 @@ export class ProblemMatcherRegistry {
 
         this.add({
             name: 'lessCompile',
-            label: 'Less problems',
+            label: nls.localizeByDefault('Less problems'),
             deprecated: true,
             owner: 'lessCompile',
             source: 'less',
@@ -244,7 +244,7 @@ export class ProblemMatcherRegistry {
 
         this.add({
             name: 'gulp-tsc',
-            label: 'Gulp TSC Problems',
+            label: nls.localizeByDefault('Gulp TSC Problems'),
             owner: 'typescript',
             source: 'ts',
             applyTo: ApplyToKind.closedDocuments,
@@ -255,7 +255,7 @@ export class ProblemMatcherRegistry {
 
         this.add({
             name: 'jshint',
-            label: 'JSHint problems',
+            label: nls.localizeByDefault('JSHint problems'),
             owner: 'jshint',
             source: 'jshint',
             applyTo: ApplyToKind.allDocuments,
@@ -265,7 +265,7 @@ export class ProblemMatcherRegistry {
 
         this.add({
             name: 'jshint-stylish',
-            label: 'JSHint stylish problems',
+            label: nls.localizeByDefault('JSHint stylish problems'),
             owner: 'jshint',
             source: 'jshint',
             applyTo: ApplyToKind.allDocuments,
@@ -275,7 +275,7 @@ export class ProblemMatcherRegistry {
 
         this.add({
             name: 'eslint-compact',
-            label: 'ESLint compact problems',
+            label: nls.localizeByDefault('ESLint compact problems'),
             owner: 'eslint',
             source: 'eslint',
             applyTo: ApplyToKind.allDocuments,
@@ -286,7 +286,7 @@ export class ProblemMatcherRegistry {
 
         this.add({
             name: 'eslint-stylish',
-            label: 'ESLint stylish problems',
+            label: nls.localizeByDefault('ESLint stylish problems'),
             owner: 'eslint',
             source: 'eslint',
             applyTo: ApplyToKind.allDocuments,
@@ -296,7 +296,7 @@ export class ProblemMatcherRegistry {
 
         this.add({
             name: 'go',
-            label: 'Go problems',
+            label: nls.localizeByDefault('Go problems'),
             owner: 'go',
             source: 'go',
             applyTo: ApplyToKind.allDocuments,

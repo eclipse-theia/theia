@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Path, URI } from '@theia/core';
+import { nls, Path, URI } from '@theia/core';
 import { OpenerService, codiconArray, open } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -36,12 +36,12 @@ export namespace FileVariableArgs {
 
 export const FILE_VARIABLE: AIVariable = {
     id: 'file-provider',
-    description: 'Resolves the contents of a file',
+    description: nls.localize('theia/ai/core/fileVariable/description', 'Resolves the contents of a file'),
     name: 'file',
-    label: 'File',
+    label: nls.localizeByDefault('File'),
     iconClasses: codiconArray('file'),
     isContextVariable: true,
-    args: [{ name: FileVariableArgs.uri, description: 'The URI of the requested file.' }]
+    args: [{ name: FileVariableArgs.uri, description: nls.localize('theia/ai/core/fileVariable/uri/description', 'The URI of the requested file.') }]
 };
 
 @injectable()

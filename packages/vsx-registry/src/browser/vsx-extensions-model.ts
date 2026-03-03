@@ -24,16 +24,15 @@ import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceInspection, PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
+import { RecommendedExtensions } from '../common/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { OVSXClient, VSXAllVersions, VSXExtensionRaw, VSXResponseError, VSXSearchEntry, VSXSearchOptions, VSXTargetPlatform } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 
@@ -46,9 +45,10 @@ export class VSXExtensionsModel {
     protected readonly extensions = new Map<string, VSXExtension>();
     protected readonly onDidChangeEmitter = new Emitter<void>();
     protected disabled = new Set<PluginIdentifiers.UnversionedId>();
-    protected uninstalled = new Set<PluginIdentifiers.UnversionedId>();
-    protected deployed = new Set<PluginIdentifiers.UnversionedId>();
-    protected _installed = new Set<PluginIdentifiers.UnversionedId>();
+    protected uninstalled = new Set<PluginIdentifiers.VersionedId>();
+    protected deployed = new Set<PluginIdentifiers.VersionedId>();
+    protected _versionedInstalled = new Set<PluginIdentifiers.VersionedId>();
+    protected _unversionedInstalled = new Set<PluginIdentifiers.UnversionedId>();
     protected _recommended = new Set<string>();
     protected _searchResult = new Set<string>();
     protected builtins = new Set<PluginIdentifiers.UnversionedId>();
@@ -93,9 +93,6 @@ export class VSXExtensionsModel {
     @inject(OVSXApiFilterProvider)
     protected vsxApiFilter: OVSXApiFilterProvider;
 
-    @inject(FileService)
-    protected readonly fileService: FileService;
-
     @inject(ApplicationServer)
     protected readonly applicationServer: ApplicationServer;
 
@@ -117,7 +114,7 @@ export class VSXExtensionsModel {
     }
 
     get installed(): IterableIterator<string> {
-        return this._installed.values();
+        return this._versionedInstalled.values();
     }
 
     get searchError(): string | undefined {
@@ -143,16 +140,28 @@ export class VSXExtensionsModel {
         return this.builtins.has(id as PluginIdentifiers.UnversionedId);
     }
 
+    /**
+     * @param id should be a ${@link PluginIdentifiers.VersionedId}
+     * @returns `true` if the specific version queried installed
+     */
+    isInstalledAtSpecificVersion(id: string): boolean {
+        return this._versionedInstalled.has(id as PluginIdentifiers.VersionedId);
+    }
+
+    /**
+     * @param id should be an unversioned Identifier
+     * @returns `true` if any version of the plugin is installed
+     */
     isInstalled(id: string): boolean {
-        return this._installed.has(id as PluginIdentifiers.UnversionedId);
+        return this._unversionedInstalled.has(id as PluginIdentifiers.UnversionedId);
     }
 
     isUninstalled(id: string): boolean {
-        return this.uninstalled.has(id as PluginIdentifiers.UnversionedId);
+        return this.uninstalled.has(id as PluginIdentifiers.VersionedId);
     }
 
     isDeployed(id: string): boolean {
-        return this.deployed.has(id as PluginIdentifiers.UnversionedId);
+        return this.deployed.has(id as PluginIdentifiers.VersionedId);
     }
 
     isDisabled(id: string): boolean {
@@ -166,24 +175,15 @@ export class VSXExtensionsModel {
     resolve(id: string): Promise<VSXExtension> {
         return this.doChange(async () => {
             await this.initialized;
-            const extension = await this.refresh(id) ?? this.getExtension(id);
+            const extension = await this.refresh(id);
             if (!extension) {
                 throw new Error(`Failed to resolve ${id} extension.`);
             }
-            if (extension.readme === undefined) {
+            if (extension.readme === undefined && extension.readmeUrl) {
                 try {
-                    let rawReadme: string = '';
-                    const installedReadme = await this.findReadmeFile(extension);
-                    // Attempt to read the local readme first
-                    // It saves network resources and is faster
-                    if (installedReadme) {
-                        const readmeContent = await this.fileService.readFile(installedReadme);
-                        rawReadme = readmeContent.value.toString();
-                    } else if (extension.readmeUrl) {
-                        rawReadme = RequestContext.asText(
-                            await this.request.request({ url: extension.readmeUrl })
-                        );
-                    }
+                    const rawReadme = RequestContext.asText(
+                        await this.request.request({ url: extension.readmeUrl })
+                    );
                     const readme = this.compileReadme(rawReadme);
                     extension.update({ readme });
                 } catch (e) {
@@ -194,22 +194,6 @@ export class VSXExtensionsModel {
             }
             return extension;
         });
-    }
-
-    protected async findReadmeFile(extension: VSXExtension): Promise<URI | undefined> {
-        if (!extension.plugin) {
-            return undefined;
-        }
-        // Since we don't know the exact capitalization of the readme file (might be README.md, readme.md, etc.)
-        // We attempt to find the readme file by searching through the plugin's directories
-        const packageUri = new URI(extension.plugin.metadata.model.packageUri);
-        const pluginUri = packageUri.withPath(packageUri.path.join('..'));
-        const pluginDirStat = await this.fileService.resolve(pluginUri);
-        const possibleNames = ['readme.md', 'readme.txt', 'readme'];
-        const readmeFileUri = pluginDirStat.children
-            ?.find(child => possibleNames.includes(child.name.toLowerCase()))
-            ?.resource;
-        return readmeFileUri;
     }
 
     protected async initInstalled(): Promise<void> {
@@ -358,44 +342,33 @@ export class VSXExtensionsModel {
     }
 
     protected async updateInstalled(): Promise<void> {
-        const [deployed, uninstalled, disabled] = await Promise.all(
-            [this.pluginServer.getDeployedPluginIds(), this.pluginServer.getUninstalledPluginIds(), this.pluginServer.getDisabledPluginIds()]);
+        const [deployed, uninstalled, disabled, currInstalled] = await Promise.all([
+            this.pluginServer.getDeployedPluginIds(),
+            this.pluginServer.getUninstalledPluginIds(),
+            this.pluginServer.getDisabledPluginIds(),
+            this.pluginServer.getInstalledPluginIds()
+        ]);
 
         this.uninstalled = new Set();
-        uninstalled.forEach(id => this.uninstalled.add(PluginIdentifiers.unversionedFromVersioned(id)));
-        this.disabled = new Set();
-        disabled.forEach(id => this.disabled.add(PluginIdentifiers.unversionedFromVersioned(id)));
+        uninstalled.forEach(id => this.uninstalled.add(id));
+        this.disabled = new Set(disabled);
         this.deployed = new Set();
-        deployed.forEach(id => this.deployed.add(PluginIdentifiers.unversionedFromVersioned(id)));
+        deployed.forEach(id => this.deployed.add(id));
 
-        const prevInstalled = this._installed;
+        const prevInstalled = this._versionedInstalled;
         const installedVersioned = new Set<PluginIdentifiers.VersionedId>();
         return this.doChange(async () => {
-            const currInstalled = new Set<PluginIdentifiers.UnversionedId>();
             const refreshing = [];
-            for (const versionedId of deployed) {
+            for (const versionedId of currInstalled) {
                 installedVersioned.add(versionedId);
                 const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(versionedId);
                 if (idAndVersion) {
-                    this._installed.delete(idAndVersion.id);
+                    this._versionedInstalled.delete(versionedId);
                     this.setExtension(idAndVersion.id, idAndVersion.version);
-                    currInstalled.add(idAndVersion.id);
                     refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
                 }
             }
-            for (const versionedId of disabled) {
-                const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(versionedId);
-                installedVersioned.add(versionedId);
-                if (idAndVersion && !this.isUninstalled(idAndVersion.id)) {
-                    if (!currInstalled.has(idAndVersion.id)) {
-                        this._installed.delete(idAndVersion.id);
-                        this.setExtension(idAndVersion.id, idAndVersion.version);
-                        currInstalled.add(idAndVersion.id);
-                        refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
-                    }
-                }
-            }
-            for (const id of this._installed) {
+            for (const id of this._versionedInstalled) {
                 const extension = this.getExtension(id);
                 if (!extension) { continue; }
                 refreshing.push(this.refresh(id, extension.version));
@@ -403,7 +376,8 @@ export class VSXExtensionsModel {
             await Promise.all(refreshing);
             const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
-            this._installed = new Set(installedSorted.values());
+            this._versionedInstalled = new Set(installedSorted);
+            this._unversionedInstalled = new Set(installedSorted.map(PluginIdentifiers.toUnversioned));
 
             const missingIds = new Set<PluginIdentifiers.VersionedId>();
             for (const id of installedVersioned) {
@@ -457,7 +431,9 @@ export class VSXExtensionsModel {
     }
 
     protected getRecommendationsForScope(scope: PreferenceInspectionScope, root?: URI): Required<RecommendedExtensions> {
-        const configuredValue = this.preferences.inspect<Required<RecommendedExtensions>>('extensions', root?.toString())?.[scope];
+        const inspection: PreferenceInspection<Required<RecommendedExtensions>> | undefined =
+            this.preferences.inspect<Required<RecommendedExtensions>>('extensions', root?.toString());
+        const configuredValue = inspection ? inspection[scope] : undefined;
         return {
             recommendations: configuredValue?.recommendations ?? [],
             unwantedRecommendations: configuredValue?.unwantedRecommendations ?? [],
@@ -492,11 +468,8 @@ export class VSXExtensionsModel {
                     targetPlatform
                 });
             }
-            if (!data) {
-                return;
-            }
-            if (data.error) {
-                return this.onDidFailRefresh(id, data.error);
+            if (!data || data.error) {
+                return this.onDidFailRefresh(id, data?.error ?? 'No data found');
             }
             if (!data.verified) {
                 if (data.publishedBy.loginName === 'open-vsx') {

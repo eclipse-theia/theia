@@ -47,9 +47,22 @@ export interface ThemeColor {
     readonly id: string;
 }
 
+// Copied from https://github.com/microsoft/vscode/blob/1.106.1/src/vs/base/common/themables.ts
+export function isThemeColor(obj: unknown): obj is ThemeColor {
+    return !!obj && typeof obj === 'object' && typeof (<ThemeColor>obj).id === 'string';
+}
+
 export interface ThemeIcon {
     readonly id: string;
     readonly color?: ThemeColor;
+}
+
+// Copied and modified from https://github.com/microsoft/vscode/blob/1.106.1/src/vs/base/common/themables.ts
+export function isThemeIcon(obj: unknown): obj is ThemeIcon {
+    return !!obj &&
+        typeof obj === 'object' &&
+        typeof (<ThemeIcon>obj).id === 'string' &&
+        (typeof (<ThemeIcon>obj).color === 'undefined' || isThemeColor((<ThemeIcon>obj).color));
 }
 
 export interface IconDefinition {

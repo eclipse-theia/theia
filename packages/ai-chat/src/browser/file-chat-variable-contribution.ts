@@ -17,7 +17,7 @@
 import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
 import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
-import { CancellationToken, ILogger, QuickInputService, URI } from '@theia/core';
+import { CancellationToken, ILogger, nls, QuickInputService, QuickPickItemOrSeparator, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
@@ -25,7 +25,17 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable } from '../common/image-context-variable';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { fileToBase64, getMimeTypeFromExtension } from './image-file-utils';
+import { ApplicationShell, codiconArray, LabelProvider } from '@theia/core/lib/browser';
+import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
+import * as fuzzy from '@theia/core/shared/fuzzy';
+import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
+
+interface ClipboardQuickPickItem extends QuickPickItem {
+    isClipboardOption: true;
+}
+
+type ImagePickerItem = FileQuickPickItem | ClipboardQuickPickItem;
 
 @injectable()
 export class FileChatVariableContribution implements FrontendVariableContribution {
@@ -43,6 +53,15 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(NavigationLocationService)
+    protected readonly navigationLocationService: NavigationLocationService;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
@@ -76,25 +95,13 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     protected async imageArgumentPicker(): Promise<string | undefined> {
         const quickPick = this.quickInputService.createQuickPick();
-        quickPick.title = 'Select an image file';
+        quickPick.placeholder = nls.localize('theia/ai/chat/imagePickerPlaceholder', 'Select an image file or search by name');
 
-        // Get all files and filter only image files
-        const allPicks = await this.quickFileSelectService.getPicks();
-        quickPick.items = allPicks.filter(item => {
-            if (FileQuickPickItem.is(item)) {
-                return this.isImageFile(item.uri.path.toString());
-            }
-            return false;
-        });
+        // Build initial items with recently opened images and clipboard option
+        quickPick.items = await this.buildImagePickerItems('');
 
         const updateItems = async (value: string) => {
-            const filteredPicks = await this.quickFileSelectService.getPicks(value, CancellationToken.None);
-            quickPick.items = filteredPicks.filter(item => {
-                if (FileQuickPickItem.is(item)) {
-                    return this.isImageFile(item.uri.path.toString());
-                }
-                return false;
-            });
+            quickPick.items = await this.buildImagePickerItems(value);
         };
 
         const onChangeListener = quickPick.onDidChangeValue(updateItems);
@@ -104,12 +111,21 @@ export class FileChatVariableContribution implements FrontendVariableContributio
             quickPick.onDispose(onChangeListener.dispose);
             quickPick.onDidAccept(async () => {
                 const selectedItem = quickPick.selectedItems[0];
+
+                // Handle clipboard option
+                if (selectedItem && 'isClipboardOption' in selectedItem) {
+                    quickPick.dispose();
+                    const clipboardResult = await this.readImageFromClipboard();
+                    resolve(clipboardResult);
+                    return;
+                }
+
                 if (selectedItem && FileQuickPickItem.is(selectedItem)) {
                     quickPick.dispose();
                     const filePath = await this.wsService.getWorkspaceRelativePath(selectedItem.uri);
                     const fileName = selectedItem.uri.displayName;
-                    const base64Data = await this.fileToBase64(selectedItem.uri);
-                    const mimeType = this.getMimeTypeFromExtension(selectedItem.uri.path.toString());
+                    const base64Data = await fileToBase64(selectedItem.uri, this.fileService, this.logger);
+                    const mimeType = getMimeTypeFromExtension(selectedItem.uri.path.toString());
 
                     // Create the argument string in the required format
                     const imageVarArgs: ImageContextVariable = {
@@ -122,6 +138,134 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                     resolve(ImageContextVariable.createArgString(imageVarArgs));
                 }
             });
+        });
+    }
+
+    /**
+     * Build the complete list of items for the image picker.
+     * Includes recently opened images, file search results (when filtering), and clipboard option.
+     */
+    protected async buildImagePickerItems(filter: string): Promise<(ImagePickerItem | QuickPickItemOrSeparator)[]> {
+        const result: (ImagePickerItem | QuickPickItemOrSeparator)[] = [];
+        const collectedUris = new Set<string>();
+
+        // Add recently opened images
+        const recentImages = this.getRecentlyOpenedImagePicks(filter, collectedUris);
+        if (recentImages.length > 0) {
+            result.push({ type: 'separator', label: nls.localizeByDefault('recently opened') });
+            result.push(...recentImages);
+        }
+
+        // Add file search results when filtering
+        if (filter) {
+            const searchResults = await this.getImageSearchResults(filter, collectedUris);
+            if (searchResults.length > 0) {
+                result.push({ type: 'separator', label: nls.localizeByDefault('file results') });
+                result.push(...searchResults);
+            }
+        }
+
+        // Add clipboard option
+        result.push(
+            { type: 'separator', label: nls.localize('theia/ai/chat/clipboardSeparator', 'clipboard') },
+            {
+                label: nls.localize('theia/ai/chat/fromClipboard', 'From Clipboard'),
+                iconClasses: codiconArray('clippy'),
+                description: nls.localize('theia/ai/chat/fromClipboardDescription', 'Paste image from clipboard'),
+                alwaysShow: true,
+                isClipboardOption: true
+            } as ClipboardQuickPickItem
+        );
+
+        return result;
+    }
+
+    /**
+     * Get quick pick items for recently opened image files.
+     */
+    protected getRecentlyOpenedImagePicks(filter: string, collectedUris: Set<string>): FileQuickPickItem[] {
+        return [...this.navigationLocationService.locations()]
+            .reverse()
+            .filter(location => {
+                const uriString = location.uri.toString();
+                if (collectedUris.has(uriString) ||
+                    location.uri.scheme !== 'file' ||
+                    !this.isImageFile(location.uri.path.toString()) ||
+                    (filter && !fuzzy.test(filter, uriString))) {
+                    return false;
+                }
+                collectedUris.add(uriString);
+                return true;
+            })
+            .map(location => this.toFileQuickPickItem(location.uri));
+    }
+
+    /**
+     * Search for image files matching the filter.
+     */
+    protected async getImageSearchResults(filter: string, collectedUris: Set<string>): Promise<FileQuickPickItem[]> {
+        const picks = await this.quickFileSelectService.getPicks(filter, CancellationToken.None);
+        return picks.filter((item): item is FileQuickPickItem =>
+            FileQuickPickItem.is(item) &&
+            this.isImageFile(item.uri.path.toString()) &&
+            !collectedUris.has(item.uri.toString())
+        );
+    }
+
+    /**
+     * Convert a URI to a FileQuickPickItem.
+     */
+    protected toFileQuickPickItem(uri: URI): FileQuickPickItem {
+        return {
+            label: this.labelProvider.getName(uri),
+            description: this.labelProvider.getDetails(uri),
+            iconClasses: this.getFileIconClasses(uri),
+            uri,
+            alwaysShow: true
+        };
+    }
+
+    /**
+     * Read an image from the clipboard and return it as an ImageContextVariable argument string.
+     */
+    protected async readImageFromClipboard(): Promise<string | undefined> {
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const item of clipboardItems) {
+                const imageType = item.types.find(type => type.startsWith('image/'));
+                if (imageType) {
+                    const blob = await item.getType(imageType);
+                    const base64Data = await this.blobToBase64(blob);
+                    const imageVarArgs: ImageContextVariable = {
+                        name: `clipboard-image-${Date.now()}.${imageType.split('/')[1]}`,
+                        data: base64Data,
+                        mimeType: imageType
+                    };
+                    return ImageContextVariable.createArgString(imageVarArgs);
+                }
+            }
+            this.logger.warn('No image found in clipboard');
+            return undefined;
+        } catch (error) {
+            this.logger.error('Failed to read image from clipboard:', error);
+            return undefined;
+        }
+    }
+
+    /**
+     * Convert a Blob to base64 string.
+     */
+    protected blobToBase64(blob: Blob): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                // Extract base64 data by removing the data URL prefix
+                const base64Data = dataUrl.substring(dataUrl.indexOf(',') + 1);
+                resolve(base64Data);
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
         });
     }
 
@@ -164,47 +308,23 @@ export class FileChatVariableContribution implements FrontendVariableContributio
     }
 
     /**
+     * Get icon classes for a file URI, matching the format used by QuickFileSelectService.
+     */
+    protected getFileIconClasses(uri: URI): string[] {
+        const icon = this.labelProvider.getIcon(uri).split(' ').filter(v => v.length > 0);
+        if (icon.length > 0) {
+            icon.push('file-icon');
+        }
+        return icon;
+    }
+
+    /**
      * Checks if a file is an image based on its extension.
      */
     protected isImageFile(filePath: string): boolean {
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'];
         const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
         return imageExtensions.includes(extension);
-    }
-
-    /**
-     * Determines the MIME type based on file extension.
-     */
-    protected getMimeTypeFromExtension(filePath: string): string {
-        const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
-        const mimeTypes: { [key: string]: string } = {
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.bmp': 'image/bmp',
-            '.svg': 'image/svg+xml',
-            '.webp': 'image/webp'
-        };
-        return mimeTypes[extension] || 'application/octet-stream';
-    }
-
-    /**
-     * Converts a file to base64 data URL.
-     */
-    protected async fileToBase64(uri: URI): Promise<string> {
-        try {
-            const fileContent = await this.fileService.readFile(uri);
-            const uint8Array = new Uint8Array(fileContent.value.buffer);
-            let binary = '';
-            for (let i = 0; i < uint8Array.length; i++) {
-                binary += String.fromCharCode(uint8Array[i]);
-            }
-            return btoa(binary);
-        } catch (error) {
-            this.logger.error('Error reading file content:', error);
-            return '';
-        }
     }
 
     protected async handleDrop(event: DragEvent, _: AIVariableContext): Promise<AIVariableDropResult | undefined> {
@@ -225,17 +345,12 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                     const wsRelativePath = await this.wsService.getWorkspaceRelativePath(uri);
                     const fileName = uri.displayName;
 
-                    if (this.isImageFile(wsRelativePath)) {
-                        const base64Data = await this.fileToBase64(uri);
-                        const mimeType = this.getMimeTypeFromExtension(wsRelativePath);
-                        variables.push(ImageContextVariable.createRequest({
-                            [ImageContextVariable.name]: fileName,
-                            [ImageContextVariable.wsRelativePath]: wsRelativePath,
-                            [ImageContextVariable.data]: base64Data,
-                            [ImageContextVariable.mimeType]: mimeType
-                        }));
+                    if (wsRelativePath && this.isImageFile(wsRelativePath)) {
+                        // Create a path-based reference - the image will be resolved on-demand
+                        // This avoids eagerly loading base64 data for file-based images
+                        variables.push(ImageContextVariable.createPathBasedRequest(wsRelativePath, fileName));
                         // we do not want to push a text for image variables
-                    } else {
+                    } else if (wsRelativePath) {
                         variables.push({
                             variable: FILE_VARIABLE,
                             arg: wsRelativePath

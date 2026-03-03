@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - Hugging Face AI EXTENSION</h2>
+<h2>ECLIPSE THEIA - HUGGING FACE AI EXTENSION</h2>
 
 <hr />
 
@@ -18,6 +18,7 @@ Alternatively, the Hugging Face API key can also be provided via the `HUGGINGFAC
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-huggingface`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-huggingface.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

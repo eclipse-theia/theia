@@ -18,8 +18,9 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+// code copied and modified from https://github.com/microsoft/vscode/blob/1.106.1/src/vscode-dts/vscode.proposed.notebookKernelSource.d.ts
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
     export interface NotebookControllerDetectionTask {
         /**
          * Dispose and remove the detection task.
@@ -41,7 +42,7 @@ declare module '@theia/plugin' {
         /**
          * An optional event to signal that the kernel source actions have changed.
          */
-        onDidChangeNotebookKernelSourceActions?: Event<void>;
+        readonly onDidChangeNotebookKernelSourceActions?: Event<void>;
         /**
          * Provide kernel source actions
          */

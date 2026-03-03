@@ -26,7 +26,7 @@ import { GitCommitDetailHeaderWidget } from './git-commit-detail-header-widget';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { GitDiffTreeModel } from '../diff/git-diff-tree-model';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
-import { ScmPreferences } from '@theia/scm/lib/browser/scm-preferences';
+import { ScmPreferences } from '@theia/scm/lib/common/scm-preferences';
 
 @injectable()
 export class GitCommitDetailWidget extends BaseWidget implements StatefulWidget {
@@ -78,7 +78,7 @@ export class GitCommitDetailWidget extends BaseWidget implements StatefulWidget 
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
         this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'scm.defaultViewMode') {
-                this.updateViewMode(e.newValue);
+                this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
             }
         }));
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CallHierarchyContribution } from './callhierarchy-contribution';
-import { bindContributionProvider } from '@theia/core/lib/common';
+import { bindRootContributionProvider } from '@theia/core/lib/common';
 import { CallHierarchyService, CallHierarchyServiceProvider } from './callhierarchy-service';
 import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { CALLHIERARCHY_ID } from './callhierarchy';
@@ -25,7 +25,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, CallHierarchyService);
+    bindRootContributionProvider(bind, CallHierarchyService);
     bind(CallHierarchyServiceProvider).to(CallHierarchyServiceProvider).inSingletonScope();
 
     bindViewContribution(bind, CallHierarchyContribution);

@@ -33,25 +33,25 @@ Never under any circumstances may you reply with just the command-id!
 
 ## Example 1
 
-This reply is to tell the user to execute the \`theia-ai-prompt-template:show-prompts-command\` command that is available in the Theia command registry.
+This reply is to tell the user to execute the \`preferences:open\` command that is available in the Theia command registry.
 
 \`\`\`json
 {
     "type": "theia-command",
-    "commandId": "theia-ai-prompt-template:show-prompts-command"
+    "commandId": "preferences:open"
 }
 \`\`\`
 
 ## Example 2
 
-This reply is to tell the user to execute the \`theia-ai-prompt-template:show-prompts-command\` command that is available in the theia command registry,
+This reply is to tell the user to execute the \`preferences:open\` command that is available in the Theia command registry,
 when the user want to pass arguments to the command.
 
 \`\`\`json
 {
     "type": "theia-command",
-    "commandId": "theia-ai-prompt-template:show-prompts-command",
-    "arguments": ["foo"]
+    "commandId": "preferences:open",
+    "arguments": ["ai-features"]
 }
 \`\`\`
 

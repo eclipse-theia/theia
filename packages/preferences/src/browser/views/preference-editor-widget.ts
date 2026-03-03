@@ -19,16 +19,16 @@ import { postConstruct, injectable, inject } from '@theia/core/shared/inversify'
 import throttle = require('@theia/core/shared/lodash.throttle');
 import * as deepEqual from 'fast-deep-equal';
 import {
-    PreferenceService,
     CompositeTreeNode,
     SelectableTreeNode,
     StatefulWidget,
     TopDownTreeIterator,
-    PreferenceChanges,
     ExpandableTreeNode,
-    PreferenceSchemaProvider,
 } from '@theia/core/lib/browser';
-import { unreachable } from '@theia/core/lib/common';
+import {
+    Disposable, DisposableCollection, nls, PreferenceProviderDataChanges,
+    PreferenceProviderProvider, PreferenceSchemaService, PreferenceService, unreachable
+} from '@theia/core';
 import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widgets/widget';
 import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
 import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
@@ -44,7 +44,7 @@ export interface PreferencesEditorState {
 @injectable()
 export class PreferencesEditorWidget extends BaseWidget implements StatefulWidget {
     static readonly ID = 'settings.editor';
-    static readonly LABEL = 'Settings Editor';
+    static readonly LABEL = nls.localizeByDefault('Settings Editor');
 
     override scrollOptions = DEFAULT_SCROLL_OPTIONS;
 
@@ -59,6 +59,11 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected lastUserSelection = '';
     protected isAtScrollTop = true;
     protected firstVisibleChildID = '';
+    /**
+     * Tracks the node ID of the preference row the user last focused.
+     * Used to scroll back to that preference when the search filter is cleared.
+     */
+    protected lastFocusedRendererNodeId = '';
     protected renderers = new Map<string, GeneralPreferenceNodeRenderer>();
     protected preferenceDataKeys = new Map<string, string>();
     // The commonly used section will duplicate preference ID's, so we'll keep a separate list of them.
@@ -68,8 +73,9 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(PreferenceNodeRendererFactory) protected readonly rendererFactory: PreferenceNodeRendererFactory;
     @inject(PreferenceNodeRendererCreatorRegistry) protected readonly rendererRegistry: PreferenceNodeRendererCreatorRegistry;
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
     @inject(PreferencesScopeTabBar) protected readonly tabbar: PreferencesScopeTabBar;
+    @inject(PreferenceProviderProvider) protected readonly providerProvider: PreferenceProviderProvider;
 
     @postConstruct()
     protected init(): void {
@@ -82,7 +88,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         this.title.label = PreferencesEditorWidget.LABEL;
         this.addClass('settings-main');
         this.toDispose.pushAll([
-            this.preferenceService.onPreferencesChanged(e => this.handlePreferenceChanges(e)),
+            this.subscribeToPreferenceProviderChanges(),
             this.model.onFilterChanged(e => this.handleDisplayChange(e)),
             this.model.onSelectionChanged(e => this.handleSelectionChange(e)),
         ]);
@@ -97,29 +103,79 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         innerWrapper.classList.add('settings-main-scroll-container');
         this.scrollContainer = innerWrapper;
         innerWrapper.addEventListener('scroll', this.onScroll, { passive: true });
+        innerWrapper.addEventListener('focusin', e => {
+            const target = e.target;
+            if (target instanceof HTMLElement) {
+                const prefRow = target.closest('.single-pref');
+                const nodeId = prefRow?.getAttribute('data-node-id');
+                if (nodeId) {
+                    this.lastFocusedRendererNodeId = nodeId;
+                }
+            }
+        });
         this.node.appendChild(innerWrapper);
         const noLeavesMessage = document.createElement('div');
         noLeavesMessage.classList.add('settings-no-results-announcement');
-        noLeavesMessage.textContent = 'That search query has returned no results.';
+        noLeavesMessage.textContent = nls.localizeByDefault('No Settings Found');
         this.node.appendChild(noLeavesMessage);
+    }
+
+    protected subscribeToPreferenceProviderChanges(): Disposable {
+        const res = new DisposableCollection();
+        for (const scope of this.schemaProvider.validScopes) {
+            const provider = this.providerProvider(scope);
+            if (!provider) { continue; }
+            provider.onDidPreferencesChanged(e => this.handlePreferenceChanges(e), this, res);
+        }
+        return res;
     }
 
     protected handleDisplayChange(e: PreferenceFilterChangeEvent): void {
         const { isFiltered } = this.model;
-        const currentFirstVisible = this.firstVisibleChildID;
         const leavesAreVisible = this.areLeavesVisible();
+        // Capture scroll target before handlers modify visibility / DOM layout.
+        const scrollTarget = this.getScrollTarget(e.source);
+
         if (e.source === PreferenceFilterChangeSource.Search) {
             this.handleSearchChange(isFiltered, leavesAreVisible);
         } else if (e.source === PreferenceFilterChangeSource.Scope) {
             this.handleScopeChange(isFiltered);
-            this.showInTree(currentFirstVisible);
         } else if (e.source === PreferenceFilterChangeSource.Schema) {
             this.handleSchemaChange(isFiltered);
-            this.showInTree(currentFirstVisible);
         } else {
             unreachable(e.source, 'Not all PreferenceFilterChangeSource enum variants handled.');
         }
-        this.resetScroll(currentFirstVisible, e.source === PreferenceFilterChangeSource.Search);
+
+        if (scrollTarget) {
+            this.showInTree(scrollTarget);
+        }
+        this.resetScroll(scrollTarget);
+
+        if (e.source === PreferenceFilterChangeSource.Search) {
+            // Reset focus if search context changes.
+            this.lastFocusedRendererNodeId = '';
+        }
+    }
+
+    protected getScrollTarget(source: PreferenceFilterChangeSource): string | undefined {
+        if (source !== PreferenceFilterChangeSource.Search) {
+            return this.firstVisibleChildID;
+        }
+        if (!this.model.isFiltered && this.lastFocusedRendererNodeId && this.isRendererInViewport(this.lastFocusedRendererNodeId)) {
+            return this.lastFocusedRendererNodeId;
+        }
+        return undefined;
+    }
+
+    protected isRendererInViewport(nodeId: string): boolean {
+        const { id, collection } = this.analyzeIDAndGetRendererGroup(nodeId);
+        const renderer = collection.get(id);
+        if (!renderer?.visible) { return false; }
+        const scrollTop = this.scrollContainer.scrollTop;
+        const viewportBottom = scrollTop + this.scrollContainer.clientHeight;
+        const elementTop = renderer.node.offsetTop;
+        const elementBottom = elementTop + renderer.node.offsetHeight;
+        return elementTop < viewportBottom && elementBottom > scrollTop;
     }
 
     protected handleRegistryChange(): void {
@@ -203,7 +259,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         }
     }
 
-    protected handlePreferenceChanges(e: PreferenceChanges): void {
+    protected handlePreferenceChanges(e: PreferenceProviderDataChanges): void {
         for (const id of Object.keys(e)) {
             this.commonlyUsedRenderers.get(id)?.handleValueChange?.();
             this.renderers.get(id)?.handleValueChange?.();
@@ -224,25 +280,23 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         }
     }
 
-    protected resetScroll(nodeIDToScrollTo?: string, filterWasCleared: boolean = false): void {
+    protected resetScroll(nodeIDToScrollTo?: string): void {
         if (this.scrollBar) { // Absent on widget creation
-            this.doResetScroll(nodeIDToScrollTo, filterWasCleared);
+            this.doResetScroll(nodeIDToScrollTo);
         } else {
             const interval = setInterval(() => {
                 if (this.scrollBar) {
                     clearInterval(interval);
-                    this.doResetScroll(nodeIDToScrollTo, filterWasCleared);
+                    this.doResetScroll(nodeIDToScrollTo);
                 }
             }, 500);
         }
     }
 
-    protected doResetScroll(nodeIDToScrollTo?: string, filterWasModified: boolean = false): void {
+    protected doResetScroll(nodeIDToScrollTo?: string): void {
         requestAnimationFrame(() => {
             this.scrollBar?.update();
-            if (filterWasModified) {
-                this.scrollContainer.scrollTop = 0;
-            } else if (nodeIDToScrollTo) {
+            if (nodeIDToScrollTo) {
                 const { id, collection } = this.analyzeIDAndGetRendererGroup(nodeIDToScrollTo);
                 const renderer = collection.get(id);
                 if (renderer?.visible) {
@@ -250,7 +304,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                     return;
                 }
             }
-
+            this.scrollContainer.scrollTop = 0;
         });
     };
 

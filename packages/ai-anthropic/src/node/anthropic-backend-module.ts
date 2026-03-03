@@ -16,9 +16,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, AnthropicLanguageModelsManager } from '../common/anthropic-language-models-manager';
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { AnthropicLanguageModelsManagerImpl } from './anthropic-language-models-manager-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { AnthropicPreferencesSchema } from '../common/anthropic-preferences';
 
 // We use a connection module to handle AI services separately for each frontend.
 const anthropicConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
@@ -30,5 +31,6 @@ const anthropicConnectionModule = ConnectionContainerModule.create(({ bind, bind
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: AnthropicPreferencesSchema });
     bind(ConnectionContainerModule).toConstantValue(anthropicConnectionModule);
 });
