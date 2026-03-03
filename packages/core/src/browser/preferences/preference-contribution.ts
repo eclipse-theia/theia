@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { bindRootContributionProvider, PreferenceProvider } from '../../common';
+import { bindRootContributionProvider } from '../../common';
 import { PreferenceScope, ValidPreferenceScopes } from '../../common/preferences/preference-scope';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import { isObject } from '../../common/types';
@@ -25,6 +25,7 @@ import { DefaultsPreferenceProvider } from '../../common/preferences/defaults-pr
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
 import { FrontendConfigPreferenceContribution } from './frontend-config-preference-contributions';
 import { bindPreferenceConfigurations } from '../../common/preferences/preference-configurations';
+import { PreferenceProvider } from '../../common/preferences/preference-provider';
 
 export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
     bindPreferenceConfigurations(bind);
