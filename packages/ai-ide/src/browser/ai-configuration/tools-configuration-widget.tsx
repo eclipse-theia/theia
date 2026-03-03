@@ -362,7 +362,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                         </p>
                     )}
                     <ul className="ai-shell-permission-list-patterns">
-                        {this.allowlistPatterns.map(pattern => (
+                        {[...this.allowlistPatterns].sort((a, b) => a.localeCompare(b)).map(pattern => (
                             <li key={pattern} className="ai-shell-permission-list-pattern-item">
                                 <code>{pattern}</code>
                                 <button
@@ -415,7 +415,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                         </p>
                     )}
                     <ul className="ai-shell-permission-list-patterns">
-                        {this.denylistPatterns.map(pattern => (
+                        {[...this.denylistPatterns].sort((a, b) => a.localeCompare(b)).map(pattern => (
                             <li key={pattern} className="ai-shell-permission-list-pattern-item">
                                 <code>{pattern}</code>
                                 <button
