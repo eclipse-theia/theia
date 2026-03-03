@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2018-2026 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -25,7 +25,7 @@ import { waitForEvent } from '@theia/core/lib/common/promise-util';
 import { EDITOR_CONTEXT_MENU, EDITOR_LINENUMBER_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugWidget } from './view/debug-widget';
-import { FunctionBreakpoint, SourceBreakpoint } from './breakpoint/breakpoint-marker';
+import { SourceBreakpoint } from './breakpoint/breakpoint-marker';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugState, DebugSession } from './debug-session';
@@ -499,11 +499,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => !!this.editors.model && !this.editors.anyBreakpoint()
         });
         registry.registerCommand(DebugCommands.ADD_FUNCTION_BREAKPOINT, {
-            execute: async () => {
-                const { labelProvider, breakpointManager, editorManager } = this;
-                const options = { labelProvider, breakpoints: breakpointManager, editorManager };
-                await new DebugFunctionBreakpoint(FunctionBreakpoint.create({ name: '' }), options).open();
-            },
+            execute: async () => DebugFunctionBreakpoint.editOrCreate(this.breakpointManager),
             isEnabled: widget => !(widget instanceof Widget) || widget instanceof DebugBreakpointsWidget,
             isVisible: widget => !(widget instanceof Widget) || widget instanceof DebugBreakpointsWidget
         });
@@ -557,8 +553,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await selectedExceptionBreakpoint.editCondition();
                 }
             },
-            isEnabled: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
-            isVisible: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
+            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.origin.raw.supportsCondition,
+            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.origin.raw.supportsCondition
         });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {
@@ -1057,16 +1053,15 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             return;
         }
         const breakpoint = SourceBreakpoint.create(uri, { line, column });
-        let shouldRemoveBreakpoint = this.breakpointManager.addBreakpoint(breakpoint);
+        const breakpointsBefore = this.breakpointManager.getBreakpoints(uri);
+        const breakpointToRemove = this.breakpointManager.addBreakpoint(breakpoint);
+        const breakpointsAfter = this.breakpointManager.getBreakpoints(uri);
+        let shouldRemoveBreakpoint = breakpointsBefore.length !== breakpointsAfter.length;
         const removeBreakpoint = () => {
-            const breakpoints = this.breakpointManager.getBreakpoints(uri);
-            const newBreakpoints = breakpoints.filter(bp => bp.id !== breakpoint.id);
-            if (breakpoints.length !== newBreakpoints.length) {
-                this.breakpointManager.setBreakpoints(uri, newBreakpoints);
-            }
+            breakpointToRemove.remove();
         };
         try {
-            const sessionBreakpoint = await this.verifyBreakpoint(breakpoint, thread.session);
+            const sessionBreakpoint = await this.verifyBreakpoint(breakpointToRemove, thread.session);
             if (!checkThread()) {
                 return;
             }
@@ -1105,21 +1100,21 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
     }
 
-    protected async verifyBreakpoint(breakpoint: SourceBreakpoint, session: DebugSession, timeout = 2000): Promise<DebugBreakpoint | undefined> {
-        let sessionBreakpoint = session.getBreakpoint(breakpoint.id);
-        if (!sessionBreakpoint || !sessionBreakpoint.installed || !sessionBreakpoint.verified) {
+    protected async verifyBreakpoint(breakpoint: DebugSourceBreakpoint, session: DebugSession, timeout = 2000): Promise<DebugBreakpoint> {
+        if (!breakpoint.getDebugProtocolBreakpoint(session.id)?.verified) {
             try {
-                await waitForEvent(Event.filter(session.onDidChangeBreakpoints, () => {
-                    sessionBreakpoint = session.getBreakpoint(breakpoint.id);
-                    return !!sessionBreakpoint && sessionBreakpoint.installed && sessionBreakpoint.verified;
-                }), timeout); // wait up to `timeout` ms for the breakpoint to become installed and verified
+                await waitForEvent(Event.filter(
+                    this.breakpointManager.onDidChangeBreakpoints,
+                    () => breakpoint.getDebugProtocolBreakpoint(session.id)?.verified),
+                    timeout // wait up to `timeout` ms for the breakpoint to become installed and verified
+                );
             } catch (e) {
                 if (!(e instanceof CancellationError)) { // ignore the `CancellationError` on timeout
                     throw e;
                 }
             }
         }
-        return sessionBreakpoint;
+        return breakpoint;
     }
 
     get threads(): DebugThreadsWidget | undefined {
