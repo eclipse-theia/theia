@@ -125,7 +125,7 @@ module.exports = (async () => {
     const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 
     container.load(frontendApplicationModule);
-    ${this.pck.ifBrowserOnly(`const { frontendOnlyApplicationModule } = require('@theia/core/lib/browser-only/frontend-only-application-module');
+    ${this.ifBrowserOnly(`const { frontendOnlyApplicationModule } = require('@theia/core/lib/browser-only/frontend-only-application-module');
     container.load(frontendOnlyApplicationModule);`)}
     
     container.load(loggerFrontendModule);

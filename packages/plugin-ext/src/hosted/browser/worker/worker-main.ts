@@ -19,6 +19,7 @@ import { Container } from '@theia/core/shared/inversify';
 import * as theia from '@theia/plugin';
 import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-api-rpc';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
@@ -70,7 +71,7 @@ pluginManager.setPluginHost({
                         ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
                     }
 
-                    ctx.importScripts('./hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                    ctx.importScripts('./' + PLUGINS_BASE_PATH + '/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
                 }
             }
 

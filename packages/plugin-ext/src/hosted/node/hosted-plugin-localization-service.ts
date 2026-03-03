@@ -20,9 +20,10 @@ import { LazyLocalization, LocalizationProvider } from '@theia/core/lib/node/i18
 import { Localization } from '@theia/core/lib/common/i18n/localization';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers, Translation } from '../../common';
+import { loadPackageTranslations, localizePackage } from './plugin-package-localization';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { Disposable, DisposableCollection, isObject, MaybePromise, nls, Path, URI } from '@theia/core';
+import { Disposable, DisposableCollection, MaybePromise, nls, Path, URI } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { LanguagePackBundle, LanguagePackService } from '../../common/language-pack-service';
 
@@ -325,83 +326,3 @@ function buildTranslationKey(pluginId: string, scope: string, key: string): stri
     return `${pluginId}/${Localization.transformKey(scope)}/${key}`;
 }
 
-// Localization logic for `package.json` entries
-// Extensions can use `package.nls.json` files to store translations for values in their package.json
-// This logic has not changed with the introduction of the vscode.l10n API
-
-interface PackageTranslation {
-    translation?: Record<string, string>
-    default?: Record<string, string>
-}
-
-async function loadPackageTranslations(pluginPath: string, locale: string): Promise<PackageTranslation> {
-    const localizedPluginPath = path.join(pluginPath, `package.nls.${locale}.json`);
-    try {
-        const defaultValue = coerceLocalizations(await fs.readJson(path.join(pluginPath, 'package.nls.json')));
-        if (await fs.pathExists(localizedPluginPath)) {
-            return {
-                translation: coerceLocalizations(await fs.readJson(localizedPluginPath)),
-                default: defaultValue
-            };
-        }
-        return {
-            default: defaultValue
-        };
-    } catch (e) {
-        if (e.code !== 'ENOENT') {
-            throw e;
-        }
-        return {};
-    }
-}
-
-interface LocalizeInfo {
-    message: string
-    comment?: string
-}
-
-function isLocalizeInfo(obj: unknown): obj is LocalizeInfo {
-    return isObject(obj) && 'message' in obj || false;
-}
-
-function coerceLocalizations(translations: Record<string, string | LocalizeInfo>): Record<string, string> {
-    for (const [key, value] of Object.entries(translations)) {
-        if (isLocalizeInfo(value)) {
-            translations[key] = value.message;
-        } else if (typeof value !== 'string') {
-            // Only strings or LocalizeInfo values are valid
-            translations[key] = 'INVALID TRANSLATION VALUE';
-        }
-    }
-    return translations as Record<string, string>;
-}
-
-function localizePackage(value: unknown, translations: PackageTranslation, callback: (key: string, defaultValue: string) => string): unknown {
-    if (typeof value === 'string') {
-        let result = value;
-        if (value.length > 2 && value.startsWith('%') && value.endsWith('%')) {
-            const key = value.slice(1, -1);
-            if (translations.translation && key in translations.translation) {
-                result = translations.translation[key];
-            } else if (translations.default && key in translations.default) {
-                result = callback(key, translations.default[key]);
-            }
-        }
-        return result;
-    }
-    if (Array.isArray(value)) {
-        const result = [];
-        for (const item of value) {
-            result.push(localizePackage(item, translations, callback));
-        }
-        return result;
-    }
-    if (isObject(value)) {
-        const result: Record<string, unknown> = {};
-        for (const [name, item] of Object.entries(value)) {
-            result[name] = localizePackage(item, translations, callback);
-        }
-        return result;
-    }
-    return value;
-}

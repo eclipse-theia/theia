@@ -20,6 +20,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoIconRegistry } from '@theia/monaco/lib/browser/monaco-icon-registry';
 import * as path from 'path';
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
 import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol';
 
 @injectable()
@@ -68,7 +69,7 @@ export class PluginIconService implements Disposable {
 
     protected toPluginUrl(id: string, relativePath: string): URI {
         return URI.from(new Endpoint({
-            path: `hostedPlugin/${this.formatExtensionId(id)}/${encodeURIComponent(relativePath)}`
+            path: `${PLUGINS_BASE_PATH}/${this.formatExtensionId(id)}/${encodeURIComponent(relativePath)}`
         }).getRestUrl().toComponents());
     }
 

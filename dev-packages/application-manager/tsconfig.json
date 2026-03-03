@@ -10,7 +10,10 @@
   ],
   "references": [
     {
-      "path": "../application-package"
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../../packages/plugin-ext"
     },
     {
       "path": "../ffmpeg"

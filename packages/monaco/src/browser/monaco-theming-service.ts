@@ -24,6 +24,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
 import { getThemes, putTheme, MonacoThemeState, stateToTheme, ThemeServiceWithDB } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { readResourceContent } from '@theia/filesystem/lib/browser/read-resource';
 import * as monaco from '@theia/monaco-editor-core';
 
 export interface MonacoTheme {
@@ -62,25 +63,33 @@ export class MonacoThemingService {
     @inject(MonacoThemeRegistry) protected readonly monacoThemeRegistry: MonacoThemeRegistry;
     @inject(ThemeServiceWithDB) protected readonly themeService: ThemeServiceWithDB;
 
+    /** Cache of in-flight theme loads by URI to deduplicate concurrent loads */
+    protected pending: { [uri: string]: Promise<any> } = {};
+
     /** Register themes whose configuration needs to be loaded */
-    register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
+    register(theme: MonacoTheme): Disposable {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
-        this.doRegister(theme, pending, toDispose);
+        this.doRegister(theme, toDispose);
         return toDispose;
     }
 
-    protected async doRegister(theme: MonacoTheme,
-        pending: { [uri: string]: Promise<any> },
-        toDispose: DisposableCollection
-    ): Promise<void> {
+    protected async doRegister(theme: MonacoTheme, toDispose: DisposableCollection): Promise<void> {
         try {
+            const { id, description, uiTheme } = theme;
+            const label = theme.label || new URI(theme.uri).path.base;
+            const existing = this.themeService.getTheme(id!);
+
+            if (existing.id === id && existing.editorTheme) {
+                return;
+            }
+
             const includes = {};
-            const json = await this.loadTheme(theme.uri, includes, pending, toDispose);
+            const json = await this.loadTheme(theme.uri, includes, toDispose);
+
             if (toDispose.disposed) {
                 return;
             }
-            const label = theme.label || new URI(theme.uri).path.base;
-            const { id, description, uiTheme } = theme;
+
             toDispose.push(this.registerParsedTheme({ id, label, description, uiTheme: uiTheme, json, includes }));
         } catch (e) {
             console.error('Failed to load theme from ' + theme.uri, e);
@@ -90,15 +99,14 @@ export class MonacoThemingService {
     protected async loadTheme(
         uri: string,
         includes: { [include: string]: any },
-        pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
-        const result = await this.fileService.read(new URI(uri));
-        const content = result.value;
+        const themeUri = new URI(uri);
+        const content = await readResourceContent(themeUri, this.fileService);
+
         if (toDispose.disposed) {
             return;
         }
-        const themeUri = new URI(uri);
         if (themeUri.path.ext !== '.json') {
             const value = plistparser.parse(content);
             if (value && 'settings' in value && Array.isArray(value.settings)) {
@@ -108,14 +116,14 @@ export class MonacoThemingService {
         }
         const json = jsoncparser.parse(content, undefined, { disallowComments: false });
         if ('tokenColors' in json && typeof json.tokenColors === 'string') {
-            const value = await this.doLoadTheme(themeUri, json.tokenColors, includes, pending, toDispose);
+            const value = await this.doLoadTheme(themeUri, json.tokenColors, includes, toDispose);
             if (toDispose.disposed) {
                 return;
             }
             json.tokenColors = value.tokenColors;
         }
         if (json.include) {
-            includes[json.include] = await this.doLoadTheme(themeUri, json.include, includes, pending, toDispose);
+            includes[json.include] = await this.doLoadTheme(themeUri, json.include, includes, toDispose);
             if (toDispose.disposed) {
                 return;
             }
@@ -128,14 +136,13 @@ export class MonacoThemingService {
         themeUri: URI,
         referencedPath: string,
         includes: { [include: string]: any },
-        pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
         const referencedUri = themeUri.parent.resolve(referencedPath).toString();
-        if (!pending[referencedUri]) {
-            pending[referencedUri] = this.loadTheme(referencedUri, includes, pending, toDispose);
+        if (!this.pending[referencedUri]) {
+            this.pending[referencedUri] = this.loadTheme(referencedUri, includes, toDispose);
         }
-        return pending[referencedUri];
+        return this.pending[referencedUri];
     }
 
     initialize(): void {

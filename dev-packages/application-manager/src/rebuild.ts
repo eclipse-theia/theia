@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import cp = require('child_process');
-import fs = require('fs-extra');
+import fs = require('@theia/core/shared/fs-extra');
 import path = require('path');
 import os = require('os');
 

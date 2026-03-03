@@ -62,6 +62,9 @@
     },
     {
       "frontendElectron": "lib/plugin-ext-frontend-electron-module"
+    },
+    {
+      "frontendOnly": "lib/plugin-ext-frontend-only-module"
     }
   ],
   "keywords": [

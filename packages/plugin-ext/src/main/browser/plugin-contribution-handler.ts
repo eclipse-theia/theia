@@ -336,9 +336,8 @@ export class PluginContributionHandler {
         }
 
         if (contributions.themes && contributions.themes.length) {
-            const pending = {};
             for (const theme of contributions.themes) {
-                pushContribution(`themes.${theme.uri}`, () => this.monacoThemingService.register(theme, pending));
+                pushContribution(`themes.${theme.uri}`, () => this.monacoThemingService.register(theme));
             }
         }
 

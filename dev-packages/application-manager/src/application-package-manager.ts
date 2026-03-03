@@ -15,14 +15,16 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as cp from 'child_process';
 import * as semver from 'semver';
-import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
+import { ApplicationPackage, ApplicationPackageOptions } from '@theia/core/shared/@theia/application-package';
+import { copyBrowserOnlyPlugins } from './browser-only/copy-plugins';
 import { WebpackGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
 import { GeneratorOptions } from './generator/abstract-generator';
-import yargs = require('yargs');
+import yargs = require('@theia/core/shared/yargs');
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
 
 // Declare missing exports from `@types/semver@7`
 declare module 'semver' {
@@ -108,6 +110,28 @@ export class ApplicationPackageManager {
     async copy(): Promise<void> {
         await fs.ensureDir(this.pck.lib('frontend'));
         await fs.copy(this.pck.frontend('index.html'), this.pck.lib('frontend', 'index.html'));
+
+        if (this.pck.isBrowserOnly()) {
+            await this.prepareBrowserOnlyPlugins();
+        }
+    }
+
+    /**
+     * For browser-only: resolve plugins source path (theiaPluginsDir) and destination
+     * (lib/frontend/hostedPlugin), then delegate to copyBrowserOnlyPlugins.
+     */
+    protected async prepareBrowserOnlyPlugins(): Promise<void> {
+        const pkg = this.pck.pck;
+        const pluginsDir = typeof pkg.theiaPluginsDir === 'string' ? pkg.theiaPluginsDir : 'plugins';
+        const pluginsSource = path.resolve(this.pck.projectPath, pluginsDir);
+
+        if (!(await fs.pathExists(pluginsSource))) {
+            return;
+        }
+
+        const hostedPluginRoot = this.pck.lib('frontend', PLUGINS_BASE_PATH);
+
+        await copyBrowserOnlyPlugins(pluginsSource, hostedPluginRoot);
     }
 
     async build(args: string[] = [], options: GeneratorOptions = {}): Promise<void> {
