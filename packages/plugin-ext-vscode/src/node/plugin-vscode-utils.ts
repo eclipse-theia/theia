@@ -29,11 +29,7 @@ import { PluginIdentifiers, PluginPackage } from '@theia/plugin-ext/lib/common/p
  * This function extracts only the `extension/package.json` file to read the extension metadata.
  *
  * @param vsixPath Path to the VSIX file
- * @returns The extension identity, or undefined if the package.json cannot be read or is invalid
- */
-/**
- * Extracts extension identity from a VSIX file by reading its package.json.
- * Returns PluginIdentifiers.Components (publisher?, name, version).
+ * @returns PluginIdentifiers.Components (publisher?, name, version), or undefined if the package.json cannot be read or is invalid
  */
 export async function extractExtensionIdentityFromVsix(vsixPath: string): Promise<PluginIdentifiers.Components | undefined> {
     try {
@@ -56,11 +52,8 @@ export async function extractExtensionIdentityFromVsix(vsixPath: string): Promis
             return undefined;
         }
 
-        // Use UNPUBLISHED as the default publisher for extensions without one
-        const publisher = packageJson.publisher ?? PluginIdentifiers.UNPUBLISHED;
-
         const components: PluginIdentifiers.Components = {
-            publisher,
+            publisher: packageJson.publisher,
             name: packageJson.name,
             version: packageJson.version
         };

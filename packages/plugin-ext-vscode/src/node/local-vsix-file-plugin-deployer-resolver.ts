@@ -16,12 +16,11 @@
 
 import * as path from 'path';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PluginDeployerResolverContext, PluginDeployerHandler } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginDeployerResolverContext, PluginDeployerHandler, PluginIdentifiers } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler';
 import { existsInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils';
-import { PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-identifiers';
 
 @injectable()
 export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerResolver {
@@ -68,11 +67,11 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         const existingPlugins = this.pluginDeployerHandler.getDeployedPluginsById(unversionedId);
         if (existingPlugins.length > 0) {
             const existingVersions = existingPlugins.map(p => p.metadata.model.version);
-            // Throw an error with a user-facing message
-            throw new Error(
+            console.log(
                 'Extension ' + unversionedId + ' (version(s): ' + existingVersions.join(', ') + ') is already installed.\n' +
                 'Uninstall the existing extension before installing a new version from VSIX.'
             );
+            return;
         }
 
         // Check if the deployment directory already exists on disk

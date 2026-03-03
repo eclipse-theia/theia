@@ -266,8 +266,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
             this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
         } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName) + ' ' + errorMessage);
+            this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
             console.warn(e);
         }
     }
