@@ -156,7 +156,7 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                     itemId: item.id,
                     selected: selected.has(item.id) || disabledIds.has(item.id),
                     disabled: disabledIds.has(item.id)
-                }))
+                })).sort((a, b) => a.name.localeCompare(b.name))
             };
         };
 
@@ -192,8 +192,8 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                         itemId: item.id,
                         selected: selected.has(item.id) || disabledIds.has(item.id),
                         disabled: disabledIds.has(item.id)
-                    }))
-                }))
+                    })).sort((a, b) => a.name.localeCompare(b.name))
+                })).sort((a, b) => a.name.localeCompare(b.name))
             };
         };
 
