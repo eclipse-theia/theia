@@ -116,4 +116,32 @@ describe('parseShellExecutionInput', () => {
             expect(result.command).to.equal('cat file.txt | grep error > output.log');
         });
     });
+
+    describe('fullOutput', () => {
+        it('should parse fullOutput: true', () => {
+            const result = parseShellExecutionInput('{"command": "git diff", "fullOutput": true}');
+            expect(result.command).to.equal('git diff');
+            expect(result.fullOutput).to.be.true;
+        });
+
+        it('should parse fullOutput: false', () => {
+            const result = parseShellExecutionInput('{"command": "ls -la", "fullOutput": false}');
+            expect(result.command).to.equal('ls -la');
+            expect(result.fullOutput).to.be.false;
+        });
+
+        it('should have undefined fullOutput when not specified', () => {
+            const result = parseShellExecutionInput('{"command": "echo hello"}');
+            expect(result.command).to.equal('echo hello');
+            expect(result.fullOutput).to.be.undefined;
+        });
+
+        it('should parse fullOutput alongside other optional fields', () => {
+            const result = parseShellExecutionInput('{"command": "npm test", "cwd": "/tmp", "timeout": 60000, "fullOutput": true}');
+            expect(result.command).to.equal('npm test');
+            expect(result.cwd).to.equal('/tmp');
+            expect(result.timeout).to.equal(60000);
+            expect(result.fullOutput).to.be.true;
+        });
+    });
 });

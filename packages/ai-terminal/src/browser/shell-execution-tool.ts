@@ -23,7 +23,8 @@ import {
     ShellExecutionServer,
     ShellExecutionToolResult,
     ShellExecutionCanceledResult,
-    combineAndTruncate
+    combineOutput,
+    truncateOutput
 } from '../common/shell-execution-server';
 import { CancellationToken, generateUuid } from '@theia/core';
 
@@ -86,11 +87,13 @@ USER INTERACTION:
 It should not be used for "endless" or long-running processes (e.g., servers, watchers) as the execution
 will block further tool usage and chat messages until it completes or times out.
 
-OUTPUT TRUNCATION: To keep responses manageable, output is truncated at multiple levels:
+OUTPUT TRUNCATION: To keep responses manageable, output is truncated by default at multiple levels:
 - Stream limit: stdout and stderr each capped at 1MB
 - Line count: Only first 50 and last 50 lines kept (middle lines omitted)
 - Line length: Lines over 1000 chars show start/end with middle omitted
-To avoid losing important information, limit output size in your commands:
+When truncation occurs, the result includes a summary showing how many characters were omitted.
+If you need the complete untruncated output (e.g. for diffs or full logs), set fullOutput: true.
+Prefer shell-based filtering (grep, head, tail) over fullOutput when possible:
 - Use grep/findstr to filter output (e.g., "npm test 2>&1 | grep -E '(FAIL|PASS|Error)'")
 - Use head/tail to limit lines (e.g., "git log --oneline -20")
 - Use wc -l to count lines before fetching full output
@@ -111,6 +114,11 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                     timeout: {
                         type: 'number',
                         description: 'Timeout in milliseconds. Default: 120000 (2 minutes). Max: 600000 (10 minutes).'
+                    },
+                    fullOutput: {
+                        type: 'boolean',
+                        description: 'When true, returns the complete untruncated output. ' +
+                            'Use only when you need the full output (e.g. for diffs). Prefer shell-based filtering (grep, head, tail) when possible.'
                     }
                 },
                 required: ['command']
@@ -143,6 +151,7 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
             command: string;
             cwd?: string;
             timeout?: number;
+            fullOutput?: boolean;
         } = JSON.parse(argString);
 
         // Get workspace root to pass to backend for path resolution
@@ -173,16 +182,18 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                 executionId,
             });
 
+            const streamCapped = result.stdoutCapped || result.stderrCapped;
+
             if (result.canceled) {
                 return {
                     canceled: true,
-                    output: this.combineAndTruncate(result.stdout, result.stderr) || undefined,
+                    output: this.combineAndTruncateOutput(result.stdout, result.stderr, args.fullOutput, streamCapped) || undefined,
                     duration: result.duration,
                 };
             }
 
-            // Combine stdout and stderr, apply truncation
-            const combinedOutput = this.combineAndTruncate(result.stdout, result.stderr);
+            // Combine stdout and stderr, apply truncation unless fullOutput requested
+            const combinedOutput = this.combineAndTruncateOutput(result.stdout, result.stderr, args.fullOutput, streamCapped);
 
             return {
                 success: result.success,
@@ -221,7 +232,26 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         return undefined;
     }
 
-    protected combineAndTruncate(stdout: string, stderr: string): string {
-        return combineAndTruncate(stdout, stderr);
+    protected combineAndTruncateOutput(stdout: string, stderr: string, fullOutput?: boolean, streamCapped?: boolean): string {
+        const combined = combineOutput(stdout, stderr);
+        if (fullOutput) {
+            if (streamCapped) {
+                return `${combined}\n\n[Warning: Output was capped at the 1MB stream limit before truncation. The output above may be incomplete.]`;
+            }
+            return combined;
+        }
+        const { output, totalCharsOmitted } = truncateOutput(combined);
+        const notes: string[] = [];
+        if (totalCharsOmitted > 0) {
+            const totalChars = combined.length;
+            notes.push(`Output truncated: ${totalCharsOmitted} characters omitted from ${totalChars} total. Use fullOutput: true to get the complete output.`);
+        }
+        if (streamCapped) {
+            notes.push('Output was capped at the 1MB stream limit. Some output may have been lost before truncation.');
+        }
+        if (notes.length > 0) {
+            return `${output}\n\n[${notes.join(' ')}]`;
+        }
+        return output;
     }
 }

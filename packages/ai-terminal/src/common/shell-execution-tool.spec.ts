@@ -16,8 +16,10 @@
 
 import { expect } from 'chai';
 import {
-    combineAndTruncate,
+    combineOutput,
+    truncateOutput,
     truncateLine,
+    truncateLineWithInfo,
     HEAD_LINES,
     TAIL_LINES,
     GRACE_LINES,
@@ -25,52 +27,6 @@ import {
 } from './shell-execution-server';
 
 describe('Shell Execution Tool', () => {
-    describe('combineAndTruncate', () => {
-        it('should return stdout when no stderr', () => {
-            const result = combineAndTruncate('stdout content', '');
-            expect(result).to.equal('stdout content');
-        });
-
-        it('should return stderr when no stdout', () => {
-            const result = combineAndTruncate('', 'stderr content');
-            expect(result).to.equal('stderr content');
-        });
-
-        it('should combine stdout and stderr with separator', () => {
-            const result = combineAndTruncate('stdout content', 'stderr content');
-            expect(result).to.equal('stdout content\n--- stderr ---\nstderr content');
-        });
-
-        it('should return empty string when both are empty', () => {
-            const result = combineAndTruncate('', '');
-            expect(result).to.equal('');
-        });
-
-        it('should not truncate output within grace area', () => {
-            const lineCount = HEAD_LINES + TAIL_LINES + GRACE_LINES;
-            const lines = Array.from({ length: lineCount }, (_, i) => `line ${i + 1}`);
-            const stdout = lines.join('\n');
-            const result = combineAndTruncate(stdout, '');
-            expect(result).to.not.include('lines omitted');
-            expect(result.split('\n').length).to.equal(lineCount);
-        });
-
-        it('should truncate output exceeding grace area', () => {
-            const lineCount = HEAD_LINES + TAIL_LINES + GRACE_LINES + 1;
-            const lines = Array.from({ length: lineCount }, (_, i) => `line ${i + 1}`);
-            const stdout = lines.join('\n');
-            const result = combineAndTruncate(stdout, '');
-            expect(result).to.include('lines omitted');
-        });
-
-        it('should truncate long lines in output', () => {
-            const longLine = 'x'.repeat(MAX_LINE_LENGTH + 500);
-            const result = combineAndTruncate(longLine, '');
-            expect(result).to.include('chars omitted');
-            expect(result.length).to.be.lessThan(longLine.length);
-        });
-    });
-
     describe('truncateLine', () => {
         it('should not truncate short lines', () => {
             const line = 'short line';
@@ -97,6 +53,109 @@ describe('Shell Execution Tool', () => {
             const result = truncateLine(line);
             expect(result.startsWith(start)).to.be.true;
             expect(result.endsWith(end)).to.be.true;
+        });
+    });
+
+    describe('truncateLineWithInfo', () => {
+        it('should report 0 charsOmitted for short lines', () => {
+            const result = truncateLineWithInfo('short line');
+            expect(result.result).to.equal('short line');
+            expect(result.charsOmitted).to.equal(0);
+        });
+
+        it('should report 0 charsOmitted for lines at exactly MAX_LINE_LENGTH', () => {
+            const line = 'x'.repeat(MAX_LINE_LENGTH);
+            const result = truncateLineWithInfo(line);
+            expect(result.result).to.equal(line);
+            expect(result.charsOmitted).to.equal(0);
+        });
+
+        it('should report correct charsOmitted for long lines', () => {
+            const line = 'x'.repeat(MAX_LINE_LENGTH + 200);
+            const result = truncateLineWithInfo(line);
+            expect(result.charsOmitted).to.be.greaterThan(0);
+            expect(result.result).to.include('chars omitted');
+            // The omitted count in the message should match the reported count
+            const match = /\[(\d+) chars omitted\]/.exec(result.result);
+            expect(match).to.not.be.undefined;
+            expect(parseInt(match![1])).to.equal(result.charsOmitted);
+        });
+    });
+
+    describe('combineOutput', () => {
+        it('should combine stdout and stderr without truncation', () => {
+            const result = combineOutput('stdout content', 'stderr content');
+            expect(result).to.equal('stdout content\n--- stderr ---\nstderr content');
+        });
+
+        it('should return stdout when no stderr', () => {
+            const result = combineOutput('stdout only', '');
+            expect(result).to.equal('stdout only');
+        });
+
+        it('should return stderr when no stdout', () => {
+            const result = combineOutput('', 'stderr only');
+            expect(result).to.equal('stderr only');
+        });
+
+        it('should return empty string when both are empty', () => {
+            const result = combineOutput('', '');
+            expect(result).to.equal('');
+        });
+
+        it('should preserve all lines without truncation', () => {
+            const lineCount = HEAD_LINES + TAIL_LINES + GRACE_LINES + 100;
+            const lines = Array.from({ length: lineCount }, (_, i) => `line ${i + 1}`);
+            const stdout = lines.join('\n');
+            const result = combineOutput(stdout, '');
+            expect(result.split('\n').length).to.equal(lineCount);
+            expect(result).to.not.include('lines omitted');
+        });
+
+        it('should preserve long lines without truncation', () => {
+            const longLine = 'x'.repeat(MAX_LINE_LENGTH + 500);
+            const result = combineOutput(longLine, '');
+            expect(result).to.equal(longLine);
+            expect(result).to.not.include('chars omitted');
+        });
+    });
+
+    describe('truncateOutput', () => {
+        it('should return totalCharsOmitted: 0 when no truncation needed', () => {
+            const result = truncateOutput('short output');
+            expect(result.output).to.equal('short output');
+            expect(result.totalCharsOmitted).to.equal(0);
+        });
+
+        it('should return totalCharsOmitted: 0 for empty string', () => {
+            const result = truncateOutput('');
+            expect(result.output).to.equal('');
+            expect(result.totalCharsOmitted).to.equal(0);
+        });
+
+        it('should report correct omitted chars for line-count truncation', () => {
+            const lineCount = HEAD_LINES + TAIL_LINES + GRACE_LINES + 20;
+            const lines = Array.from({ length: lineCount }, (_, i) => `line ${i + 1}`);
+            const input = lines.join('\n');
+            const result = truncateOutput(input);
+            expect(result.output).to.include('lines omitted');
+            expect(result.totalCharsOmitted).to.be.greaterThan(0);
+        });
+
+        it('should report correct omitted chars for line-length truncation only', () => {
+            const longLine = 'x'.repeat(MAX_LINE_LENGTH + 200);
+            const result = truncateOutput(longLine);
+            expect(result.output).to.include('chars omitted');
+            expect(result.totalCharsOmitted).to.be.greaterThan(0);
+        });
+
+        it('should not truncate output within grace area', () => {
+            const lineCount = HEAD_LINES + TAIL_LINES + GRACE_LINES;
+            const lines = Array.from({ length: lineCount }, (_, i) => `line ${i + 1}`);
+            const input = lines.join('\n');
+            const result = truncateOutput(input);
+            expect(result.output).to.not.include('lines omitted');
+            expect(result.totalCharsOmitted).to.equal(0);
         });
     });
 });
