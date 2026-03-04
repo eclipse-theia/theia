@@ -136,26 +136,42 @@ export class StillumPortalBridge implements Disposable {
         return response.json();
     }
 
+    /**
+     * Save source code by delegating to the portal via postMessage (avoids CORS).
+     * Sends a save-request, waits for the portal's save-response.
+     */
     async saveSourceCode(artifactId: string, versionId: string, sourceCode: string): Promise<void> {
-        const url = `${this.registryApiBaseUrl}/tenants/${this.tenantId}/artifacts/${artifactId}/versions/${versionId}`;
-        const response = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${this.token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ sourceCode }),
+        const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+        return new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                window.removeEventListener('message', handler);
+                reject(new Error('Save timed out — no response from portal'));
+            }, 30_000);
+
+            const handler = (event: MessageEvent) => {
+                const msg = event.data;
+                if (msg?.type === 'stillum:save-response' && msg.requestId === requestId) {
+                    window.removeEventListener('message', handler);
+                    clearTimeout(timeout);
+                    if (msg.success) {
+                        resolve();
+                    } else {
+                        reject(new Error(msg.error ?? 'Save failed'));
+                    }
+                }
+            };
+
+            window.addEventListener('message', handler);
+
+            window.parent.postMessage({
+                type: 'stillum:save-request',
+                requestId,
+                artifactId,
+                versionId,
+                sourceCode,
+            }, '*');
         });
-        if (!response.ok) {
-            throw new Error(`Failed to save: ${response.status} ${response.statusText}`);
-        }
-        // Notify parent frame of successful save
-        window.parent.postMessage({
-            type: 'stillum:save-notification',
-            artifactId,
-            versionId,
-        }, '*');
     }
 
     notifyDirtyState(dirty: boolean): void {
