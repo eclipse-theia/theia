@@ -11,6 +11,8 @@ export interface StillumInitMessage {
     registryApiBaseUrl: string;
     openComponentId?: string;
     readOnly?: boolean;
+    /** Workspace data sent from the portal to avoid CORS issues */
+    workspace?: WorkspaceData;
 }
 
 export interface TokenRefreshMessage {
