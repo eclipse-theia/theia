@@ -65,13 +65,6 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     default: {
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
 
-                        // Session setting overrides global preference
-                        const sessionTimeout = request.session.settings?.commonSettings?.confirmationTimeout;
-                        const timeoutSeconds = sessionTimeout !== undefined && sessionTimeout > 0
-                            ? sessionTimeout
-                            : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
-                        toolCallContent.confirmationTimeout = timeoutSeconds;
-
                         // Check for auto-action hook
                         const autoAction = toolRequest.checkAutoAction?.(arg_string);
 
@@ -84,6 +77,12 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                             return toolCallContent.result;
                         } else {
                             // No auto-action — needs user confirmation
+                            // Session setting overrides global preference
+                            const sessionTimeout = request.session.settings?.commonSettings?.confirmationTimeout;
+                            const timeoutSeconds = sessionTimeout !== undefined && sessionTimeout > 0
+                                ? sessionTimeout
+                                : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
+                            toolCallContent.confirmationTimeout = timeoutSeconds;
                             toolCallContent.requestUserConfirmation();
                             confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
                         }

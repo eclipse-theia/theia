@@ -34,7 +34,7 @@ import {
 export class AgentDelegationTool implements ToolProvider {
     static ID = AGENT_DELEGATION_FUNCTION_ID;
 
-    readonly pendingDelegations = new Map<string, { agentName: string; prompt: string; invocation: ChatRequestInvocation }>();
+    protected readonly pendingDelegations = new Map<string, { agentName: string; prompt: string; invocation: ChatRequestInvocation }>();
 
     @inject(ChatAgentServiceFactory)
     protected readonly getChatAgentService: () => ChatAgentService;
@@ -180,6 +180,15 @@ export class AgentDelegationTool implements ToolProvider {
                         prompt,
                         invocation: response
                     });
+                    // Clean up when the delegated session is deleted
+                    const chatService = this.getChatService();
+                    const toolCallId = ctx.toolCallId;
+                    const sessionEventListener = chatService.onSessionEvent(event => {
+                        if (event.type === 'deleted' && event.sessionId === newSession.id) {
+                            this.pendingDelegations.delete(toolCallId);
+                            sessionEventListener.dispose();
+                        }
+                    });
                 }
 
                 try {
@@ -223,7 +232,6 @@ export class AgentDelegationTool implements ToolProvider {
      * Sets up monitoring of the ChangeSet in the delegated session and bubbles changes to the parent session.
      * @param delegatedSession The session created for the delegated agent
      * @param parentModel The parent session model that should receive the bubbled changes
-     * @param agentName The name of the agent for attribution purposes
      */
     private setupChangeSetBubbling(
         delegatedSession: ChatSession,
@@ -239,7 +247,6 @@ export class AgentDelegationTool implements ToolProvider {
      * Bubbles the ChangeSet from the delegated session to the parent session.
      * @param delegatedSession The session from which to bubble changes
      * @param parentModel The parent session model to receive the bubbled changes
-     * @param agentName The name of the agent for attribution purposes
      */
     private bubbleChangeSet(
         delegatedSession: ChatSession,

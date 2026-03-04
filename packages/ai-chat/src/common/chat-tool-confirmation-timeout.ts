@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
 import { ToolCallChatResponseContent } from './chat-model';
 
 /**
@@ -34,7 +35,11 @@ export async function raceConfirmationWithTimeout(
             const timeoutPromise = new Promise<boolean>(resolve => {
                 timeoutId = setTimeout(() => {
                     if (!content.finished) {
-                        content.deny(`Confirmation timed out after ${timeoutSeconds} seconds`);
+                        content.deny(nls.localize(
+                            'theia/ai/chat/toolConfirmationTimeout/denialReason',
+                            'Confirmation timed out after {0} seconds',
+                            `${timeoutSeconds}`
+                        ));
                     }
                     resolve(false);
                 }, timeoutSeconds * 1000);
