@@ -498,12 +498,13 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         quickPick.title = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/title', 'Select Location for Custom Agents File');
         quickPick.placeholder = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/placeholder', 'Choose where to create or open a custom agents file');
 
-        quickPick.items = locations.map(location => {
-            const description = location.exists
+        quickPick.items = locations.map(location => ({
+            label: location.uri.path.toString(),
+            description: location.exists
                 ? nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/openExistingFile', 'Open existing file')
-                : nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/createNewFile', 'Create new file');
-            return { label: location.uri.path.toString(), description, location };
-        });
+                : nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/createNewFile', 'Create new file'),
+            location
+        }));
 
         quickPick.onDidAccept(async () => {
             const selectedItem = quickPick.selectedItems[0] as unknown as { location: { uri: URI, exists: boolean } };
@@ -569,11 +570,14 @@ const AgentGlobalVariables = ({ variables: globalVariables, variableService }: A
     }
 
     const allVariables = variableService.getVariables();
-    const variableData = globalVariables.map(varId => ({
-        id: varId,
-        name: allVariables.find(v => v.id === varId)?.name || varId,
-        description: allVariables.find(v => v.id === varId)?.description || ''
-    }));
+    const variableData = globalVariables.map(varId => {
+        const variable = allVariables.find(v => v.id === varId);
+        return {
+            id: varId,
+            name: variable?.name || varId,
+            description: variable?.description || ''
+        };
+    });
 
     return (
         <table className="ai-templates-table">
@@ -809,7 +813,7 @@ const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettings
         try {
             const newSelections: GenericCapabilitySelections = {
                 ...savedSelections,
-                [capabilityType]: []
+                [capabilityType]: undefined
             };
             await aiSettingsService.updateAgentSettings(agentId, { genericCapabilitySelections: newSelections });
             onSettingsChange();
@@ -823,12 +827,12 @@ const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettings
     const capabilityTypes = CAPABILITY_TYPE_PROMPT_MAP.map(m => m.type);
 
     const getDisplayName = (type: keyof GenericCapabilitySelections): string => ({
-        skills: 'Skills',
-        mcpFunctions: 'MCP Functions',
-        functions: 'Functions',
-        promptFragments: 'Prompt Fragments',
-        agentDelegation: 'Agent Delegation',
-        variables: 'Variables'
+        skills: nls.localizeByDefault('Skills'),
+        mcpFunctions: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/mcpFunctions', 'MCP Functions'),
+        functions: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/functions', 'Functions'),
+        promptFragments: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/promptFragments', 'Prompt Fragments'),
+        agentDelegation: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/agentDelegation', 'Agent Delegation'),
+        variables: nls.localizeByDefault('Variables')
     } as const)[type];
 
     return (

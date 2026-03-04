@@ -1799,8 +1799,6 @@ div:last-child>.theia-ChatNode {
   font-size: var(--theia-ui-font-size1);
 }
 
-/* .theia-GenericCapabilities-TreeNodeChildren is used as a semantic container for tree children */
-
 /* Tree item (leaf) */
 .theia-GenericCapabilities-TreeItem {
   display: flex;

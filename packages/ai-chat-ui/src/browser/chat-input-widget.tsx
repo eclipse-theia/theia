@@ -334,29 +334,35 @@ export class AIChatInputWidget extends ReactWidget {
      * Checks if current capability overrides differ from saved settings.
      */
     protected hasCapabilityChangesFromSaved(): boolean {
-        const currentOverrides: Record<string, boolean> = {};
-        for (const [key, value] of this.userCapabilityOverrides) {
-            currentOverrides[key] = value;
-        }
-
         const saved = this.savedCapabilityOverrides ?? {};
-        const current = currentOverrides;
-
-        // Check if keys differ
         const savedKeys = Object.keys(saved);
-        const currentKeys = Object.keys(current);
+        const currentKeys = Array.from(this.userCapabilityOverrides.keys());
+
         if (savedKeys.length !== currentKeys.length) {
             return true;
         }
 
-        // Check if any values differ
-        for (const key of currentKeys) {
-            if (saved[key] !== current[key]) {
-                return true;
+        return !currentKeys.every(key => saved[key] === this.userCapabilityOverrides.get(key));
+    }
+
+    /**
+     * Compares two string arrays for equality (order-independent).
+     */
+    protected arraysEqualUnordered(a: string[], b: string[]): boolean {
+        if (a.length !== b.length) {
+            return false;
+        }
+        const setA = new Set(a);
+        const setB = new Set(b);
+        if (setA.size !== setB.size) {
+            return false;
+        }
+        for (const item of setB) {
+            if (!setA.has(item)) {
+                return false;
             }
         }
-
-        return false;
+        return true;
     }
 
     /**
@@ -366,26 +372,13 @@ export class AIChatInputWidget extends ReactWidget {
         const saved = this.savedGenericCapabilitySelections ?? {};
         const current = this.genericCapabilitySelections;
 
-        // Compare each array property
         const types: (keyof GenericCapabilitySelections)[] = ['skills', 'mcpFunctions', 'functions', 'promptFragments', 'agentDelegation', 'variables'];
         for (const type of types) {
             const savedArray = saved[type] ?? [];
             const currentArray = current[type] ?? [];
 
-            if (savedArray.length !== currentArray.length) {
+            if (!this.arraysEqualUnordered(savedArray, currentArray)) {
                 return true;
-            }
-
-            // Check if arrays have the same elements (order-independent)
-            const savedSet = new Set(savedArray);
-            const currentSet = new Set(currentArray);
-            if (savedSet.size !== currentSet.size) {
-                return true;
-            }
-            for (const item of currentSet) {
-                if (!savedSet.has(item)) {
-                    return true;
-                }
             }
         }
 
@@ -415,20 +408,24 @@ export class AIChatInputWidget extends ReactWidget {
             capabilityOverrides[key] = value;
         }
 
-        await this.aiSettingsService.updateAgentSettings(agentId, {
-            capabilityOverrides: Object.keys(capabilityOverrides).length > 0 ? capabilityOverrides : undefined,
-            genericCapabilitySelections: GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
-                ? this.genericCapabilitySelections
-                : undefined
-        });
+        try {
+            await this.aiSettingsService.updateAgentSettings(agentId, {
+                capabilityOverrides: Object.keys(capabilityOverrides).length > 0 ? capabilityOverrides : undefined,
+                genericCapabilitySelections: GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
+                    ? this.genericCapabilitySelections
+                    : undefined
+            });
 
-        // Update saved state to match current
-        this.savedCapabilityOverrides = Object.keys(capabilityOverrides).length > 0 ? { ...capabilityOverrides } : undefined;
-        this.savedGenericCapabilitySelections = GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
-            ? { ...this.genericCapabilitySelections }
-            : undefined;
+            // Update saved state to match current
+            this.savedCapabilityOverrides = Object.keys(capabilityOverrides).length > 0 ? { ...capabilityOverrides } : undefined;
+            this.savedGenericCapabilitySelections = GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
+                ? { ...this.genericCapabilitySelections }
+                : undefined;
 
-        this.update();
+            this.update();
+        } catch (error) {
+            console.error('Failed to save capability selections to settings:', error);
+        }
     }
 
     protected chatInputFocusKey: ContextKey<boolean>;
