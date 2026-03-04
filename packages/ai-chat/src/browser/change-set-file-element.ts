@@ -23,7 +23,6 @@ import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import * as monaco from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
 import { TrimTrailingWhitespaceCommand } from '@theia/monaco-editor-core/esm/vs/editor/common/commands/trimTrailingWhitespaceCommand';
 import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
 import { CommandExecutor } from '@theia/monaco-editor-core/esm/vs/editor/common/cursor/cursor';
@@ -33,6 +32,7 @@ import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { insertFinalNewline } from '@theia/monaco/lib/browser/monaco-utilities';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { ChangeSetElement } from '../common';
 import { SerializableChangeSetElement } from '../common/chat-model-serialization';
 import { createChangeSetFileUri } from './change-set-file-resource';
@@ -100,6 +100,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     @inject(MonacoCodeActionService)
     protected readonly codeActionService: MonacoCodeActionService;
+
+    @inject(MonacoWorkspace)
+    protected readonly monacoWorkspace: MonacoWorkspace;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
@@ -314,7 +317,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     /**
      * Applies changes using Monaco utilities, including loading the model for the base file URI,
-     * setting the value to the intended state, and running code actions on save.
+     * computing minimal edits, and running code actions on save.
      */
     protected async applyChangesWithMonaco(contents?: string): Promise<void> {
         let modelReference: IReference<MonacoEditorModel> | undefined;
@@ -325,8 +328,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
             const targetContent = contents ?? this.targetState;
             const currentContent = model.textEditorModel.getValue();
             if (currentContent !== targetContent) {
-                // Compute minimal edits using Monaco's diff service
-                // Use Monaco's IEditorWorkerService directly for minimal edits
+                // Use Monaco's IEditorWorkerService to compute minimal edits
                 const { IEditorWorkerService } = await import('@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker');
                 const workerService = StandaloneServices.get(IEditorWorkerService);
                 const minimalEdits = await workerService.computeMoreMinimalEdits(
@@ -334,17 +336,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
                     [{ range: model.textEditorModel.getFullModelRange(), text: targetContent }]
                 );
                 if (minimalEdits && minimalEdits.length > 0) {
-                    model.textEditorModel.pushStackElement();
-                    model.textEditorModel.pushEditOperations(
-                        null,
-                        minimalEdits.map((edit: { range: monaco.IRange, text: string }) => ({
-                            range: edit.range,
-                            text: edit.text,
-                            forceMoveMarkers: false
-                        })) as monaco.editor.IIdentifiedSingleEditOperation[],
-                        () => null
-                    );
-                    model.textEditorModel.pushStackElement();
+                    // Use MonacoWorkspace.applyBackgroundEdit to preserve undo stack
+                    await this.monacoWorkspace.applyBackgroundEdit(model, minimalEdits);
                 }
             }
             const languageId = model.languageId;
