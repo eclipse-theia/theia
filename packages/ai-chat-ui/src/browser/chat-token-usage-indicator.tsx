@@ -50,17 +50,17 @@ export function computeSessionTokenUsage(chatModel?: ChatModel): number {
     if (!chatModel) {
         return 0;
     }
-    let total = 0;
-    for (const request of chatModel.getRequests()) {
-        const usage: ResponseTokenUsage | undefined = request.response.tokenUsage;
+    const requests = chatModel.getRequests();
+    for (let i = requests.length - 1; i >= 0; i--) {
+        const usage: ResponseTokenUsage | undefined = requests[i].response.tokenUsage;
         if (usage) {
-            total += usage.inputTokens
+            return usage.inputTokens
                 + usage.outputTokens
                 + (usage.cacheCreationInputTokens ?? 0)
                 + (usage.cacheReadInputTokens ?? 0);
         }
     }
-    return total;
+    return 0;
 }
 
 export interface ChatTokenUsageIndicatorProps {

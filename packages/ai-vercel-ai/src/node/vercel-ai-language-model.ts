@@ -43,6 +43,17 @@ import {
 } from 'ai';
 import { VercelAiLanguageModelFactory, VercelAiProviderConfig } from './vercel-ai-language-model-factory';
 
+type StreamPart = ToolResultPart | {
+    type: string;
+    textDelta?: string;
+    toolCallId?: string;
+    toolName?: string;
+    args?: object | string;
+    argsTextDelta?: string;
+    usage?: { promptTokens: number; completionTokens: number };
+    signature?: string;
+};
+
 interface VercelCancellationToken extends Disposable {
     signal: AbortSignal;
     cancellationToken: CancellationToken;
@@ -65,6 +76,10 @@ export class VercelAiStreamTransformer {
         protected readonly fullStream: VercelAiStream,
         protected readonly context: StreamContext
     ) { }
+
+    private isToolResultPart(part: StreamPart): part is ToolResultPart {
+        return part.type === 'tool-result';
+    }
 
     async *transform(): AsyncGenerator<LanguageModelStreamResponsePart> {
         this.toolCallsMap.clear();
@@ -113,11 +128,12 @@ export class VercelAiStreamTransformer {
                         break;
                     }
 
-                    default:
-                        if ((part.type as string) === 'tool-result') {
-                            toolCallUpdated = this.processToolResult(part as unknown as ToolResultPart);
+                    default: {
+                        if (this.isToolResultPart(part)) {
+                            toolCallUpdated = this.processToolResult(part);
                         }
                         break;
+                    }
                 }
 
                 if (toolCallUpdated && this.toolCallsMap.size > 0) {

@@ -566,6 +566,9 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
         const parsedCommand = await this.parseTextResponse(responseAsText);
         const content = this.createResponseContent(parsedCommand, request);
         request.response.response.addContent(content);
+        if ('usage' in languageModelResponse && languageModelResponse.usage) {
+            request.response.setTokenUsage(this.mapUsageResponsePart(languageModelResponse.usage));
+        }
     }
 
     protected abstract parseTextResponse(text: string): Promise<T>;

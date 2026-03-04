@@ -146,12 +146,20 @@ describe('ChatTokenUsageIndicator', () => {
             expect(computeSessionTokenUsage(model)).to.equal(1500);
         });
 
-        it('should accumulate tokens across multiple requests', () => {
+        it('should return tokens from the latest request with usage', () => {
             const model = createMockChatModel([
                 createMockRequest({ inputTokens: 1000, outputTokens: 500 }),
                 createMockRequest({ inputTokens: 2000, outputTokens: 800 })
             ]);
-            expect(computeSessionTokenUsage(model)).to.equal(4300);
+            expect(computeSessionTokenUsage(model)).to.equal(2800);
+        });
+
+        it('should use the last request with usage if the last request has no tokenUsage', () => {
+            const model = createMockChatModel([
+                createMockRequest({ inputTokens: 1000, outputTokens: 500 }),
+                createMockRequest(undefined)
+            ]);
+            expect(computeSessionTokenUsage(model)).to.equal(1500);
         });
 
         it('should include cache creation and cache read tokens', () => {
@@ -172,7 +180,7 @@ describe('ChatTokenUsageIndicator', () => {
                 createMockRequest(undefined),
                 createMockRequest({ inputTokens: 3000, outputTokens: 1000 })
             ]);
-            expect(computeSessionTokenUsage(model)).to.equal(5500);
+            expect(computeSessionTokenUsage(model)).to.equal(4000);
         });
     });
 
@@ -207,7 +215,7 @@ describe('ChatTokenUsageIndicator', () => {
             expect(label?.textContent).to.contain('125.0k');
         });
 
-        it('should accumulate tokens across multiple requests', () => {
+        it('should display tokens from the latest request with usage', () => {
             const model = createMockChatModel([
                 createMockRequest({ inputTokens: 10000, outputTokens: 5000 }),
                 createMockRequest({ inputTokens: 20000, outputTokens: 15000 })
@@ -220,8 +228,8 @@ describe('ChatTokenUsageIndicator', () => {
                 );
             });
             const label = container.querySelector('.token-usage-label');
-            // 10000 + 5000 + 20000 + 15000 = 50000 => '50.0k'
-            expect(label?.textContent).to.contain('50.0k');
+            // latest request: 20000 + 15000 = 35000 => '35.0k'
+            expect(label?.textContent).to.contain('35.0k');
         });
 
         it('should apply correct color class based on token total', () => {
