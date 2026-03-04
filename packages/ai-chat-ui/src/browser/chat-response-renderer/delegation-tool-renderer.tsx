@@ -71,8 +71,6 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
     }
 }
 
-// --- DelegatedChat component (ported from delegation-response-renderer.tsx) ---
-
 interface DelegatedChatProps {
     invocation?: ChatRequestInvocation;
     agentId: string;
