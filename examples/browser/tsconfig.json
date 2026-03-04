@@ -195,6 +195,9 @@
       "path": "../../packages/secondary-window"
     },
     {
+      "path": "../../packages/stillum-registry-fs"
+    },
+    {
       "path": "../../packages/task"
     },
     {

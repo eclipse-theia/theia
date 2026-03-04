@@ -22,6 +22,7 @@
   },
   "theiaPluginsDir": "../../plugins",
   "dependencies": {
+    "@stillum/registry-fs": "1.0.0",
     "@theia/ai-anthropic": "1.69.0",
     "@theia/ai-chat": "1.69.0",
     "@theia/ai-chat-ui": "1.69.0",
