@@ -17,6 +17,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ToolCallChatResponseContent, ToolCallChatResponseContentImpl } from './chat-model';
+import { raceConfirmationWithTimeout } from './chat-tool-confirmation-timeout';
 
 describe('ToolCallChatResponseContentImpl', () => {
     let consoleWarnStub: sinon.SinonStub;
@@ -283,35 +284,9 @@ describe('Tool Confirmation Timeout', () => {
         return new ToolCallChatResponseContentImpl(id, name, '{}');
     }
 
-    async function runTimeoutPattern(
-        toolCallContent: ToolCallChatResponseContentImpl,
-        timeoutSeconds: number
-    ): Promise<boolean> {
-        if (timeoutSeconds > 0) {
-            let timeoutId: ReturnType<typeof setTimeout> | undefined;
-            try {
-                const timeoutPromise = new Promise<boolean>(resolve => {
-                    timeoutId = setTimeout(() => {
-                        if (!toolCallContent.finished) {
-                            toolCallContent.deny(`Confirmation timed out after ${timeoutSeconds} seconds`);
-                        }
-                        resolve(false);
-                    }, timeoutSeconds * 1000);
-                });
-                return await Promise.race([toolCallContent.confirmed, timeoutPromise]);
-            } finally {
-                if (timeoutId !== undefined) {
-                    clearTimeout(timeoutId);
-                }
-            }
-        } else {
-            return toolCallContent.confirmed;
-        }
-    }
-
     it('should auto-deny when timeout expires', async () => {
         const content = createToolCallContent();
-        const resultPromise = runTimeoutPattern(content, 30);
+        const resultPromise = raceConfirmationWithTimeout(content, 30);
 
         await clock.tickAsync(30 * 1000);
 
@@ -323,7 +298,7 @@ describe('Tool Confirmation Timeout', () => {
 
     it('should return true when user confirms before timeout', async () => {
         const content = createToolCallContent();
-        const resultPromise = runTimeoutPattern(content, 30);
+        const resultPromise = raceConfirmationWithTimeout(content, 30);
 
         content.confirm();
         await clock.tickAsync(0);
@@ -334,7 +309,7 @@ describe('Tool Confirmation Timeout', () => {
 
     it('should return false when user denies before timeout with reason preserved', async () => {
         const content = createToolCallContent();
-        const resultPromise = runTimeoutPattern(content, 30);
+        const resultPromise = raceConfirmationWithTimeout(content, 30);
 
         content.deny('not allowed');
         await clock.tickAsync(0);
@@ -346,7 +321,7 @@ describe('Tool Confirmation Timeout', () => {
 
     it('should clean up timer when user confirms before timeout', async () => {
         const content = createToolCallContent();
-        const resultPromise = runTimeoutPattern(content, 30);
+        const resultPromise = raceConfirmationWithTimeout(content, 30);
 
         content.confirm();
         await clock.tickAsync(0);
@@ -362,7 +337,7 @@ describe('Tool Confirmation Timeout', () => {
 
     it('should clean up timer when user denies before timeout', async () => {
         const content = createToolCallContent();
-        const resultPromise = runTimeoutPattern(content, 30);
+        const resultPromise = raceConfirmationWithTimeout(content, 30);
 
         content.deny('user denied');
         await clock.tickAsync(0);
@@ -381,7 +356,7 @@ describe('Tool Confirmation Timeout', () => {
         const content = createToolCallContent();
 
         // Start the timeout pattern (schedules the setTimeout)
-        const resultPromise = runTimeoutPattern(content, 30);
+        const resultPromise = raceConfirmationWithTimeout(content, 30);
 
         // Tool completes before the timeout (marks finished=true but does NOT resolve confirmed)
         content.complete('some result');
@@ -401,7 +376,7 @@ describe('Tool Confirmation Timeout', () => {
 
     it('should await confirmed directly when timeout is 0', async () => {
         const content = createToolCallContent();
-        const resultPromise = runTimeoutPattern(content, 0);
+        const resultPromise = raceConfirmationWithTimeout(content, 0);
 
         content.confirm();
         await clock.tickAsync(0);

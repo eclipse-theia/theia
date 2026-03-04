@@ -18,6 +18,7 @@ import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
+import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
 import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
@@ -74,36 +75,17 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                         // Check for auto-action hook
                         const autoAction = toolRequest.checkAutoAction?.(arg_string);
 
+                        let confirmed: boolean;
                         if (autoAction?.action === 'allow') {
                             toolCallContent.confirm();
+                            confirmed = await toolCallContent.confirmed;
                         } else if (autoAction?.action === 'deny') {
                             toolCallContent.deny(autoAction.reason);
                             return toolCallContent.result;
                         } else {
                             // No auto-action — needs user confirmation
                             toolCallContent.requestUserConfirmation();
-                        }
-
-                        let confirmed: boolean;
-                        if (timeoutSeconds > 0) {
-                            let timeoutId: ReturnType<typeof setTimeout> | undefined;
-                            try {
-                                const timeoutPromise = new Promise<boolean>(resolve => {
-                                    timeoutId = setTimeout(() => {
-                                        if (!toolCallContent.finished) {
-                                            toolCallContent.deny(`Confirmation timed out after ${timeoutSeconds} seconds`);
-                                        }
-                                        resolve(false);
-                                    }, timeoutSeconds * 1000);
-                                });
-                                confirmed = await Promise.race([toolCallContent.confirmed, timeoutPromise]);
-                            } finally {
-                                if (timeoutId !== undefined) {
-                                    clearTimeout(timeoutId);
-                                }
-                            }
-                        } else {
-                            confirmed = await toolCallContent.confirmed;
+                            confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
                         }
 
                         if (confirmed) {

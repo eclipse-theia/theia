@@ -995,6 +995,11 @@ div:last-child>.theia-ChatNode {
   gap: var(--theia-ui-padding);
 }
 
+.theia-tool-confirmation-countdown {
+  font-size: var(--theia-ui-font-size0);
+  opacity: 0.8;
+}
+
 .theia-tool-confirmation-status {
   margin: 10px 0;
   padding: 12px;
