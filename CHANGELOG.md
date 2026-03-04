@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.70.0 - TBD
+
+<a name="breaking_changes_1.70.0">[Breaking Changes:](#breaking_changes_1.70.0)</a>
+
+- [core] ended support for Node.js 20 [#17079](https://github.com/eclipse-theia/theia/pull/17079) - Contributed on behalf of STMicroelectronics
+
 ## 1.69.0 - 2/26/2026
 
 - [ai] declared agent-specific variable in claudeCode agent and improved agent specific variable status UX [#16967](https://github.com/eclipse-theia/theia/pull/16967)
