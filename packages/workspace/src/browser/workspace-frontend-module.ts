@@ -59,6 +59,8 @@ import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
 import { CanonicalUriService } from './canonical-uri-service';
 import { WorkspaceMetadataStorageService, WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './metadata-storage';
 import { WorkspaceMetadataStoreImpl } from './metadata-storage/workspace-metadata-store';
+import { WorkspaceSearchFilterService, WorkspaceSearchFilterProvider } from './workspace-search-filter-service';
+import { WorkspaceFilesExcludeFilterProvider } from './workspace-files-exclude-filter-provider';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -127,4 +129,9 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 
     rebind(WindowTitleUpdater).to(WorkspaceWindowTitleUpdater).inSingletonScope();
+
+    bindRootContributionProvider(bind, WorkspaceSearchFilterProvider);
+    bind(WorkspaceSearchFilterService).toSelf().inSingletonScope();
+    bind(WorkspaceFilesExcludeFilterProvider).toSelf().inSingletonScope();
+    bind(WorkspaceSearchFilterProvider).toService(WorkspaceFilesExcludeFilterProvider);
 });
