@@ -6,12 +6,14 @@
     "@theia/core": "1.69.0",
     "@theia/editor": "1.69.0",
     "@theia/filesystem": "1.69.0",
+    "@theia/workspace": "1.69.0",
     "tslib": "^2.6.2"
   },
   "main": "lib/browser",
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/stillum-registry-fs-frontend-module"
+      "frontend": "lib/browser/stillum-registry-fs-frontend-module",
+      "backend": "lib/node/stillum-registry-fs-backend-module"
     }
   ],
   "keywords": [

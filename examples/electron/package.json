@@ -13,7 +13,7 @@
         "reloadOnReconnect": true,
         "electron": {
           "splashScreenOptions": {
-            "content": "resources/theia-logo.svg",
+            "content": "resources/stillum-logo.svg",
             "height": 90
           }
         }
