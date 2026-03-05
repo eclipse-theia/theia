@@ -24,6 +24,8 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     private _currentCommand: string = '';
     get currentCommand(): string { return this._currentCommand; }
 
+    private _maxCapacity: number;
+
     private readonly toDispose = new DisposableCollection();
     private readonly onCommandStartEmitter = new Emitter<void>();
     private readonly onPromptShownEmitter = new Emitter<void>();
@@ -33,9 +35,10 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     enableCommandHistory: boolean = false;
     enableCommandSeparator: boolean = false;
 
-    constructor() {
+    constructor(maxCapacity: number = 200) {
         this.toDispose.push(this.onCommandStartEmitter);
         this.toDispose.push(this.onPromptShownEmitter);
+        this._maxCapacity = maxCapacity;
     }
 
     startCommand(command: string): void {
@@ -45,6 +48,9 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
 
     finishCommand(block: TerminalBlock): void {
         this._commandHistory.push(block);
+        if (this._commandHistory.length > this._maxCapacity) {
+            this._commandHistory.shift();
+        }
         this._currentCommand = '';
         this.onPromptShownEmitter.fire();
     }
@@ -57,7 +63,6 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
         this._commandHistory = [];
         this.toDispose.dispose();
     }
-
 
     /**
      * Decodes a hex-encoded string to UTF-8 using browser-compatible APIs.
