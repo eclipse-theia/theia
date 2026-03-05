@@ -101,7 +101,3 @@ __theia_prompt_finished() {
 autoload -Uz add-zsh-hook
 add-zsh-hook preexec __theia_command_preexec
 add-zsh-hook precmd __theia_command_precmd
-
-if [[ -n "$THEIA_USER_ZSHRC" && -f "$THEIA_USER_ZSHRC" ]]; then
-  source "$THEIA_USER_ZSHRC"
-fi
