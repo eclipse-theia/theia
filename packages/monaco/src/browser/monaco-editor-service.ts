@@ -131,7 +131,7 @@ export class MonacoEditorService extends StandaloneCodeEditorService {
         const mode = this.getEditorOpenMode(input);
         const widgetOptions = this.getWidgetOptions(source, sideBySide);
         const selection = this.getSelection(input);
-        const preview = !!this.preferencesService.get<boolean>(MonacoEditorService.ENABLE_PREVIEW_PREFERENCE, false);
+        const preview = !!this.preferencesService.get(MonacoEditorService.ENABLE_PREVIEW_PREFERENCE, false);
         return { mode, widgetOptions, preview, selection };
     }
 

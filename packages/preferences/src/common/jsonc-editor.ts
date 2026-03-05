@@ -42,8 +42,8 @@ export class JSONCEditor {
                 content: ''
             }];
         }
-        const tabSize = this.preferenceService.get('[json].editor.tabSize', 4);
-        const insertSpaces = this.preferenceService.get('[json].editor.insertSpaces', true);
+        const tabSize = this.preferenceService.get('editor.tabSize', { fallback: 4, override: 'json' });
+        const insertSpaces = this.preferenceService.get('editor.insertSpaces', { fallback: true, override: 'json' });
 
         const jsonCOptions = {
             formattingOptions: {

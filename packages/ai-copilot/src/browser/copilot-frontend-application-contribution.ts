@@ -91,7 +91,7 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
                     // until the next sign-in. Let the user know instead of silently ignoring it.
                     this.notifyEnterpriseUrlChanged();
                 } else if (event.preferenceName === COPILOT_MODEL_OVERRIDES_PREF && this.isCopilotEnabled()) {
-                    const newModels = this.preferenceService.get<string[]>(COPILOT_MODEL_OVERRIDES_PREF, []);
+                    const newModels = this.preferenceService.get<string>(COPILOT_MODEL_OVERRIDES_PREF, []);
                     if (newModels.length > 0) {
                         this.useAutoDiscovery = false;
                         this.handleModelChanges(newModels);
@@ -123,7 +123,7 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
     }
 
     protected isCopilotEnabled(): boolean {
-        return this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true);
+        return this.preferenceService.get(COPILOT_ENABLED_PREF, true);
     }
 
     /**
@@ -195,7 +195,7 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
             });
             return;
         }
-        const configuredModels = this.preferenceService.get<string[]>(COPILOT_MODEL_OVERRIDES_PREF, []);
+        const configuredModels = this.preferenceService.get<string>(COPILOT_MODEL_OVERRIDES_PREF, []);
         if (configuredModels.length > 0) {
             this.discoveryStatus.updateStatus(COPILOT_PROVIDER_ID, {
                 state: 'overridden',
@@ -294,7 +294,7 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
             this.discoverAndRegisterModels();
             return;
         }
-        const models = this.preferenceService.get<string[]>(COPILOT_MODEL_OVERRIDES_PREF, []);
+        const models = this.preferenceService.get<string>(COPILOT_MODEL_OVERRIDES_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map((modelId: string) => this.createCopilotModelDescription(modelId)));
     }
 
