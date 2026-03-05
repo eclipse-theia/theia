@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as path from 'path';
 import { URI } from './types-impl';
 import { IconUrl, PluginPackage } from '../common/plugin-protocol';
 import { Plugin } from '../common/plugin-api-rpc';
+import { resolve, relative, normalize } from '../common/paths-util';
 
 export type PluginIconPath = string | URI | {
     light: string | URI,
@@ -41,13 +41,14 @@ export namespace PluginIconPath {
     }
     export function asString(arg: string | URI, plugin: Plugin): string {
         arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
+
         if (typeof arg !== 'string') {
             return arg.toString(true);
         }
-        const { packagePath } = plugin.rawModel;
-        const absolutePath = path.isAbsolute(arg) ? arg : path.join(packagePath, arg);
-        const normalizedPath = path.normalize(absolutePath);
-        const relativePath = path.relative(packagePath, normalizedPath);
-        return PluginPackage.toPluginUrl(plugin.rawModel, relativePath);
+        const packageRoot = (URI.parse(plugin.model.packageUri).path || plugin.model.packageUri).replace(/\\/g, '/');
+        const absolutePath = normalize(arg.startsWith('/') ? arg : resolve(packageRoot, arg));
+        const relativePath = relative(packageRoot, absolutePath);
+
+        return PluginPackage.toPluginUrl(plugin.model, relativePath);
     }
 }

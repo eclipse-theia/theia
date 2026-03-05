@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 Maksim Kachurin.
+// Copyright (C) 2026 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/**
- * Base path where hosted plugin resources (list.json, plugin assets) are served
- * from the app origin
- */
-export const PLUGINS_BASE_PATH = 'hostedPlugin';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { IShellTerminalServer, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
+import { BrowserOnlyShellTerminalServer } from './browser-only-shell-terminal-server';
+
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    rebind(ShellTerminalServerProxy).to(BrowserOnlyShellTerminalServer).inSingletonScope();
+    rebind(IShellTerminalServer).toService(ShellTerminalServerProxy);
+});

@@ -23,7 +23,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { readResourceContent } from '@theia/filesystem/lib/browser/read-resource';
+import { readResourceContent } from '@theia/core/lib/browser/resource-content-reader';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
@@ -38,7 +38,9 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     protected readonly fileService: FileService;
 
     protected readonly snippets = new Map<string, Snippet[]>();
-    protected readonly registeredSnippets: Array<{ id: symbol; uri: URI; options: SnippetLoadOptions; dispose: DisposableCollection; loadPromise?: Promise<void> }> = [];
+
+    /** Snippet registrations by id. Loaded lazily on first completion for each language (see loadSnippets). */
+    protected readonly registeredSnippets = new Map<symbol, RegisteredSnippetEntry>();
 
     async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.CompletionContext): Promise<monaco.languages.CompletionList | undefined> {
@@ -109,23 +111,31 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
 
+    /** Loads snippet URIs that match the given language scope. Only triggers load when completion is requested for that language. */
     protected async loadSnippets(scope: string): Promise<void> {
-        const matchesScope = (e: { options: SnippetLoadOptions }) => this.optionsMatchesScope(e.options, scope) || this.optionsMatchesScope(e.options, '*');
-        for (const entry of this.registeredSnippets) {
-            if (matchesScope(entry) && !entry.loadPromise) {
+        const entries = this.getEntriesForScope(scope);
+        for (const entry of entries) {
+            if (!entry.loadPromise) {
                 entry.loadPromise = this.loadURI(entry.uri, entry.options, entry.dispose);
             }
         }
-        const toWait = this.registeredSnippets.filter(matchesScope).map(e => e.loadPromise).filter((p): p is Promise<void> => p !== undefined);
+        const toWait = entries
+            .map(e => e.loadPromise)
+            .filter((p): p is Promise<void> => p !== undefined);
         if (toWait.length) {
             await Promise.all(toWait);
         }
     }
 
+    private getEntriesForScope(scope: string): RegisteredSnippetEntry[] {
+        return [...this.registeredSnippets.values()]
+            .filter(e => this.optionsMatchesScope(e.options, scope) || this.optionsMatchesScope(e.options, '*'));
+    }
+
     private optionsMatchesScope(options: SnippetLoadOptions, scope: string): boolean {
         const lang = options.language;
-        if (lang === undefined || lang === '*') {return true; }
-        if (Array.isArray(lang)) {return lang.includes(scope); }
+        if (lang === undefined || lang === '*') { return true; }
+        if (Array.isArray(lang)) { return lang.includes(scope); }
         return lang === scope;
     }
 
@@ -133,12 +143,12 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         const id = Symbol();
         const dispose = new DisposableCollection();
         const normalizedUri = (typeof uri === 'string' ? new URI(uri) : uri).normalizePath();
-        this.registeredSnippets.push({ id, uri: normalizedUri, options, dispose });
+        this.registeredSnippets.set(id, { uri: normalizedUri, options, dispose });
         return Disposable.create(() => {
-            const idx = this.registeredSnippets.findIndex(e => e.id === id);
-            if (idx !== -1) {
-                const removed = this.registeredSnippets.splice(idx, 1)[0];
-                removed.dispose.dispose();
+            const entry = this.registeredSnippets.get(id);
+            if (entry) {
+                this.registeredSnippets.delete(id);
+                entry.dispose.dispose();
             }
         });
     }
@@ -244,6 +254,13 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
 export interface SnippetLoadOptions {
     language?: string | string[]
     source: string
+}
+
+interface RegisteredSnippetEntry {
+    uri: URI;
+    options: SnippetLoadOptions;
+    dispose: DisposableCollection;
+    loadPromise?: Promise<void>;
 }
 
 export interface JsonSerializedSnippets {

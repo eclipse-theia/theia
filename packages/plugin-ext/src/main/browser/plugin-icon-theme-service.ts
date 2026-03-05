@@ -35,8 +35,8 @@ import { FileStatNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { PLUGINS_BASE_PATH, PLUGIN_RESOURCE_SCHEME } from '@theia/core/lib/common/static-asset-paths';
-import { readResourceContent } from '@theia/filesystem/lib/browser/read-resource';
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
+import { readResourceContent } from '@theia/core/lib/browser/resource-content-reader';
 import { FileStat, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -210,23 +210,19 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             this.icons.clear();
         }));
 
-        const uri = new URI(this.uri);
-        const content = await readResourceContent(uri, this.fileService);
+        const content = await readResourceContent(this.uri, this.fileService);
         const json: RecursivePartial<PluginIconThemeDocument> = jsoncparser.parse(content, undefined, { disallowComments: false });
         this.hidesExplorerArrows = !!json.hidesExplorerArrows;
 
-        if (!this.uri.startsWith(PLUGIN_RESOURCE_SCHEME + ':')) {
-            const toUnwatch = this.fileService.watch(uri);
-            if (this.toUnload.disposed) {
-                toUnwatch.dispose();
-            } else {
-                this.toUnload.push(toUnwatch);
-                this.toUnload.push(this.fileService.onDidFilesChange(e => {
-                    if (e.contains(uri, FileChangeType.ADDED) || e.contains(uri, FileChangeType.UPDATED)) {
-                        this.reload();
-                    }
-                }));
-            }
+        if (!this.uri.startsWith(PLUGINS_BASE_PATH + '/') && !this.toUnload.disposed) {
+            const uri = new URI(this.uri);
+
+            this.toUnload.push(this.fileService.watch(uri));
+            this.toUnload.push(this.fileService.onDidFilesChange(e => {
+                if (e.contains(uri, FileChangeType.ADDED) || e.contains(uri, FileChangeType.UPDATED)) {
+                    this.reload();
+                }
+            }));
         }
 
         const iconDefinitions = json.iconDefinitions;

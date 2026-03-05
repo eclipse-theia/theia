@@ -75,7 +75,9 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * Indicates whether the "ai-core" extension is available.
      */
-    protected aiIsIncluded: boolean;
+    protected aiIsIncluded = false;
+
+    protected dataLoaded = false;
 
     /**
      * Collection of useful links to display for end users.
@@ -115,15 +117,13 @@ export class GettingStartedWidget extends ReactWidget {
 
     @postConstruct()
     protected init(): void {
-        this.doInit();
-    }
-
-    protected async doInit(): Promise<void> {
         this.id = GettingStartedWidget.ID;
         this.title.label = GettingStartedWidget.LABEL;
         this.title.caption = GettingStartedWidget.LABEL;
         this.title.closable = true;
+    }
 
+    protected async doInit(): Promise<void> {
         this.applicationInfo = await this.appServer.getApplicationInfo();
         this.recentWorkspaces = await this.workspaceService.recentWorkspaces();
         this.home = new URI(await this.environments.getHomeDirUri()).path.toString();
@@ -131,6 +131,14 @@ export class GettingStartedWidget extends ReactWidget {
         const extensions = await this.appServer.getExtensionsInfos();
         this.aiIsIncluded = extensions.find(ext => ext.name === '@theia/ai-core') !== undefined;
         this.update();
+    }
+
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        if (!this.dataLoaded) {
+            this.dataLoaded = true;
+            this.doInit();
+        }
     }
 
     protected override onActivateRequest(msg: Message): void {

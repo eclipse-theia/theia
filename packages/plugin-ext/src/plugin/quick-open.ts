@@ -26,7 +26,7 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { InputBoxValidationSeverity, QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
 import { Severity } from '@theia/core/lib/common/severity';
 import { URI } from '@theia/core/shared/vscode-uri';
-import * as path from 'path';
+import { resolve, relative, normalize } from '../common/paths-util';
 import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
@@ -452,14 +452,14 @@ export class QuickInputExt implements theia.QuickInput {
         URI | { light: string | URI; dark: string | URI } | ThemeIcon {
         const toUrl = (arg: string | URI) => {
             arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
+
             if (typeof arg !== 'string') {
                 return arg.toString(true);
             }
-            const { packagePath } = this.plugin.rawModel;
-            const absolutePath = path.isAbsolute(arg) ? arg : path.join(packagePath, arg);
-            const normalizedPath = path.normalize(absolutePath);
-            const relativePath = path.relative(packagePath, normalizedPath);
-            return PluginPackage.toPluginUrl(this.plugin.rawModel, relativePath);
+            const packageRoot = (URI.parse(this.plugin.model.packageUri).path || this.plugin.model.packageUri).replace(/\\/g, '/');
+            const absolutePath = normalize(arg.startsWith('/') ? arg : resolve(packageRoot, arg));
+            const relativePath = relative(packageRoot, absolutePath);
+            return PluginPackage.toPluginUrl(this.plugin.model, relativePath);
         };
         if (ThemeIcon.is(iconPath)) {
             return iconPath;

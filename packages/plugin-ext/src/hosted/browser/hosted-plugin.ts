@@ -24,7 +24,7 @@
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
-import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
+import { getPluginId, DeployedPlugin, HostedPluginServer, type PluginHost } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -68,7 +68,7 @@ import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 import { NotebookTypeRegistry, NotebookService, NotebookRendererMessagingService } from '@theia/notebook/lib/browser';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import {
-    AbstractHostedPluginSupport, PluginContributions, PluginHost,
+    AbstractHostedPluginSupport, PluginContributions,
     ALL_ACTIVATION_EVENT, isConnectionScopedBackendPlugin
 } from '../common/hosted-plugin';
 import { isRemote } from '@theia/core/lib/browser/browser';
@@ -283,8 +283,9 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         this.activateByWorkspaceContains(manager, plugin);
     }
 
-    protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
+    protected async obtainManager(host: PluginHost, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
         let manager = this.managers.get(host);
+
         if (!manager) {
             const pluginId = getPluginId(hostContributions[0].plugin.metadata.model);
             const rpc = this.initRpc(host, pluginId);
@@ -306,6 +307,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                 this.terminalService.getDefaultShell(),
                 this.jsonSchemaStore.schemas
             ]);
+
             if (toDisconnect.disposed) {
                 return undefined;
             }
@@ -350,6 +352,20 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
             this.activationEvents.forEach(event => manager!.$activateByEvent(event));
         }
         return manager;
+    }
+
+    protected override shouldStartPluginsForHost(host: PluginHost): boolean {
+        // do not start frontend plugins for electron browser
+        if (host === 'frontend') {
+            return !environment.electron.is();
+        }
+
+        // do not start backend plugins for browser-only
+        if (environment.browserOnly.is()) {
+            return false;
+        }
+
+        return true;
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
