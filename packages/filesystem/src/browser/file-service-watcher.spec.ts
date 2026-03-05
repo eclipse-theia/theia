@@ -20,10 +20,10 @@ let disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
 
-import { Disposable, URI } from '@theia/core';
+import { Disposable, Emitter, URI } from '@theia/core';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { FileSystemProvider, FileSystemProviderCapabilities, WatchOptions } from '../common/files';
+import { FileChange, FileChangeType, FileSystemProvider, FileSystemProviderCapabilities, WatchOptions } from '../common/files';
 import { FileService } from './file-service';
 
 disableJSDOM();
@@ -551,5 +551,176 @@ describe('FileService watcher deduplication', () => {
             }
             expect(liveWatcherCount(mockProvider)).to.equal(1);
         });
+    });
+});
+
+/**
+ * Creates a mock provider with a real onDidChangeFile emitter, suitable for
+ * registering with FileService.registerProvider and testing event delivery.
+ */
+function createEventMockProvider(caseSensitive: boolean = true): FileSystemProvider & {
+    watchers: MockWatcher[];
+    fileChangeEmitter: Emitter<readonly FileChange[]>;
+    /** Simulate a file change event delivered by active OS watchers. */
+    simulateChange(uri: URI, type?: FileChangeType): void;
+} {
+    const watchers: MockWatcher[] = [];
+    const fileChangeEmitter = new Emitter<readonly FileChange[]>();
+    const provider = {
+        watchers,
+        fileChangeEmitter,
+        capabilities: caseSensitive ? FileSystemProviderCapabilities.PathCaseSensitive : 0,
+        onDidChangeCapabilities: () => Disposable.NULL,
+        onDidChangeFile: fileChangeEmitter.event,
+        onFileWatchError: () => Disposable.NULL,
+        watch(resource: URI, options: WatchOptions): Disposable {
+            const watcher: MockWatcher = {
+                resource, options, disposed: false,
+                disposable: Disposable.create(() => { watcher.disposed = true; }),
+            };
+            watchers.push(watcher);
+            return watcher.disposable;
+        },
+        simulateChange(uri: URI, type: FileChangeType = FileChangeType.UPDATED): void {
+            fileChangeEmitter.fire([{ resource: uri, type }]);
+        },
+        stat: () => { throw new Error('not implemented'); },
+        readdir: () => { throw new Error('not implemented'); },
+        readFile: () => { throw new Error('not implemented'); },
+        writeFile: () => { throw new Error('not implemented'); },
+        delete: () => { throw new Error('not implemented'); },
+        mkdir: () => { throw new Error('not implemented'); },
+        rename: () => { throw new Error('not implemented'); },
+    };
+    return provider as FileSystemProvider & typeof provider;
+}
+
+describe('FileService watcher event delivery', () => {
+    let fileService: FileService;
+    let provider: ReturnType<typeof createEventMockProvider>;
+    let disJSDOM: () => void;
+
+    before(() => {
+        disJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disJSDOM();
+    });
+
+    beforeEach(() => {
+        fileService = new FileService();
+        provider = createEventMockProvider();
+        fileService.registerProvider('file', provider);
+    });
+
+    it('should deliver events for a subsumed child through the parent watcher', async () => {
+        const received: URI[] = [];
+        fileService.onDidFilesChange(e => {
+            for (const change of e.changes) {
+                received.push(change.resource);
+            }
+        });
+
+        const parentUri = new URI('file:///project');
+        const childUri = new URI('file:///project/src');
+
+        await fileService.doWatch(parentUri, { recursive: true, excludes: [] });
+        await fileService.doWatch(childUri, { recursive: false, excludes: [] });
+
+        // Child is subsumed — only parent has a real watcher
+        expect(liveWatcherCount(provider)).to.equal(1);
+
+        // Simulate a change under the child path — should be delivered through the parent
+        const changedFile = new URI('file:///project/src/index.ts');
+        provider.simulateChange(changedFile);
+
+        expect(received).to.have.lengthOf(1);
+        expect(received[0].toString()).to.equal(changedFile.toString());
+    });
+
+    it('should deliver events after a child is promoted due to parent disposal', async () => {
+        const received: URI[] = [];
+        fileService.onDidFilesChange(e => {
+            for (const change of e.changes) {
+                received.push(change.resource);
+            }
+        });
+
+        const parentUri = new URI('file:///project');
+        const childUri = new URI('file:///project/src');
+
+        const parentDisposable = await fileService.doWatch(parentUri, { recursive: true, excludes: [] });
+        await fileService.doWatch(childUri, { recursive: false, excludes: [] });
+
+        // Dispose parent — child gets promoted with its own real watcher
+        parentDisposable.dispose();
+        expect(liveWatcherCount(provider)).to.equal(1);
+
+        // Simulate a change — should still be delivered
+        const changedFile = new URI('file:///project/src/index.ts');
+        provider.simulateChange(changedFile);
+
+        expect(received).to.have.lengthOf(1);
+        expect(received[0].toString()).to.equal(changedFile.toString());
+    });
+
+    it('should not let a parent with excludes suppress events for a child that needs them', async () => {
+        const received: URI[] = [];
+        fileService.onDidFilesChange(e => {
+            for (const change of e.changes) {
+                received.push(change.resource);
+            }
+        });
+
+        const parentUri = new URI('file:///project');
+        const childUri = new URI('file:///project/src');
+
+        await fileService.doWatch(parentUri, { recursive: true, excludes: ['**/node_modules'] });
+        await fileService.doWatch(childUri, { recursive: true, excludes: [] });
+
+        // Child is recursive with no excludes, parent has excludes — child should NOT be subsumed
+        // Both should have their own real watchers
+        expect(liveWatcherCount(provider)).to.equal(2);
+
+        // Simulate a change inside node_modules under the child — only the child's watcher would catch it
+        const changedFile = new URI('file:///project/src/node_modules/pkg/index.js');
+        provider.simulateChange(changedFile);
+
+        expect(received).to.have.lengthOf(1);
+        expect(received[0].toString()).to.equal(changedFile.toString());
+    });
+
+    it('should preserve recursive watcher state through subsumption and promotion', async () => {
+        const received: URI[] = [];
+        fileService.onDidFilesChange(e => {
+            for (const change of e.changes) {
+                received.push(change.resource);
+            }
+        });
+
+        const grandparentUri = new URI('file:///project');
+        const parentUri = new URI('file:///project/src');
+        const childUri = new URI('file:///project/src/lib');
+
+        // Create parent (recursive), then child under it
+        await fileService.doWatch(parentUri, { recursive: true, excludes: [] });
+        await fileService.doWatch(childUri, { recursive: false, excludes: [] });
+        expect(liveWatcherCount(provider)).to.equal(1); // only parent has real watcher
+
+        // Now create a grandparent that subsumes the parent
+        const gpDisposable = await fileService.doWatch(grandparentUri, { recursive: true, excludes: [] });
+        expect(liveWatcherCount(provider)).to.equal(1); // only grandparent is live
+
+        // Dispose the grandparent — parent should be promoted, child should re-parent to parent
+        gpDisposable.dispose();
+        expect(liveWatcherCount(provider)).to.equal(1); // promoted parent is live
+
+        // Simulate a change under the child — should still be delivered
+        const changedFile = new URI('file:///project/src/lib/utils.ts');
+        provider.simulateChange(changedFile);
+
+        expect(received).to.have.lengthOf(1);
+        expect(received[0].toString()).to.equal(changedFile.toString());
     });
 });

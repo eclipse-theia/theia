@@ -1473,12 +1473,10 @@ export class FileService {
         const subsumingParentKey = this.findSubsumingParent(provider, resource, options);
         if (subsumingParentKey) {
             const parentEntry = this.activeWatchers.get(subsumingParentKey) as RecursiveWatcherEntry;
-            const entry: WatcherEntry = {
-                resource, options, provider,
-                count: 1,
-                realWatcher: undefined,
-                subsumingParent: parentEntry,
-            };
+            // Reuse createWatcherEntry so recursive watchers keep their subsumedChildren/compiledExcludes
+            // fields intact for when they are later promoted.
+            const entry = this.createWatcherEntry(provider, resource, options, false);
+            entry.subsumingParent = parentEntry;
             this.activeWatchers.set(key, entry);
             parentEntry.subsumedChildren.add(key);
             return this.createWatcherDisposable(key, entry);
@@ -1497,12 +1495,13 @@ export class FileService {
         return this.createWatcherDisposable(key, entry);
     }
 
-    private createWatcherEntry(provider: FileSystemProvider, resource: URI, options: WatchOptions): WatcherEntry {
+    private createWatcherEntry(provider: FileSystemProvider, resource: URI, options: WatchOptions, startWatching: boolean = true): WatcherEntry {
+        const realWatcher = startWatching ? provider.watch(resource, options) : undefined;
         if (options.recursive) {
             const recursiveEntry: RecursiveWatcherEntry = {
                 resource, options, provider,
                 count: 1,
-                realWatcher: provider.watch(resource, options),
+                realWatcher,
                 subsumingParent: undefined,
                 subsumedChildren: new Set(),
                 compiledExcludes: options.excludes.map(pattern => new Minimatch(pattern, { dot: true })),
@@ -1512,7 +1511,7 @@ export class FileService {
         return {
             resource, options, provider,
             count: 1,
-            realWatcher: provider.watch(resource, options),
+            realWatcher,
             subsumingParent: undefined,
         };
     }
