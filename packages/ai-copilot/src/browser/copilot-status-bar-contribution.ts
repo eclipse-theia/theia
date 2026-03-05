@@ -74,7 +74,7 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
     }
 
     protected updateStatusBar(): void {
-        if (!this.activationService.isActive || !this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true)) {
+        if (!this.activationService.isActive || !this.preferenceService.get(COPILOT_ENABLED_PREF, true)) {
             this.statusBar.removeElement(COPILOT_STATUS_BAR_ID);
             return;
         }

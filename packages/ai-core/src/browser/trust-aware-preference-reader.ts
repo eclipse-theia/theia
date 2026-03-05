@@ -97,11 +97,11 @@ export class TrustAwarePreferenceReader {
      * Reads the preference, ignoring workspace/folder scopes when the workspace
      * is untrusted. Returns `globalValue ?? defaultValue ?? fallback`.
      */
-    get<T>(preferenceName: string, fallback?: T, resourceUri?: string): T | undefined {
+    get<T>(preferenceName: string, fallback?: T, resource?: string): T | undefined {
         if (this.trusted) {
-            return this.preferences.get<T>(preferenceName, fallback, resourceUri);
+            return this.preferences.get<T>(preferenceName, { fallback, resource });
         }
-        const inspection = this.preferences.inspect<JSONValue>(preferenceName, resourceUri);
+        const inspection = this.preferences.inspect<JSONValue>(preferenceName, resource);
         const value = inspection?.globalValue ?? inspection?.defaultValue;
         return (value as T | undefined) ?? fallback;
     }

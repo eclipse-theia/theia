@@ -22,13 +22,25 @@ import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { Deferred } from '../promise-util';
 import URI from '../uri';
-import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult, PreferenceUtils } from './preference-provider';
 import { PreferenceSchemaService } from './preference-schema';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
 import { deepFreeze } from '../objects';
 import { unreachable } from '../types';
+
+/**
+ * Options for {@link PreferenceService.get}.
+ */
+export interface PreferenceGetOptions<T> {
+    /** Value to return when no stored value exists for the preference. */
+    fallback?: T;
+    /** URI of the resource for which to retrieve the preference. */
+    resource?: string;
+    /** Language-override identifier (e.g. `'typescript'`). */
+    override?: string;
+}
 
 /**
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
@@ -39,12 +51,13 @@ export interface PreferenceChange extends Omit<PreferenceProviderDataChange, 'ne
      * Tests wether the given resource is affected by the preference change.
      * @param resourceUri the uri of the resource to test.
      */
-    affects(resourceUri?: string): boolean;
+    affects(resourceUri?: string, overideIdentifier?: string): boolean;
+    readonly affectedOverrides: readonly String[];
 }
 
 export class PreferenceChangeImpl implements PreferenceChange {
     protected readonly change: PreferenceProviderDataChange;
-    constructor(change: PreferenceProviderDataChange) {
+    constructor(change: PreferenceProviderDataChange, readonly affectedOverrides: readonly String[]) {
         this.change = deepFreeze(change);
     }
 
@@ -58,19 +71,23 @@ export class PreferenceChangeImpl implements PreferenceChange {
         return this.change.domain;
     }
 
+    get overrideIdentifier(): string | undefined {
+        return this.change.overrideIdentifier;
+    }
+
     // TODO add tests
-    affects(resourceUri?: string): boolean {
+    affects(resourceUri?: string, overideIdentifier?: string): boolean {
         const resourcePath = resourceUri && new URI(resourceUri).path;
         const domain = this.change.domain;
-        return !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
+        const affectsResource = !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
+        const affectsOverride = !overideIdentifier || this.affectedOverrides.includes(overideIdentifier);
+        return affectsResource && affectsOverride;
     }
 }
 /**
  * A key-value storage for {@link PreferenceChange}s. Used to aggregate multiple simultaneous preference changes.
  */
-export interface PreferenceChanges {
-    [preferenceName: string]: PreferenceChange
-}
+export type PreferenceChanges = PreferenceChange[];
 
 export const PreferenceService = Symbol('PreferenceService');
 /**
@@ -94,43 +111,19 @@ export interface PreferenceService extends Disposable {
      * Retrieve the stored value for the given preference.
      *
      * @param preferenceName the preference identifier.
+     * @param options optional lookup options.
+     *   - `fallback` – value to return when no stored value exists.
+     *   - `resource` – URI of the resource for which the preference is stored (enables per-resource values, e.g. `files.encoding`).
+     *   - `override` – language-override identifier (e.g. `'typescript'`).
      *
-     * @returns the value stored for the given preference when it exists, `undefined` otherwise.
+     * @returns the stored value when it exists, otherwise `options.fallback` (or `undefined` when no fallback is given).
      */
-    get<T>(preferenceName: string): T | undefined;
-    /**
-     * Retrieve the stored value for the given preference.
-     *
-     * @param preferenceName the preference identifier.
-     * @param defaultValue the value to return when no value for the given preference is stored.
-     *
-     * @returns the value stored for the given preference when it exists, otherwise the given default value.
-     */
-    get<T>(preferenceName: string, defaultValue: T): T;
-    /**
-     * Retrieve the stored value for the given preference and resourceUri.
-     *
-     * @param preferenceName the preference identifier.
-     * @param defaultValue the value to return when no value for the given preference is stored.
-     * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
-     * a potentially different value for the same preference for different resources, for example `files.encoding`.
-     *
-     * @returns the value stored for the given preference and resourceUri when it exists, otherwise the given
-     * default value.
-     */
-    get<T>(preferenceName: string, defaultValue: T, resourceUri?: string): T;
-    /**
-     * Retrieve the stored value for the given preference and resourceUri.
-     *
-     * @param preferenceName the preference identifier.
-     * @param defaultValue the value to return when no value for the given preference is stored.
-     * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
-     * a potentially different value for the same preference for different resources, for example `files.encoding`.
-     *
-     * @returns the value stored for the given preference and resourceUri when it exists, otherwise the given
-     * default value.
-     */
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined;
+    get(preferenceName: string, defaultValue: string): string;
+    get(preferenceName: string, defaultValue: number): number;
+    get(preferenceName: string, defaultValue: boolean): boolean;
+    get<T>(preferenceName: string, defaultValue: T[]): T[];
+    get<T>(preferenceName: string, options: PreferenceGetOptions<T> & { fallback: T }): T;
+    get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined;
     /**
      * Sets the given preference to the given value.
      *
@@ -140,11 +133,12 @@ export interface PreferenceService extends Disposable {
      * When the folder scope is specified a resourceUri must be provided.
      * @param resourceUri the uri of the resource for which the preference is stored. This used to store
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     * @param overrideIdentifier the identifier of the override to use.
      *
      * @returns a promise which resolves to `undefined` when setting the preference was successful. Otherwise it rejects
      * with an error.
      */
-    set(preferenceName: string, value: any, scope?: PreferenceScope, resourceUri?: string): Promise<void>;
+    set(preferenceName: string, value: any, scope?: PreferenceScope, resourceUri?: string, overrideIdentifier?: string): Promise<void>;
 
     /**
      * Determines and applies the changes necessary to apply `value` to either the `resourceUri` supplied or the active session.
@@ -154,8 +148,9 @@ export interface PreferenceService extends Disposable {
      * @param preferenceName the identifier of the preference to modify.
      * @param value the value to which to set the preference. `undefined` will reset the preference to its default value.
      * @param resourceUri the uri of the resource to which the change is to apply. If none is provided, folder scope will be ignored.
+     * @param overrideIdentifier the identifier of the override to use.
      */
-    updateValue(preferenceName: string, value: any, resourceUri?: string): Promise<void>
+    updateValue(preferenceName: string, value: any, resourceUri?: string, overrideIdentifier?: string): Promise<void>
 
     /**
      * Registers a callback which will be called whenever a preference is changed.
@@ -170,40 +165,19 @@ export interface PreferenceService extends Disposable {
      *
      * @param preferenceName the preference identifier.
      * @param resourceUri the uri of the resource for which the preference is stored.
-     * @param forceLanguageOverride if `true` and `preferenceName` is a language override, only values for the specified override will be returned.
+     * @param overrideIdentifier the identifier of the override to use.
      * Otherwise, values for the override will be returned where defined, and values from the base preference will be returned otherwise.
      *
      * @return an object containing the value of the given preference for all scopes.
      */
-    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string, forceLanguageOverride?: boolean): PreferenceInspection<T> | undefined;
+    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): PreferenceInspection<T> | undefined;
     /**
      * For behavior, see {@link PreferenceService.inspect}.
      *
      * @returns the value in the scope specified.
      */
-    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined
-    /**
-     * Returns a new preference identifier based on the given OverridePreferenceName.
-     *
-     * @param options the override specification.
-     *
-     * @returns the calculated string based on the given OverridePreferenceName.
-     */
-    overridePreferenceName(options: OverridePreferenceName): string;
-    /**
-     * Tries to split the given preference identifier into the original OverridePreferenceName attributes
-     * with which this identifier was created. Returns `undefined` if this is not possible, for example
-     * when the given preference identifier was not generated by `overridePreferenceName`.
-     *
-     * This method is checked when resolving preferences. Therefore together with "overridePreferenceName"
-     * this can be used to handle specialized preferences, e.g. "[markdown].editor.autoIndent" and "editor.autoIndent".
-     *
-     * @param preferenceName the preferenceName which might have been created via {@link PreferenceService.overridePreferenceName}.
-     *
-     * @returns the OverridePreferenceName which was used to create the given `preferenceName` if this was the case,
-     * `undefined` otherwise.
-     */
-    overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined;
+    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, overrideIdentifier?: string): T | undefined
+
     /**
      * Retrieve the stored value for the given preference and resourceUri.
      *
@@ -211,12 +185,13 @@ export interface PreferenceService extends Disposable {
      * @param defaultValue the value to return when no value for the given preference is stored.
      * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     * @param overrideIdentifier the identifier of the override to use.
      *
      * @returns an object containing the value stored for the given preference and resourceUri when it exists,
      * otherwise the given default value. If determinable the object will also contain the uri of the configuration
      * resource in which the preference was stored.
      */
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T>;
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T>;
     /**
      * Returns the uri of the configuration resource for the given scope and optional resource uri.
      *
@@ -335,35 +310,38 @@ export class PreferenceServiceImpl implements PreferenceService {
         return this._isReady;
     }
 
-    protected reconcilePreferences(changes: PreferenceProviderDataChanges): void {
-        const changesToEmit: PreferenceChanges = {};
-        const acceptChange = (change: PreferenceProviderDataChange) => {
-            this.getAffectedPreferenceNames(change, preferenceName =>
-                changesToEmit[preferenceName] = new PreferenceChangeImpl({ ...change, preferenceName }));
-        };
+    protected getAffectedOverrides(change: PreferenceProviderDataChange): String[] {
+        if (change.overrideIdentifier) { // changes to overrides never affect other overrides
+            return [change.overrideIdentifier];
+        } else {
+            const affectedOverrides = [];
+            const preference = this.schemaService.getSchemaProperty(change.preferenceName);
+            if (preference && preference.overridable) {
 
-        for (const preferenceName of Object.keys(changes)) {
-
-            let change = changes[preferenceName];
-            const overridden = this.overriddenPreferenceName(change.preferenceName);
-            if (change.newValue === undefined) {
-                if (overridden) {
-                    change = {
-                        ...change, newValue: this.doGet(overridden.preferenceName)
-                    };
+                for (const overrideId of this.schemaService.overrideIdentifiers) {
+                    if (!this.doHas(change.preferenceName, undefined, overrideId)) {
+                        affectedOverrides.push(overrideId);
+                    }
                 }
             }
+            return affectedOverrides;
+        }
+    }
 
+    protected reconcilePreferences(changes: PreferenceProviderDataChanges): void {
+        const changesToEmit: PreferenceChanges = [];
+
+        for (const change of changes) {
             for (const scope of [...this.schemaService.validScopes].reverse()) {
                 const provider = this.getProvider(scope);
                 if (provider) {
-                    const scopeValue: JSONValue | undefined = provider.get(preferenceName);
+                    const scopeValue: JSONValue | undefined = provider.get(change.preferenceName, undefined, change.overrideIdentifier);
                     if (scope > change.scope && scopeValue !== undefined) {
                         const preference = this.schemaService.getSchemaProperty(change.preferenceName);
                         if (!preference?.type || preference.type === 'object' || preference.type === 'array'
                             || Array.isArray(preference.type) && preference.type.some(candidate => candidate === 'object' || candidate === 'array')) {
                             // Merge object/array preferences
-                            acceptChange(change);
+                            changesToEmit.push(new PreferenceChangeImpl({ ...change }, this.getAffectedOverrides(change)));
                         }
                         break;
                     }
@@ -372,19 +350,14 @@ export class PreferenceServiceImpl implements PreferenceService {
                         const hasNewValue = change.newValue !== undefined || scope === PreferenceScope.Default;
                         const isResetToUndefined = change.newValue === undefined && scopeValue === undefined; // is reset to undefined (no default value)
                         if (hasNewValue || isResetToUndefined) {
-                            acceptChange(change);
+                            changesToEmit.push(new PreferenceChangeImpl({ ...change }, this.getAffectedOverrides(change)));
                             break;
                         }
                     }
                     // Handle fallback to more general scope when preference is reset
                     if (scope < change.scope && change.newValue === undefined && scopeValue !== undefined) {
                         // preference is changed to `undefined`, use the value from a more general scope
-                        change = {
-                            ...change,
-                            newValue: scopeValue,
-                            scope
-                        };
-                        acceptChange(change);
+                        changesToEmit.push(new PreferenceChangeImpl({ ...change, scope }, this.getAffectedOverrides(change)));
                         break;
                     }
                 }
@@ -392,126 +365,76 @@ export class PreferenceServiceImpl implements PreferenceService {
         }
 
         // emit the changes
-        const changedPreferenceNames = Object.keys(changesToEmit);
-        if (changedPreferenceNames.length > 0) {
+        if (changesToEmit.length > 0) {
             this.onPreferencesChangedEmitter.fire(changesToEmit);
         }
-        changedPreferenceNames.forEach(preferenceName => this.onPreferenceChangedEmitter.fire(changesToEmit[preferenceName]));
-    }
-    protected getAffectedPreferenceNames(change: PreferenceProviderDataChange, accept: (affectedPreferenceName: string) => void): void {
-        const overridden = this.preferenceOverrideService.overriddenPreferenceName(change.preferenceName);
-        accept(change.preferenceName);
-        if (!overridden?.overrideIdentifier) { // changes to overrides never affect other overrides
-            const preference = this.schemaService.getSchemaProperty(change.preferenceName);
-            if (preference && preference.overridable) {
-
-                for (const overrideId of this.schemaService.overrideIdentifiers) {
-                    const overridePreferenceName = this.preferenceOverrideService.overridePreferenceName({
-                        overrideIdentifier: overrideId,
-                        preferenceName: change.preferenceName
-                    });
-
-                    if (!this.doHas(overridePreferenceName)) {
-                        accept(overridePreferenceName);
-                    }
-                }
-            }
-        }
+        changesToEmit.forEach(change => this.onPreferenceChangedEmitter.fire(change));
     }
 
     protected getProvider(scope: PreferenceScope): PreferenceProvider | undefined {
         return this.preferenceProviders.get(scope);
     }
 
-    has(preferenceName: string, resourceUri?: string): boolean {
-        return this.get(preferenceName, undefined, resourceUri) !== undefined;
+    has(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): boolean {
+        return this.get(preferenceName, { resource: resourceUri, override: overrideIdentifier }) !== undefined;
     }
 
-    get<T>(preferenceName: string): T | undefined;
-    get<T>(preferenceName: string, defaultValue: T): T;
-    get<T>(preferenceName: string, defaultValue: T, resourceUri: string): T;
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined;
-    get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined {
-        return this.resolve<T>(preferenceName, defaultValue, resourceUri).value;
+    get(preferenceName: string, defaultValue: string): string;
+    get(preferenceName: string, defaultValue: number): number;
+    get(preferenceName: string, defaultValue: boolean): boolean;
+    get<T>(preferenceName: string, defaultValue: T[]): T[];
+    get<T>(preferenceName: string, options: PreferenceGetOptions<T> & { fallback: T }): T;
+    get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined;
+    get<T>(preferenceName: string, optionsOrFallback?: PreferenceGetOptions<T> | string | number | boolean | T[]): T | undefined {
+        let fallback: T | undefined;
+        let resource: string | undefined;
+        let override: string | undefined;
+        if (typeof optionsOrFallback === 'string'
+            || typeof optionsOrFallback === 'number'
+            || typeof optionsOrFallback === 'boolean'
+            || Array.isArray(optionsOrFallback)) {
+            fallback = optionsOrFallback as T;
+        } else if (optionsOrFallback) {
+            ({ fallback, resource, override } = optionsOrFallback);
+        }
+        return this.resolve<T>(preferenceName, fallback, resource, override).value;
     }
 
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
-        const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri);
-        if (value === undefined) {
-            const overridden = this.overriddenPreferenceName(preferenceName);
-            if (overridden) {
-                return this.doResolve(overridden.preferenceName, defaultValue, resourceUri);
-            }
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
+        const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri, overrideIdentifier);
+        if (value === undefined && overrideIdentifier && this.schemaService.overrideIdentifiers.has(overrideIdentifier)) {
+            return this.doResolve(preferenceName, defaultValue, resourceUri, undefined);
         }
         return { value, configUri };
     }
 
-    async set(preferenceName: string, value: any, scope: PreferenceScope | undefined, resourceUri?: string): Promise<void> {
+    async set(preferenceName: string, value: any, scope: PreferenceScope | undefined, resourceUri?: string, overrideIdentifier?: string): Promise<void> {
         const resolvedScope = scope ?? (!resourceUri ? PreferenceScope.Workspace : PreferenceScope.Folder);
         if (resolvedScope === PreferenceScope.Folder && !resourceUri) {
             throw new Error('Unable to write to Folder Settings because no resource is provided.');
         }
         const provider = this.getProvider(resolvedScope);
-        if (provider && await provider.setPreference(preferenceName, value, resourceUri)) {
+        if (provider && await provider.setPreference(preferenceName, value, resourceUri, overrideIdentifier)) {
             return;
         }
         throw new Error(`Unable to write to ${PreferenceScope[resolvedScope]} Settings.`);
     }
 
-    getBoolean(preferenceName: string): boolean | undefined;
-    getBoolean(preferenceName: string, defaultValue: boolean): boolean;
-    getBoolean(preferenceName: string, defaultValue: boolean, resourceUri: string): boolean;
-    getBoolean(preferenceName: string, defaultValue?: boolean, resourceUri?: string): boolean | undefined {
-        const value = resourceUri ? this.get(preferenceName, defaultValue, resourceUri) : this.get(preferenceName, defaultValue);
-        // eslint-disable-next-line no-null/no-null
-        return value !== null && value !== undefined ? !!value : defaultValue;
-    }
-
-    getString(preferenceName: string): string | undefined;
-    getString(preferenceName: string, defaultValue: string): string;
-    getString(preferenceName: string, defaultValue: string, resourceUri: string): string;
-    getString(preferenceName: string, defaultValue?: string, resourceUri?: string): string | undefined {
-        const value = resourceUri ? this.get(preferenceName, defaultValue, resourceUri) : this.get(preferenceName, defaultValue);
-        // eslint-disable-next-line no-null/no-null
-        if (value === null || value === undefined) {
-            return defaultValue;
-        }
-        return value.toString();
-    }
-
-    getNumber(preferenceName: string): number | undefined;
-    getNumber(preferenceName: string, defaultValue: number): number;
-    getNumber(preferenceName: string, defaultValue: number, resourceUri: string): number;
-    getNumber(preferenceName: string, defaultValue?: number, resourceUri?: string): number | undefined {
-        const value = resourceUri ? this.get(preferenceName, defaultValue, resourceUri) : this.get(preferenceName, defaultValue);
-        // eslint-disable-next-line no-null/no-null
-        if (value === null || value === undefined) {
-            return defaultValue;
-        }
-        if (typeof value === 'number') {
-            return value;
-        }
-        return Number(value);
-    }
-
-    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string, forceLanguageOverride?: boolean): PreferenceInspection<T> | undefined {
-        const defaultValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Default, resourceUri, forceLanguageOverride);
-        const globalValue = this.inspectInScope<T>(preferenceName, PreferenceScope.User, resourceUri, forceLanguageOverride);
-        const workspaceValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Workspace, resourceUri, forceLanguageOverride);
-        const workspaceFolderValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Folder, resourceUri, forceLanguageOverride);
+    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): PreferenceInspection<T> | undefined {
+        const defaultValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Default, resourceUri, overrideIdentifier);
+        const globalValue = this.inspectInScope<T>(preferenceName, PreferenceScope.User, resourceUri, overrideIdentifier);
+        const workspaceValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Workspace, resourceUri, overrideIdentifier);
+        const workspaceFolderValue = this.inspectInScope<T>(preferenceName, PreferenceScope.Folder, resourceUri, overrideIdentifier);
 
         const valueApplied = workspaceFolderValue ?? workspaceValue ?? globalValue ?? defaultValue;
 
         return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, value: valueApplied };
     }
 
-    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined {
-        const value = this.doInspectInScope<T>(preferenceName, scope, resourceUri);
-        if (value === undefined && !forceLanguageOverride) {
-            const overridden = this.overriddenPreferenceName(preferenceName);
-            if (overridden) {
-                return this.doInspectInScope(overridden.preferenceName, scope, resourceUri);
-            }
+    inspectInScope<T extends JSONValue>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, overrideIdentifier?: string): T | undefined {
+        const value = this.doInspectInScope<T>(preferenceName, scope, resourceUri, overrideIdentifier);
+        if (value === undefined && overrideIdentifier && this.schemaService.overrideIdentifiers.has(overrideIdentifier)) {
+            return this.doInspectInScope<T>(preferenceName, scope, resourceUri, undefined);
         }
         return value;
     }
@@ -530,8 +453,8 @@ export class PreferenceServiceImpl implements PreferenceService {
         unreachable(scope, 'Not all PreferenceScope enum variants handled.');
     }
 
-    async updateValue(preferenceName: string, value: any, resourceUri?: string): Promise<void> {
-        const inspection = this.inspect<any>(preferenceName, resourceUri);
+    async updateValue(preferenceName: string, value: any, resourceUri?: string, overrideIdentifier?: string): Promise<void> {
+        const inspection = this.inspect<any>(preferenceName, resourceUri, overrideIdentifier);
         if (inspection) {
             const scopesToChange = this.getScopesToChange(inspection, value);
             const isDeletion = value === undefined
@@ -541,7 +464,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                     && PreferenceUtils.deepEqual(value, inspection.defaultValue)
                 );
             const effectiveValue = isDeletion ? undefined : value;
-            await Promise.all(scopesToChange.map(scope => this.set(preferenceName, effectiveValue, scope, resourceUri)));
+            await Promise.all(scopesToChange.map(scope => this.set(preferenceName, effectiveValue, scope, resourceUri, overrideIdentifier)));
         }
     }
 
@@ -564,29 +487,22 @@ export class PreferenceServiceImpl implements PreferenceService {
         return [allScopes.find(isScopeDefined) ?? PreferenceScope.User];
     }
 
-    overridePreferenceName(options: OverridePreferenceName): string {
-        return this.preferenceOverrideService.overridePreferenceName(options);
+    protected doHas(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): boolean {
+        return this.doGet(preferenceName, undefined, resourceUri, overrideIdentifier) !== undefined;
     }
-    overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
-        return this.preferenceOverrideService.overriddenPreferenceName(preferenceName);
-    }
-
-    protected doHas(preferenceName: string, resourceUri?: string): boolean {
-        return this.doGet(preferenceName, undefined, resourceUri) !== undefined;
-    }
-    protected doInspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string): T | undefined {
+    protected doInspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, overrideIdentifier?: string): T | undefined {
         const provider = this.getProvider(scope);
-        return provider && provider.get<T>(preferenceName, resourceUri);
+        return provider && provider.get<T>(preferenceName, resourceUri, overrideIdentifier);
     }
-    protected doGet<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined {
-        return this.doResolve(preferenceName, defaultValue, resourceUri).value;
+    protected doGet<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): T | undefined {
+        return this.doResolve(preferenceName, defaultValue, resourceUri, overrideIdentifier).value;
     }
-    protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
+    protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         for (const scope of this.schemaService.validScopes) {
             const provider = this.getProvider(scope);
             if (provider?.canHandleScope(scope)) {
-                const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri);
+                const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri, overrideIdentifier);
                 if (value !== undefined) {
                     result.configUri = configUri;
                     result.value = PreferenceUtils.merge(result.value as any, value as any) as any;

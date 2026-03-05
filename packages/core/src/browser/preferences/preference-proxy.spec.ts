@@ -234,13 +234,13 @@ describe('Preference Proxy', () => {
 
                 prefService.onPreferencesChanged(() => changeEventsEmittedByService++);
                 proxy.onPreferenceChanged(() => changeEventsEmittedByProxy++);
-                await prefService.set(prefService.overridePreferenceName({ overrideIdentifier: 'swift', preferenceName: 'my.pref' }), 'boo', PreferenceScope.User);
+                await prefService.set('my.pref', 'boo', PreferenceScope.User, undefined, 'swift');
                 expect(changeEventsEmittedByService, 'The service should have emitted an event for the non-matching override.').to.equal(1);
                 expect(changeEventsEmittedByProxy, 'The proxy should not have emitted an event for the non-matching override.').to.equal(0);
                 await prefService.set('my.pref', 'far', PreferenceScope.User);
                 expect(changeEventsEmittedByService, 'The service should have emitted an event for the base name.').to.equal(2);
                 expect(changeEventsEmittedByProxy, 'The proxy should have emitted for an event for the base name.').to.equal(1);
-                await prefService.set(prefService.overridePreferenceName({ preferenceName: 'my.pref', overrideIdentifier: 'typescript' }), 'faz', PreferenceScope.User);
+                await prefService.set('my.pref', 'faz', PreferenceScope.User, undefined, 'typescript');
                 expect(changeEventsEmittedByService, 'The service should have emitted an event for the matching override.').to.equal(3);
                 expect(changeEventsEmittedByProxy, 'The proxy should have emitted an event for the matching override.').to.equal(2);
                 await prefService.set('my.pref', 'yet another value', PreferenceScope.User);
@@ -272,7 +272,8 @@ describe('Preference Proxy', () => {
                     }
                 });
                 await prefService.set('my.pref', 'bog', PreferenceScope.User);
-                expect(changesNotAffectingTypescript, 'Two events (one for `my.pref` and one for `[swift].my.pref`) should not have affected TS').to.equal(2);
+                await prefService.set('my.pref', 'bla', PreferenceScope.User, undefined, 'swift');
+                expect(changesNotAffectingTypescript, 'should not have affected TS').to.equal(1);
                 expect(changesAffectingTypescript, 'One event should have been fired that does affect typescript.').to.equal(1);
             });
 
