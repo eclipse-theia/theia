@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource and others.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -38,22 +38,6 @@ describe('TerminalManagerTreeTypes', () => {
     });
 
     describe('isTasksPageNode', () => {
-        it('should return true for a page node with isTasksPage flag set', () => {
-            const node: TerminalManagerTreeTypes.PageNode = {
-                page: true,
-                id: 'page-123' as TerminalManagerTreeTypes.PageId,
-                children: [],
-                isEditing: false,
-                label: 'Tasks',
-                counter: 0,
-                isTasksPage: true,
-                selected: false,
-                parent: undefined,
-                expanded: false
-            };
-            expect(isTasksPageNode(node)).to.be.true;
-        });
-
         it('should return true for a page node with TASKS_PAGE_ID', () => {
             const node: TerminalManagerTreeTypes.PageNode = {
                 page: true,
@@ -62,22 +46,6 @@ describe('TerminalManagerTreeTypes', () => {
                 isEditing: false,
                 label: 'Tasks',
                 counter: 0,
-                selected: false,
-                parent: undefined,
-                expanded: false
-            };
-            expect(isTasksPageNode(node)).to.be.true;
-        });
-
-        it('should return true for a page node with both TASKS_PAGE_ID and isTasksPage flag', () => {
-            const node: TerminalManagerTreeTypes.PageNode = {
-                page: true,
-                id: TASKS_PAGE_ID,
-                children: [],
-                isEditing: false,
-                label: 'Tasks',
-                counter: 0,
-                isTasksPage: true,
                 selected: false,
                 parent: undefined,
                 expanded: false
@@ -100,24 +68,7 @@ describe('TerminalManagerTreeTypes', () => {
             expect(isTasksPageNode(node)).to.be.false;
         });
 
-        it('should return false for a page node with isTasksPage explicitly set to false', () => {
-            const node: TerminalManagerTreeTypes.PageNode = {
-                page: true,
-                id: 'page-123' as TerminalManagerTreeTypes.PageId,
-                children: [],
-                isEditing: false,
-                label: 'Regular Page',
-                counter: 1,
-                isTasksPage: false,
-                selected: false,
-                parent: undefined,
-                expanded: false
-            };
-            expect(isTasksPageNode(node)).to.be.false;
-        });
-
         it('should return false for non-page nodes', () => {
-            expect(isTasksPageNode(undefined)).to.be.false;
             expect(isTasksPageNode(undefined)).to.be.false;
             expect(isTasksPageNode({})).to.be.false;
             expect(isTasksPageNode('page-tasks')).to.be.false;

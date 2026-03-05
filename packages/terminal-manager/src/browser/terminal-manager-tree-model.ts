@@ -367,7 +367,6 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             isEditing: false,
             expanded: true,
             counter: 0,
-            isTasksPage: true,
         };
         if (this.root && CompositeTreeNode.is(this.root)) {
             this.root = CompositeTreeNode.addChild(this.root, tasksPageNode);

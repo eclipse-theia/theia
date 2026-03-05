@@ -46,7 +46,7 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     protected commandHandlerDisposables = new DisposableCollection();
 
     /**
-     * Check if a terminal is a task terminal without creating a circular dependency.
+     * Check if a terminal is a task terminal.
      * Task terminals have a 'kind' property set to 'task'.
      */
     protected isTaskTerminal(terminal: TerminalWidget): boolean {
