@@ -49,6 +49,7 @@ export function normalizeToolArgs(args: string | undefined): string {
 export interface ChatToolContext extends ToolInvocationContext {
     readonly request: MutableChatRequestModel;
     readonly response: MutableChatResponseModel;
+    readonly rootSessionId?: string;
 }
 
 export namespace ChatToolContext {
@@ -135,6 +136,7 @@ export class ChatToolRequestService {
             request,
             toolCallId: ctx?.toolCallId,
             cancellationToken: request.response.cancellationToken,
+            rootSessionId: request.session.rootSessionId,
             get response(): MutableChatResponseModel {
                 return request.response;
             }

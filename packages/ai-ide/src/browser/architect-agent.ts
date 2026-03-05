@@ -20,19 +20,21 @@ import {
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID } from '../common/architect-prompt-template';
+import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID, ARCHITECT_PLANNING_NEXT_PROMPT_ID } from './architect-prompt-template';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
+
+export const ArchitectAgentId = 'Architect';
 
 @injectable()
 export class ArchitectAgent extends AbstractModeAwareChatAgent {
     @inject(ChatService) protected readonly chatService: ChatService;
     @inject(TaskContextStorageService) protected readonly taskContextStorageService: TaskContextStorageService;
 
-    name = 'Architect';
-    id = 'Architect';
+    name = ArchitectAgentId;
+    id = ArchitectAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'default/code',
@@ -52,6 +54,10 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
         {
             id: ARCHITECT_SIMPLE_PROMPT_ID,
             name: nls.localize('theia/ai/ide/architectAgent/mode/simple', 'Simple Mode')
+        },
+        {
+            id: ARCHITECT_PLANNING_NEXT_PROMPT_ID,
+            name: nls.localize('theia/ai/ide/architectAgent/mode/planNext', 'Plan Mode (Next)')
         },
     ];
 

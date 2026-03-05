@@ -34,11 +34,13 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
 
+export const CoderAgentId = 'Coder';
+
 @injectable()
 export class CoderAgent extends AbstractModeAwareChatAgent {
     @inject(ChatService) protected readonly chatService: ChatService;
-    id: string = 'Coder';
-    name = 'Coder';
+    id: string = CoderAgentId;
+    name = CoderAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'default/code',

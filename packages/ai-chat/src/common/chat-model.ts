@@ -242,6 +242,8 @@ export interface ChatModel {
     readonly suggestions: readonly ChatSuggestion[];
     readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
+    /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
+    rootSessionId?: string;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
@@ -925,6 +927,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _changeSet: ChatTreeChangeSet;
     protected _settings: ChatSessionSettings;
     protected _location: ChatAgentLocation;
+    rootSessionId?: string;
 
     get location(): ChatAgentLocation {
         return this._location;
