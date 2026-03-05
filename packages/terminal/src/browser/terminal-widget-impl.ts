@@ -54,7 +54,7 @@ import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/brows
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { guessShellTypeFromExecutable } from '../common/shell-type';
-import { TerminalCommandHistoryStateImpl } from './terminal-command-history';
+import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -144,6 +144,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
+    @inject(TerminalCommandHistoryStateFactory) readonly commandHistoryStateFactory: TerminalCommandHistoryStateFactory;
 
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
@@ -218,8 +219,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.title.closable = true;
         this.addClass('terminal-container');
 
-        const commandHistoryStateImpl = new TerminalCommandHistoryStateImpl();
-        this.commandHistoryState = commandHistoryStateImpl;
+        this.commandHistoryState = this.commandHistoryStateFactory();
 
         this.term = new Terminal({
             cursorBlink: this.preferences['terminal.integrated.cursorBlinking'],
@@ -248,8 +248,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.loadAddon(this.webglAddon);
 
         this.initializeLinkHover();
-
-        this.toDispose.push(commandHistoryStateImpl);
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();

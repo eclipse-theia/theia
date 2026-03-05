@@ -16,26 +16,32 @@
 
 import { DisposableCollection, Event, Emitter, Disposable } from '@theia/core';
 import { TerminalBlock, TerminalCommandHistoryState } from './base/terminal-widget';
+import { injectable } from '@theia/core/shared/inversify';
 
+export const TerminalCommandHistoryStateFactory = Symbol('TerminalCommandHistoryStateFactory');
+export type TerminalCommandHistoryStateFactory = () => TerminalCommandHistoryState;
+
+@injectable()
 export class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Disposable {
+    static readonly MAX_CAPACITY = 200;
+
     private _commandHistory: TerminalBlock[] = [];
     get commandHistory(): TerminalBlock[] { return this._commandHistory; }
 
     private _currentCommand: string = '';
     get currentCommand(): string { return this._currentCommand; }
 
-    private _maxCapacity: number;
-
+    private readonly _maxCapacity: number;
     private readonly toDispose = new DisposableCollection();
     private readonly onCommandStartEmitter = new Emitter<void>();
     private readonly onPromptShownEmitter = new Emitter<void>();
     readonly onTerminalCommandStart: Event<void> = this.onCommandStartEmitter.event;
     readonly onTerminalPromptShown: Event<void> = this.onPromptShownEmitter.event;
 
-    constructor(maxCapacity: number = 200) {
+    constructor() {
         this.toDispose.push(this.onCommandStartEmitter);
         this.toDispose.push(this.onPromptShownEmitter);
-        this._maxCapacity = maxCapacity;
+        this._maxCapacity = TerminalCommandHistoryStateImpl.MAX_CAPACITY;
     }
 
     startCommand(command: string): void {
