@@ -195,7 +195,7 @@ class AiTerminalChatWidget {
         if (this.getEnableCommandHistory()) {
             // Character count for recent context when one line is 120 characters long.
             const characterLimit = 1200;
-            const commandHistory = this.terminalWidget.commandHistoryState.commandHistory;
+            const commandHistory = this.terminalWidget.commandHistoryState?.commandHistory ?? [];
             return this.extractContextFromTerminalOutput(commandHistory, characterLimit);
         }
 

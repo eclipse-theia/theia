@@ -194,6 +194,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     private _currentTerminalOutput: string[];
     commandHistoryState: TerminalCommandHistoryState;
 
+    enableCommandHistory: boolean;
+    protected enableCommandSeparator: boolean;
+
     @postConstruct()
     protected init(): void {
         this.id = this._terminalDOMId;
@@ -215,7 +218,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.title.closable = true;
         this.addClass('terminal-container');
 
-        const commandHistoryStateImpl = new TerminalCommandHistoryStateImpl(this.preferences);
+        const commandHistoryStateImpl = new TerminalCommandHistoryStateImpl();
         this.commandHistoryState = commandHistoryStateImpl;
 
         this.term = new Terminal({
@@ -233,7 +236,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
             theme: this.themeService.theme,
             // Enables proposed API to allow parsing of OSC 133 sequences for command tracking.
-            allowProposedApi: this.commandHistoryState.enableCommandHistory,
+            allowProposedApi: this.preferences['terminal.integrated.enableCommandHistory']
         });
         this._buffer = new TerminalBufferImpl(this.term);
         this._currentTerminalOutput = [];
@@ -256,6 +259,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.needsResize = true;
             this.update();
         }));
+        this.updateCommandHistoryConfig();
         this.updateCommandHistoryHandlers();
 
         this.toDispose.push(this.themeService.onDidChange(() => {
@@ -390,7 +394,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
         this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
-        this.commandHistoryState.updateConfig();
+        this.updateCommandHistoryConfig();
+    }
+
+    protected updateCommandHistoryConfig(): void {
+        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
+        this.enableCommandSeparator = this.enableCommandHistory
+            ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
+            : false;
     }
 
     /**
@@ -410,7 +421,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnCommandHistory.dispose();
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
-        if (!this.commandHistoryState.enableCommandHistory) {
+        if (!this.enableCommandHistory) {
             return;
         }
         this.toDisposeOnCommandHistory.push(
@@ -421,7 +432,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     }
                     this.promptStartMarker?.dispose();
                     this.promptStartMarker = this.term.registerMarker(0);
-                    if (this.commandHistoryState.enableCommandSeparator) {
+                    if (this.enableCommandSeparator) {
                         this.addCommandSeparator();
                     }
                 } else if (oscPayload.startsWith('command_started')) {

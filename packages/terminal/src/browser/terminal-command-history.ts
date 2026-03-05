@@ -14,10 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Event, Disposable } from '@theia/core';
+import { DisposableCollection, Event, Emitter, Disposable } from '@theia/core';
 import { TerminalBlock, TerminalCommandHistoryState } from './base/terminal-widget';
-import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
-import { TerminalPreferences } from '../common/terminal-preferences';
 
 export class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Disposable {
     private _commandHistory: TerminalBlock[] = [];
@@ -35,12 +33,9 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     enableCommandHistory: boolean = false;
     enableCommandSeparator: boolean = false;
 
-    constructor(
-        protected readonly preferences: TerminalPreferences
-    ) {
+    constructor() {
         this.toDispose.push(this.onCommandStartEmitter);
         this.toDispose.push(this.onPromptShownEmitter);
-        this.updateConfig();
     }
 
     startCommand(command: string): void {
@@ -63,12 +58,6 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
         this.toDispose.dispose();
     }
 
-    updateConfig(): void {
-        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
-        this.enableCommandSeparator = this.enableCommandHistory
-            ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
-            : false;
-    }
 
     /**
      * Decodes a hex-encoded string to UTF-8 using browser-compatible APIs.

@@ -188,8 +188,12 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract waitOnExit(waitOnExit?: boolean | string): void;
 
-    abstract commandHistoryState: TerminalCommandHistoryState;
+    abstract commandHistoryState?: TerminalCommandHistoryState;
 
+    /**
+     * Preference if the terminal command history is enabled
+     */
+    abstract enableCommandHistory?: boolean;
 }
 
 /**
@@ -232,21 +236,6 @@ export interface TerminalCommandHistoryState {
      * Event which fires when terminal prompt is shown.
      */
     onTerminalPromptShown: Event<void>;
-
-    /**
-     * Whether to enable command history in terminal.
-     */
-    enableCommandHistory: boolean;
-
-    /**
-     * Whether to show command separator in terminal command history.
-     */
-    enableCommandSeparator: boolean;
-
-    /**
-     * Updates the configuration enableCommandHistory and enableCommandSeparator.
-     */
-    updateConfig(): void;
 
 }
 
