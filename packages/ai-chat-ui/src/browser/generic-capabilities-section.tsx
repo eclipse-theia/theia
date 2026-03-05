@@ -26,6 +26,8 @@ export interface GenericCapabilitiesSectionProps {
     genericCapabilities: GenericCapabilitySelections;
     /** Called when a capability type's selection changes */
     onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+    /** Called to reset all generic capabilities to stored defaults */
+    onResetGenericCapabilities: () => void;
     /** Available capabilities to select from */
     availableCapabilities: AvailableGenericCapabilities;
     /** Items already in the agent prompt that should be disabled/greyed */
@@ -45,6 +47,7 @@ export interface GenericCapabilitiesSectionProps {
 export const GenericCapabilitiesSection: React.FunctionComponent<GenericCapabilitiesSectionProps> = ({
     genericCapabilities,
     onGenericCapabilityChange,
+    onResetGenericCapabilities,
     availableCapabilities,
     disabledCapabilities,
     disabled,
@@ -71,6 +74,7 @@ export const GenericCapabilitiesSection: React.FunctionComponent<GenericCapabili
             <GenericCapabilitiesTree
                 genericCapabilities={genericCapabilities}
                 onGenericCapabilityChange={onGenericCapabilityChange}
+                onResetGenericCapabilities={onResetGenericCapabilities}
                 availableCapabilities={availableCapabilities}
                 disabledCapabilities={disabledCapabilities}
                 disabled={disabled}

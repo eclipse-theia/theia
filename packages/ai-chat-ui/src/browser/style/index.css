@@ -1859,7 +1859,7 @@ div:last-child>.theia-ChatNode {
   position: relative;
 }
 
-/* Save button container in capabilities panel */
+/* Save button container in capabilities panel - always rendered inline with Generic Capabilities heading */
 .theia-ChatInput-CapabilitiesPanel-SaveButton {
   position: absolute;
   top: var(--theia-ui-padding);
@@ -1868,38 +1868,13 @@ div:last-child>.theia-ChatNode {
   align-items: center;
 }
 
-.theia-ChatInput-CapabilitiesPanel-SaveButton .save-button {
-  min-width: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
-  height: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
-  padding: calc(var(--theia-ui-padding) / 3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.theia-ChatInput-CapabilitiesPanel-SaveButton .theia-button {
+  height: 100%;
   box-sizing: border-box;
-  user-select: none;
-  background-repeat: no-repeat;
-  background-position: center;
-  border-radius: calc(var(--theia-ui-padding) * 5 / 6);
-  border: var(--theia-border-width) solid transparent;
-  cursor: pointer;
-  outline: none;
-  background-color: var(--theia-button-background);
-  color: var(--theia-button-foreground);
-}
-
-.theia-ChatInput-CapabilitiesPanel-SaveButton .save-button:hover {
-  background-color: var(--theia-button-hoverBackground);
-}
-
-.theia-ChatInput-CapabilitiesPanel-SaveButton .save-button:focus-visible {
-  outline: var(--theia-border-width) solid var(--theia-focusBorder);
-  outline-offset: calc(-1 * var(--theia-border-width));
-}
-
-.theia-ChatInput-CapabilitiesPanel-SaveButton .save-button.disabled {
-  cursor: default;
-  opacity: var(--theia-mod-disabled-opacity);
-  pointer-events: none;
+  font-size: 12px;
+  padding: 2px 4px;
+  min-width: 40px;
+  margin: 0;
 }
 
 .theia-ChatInput-CapabilitiesPanel-Left {

@@ -245,6 +245,12 @@ export class AIChatInputWidget extends ReactWidget {
         this.update();
     };
 
+    protected handleResetGenericCapabilities = (): void => {
+        const saved = this.savedGenericCapabilitySelections ?? {};
+        this.genericCapabilitySelections = { ...saved };
+        this.update();
+    };
+
     protected async updateCapabilitiesForAgent(agentId: string, modeId?: string, preserveOverrides?: boolean): Promise<void> {
         const capabilities = await this.capabilitiesService.getCapabilitiesForAgent(agentId, modeId);
         this.capabilityDefaults = capabilities;
@@ -388,14 +394,14 @@ export class AIChatInputWidget extends ReactWidget {
     /**
      * Checks if there are any unsaved changes (capability overrides or generic selections).
      */
-    protected hasAnyChangesFromSaved(): boolean {
-        return this.hasCapabilityChangesFromSaved() || this.hasGenericCapabilityChangesFromSaved();
+    public hasAnyChangesFromSaved(): boolean {
+        return (this.hasCapabilityChangesFromSaved() || this.hasGenericCapabilityChangesFromSaved()) && this.receivingAgent !== undefined;
     }
 
     /**
      * Saves current capability selections to settings.
      */
-    protected async saveCurrentSelectionsToSettings(): Promise<void> {
+    public async saveCurrentSelectionsToSettings(): Promise<void> {
         if (!this.receivingAgent) {
             return;
         }
@@ -968,6 +974,7 @@ export class AIChatInputWidget extends ReactWidget {
                 genericCapabilitiesProps={{
                     genericCapabilities: this.genericCapabilitySelections,
                     onGenericCapabilityChange: this.handleGenericCapabilityChange,
+                    onResetGenericCapabilities: this.handleResetGenericCapabilities,
                     availableCapabilities: this.availableGenericCapabilities,
                     disabledCapabilities: this.disabledGenericCapabilities,
                     hoverService: this.hoverService,
@@ -1257,6 +1264,7 @@ interface ChatInputProperties {
     genericCapabilitiesProps: {
         genericCapabilities: GenericCapabilitySelections;
         onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+        onResetGenericCapabilities: () => void;
         availableCapabilities: AvailableGenericCapabilities;
         disabledCapabilities: GenericCapabilitySelections;
         hoverService: HoverService;
@@ -1703,6 +1711,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
                         genericCapabilities={props.genericCapabilitiesProps.genericCapabilities}
                         onGenericCapabilityChange={props.genericCapabilitiesProps.onGenericCapabilityChange}
+                        onResetGenericCapabilities={props.genericCapabilitiesProps.onResetGenericCapabilities}
                         availableCapabilities={props.genericCapabilitiesProps.availableCapabilities}
                         disabledCapabilities={props.genericCapabilitiesProps.disabledCapabilities}
                         disabled={!props.isEnabled}
@@ -1896,6 +1905,7 @@ interface CapabilitiesBarProps {
     onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
     genericCapabilities: GenericCapabilitySelections;
     onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+    onResetGenericCapabilities: () => void;
     availableCapabilities: AvailableGenericCapabilities;
     disabledCapabilities: GenericCapabilitySelections;
     disabled?: boolean;
@@ -1916,6 +1926,7 @@ const CapabilitiesBar: React.FunctionComponent<CapabilitiesBarProps> = ({
     onCapabilityChange,
     genericCapabilities,
     onGenericCapabilityChange,
+    onResetGenericCapabilities,
     availableCapabilities,
     disabledCapabilities,
     disabled,
@@ -1926,7 +1937,8 @@ const CapabilitiesBar: React.FunctionComponent<CapabilitiesBarProps> = ({
     if (isOpen) {
         // Expanded state: full panel with save button
         const hasCapabilities = capabilities.length > 0;
-        const saveLabel = nls.localize('theia/ai/chat-ui/saveToSettings', 'Save to settings');
+        const saveLabel = nls.localizeByDefault('Save');
+        const saveTitle = nls.localize('theia/ai/chat-ui/saveCurrentSelectionsToSettings', 'Save capability settings');
         return (
             <div className="theia-ChatInput-CapabilitiesPanel">
                 {hasCapabilities && (
@@ -1946,31 +1958,22 @@ const CapabilitiesBar: React.FunctionComponent<CapabilitiesBarProps> = ({
                     <GenericCapabilitiesSection
                         genericCapabilities={genericCapabilities}
                         onGenericCapabilityChange={onGenericCapabilityChange}
+                        onResetGenericCapabilities={onResetGenericCapabilities}
                         availableCapabilities={availableCapabilities}
                         disabledCapabilities={disabledCapabilities}
                         disabled={disabled}
                         hoverService={hoverService} />
                 </div>
-                {hasUnsavedChanges && (
-                    <div className="theia-ChatInput-CapabilitiesPanel-SaveButton">
-                        <span
-                            className="option save-button"
-                            role="button"
-                            tabIndex={disabled ? -1 : 0}
-                            onClick={() => !disabled && onSaveToSettings()}
-                            onMouseEnter={hoverHandler(hoverService, saveLabel)}
-                            onKeyDown={e => {
-                                if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
-                                    e.preventDefault();
-                                    onSaveToSettings();
-                                }
-                            }}
-                            aria-label={saveLabel}
-                        >
-                            <span className="codicon codicon-save" />
-                        </span>
-                    </div>
-                )}
+                <div className="theia-ChatInput-CapabilitiesPanel-SaveButton">
+                    <button
+                        className="theia-button"
+                        disabled={!hasUnsavedChanges || disabled}
+                        title={saveTitle}
+                        onClick={onSaveToSettings}
+                    >
+                        {saveLabel}
+                    </button>
+                </div>
             </div>
         );
     }
