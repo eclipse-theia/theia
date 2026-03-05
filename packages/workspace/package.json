@@ -15,11 +15,18 @@
   },
   "theiaExtensions": [
     {
+      "preload": "lib/electron-browser/preload",
+      "electronMain": "lib/electron-main/electron-main-module"
+    },
+    {
       "frontend": "lib/browser/workspace-frontend-module",
       "backend": "lib/node/workspace-backend-module"
     },
     {
       "frontendOnly": "lib/browser-only/workspace-frontend-only-module"
+    },
+    {
+      "frontendElectron": "lib/electron-browser/electron-workspace-module"
     }
   ],
   "keywords": [
