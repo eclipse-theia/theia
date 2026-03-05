@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/tslint/config */
+/* eslint-disable @typescript-eslint/tslint/config, max-len */
 // *****************************************************************************
 // Copyright (C) 2025 EclipseSource GmbH and others.
 //

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,8 +19,8 @@ import { BasePromptFragment } from '@theia/ai-core/lib/common';
 export const EXPLORE_SYSTEM_PROMPT_ID = 'explore-system';
 
 export const exploreSystemPrompt: BasePromptFragment = {
-  id: EXPLORE_SYSTEM_PROMPT_ID,
-  template: `# Role
+    id: EXPLORE_SYSTEM_PROMPT_ID,
+    template: `# Role
 
 You are a **codebase exploration assistant**.
 
