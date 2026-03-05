@@ -53,6 +53,7 @@ export class TabBarToolbar extends ReactWidget {
     protected contextKeyListener: Disposable | undefined;
     protected toDisposeOnUpdateItems: DisposableCollection = new DisposableCollection();
 
+    protected toolbarContextKeys = new Set<string>();
     protected keybindingContextKeys = new Set<string>();
 
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
@@ -74,7 +75,7 @@ export class TabBarToolbar extends ReactWidget {
         this.toDispose.pushAll([
             this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()),
             this.contextKeyService.onDidChange(e => {
-                if (this.current) {
+                if (this.current && e.affects(this.toolbarContextKeys)) {
                     this.updateTarget(this.current);
                 } else if (e.affects(this.keybindingContextKeys)) {
                     this.maybeUpdate();
@@ -87,11 +88,12 @@ export class TabBarToolbar extends ReactWidget {
         ]);
     }
 
-    updateItems(items: Array<TabBarToolbarItem>, current: Widget | undefined): void {
+    updateItems(items: Array<TabBarToolbarItem>, current: Widget | undefined, contextKeys: Set<string> = new Set()): void {
         this.toDisposeOnUpdateItems.dispose();
         this.toDisposeOnUpdateItems = new DisposableCollection();
         this.inline.clear();
         this.more.clear();
+        this.toolbarContextKeys = contextKeys;
 
         for (const item of items.sort(TabBarToolbarAction.PRIORITY_COMPARATOR).reverse()) {
 
@@ -100,7 +102,6 @@ export class TabBarToolbar extends ReactWidget {
             } else {
                 this.more.set(item.id, item);
             }
-
             if (item.onDidChange) {
                 this.toDisposeOnUpdateItems.push(item.onDidChange(() => this.maybeUpdate()));
             }
@@ -118,7 +119,8 @@ export class TabBarToolbar extends ReactWidget {
     updateTarget(current?: Widget): void {
         const operativeWidget = TabBarDelegator.is(current) ? current.getTabBarDelegate() : current;
         const items = operativeWidget ? this.toolbarRegistry.visibleItems(operativeWidget) : [];
-        this.updateItems(items, operativeWidget);
+        const contextKeys = operativeWidget ? this.toolbarRegistry.collectContextKeys(operativeWidget) : new Set<string>();
+        this.updateItems(items, operativeWidget, contextKeys);
     }
 
     protected readonly toDisposeOnSetCurrent = new DisposableCollection();

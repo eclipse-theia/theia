@@ -112,9 +112,10 @@ export class MenusContributionPointHandler {
                                 }
                                 const label = cmd.label || cmd.id;
                                 const icon = cmd.iconClass;
-                                const action: CommandMenu & AcceleratorSource = {
+                                const action: CommandMenu & AcceleratorSource & { when?: string } = {
                                     id: command,
                                     sortString: order || '',
+                                    when: item.when,
                                     isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
                                         if (item.when && !contextMatcher.match(item.when, context)) {
                                             return false;
