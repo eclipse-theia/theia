@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { NewWindowOptions, WindowSearchParams } from '../../common/window';
+import { NewWindowOptions } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
 import { ElectronWindowPreferences } from '../../electron-common/electron-window-preferences';
@@ -57,8 +57,12 @@ export class ElectronWindowService extends DefaultWindowService {
         return undefined;
     }
 
-    override openNewDefaultWindow(params?: WindowSearchParams): void {
-        this.delegate.openNewDefaultWindow(params);
+    override async openNewDefaultWindow(params?: WindowReloadOptions): Promise<number> {
+        return this.delegate.openNewDefaultWindow(params?.search);
+    }
+
+    override closeWindow(windowId: number): void {
+        this.delegate.closeWindow(windowId);
     }
 
     override focus(): void {
@@ -116,4 +120,3 @@ export class ElectronWindowService extends DefaultWindowService {
         }
     }
 }
-
