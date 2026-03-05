@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import path = require('path');
+import * as fs from 'fs';
 import { GeneralShellType, guessShellTypeFromExecutable } from '../common/shell-type';
 import { ShellProcess, ShellProcessOptions } from './shell-process';
 
@@ -35,19 +36,25 @@ export class ShellIntegrationInjector {
         const shellExecutable = options.shell ?? ShellProcess.getShellExecutablePath();
         const shellType = guessShellTypeFromExecutable(shellExecutable);
         if (shellType === GeneralShellType.Bash) {
+            const scriptPath = this.getShellIntegrationPath(this.BASH_INTEGRATION_SCRIPT_PATH);
+            if (!scriptPath) {
+                return options;
+            }
             // strips the login flag if present to avoid conflicts with --rcfile
             const filteredArgs = this.stripLoginFlag(options.args);
             return {
                 ...options,
                 args: [
-                    this.BASH_RCFILE_FLAG, this.getShellIntegrationPath(this.BASH_INTEGRATION_SCRIPT_PATH),
+                    this.BASH_RCFILE_FLAG, scriptPath,
                     ...(filteredArgs ?? []),
                 ],
             };
         } else if (shellType === GeneralShellType.Zsh) {
             const zdotdirPath = this.getShellIntegrationPath(this.ZDOTDIR_RELATIVE_DIR);
             const zshDirPath = this.getShellIntegrationPath(this.ZSH_INTEGRATION_DIR);
-
+            if (!zdotdirPath || !zshDirPath) {
+                return options;
+            }
             return {
                 ...options,
                 env: {
@@ -62,8 +69,13 @@ export class ShellIntegrationInjector {
         }
     }
 
-    private static getShellIntegrationPath(relativePath: string): string {
-        return path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath);
+    private static getShellIntegrationPath(relativePath: string): string | undefined {
+        const fullPath = path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath);
+        if (!fs.existsSync(fullPath)) {
+            console.warn(`Shell integration file not found (application may not be bundled correctly): ${fullPath}`);
+            return undefined;
+        }
+        return fullPath;
     }
 
     private static stripLoginFlag(args: string | string[] | undefined): string[] | undefined {
