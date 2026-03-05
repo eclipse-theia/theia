@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 and others.
+// Copyright (C) 2026 and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -116,7 +116,7 @@ describe('FileService watcher deduplication', () => {
             expect(liveWatcherCount(mockProvider)).to.equal(0);
         });
 
-        it('should subsume a second recursive watcher on the same URI with different excludes', async () => {
+        it('should not let a restrictive parent subsume a permissive child at the same URI', async () => {
             const uri = new URI('file:///project/src');
             const opts1: WatchOptions = { recursive: true, excludes: ['**/node_modules'] };
             const opts2: WatchOptions = { recursive: true, excludes: [] };
@@ -124,7 +124,47 @@ describe('FileService watcher deduplication', () => {
             const d1 = await fileService.doWatch(uri, opts1);
             const d2 = await fileService.doWatch(uri, opts2);
 
-            // The first recursive watcher subsumes the second (same URI, covered by parent match)
+            // The first watcher (with excludes) cannot subsume the second (no excludes),
+            // but the second (watching everything) CAN subsume the first via subsumeExistingChildren.
+            // Two real watchers were created, but only the permissive one (d2) remains live.
+            expect(mockProvider.watchers).to.have.lengthOf(2);
+            expect(liveWatcherCount(mockProvider)).to.equal(1);
+
+            // Disposing d1 (already subsumed, no real watcher) should have no OS-level effect
+            d1.dispose();
+            expect(liveWatcherCount(mockProvider)).to.equal(1);
+
+            d2.dispose();
+            expect(liveWatcherCount(mockProvider)).to.equal(0);
+        });
+
+        it('should subsume a watcher with matching excludes on the same URI', async () => {
+            const uri = new URI('file:///project/src');
+            const opts1: WatchOptions = { recursive: true, excludes: ['**/node_modules'] };
+            const opts2: WatchOptions = { recursive: true, excludes: ['**/node_modules'] };
+
+            const d1 = await fileService.doWatch(uri, opts1);
+            const d2 = await fileService.doWatch(uri, opts2);
+
+            // Same excludes — exact-match dedup applies
+            expect(mockProvider.watchers).to.have.lengthOf(1);
+
+            d2.dispose();
+            expect(liveWatcherCount(mockProvider)).to.equal(1);
+
+            d1.dispose();
+            expect(liveWatcherCount(mockProvider)).to.equal(0);
+        });
+
+        it('should subsume a watcher with more excludes (superset) on the same URI', async () => {
+            const uri = new URI('file:///project/src');
+            const opts1: WatchOptions = { recursive: true, excludes: [] };
+            const opts2: WatchOptions = { recursive: true, excludes: ['**/node_modules'] };
+
+            const d1 = await fileService.doWatch(uri, opts1);
+            const d2 = await fileService.doWatch(uri, opts2);
+
+            // Parent has no excludes, so it watches everything the child needs — subsumption is safe
             expect(mockProvider.watchers).to.have.lengthOf(1);
 
             d2.dispose();
