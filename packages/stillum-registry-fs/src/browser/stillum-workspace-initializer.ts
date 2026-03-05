@@ -1,7 +1,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { URI } from '@theia/core';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { Disposable, DisposableCollection, URI } from '@theia/core';
+import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { StillumPortalBridge, StillumInitMessage, WorkspaceData } from './stillum-portal-bridge';
@@ -47,6 +47,10 @@ export class StillumWorkspaceInitializer implements FrontendApplicationContribut
     private workspacePath: string = '';
     /** Debounce timers per component to avoid rapid-fire syncs */
     private syncTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    /** Disposables for editor save listeners (cleaned up when editors close) */
+    private editorDisposables = new DisposableCollection();
+    /** Widget IDs already tracked — prevents double-registering listeners */
+    private trackedWidgetIds = new Set<string>();
 
     async onStart(): Promise<void> {
         // Only activate when running inside an iframe with a parent window
@@ -116,7 +120,7 @@ export class StillumWorkspaceInitializer implements FrontendApplicationContribut
         console.log('[StillumWorkspaceInitializer] Workspace path resolved:', this.workspacePath);
 
         this.buildSyncMappings(workspace);
-        this.setupFileSyncWatcher();
+        this.setupEditorSaveListener();
         await this.openTargetFile(initData, workspace);
     }
 
@@ -242,38 +246,129 @@ export class StillumWorkspaceInitializer implements FrontendApplicationContribut
         });
     }
 
-    // ─── File sync watcher ─────────────────────────────────────────────
+    // ─── Editor save listener ─────────────────────────────────────────
 
     /**
-     * Watch for file changes in the workspace.
-     * - src/index.tsx changes → sync as sourceCode to module artifact
-     * - Any file in a component folder changes → collect ALL files from that folder
-     *   and sync as sourceFiles to the component artifact
+     * Intercept save events directly from the Theia editor.
+     *
+     * Uses THREE layers to ensure every editor is tracked regardless of timing:
+     *
+     *   1. editorManager.all — catches editors already open when this runs
+     *   2. editorManager.onCreated — catches editors created AFTER this runs
+     *   3. editorManager.onActiveEditorChanged — lazy fallback: whenever the
+     *      user switches editor tab, we check if it's tracked and attach
+     *      a listener if needed.  This covers edge-cases where the first
+     *      two layers missed a widget (e.g., restored from layout state
+     *      between layers 1 and 2).
+     *
+     * Each layer calls trackEditorWidget(), which is **idempotent** (guarded
+     * by trackedWidgetIds).
      */
-    private setupFileSyncWatcher(): void {
-        this.fileService.onDidFilesChange(event => {
-            for (const change of event.changes) {
-                const filePath = change.resource.path.toString();
-                const relativePath = this.toRelativePath(filePath);
-                if (!relativePath) continue;
+    private setupEditorSaveListener(): void {
+        // Layer 1 — editors already open
+        const existing = this.editorManager.all;
+        console.log('[StillumWorkspaceInitializer] Layer 1 — existing editors:', existing.length);
+        for (const widget of existing) {
+            this.trackEditorWidget(widget);
+        }
 
-                // Check if it's the module's index.tsx
-                if (relativePath === 'src/index.tsx' && this.moduleMapping) {
-                    this.syncModuleSourceCode(change.resource);
-                    continue;
+        // Layer 2 — editors created later
+        this.editorDisposables.push(
+            this.editorManager.onCreated(widget => {
+                console.log('[StillumWorkspaceInitializer] Layer 2 — onCreated:', widget.id);
+                this.trackEditorWidget(widget);
+            })
+        );
+
+        // Layer 3 — active editor changes (lazy catch-all)
+        this.editorDisposables.push(
+            this.editorManager.onActiveEditorChanged(widget => {
+                if (widget) {
+                    this.trackEditorWidget(widget);
                 }
+            })
+        );
 
-                // Check if the file is inside a tracked component folder
-                const tracked = this.trackedComponentFolders.find(
-                    f => relativePath.startsWith(f.relativeFolderPath + '/'),
-                );
-                if (tracked) {
-                    this.debouncedSyncComponentFolder(tracked);
+        console.log('[StillumWorkspaceInitializer] Editor save listener active (3-layer)');
+    }
+
+    /**
+     * Attach a save listener to an editor widget.
+     *
+     * Idempotent: if the widget is already tracked (by ID), this is a no-op.
+     *
+     * When the editor transitions from dirty → clean (= save completed),
+     * we check if the file belongs to a tracked component folder or is the
+     * module index, and sync it to the registry.
+     */
+    private trackEditorWidget(widget: EditorWidget): void {
+        // Idempotent guard
+        if (this.trackedWidgetIds.has(widget.id)) {
+            return;
+        }
+
+        const resourceUri = widget.getResourceUri();
+        if (!resourceUri) {
+            return;
+        }
+
+        const filePath = resourceUri.path.toString();
+        const relativePath = this.toRelativePath(filePath);
+        if (!relativePath) {
+            return;
+        }
+
+        // Only track files in our tracked paths
+        const isModuleIndex = relativePath === 'src/index.tsx' && !!this.moduleMapping;
+        const tracked = this.trackedComponentFolders.find(
+            f => relativePath.startsWith(f.relativeFolderPath + '/'),
+        );
+
+        if (!isModuleIndex && !tracked) {
+            return;
+        }
+
+        // Mark as tracked BEFORE registering listeners
+        this.trackedWidgetIds.add(widget.id);
+        console.log('[StillumWorkspaceInitializer] ✔ Tracking editor:', relativePath,
+            '| widgetId:', widget.id,
+            '| isModuleIndex:', isModuleIndex,
+            '| componentFolder:', tracked?.relativeFolderPath ?? 'N/A');
+
+        // Track dirty state: we need to detect the dirty → clean transition
+        let wasDirty = widget.saveable.dirty;
+
+        const disposable = new DisposableCollection();
+
+        disposable.push(
+            widget.saveable.onDirtyChanged(() => {
+                const isDirty = widget.saveable.dirty;
+                console.log('[StillumWorkspaceInitializer] onDirtyChanged:', relativePath,
+                    '| wasDirty:', wasDirty, '→ isDirty:', isDirty);
+
+                if (wasDirty && !isDirty) {
+                    // dirty → clean = save completed
+                    console.log('[StillumWorkspaceInitializer] 💾 Save detected:', relativePath);
+                    if (isModuleIndex) {
+                        this.syncModuleSourceCode(resourceUri);
+                    } else if (tracked) {
+                        this.debouncedSyncComponentFolder(tracked);
+                    }
                 }
-            }
-        });
+                wasDirty = isDirty;
+            })
+        );
 
-        console.log('[StillumWorkspaceInitializer] File sync watcher active');
+        // Clean up when the editor is closed
+        disposable.push(
+            Disposable.create(() => {
+                this.trackedWidgetIds.delete(widget.id);
+                console.log('[StillumWorkspaceInitializer] Editor closed, removed tracking:', relativePath);
+            })
+        );
+        widget.disposed.connect(() => disposable.dispose());
+
+        this.editorDisposables.push(disposable);
     }
 
     /**
@@ -283,15 +378,19 @@ export class StillumWorkspaceInitializer implements FrontendApplicationContribut
         if (!this.moduleMapping) return;
         try {
             const content = await this.fileService.read(fileUri);
-            console.log('[StillumWorkspaceInitializer] Syncing module src/index.tsx');
+            console.log('[StillumWorkspaceInitializer] Syncing module src/index.tsx',
+                '| artifactId:', this.moduleMapping.artifactId,
+                '| versionId:', this.moduleMapping.versionId,
+                '| contentLength:', content.value.length);
             await this.bridge.saveSourceCode(
                 this.moduleMapping.artifactId,
                 this.moduleMapping.versionId,
                 content.value,
             );
+            console.log('[StillumWorkspaceInitializer] ✅ Module source sync successful');
             this.bridge.notifyDirtyState(false);
         } catch (error) {
-            console.error('[StillumWorkspaceInitializer] Failed to sync module source:', error);
+            console.error('[StillumWorkspaceInitializer] ❌ Failed to sync module source:', error);
         }
     }
 
@@ -319,6 +418,7 @@ export class StillumWorkspaceInitializer implements FrontendApplicationContribut
     private async syncComponentFolder(tracked: TrackedComponentFolder): Promise<void> {
         try {
             const folderUri = new URI(`file://${this.workspacePath}/${tracked.relativeFolderPath}`);
+            console.log('[StillumWorkspaceInitializer] Collecting files from:', folderUri.toString());
             const sourceFiles = await this.collectFolderFiles(folderUri, '');
 
             if (Object.keys(sourceFiles).length === 0) {
@@ -326,15 +426,19 @@ export class StillumWorkspaceInitializer implements FrontendApplicationContribut
                 return;
             }
 
-            console.log(`[StillumWorkspaceInitializer] Syncing component ${tracked.relativeFolderPath}:`, Object.keys(sourceFiles));
+            console.log('[StillumWorkspaceInitializer] Syncing component:', tracked.relativeFolderPath,
+                '| files:', Object.keys(sourceFiles),
+                '| artifactId:', tracked.artifactId,
+                '| versionId:', tracked.versionId);
             await this.bridge.saveComponentFiles(
                 tracked.artifactId,
                 tracked.versionId,
                 sourceFiles,
             );
+            console.log('[StillumWorkspaceInitializer] ✅ Component sync successful:', tracked.relativeFolderPath);
             this.bridge.notifyDirtyState(false);
         } catch (error) {
-            console.error('[StillumWorkspaceInitializer] Failed to sync component folder:', error);
+            console.error('[StillumWorkspaceInitializer] ❌ Failed to sync component folder:', error);
         }
     }
 
