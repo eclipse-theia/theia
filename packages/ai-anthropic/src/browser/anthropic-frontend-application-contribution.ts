@@ -64,7 +64,7 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
         this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
         this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
 
-        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
         this.prevCustomModels = [...customModels];
 
@@ -91,7 +91,7 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
             event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
             this.updateDiscoveredModels();
         } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-            this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+            this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>>(CUSTOM_ENDPOINTS_PREF, []));
         }
     }
 
@@ -102,7 +102,7 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
 
     /** Re-applies the model descriptions of the configured custom endpoints. */
     protected updateCustomModels(): void {
-        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
@@ -133,8 +133,8 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
     protected createModelDescription(model: DiscoveredModel): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${model.id}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
-        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const globalCompaction = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = <ServerSideCompactionSetting>this.preferenceService.get(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
         const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);
@@ -155,8 +155,8 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
 
     protected createCustomModelDescriptionsFromPreferences(preferences: Partial<AnthropicModelDescription>[]): AnthropicModelDescription[] {
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
-        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const globalCompaction = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = <ServerSideCompactionSetting>this.preferenceService.get(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
         const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);

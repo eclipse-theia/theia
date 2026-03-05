@@ -209,7 +209,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             });
 
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
-            const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
+            const maxResults = this.preferenceService.get(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
 
             const formattedResults = optimizeSearchResults(finalResults, this.workspaceScope);
 

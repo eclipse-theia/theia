@@ -80,10 +80,10 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
         return undefined;
     }
 
-    override resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+    override resolve<T>(preferenceName: string, resourceUri?: string, overideIdentifier?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         for (const provider of this.providers.values()) {
-            const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);
+            const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri, overideIdentifier);
             if (configUri && value !== undefined) {
                 result.configUri = configUri;
                 result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
@@ -101,7 +101,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
         return result;
     }
 
-    async setPreference(preferenceName: string, value: any, resourceUri?: string): Promise<boolean> {
+    async setPreference(preferenceName: string, value: any, resourceUri?: string, overideIdentifier?: string): Promise<boolean> {
         const sectionName = preferenceName.split('.', 1)[0];
         const defaultConfigName = this.configurations.getConfigName();
         const configName = this.configurations.isSectionName(sectionName) ? sectionName : defaultConfigName;
@@ -109,7 +109,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
         const setWithConfigName = async (name: string): Promise<boolean> => {
             for (const provider of this.providers.values()) {
                 if (this.configurations.getName(provider.getConfigUri()) === name) {
-                    if (await provider.setPreference(preferenceName, value, resourceUri)) {
+                    if (await provider.setPreference(preferenceName, value, resourceUri, overideIdentifier)) {
                         return true;
                     }
                 }

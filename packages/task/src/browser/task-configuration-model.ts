@@ -44,7 +44,7 @@ export class TaskConfigurationModel implements Disposable {
         this.reconcile();
         if (this.preferences) {
             this.toDispose.push(this.preferences.onDidPreferencesChanged((e: PreferenceProviderDataChanges) => {
-                const change = e['tasks'];
+                const change = e.find(c => c.preferenceName === 'tasks');
                 if (change && PreferenceProviderDataChange.affects(change, this.getWorkspaceFolder())) {
                     this.reconcile();
                 }
