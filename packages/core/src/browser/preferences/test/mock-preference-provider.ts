@@ -33,10 +33,18 @@ export class MockPreferenceProvider extends PreferenceProviderImpl {
     getPreferences(): { [p: string]: any } {
         return this.prefs;
     }
-    setPreference(preferenceName: string, newValue: any, resourceUri?: string): Promise<boolean> {
-        const oldValue = this.prefs[preferenceName];
-        this.prefs[preferenceName] = newValue;
-        return this.emitPreferencesChangedEvent([{ preferenceName, oldValue, newValue, scope: this.scope, domain: [] }]);
+    setPreference(preferenceName: string, newValue: any, resourceUri?: string, overrideIdentifier?: string): Promise<boolean> {
+        const key = this.getKey(preferenceName, overrideIdentifier);
+        const oldValue = this.prefs[key];
+        this.prefs[key] = newValue;
+        return this.emitPreferencesChangedEvent([{ preferenceName, overrideIdentifier, oldValue, newValue, scope: this.scope, domain: [] }]);
+    }
+
+    protected getKey(preferenceName: string, overrideIdentifier?: string): string {
+        if (overrideIdentifier) {
+            return `[${overrideIdentifier}].${preferenceName}`;
+        }
+        return preferenceName;
     }
 }
 

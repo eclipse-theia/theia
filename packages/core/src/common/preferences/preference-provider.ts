@@ -41,6 +41,11 @@ export interface PreferenceProviderDataChange {
      * The {@link PreferenceScope} of the changed preference.
      */
     readonly scope: PreferenceScope;
+
+    /**
+     * The identifier of the override that caused this change.
+     */
+    readonly overrideIdentifier?: string;
     /**
      * URIs of the scopes in which this change applies.
      */
@@ -60,9 +65,7 @@ export interface PreferenceResolveResult<T> {
     value?: T
 }
 
-export interface PreferenceProviderDataChanges {
-    [preferenceName: string]: PreferenceProviderDataChange;
-}
+export type PreferenceProviderDataChanges = PreferenceProviderDataChange[];
 export const PreferenceProvider = Symbol('PreferenceProvider');
 
 export interface PreferenceProvider extends Disposable {
@@ -81,33 +84,36 @@ export interface PreferenceProvider extends Disposable {
      * @param preferenceName the preference identifier.
      * @param resourceUri the uri of the resource for which the preference is stored. This is used to retrieve
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     * @param overrideIdentifier the identifier of the override to use.
      *
      * @returns the value stored for the given preference and resourceUri if it exists, otherwise `undefined`.
      */
-    get<T>(preferenceName: string, resourceUri?: string): T | undefined;
+    get<T>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): T | undefined;
     /**
      * Stores a new value for the given preference key in the provider.
      * @param key the preference key (typically the name).
      * @param value the new preference value.
      * @param resourceUri the URI of the resource for which the preference is stored.
+     * @param overrideIdentifier the identifier of the override to use.
      *
      * @returns a promise that only resolves if all changes were delivered.
      * If changes were made then implementation must either
      * await on `this.emitPreferencesChangedEvent(...)` or
      * `this.pendingChanges` if changes are fired indirectly.
      */
-    setPreference(key: string, value: JSONValue, resourceUri?: string): Promise<boolean>
+    setPreference(key: string, value: JSONValue, resourceUri?: string, overrideIdentifier?: string): Promise<boolean>
     /**
      * Resolve the value for the given preference and resource URI.
      *
      * @param preferenceName the preference identifier.
      * @param resourceUri the URI of the resource for which this provider should resolve the preference. This is used to retrieve
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     * @param overrideIdentifier the identifier of the override to use.
      *
      * @returns an object containing the value stored for the given preference and resourceUri if it exists,
      * otherwise `undefined`.
      */
-    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T>;
+    resolve<T>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T>;
 
     /**
      * Retrieve the configuration URI for the given resource URI.
