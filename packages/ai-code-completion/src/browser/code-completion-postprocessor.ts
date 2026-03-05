@@ -30,7 +30,7 @@ export class DefaultCodeCompletionPostProcessor {
     protected readonly preferenceService: PreferenceService;
 
     public postProcess(text: string): string {
-        if (this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS, true)) {
+        if (this.preferenceService.get(PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS, true)) {
             return this.stripBackticks(text);
         }
         return text;

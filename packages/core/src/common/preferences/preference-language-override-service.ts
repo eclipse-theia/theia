@@ -17,7 +17,6 @@
 import { inject, injectable } from 'inversify';
 import { isObject } from '../types';
 import { IndexedAccess, PreferenceSchemaService } from './preference-schema';
-import { escapeRegExpCharacters } from '../strings';
 import { JSONValue } from '@lumino/coreutils';
 
 export interface OverridePreferenceName {
@@ -56,39 +55,5 @@ export class PreferenceLanguageOverrideService {
      */
     overridePreferenceName({ preferenceName, overrideIdentifier }: OverridePreferenceName): string {
         return `${this.markLanguageOverride(overrideIdentifier)}.${preferenceName}`;
-    }
-
-    /**
-     * @returns an OverridePreferenceName if the `name` contains a language override, e.g. [typescript].editor.tabSize.
-     */
-    overriddenPreferenceName(name: string): OverridePreferenceName | undefined {
-        const index = name.indexOf('.');
-        if (index === -1) {
-            return undefined;
-        }
-        const matches = name.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
-        const overrideIdentifier = matches && matches[1];
-        if (!overrideIdentifier || !this.preferenceSchemaService.overrideIdentifiers.has(overrideIdentifier)) {
-            return undefined;
-        }
-        const preferenceName = name.substring(index + 1);
-        return { preferenceName, overrideIdentifier };
-    }
-
-    computeOverridePatternPropertiesKey(): string | undefined {
-        let param: string = '';
-        for (const overrideIdentifier of this.preferenceSchemaService.overrideIdentifiers) {
-            if (param.length) {
-                param += '|';
-            }
-            param += new RegExp(escapeRegExpCharacters(overrideIdentifier)).source;
-        }
-        return param.length ? getOverridePattern(param) : undefined;
-    }
-
-    *getOverridePreferenceNames(preferenceName: string): IterableIterator<string> {
-        for (const overrideIdentifier of this.preferenceSchemaService.overrideIdentifiers) {
-            yield this.overridePreferenceName({ preferenceName, overrideIdentifier });
-        }
     }
 }

@@ -118,8 +118,8 @@ export class ClaudeCodeFrontendService {
         const rootsUris = roots.map(root => FileUri.fsPath(root.resource.toString()));
 
         const prompt = request.prompt;
-        const apiKey = this.preferenceService.get<string>(CLAUDE_CODE_API_KEY_PREF, undefined);
-        const claudeCodePath = this.preferenceService.get<string>(CLAUDE_CODE_EXECUTABLE_PATH_PREF, undefined);
+        const apiKey = this.preferenceService.get<string>(CLAUDE_CODE_API_KEY_PREF);
+        const claudeCodePath = this.preferenceService.get<string>(CLAUDE_CODE_EXECUTABLE_PATH_PREF);
         this.getOutputChannel()?.appendLine(JSON.stringify(request, undefined, 2));
 
         await this.claudeCodeBackendService.send({
