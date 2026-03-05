@@ -20,7 +20,6 @@ import { PreferenceService } from './preference-service';
 import { PreferenceScope } from './preference-scope';
 import { IJSONSchema } from '../json-schema';
 import { isThenable } from '../promise-util';
-import { OverridePreferenceName } from './preference-language-override-service';
 import { isObject, MaybePromise } from '../types';
 import { Event } from '../event';
 import { Disposable } from '../disposable';
@@ -185,20 +184,13 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
     }
     const onPreferenceChanged = (listener: (e: PreferenceChangeEvent<T>) => any, thisArgs?: any, disposables?: Disposable[]) => preferences.onPreferencesChanged(changes => {
         if (schema) {
-            for (const key of Object.keys(changes)) {
-                const e = changes[key];
-                const overridden = preferences.overriddenPreferenceName(e.preferenceName);
-                const preferenceName = overridden ? overridden.preferenceName : e.preferenceName;
-                if (preferenceName.startsWith(prefix) && (!opts.overrideIdentifier || overridden?.overrideIdentifier === opts.overrideIdentifier)) {
+            for (const e of changes) {
+                const preferenceName = e.preferenceName;
+                if (preferenceName.startsWith(prefix) && (!opts.overrideIdentifier || e.affectedOverrides.includes(opts.overrideIdentifier))) {
                     if (schema.properties && schema.properties[preferenceName]) {
                         listener({
                             preferenceName: preferenceName as keyof T,
-                            affects: (resourceUri, overrideIdentifier) => {
-                                if (overrideIdentifier !== overridden?.overrideIdentifier) {
-                                    return false;
-                                }
-                                return e.affects(resourceUri);
-                            }
+                            affects: (resourceUri, overrideIdentifier) => e.affects(resourceUri, overrideIdentifier)
                         });
                     }
                 }
@@ -210,12 +202,12 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
         throw new Error('Unsupported operation');
     };
 
-    const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) => {
-        const preferenceName = OverridePreferenceName.is(arg) ?
-            preferences.overridePreferenceName(arg) :
-            <string>arg;
-        return preferences.get(preferenceName, defaultValue, resourceUri || opts.resourceUri);
-    };
+    const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) =>
+        preferences.get(typeof arg === 'object' ? (arg as { preferenceName: string }).preferenceName : arg as string, {
+            fallback: defaultValue,
+            resource: resourceUri || opts.resourceUri,
+            override: opts.overrideIdentifier
+        });
 
     const ownKeys: () => string[] = () => {
         const properties = [];
@@ -286,13 +278,10 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
                 if (schema.properties[fullProperty]) {
                     let value;
                     if (opts.overrideIdentifier) {
-                        value = preferences.get(preferences.overridePreferenceName({
-                            overrideIdentifier: opts.overrideIdentifier,
-                            preferenceName: fullProperty
-                        }), undefined, opts.resourceUri);
+                        value = preferences.get(fullProperty, { resource: opts.resourceUri, override: opts.overrideIdentifier });
                     }
                     if (value === undefined) {
-                        value = preferences.get(fullProperty, undefined, opts.resourceUri);
+                        value = preferences.get(fullProperty, { resource: opts.resourceUri });
                     }
                     return value;
                 }

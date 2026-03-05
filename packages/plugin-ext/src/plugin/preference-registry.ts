@@ -205,13 +205,11 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
             },
             update: (key: string, value: any, targetScope?: ConfigurationTarget | boolean, withLanguageOverride?: boolean): PromiseLike<void> => {
                 const resourceStr = overrides.resource?.toString();
-                const overrideSegment = overrides.overrideIdentifier ? `[${overrides.overrideIdentifier}].` : '';
                 const preferenceKey = rawSection ? `${rawSection}.${key}` : key;
-                const fullPath = overrideSegment + preferenceKey;
                 if (typeof value !== 'undefined') {
-                    return this.proxy.$updateConfigurationOption(targetScope, fullPath, value, resourceStr, withLanguageOverride);
+                    return this.proxy.$updateConfigurationOption(targetScope, preferenceKey, value, resourceStr, withLanguageOverride, overrides.overrideIdentifier ?? undefined);
                 } else {
-                    return this.proxy.$removeConfigurationOption(targetScope, fullPath, resourceStr, withLanguageOverride);
+                    return this.proxy.$removeConfigurationOption(targetScope, preferenceKey, resourceStr, withLanguageOverride, overrides.overrideIdentifier ?? undefined);
                 }
             },
             inspect: <T>(key: string): ConfigurationInspect<T> | undefined => {
