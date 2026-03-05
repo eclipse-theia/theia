@@ -32,9 +32,6 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     readonly onTerminalCommandStart: Event<void> = this.onCommandStartEmitter.event;
     readonly onTerminalPromptShown: Event<void> = this.onPromptShownEmitter.event;
 
-    enableCommandHistory: boolean = false;
-    enableCommandSeparator: boolean = false;
-
     constructor(maxCapacity: number = 200) {
         this.toDispose.push(this.onCommandStartEmitter);
         this.toDispose.push(this.onPromptShownEmitter);

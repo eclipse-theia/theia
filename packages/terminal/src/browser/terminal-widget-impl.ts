@@ -192,7 +192,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     private _currentTerminalOutput: string[];
-    commandHistoryState: TerminalCommandHistoryState;
+    commandHistoryState?: TerminalCommandHistoryState;
 
     enableCommandHistory: boolean;
     protected enableCommandSeparator: boolean;
@@ -399,6 +399,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected updateCommandHistoryConfig(): void {
         this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
+        this.term.options.allowProposedApi = this.enableCommandHistory;
         this.enableCommandSeparator = this.enableCommandHistory
             ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
             : false;
@@ -421,11 +422,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnCommandHistory.dispose();
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
-        if (!this.enableCommandHistory) {
+        if (!this.enableCommandHistory || !this.commandHistoryState) {
             return;
         }
         this.toDisposeOnCommandHistory.push(
             this.term.parser.registerOscHandler(133, (oscPayload: string) => {
+                if (!this.commandHistoryState) {
+                    return false;
+                }
                 if (oscPayload === 'prompt_started') {
                     if (this.commandHistoryState.currentCommand) {
                         this.finishCurrentCommand();
@@ -456,7 +460,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected startNewCommand(hexEncodedCommand: string): void {
         this.outputStartMarker?.dispose();
         this.outputStartMarker = this.term.registerMarker(0);
-        this.commandHistoryState.startCommand(hexEncodedCommand);
+        this.commandHistoryState!.startCommand(hexEncodedCommand);
     }
 
     protected finishCurrentCommand(): void {
@@ -472,12 +476,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
 
         const block: TerminalBlock = {
-            command: this.commandHistoryState.currentCommand,
+            command: this.commandHistoryState!.currentCommand,
             output,
         };
 
         this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
-        this.commandHistoryState.finishCommand(block);
+        this.commandHistoryState!.finishCommand(block);
         this.outputStartMarker = undefined;
         this.promptStartMarker = undefined;
     }
@@ -959,7 +963,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
         this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
         this.resetCommandOutputMarker();
-        this.commandHistoryState.clearCommandCollectionState();
+        if (this.commandHistoryState) {
+            this.commandHistoryState.clearCommandCollectionState();
+        }
     }
 
     scrollLineUp(): void {
