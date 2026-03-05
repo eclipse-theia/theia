@@ -97,8 +97,9 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             type: 'number',
             title: nls.localize('theia/ai/workspace/fileContentMaxSizeKB/title', 'File Content Max Size (KB)'),
             description: nls.localize('theia/ai/workspace/fileContentMaxSizeKB/description',
-                'Maximum file size in kilobytes returned by the getFileContent tool. ' +
-                'Files exceeding this limit return an error regardless of offset/limit parameters.'),
+                'Maximum size in kilobytes of the content returned by the getFileContent tool. ' +
+                'When reading a full file (no offset/limit), files exceeding this limit return an error. ' +
+                'When using offset and limit, only the requested range is checked against this limit.'),
             default: 256,
             minimum: 1
         }

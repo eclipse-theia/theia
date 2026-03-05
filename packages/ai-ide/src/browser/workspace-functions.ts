@@ -380,7 +380,7 @@ export class FileContentFunction implements ToolProvider {
             const rawContent = openEditorValue !== undefined ? openEditorValue : (await this.fileService.read(targetUri)).value;
 
             if (offset === undefined && limit === undefined) {
-                const sizeKB = Math.round(rawContent.length / 1024);
+                const sizeKB = Math.round(new Blob([rawContent]).size / 1024);
                 if (sizeKB > maxSizeKB) {
                     return JSON.stringify({
                         error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit (' + sizeKB + 'KB). ' +
@@ -396,7 +396,7 @@ export class FileContentFunction implements ToolProvider {
                 const startOffset = offset ?? 0;
                 const sliced = limit !== undefined ? lines.slice(startOffset, startOffset + limit) : lines.slice(startOffset);
                 const result = sliced.join('\n');
-                const resultSizeKB = Math.round(result.length / 1024);
+                const resultSizeKB = Math.round(new Blob([result]).size / 1024);
                 if (resultSizeKB > maxSizeKB) {
                     return JSON.stringify({
                         error: 'Requested range exceeds the configured ' + maxSizeKB + 'KB size limit (' + resultSizeKB + 'KB). ' +
