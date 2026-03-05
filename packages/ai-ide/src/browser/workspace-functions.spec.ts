@@ -259,7 +259,9 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
 describe('FileContentFunction handler', () => {
     let container: Container;
     let fileContentFunction: FileContentFunction;
-    let mockFileService: FileService;
+    // Mutable delegates — tests reassign these directly instead of casting the mock object.
+    let mockResolve: () => Promise<unknown>;
+    let mockRead: () => Promise<unknown>;
     let mockMonacoWorkspace: MonacoWorkspace;
     let mockPreferenceService: { get: <T>(path: string, defaultValue: T) => T };
 
@@ -278,15 +280,22 @@ describe('FileContentFunction handler', () => {
             roots: [{ resource: new URI('file:///workspace') }]
         } as unknown as WorkspaceService;
 
-        mockFileService = {
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 1024,
+            resource: new URI('file:///workspace/test.txt')
+        });
+
+        mockRead = async () => ({ value: 'line1\nline2\nline3\nline4\nline5' });
+
+        // The mock object is stable across a test; individual methods delegate to
+        // the mutable variables above so tests can substitute behaviour without
+        // the fragile `(obj as unknown as {…}).method = …` double-cast pattern.
+        const mockFileService = {
             exists: async () => true,
-            resolve: async () => ({
-                isFile: true,
-                isDirectory: false,
-                size: 1024,
-                resource: new URI('file:///workspace/test.txt')
-            }),
-            read: async () => ({ value: 'line1\nline2\nline3\nline4\nline5' })
+            resolve: () => mockResolve(),
+            read: () => mockRead(),
         } as unknown as FileService;
 
         mockPreferenceService = {
@@ -316,13 +325,13 @@ describe('FileContentFunction handler', () => {
     it('rejects without reading when on-disk size exceeds limit', async () => {
         // Stat reports 512 KB; default limit is 256 KB
         let readCalled = false;
-        (mockFileService as unknown as { resolve: unknown }).resolve = async () => ({
+        mockResolve = async () => ({
             isFile: true,
             isDirectory: false,
             size: 512 * 1024,
             resource: new URI('file:///workspace/big.txt')
         });
-        (mockFileService as unknown as { read: unknown }).read = async () => {
+        mockRead = async () => {
             readCalled = true;
             return { value: 'should not be read' };
         };
@@ -338,7 +347,7 @@ describe('FileContentFunction handler', () => {
 
     it('returns editor content when file is open in editor and within size limit', async () => {
         let resolveCalled = false;
-        (mockFileService as unknown as { resolve: unknown }).resolve = async () => {
+        mockResolve = async () => {
             resolveCalled = true;
             return { isFile: true, isDirectory: false, size: 1024, resource: new URI('file:///workspace/open.txt') };
         };
@@ -378,7 +387,7 @@ describe('FileContentFunction handler', () => {
     it('skips stat pre-check and reads full file when offset/limit are provided', async () => {
         // Stat would report huge file, but offset+limit path must still attempt the read
         let resolveCalled = false;
-        (mockFileService as unknown as { resolve: unknown }).resolve = async () => {
+        mockResolve = async () => {
             resolveCalled = true;
             return {
                 isFile: true,
@@ -399,14 +408,7 @@ describe('FileContentFunction handler', () => {
     it('rejects when the requested slice itself exceeds the size limit', async () => {
         const bigLine = 'x'.repeat(1024);
         const bigContent = Array.from({ length: 300 }, () => bigLine).join('\n');
-        (mockFileService as unknown as { read: unknown }).read = async () => ({ value: bigContent });
-        // stat size is small so the pre-check passes (not reached in offset path anyway)
-        (mockFileService as unknown as { resolve: unknown }).resolve = async () => ({
-            isFile: true,
-            isDirectory: false,
-            size: 1024,
-            resource: new URI('file:///workspace/big.txt')
-        });
+        mockRead = async () => ({ value: bigContent });
 
         const handler = fileContentFunction.getTool().handler;
         // Reading all 300 lines × 1 KB each = ~300 KB, over the 256 KB default limit
@@ -418,12 +420,8 @@ describe('FileContentFunction handler', () => {
     });
 
     it('returns File not found error when file does not exist', async () => {
-        (mockFileService as unknown as { resolve: unknown }).resolve = async () => {
-            throw new Error('File not found');
-        };
-        (mockFileService as unknown as { read: unknown }).read = async () => {
-            throw new Error('File not found');
-        };
+        mockResolve = async () => { throw new Error('File not found'); };
+        mockRead = async () => { throw new Error('File not found'); };
 
         const handler = fileContentFunction.getTool().handler;
         const result = await handler(JSON.stringify({ file: 'nonexistent.txt' }), undefined);
@@ -493,8 +491,8 @@ describe('FileContentFunction handler', () => {
         mockPreferenceService.get = <T>(_path: string, _defaultValue: T) => 1 as unknown as T;
 
         const content = 'x'.repeat(2 * 1024); // 2 KB
-        (mockFileService as unknown as { read: unknown }).read = async () => ({ value: content });
-        (mockFileService as unknown as { resolve: unknown }).resolve = async () => ({
+        mockRead = async () => ({ value: content });
+        mockResolve = async () => ({
             isFile: true,
             isDirectory: false,
             size: 2 * 1024,
