@@ -262,8 +262,26 @@ describe('FileContentFunction handler', () => {
     // Mutable delegates — tests reassign these directly instead of casting the mock object.
     let mockResolve: () => Promise<unknown>;
     let mockRead: () => Promise<unknown>;
+    let mockReadStream: () => Promise<unknown>;
     let mockMonacoWorkspace: MonacoWorkspace;
     let mockPreferenceService: { get: <T>(path: string, defaultValue: T) => T };
+
+    const makeMockStream = (content: string) => {
+        const handlers: Record<string, Function> = {};
+        // Use setTimeout so the macro-task fires after all pending microtasks
+        // (including the await continuation that registers the listeners).
+        setTimeout(() => {
+            handlers['data']?.(content);
+            handlers['end']?.();
+        }, 0);
+        return {
+            on(event: string, cb: Function): void { handlers[event] = cb; },
+            pause(): void { },
+            resume(): void { },
+            destroy(): void { },
+            removeListener(): void { }
+        };
+    };
 
     let disableJSDOMInner: () => void;
     before(() => {
@@ -289,6 +307,8 @@ describe('FileContentFunction handler', () => {
 
         mockRead = async () => ({ value: 'line1\nline2\nline3\nline4\nline5' });
 
+        mockReadStream = async () => ({ value: makeMockStream('line1\nline2\nline3\nline4\nline5') });
+
         // The mock object is stable across a test; individual methods delegate to
         // the mutable variables above so tests can substitute behaviour without
         // the fragile `(obj as unknown as {…}).method = …` double-cast pattern.
@@ -296,6 +316,7 @@ describe('FileContentFunction handler', () => {
             exists: async () => true,
             resolve: () => mockResolve(),
             read: () => mockRead(),
+            readStream: () => mockReadStream(),
         } as unknown as FileService;
 
         mockPreferenceService = {
@@ -384,9 +405,10 @@ describe('FileContentFunction handler', () => {
         expect(result).to.include('line2\nline3');
     });
 
-    it('skips stat pre-check and reads full file when offset/limit are provided', async () => {
-        // Stat would report huge file, but offset+limit path must still attempt the read
+    it('does not call resolve() or read() for paginated disk reads, uses readStream instead', async () => {
+        // Stat would report huge file, but the streaming path bypasses both stat and read
         let resolveCalled = false;
+        let readCalled = false;
         mockResolve = async () => {
             resolveCalled = true;
             return {
@@ -396,19 +418,24 @@ describe('FileContentFunction handler', () => {
                 resource: new URI('file:///workspace/big.txt')
             };
         };
+        mockRead = async () => {
+            readCalled = true;
+            return { value: 'should not be read' };
+        };
 
         const handler = fileContentFunction.getTool().handler;
         const result = await handler(JSON.stringify({ file: 'big.txt', offset: 0, limit: 3 }), undefined);
 
-        // resolve is NOT called for the pre-check in the offset/limit path
+        // resolve and read are NOT called in the streaming path
         expect(resolveCalled).to.be.false;
+        expect(readCalled).to.be.false;
         expect(result).to.include('line1\nline2\nline3');
     });
 
     it('rejects when the requested slice itself exceeds the size limit', async () => {
         const bigLine = 'x'.repeat(1024);
         const bigContent = Array.from({ length: 300 }, () => bigLine).join('\n');
-        mockRead = async () => ({ value: bigContent });
+        mockReadStream = async () => ({ value: makeMockStream(bigContent) });
 
         const handler = fileContentFunction.getTool().handler;
         // Reading all 300 lines × 1 KB each = ~300 KB, over the 256 KB default limit
@@ -422,6 +449,7 @@ describe('FileContentFunction handler', () => {
     it('returns File not found error when file does not exist', async () => {
         mockResolve = async () => { throw new Error('File not found'); };
         mockRead = async () => { throw new Error('File not found'); };
+        mockReadStream = async () => { throw new Error('File not found'); };
 
         const handler = fileContentFunction.getTool().handler;
         const result = await handler(JSON.stringify({ file: 'nonexistent.txt' }), undefined);

@@ -379,6 +379,11 @@ export class FileContentFunction implements ToolProvider {
                 }
             }
 
+            // Paginated reads of on-disk files use streaming to avoid loading the full file into memory.
+            if ((offset !== undefined || limit !== undefined) && openEditorValue === undefined) {
+                return this.readStreamedSlice(targetUri, offset ?? 0, limit, maxSizeKB);
+            }
+
             const rawContent = openEditorValue !== undefined ? openEditorValue : (await this.fileService.read(targetUri)).value;
 
             if (offset === undefined && limit === undefined) {
@@ -407,6 +412,53 @@ export class FileContentFunction implements ToolProvider {
         } catch (error) {
             return JSON.stringify({ error: 'File not found' });
         }
+    }
+
+    private async readStreamedSlice(
+        targetUri: URI, startLine: number, limit: number | undefined, maxSizeKB: number
+    ): Promise<string> {
+        let streamValue: Awaited<ReturnType<typeof this.fileService.readStream>>['value'];
+        try {
+            streamValue = (await this.fileService.readStream(targetUri)).value;
+        } catch {
+            return JSON.stringify({ error: 'File not found' });
+        }
+
+        return new Promise<string>(resolve => {
+            let pending = '';
+            let lineIndex = 0;
+            const sliceLines: string[] = [];
+
+            streamValue.on('data', (chunk: string) => {
+                const parts = (pending + chunk).split('\n');
+                pending = parts.pop()!;
+                for (const line of parts) {
+                    if (lineIndex >= startLine && (limit === undefined || lineIndex < startLine + limit)) {
+                        sliceLines.push(line);
+                    }
+                    lineIndex++;
+                }
+            });
+
+            streamValue.on('end', () => {
+                if (pending.length > 0) {
+                    if (lineIndex >= startLine && (limit === undefined || lineIndex < startLine + limit)) {
+                        sliceLines.push(pending);
+                    }
+                    lineIndex++;
+                }
+                const result = sliceLines.join('\n');
+                const resultSizeKB = Math.round(new Blob([result]).size / 1024);
+                if (resultSizeKB > maxSizeKB) {
+                    resolve(this.buildSliceSizeLimitError(resultSizeKB, maxSizeKB));
+                    return;
+                }
+                const header = `[Lines ${startLine + 1}\u2013${startLine + sliceLines.length} of ${lineIndex} total. Use offset and limit to read other ranges.]`;
+                resolve(`${header}\n${result}`);
+            });
+
+            streamValue.on('error', () => resolve(JSON.stringify({ error: 'File not found' })));
+        });
     }
 
     private buildFileSizeLimitError(sizeKB: number, maxSizeKB: number): string {
