@@ -431,6 +431,83 @@ describe('FileContentFunction handler', () => {
         const parsed = JSON.parse(result as string);
         expect(parsed.error).to.equal('File not found');
     });
+
+    it('rejects negative offset', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: -1 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('non-negative integer');
+    });
+
+    it('rejects fractional offset', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 1.5 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('non-negative integer');
+    });
+
+    it('rejects negative limit', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', limit: -1 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('positive integer');
+    });
+
+    it('rejects zero limit', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', limit: 0 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('positive integer');
+    });
+
+    it('returns content from offset to end when only offset is provided', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 2 }), undefined);
+
+        expect(result).to.include('[Lines 3\u20135 of 5 total.');
+        expect(result).to.include('line3\nline4\nline5');
+    });
+
+    it('returns last line when offset is at boundary', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 4, limit: 1 }), undefined);
+
+        expect(result).to.include('[Lines 5\u20135 of 5 total.');
+        expect(result).to.include('line5');
+    });
+
+    it('returns empty content when offset is beyond end of file', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 100, limit: 5 }), undefined);
+
+        // slice beyond end returns empty array → empty joined string
+        expect(result).to.include('[Lines 101\u2013100 of 5 total.');
+    });
+
+    it('uses custom preference value for size limit', async () => {
+        // Set a very small limit of 1 KB
+        mockPreferenceService.get = <T>(_path: string, _defaultValue: T) => 1 as unknown as T;
+
+        const content = 'x'.repeat(2 * 1024); // 2 KB
+        (mockFileService as unknown as { read: unknown }).read = async () => ({ value: content });
+        (mockFileService as unknown as { resolve: unknown }).resolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 2 * 1024,
+            resource: new URI('file:///workspace/test.txt')
+        });
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.maxSizeKB).to.equal(1);
+    });
 });
 
 describe('FindFilesByPattern.getArgumentsShortLabel', () => {

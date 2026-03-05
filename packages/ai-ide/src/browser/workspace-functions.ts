@@ -281,7 +281,7 @@ export class FileContentFunction implements ToolProvider {
                 'Binary files may not be readable and will return an error. ' +
                 'Use this tool to read file contents before making any edits with replacement functions. ' +
                 'Do NOT use this for files you haven\'t located yet - use findFilesByPattern or searchInWorkspace first. ' +
-                `Files exceeding the configured size limit (${this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256)}KB) will return an error. ` +
+                'Files exceeding the configured size limit will return an error. ' +
                 'It is recommended to read the whole file by not providing offset or limit parameters, ' +
                 'unless you expect it to be very large. ' +
                 'If the size limit is hit, do NOT attempt to read the full file in chunks using offset and limit — ' +
@@ -347,6 +347,13 @@ export class FileContentFunction implements ToolProvider {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
 
+        if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
+            return JSON.stringify({ error: 'offset must be a non-negative integer.' });
+        }
+        if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
+            return JSON.stringify({ error: 'limit must be a positive integer.' });
+        }
+
         let targetUri: URI | undefined;
         try {
             const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
@@ -368,12 +375,7 @@ export class FileContentFunction implements ToolProvider {
                 const stat = await this.fileService.resolve(targetUri);
                 const sizeKB = Math.round((stat.size ?? 0) / 1024);
                 if (sizeKB > maxSizeKB) {
-                    return JSON.stringify({
-                        error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit (' + sizeKB + 'KB). ' +
-                            'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, or use searchInWorkspace to find specific content.',
-                        sizeKB,
-                        maxSizeKB
-                    });
+                    return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
                 }
             }
 
@@ -382,12 +384,7 @@ export class FileContentFunction implements ToolProvider {
             if (offset === undefined && limit === undefined) {
                 const sizeKB = Math.round(new Blob([rawContent]).size / 1024);
                 if (sizeKB > maxSizeKB) {
-                    return JSON.stringify({
-                        error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit (' + sizeKB + 'KB). ' +
-                            'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, or use searchInWorkspace to find specific content.',
-                        sizeKB,
-                        maxSizeKB
-                    });
+                    return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
                 }
             }
 
@@ -398,12 +395,7 @@ export class FileContentFunction implements ToolProvider {
                 const result = sliced.join('\n');
                 const resultSizeKB = Math.round(new Blob([result]).size / 1024);
                 if (resultSizeKB > maxSizeKB) {
-                    return JSON.stringify({
-                        error: 'Requested range exceeds the configured ' + maxSizeKB + 'KB size limit (' + resultSizeKB + 'KB). ' +
-                            'Use a smaller limit to read fewer lines at a time.',
-                        resultSizeKB,
-                        maxSizeKB
-                    });
+                    return this.buildSliceSizeLimitError(resultSizeKB, maxSizeKB);
                 }
                 const startLine = startOffset + 1;
                 const endLine = startOffset + sliced.length;
@@ -415,6 +407,24 @@ export class FileContentFunction implements ToolProvider {
         } catch (error) {
             return JSON.stringify({ error: 'File not found' });
         }
+    }
+
+    private buildFileSizeLimitError(sizeKB: number, maxSizeKB: number): string {
+        return JSON.stringify({
+            error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit (' + sizeKB + 'KB). ' +
+                'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, or use searchInWorkspace to find specific content.',
+            sizeKB,
+            maxSizeKB
+        });
+    }
+
+    private buildSliceSizeLimitError(resultSizeKB: number, maxSizeKB: number): string {
+        return JSON.stringify({
+            error: 'Requested range exceeds the configured ' + maxSizeKB + 'KB size limit (' + resultSizeKB + 'KB). ' +
+                'Use a smaller limit to read fewer lines at a time.',
+            resultSizeKB,
+            maxSizeKB
+        });
     }
 }
 
