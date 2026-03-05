@@ -32,6 +32,7 @@ import {
 import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { URI } from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -533,6 +534,111 @@ describe('FileContentFunction handler', () => {
         const parsed = JSON.parse(result as string);
         expect(parsed.error).to.include('size limit');
         expect(parsed.maxSizeKB).to.equal(1);
+    });
+
+    it('falls back to streaming when stat.size is undefined and file is within limit', async () => {
+        // stat does not include a size — the code must not treat this as "0 KB"
+        // but instead stream the file and succeed when content is small.
+        let readCalled = false;
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: undefined,
+            resource: new URI('file:///workspace/test.txt')
+        });
+        mockRead = async () => {
+            readCalled = true;
+            return { value: 'should not be used' };
+        };
+        // mockReadStream already returns the small 5-line fixture from beforeEach
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        expect(readCalled).to.be.false;
+        expect(result).to.include('line1');
+    });
+
+    it('returns size-limit error (not "File not found") when stat.size is undefined and streamed content exceeds limit', async () => {
+        // stat does not include a size; the streamed content is larger than the limit.
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: undefined,
+            resource: new URI('file:///workspace/big.txt')
+        });
+        const bigLine = 'x'.repeat(1024);
+        const bigContent = Array.from({ length: 300 }, () => bigLine).join('\n'); // ~300 KB
+        mockReadStream = async () => ({ value: makeMockStream(bigContent) });
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.error).not.to.equal('File not found');
+    });
+
+    it('returns size-limit error (not "File not found") when fileService.read throws FILE_TOO_LARGE', async () => {
+        // Simulate a file system provider that enforces its own hard size limit below maxSizeKB.
+        // stat.size is present and within our configured limit, but read() still throws.
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 100 * 1024, // 100 KB — under the 256 KB default limit
+            resource: new URI('file:///workspace/test.txt')
+        });
+        mockRead = async () => {
+            throw new FileOperationError('File too large', FileOperationResult.FILE_TOO_LARGE);
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.maxSizeKB).to.equal(256);
+    });
+
+    it('returns size-limit error (not "File not found") when fileService.read throws FILE_EXCEEDS_MEMORY_LIMIT', async () => {
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 100 * 1024,
+            resource: new URI('file:///workspace/test.txt')
+        });
+        mockRead = async () => {
+            throw new FileOperationError('Exceeds memory limit', FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT);
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.maxSizeKB).to.equal(256);
+    });
+
+    it('returns size-limit error (not "File not found") when readStream throws FILE_TOO_LARGE for paginated read', async () => {
+        // This is the key scenario: files.maxFileSizeMB is lower than the file size,
+        // but the caller is trying to read a chunk with offset/limit.
+        // Before the fix, readStream would throw FILE_TOO_LARGE and the catch block
+        // would return "File not found".
+        mockReadStream = async () => {
+            throw new FileOperationError('File too large', FileOperationResult.FILE_TOO_LARGE);
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt', offset: 0, limit: 50 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.error).not.to.equal('File not found');
+        expect(parsed.maxSizeKB).to.equal(256);
     });
 });
 

@@ -17,7 +17,7 @@ import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core
 import { CancellationToken, Disposable, PreferenceService, URI, Path } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileStat } from '@theia/filesystem/lib/common/files';
+import { FileStat, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     FILE_CONTENT_FUNCTION_ID, GET_FILE_DIAGNOSTICS_ID,
@@ -373,9 +373,15 @@ export class FileContentFunction implements ToolProvider {
 
             if (offset === undefined && limit === undefined && openEditorValue === undefined) {
                 const stat = await this.fileService.resolve(targetUri);
-                const sizeKB = Math.round((stat.size ?? 0) / 1024);
-                if (sizeKB > maxSizeKB) {
-                    return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
+                if (stat.size !== undefined) {
+                    const sizeKB = Math.round(stat.size / 1024);
+                    if (sizeKB > maxSizeKB) {
+                        return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
+                    }
+                } else {
+                    // Size is unknown from stat; use the streaming path to avoid loading
+                    // an arbitrarily large file into memory, with a post-read size check.
+                    return this.readStreamedSlice(targetUri, 0, undefined, maxSizeKB);
                 }
             }
 
@@ -410,6 +416,18 @@ export class FileContentFunction implements ToolProvider {
 
             return rawContent;
         } catch (error) {
+            if (error instanceof FileOperationError) {
+                if (error.fileOperationResult === FileOperationResult.FILE_TOO_LARGE ||
+                    error.fileOperationResult === FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT) {
+                    const maxSizeKB = this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
+                    return JSON.stringify({
+                        error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit. ' +
+                            'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, ' +
+                            'or use searchInWorkspace to find specific content.',
+                        maxSizeKB
+                    });
+                }
+            }
             return JSON.stringify({ error: 'File not found' });
         }
     }
@@ -419,8 +437,21 @@ export class FileContentFunction implements ToolProvider {
     ): Promise<string> {
         let streamValue: Awaited<ReturnType<typeof this.fileService.readStream>>['value'];
         try {
-            streamValue = (await this.fileService.readStream(targetUri)).value;
-        } catch {
+            // Bypass the files.maxFileSizeMB preference: the streaming path never loads the
+            // full file into memory, so the OS-level size cap is not appropriate here.
+            // Our own per-result maxSizeKB check still applies to the collected slice.
+            streamValue = (await this.fileService.readStream(targetUri, { limits: { size: Number.MAX_SAFE_INTEGER } })).value;
+        } catch (e) {
+            if (e instanceof FileOperationError &&
+                (e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE ||
+                 e.fileOperationResult === FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT)) {
+                return JSON.stringify({
+                    error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit. ' +
+                        'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, ' +
+                        'or use searchInWorkspace to find specific content.',
+                    maxSizeKB
+                });
+            }
             return JSON.stringify({ error: 'File not found' });
         }
 
@@ -450,7 +481,13 @@ export class FileContentFunction implements ToolProvider {
                 const result = sliceLines.join('\n');
                 const resultSizeKB = Math.round(new Blob([result]).size / 1024);
                 if (resultSizeKB > maxSizeKB) {
-                    resolve(this.buildSliceSizeLimitError(resultSizeKB, maxSizeKB));
+                    // Full-file reads (startLine=0, no limit) should advise the caller to use
+                    // offset/limit for pagination.  Explicit slice requests should advise using
+                    // a smaller limit instead.
+                    const sizeError = (startLine === 0 && limit === undefined)
+                        ? this.buildFileSizeLimitError(resultSizeKB, maxSizeKB)
+                        : this.buildSliceSizeLimitError(resultSizeKB, maxSizeKB);
+                    resolve(sizeError);
                     return;
                 }
                 const header = `[Lines ${startLine + 1}\u2013${startLine + sliceLines.length} of ${lineIndex} total. Use offset and limit to read other ranges.]`;
