@@ -39,7 +39,7 @@ import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
-import { TerminalManagerTreeTypes, TASKS_PAGE_ID } from './terminal-manager-types';
+import { TerminalManagerTreeTypes } from './terminal-manager-types';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 
@@ -313,9 +313,13 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         // Create disposable collection for this terminal
         const disposables = new DisposableCollection();
 
-        // Track title changes with proper disposal
+        // Track title label changes with proper disposal
+        let currentLabel = widget.title.label;
         const titleChangeHandler = () => {
-            this.treeWidget.model.updateTerminalLabel(nodeId, widget.title.label);
+            if (widget.title.label !== currentLabel) {
+                currentLabel = widget.title.label;
+                this.treeWidget.model.updateTerminalLabel(nodeId, currentLabel);
+            }
         };
         widget.title.changed.connect(titleChangeHandler);
         disposables.push(Disposable.create(() => widget.title.changed.disconnect(titleChangeHandler)));
@@ -639,10 +643,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             const pageNode = treeWidget.model.getNode(pageId);
             if (!TerminalManagerTreeTypes.isPageNode(pageNode)) {
                 throw TerminalManagerWidget.createRestoreError(pageId);
-            }
-            // Mark the Tasks page node if restoring it
-            if (pageId === TASKS_PAGE_ID) {
-                pageNode.isTasksPage = true;
             }
             this.pagePanels.set(pageId, pagePanel);
             this.terminalPanelWrapper.addWidget(pagePanel);

@@ -111,10 +111,9 @@ export const TASKS_PAGE_ID: TerminalManagerTreeTypes.PageId = 'page-tasks';
 
 /**
  * Type guard to check if a node is the special Tasks page.
- * Returns true if the node is a PageNode with either the isTasksPage flag set or id === TASKS_PAGE_ID.
  */
 export const isTasksPageNode = (node: unknown): node is TerminalManagerTreeTypes.PageNode =>
-    TerminalManagerTreeTypes.isPageNode(node) && (node.isTasksPage === true || node.id === TASKS_PAGE_ID);
+    TerminalManagerTreeTypes.isPageNode(node) && node.id === TASKS_PAGE_ID;
 
 export namespace TerminalManagerTreeTypes {
     export type TerminalKey = `terminal-${string}`;
@@ -160,10 +159,6 @@ export namespace TerminalManagerTreeTypes {
         label: string;
         id: PageId;
         counter: number;
-        /**
-         * Optional flag to identify the special Tasks page.
-         */
-        isTasksPage?: boolean;
     }
 
     export type TerminalManagerTreeNode = PageNode | TerminalNode | TerminalGroupNode;
