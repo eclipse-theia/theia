@@ -126,7 +126,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     protected async updateInputEnabled(): Promise<void> {
         const models = await this.languageModelRegistry.getLanguageModels();
         const hasReadyModels = models.some(model => model.status.status === 'ready');
-        const bypassed = this.preferenceService.get<boolean>(BYPASS_MODEL_REQUIREMENT_PREF, false);
+        const bypassed = this.preferenceService.get(BYPASS_MODEL_REQUIREMENT_PREF, false);
         const enabled = hasReadyModels || bypassed;
         if (this._inputEnabled !== enabled) {
             this._inputEnabled = enabled;

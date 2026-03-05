@@ -11,6 +11,8 @@
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
 - [core] widened `DecorationsProvider.onDidChange` to `Event<URI[] | undefined>`, where `undefined` is a flush signalling that all decorations may have changed. `DecorationsService.onDidChangeDecorations` now fires batched payloads that never list removals: an empty map means an unspecified set changed, and clients must re-query the decorations they display on every event [#17766](https://github.com/eclipse-theia/theia/pull/17766)
+- [core] reworked the preference API to use explicit override identifiers instead of encoding them into preference names (e.g. `[typescript].editor.tabSize`). Adopters that read, write or listen to language-scoped preferences through `PreferenceService`, `PreferenceProvider` or the change events must migrate to the new signatures [#16046](https://github.com/eclipse-theia/theia/issues/16046). Preference change events for
+"override names" like `[typescript]editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
 
 ## 1.75.0 - 8/27/2026
 

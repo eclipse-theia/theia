@@ -73,7 +73,7 @@ export class CommonVariableContribution implements VariableContribution {
                 if (!preferenceName) {
                     return undefined;
                 }
-                return this.preferences.get(preferenceName, undefined, resourceUri && resourceUri.toString());
+                return this.preferences.get(preferenceName, { resource: resourceUri && resourceUri.toString() });
             }
         });
         variables.registerVariable({
@@ -98,7 +98,7 @@ export class CommonVariableContribution implements VariableContribution {
                 if (!variable || !section) {
                     return undefined;
                 }
-                const configuration = this.preferences.get<RecursivePartial<{ inputs: MaybeArray<VariableInput> }>>(section, undefined, resourceUri && resourceUri.toString());
+                const configuration = this.preferences.get<RecursivePartial<{ inputs: MaybeArray<VariableInput> }>>(section, { resource: resourceUri && resourceUri.toString() });
                 const inputs = !!configuration && 'inputs' in configuration ? configuration.inputs : undefined;
                 const input = Array.isArray(inputs) && inputs.find(item => !!item && item.id === variable);
                 if (!input) {

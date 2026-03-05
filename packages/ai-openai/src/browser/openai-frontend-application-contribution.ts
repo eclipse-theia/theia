@@ -43,28 +43,28 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
-            const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+            const apiKey = this.preferenceService.get<string>(API_KEY_PREF);
             this.manager.setApiKey(apiKey);
 
-            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            const proxyUri = this.preferenceService.get<string>('http.proxy');
             this.manager.setProxyUrl(proxyUri);
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+            const models = this.preferenceService.get<string>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
             this.prevModels = [...models];
 
-            const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+            const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
             this.prevCustomModels = [...customModels];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF));
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                    this.handleModelChanges(this.preferenceService.get<string>(MODELS_PREF, []));
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-                    this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+                    this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []));
                 } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
                     this.updateAllModels();
                 } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF) {
@@ -74,7 +74,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
                     this.updateAllModels();
                 } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy'));
                     this.updateAllModels();
                 }
             });
@@ -126,10 +126,10 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 
     protected updateAllModels(): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        const models = this.preferenceService.get<string>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
 
-        const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
@@ -137,9 +137,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
-        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
-        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const useResponseApi = this.preferenceService.get(USE_RESPONSE_API_PREF, false);
+        const globalCompaction = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = <ServerSideCompactionSetting>this.preferenceService.get(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
         const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);
@@ -160,8 +160,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         preferences: Partial<OpenAiModelDescription>[]
     ): OpenAiModelDescription[] {
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
-        const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
+        const globalCompaction = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
+        const compactionOverride = <ServerSideCompactionSetting>this.preferenceService.get(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
         const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
         const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);

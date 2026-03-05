@@ -33,7 +33,7 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
-            const llamafiles = this.preferenceService.get<LlamafileEntry[]>(PREFERENCE_LLAMAFILE, []);
+            const llamafiles = this.preferenceService.get<LlamafileEntry>(PREFERENCE_LLAMAFILE, []);
             const validLlamafiles = llamafiles.filter(LlamafileEntry.is);
 
             const LlamafileModelDescriptions = this.getLLamaFileModelDescriptions(validLlamafiles);
@@ -43,7 +43,7 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_LLAMAFILE) {
-                    const currentLlamafiles = this.preferenceService.get<LlamafileEntry[]>(PREFERENCE_LLAMAFILE, []);
+                    const currentLlamafiles = this.preferenceService.get<LlamafileEntry>(PREFERENCE_LLAMAFILE, []);
                     const newModels = currentLlamafiles.filter(LlamafileEntry.is);
                     this.handleLlamaFilePreferenceChange(newModels);
                 }

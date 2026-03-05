@@ -334,7 +334,7 @@ export class AIChatInputWidget extends ReactWidget {
         if (!this.preferenceService || !this.currentLanguageModelId) {
             return undefined;
         }
-        const entries = this.preferenceService.get<ReasoningPreferenceEntry[]>(PREFERENCE_NAME_REASONING, []);
+        const entries = this.preferenceService.get<ReasoningPreferenceEntry>(PREFERENCE_NAME_REASONING, []);
         const [providerId, modelId] = this.currentLanguageModelId.split('/');
         return mergeReasoningSettings(entries, modelId, providerId, this.receivingAgent?.agentId)?.reasoning?.level;
     }
@@ -1072,11 +1072,11 @@ export class AIChatInputWidget extends ReactWidget {
             this.navigationState = new ChatInputNavigationState(this.historyService);
         });
         this.initializeContextKeys();
-        this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
+        this.tokenUsageEnabled = this.preferenceService?.get(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
         if (this.preferenceService) {
             this.toDispose.push(this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
-                    this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
+                    this.tokenUsageEnabled = this.preferenceService?.get(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
                     this.update();
                 } else if (change.preferenceName === PREFERENCE_NAME_REASONING) {
                     // Refresh the reasoning selector display when the default preference changes.
@@ -1199,7 +1199,7 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected getTokenUsageWarningThresholdPercentage(): number {
-        const value = this.preferenceService?.get<number>(
+        const value = this.preferenceService?.get(
             CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE,
             CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT
         );
@@ -1210,7 +1210,7 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected isTokenUsageWarningEnabled(): boolean {
-        return this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED, false) ?? false;
+        return this.preferenceService?.get(CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED, false) ?? false;
     }
 
     /**

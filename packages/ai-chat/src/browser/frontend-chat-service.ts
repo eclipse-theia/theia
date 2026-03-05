@@ -33,7 +33,7 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
     protected readonly changeSetFileService: ChangeSetFileService;
 
     protected override isPinChatAgentEnabled(): boolean {
-        return this.preferenceService.get<boolean>(PIN_CHAT_AGENT_PREF, true);
+        return this.preferenceService.get(PIN_CHAT_AGENT_PREF, true);
     }
 
     protected override initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {

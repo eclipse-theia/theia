@@ -48,25 +48,25 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
-            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            const proxyUri = this.preferenceService.get<string>('http.proxy');
             this.manager.setProxyUrl(proxyUri);
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+            const models = this.preferenceService.get<string>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
             this.prevModels = [...models];
 
-            const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+            const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
             this.prevCustomModels = [...customModels];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF));
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                    this.handleModelChanges(this.preferenceService.get<string>(MODELS_PREF, []));
                 } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy'));
                     this.updateAllModels();
                 } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF ||
                     event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
@@ -74,7 +74,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
                     this.updateAllModels();
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-                    this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+                    this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>>(CUSTOM_ENDPOINTS_PREF, []));
                 }
             });
 
@@ -121,10 +121,10 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
     }
 
     protected updateAllModels(): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        const models = this.preferenceService.get<string>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
 
-        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
