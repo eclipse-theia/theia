@@ -116,6 +116,7 @@
         "chatSessionSummaryAgent": {
           "description": "Sohbet oturumu özetleri oluşturmak için kullanılan aracı."
         },
+        "clipboardSeparator": "pano",
         "confirmApplySuggestion": "{0} dosyası bu öneri oluşturulduğundan beri değiştirilmiştir. Değişikliği uygulamak istediğinizden emin misiniz?",
         "confirmRevertSuggestion": "{0} dosyası bu öneri oluşturulduğundan beri değiştirilmiştir. Değişikliği geri almak istediğinizden emin misiniz?",
         "couldNotFindMatchingLM": "Eşleşen bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
@@ -143,6 +144,7 @@
           "description": "Bir görüntü için bağlam bilgisi sağlar.",
           "label": "Görüntü Dosyası"
         },
+        "imagePickerPlaceholder": "Bir görüntü dosyası seçin veya ada göre arayın",
         "orchestrator": {
           "description": "Bu ajan, kullanıcı isteğini mevcut tüm sohbet ajanlarının açıklamalarıyla karşılaştırarak analiz eder ve isteği yanıtlamak için en uygun ajanı seçer (AI kullanarak). Kullanıcının isteği, daha fazla onay gerekmeden doğrudan seçilen ajana iletilir.",
           "vars": {
@@ -162,7 +164,6 @@
           "description": "Ajan sabitlemeyi etkinleştirerek, belirtilen sohbet ajanını istemlerde otomatik olarak aktif tutun ve tekrar tekrar belirtme ihtiyacını azaltın. Ajanları istediğiniz zaman manuel olarak sabitleyebilir veya değiştirebilirsiniz."
         },
         "revertSuggestion": "Öneriyi geri al",
-        "selectImageFile": "Bir görüntü dosyası seçin",
         "sessionStorageScope": {
           "description": "Sohbet oturumlarını ayrı çalışma alanı depolarında mı yoksa tek bir genel depoda mı saklayacağınızı seçin. Açık bir çalışma alanı yoksa, oturumlar genel depolamaya geri döner.",
           "global": "Sohbet oturumlarını, tüm çalışma alanlarında paylaşılan tek bir depoda saklayın.",
@@ -191,11 +192,15 @@
         },
         "view": {
           "label": "AI Sohbet"
+        },
+        "welcomeScreenSessions": {
+          "description": "Karşılama ekranında görüntülenecek son sohbet oturumlarının satır sayısı. Görüntülenebilen oturum sayısı, kullanılabilir genişliğe bağlıdır. Son sohbetler bölümünü gizlemek için 0 olarak ayarlayın."
         }
       },
       "chat-ui": {
         "addContextVariable": "Bağlam değişkeni ekle",
         "agent": "Ajan",
+        "agentDelegationDescription": "Delege edilebilecek diğer AI ajanları",
         "aiDisabled": "AI özellikleri devre dışıdır",
         "applyAll": "Tümünü Uygula",
         "applyAllTitle": "Bekleyen tüm değişiklikleri uygula",
@@ -204,10 +209,7 @@
         "cancel": "İptal (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiFeatureHeader": "🚀 AI Özellikleri Kullanılabilir (Beta Sürümü)!",
-          "featuresDisabled": "Şu anda tüm AI Özellikleri devre dışıdır!",
           "generating": "Oluşturma",
-          "howToEnable": "AI Özelliklerini Etkinleştirme:",
           "noRenderer": "Hata: Renderer bulunamadı",
           "scrollToBottom": "En son mesaja atla",
           "waitingForInput": "Giriş bekleniyor",
@@ -222,14 +224,17 @@
         },
         "chatInputAriaLabel": "Mesajınızı buraya yazın",
         "chatResponses": "Sohbet yanıtları",
+        "clearAllSelections": "Arama dizesini ve yetenek seçimlerini temizle",
         "code-part-renderer": {
           "copied": "Kopyalandı",
           "generatedCode": "Oluşturulan Kod"
         },
+        "collapseAll": "Tümünü daralt",
         "collapseChangeSet": "Daralt Değişiklik Seti",
         "command-part-renderer": {
           "commandNotExecutable": "Komutun kimliği \"{0}\"dir, ancak Sohbet penceresinden çalıştırılamaz."
         },
+        "confirmDeleteChatMsg": "Bu sohbeti silmek istediğinizden emin misiniz?",
         "copyCodeBlock": "Kod Bloğunu Kopyala",
         "couldNotSendRequestToSession": "\"{0}\" isteği {1} oturumuna gönderilemedi.",
         "delegation-response-renderer": {
@@ -248,6 +253,7 @@
           }
         },
         "deleteChangeSet": "Değişiklik Setini Sil",
+        "deleteChat": "Sohbeti Sil",
         "editRequest": "Düzenle",
         "edited": "düzenlendi",
         "editedTooltipHint": "Bu komut istemi varyantı düzenlenmiştir. AI Yapılandırma görünümünde sıfırlayabilirsiniz.",
@@ -260,17 +266,27 @@
         "failedToRetry": "Yeniden deneme başarısız mesajı",
         "focusInput": "Odak Sohbet Girişi",
         "focusResponse": "Odak Sohbet Yanıtı",
+        "functions": "İşlevler",
+        "functionsDescription": "Theia uzantıları tarafından sağlanan yerleşik işlevler",
+        "genericCapabilities": "Genel Yetenekler",
+        "mcpFunctions": "MCP",
+        "mcpFunctionsDescription": "Bağlı sunuculardan Model Bağlam Protokolü (MCP) işlevleri",
         "noChatAgentsAvailable": "Sohbet temsilcisi mevcut değil.",
+        "noMatchingCapabilities": "Eşleşen özellik yok",
         "openDiff": "Açık Fark",
         "openImage": "Resmi aç",
         "openOriginalFile": "Orijinal Dosyayı Aç",
         "performThisTask": "Bu görevi gerçekleştirin.",
         "persistedSession": "Kalıcı oturum (geri yüklemek için tıklayın)",
+        "promptFragments": "İstemi",
+        "promptFragmentsDescription": "Sohbete eklenecek özel komut istemi parçaları",
         "removeChat": "Sohbeti Kaldır",
         "renameChat": "Sohbeti Yeniden Adlandır",
         "requestNotFoundForRetry": "Yeniden denemek için istek bulunamadı",
         "responseFrom": "{0}'dan gelen yanıt",
+        "searchCapabilities": "Arama yetenekleri",
         "selectAgentQuickPickPlaceholder": "Yeni oturum için bir aracı seçin",
+        "selectAllInCategory": "Bu kategorideki tümünü seç",
         "selectChat": "Sohbeti seç",
         "selectContextVariableQuickPickPlaceholder": "Mesaja eklenecek bir bağlam değişkeni seçin.",
         "selectTaskContextQuickPickItem": {
@@ -280,12 +296,10 @@
         "selectVariableArguments": "Değişken argümanları seçin",
         "send": "Gönder (Enter)",
         "sessionNotFoundForRetry": "Yeniden denemek için oturum bulunamadı",
+        "skillsDescription": "Sohbete eklenebilen yeniden kullanılabilir beceri talimatları",
         "switchAgentMode": "Ajan Modunu Değiştir",
         "text-part-renderer": {
           "cantDisplay": "Yanıt görüntülenemiyor, lütfen ChatResponsePartRenderers'ınızı kontrol edin!"
-        },
-        "thinking-part-renderer": {
-          "thinking": "Düşünme"
         },
         "toggleCapabilitiesConfig": "Yetenek Yapılandırmasını Değiştir",
         "toolcall-part-renderer": {
@@ -315,6 +329,8 @@
           "contentNotRestoreable": "Bu içerik (tipi '{0}') tam olarak geri yüklenemedi. Artık kullanılmayan bir uzantıdan gelmiş olabilir."
         },
         "unpinAgent": "Ajanı Sabitlemeyi Kaldır",
+        "unselectAllInCategory": "Bu kategorideki tüm seçimleri kaldır",
+        "variablesDescription": "Bağlam bilgisi sağlayan dinamik değişkenler",
         "variantTooltip": "Komut istemi varyantı: {0}",
         "yourMessage": "Mesajınız"
       },
@@ -459,7 +475,6 @@
         "itemCount": "{0} öğeler",
         "noItems": "Hiçbir öğe yok",
         "oneItem": "1 öğe",
-        "running": "Çalışıyor...",
         "searched": "Aranan",
         "searching": "Arama",
         "todoList": "Tüm Liste",
@@ -536,7 +551,6 @@
           "privacy": "Theia açık kaynaklı bir projedir. GitHub Copilot hizmetlerine bağlanmak için yalnızca GitHub kullanıcı adınıza erişim talep ediyoruz — başka hiçbir veriye erişilmez veya depolanmaz.",
           "success": "GitHub Copilot'a başarıyla giriş yapıldı!",
           "successHint": "GitHub hesabınız Copilot'a erişime sahipse, artık Copilot dil modellerini ",
-          "title": "GitHub Copilot'a giriş yapın",
           "tos": "Giriş yaparak, aşağıdakileri kabul etmiş olursunuz ",
           "tosLink": "GitHub Hizmet Şartları",
           "verifying": "Yetkilendirme doğrulanıyor..."
@@ -552,6 +566,9 @@
         "models": {
           "description": "Kullanılacak GitHub Copilot modelleri. Kullanılabilir modeller, Copilot aboneliğinize bağlıdır."
         },
+        "signOut": {
+          "confirmMessage": "GitHub Copilot'tan çıkış yapmak istediğinizden emin misiniz?"
+        },
         "statusBar": {
           "signedIn": "{0} olarak GitHub Copilot'a giriş yaptınız. Çıkmak için tıklayın.",
           "signedOut": "GitHub Copilot'a giriş yapmadınız. Giriş yapmak için tıklayın."
@@ -559,14 +576,16 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Eylemler",
           "addCustomAgent": "Özel Ajan Ekle",
           "availableCapabilities": "Mevcut Yetenekler",
+          "completionNotificationDescriptionPrefix": "Bu aracı görevini tamamladığında nasıl bilgilendirilmek istediğinizi seçin. \"Varsayılan\" seçeneği ",
+          "defaultNotificationDescription": "Küresel AI bildirim ayarını kullanır",
           "enableAgent": "Aracıyı Etkinleştir",
-          "label": "Ajanlar",
           "llmRequirements": "LLM Gereksinimleri",
           "notUsedInPrompt": "Komut isteminde kullanılmaz.",
           "notUsedInPromptTooltip": "Bu değişken, aracı tarafından bildirilir ancak mevcut komut istemi şablonunda referans gösterilmez.",
+          "notificationSettings": "Bildirim Ayarları",
+          "notificationSettingsLink": "AI bildirim ayarı",
           "promptTemplates": "Komut İstemi Şablonları",
           "selectAgentMessage": "Lütfen önce bir Ajan seçin!",
           "showInChat": "Sohbette göster",
@@ -665,6 +684,16 @@
           "unavailableModel": "Seçilen model artık mevcut değildir"
         },
         "noVariableFoundForOpenRequest": "Açık istek için değişken bulunamadı.",
+        "notification": {
+          "message": {
+            "description": "Uygulama içinde bir bildirim mesajı göster"
+          },
+          "off": {
+            "description": "Tüm bildirimleri devre dışı bırak"
+          },
+          "osNotification": "İşletim Sistemi Bildirimi",
+          "windowBlink": "Pencere Yanıp Sönme"
+        },
         "openEditorsShortVariable": {
           "description": "Şu anda açık olan tüm dosyalara kısa referans (göreceli yollar, virgülle ayrılmış)"
         },
@@ -770,6 +799,30 @@
           "edited": "düzenlendi",
           "unavailableVariant": "Kullanılamıyor"
         },
+        "thinkingMode": {
+          "mdDescription": "Genişletilmiş düşünme yeteneklerini destekleyen modeller için düşünme modu ayarlarının belirtilmesine olanak tanır.\nHer ayar şunlardan oluşur:\n- `scope`: Ayarın ne zaman geçerli olacağını tanımlar:\n- `modelId` (isteğe bağlı): Eşleşecek model kimliği\n- `providerId` (isteğe bağlı): Eşleşecek sağlayıcı kimliği\n- `agentId` (isteğe bağlı): Eşleşecek ajan kimliği\n- `thinkingMode`: Düşünme modu yapılandırması:\n- `enabled` (boolean): Düşünme modunun etkin olup olmadığı\n- `budgetTokens` (sayı, isteğe bağlı): Düşünme için maksimum jeton sayısı (model tarafından destekleniyorsa)\nAyarlar, özgüllüğe göre eşleştirilir (ajan: 100, model: 10, sağlayıcı: 1 puan).",
+          "scope": {
+            "agentId": {
+              "description": "Ayarların uygulanacağı (isteğe bağlı) ajan kimliği."
+            },
+            "modelId": {
+              "description": "(İsteğe bağlı) model kimliği"
+            },
+            "providerId": {
+              "description": "Ayarları uygulamak için (isteğe bağlı) sağlayıcı kimliği."
+            }
+          },
+          "thinkingMode": {
+            "budgetTokens": {
+              "description": "Düşünmek için kullanılacak maksimum jeton sayısı. Yalnızca model düşünme bütçesini destekliyorsa geçerlidir."
+            },
+            "description": "Düşünme modu yapılandırması.",
+            "enabled": {
+              "description": "Düşünme modunun etkin olup olmadığı."
+            }
+          },
+          "title": "Düşünme Modu Ayarları"
+        },
         "todayVariable": {
           "description": "Bugün için bir şeyler yapın",
           "format": {
@@ -873,7 +926,6 @@
       "ide": {
         "agent-description": "[AI Yapılandırma Görünümü]({0}) içinde etkinleştirme, LLM seçimi, komut istemi şablonu özelleştirme ve özel ajan oluşturma dahil olmak üzere AI ajan ayarlarını yapılandırın.",
         "agentConfiguration": {
-          "capabilityId": "Parça kimliği",
           "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "Yeni dosya oluştur",
@@ -904,6 +956,10 @@
             "question": "Playwright MCP sunucuları çalışmıyor. Şimdi başlatmak ister misiniz? Bu, Playwright MCP sunucularını yükleyebilir."
           }
         },
+        "appTester": {
+          "description": "Ajanın tarayıcı uygulamalarını uçtan uca test etmesini sağlar. Bunun için ajan, uygulamayı doğrulamak üzere tarayıcı etkileşimlerini otomatikleştiren AppTester ajanına yetki verebilir.",
+          "name": "Uygulama Testçisi"
+        },
         "architectAgent": {
           "mode": {
             "plan": "Plan Modu",
@@ -913,9 +969,10 @@
             "executePlanWithCoder": "Coder ile \"{0}\" komutunu çalıştırın."
           }
         },
+        "browseAllChats": "Tüm sohbetleri gözat...",
         "bypassHint": "Claude Code gibi bazı ajanlar Theia Dil Modellerine ihtiyaç duymaz.",
         "chatDisabledMessage": {
-          "featuresTitle": "Şu anda desteklenen görünümler ve özellikler:"
+          "title": "AI Özellikleri Devre Dışı Bırakıldı"
         },
         "coderAgent": {
           "mode": {
@@ -948,6 +1005,7 @@
             }
           }
         },
+        "configurationState": "Yapılandırma sorunları",
         "configureAgent": {
           "header": "Varsayılan aracıyı yapılandırın"
         },
@@ -957,6 +1015,7 @@
             "edit": "Varsayılan Mod"
           }
         },
+        "deleteChat": "Sohbeti Sil",
         "enableAI": {
           "mdDescription": "Bu ayar, en son AI özelliklerine (Beta sürümü) erişmenizi sağlar.            \n            Bu özelliklerin beta aşamasında olduğunu, yani değişikliklere uğrayabileceğini ve daha da geliştirileceğini lütfen unutmayın. Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli istekler gönderebileceğini bilmeniz önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek, bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar,\n            ana özellik ayarı etkinleştirildikten sonra geçerli olacaktır. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere](https://theia-ide.org/docs/user_ai/) bakın**."
         },
@@ -979,16 +1038,20 @@
             "yes": "Evet, sunucuyu başlatın"
           }
         },
+        "githubCapability": {
+          "description": "Ajanın GitHub ile etkileşime girmesine olanak tanır. Bunun için ajan, sorunları, çekme isteklerini, yorumları ve depo içeriğini okuyup yazabilen GitHub ajanına yetki verebilir.",
+          "name": "GitHub"
+        },
         "githubRepoName": {
           "description": "Mevcut GitHub deposunun adı (ör. \"eclipse-theia/theia\")"
         },
+        "howToGetStarted": "Başlangıç",
         "model-selection-description": "[AI Yapılandırma Görünümü]({0}) içinde her bir AI ajanı tarafından hangi Büyük Dil Modellerinin (LLM) kullanılacağını seçin.",
         "moreAgentsAvailable": {
           "header": "Daha fazla ajan mevcuttur"
         },
         "noRecommendedAgents": "Önerilen ajan bulunmamaktadır.",
         "openSettings": "AI Ayarlarını Aç",
-        "or": "veya",
         "orchestrator": {
           "error": {
             "noAgents": "İsteği işleyebilecek sohbet ajanı mevcut değil. Lütfen yapılandırmanızda herhangi bir ajanın etkin olup olmadığını kontrol edin."
@@ -1002,18 +1065,28 @@
           }
         },
         "prompt-template-description": "[AI Yapılandırma Görünümü]({0}) içinde AI ajanları için komut istem varyantlarını seçin ve komut istem şablonlarını özelleştirin.",
-        "recommendedAgents": "Önerilen ajanlar:",
+        "recentChats": "Son Sohbetler",
+        "renameChat": "Sohbeti Yeniden Adlandır",
         "shellAllowlist": {
           "placeholder": "Örneğin, \"git log\" (tam) veya \"git log *\" (argümanlarla)."
         },
         "shellDenylist": {
           "placeholder": "Örneğin, \"git push *\" veya \"rm -rf /\""
         },
+        "shellExecutionCapability": {
+          "description": "Ajanın ana sistemde rastgele kabuk komutları çalıştırmasına izin verir. Ajan daha sonra görev olarak kullanılamayan komut dosyalarını yürütmek, sistem bilgilerini sorgulamak ve özel bir aracı olmayan işlemleri gerçekleştirmek için yetki devredebilir.",
+          "name": "Kabuk Yürütme"
+        },
         "skillsConfiguration": {
-          "label": "Beceri",
           "location": {
             "label": "Konum"
-          }
+          },
+          "noSkills": "Kullanılabilir beceri yok",
+          "noSlashCommands": "Kullanılabilir eğik çizgi komutu yok",
+          "slashCommand": {
+            "allAgents": "Tüm ajanlar"
+          },
+          "slashCommandsSectionHeader": "Slash Komutları"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1048,6 +1121,15 @@
               "label": "Onayla"
             }
           }
+        },
+        "tooltip": {
+          "agent": "Ajan",
+          "lastActivity": "Son etkinlik",
+          "lastMessage": "Son mesaj",
+          "messages": "Mesajlar",
+          "multipleExchanges": "{0} değişimler",
+          "oneExchange": "1 değişim",
+          "unread": "Okunmamış"
         },
         "variableConfiguration": {
           "selectVariable": "Lütfen bir Değişken seçin.",
@@ -1149,9 +1231,36 @@
         "copyAllSingle": "Sohbet için tümünü kopyala (tüm araçları içeren tek komut istemi parçası)",
         "copyForPrompt": "Kopyalama aracı (sohbet veya komut istemi şablonu için)",
         "copyForPromptTemplate": "Hızlı şablon için tümünü kopyala (tüm araçları içeren tek hızlı şablon parçası)",
+        "deleteServer": "Sunucuyu Sil",
+        "deleteServerDialogMsg": "\"{0}\" sunucusunu silmek istediğinizden emin misiniz?",
+        "deleteServerDialogTitle": "MCP Sunucusunu Sil",
+        "deleteServerError": "MCP sunucusu silinemedi: {0}",
+        "editServer": "Sunucuyu Düzenle",
+        "editServerTitle": "MCP Sunucusunu Düzenle",
         "environmentVariables": "Ortam Değişkenleri",
+        "form": {
+          "argsPlaceholder": "Boşlukla ayrılmış, örneğin -y @modelcontextprotocol/server-brave-search",
+          "authHeaderPlaceholder": "Varsayılan: Taşıyıcı ile yetkilendirme",
+          "authTokenPlaceholder": "İsteğe bağlı kimlik doğrulama jetonu",
+          "autostart": "Otomatik başlatma",
+          "commandPlaceholder": "Örneğin, npx veya uvx",
+          "commandRequired": "Yerel sunucular için komut gereklidir.",
+          "envPlaceholder": "KEY=değer (her satırda bir tane)",
+          "headersPlaceholder": "Başlık-Ad=değer (her satırda bir tane)",
+          "localServer": "Yerel (Komut)",
+          "nameExists": "Bu ada sahip bir sunucu zaten mevcuttur.",
+          "nameRequired": "Sunucu adı gereklidir",
+          "remoteServer": "Uzak (URL)",
+          "saveChanges": "Değişiklikleri Kaydet",
+          "serverName": "Sunucu Adı",
+          "serverNamePlaceholder": "Örneğin, my-mcp-server",
+          "serverType": "Sunucu Türü",
+          "serverUrlPlaceholder": "Örneğin, https://mcp.example.com",
+          "serverUrlRequired": "Uzak sunucular için sunucu URL'si gereklidir."
+        },
         "headers": "Başlıklar",
         "noServers": "Yapılandırılmış MCP sunucusu yok",
+        "saveServerError": "MCP sunucu yapılandırması kaydedilemedi: {0}",
         "serverAuthToken": "Kimlik Doğrulama Jetonu",
         "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı",
         "serverUrl": "Sunucu URL'si",
@@ -1248,6 +1357,11 @@
         }
       },
       "session-settings-dialog": {
+        "advancedSettings": "Gelişmiş Ayarlar (JSON)",
+        "budgetTokens": "Bütçe jetonları:",
+        "enableThinking": "Genişletilmiş düşünmeyi etkinleştirin",
+        "thinkingMode": "Düşünme Modu",
+        "thinkingModeNote": "Bazı modeller bu ayarı yok sayabilir.",
         "title": "Oturum Ayarlarını Yap",
         "tooltip": "Oturum Ayarlarını Yap"
       },
@@ -1363,9 +1477,13 @@
       "fileChangeSetTitle": "Önerilen değişiklikler"
     },
     "ai-chat-ui": {
+      "deleteChat": "Sohbeti Sil",
       "initiate-session-task-context": "Görev Bağlamı: Oturumu Başlat",
+      "navigate-back": "Geri Dön",
+      "navigate-forward": "İleriye Git",
       "open-current-session-summary": "Geçerli Oturum Özetini Aç",
       "open-settings-tooltip": "AI ayarlarını aç...",
+      "renameChat": "Sohbeti Yeniden Adlandır",
       "scroll-lock": "Kaydırmayı Kilitle",
       "scroll-unlock": "Kilit Açma Kaydırma",
       "session-settings": "Oturum Ayarlarını Yap",
@@ -1378,11 +1496,12 @@
     },
     "ai-core": {
       "agentCompletionMessage": "\"{0}\" ajanı görevini tamamladı.",
+      "agentCompletionMessageWithSession": "Ajan \"{0}\" \"{1}\" içindeki görevini tamamladı.",
       "agentCompletionTitle": "Ajan \"{0}\" Görevi Tamamlandı",
-      "agentCompletionWithTask": "Ajan \"{0}\" görevi tamamladı: {1}",
       "preferences": {
         "title": "AI Özellikleri"
-      }
+      },
+      "showChat": "Sohbeti Göster"
     },
     "ai-editor": {
       "contextMenu": "AI'ya sor",
@@ -1414,8 +1533,23 @@
       "blockedServersLabel": "MCP Sunucuları (otomatik başlatma engellenmiş)"
     },
     "ai-terminal": {
+      "allowAllConfirm": "Anladım, tümünü izin ver",
+      "allowAllForever": "Her zaman tüm kabuk komutlarına izin ver...",
+      "allowAllSession": "Bu sohbet için tüm kabuk komutlarına izin ver...",
+      "allowAllSessionConfirm": "Anladım, bu sohbet için tümüne izin ver",
+      "allowAllSessionTitle": "Bu Sohbet için TÜM Kabuk Komutlarına İzin Ver?",
+      "allowAllSessionWarning": "Bu, AI'nın bu sohbet oturumunun geri kalanında herhangi bir onay olmadan herhangi bir kabuk komutunu yürütmesine olanak tanır. Kabuk komutları tam sistem erişimine sahiptir ve herhangi bir komutu yürütebilir, çalışma alanı dışındaki dosyaları değiştirebilir ve ağ kaynaklarına erişebilir. Engellenenler listesindeki komutlar yine de engellenecektir.",
+      "allowAllTitle": "TÜM Kabuk Komutlarına İzin Ver?",
+      "allowAllWarning": "Bu, AI'nın herhangi bir onay olmadan herhangi bir kabuk komutunu yürütmesine olanak tanır. Kabuk komutları tam sistem erişimine sahiptir ve herhangi bir komutu yürütebilir, çalışma alanı dışındaki dosyaları değiştirebilir ve ağ kaynaklarına erişebilir. Engelleme listesindeki komutlar yine de engellenecektir.",
+      "alwaysAllowPattern": "{0}'a her zaman izin ver",
+      "alwaysAllowPatterns": "{0} ve {1} adreslerine her zaman izin ver",
+      "alwaysAllowPatternsList": "{0}'a her zaman izin ver",
+      "alwaysDenyPattern": "{0}'yi her zaman reddet",
+      "alwaysDenyPatterns": "{0} ve {1} adreslerini her zaman reddet",
+      "alwaysDenyPatternsList": "{0}'yi her zaman reddet",
       "cancelExecution": "Komut yürütmeyi iptal et",
       "canceling": "İptal ediliyor...",
+      "configurePermissions": "Kabuk komut izinlerini yapılandırın",
       "confirmExecution": "Kabuk Komutunu Onayla",
       "denialReason": "Sebep",
       "executionCanceled": "İptal edildi",
@@ -1593,6 +1727,7 @@
       "couldNotRunTask": "{0}' görevi çalıştırılamadı.",
       "dataBreakpoint": "veri kesme noktası",
       "debugConfiguration": "Hata Ayıklama Yapılandırması",
+      "debugRestricted": "Kısıtlı Modda hata ayıklama devre dışıdır.",
       "debugSessionInitializationFailed": "Hata ayıklama oturumu başlatma başarısız oldu. Ayrıntılar için konsola bakın.",
       "debugSessionTypeNotSupported": "\"{0}\" hata ayıklama oturumu türü desteklenmemektedir.",
       "debugToolbarMenu": "Hata Ayıklama Araç Çubuğu Menüsü",
@@ -1623,6 +1758,11 @@
       "unverifiedBreakpoint": "Doğrulanmamış {0}"
     },
     "editor": {
+      "clearFormatterSetting": "Biçimlendirici ayarını temizle",
+      "configuredIn": "{0}'da yapılandırılmıştır.",
+      "configuredNotInstalled": "{1}'da yapılandırılmış ancak yüklenmemiş \"{0}\"",
+      "configuredNotInstalledFallbackNamed": "{1}'da yapılandırılan '{0}' yüklü değil, '{2}' kullanılıyor",
+      "currentFormatter": "(Güncel)",
       "diffEditor.wordWrap2": "Satırlar, `#editor.wordWrap#` ayarına göre satır sonu yapacaktır.",
       "dirtyEncoding": "Dosya kirli. Lütfen başka bir kodlama ile yeniden açmadan önce kaydedin.",
       "editor.bracketPairColorization.enabled": "Köşeli parantez çiftlerinin renklendirilmesinin etkin olup olmadığını kontrol eder. Köşeli parantezlerin vurgu renklerini geçersiz kılmak için `#workbench.colorCustomizations#` kullanın.",
@@ -1643,11 +1783,26 @@
       "editor.suggestLineHeight": "Öneri widget'ının satır yüksekliği. `0` olarak ayarlandığında, `#editor.lineHeight#` değeri kullanılır. Minimum değer 8'dir.",
       "editor.tabSize": "Bir sekmenin eşdeğer olduğu boşluk sayısı. Bu ayar, `#editor.detectIndentation#` açık olduğunda dosya içeriğine göre geçersiz kılınır.",
       "formatOnSaveTimeout": "Dosya kaydetme sırasında çalıştırılan biçimlendirmenin iptal edildiği milisaniye cinsinden zaman aşımı süresi.",
+      "formatter": "Biçimlendirici",
+      "noDefaultConfiguredLabel": "Varsayılan biçimlendirici yapılandırılmamış",
+      "noDefaultConfiguredTooltip": "Varsayılan biçimlendirici yapılandırılmamış ({0} biçimlendiriciler mevcuttur)",
+      "noEditor": "Etkin editör yok",
+      "noFormatter": "Biçimlendirici Yok",
+      "noFormatterInstalled": "Biçimlendirici yüklü değil",
+      "noFormattersAvailable": "Bu dil için formatlayıcı mevcut değildir.",
+      "noFormattersInstalledTooltip": "Bu dil için herhangi bir biçimlendirici yüklü değildir.",
+      "onlyAvailableFormatter": "Yalnızca Kullanılabilir Biçimlendirici",
+      "onlyFormatterInstalled": "{0} (yalnızca biçimlendirici yüklü)",
       "persistClosedEditors": "Pencerenin yeniden yüklenmesi durumunda çalışma alanının kapalı düzenleyici geçmişinin korunup korunmayacağını kontrol eder.",
+      "selectFormatter": "Varsayılan Biçimlendiriciyi Seç",
+      "selectScope": "Ayarın kaydedileceği yeri seçin",
       "showAllEditors": "Tüm Açık Editörleri Göster",
+      "showFormatterInfo": "Biçimlendirici Bilgilerini Göster",
       "splitHorizontal": "Editörü Yatay Olarak Böl",
       "splitVertical": "Bölünmüş Editör Dikey",
-      "toggleStickyScroll": "Yapışkan Kaydırmayı Aç/Kapat"
+      "toggleStickyScroll": "Yapışkan Kaydırmayı Aç/Kapat",
+      "userSettingsDetail": "Tüm çalışma alanlarına uygula",
+      "workspaceSettingsDetail": "Yalnızca mevcut çalışma alanına uygula"
     },
     "external-terminal": {
       "cwd": "Yeni harici terminal için geçerli çalışma dizinini seçin"
@@ -2026,7 +2181,8 @@
       },
       "taskAlreadyRunningInTerminal": "Görev terminalde zaten çalışıyor",
       "taskExitedWithCode": "\"{0}\" görevi, {1} koduyla sonlandırıldı.",
-      "taskTerminalTitle": "Görev: {0}",
+      "taskIdLabel": "#{0}",
+      "taskRestricted": "Kısıtlı Modda görev yürütme devre dışıdır.",
       "taskTerminatedBySignal": "\"{0}\" görevi, {1} sinyaliyle sonlandırıldı.",
       "terminalWillBeReusedByTasks": "Terminal, görevler tarafından yeniden kullanılacaktır."
     },

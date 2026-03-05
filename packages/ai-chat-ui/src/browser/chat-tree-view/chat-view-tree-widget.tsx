@@ -56,6 +56,7 @@ import {
     postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
+import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
@@ -873,10 +874,60 @@ const ChatRequestRender = (
         );
     };
 
+    // Single-pass: parse inline image parts once and index by part position
+    const inlineImageByIndex = ImageContextVariable.extractInlineImagesWithIndices(parts);
+    const inlineImageDataSet = new Set<string>(Array.from(inlineImageByIndex.values()).map(v => v.data));
+
+    const renderContextImages = () => {
+        const seenData = new Set<string>();
+        const resolvedImages = (node.request.context?.variables ?? [])
+            .filter(v => ImageContextVariable.isResolvedImageContext(v))
+            .map(v => ImageContextVariable.parseResolved(v))
+            .filter((v): v is NonNullable<typeof v> => v !== undefined)
+            .filter(v => !inlineImageDataSet.has(v.data))
+            .filter(v => {
+                if (seenData.has(v.data)) {
+                    return false;
+                }
+                seenData.add(v.data);
+                return true;
+            });
+        if (resolvedImages.length === 0) {
+            return undefined;
+        }
+        return (
+            <div className='theia-RequestNode-ImagePreview'>
+                {resolvedImages.map((resolved, i) => {
+                    const altText = resolved.name ?? resolved.wsRelativePath?.split('/').pop() ?? 'Image';
+                    return (
+                        <div key={i} className='theia-RequestNode-ImagePreview-Item'>
+                            <img
+                                src={`data:${resolved.mimeType};base64,${resolved.data}`}
+                                alt={altText}
+                            />
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <div className="theia-RequestNode">
             <p>
                 {parts.map((part, index) => {
+                    const resolvedInlineImage = inlineImageByIndex.get(index);
+                    if (resolvedInlineImage) {
+                        const altText = resolvedInlineImage.name ?? resolvedInlineImage.wsRelativePath?.split('/').pop() ?? 'Image';
+                        return (
+                            <span key={index} className='theia-RequestNode-ImagePreview-Item theia-RequestNode-ImagePreview-Inline'>
+                                <img
+                                    src={`data:${resolvedInlineImage.mimeType};base64,${resolvedInlineImage.data}`}
+                                    alt={altText}
+                                />
+                            </span>
+                        );
+                    }
                     if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart || part instanceof ParsedChatRequestFunctionPart) {
                         let description = undefined;
                         let className = '';
@@ -913,6 +964,7 @@ const ChatRequestRender = (
                     }
                 })}
             </p>
+            {renderContextImages()}
             {renderFooter()}
         </div>
     );

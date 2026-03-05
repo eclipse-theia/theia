@@ -67,11 +67,14 @@ export class CreateTaskContextFunction implements ToolProvider {
                 try {
                     const { title, content } = JSON.parse(args);
                     const summaryId = generateUuid();
+                    // Store task context in root session if this is a delegated session,
+                    // so it's accessible across the entire delegation chain
+                    const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
                     const summary: Summary = {
                         id: summaryId,
                         label: title,
                         summary: content,
-                        sessionId: ctx.request.session.id
+                        sessionId: targetSessionId
                     };
 
                     await this.storageService.store(summary);
@@ -125,7 +128,9 @@ export class GetTaskContextFunction implements ToolProvider {
                         summary = await this.storageService.get(taskContextId);
                     } else {
                         const allSummaries = this.storageService.getAll();
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
+                        // Use root session if this is a delegated session, otherwise use current session
+                        const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
                         summary = sessionSummaries[sessionSummaries.length - 1];
                     }
 
@@ -196,7 +201,9 @@ export class EditTaskContextFunction implements ToolProvider {
                         summary = await this.storageService.get(taskContextId);
                     } else {
                         const allSummaries = this.storageService.getAll();
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
+                        // Use root session if this is a delegated session, otherwise use current session
+                        const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
                         summary = sessionSummaries[sessionSummaries.length - 1];
                     }
 
@@ -257,7 +264,9 @@ export class ListTaskContextsFunction implements ToolProvider {
 
                 try {
                     const allSummaries = this.storageService.getAll();
-                    const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
+                    // Use root session if this is a delegated session, otherwise use current session
+                    const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
+                    const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
 
                     if (sessionSummaries.length === 0) {
                         return 'No task contexts found for this session.';
@@ -319,7 +328,9 @@ export class RewriteTaskContextFunction implements ToolProvider {
                         summary = await this.storageService.get(taskContextId);
                     } else {
                         const allSummaries = this.storageService.getAll();
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
+                        // Use root session if this is a delegated session, otherwise use current session
+                        const targetSessionId = ctx.rootSessionId || ctx.request.session.id;
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === targetSessionId);
                         summary = sessionSummaries[sessionSummaries.length - 1];
                     }
 

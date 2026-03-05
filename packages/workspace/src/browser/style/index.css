@@ -51,7 +51,7 @@
     justify-content: flex-start !important;
 }
 
-.workspace-trust-dialog .dialogContent div.workspace-trust-description {
+.workspace-trust-dialog.lm-Widget .dialogContent div.workspace-trust-description {
     color: var(--theia-descriptionForeground);
     line-height: var(--theia-content-line-height);
     white-space: pre-line;

@@ -108,8 +108,69 @@ export class OpenAiModel implements LanguageModel {
         protected proxy?: string
     ) { }
 
-    protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
-        return request.settings ?? {};
+    /**
+     * Checks if the model is an o-series model that supports reasoning.
+     * Models like o1, o1-mini, o1-preview, o3, o3-mini, o4-mini support the reasoning_effort parameter.
+     * These models use: reasoning_effort: 'low' | 'medium' | 'high'
+     */
+    protected supportsReasoning(): boolean {
+        return /^o[134](-|$)/i.test(this.model);
+    }
+
+    /**
+     * Checks if the model is a GPT-5 series model (gpt-5, gpt-5.1, gpt-5.2).
+     * These models use a different reasoning parameter format: reasoning: { effort: 'none' | 'low' | 'medium' | 'high' }
+     */
+    protected supportsGPT5Reasoning(): boolean {
+        return /^gpt-5(\.?[012])?(-|$)/i.test(this.model);
+    }
+
+    /**
+     * Gets the settings for a request, optionally including reasoning parameters.
+     * @param request The language model request
+     * @param forResponseApi Whether the settings are for the Response API (true) or Chat Completions API (false).
+     *                       GPT-5 reasoning parameters are only supported with the Response API.
+     */
+    protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
+        const baseSettings = request.settings ?? {};
+
+        if (request.thinkingMode?.enabled && forResponseApi && this.supportsGPT5Reasoning()) {
+            const budgetTokens = request.thinkingMode.budgetTokens ?? 10000;
+            let effort: 'none' | 'low' | 'medium' | 'high';
+            if (budgetTokens <= 0) {
+                effort = 'none';
+            } else if (budgetTokens <= 2000) {
+                effort = 'low';
+            } else if (budgetTokens <= 20000) {
+                effort = 'medium';
+            } else {
+                effort = 'high';
+            }
+
+            return {
+                ...baseSettings,
+                reasoning: { effort }
+            };
+        }
+
+        if (request.thinkingMode?.enabled && this.supportsReasoning()) {
+            const budgetTokens = request.thinkingMode.budgetTokens ?? 10000;
+            let reasoningEffort: 'low' | 'medium' | 'high';
+            if (budgetTokens <= 2000) {
+                reasoningEffort = 'low';
+            } else if (budgetTokens <= 20000) {
+                reasoningEffort = 'medium';
+            } else {
+                reasoningEffort = 'high';
+            }
+
+            return {
+                ...baseSettings,
+                reasoning_effort: reasoningEffort
+            };
+        }
+
+        return baseSettings;
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -265,7 +326,7 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const settings = this.getSettings(request);
+        const settings = this.getSettings(request, true);
         const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
 
         try {

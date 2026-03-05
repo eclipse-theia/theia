@@ -116,6 +116,7 @@
         "chatSessionSummaryAgent": {
           "description": "Agent permettant de générer des résumés de sessions de chat."
         },
+        "clipboardSeparator": "presse-papiers",
         "confirmApplySuggestion": "Le fichier {0} a été modifié depuis la création de cette suggestion. Êtes-vous certain de vouloir appliquer la modification ?",
         "confirmRevertSuggestion": "Le fichier {0} a été modifié depuis la création de cette suggestion. Êtes-vous certain de vouloir annuler la modification ?",
         "couldNotFindMatchingLM": "Impossible de trouver un modèle linguistique correspondant. Veuillez vérifier votre configuration !",
@@ -143,6 +144,7 @@
           "description": "Fournit des informations contextuelles pour une image.",
           "label": "Fichier image"
         },
+        "imagePickerPlaceholder": "Sélectionnez un fichier image ou effectuez une recherche par nom.",
         "orchestrator": {
           "description": "Cet agent analyse la demande de l'utilisateur par rapport à la description de tous les agents de chat disponibles et sélectionne l'agent le plus approprié pour répondre à la demande (à l'aide de l'IA). La demande de l'utilisateur sera directement déléguée à l'agent sélectionné sans autre confirmation.",
           "vars": {
@@ -162,7 +164,6 @@
           "description": "Activez l'épinglage d'agent pour maintenir automatiquement un agent de chat mentionné actif dans toutes les invites, ce qui réduit le besoin de mentions répétées. Vous pouvez désépingler ou changer d'agent manuellement à tout moment."
         },
         "revertSuggestion": "Revenir à la suggestion",
-        "selectImageFile": "Sélectionnez un fichier image",
         "sessionStorageScope": {
           "description": "Choisissez si vous souhaitez conserver les sessions de chat dans des magasins distincts par espace de travail ou dans un seul magasin global. Si aucun espace de travail n'est ouvert, les sessions seront conservées dans le magasin global.",
           "global": "Stockez les sessions de chat dans un seul magasin, partagé entre tous les espaces de travail.",
@@ -191,11 +192,15 @@
         },
         "view": {
           "label": "Chat IA"
+        },
+        "welcomeScreenSessions": {
+          "description": "Nombre de lignes de sessions de chat récentes à afficher sur l'écran d'accueil. Le nombre de sessions visibles dépend de la largeur disponible. Définissez cette valeur sur 0 pour masquer la section des chats récents."
         }
       },
       "chat-ui": {
         "addContextVariable": "Ajouter une variable de contexte",
         "agent": "Agent",
+        "agentDelegationDescription": "Autres agents IA pouvant être délégués à",
         "aiDisabled": "Les fonctionnalités d'IA sont désactivées.",
         "applyAll": "Appliquer tout",
         "applyAllTitle": "Appliquer toutes les modifications en attente",
@@ -204,10 +209,7 @@
         "cancel": "Annuler (Esc)",
         "chat-view-tree-widget": {
           "ai": "IA",
-          "aiFeatureHeader": "🚀 Fonctionnalités IA disponibles (version bêta) !",
-          "featuresDisabled": "Actuellement, toutes les fonctionnalités IA sont désactivées !",
           "generating": "Génération",
-          "howToEnable": "Comment activer les fonctionnalités IA :",
           "noRenderer": "Erreur : aucun moteur de rendu trouvé",
           "scrollToBottom": "Aller au dernier message",
           "waitingForInput": "En attente d'une entrée",
@@ -222,14 +224,17 @@
         },
         "chatInputAriaLabel": "Tapez votre message ici",
         "chatResponses": "Réponses au chat",
+        "clearAllSelections": "Effacer la chaîne de recherche et les sélections de capacités",
         "code-part-renderer": {
           "copied": "Copié",
           "generatedCode": "Code généré"
         },
+        "collapseAll": "Réduire tout",
         "collapseChangeSet": "Réduire l'ensemble de modifications",
         "command-part-renderer": {
           "commandNotExecutable": "La commande a l'identifiant « {0} », mais elle n'est pas exécutable à partir de la fenêtre de chat."
         },
+        "confirmDeleteChatMsg": "Êtes-vous sûr de vouloir supprimer cette conversation ?",
         "copyCodeBlock": "Copier le bloc de code",
         "couldNotSendRequestToSession": "Impossible d'envoyer la requête « {0} » à la session {1}",
         "delegation-response-renderer": {
@@ -248,6 +253,7 @@
           }
         },
         "deleteChangeSet": "Supprimer le jeu de modifications",
+        "deleteChat": "Supprimer le chat",
         "editRequest": "Modifier",
         "edited": "édité",
         "editedTooltipHint": "Cette variante d'invite a été modifiée. Vous pouvez la réinitialiser dans la vue Configuration IA.",
@@ -260,17 +266,27 @@
         "failedToRetry": "Échec de la tentative de renouvellement du message",
         "focusInput": "Entrée de chat ciblée",
         "focusResponse": "Réponse du chat Focus",
+        "functions": "Fonctions",
+        "functionsDescription": "Fonctions intégrées fournies par les extensions Theia",
+        "genericCapabilities": "Capacités génériques",
+        "mcpFunctions": "MCP",
+        "mcpFunctionsDescription": "Fonctions du protocole MCP (Model Context Protocol) à partir de serveurs connectés",
         "noChatAgentsAvailable": "Aucun agent de chat disponible.",
+        "noMatchingCapabilities": "Aucune correspondance trouvée",
         "openDiff": "Ouvrir Diff",
         "openImage": "Ouvrir l'image",
         "openOriginalFile": "Ouvrir le fichier original",
         "performThisTask": "Effectuez cette tâche.",
         "persistedSession": "Session persistante (cliquez pour restaurer)",
+        "promptFragments": "Invites",
+        "promptFragmentsDescription": "Fragments d'invite personnalisés à inclure dans la conversation",
         "removeChat": "Supprimer le chat",
         "renameChat": "Renommer le chat",
         "requestNotFoundForRetry": "Demande introuvable, veuillez réessayer.",
         "responseFrom": "Réponse d'{0}",
+        "searchCapabilities": "Fonctions de recherche",
         "selectAgentQuickPickPlaceholder": "Sélectionnez un agent pour la nouvelle session.",
+        "selectAllInCategory": "Sélectionner tout dans cette catégorie",
         "selectChat": "Sélectionner le chat",
         "selectContextVariableQuickPickPlaceholder": "Sélectionnez une variable de contexte à associer au message.",
         "selectTaskContextQuickPickItem": {
@@ -280,12 +296,10 @@
         "selectVariableArguments": "Sélectionner des arguments variables",
         "send": "Envoyer (Entrée)",
         "sessionNotFoundForRetry": "Session introuvable, veuillez réessayer.",
+        "skillsDescription": "Instructions réutilisables pouvant être ajoutées à la conversation.",
         "switchAgentMode": "Basculer en mode agent",
         "text-part-renderer": {
           "cantDisplay": "Impossible d'afficher la réponse, veuillez vérifier vos ChatResponsePartRenderers !"
-        },
-        "thinking-part-renderer": {
-          "thinking": "Réflexion"
         },
         "toggleCapabilitiesConfig": "Configuration des capacités de basculement",
         "toolcall-part-renderer": {
@@ -315,6 +329,8 @@
           "contentNotRestoreable": "Ce contenu (type « {0} ») n'a pas pu être entièrement restauré. Il provient peut-être d'une extension qui n'est plus disponible."
         },
         "unpinAgent": "Détacher l'agent",
+        "unselectAllInCategory": "Désélectionner tout dans cette catégorie",
+        "variablesDescription": "Variables dynamiques fournissant des informations contextuelles",
         "variantTooltip": "Variante de l'invite : {0}",
         "yourMessage": "Votre message"
       },
@@ -459,7 +475,6 @@
         "itemCount": "{0} éléments",
         "noItems": "Aucun élément",
         "oneItem": "1 élément",
-        "running": "En cours d'exécution...",
         "searched": "Recherché",
         "searching": "Recherche",
         "todoList": "Tout Liste",
@@ -536,7 +551,6 @@
           "privacy": "Theia est un projet open source. Nous demandons uniquement l'accès à votre nom d'utilisateur GitHub pour nous connecter aux services GitHub Copilot. Aucune autre donnée n'est consultée ou stockée.",
           "success": "Connexion à GitHub Copilot réussie !",
           "successHint": "Si votre compte GitHub a accès à Copilot, vous pouvez désormais configurer les modèles linguistiques Copilot dans le ",
-          "title": "Connectez-vous à GitHub Copilot",
           "tos": "En vous connectant, vous acceptez les ",
           "tosLink": "Conditions d'utilisation de GitHub",
           "verifying": "Vérification de l'autorisation..."
@@ -552,6 +566,9 @@
         "models": {
           "description": "Modèles GitHub Copilot à utiliser. Les modèles disponibles dépendent de votre abonnement Copilot."
         },
+        "signOut": {
+          "confirmMessage": "Êtes-vous sûr de vouloir vous déconnecter de GitHub Copilot ?"
+        },
         "statusBar": {
           "signedIn": "Connecté à GitHub Copilot en tant qu'{0}. Cliquez pour vous déconnecter.",
           "signedOut": "Vous n'êtes pas connecté à GitHub Copilot. Cliquez pour vous connecter."
@@ -559,14 +576,16 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Actions",
           "addCustomAgent": "Ajouter un agent personnalisé",
           "availableCapabilities": "Capacités disponibles",
+          "completionNotificationDescriptionPrefix": "Sélectionnez la manière dont vous souhaitez être averti lorsque cet agent termine sa tâche. « Par défaut » utilise le ",
+          "defaultNotificationDescription": "Utilise le paramètre global de notification IA.",
           "enableAgent": "Activer l'agent",
-          "label": "Agents",
           "llmRequirements": "Exigences LLM",
           "notUsedInPrompt": "Non utilisé dans l'invite",
           "notUsedInPromptTooltip": "Cette variable est déclarée par l'agent, mais n'est pas référencée dans le modèle d'invite actuel.",
+          "notificationSettings": "Paramètres de notification",
+          "notificationSettingsLink": "Paramètre de notification IA",
           "promptTemplates": "Modèles d'invite",
           "selectAgentMessage": "Veuillez d'abord sélectionner un agent !",
           "showInChat": "Afficher dans le chat",
@@ -665,6 +684,16 @@
           "unavailableModel": "Le modèle sélectionné n'est plus disponible."
         },
         "noVariableFoundForOpenRequest": "Aucune variable trouvée pour la requête ouverte.",
+        "notification": {
+          "message": {
+            "description": "Afficher un message de notification dans l'application."
+          },
+          "off": {
+            "description": "Désactiver toutes les notifications"
+          },
+          "osNotification": "OS Notification",
+          "windowBlink": "Fenêtre clignotante"
+        },
         "openEditorsShortVariable": {
           "description": "Référence succincte à tous les fichiers actuellement ouverts (chemins relatifs, séparés par des virgules)"
         },
@@ -770,6 +799,30 @@
           "edited": "édité",
           "unavailableVariant": "Indisponible"
         },
+        "thinkingMode": {
+          "mdDescription": "Permet de spécifier les paramètres du mode réflexion pour les modèles qui prennent en charge des capacités de réflexion étendues.\nChaque paramètre comprend :\n- `scope` : définit quand le paramètre s'applique :\n- `modelId` (facultatif) : l'ID du modèle à faire correspondre\n- `providerId` (facultatif) : l'ID du fournisseur à faire correspondre\n- `agentId` (facultatif) : L'ID de l'agent à faire correspondre\n- `thinkingMode` : configuration du mode de réflexion :\n- `enabled` (booléen) : indique si le mode de réflexion est activé\n- `budgetTokens` (nombre, facultatif) : nombre maximal de jetons pour la réflexion (si pris en charge par le modèle)\nLes paramètres sont mis en correspondance en fonction de leur spécificité (agent : 100, modèle : 10, fournisseur : 1 point).",
+          "scope": {
+            "agentId": {
+              "description": "L'identifiant d'agent (facultatif) auquel appliquer les paramètres."
+            },
+            "modelId": {
+              "description": "L'identifiant du modèle (facultatif)"
+            },
+            "providerId": {
+              "description": "L'identifiant du fournisseur (facultatif) auquel appliquer les paramètres."
+            }
+          },
+          "thinkingMode": {
+            "budgetTokens": {
+              "description": "Nombre maximal de jetons à utiliser pour la réflexion. Applicable uniquement si le modèle prend en charge le budget de réflexion."
+            },
+            "description": "Configuration du mode de réflexion.",
+            "enabled": {
+              "description": "Si le mode réflexion est activé."
+            }
+          },
+          "title": "Paramètres du mode de réflexion"
+        },
         "todayVariable": {
           "description": "Faire quelque chose pour aujourd'hui",
           "format": {
@@ -873,7 +926,6 @@
       "ide": {
         "agent-description": "Configurez les paramètres de l'agent IA, notamment l'activation, la sélection LLM, la personnalisation des modèles d'invite et la création d'agents personnalisés dans la [vue Configuration IA]({0}).",
         "agentConfiguration": {
-          "capabilityId": "Fragment ID",
           "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "Créer un nouveau fichier",
@@ -904,6 +956,10 @@
             "question": "Les serveurs Playwright MCP ne sont pas en cours d'exécution. Souhaitez-vous les démarrer maintenant ? Cela peut entraîner l'installation des serveurs Playwright MCP."
           }
         },
+        "appTester": {
+          "description": "Permet à l'agent de tester les applications de navigateur de bout en bout. Pour cela, l'agent peut déléguer à l'agent AppTester, qui automatise les interactions du navigateur pour vérifier la mise en œuvre.",
+          "name": "Testeur d'applications"
+        },
         "architectAgent": {
           "mode": {
             "plan": "Plan Mode",
@@ -913,9 +969,10 @@
             "executePlanWithCoder": "Exécutez « {0} » avec Coder."
           }
         },
+        "browseAllChats": "Parcourir toutes les discussions...",
         "bypassHint": "Certains agents comme Claude Code ne nécessitent pas les modèles linguistiques Theia.",
         "chatDisabledMessage": {
-          "featuresTitle": "Vues et fonctionnalités actuellement prises en charge :"
+          "title": "Les fonctionnalités d'IA sont désactivées."
         },
         "coderAgent": {
           "mode": {
@@ -948,6 +1005,7 @@
             }
           }
         },
+        "configurationState": "Problèmes de configuration",
         "configureAgent": {
           "header": "Configurer un agent par défaut"
         },
@@ -957,6 +1015,7 @@
             "edit": "Mode par défaut"
           }
         },
+        "deleteChat": "Supprimer le chat",
         "enableAI": {
           "mdDescription": "Ce paramètre vous permet d'accéder aux dernières fonctionnalités d'IA (version bêta).            \n            Veuillez noter que ces fonctionnalités sont en phase bêta, ce qui signifie qu'elles peuvent             subir des modifications et seront encore améliorées. Il est important de savoir que ces fonctionnalités peuvent générer            des requêtes continues vers les modèles linguistiques (LLM) auxquels vous donnez accès. Cela peut entraîner des coûts que vous            devrez surveiller de près. En activant cette option, vous reconnaissez ces risques.            \n            **Remarque importante ! Les paramètres ci-dessous dans cette section ne prendront effet\n            qu'une fois le paramètre de la fonctionnalité principale activé. Après avoir activé la fonctionnalité, vous devez configurer au moins un            fournisseur LLM ci-dessous. Consultez également [la documentation](https://theia-ide.org/docs/user_ai/)**."
         },
@@ -979,16 +1038,20 @@
             "yes": "Oui, démarrez le serveur."
           }
         },
+        "githubCapability": {
+          "description": "Permet à l'agent d'interagir avec GitHub. Pour cela, l'agent peut déléguer à l'agent GitHub, qui peut lire et écrire des tickets, des pull requests, des commentaires et le contenu du référentiel.",
+          "name": "GitHub"
+        },
         "githubRepoName": {
           "description": "Nom du référentiel GitHub actuel (par exemple, « eclipse-theia/theia »)."
         },
+        "howToGetStarted": "Comment commencer",
         "model-selection-description": "Choisissez les grands modèles linguistiques (LLM) utilisés par chaque agent IA dans la [vue Configuration IA]({0}).",
         "moreAgentsAvailable": {
           "header": "D'autres agents sont disponibles."
         },
         "noRecommendedAgents": "Aucun agent recommandé n'est disponible.",
         "openSettings": "Ouvrir les paramètres AI",
-        "or": "ou",
         "orchestrator": {
           "error": {
             "noAgents": "Aucun agent de chat n'est disponible pour traiter la demande. Veuillez vérifier votre configuration pour voir si l'un d'entre eux est activé."
@@ -1002,18 +1065,28 @@
           }
         },
         "prompt-template-description": "Sélectionnez les variantes d'invite et personnalisez les modèles d'invite pour les agents IA dans la [vue Configuration IA]({0}).",
-        "recommendedAgents": "Agents recommandés :",
+        "recentChats": "Chats récents",
+        "renameChat": "Renommer le chat",
         "shellAllowlist": {
           "placeholder": "Par exemple, « git log » (exact) ou « git log * » (avec arguments)."
         },
         "shellDenylist": {
           "placeholder": "Par exemple, « git push * » ou « rm -rf / »."
         },
+        "shellExecutionCapability": {
+          "description": "Permet à l'agent d'exécuter des commandes shell arbitraires sur le système hôte. L'agent peut alors déléguer l'exécution de scripts qui ne sont pas disponibles en tant que tâches, interroger les informations système et effectuer des opérations pour lesquelles il n'existe aucun outil dédié.",
+          "name": "Exécution du shell"
+        },
         "skillsConfiguration": {
-          "label": "Compétences",
           "location": {
             "label": "Emplacement"
-          }
+          },
+          "noSkills": "Aucune compétence disponible",
+          "noSlashCommands": "Aucune commande slash disponible",
+          "slashCommand": {
+            "allAgents": "Tous les agents"
+          },
+          "slashCommandsSectionHeader": "Commandes slash"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1048,6 +1121,15 @@
               "label": "Confirmer"
             }
           }
+        },
+        "tooltip": {
+          "agent": "Agent",
+          "lastActivity": "Dernière activité",
+          "lastMessage": "Dernier message",
+          "messages": "Messages",
+          "multipleExchanges": "{0} échanges",
+          "oneExchange": "1 échange",
+          "unread": "Non lu"
         },
         "variableConfiguration": {
           "selectVariable": "Veuillez sélectionner une variable.",
@@ -1149,9 +1231,36 @@
         "copyAllSingle": "Copier tout pour le chat (fragment d'invite unique avec tous les outils)",
         "copyForPrompt": "Outil de copie (pour le chat ou le modèle d'invite)",
         "copyForPromptTemplate": "Copier tout pour le modèle d'invite (fragment d'invite unique avec tous les outils)",
+        "deleteServer": "Supprimer le serveur",
+        "deleteServerDialogMsg": "Êtes-vous sûr de vouloir supprimer le serveur « {0} » ?",
+        "deleteServerDialogTitle": "Supprimer le serveur MCP",
+        "deleteServerError": "Échec de la suppression du serveur MCP : {0}",
+        "editServer": "Modifier le serveur",
+        "editServerTitle": "Modifier le serveur MCP",
         "environmentVariables": "Variables d'environnement",
+        "form": {
+          "argsPlaceholder": "Séparés par des espaces, par exemple -y @modelcontextprotocol/server-brave-search",
+          "authHeaderPlaceholder": "Par défaut : autorisation avec porteur",
+          "authTokenPlaceholder": "Jeton d'authentification facultatif",
+          "autostart": "Démarrage automatique",
+          "commandPlaceholder": "Par exemple, npx ou uvx.",
+          "commandRequired": "La commande est requise pour les serveurs locaux.",
+          "envPlaceholder": "KEY=valeur (une par ligne)",
+          "headersPlaceholder": "Nom-de-l'en-tête=valeur (un par ligne)",
+          "localServer": "Local (Commande)",
+          "nameExists": "Un serveur portant ce nom existe déjà.",
+          "nameRequired": "Le nom du serveur est obligatoire.",
+          "remoteServer": "À distance (URL)",
+          "saveChanges": "Enregistrer les modifications",
+          "serverName": "Nom du serveur",
+          "serverNamePlaceholder": "Par exemple, my-mcp-server",
+          "serverType": "Type de serveur",
+          "serverUrlPlaceholder": "Par exemple, https://mcp.example.com",
+          "serverUrlRequired": "L'URL du serveur est requise pour les serveurs distants."
+        },
         "headers": "En-têtes",
         "noServers": "Aucun serveur MCP configuré",
+        "saveServerError": "Échec de l'enregistrement de la configuration du serveur MCP : {0}",
         "serverAuthToken": "Jeton d'authentification",
         "serverAuthTokenHeader": "Nom de l'en-tête d'authentification",
         "serverUrl": "URL du serveur",
@@ -1248,6 +1357,11 @@
         }
       },
       "session-settings-dialog": {
+        "advancedSettings": "Paramètres avancés (JSON)",
+        "budgetTokens": "Jetons budgétaires :",
+        "enableThinking": "Activer la réflexion approfondie",
+        "thinkingMode": "Mode réflexion",
+        "thinkingModeNote": "Certains modèles peuvent ignorer ce paramètre.",
         "title": "Définir les paramètres de session",
         "tooltip": "Définir les paramètres de session"
       },
@@ -1363,9 +1477,13 @@
       "fileChangeSetTitle": "Modifications proposées"
     },
     "ai-chat-ui": {
+      "deleteChat": "Supprimer le chat",
       "initiate-session-task-context": "Contexte de la tâche : lancer une session",
+      "navigate-back": "Revenir en arrière",
+      "navigate-forward": "Naviguer vers l'avant",
       "open-current-session-summary": "Ouvrir le résumé de la session actuelle",
       "open-settings-tooltip": "Ouvrir les paramètres AI...",
+      "renameChat": "Renommer le chat",
       "scroll-lock": "Verrouiller le défilement",
       "scroll-unlock": "Déverrouiller le défilement",
       "session-settings": "Définir les paramètres de session",
@@ -1378,11 +1496,12 @@
     },
     "ai-core": {
       "agentCompletionMessage": "L'agent « {0} » a terminé sa tâche.",
+      "agentCompletionMessageWithSession": "L'agent « {0} » a terminé sa tâche dans « {1} ».",
       "agentCompletionTitle": "Agent « {0} » Tâche terminée",
-      "agentCompletionWithTask": "L'agent « {0} » a terminé la tâche : {1}",
       "preferences": {
         "title": "Fonctionnalités IA"
-      }
+      },
+      "showChat": "Afficher le chat"
     },
     "ai-editor": {
       "contextMenu": "Demander à l'IA",
@@ -1414,8 +1533,23 @@
       "blockedServersLabel": "Serveurs MCP (démarrage automatique bloqué)"
     },
     "ai-terminal": {
+      "allowAllConfirm": "Je comprends, autoriser tout",
+      "allowAllForever": "Toujours autoriser toutes les commandes shell...",
+      "allowAllSession": "Autoriser toutes les commandes shell pour ce chat...",
+      "allowAllSessionConfirm": "Je comprends, autoriser tout pour ce chat",
+      "allowAllSessionTitle": "Autoriser TOUTES les commandes Shell pour ce chat ?",
+      "allowAllSessionWarning": "Cela permettra à l'IA d'exécuter n'importe quelle commande shell sans confirmation pendant le reste de cette session de chat. Les commandes shell ont un accès complet au système et peuvent exécuter n'importe quelle commande, modifier des fichiers en dehors de l'espace de travail et accéder aux ressources réseau. Les commandes figurant sur la liste des commandes interdites resteront bloquées.",
+      "allowAllTitle": "Autoriser TOUTES les commandes Shell ?",
+      "allowAllWarning": "Cela permettra à l'IA d'exécuter n'importe quelle commande shell sans confirmation. Les commandes shell ont un accès complet au système et peuvent exécuter n'importe quelle commande, modifier des fichiers en dehors de l'espace de travail et accéder aux ressources réseau. Les commandes figurant sur la liste des interdictions resteront bloquées.",
+      "alwaysAllowPattern": "Toujours autoriser {0}",
+      "alwaysAllowPatterns": "Toujours autoriser {0} et {1}",
+      "alwaysAllowPatternsList": "Toujours autoriser {0}",
+      "alwaysDenyPattern": "Toujours refuser l'{0}",
+      "alwaysDenyPatterns": "Toujours refuser {0} et {1}",
+      "alwaysDenyPatternsList": "Toujours refuser l'{0}",
       "cancelExecution": "Annuler l'exécution de la commande",
       "canceling": "Annulation...",
+      "configurePermissions": "Configurer les autorisations des commandes shell",
       "confirmExecution": "Confirmer la commande Shell",
       "denialReason": "Raison",
       "executionCanceled": "Annulé",
@@ -1593,6 +1727,7 @@
       "couldNotRunTask": "Impossible d'exécuter la tâche « {0} ».",
       "dataBreakpoint": "point d'arrêt de données",
       "debugConfiguration": "Configuration de débogage",
+      "debugRestricted": "Le débogage est désactivé en mode restreint.",
       "debugSessionInitializationFailed": "Échec de l'initialisation de la session de débogage. Consultez la console pour plus de détails.",
       "debugSessionTypeNotSupported": "Le type de session de débogage « {0} » n'est pas pris en charge.",
       "debugToolbarMenu": "Menu de la barre d'outils de débogage",
@@ -1623,6 +1758,11 @@
       "unverifiedBreakpoint": "{0} non vérifiée"
     },
     "editor": {
+      "clearFormatterSetting": "Effacer les paramètres du formateur",
+      "configuredIn": "Configuré dans {0}",
+      "configuredNotInstalled": "« {0} » configuré dans {1} mais non installé",
+      "configuredNotInstalledFallbackNamed": "« {0} » configuré dans {1} non installé, utilisant « {2} ».",
+      "currentFormatter": "(Actuel)",
       "diffEditor.wordWrap2": "Les lignes s'enrouleront selon le paramètre `#editor.wordWrap#`.",
       "dirtyEncoding": "Le fichier est corrompu. Veuillez d'abord l'enregistrer avant de le rouvrir avec un autre encodage.",
       "editor.bracketPairColorization.enabled": "Contrôle si la colorisation des paires de crochets est activée ou non. Utilisez `#workbench.colorCustomizations#` pour remplacer les couleurs de mise en évidence des crochets.",
@@ -1643,11 +1783,26 @@
       "editor.suggestLineHeight": "Hauteur de ligne pour le widget de suggestion. Lorsqu'elle est définie sur « 0 », la valeur de « #editor.lineHeight# » est utilisée. La valeur minimale est 8.",
       "editor.tabSize": "Nombre d'espaces équivalant à une tabulation. Ce paramètre est remplacé en fonction du contenu du fichier lorsque `#editor.detectIndentation#` est activé.",
       "formatOnSaveTimeout": "Délai d'expiration en millisecondes après lequel le formatage exécuté lors de l'enregistrement du fichier est annulé.",
+      "formatter": "Formateur",
+      "noDefaultConfiguredLabel": "Aucun formateur par défaut configuré",
+      "noDefaultConfiguredTooltip": "Aucun formateur par défaut n'est configuré (formateurs {0}s disponibles)",
+      "noEditor": "Aucun éditeur actif",
+      "noFormatter": "Pas de formateur",
+      "noFormatterInstalled": "Aucun formateur installé",
+      "noFormattersAvailable": "Aucun formateur n'est disponible pour cette langue.",
+      "noFormattersInstalledTooltip": "Aucun formateur n'est installé pour cette langue.",
+      "onlyAvailableFormatter": "Seul le formateur disponible",
+      "onlyFormatterInstalled": "{0} (seul le formateur est installé)",
       "persistClosedEditors": "Contrôle si l'historique de l'éditeur fermé doit être conservé pour l'espace de travail lors du rechargement des fenêtres.",
+      "selectFormatter": "Sélectionner le formateur par défaut",
+      "selectScope": "Sélectionnez l'emplacement où enregistrer le paramètre.",
       "showAllEditors": "Afficher tous les éditeurs ouverts",
+      "showFormatterInfo": "Afficher les informations sur le formateur",
       "splitHorizontal": "Éditeur divisé horizontalement",
       "splitVertical": "Éditeur fractionné vertical",
-      "toggleStickyScroll": "Activer/désactiver le défilement collant"
+      "toggleStickyScroll": "Activer/désactiver le défilement collant",
+      "userSettingsDetail": "Appliquer à tous les espaces de travail",
+      "workspaceSettingsDetail": "Appliquer uniquement à l'espace de travail actuel"
     },
     "external-terminal": {
       "cwd": "Sélectionner le répertoire de travail actuel pour le nouveau terminal externe"
@@ -2026,7 +2181,8 @@
       },
       "taskAlreadyRunningInTerminal": "La tâche est déjà en cours d'exécution dans le terminal.",
       "taskExitedWithCode": "La tâche « {0} » s'est terminée avec le code {1}.",
-      "taskTerminalTitle": "Tâche : {0}",
+      "taskIdLabel": "#{0}",
+      "taskRestricted": "L'exécution des tâches est désactivée en mode restreint.",
       "taskTerminatedBySignal": "La tâche « {0} » a été interrompue par l'{1} de signal.",
       "terminalWillBeReusedByTasks": "Le terminal sera réutilisé par les tâches."
     },

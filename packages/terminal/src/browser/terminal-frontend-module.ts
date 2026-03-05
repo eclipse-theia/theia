@@ -19,7 +19,7 @@ import 'xterm/css/xterm.css';
 
 import { ContainerModule, Container } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution, nls } from '@theia/core/lib/common';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
@@ -103,10 +103,10 @@ export default new ContainerModule(bind => {
     }).inSingletonScope();
     bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
 
-    bindContributionProvider(bind, TerminalContribution);
+    bindRootContributionProvider(bind, TerminalContribution);
 
     // terminal link provider contribution point
-    bindContributionProvider(bind, TerminalLinkProvider);
+    bindRootContributionProvider(bind, TerminalLinkProvider);
     bind(TerminalLinkProviderContribution).toSelf().inSingletonScope();
     bind(TerminalContribution).toService(TerminalLinkProviderContribution);
     bind(XtermLinkFactory).toFactory(createXtermLinkFactory);

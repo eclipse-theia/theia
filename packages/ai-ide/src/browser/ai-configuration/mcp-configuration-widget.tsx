@@ -29,7 +29,7 @@ import {
     RemoteMCPServerDescription
 } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MessageService, nls, PreferenceScope, PreferenceService } from '@theia/core';
-import { PROMPT_VARIABLE } from '@theia/ai-core/lib/common/prompt-variable-contribution';
+import { PROMPT_VARIABLE } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { DialogProps } from '@theia/core/lib/browser/dialogs';

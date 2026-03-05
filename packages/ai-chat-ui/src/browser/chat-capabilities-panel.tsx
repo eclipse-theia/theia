@@ -50,10 +50,6 @@ export const CapabilityChipsRow: React.FunctionComponent<CapabilityChipsRowProps
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
 
-    if (capabilities.length === 0) {
-        return undefined;
-    }
-
     const handleKeyDown = (e: React.KeyboardEvent): void => {
         if (disabled) {
             return;
@@ -95,6 +91,8 @@ export const CapabilityChipsRow: React.FunctionComponent<CapabilityChipsRowProps
                         <CapabilityChip
                             key={capability.fragmentId}
                             fragmentId={capability.fragmentId}
+                            name={capability.name}
+                            description={capability.description}
                             checked={isChecked}
                             disabled={disabled}
                             tabIndex={index === focusIndex ? 0 : -1}
@@ -111,6 +109,7 @@ export const CapabilityChipsRow: React.FunctionComponent<CapabilityChipsRowProps
 
 interface CapabilityChipProps {
     fragmentId: string;
+    name?: string;
     description?: string;
     checked: boolean;
     disabled?: boolean;
@@ -125,8 +124,9 @@ interface CapabilityChipProps {
  * option buttons (match case, regex). Uses inputOption theme colors
  * when enabled, transparent when disabled.
  */
-const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChip({
+export const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChip({
     fragmentId,
+    name,
     description,
     checked,
     disabled,
@@ -151,7 +151,7 @@ const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChip({
         }
     };
 
-    const label = fragmentId; // TODO: should be a dedicated display label of the prompt fragment
+    const label = name ?? fragmentId;
 
     const handleMouseEnter = (): void => {
         if (chipRef.current) {

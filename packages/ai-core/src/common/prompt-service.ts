@@ -20,10 +20,16 @@ import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVar
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
 import { ToolRequest } from './language-model';
-import { matchFunctionsRegEx, matchVariablesRegEx } from './prompt-service-util';
+import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, stripFrontMatter } from './prompt-service-util';
 import { AISettingsService } from './settings-service';
 
 export interface CommandPromptFragmentMetadata {
+    /** Display name for this prompt fragment (defaults to fragment id if not specified) */
+    name?: string;
+
+    /** Description of this prompt fragment's purpose */
+    description?: string;
+
     /** Mark this template as available as a slash command */
     isCommand?: boolean;
 
@@ -628,7 +634,7 @@ export class PromptServiceImpl implements PromptService {
         }
         return {
             ...rawFragment,
-            template: this.stripComments(rawFragment.template)
+            template: stripFrontMatter(this.stripComments(rawFragment.template))
         };
     }
 
@@ -658,6 +664,35 @@ export class PromptServiceImpl implements PromptService {
     protected stripComments(templateText: string): string {
         const commentRegex = /^\s*{{!--[\s\S]*?--}}\s*\n?/;
         return commentRegex.test(templateText) ? templateText.replace(commentRegex, '').trimStart() : templateText;
+    }
+
+    /**
+     * Extracts metadata fields from YAML front matter in the template and
+     * merges them onto the fragment. Programmatic fields take precedence over
+     * front matter values so callers can still override individual fields.
+     */
+    protected enrichWithFrontMatter(fragment: BasePromptFragment): BasePromptFragment {
+        const match = fragment.template.match(FRONT_MATTER_REGEX);
+        if (!match) {
+            return fragment;
+        }
+        const yamlBlock = match[1];
+        const extracted: Partial<CommandPromptFragmentMetadata> = {};
+        for (const line of yamlBlock.split('\n')) {
+            const kv = line.match(/^\s*(\w+)\s*:\s*(.*?)\s*$/);
+            if (kv) {
+                const [, key, value] = kv;
+                if (key === 'name' && !fragment.name) {
+                    extracted.name = value;
+                } else if (key === 'description' && !fragment.description) {
+                    extracted.description = value;
+                }
+            }
+        }
+        if (extracted.name || extracted.description) {
+            return { ...fragment, ...extracted };
+        }
+        return fragment;
     }
 
     getSelectedVariantId(variantSetId: string): string | undefined {
@@ -989,15 +1024,16 @@ export class PromptServiceImpl implements PromptService {
     }
 
     addBuiltInPromptFragment(promptFragment: BasePromptFragment, promptVariantSetId?: string, isDefault: boolean = false): void {
-        this.checkCommandUniqueness(promptFragment);
+        const enriched = this.enrichWithFrontMatter(promptFragment);
+        this.checkCommandUniqueness(enriched);
 
-        const existingIndex = this._builtInFragments.findIndex(fragment => fragment.id === promptFragment.id);
+        const existingIndex = this._builtInFragments.findIndex(fragment => fragment.id === enriched.id);
         if (existingIndex !== -1) {
             // Replace existing fragment with the same ID
-            this._builtInFragments[existingIndex] = promptFragment;
+            this._builtInFragments[existingIndex] = enriched;
         } else {
             // Add new fragment
-            this._builtInFragments.push(promptFragment);
+            this._builtInFragments.push(enriched);
         }
 
         // If this is a variant of a prompt variant set, record it in the variants map

@@ -116,6 +116,7 @@
         "chatSessionSummaryAgent": {
           "description": "チャットセッションの要約を生成するエージェント。"
         },
+        "clipboardSeparator": "クリップボード",
         "confirmApplySuggestion": "この提案作成以降、ファイル {0} が変更されました。変更を適用してもよろしいですか?",
         "confirmRevertSuggestion": "この提案作成以降、ファイル {0} が変更されました。変更を元に戻すことを確認しますか?",
         "couldNotFindMatchingLM": "一致する言語モデルが見つかりませんでした。設定を確認してください！",
@@ -143,6 +144,7 @@
           "description": "画像のコンテキスト情報を提供します",
           "label": "画像ファイル"
         },
+        "imagePickerPlaceholder": "画像ファイルを選択するか、名前で検索してください",
         "orchestrator": {
           "description": "このエージェントは、利用可能な全チャットエージェントの説明とユーザーのリクエストを照合し、リクエストに応答するのに最適なエージェントを(AIを用いて)選択します。ユーザーのリクエストは、追加の確認なしに選択されたエージェントに直接委譲されます。",
           "vars": {
@@ -162,7 +164,6 @@
           "description": "エージェント固定を有効にすると、指定したチャットエージェントがプロンプト間で自動的にアクティブ状態を維持され、繰り返しメンションする必要が軽減されます。        エージェントの固定解除や切り替えはいつでも手動で行えます。"
         },
         "revertSuggestion": "提案を元に戻す",
-        "selectImageFile": "画像ファイルを選択してください",
         "sessionStorageScope": {
           "description": "チャットセッションを、ワークスペースごとの個別のストレージに保存するか、単一のグローバルストレージに保存するかを選択します。開いているワークスペースがない場合、セッションはグローバルストレージにフォールバックします。",
           "global": "すべてのワークスペースで共有される単一のストアにチャットセッションを保存する。",
@@ -191,11 +192,15 @@
         },
         "view": {
           "label": "AIチャット"
+        },
+        "welcomeScreenSessions": {
+          "description": "ウェルカム画面に表示する最近のチャットセッションの行数。表示されるセッション数は利用可能な幅によって異なります。最近のチャットセクションを非表示にするには0に設定してください。"
         }
       },
       "chat-ui": {
         "addContextVariable": "コンテキスト変数を追加",
         "agent": "エージェント",
+        "agentDelegationDescription": "委任可能な他のAIエージェント",
         "aiDisabled": "AI機能は無効化されています",
         "applyAll": "すべて適用",
         "applyAllTitle": "保留中の変更をすべて適用",
@@ -204,10 +209,7 @@
         "cancel": "キャンセル (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiFeatureHeader": "🚀 AI機能利用可能(ベータ版)！",
-          "featuresDisabled": "現在、すべてのAI機能は無効化されています！",
           "generating": "生成",
-          "howToEnable": "AI機能の有効化方法:",
           "noRenderer": "エラー: レンダラーが見つかりません",
           "scrollToBottom": "最新のメッセージへ移動",
           "waitingForInput": "入力待ち",
@@ -222,14 +224,17 @@
         },
         "chatInputAriaLabel": "ここにメッセージを入力してください",
         "chatResponses": "チャット応答",
+        "clearAllSelections": "検索文字列と機能選択をクリア",
         "code-part-renderer": {
           "copied": "コピー",
           "generatedCode": "生成コード"
         },
+        "collapseAll": "すべて折りたたむ",
         "collapseChangeSet": "変更セットを折りたたむ",
         "command-part-renderer": {
           "commandNotExecutable": "コマンドのIDは「{0}」ですが、チャットウィンドウからは実行できません。"
         },
+        "confirmDeleteChatMsg": "このチャットを削除してもよろしいですか?",
         "copyCodeBlock": "コードブロックをコピー",
         "couldNotSendRequestToSession": "セッション {1} へのリクエスト \"{0}\" を送信できませんでした",
         "delegation-response-renderer": {
@@ -248,6 +253,7 @@
           }
         },
         "deleteChangeSet": "変更セットを削除",
+        "deleteChat": "チャットを削除",
         "editRequest": "編集",
         "edited": "編集済み",
         "editedTooltipHint": "このプロンプトのバリエーションは編集済みです。AI設定ビューでリセットできます。",
@@ -260,17 +266,27 @@
         "failedToRetry": "再試行に失敗しました",
         "focusInput": "フォーカスチャット入力",
         "focusResponse": "フォーカスチャット応答",
+        "functions": "機能",
+        "functionsDescription": "Theia拡張機能によって提供される組み込み関数",
+        "genericCapabilities": "汎用機能",
+        "mcpFunctions": "MCP",
+        "mcpFunctionsDescription": "接続済みサーバーからのモデルコンテキストプロトコル(MCP)機能",
         "noChatAgentsAvailable": "チャットエージェントは利用できません。",
+        "noMatchingCapabilities": "一致する機能はありません",
         "openDiff": "Open Diff",
         "openImage": "画像を開く",
         "openOriginalFile": "元のファイルを開く",
         "performThisTask": "このタスクを実行してください。",
         "persistedSession": "永続化されたセッション(クリックで復元)",
+        "promptFragments": "プロンプト",
+        "promptFragmentsDescription": "会話に含めるカスタムプロンプトフラグメント",
         "removeChat": "チャットを削除",
         "renameChat": "チャットの名前変更",
         "requestNotFoundForRetry": "リクエストが見つかりません。再試行してください。",
         "responseFrom": "{0}からの応答",
+        "searchCapabilities": "検索機能",
         "selectAgentQuickPickPlaceholder": "新しいセッション用のエージェントを選択してください",
+        "selectAllInCategory": "このカテゴリのすべてを選択",
         "selectChat": "チャットを選択",
         "selectContextVariableQuickPickPlaceholder": "メッセージに添付するコンテキスト変数を選択してください",
         "selectTaskContextQuickPickItem": {
@@ -280,12 +296,10 @@
         "selectVariableArguments": "可変引数を選択",
         "send": "送信(Enter)",
         "sessionNotFoundForRetry": "再試行用のセッションが見つかりません",
+        "skillsDescription": "会話に追加可能な再利用可能なスキル指示",
         "switchAgentMode": "エージェントモードの切り替え",
         "text-part-renderer": {
           "cantDisplay": "応答を表示できません。ChatResponsePartRenderers を確認してください！"
-        },
-        "thinking-part-renderer": {
-          "thinking": "思考"
         },
         "toggleCapabilitiesConfig": "機能設定の切り替え",
         "toolcall-part-renderer": {
@@ -315,6 +329,8 @@
           "contentNotRestoreable": "このコンテンツ(タイプ '{0}')は完全に復元できませんでした。利用できなくなった拡張機能からのものである可能性があります。"
         },
         "unpinAgent": "エージェントの固定解除",
+        "unselectAllInCategory": "このカテゴリの選択をすべて解除",
+        "variablesDescription": "コンテキスト情報を提供する動的変数",
         "variantTooltip": "プロンプトのバリエーション: {0}",
         "yourMessage": "あなたのメッセージ"
       },
@@ -459,7 +475,6 @@
         "itemCount": "{0} 項目",
         "noItems": "項目なし",
         "oneItem": "1項目",
-        "running": "実行中...",
         "searched": "検索",
         "searching": "検索",
         "todoList": "Todo List",
@@ -536,7 +551,6 @@
           "privacy": "Theiaはオープンソースプロジェクトです。GitHub Copilotサービスに接続するため、GitHubユーザー名へのアクセスのみ要求します。その他のデータへのアクセスや保存は一切行いません。",
           "success": "GitHub Copilotへのサインインに成功しました！",
           "successHint": "GitHubアカウントでCopilotを利用できる場合、Copilot言語モデルを ",
-          "title": "GitHub Copilot にサインイン",
           "tos": "サインインすることにより、あなたは以下の内容に同意するものとします: ",
           "tosLink": "GitHub 利用規約",
           "verifying": "認証を確認中..."
@@ -552,6 +566,9 @@
         "models": {
           "description": "使用するGitHub Copilotモデル。利用可能なモデルはCopilotのサブスクリプションによって異なります。"
         },
+        "signOut": {
+          "confirmMessage": "GitHub Copilotからログアウトしてもよろしいですか?"
+        },
         "statusBar": {
           "signedIn": "GitHub Copilot に {0} としてサインインしています。クリックしてサインアウトします。",
           "signedOut": "GitHub Copilot にサインインしていません。クリックしてサインインしてください。"
@@ -559,14 +576,16 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "アクション",
           "addCustomAgent": "カスタムエージェントを追加",
           "availableCapabilities": "利用可能な機能",
+          "completionNotificationDescriptionPrefix": "このエージェントがタスクを完了した際の通知方法を選択してください。「デフォルト」は ",
+          "defaultNotificationDescription": "グローバルAI通知設定を使用します",
           "enableAgent": "エージェントを有効にする",
-          "label": "エージェント",
           "llmRequirements": "LLM要件",
           "notUsedInPrompt": "プロンプトでは使用されません",
           "notUsedInPromptTooltip": "この変数はエージェントによって宣言されていますが、現在のプロンプトテンプレートでは参照されていません。",
+          "notificationSettings": "通知設定",
+          "notificationSettingsLink": "AI通知設定",
           "promptTemplates": "プロンプトテンプレート",
           "selectAgentMessage": "まずエージェントを選択してください！",
           "showInChat": "チャットで表示",
@@ -665,6 +684,16 @@
           "unavailableModel": "選択したモデルは利用できなくなりました"
         },
         "noVariableFoundForOpenRequest": "開くリクエストに対応する変数が見つかりません。",
+        "notification": {
+          "message": {
+            "description": "アプリケーション内に通知メッセージを表示する"
+          },
+          "off": {
+            "description": "すべての通知を無効にする"
+          },
+          "osNotification": "OS 通知",
+          "windowBlink": "ウィンドウ点滅"
+        },
         "openEditorsShortVariable": {
           "description": "現在開いている全ファイルの簡易参照(相対パス、カンマ区切り)"
         },
@@ -770,6 +799,30 @@
           "edited": "編集済み",
           "unavailableVariant": "利用不可"
         },
+        "thinkingMode": {
+          "mdDescription": "拡張思考機能をサポートするモデル向けに思考モード設定を指定可能。\n            各設定は以下で構成される:\n            - `scope`: 設定の適用条件を定義:\n              - `modelId` (オプション): 一致させるモデルID\n              - `providerId` (オプション): 一致させるプロバイダーID\n              - `agentId` (オプション): 一致させるエージェントID\n            - `thinkingMode`: 思考モードの設定:\n              - `enabled` (ブール値): 思考モードを有効にするかどうか\n              - `budgetTokens` (数値、オプション): 思考に割り当てる最大トークン数(モデルがサポートしている場合)\n            設定は特異性に基づいて照合されます(エージェント: 100点、モデル: 10点、プロバイダー: 1点)。",
+          "scope": {
+            "agentId": {
+              "description": "設定を適用する(オプションの)エージェントID。"
+            },
+            "modelId": {
+              "description": "(オプションの)モデルID"
+            },
+            "providerId": {
+              "description": "設定を適用する(オプションの)プロバイダーID。"
+            }
+          },
+          "thinkingMode": {
+            "budgetTokens": {
+              "description": "思考に使用する最大トークン数。モデルが思考予算をサポートしている場合にのみ適用されます。"
+            },
+            "description": "思考モードの設定。",
+            "enabled": {
+              "description": "思考モードが有効かどうか。"
+            }
+          },
+          "title": "思考モード設定"
+        },
         "todayVariable": {
           "description": "今日の何かをする",
           "format": {
@@ -873,7 +926,6 @@
       "ide": {
         "agent-description": "[AI設定ビュー]({0})で、有効化、LLM選択、プロンプトテンプレートのカスタマイズ、カスタムエージェント作成を含むAIエージェント設定を構成します。",
         "agentConfiguration": {
-          "capabilityId": "フラグメント ID",
           "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "新規ファイルを作成",
@@ -904,6 +956,10 @@
             "question": "Playwright MCP サーバーが実行されていません。今すぐ起動しますか?これにより Playwright MCP サーバーがインストールされる可能性があります。"
           }
         },
+        "appTester": {
+          "description": "エージェントがブラウザアプリケーションをエンドツーエンドでテストできるようにします。このため、エージェントはAppTesterエージェントに委譲でき、             これによりブラウザ操作が自動化され実装が検証されます。",
+          "name": "アプリテスター"
+        },
         "architectAgent": {
           "mode": {
             "plan": "プランモード",
@@ -913,9 +969,10 @@
             "executePlanWithCoder": "Coderで「{0}」を実行"
           }
         },
+        "browseAllChats": "すべてのチャットを閲覧...",
         "bypassHint": "Claude Codeのような一部のエージェントはTheia言語モデルを必要としません",
         "chatDisabledMessage": {
-          "featuresTitle": "現在サポートされているビューと機能:"
+          "title": "AI機能は無効化されています"
         },
         "coderAgent": {
           "mode": {
@@ -948,6 +1005,7 @@
             }
           }
         },
+        "configurationState": "設定に関する問題",
         "configureAgent": {
           "header": "デフォルトエージェントの設定"
         },
@@ -957,6 +1015,7 @@
             "edit": "デフォルトモード"
           }
         },
+        "deleteChat": "チャットを削除",
         "enableAI": {
           "mdDescription": "この設定により、最新のAI機能(ベータ版)にアクセスできます。            \n            これらの機能はベータ段階にあるため、変更される可能性があり、さらに改善される点にご注意ください。これらの機能は、アクセスを許可した言語モデル(LLM)に対して継続的なリクエストを生成する可能性があることを認識することが重要です。これにより、注意深く監視する必要のあるコストが発生する可能性があります。 このオプションを有効化することで、これらのリスクを認識したものとみなされます。            \n            **ご注意！このセクションの以下の設定は、\n            メイン機能設定が有効になって初めて有効になります。機能を有効化した後、以下のLLMプロバイダーを少なくとも1つ設定する必要があります。詳細は[ドキュメント](https://theia-ide.org/docs/user_ai/)も参照してください**。"
         },
@@ -979,16 +1038,20 @@
             "yes": "はい、サーバーを起動します"
           }
         },
+        "githubCapability": {
+          "description": "エージェントがGitHubと連携することを許可します。このため、エージェントはGitHubエージェントに委任でき、             これにより課題、プルリクエスト、コメント、リポジトリの内容を読み書きできます。",
+          "name": "GitHub"
+        },
         "githubRepoName": {
           "description": "現在のGitHubリポジトリ名(例: \"eclipse-theia/theia\")"
         },
+        "howToGetStarted": "はじめ方",
         "model-selection-description": "各AIエージェントが使用する大規模言語モデル(LLM)を[AI設定ビュー]({0})で選択します。",
         "moreAgentsAvailable": {
           "header": "追加のエージェントが利用可能です"
         },
         "noRecommendedAgents": "推奨されるエージェントは利用できません。",
         "openSettings": "AI設定を開く",
-        "or": "または",
         "orchestrator": {
           "error": {
             "noAgents": "リクエストを処理できるチャットエージェントが利用できません。設定で有効化されているかご確認ください。"
@@ -1002,18 +1065,28 @@
           }
         },
         "prompt-template-description": "[AI設定ビュー]({0})でAIエージェントのプロンプトバリエーションを選択し、プロンプトテンプレートをカスタマイズします。",
-        "recommendedAgents": "推奨エージェント:",
+        "recentChats": "最近のチャット",
+        "renameChat": "チャットの名前変更",
         "shellAllowlist": {
           "placeholder": "例: \"git log\" (正確なコマンド) または \"git log *\" (引数付き)"
         },
         "shellDenylist": {
           "placeholder": "例: \"git push *\" または \"rm -rf /\""
         },
+        "shellExecutionCapability": {
+          "description": "エージェントがホストシステム上で任意のシェルコマンドを実行できるようにします。これによりエージェントは、タスクとして利用できないスクリプトの実行を委譲したり、システム情報の照会を行ったり、専用ツールが存在しない操作を実行したりすることが可能になります。",
+          "name": "シェル実行"
+        },
         "skillsConfiguration": {
-          "label": "スキル",
           "location": {
             "label": "場所"
-          }
+          },
+          "noSkills": "利用可能なスキルはありません",
+          "noSlashCommands": "スラッシュコマンドは利用できません",
+          "slashCommand": {
+            "allAgents": "すべてのエージェント"
+          },
+          "slashCommandsSectionHeader": "スラッシュコマンド"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1048,6 +1121,15 @@
               "label": "確認"
             }
           }
+        },
+        "tooltip": {
+          "agent": "エージェント",
+          "lastActivity": "最終アクティビティ",
+          "lastMessage": "最後のメッセージ",
+          "messages": "メッセージ",
+          "multipleExchanges": "{0} 交換",
+          "oneExchange": "1 exchange",
+          "unread": "未読"
         },
         "variableConfiguration": {
           "selectVariable": "変数を選択してください。",
@@ -1149,9 +1231,36 @@
         "copyAllSingle": "チャット用にすべてコピー(全ツールを含む単一プロンプトフラグメント)",
         "copyForPrompt": "コピーツール(チャットまたはプロンプトテンプレート用)",
         "copyForPromptTemplate": "プロンプトテンプレート用にすべてをコピー(すべてのツールを含む単一のプロンプトフラグメント)",
+        "deleteServer": "サーバーを削除",
+        "deleteServerDialogMsg": "サーバー「{0}」を削除してもよろしいですか?",
+        "deleteServerDialogTitle": "MCPサーバーを削除",
+        "deleteServerError": "MCPサーバーの削除に失敗しました: {0}",
+        "editServer": "編集サーバー",
+        "editServerTitle": "MCPサーバーを編集",
         "environmentVariables": "環境変数",
+        "form": {
+          "argsPlaceholder": "スペース区切り、例:-y @modelcontextprotocol/server-brave-search",
+          "authHeaderPlaceholder": "デフォルト: Bearerによる認証",
+          "authTokenPlaceholder": "オプションの認証トークン",
+          "autostart": "自動起動",
+          "commandPlaceholder": "例: npx または uvx",
+          "commandRequired": "ローカルサーバーにはコマンドが必要です",
+          "envPlaceholder": "KEY=value (1行につき1組)",
+          "headersPlaceholder": "ヘッダー名=値(1行につき1つ)",
+          "localServer": "ローカル(コマンド)",
+          "nameExists": "この名前のサーバーは既に存在します",
+          "nameRequired": "サーバー名は必須です",
+          "remoteServer": "リモート(URL)",
+          "saveChanges": "変更を保存",
+          "serverName": "サーバー名",
+          "serverNamePlaceholder": "例: my-mcp-server",
+          "serverType": "サーバータイプ",
+          "serverUrlPlaceholder": "例: https://mcp.example.com",
+          "serverUrlRequired": "リモートサーバーにはサーバーURLが必要です"
+        },
         "headers": "ヘッダー",
         "noServers": "MCPサーバーが設定されていません",
+        "saveServerError": "MCPサーバー設定の保存に失敗しました: {0}",
         "serverAuthToken": "認証トークン",
         "serverAuthTokenHeader": "認証ヘッダー名",
         "serverUrl": "サーバーURL",
@@ -1248,6 +1357,11 @@
         }
       },
       "session-settings-dialog": {
+        "advancedSettings": "詳細設定 (JSON)",
+        "budgetTokens": "予算トークン:",
+        "enableThinking": "拡張思考を有効にする",
+        "thinkingMode": "思考モード",
+        "thinkingModeNote": "一部のモデルではこの設定が無視される場合があります。",
         "title": "セッション設定を設定する",
         "tooltip": "セッション設定を設定する"
       },
@@ -1363,9 +1477,13 @@
       "fileChangeSetTitle": "変更案"
     },
     "ai-chat-ui": {
+      "deleteChat": "チャットを削除",
       "initiate-session-task-context": "タスクコンテキスト: セッションの開始",
+      "navigate-back": "戻る",
+      "navigate-forward": "前方へ移動",
       "open-current-session-summary": "現在のセッションの概要を開く",
       "open-settings-tooltip": "AI設定を開く...",
+      "renameChat": "チャットの名前変更",
       "scroll-lock": "スクロールロック",
       "scroll-unlock": "スクロールのロック解除",
       "session-settings": "セッション設定を設定する",
@@ -1378,11 +1496,12 @@
     },
     "ai-core": {
       "agentCompletionMessage": "エージェント「{0}」はタスクを完了しました。",
+      "agentCompletionMessageWithSession": "エージェント「{0}」は「{1}」におけるタスクを完了しました。",
       "agentCompletionTitle": "エージェント「{0}」タスク完了",
-      "agentCompletionWithTask": "エージェント「{0}」がタスクを完了しました: {1}",
       "preferences": {
         "title": "AI機能"
-      }
+      },
+      "showChat": "チャットを表示"
     },
     "ai-editor": {
       "contextMenu": "AIに質問する",
@@ -1414,8 +1533,23 @@
       "blockedServersLabel": "MCPサーバー(自動起動がブロックされています)"
     },
     "ai-terminal": {
+      "allowAllConfirm": "了解しました、すべて許可します",
+      "allowAllForever": "すべてのシェルコマンドを常に許可する...",
+      "allowAllSession": "このチャットで全てのシェルコマンドを許可...",
+      "allowAllSessionConfirm": "承知しました、このチャットではすべて許可します",
+      "allowAllSessionTitle": "このチャットで全てのシェルコマンドを許可しますか?",
+      "allowAllSessionWarning": "これにより、AIは本チャットセッションの残りの間、確認なしで任意のシェルコマンドを実行できるようになります。シェルコマンドはシステム全体へのアクセス権を持ち、任意のコマンドの実行、ワークスペース外のファイル変更、ネットワークリソースへのアクセスが可能です。拒否リストに登録されたコマンドは引き続きブロックされます。",
+      "allowAllTitle": "すべてのシェルコマンドを許可しますか?",
+      "allowAllWarning": "これにより、AIは確認なしで任意のシェルコマンドを実行できるようになります。シェルコマンドはシステム全体へのアクセス権を持ち、任意のコマンドの実行、ワークスペース外のファイル変更、ネットワークリソースへのアクセスが可能です。拒否リストに登録されたコマンドは引き続きブロックされます。",
+      "alwaysAllowPattern": "{0} を常に許可する",
+      "alwaysAllowPatterns": "{0} と {1} を常に許可する",
+      "alwaysAllowPatternsList": "{0} を常に許可する",
+      "alwaysDenyPattern": "{0} を常に拒否する",
+      "alwaysDenyPatterns": "{0} と {1} は常に拒否する",
+      "alwaysDenyPatternsList": "{0} を常に拒否する",
       "cancelExecution": "コマンドの実行をキャンセル",
       "canceling": "キャンセル中...",
+      "configurePermissions": "シェルコマンドの権限を設定する",
       "confirmExecution": "シェルコマンドの確認",
       "denialReason": "理由",
       "executionCanceled": "キャンセル済み",
@@ -1593,6 +1727,7 @@
       "couldNotRunTask": "タスク「{0}」を実行できませんでした。",
       "dataBreakpoint": "データブレークポイント",
       "debugConfiguration": "デバッグ構成",
+      "debugRestricted": "制限モードではデバッグが無効化されています",
       "debugSessionInitializationFailed": "デバッグセッションの初期化に失敗しました。詳細はコンソールを参照してください。",
       "debugSessionTypeNotSupported": "デバッグ セッション タイプ「{0}」はサポートされていません。",
       "debugToolbarMenu": "デバッグツールバーメニュー",
@@ -1623,6 +1758,11 @@
       "unverifiedBreakpoint": "未検証 {0}"
     },
     "editor": {
+      "clearFormatterSetting": "フォーマッタ設定をクリア",
+      "configuredIn": "{0} で設定済み",
+      "configuredNotInstalled": "{1}で設定されているがインストールされていない「{0}」",
+      "configuredNotInstalledFallbackNamed": "{1}で設定された「{0}」はインストールされていません。代わりに「{2}」を使用しています。",
+      "currentFormatter": "(現在の)",
       "diffEditor.wordWrap2": "行は`#editor.wordWrap#`設定に従って折り返されます。",
       "dirtyEncoding": "ファイルが変更済みです。別のエンコーディングで再度開く前に、まず保存してください。",
       "editor.bracketPairColorization.enabled": "括弧ペアの色分けを有効にするかどうかを制御します。括弧のハイライト色を上書きするには `#workbench.colorCustomizations#` を使用してください。",
@@ -1643,11 +1783,26 @@
       "editor.suggestLineHeight": "サジェストウィジェットの行間。`0`に設定すると、`#editor.lineHeight#`の値が使用されます。最小値は8です。",
       "editor.tabSize": "タブが等しいスペース数。この設定は、`#editor.detectIndentation#` が有効な場合、ファイルの内容に基づいて上書きされます。",
       "formatOnSaveTimeout": "ファイル保存時に実行される書式設定がキャンセルされるまでのタイムアウト(ミリ秒単位)。",
+      "formatter": "フォーマッター",
+      "noDefaultConfiguredLabel": "デフォルトのフォーマッタは設定されていません",
+      "noDefaultConfiguredTooltip": "デフォルトのフォーマッタは設定されていません(利用可能なフォーマッタ:{0})",
+      "noEditor": "アクティブなエディターがありません",
+      "noFormatter": "フォーマッターなし",
+      "noFormatterInstalled": "フォーマッタがインストールされていません",
+      "noFormattersAvailable": "この言語用のフォーマッタは利用できません",
+      "noFormattersInstalledTooltip": "この言語用のフォーマッタはインストールされていません。",
+      "onlyAvailableFormatter": "利用可能なフォーマッタのみ",
+      "onlyFormatterInstalled": "{0} (フォーマッターのみインストール済み)",
       "persistClosedEditors": "ワークスペースの編集履歴をウィンドウ再読み込み後も保持するかどうかを制御します。",
+      "selectFormatter": "デフォルトのフォーマッタを選択",
+      "selectScope": "設定の保存先を選択してください",
       "showAllEditors": "開いているすべてのエディターを表示",
+      "showFormatterInfo": "フォーマッタ情報を表示",
       "splitHorizontal": "分割エディタ(水平方向)",
       "splitVertical": "分割エディタ(縦方向)",
-      "toggleStickyScroll": "固定スクロールの切り替え"
+      "toggleStickyScroll": "固定スクロールの切り替え",
+      "userSettingsDetail": "すべてのワークスペースに適用",
+      "workspaceSettingsDetail": "現在のワークスペースにのみ適用"
     },
     "external-terminal": {
       "cwd": "新しい外部ターミナル用の現在の作業ディレクトリを選択"
@@ -2026,7 +2181,8 @@
       },
       "taskAlreadyRunningInTerminal": "タスクは既にターミナルで実行中です",
       "taskExitedWithCode": "タスク「{0}」はコード{1}で終了しました。",
-      "taskTerminalTitle": "タスク: {0}",
+      "taskIdLabel": "#{0}",
+      "taskRestricted": "制限モードではタスクの実行が無効化されています",
       "taskTerminatedBySignal": "タスク「{0}」はシグナル{1}によって終了しました。",
       "terminalWillBeReusedByTasks": "ターミナルはタスク間で再利用されます。"
     },

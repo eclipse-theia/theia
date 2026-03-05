@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
-import { CommandContribution, MenuContribution, bindContributionProvider, nls } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution, bindRootContributionProvider, nls } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { QuickOpenTask, TaskTerminateQuickOpen, TaskRestartRunningQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
@@ -75,7 +75,7 @@ export default new ContainerModule(bind => {
 
     bind(TaskProviderRegistry).toSelf().inSingletonScope();
     bind(TaskResolverRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, TaskContribution);
+    bindRootContributionProvider(bind, TaskContribution);
     bind(TaskSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(TaskSchemaUpdater);
     bind(TaskNameResolver).toSelf().inSingletonScope();

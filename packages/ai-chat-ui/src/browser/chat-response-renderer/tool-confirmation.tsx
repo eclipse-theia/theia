@@ -91,7 +91,7 @@ export interface ToolConfirmationActionsProps extends ToolConfirmationCallbacks 
     contextMenuRenderer: ContextMenuRenderer;
 }
 
-class InlineActionMenuNode implements CommandMenu {
+export class InlineActionMenuNode implements CommandMenu {
     constructor(
         readonly id: string,
         readonly label: string,

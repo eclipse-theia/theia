@@ -33,6 +33,8 @@ import { bindSearchInWorkspacePreferences } from '../common/search-in-workspace-
 import { SearchInWorkspaceLabelProvider } from './search-in-workspace-label-provider';
 import { SearchInWorkspaceFactory } from './search-in-workspace-factory';
 import { SearchLayoutVersion3Migration } from './search-layout-migrations';
+import { WorkspaceSearchFilterProvider } from '@theia/workspace/lib/browser';
+import { SearchExcludeFilterProvider } from './search-exclude-filter-provider';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceContextKeyService).toSelf().inSingletonScope();
@@ -68,6 +70,9 @@ export default new ContainerModule(bind => {
 
     bind(SearchInWorkspaceLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(SearchInWorkspaceLabelProvider);
+
+    bind(SearchExcludeFilterProvider).toSelf().inSingletonScope();
+    bind(WorkspaceSearchFilterProvider).toService(SearchExcludeFilterProvider);
 });
 
 export function createSearchTreeWidget(parent: interfaces.Container): SearchInWorkspaceResultTreeWidget {

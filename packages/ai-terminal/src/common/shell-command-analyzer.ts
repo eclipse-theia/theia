@@ -207,6 +207,12 @@ export class DefaultShellCommandAnalyzer implements ShellCommandAnalyzer {
             }
 
             if (ch === '&') {
+                // Don't split when & is part of a file descriptor redirect
+                // e.g., 2>&1, >&2, <&3, &>file, &>>file
+                if (current.endsWith('>') || current.endsWith('<') || command[i + 1] === '>') {
+                    current += ch;
+                    continue;
+                }
                 this.pushSubCommand(results, current);
                 current = '';
                 continue;

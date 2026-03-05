@@ -32,6 +32,7 @@ import { MonacoKeybindingContribution } from './monaco-keybinding';
 import { MonacoLanguages } from './monaco-languages';
 import { MonacoWorkspace } from './monaco-workspace';
 import { ActiveMonacoEditorContribution, MonacoEditorService, MonacoEditorServiceFactory, VSCodeContextKeyService, VSCodeThemeService } from './monaco-editor-service';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { MonacoTextModelService, MonacoEditorModelFactory, MonacoEditorModelFilter } from './monaco-text-model-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoOutlineContribution } from './monaco-outline-contribution';
@@ -55,7 +56,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { MonacoIconRegistry } from './monaco-icon-registry';
 import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
 import { MonacoThemingService } from './monaco-theming-service';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { WorkspaceSymbolCommand } from './workspace-symbol-command';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
@@ -118,7 +119,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoConfigurationService).toDynamicValue(({ container }) => createMonacoConfigurationService(container)).inSingletonScope();
 
     bind(MonacoBulkEditService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, ActiveMonacoEditorContribution);
+    bindRootContributionProvider(bind, ActiveMonacoEditorContribution);
     bind(MonacoEditorServiceFactory).toFactory((context: interfaces.Context) => (contextKeyService: IContextKeyService, themeService: IThemeService) => {
         const child = context.container.createChild();
         child.bind(VSCodeContextKeyService).toConstantValue(contextKeyService);
@@ -126,14 +127,15 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         child.bind(MonacoEditorService).toSelf().inSingletonScope();
         return child.get(MonacoEditorService);
     });
+    bind(MonacoEditorService).toDynamicValue(() => StandaloneServices.get(ICodeEditorService) as MonacoEditorService).inSingletonScope();
     bind(MonacoTextModelService).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();
     bind(MonacoEditorServices).toSelf().inSingletonScope();
     bind(MonacoEditorProvider).toSelf().inSingletonScope();
-    bindContributionProvider(bind, MonacoEditorFactory);
-    bindContributionProvider(bind, MonacoEditorModelFactory);
-    bindContributionProvider(bind, MonacoEditorModelFilter);
-    bindContributionProvider(bind, SaveParticipant);
+    bindRootContributionProvider(bind, MonacoEditorFactory);
+    bindRootContributionProvider(bind, MonacoEditorModelFactory);
+    bindRootContributionProvider(bind, MonacoEditorModelFilter);
+    bindRootContributionProvider(bind, SaveParticipant);
     bind(MonacoCommandService).toSelf().inTransientScope();
 
     bind(TextEditorProvider).toProvider(context =>

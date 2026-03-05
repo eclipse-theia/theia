@@ -77,15 +77,18 @@ export class ToolConfirmationManager {
      * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
      */
     setConfirmationMode(toolId: string, mode: ToolConfirmationMode, toolRequest?: ToolRequest): void {
+        const defaultPref = this.preferenceService.inspect(TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as {
+            [toolId: string]: ToolConfirmationMode;
+        } || {};
         const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
         let starMode = current['*'];
         if (starMode === undefined) {
-            starMode = ToolConfirmationMode.ALWAYS_ALLOW;
+            starMode = defaultPref['*'] ?? ToolConfirmationMode.ALWAYS_ALLOW;
         }
         // For confirmAlwaysAllow tools, the effective default is CONFIRM, not ALWAYS_ALLOW
         const effectiveDefault = (toolRequest?.confirmAlwaysAllow && starMode === ToolConfirmationMode.ALWAYS_ALLOW)
             ? ToolConfirmationMode.CONFIRM
-            : starMode;
+            : defaultPref[toolId] ?? starMode;
         if (mode === effectiveDefault) {
             if (toolId in current) {
                 const { [toolId]: _, ...rest } = current;

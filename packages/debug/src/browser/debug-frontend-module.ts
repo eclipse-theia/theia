@@ -33,7 +33,7 @@ import {
     DebugSessionContributionRegistry,
     DebugSessionContributionRegistryImpl
 } from './debug-session-contribution';
-import { bindContributionProvider, nls, ResourceResolver } from '@theia/core';
+import { bindRootContributionProvider, nls, ResourceResolver } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
@@ -68,13 +68,13 @@ import { AddOrEditDataBreakpointAddress } from './breakpoint/debug-data-breakpoi
 import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
-    bindContributionProvider(bind, DebugContribution);
+    bindRootContributionProvider(bind, DebugContribution);
 
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
         container.get<ContextKeyService>(ContextKeyService).createKey('callStackItemType', undefined)
     ).inSingletonScope();
 
-    bindContributionProvider(bind, DebugSessionContribution);
+    bindRootContributionProvider(bind, DebugSessionContribution);
     bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
     bind(DebugSessionManager).toSelf().inSingletonScope();
 

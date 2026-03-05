@@ -26,7 +26,7 @@ import { Agent, AgentService } from '@theia/ai-core';
 @injectable()
 export class AISkillsConfigurationWidget extends ReactWidget {
     static readonly ID = 'ai-skills-configuration-widget';
-    static readonly LABEL = nls.localize('theia/ai/ide/skillsConfiguration/label', 'Skills');
+    static readonly LABEL = nls.localizeByDefault('Skills');
 
     @inject(SkillService)
     protected readonly skillService: SkillService;
@@ -111,7 +111,7 @@ export class AISkillsConfigurationWidget extends ReactWidget {
         return (
             <div className="ai-skills-section">
                 <h3 className="section-header">
-                    {nls.localize('theia/ai/ide/skillsConfiguration/skillsSectionHeader', 'Skills')}
+                    {nls.localizeByDefault('Skills')}
                 </h3>
                 {this.skills.length === 0 ? (
                     <div className="ai-empty-state-content">
@@ -179,7 +179,7 @@ export class AISkillsConfigurationWidget extends ReactWidget {
                                     </th>
                                     <th className="slash-command-description-column">{nls.localizeByDefault('Description')}</th>
                                     <th className="slash-command-agents-column">
-                                        {nls.localize('theia/ai/ide/skillsConfiguration/slashCommand/agents', 'Agents')}
+                                        {nls.localizeByDefault('Agents')}
                                     </th>
                                 </tr>
                             </thead>

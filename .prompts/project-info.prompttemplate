@@ -21,14 +21,14 @@ Widgets are views that are visible in the workbench of a Theia-based application
 
 #### Commands
 
-Commands in Theia are actions that can be executed by users and programmatically. They are registered through the `CommandRegistry` and can be triggered via menus, 
+Commands in Theia are actions that can be executed by users and programmatically. They are registered through the `CommandRegistry` and can be triggered via menus,
 keybindings, or other UI elements such as toolbar items.
 
 Commands are contributed via `CommandContribution`, see for example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
 
 #### Toolbars
 
-Toolbars in Theia are UI components that provide quick access to commonly used commands. They can be added to various parts of the workbench including the main toolbar, 
+Toolbars in Theia are UI components that provide quick access to commonly used commands. They can be added to various parts of the workbench including the main toolbar,
  and custom widget toolbars.
 
 Toolbars are typically contributed through:
@@ -45,6 +45,15 @@ Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-v
 - Use single quotes (`'`) for string literals instead of double quotes (`"`).
 - Use Theia's Event/Emitter/Disposable for handling event listener patterns
 - For localization, use `nls.localizeByDefault(defaultValue)` when the string exists in VS Code's language packs. ESLint will flag `nls.localize` with a custom key if a matching default string is available. Only use `nls.localize('theia/<package>/<id>', 'text')` for strings that do not exist in VS Code translations.
+
+### Contribution Providers
+
+When binding a `ContributionProvider`, prefer `bindRootContributionProvider` over `bindContributionProvider`.
+
+- **`bindRootContributionProvider`** should be used in most cases. It walks to the root Inversify container before constructing the provider, which avoids a memory leak where the provider permanently retains a reference to a child container. Use this whenever contributions are bound in the main (root) container, which is the typical case for module-level `ContainerModule` bindings.
+- **`bindContributionProvider`** should only be used when some or all of the relevant contributions are scoped to a child container rather than the root container, such as connection-scoped containers (e.g., inside `ConnectionContainerModule.create(...)`).
+
+Both functions are exported from `@theia/core/lib/common/contribution-provider`.
 
 ### Test File References
 

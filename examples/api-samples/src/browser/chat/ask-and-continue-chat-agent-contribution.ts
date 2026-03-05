@@ -131,9 +131,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
                 const question = content.replace(/^<question>\n|<\/question>$/g, '');
                 const parsedQuestion = JSON.parse(question);
 
-                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
-                    this.handleAnswer(selectedOption, request);
-                });
+                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => this.handleAnswer(selectedOption, request));
             },
             incompleteContentFactory: (content: string, request: MutableChatRequestModel) =>
                 // Display a progress indicator while the question is being parsed

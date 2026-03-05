@@ -272,7 +272,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     protected handleAddAllowlistPattern(): void {
         this.handleAddPatternToList(
             this.allowlistInputRef,
-            pattern => this.shellCommandPermissionService.addAllowlistPattern(pattern),
+            pattern => this.shellCommandPermissionService.addAllowlistPatterns(pattern),
             () => this.shellCommandPermissionService.getAllowlistPatterns(),
             patterns => { this.allowlistPatterns = patterns; },
             error => { this.allowlistError = error; }
@@ -286,7 +286,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     protected handleAddDenylistPattern(): void {
         this.handleAddPatternToList(
             this.denylistInputRef,
-            pattern => this.shellCommandPermissionService.addDenylistPattern(pattern),
+            pattern => this.shellCommandPermissionService.addDenylistPatterns(pattern),
             () => this.shellCommandPermissionService.getDenylistPatterns(),
             patterns => { this.denylistPatterns = patterns; },
             error => { this.denylistError = error; }
@@ -362,7 +362,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                         </p>
                     )}
                     <ul className="ai-shell-permission-list-patterns">
-                        {this.allowlistPatterns.map(pattern => (
+                        {[...this.allowlistPatterns].sort((a, b) => a.localeCompare(b)).map(pattern => (
                             <li key={pattern} className="ai-shell-permission-list-pattern-item">
                                 <code>{pattern}</code>
                                 <button
@@ -415,7 +415,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                         </p>
                     )}
                     <ul className="ai-shell-permission-list-patterns">
-                        {this.denylistPatterns.map(pattern => (
+                        {[...this.denylistPatterns].sort((a, b) => a.localeCompare(b)).map(pattern => (
                             <li key={pattern} className="ai-shell-permission-list-pattern-item">
                                 <code>{pattern}</code>
                                 <button

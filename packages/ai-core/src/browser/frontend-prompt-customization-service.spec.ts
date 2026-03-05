@@ -141,5 +141,62 @@ Template with $ARGUMENTS and {{variable}} and ~{function}`;
             expect(result.template).to.equal('Template with $ARGUMENTS and {{variable}} and ~{function}');
             expect(result.metadata?.isCommand).to.be.true;
         });
+
+        it('extracts name and description from front matter', () => {
+            const fileContent = `---
+name: My Fragment
+description: A helpful description of this fragment
+---
+Template content`;
+
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
+
+            expect(result.template).to.equal('Template content');
+            expect(result.metadata?.name).to.equal('My Fragment');
+            expect(result.metadata?.description).to.equal('A helpful description of this fragment');
+        });
+
+        it('extracts name and description alongside command metadata', () => {
+            const fileContent = `---
+name: App Tester
+description: Delegate testing to AppTester
+isCommand: true
+commandName: apptester
+---
+Template content`;
+
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
+
+            expect(result.metadata?.name).to.equal('App Tester');
+            expect(result.metadata?.description).to.equal('Delegate testing to AppTester');
+            expect(result.metadata?.isCommand).to.be.true;
+            expect(result.metadata?.commandName).to.equal('apptester');
+        });
+
+        it('handles missing name and description gracefully', () => {
+            const fileContent = `---
+isCommand: true
+---
+Template content`;
+
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
+
+            expect(result.metadata?.name).to.be.undefined;
+            expect(result.metadata?.description).to.be.undefined;
+            expect(result.metadata?.isCommand).to.be.true;
+        });
+
+        it('rejects non-string name and description', () => {
+            const fileContent = `---
+name: 42
+description: true
+---
+Template`;
+
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
+
+            expect(result.metadata?.name).to.be.undefined;
+            expect(result.metadata?.description).to.be.undefined;
+        });
     });
 });

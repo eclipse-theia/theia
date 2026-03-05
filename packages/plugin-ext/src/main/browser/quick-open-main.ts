@@ -339,11 +339,13 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                         if (button.handle === -1) {
                             return this.quickInputService.backButton;
                         }
-                        const { iconUrl, tooltip, handle } = button;
+                        const { iconUrl, tooltip, handle, location, toggle } = button;
                         return {
                             tooltip,
                             handle,
-                            iconClass: this.toIconClass(iconUrl)
+                            iconClass: this.toIconClass(iconUrl),
+                            location,
+                            toggle,
                         };
                     });
                 } else {
@@ -373,6 +375,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
             iconClass: this.toIconClass(button.iconUrl),
             tooltip: button.tooltip,
             handle: button === QuickInputButtons.Back ? -1 : i,
+            location: button.location,
+            toggle: button.toggle,
         } as QuickInputButton));
     }
 }

@@ -116,6 +116,7 @@
         "chatSessionSummaryAgent": {
           "description": "Agent pro generování souhrnů chatových relací."
         },
+        "clipboardSeparator": "schránka",
         "confirmApplySuggestion": "Soubor {0} se od vytvoření tohoto návrhu změnil. Opravdu chcete změnu použít?",
         "confirmRevertSuggestion": "Soubor {0} se od vytvoření tohoto návrhu změnil. Opravdu chcete změnu vrátit zpět?",
         "couldNotFindMatchingLM": "Nebylo možné najít odpovídající jazykový model. Zkontrolujte prosím nastavení!",
@@ -143,6 +144,7 @@
           "description": "Poskytuje kontextové informace k obrázku.",
           "label": "Obrázkový soubor"
         },
+        "imagePickerPlaceholder": "Vyberte soubor obrázku nebo vyhledejte podle názvu",
         "orchestrator": {
           "description": "Tento agent analyzuje požadavek uživatele na základě popisu všech dostupných chatových agentů a vybere nejvhodnějšího agenta, který na požadavek odpoví (pomocí AI). Požadavek uživatele bude bez dalšího potvrzení přímo předán vybranému agentovi.",
           "vars": {
@@ -162,7 +164,6 @@
           "description": "Povolit připnutí agenta, aby zůstal zmíněný chatovací agent aktivní napříč výzvami, což snižuje potřebu opakovaných zmínek.        Agenty můžete kdykoli ručně odpojit nebo přepnout."
         },
         "revertSuggestion": "Vrátit návrh",
-        "selectImageFile": "Vyberte soubor s obrázkem",
         "sessionStorageScope": {
           "description": "Vyberte, zda chcete chatové relace uchovávat v samostatných úložištích pro jednotlivé pracovní prostory nebo v jediném globálním úložišti. Pokud není otevřen žádný pracovní prostor, relace se přesunou do globálního úložiště.",
           "global": "Ukládejte chatové relace do jediného úložiště, které je sdílené napříč všemi pracovními prostory.",
@@ -191,11 +192,15 @@
         },
         "view": {
           "label": "AI Chat"
+        },
+        "welcomeScreenSessions": {
+          "description": "Počet řádků posledních chatových relací, které se mají zobrazit na úvodní obrazovce. Počet viditelných relací závisí na dostupné šířce. Nastavte hodnotu 0, chcete-li skrýt sekci posledních chatů."
         }
       },
       "chat-ui": {
         "addContextVariable": "Přidat kontextovou proměnnou",
         "agent": "Agent",
+        "agentDelegationDescription": "Další AI agenti, kterým lze delegovat úkoly",
         "aiDisabled": "Funkce AI jsou deaktivovány.",
         "applyAll": "Použít vše",
         "applyAllTitle": "Použít všechny čekající změny",
@@ -204,10 +209,7 @@
         "cancel": "Zrušit (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiFeatureHeader": "🚀 Dostupné funkce AI (beta verze)!",
-          "featuresDisabled": "V současné době jsou všechny funkce AI deaktivovány!",
           "generating": "Generování",
-          "howToEnable": "Jak povolit funkce AI:",
           "noRenderer": "Chyba: Nebylo nalezeno žádné renderovací zařízení",
           "scrollToBottom": "Přejít na nejnovější zprávu",
           "waitingForInput": "Čekání na vstup",
@@ -222,14 +224,17 @@
         },
         "chatInputAriaLabel": "Zadejte zde svou zprávu",
         "chatResponses": "Odpovědi v chatu",
+        "clearAllSelections": "Vymazat vyhledávací řetězec a výběr funkcí",
         "code-part-renderer": {
           "copied": "Zkopírováno",
           "generatedCode": "Generovaný kód"
         },
+        "collapseAll": "Sbalit vše",
         "collapseChangeSet": "Sbalit sadu změn",
         "command-part-renderer": {
           "commandNotExecutable": "Příkaz má identifikátor „{0}“, ale nelze jej spustit z okna chatu."
         },
+        "confirmDeleteChatMsg": "Opravdu chcete tento chat smazat?",
         "copyCodeBlock": "Kopírovat blok kódu",
         "couldNotSendRequestToSession": "Nebylo možné odeslat požadavek „{0}“ do relace {1}",
         "delegation-response-renderer": {
@@ -248,6 +253,7 @@
           }
         },
         "deleteChangeSet": "Odstranit sadu změn",
+        "deleteChat": "Smazat chat",
         "editRequest": "Upravit",
         "edited": "upraveno",
         "editedTooltipHint": "Tato varianta výzvy byla upravena. Můžete ji resetovat v zobrazení Konfigurace AI.",
@@ -260,17 +266,27 @@
         "failedToRetry": "Zpráva o neúspěšném opakování pokusu",
         "focusInput": "Zaměření na zadávání textu v chatu",
         "focusResponse": "Odpověď v chatu Focus",
+        "functions": "Funkce",
+        "functionsDescription": "Vestavěné funkce poskytované rozšířeními Theia",
+        "genericCapabilities": "Obecné schopnosti",
+        "mcpFunctions": "MCP",
+        "mcpFunctionsDescription": "Funkce protokolu Model Context Protocol (MCP) z připojených serverů",
         "noChatAgentsAvailable": "Žádní chatovací agenti nejsou k dispozici.",
+        "noMatchingCapabilities": "Žádné odpovídající funkce",
         "openDiff": "Otevřít Diff",
         "openImage": "Otevřít obrázek",
         "openOriginalFile": "Otevřít původní soubor",
         "performThisTask": "Proveďte tento úkol.",
         "persistedSession": "Trvalá relace (kliknutím obnovíte)",
+        "promptFragments": "Výzvy",
+        "promptFragmentsDescription": "Vlastní fragmenty výzev, které mají být zahrnuty do konverzace",
         "removeChat": "Odebrat chat",
         "renameChat": "Přejmenovat chat",
         "requestNotFoundForRetry": "Požadavek nebyl nalezen, zkuste to znovu.",
         "responseFrom": "Odpověď od {0}",
+        "searchCapabilities": "Vyhledávací funkce",
         "selectAgentQuickPickPlaceholder": "Vyberte agenta pro novou relaci",
+        "selectAllInCategory": "Vybrat vše v této kategorii",
         "selectChat": "Vybrat chat",
         "selectContextVariableQuickPickPlaceholder": "Vyberte kontextovou proměnnou, která má být připojena ke zprávě.",
         "selectTaskContextQuickPickItem": {
@@ -280,12 +296,10 @@
         "selectVariableArguments": "Vyberte proměnné argumenty",
         "send": "Odeslat (Enter)",
         "sessionNotFoundForRetry": "Relace nebyla nalezena pro opakování pokusu",
+        "skillsDescription": "Opakovaně použitelné pokyny k dovednostem, které lze přidat do konverzace",
         "switchAgentMode": "Přepnout režim agenta",
         "text-part-renderer": {
           "cantDisplay": "Nelze zobrazit odpověď, zkontrolujte prosím ChatResponsePartRenderers!"
-        },
-        "thinking-part-renderer": {
-          "thinking": "Myšlení"
         },
         "toggleCapabilitiesConfig": "Přepínání konfigurace funkcí",
         "toolcall-part-renderer": {
@@ -315,6 +329,8 @@
           "contentNotRestoreable": "Tento obsah (typ „{0}“) nebylo možné zcela obnovit. Může pocházet z rozšíření, které již není k dispozici."
         },
         "unpinAgent": "Odepnout agenta",
+        "unselectAllInCategory": "Zrušit výběr všeho v této kategorii",
+        "variablesDescription": "Dynamické proměnné, které poskytují kontextové informace",
         "variantTooltip": "Varianta výzvy: {0}",
         "yourMessage": "Vaše zpráva"
       },
@@ -459,7 +475,6 @@
         "itemCount": "{0} položky",
         "noItems": "Žádné položky",
         "oneItem": "1 položka",
-        "running": "Spouštění...",
         "searched": "Hledáno",
         "searching": "Vyhledávání",
         "todoList": "Seznam úkolů",
@@ -536,7 +551,6 @@
           "privacy": "Theia je open-source projekt. Žádáme pouze o přístup k vašemu uživatelskému jménu GitHub, abychom se mohli připojit ke službám GitHub Copilot – žádné další údaje nejsou zpřístupňovány ani ukládány.",
           "success": "Úspěšně přihlášeno do GitHub Copilot!",
           "successHint": "Pokud má váš účet GitHub přístup k Copilotu, můžete nyní nakonfigurovat jazykové modely Copilotu v ",
-          "title": "Přihlaste se do GitHub Copilot",
           "tos": "Přihlášením souhlasíte s ",
           "tosLink": "Podmínky služby GitHub",
           "verifying": "Ověřování autorizace..."
@@ -552,6 +566,9 @@
         "models": {
           "description": "Modely GitHub Copilot, které lze použít. Dostupné modely závisí na vašem předplatném Copilot."
         },
+        "signOut": {
+          "confirmMessage": "Opravdu se chcete odhlásit z GitHub Copilot?"
+        },
         "statusBar": {
           "signedIn": "Přihlášeno do GitHub Copilot jako {0}. Kliknutím se odhlásíte.",
           "signedOut": "Nejste přihlášeni do GitHub Copilot. Klikněte pro přihlášení."
@@ -559,14 +576,16 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Akce",
           "addCustomAgent": "Přidat vlastní agenta",
           "availableCapabilities": "Dostupné funkce",
+          "completionNotificationDescriptionPrefix": "Vyberte, jakým způsobem chcete být informováni, když tento agent dokončí svůj úkol. „Výchozí“ používá ",
+          "defaultNotificationDescription": "Používá globální nastavení oznámení AI.",
           "enableAgent": "Povolit agenta",
-          "label": "Agenti",
           "llmRequirements": "Požadavky LLM",
           "notUsedInPrompt": "Nepoužívá se v příkazovém řádku.",
           "notUsedInPromptTooltip": "Tato proměnná je deklarována agentem, ale není odkazována v aktuální šabloně výzvy.",
+          "notificationSettings": "Nastavení oznámení",
+          "notificationSettingsLink": "Nastavení oznámení AI",
           "promptTemplates": "Šablony výzev",
           "selectAgentMessage": "Nejprve vyberte agenta!",
           "showInChat": "Zobrazit v chatu",
@@ -665,6 +684,16 @@
           "unavailableModel": "Vybraný model již není k dispozici."
         },
         "noVariableFoundForOpenRequest": "Nenalezena proměnná pro otevřenou žádost.",
+        "notification": {
+          "message": {
+            "description": "Zobrazit oznámení uvnitř aplikace"
+          },
+          "off": {
+            "description": "Zakázat všechna oznámení"
+          },
+          "osNotification": "Oznámení operačního systému",
+          "windowBlink": "Blikání okna"
+        },
         "openEditorsShortVariable": {
           "description": "Krátký odkaz na všechny aktuálně otevřené soubory (relativní cesty, oddělené čárkami)"
         },
@@ -770,6 +799,30 @@
           "edited": "upraveno",
           "unavailableVariant": "Není k dispozici"
         },
+        "thinkingMode": {
+          "mdDescription": "Umožňuje specifikovat nastavení režimu uvažování pro modely, které podporují rozšířené schopnosti uvažování.\nKaždé nastavení se skládá z:\n- `scope`: Definuje, kdy se nastavení použije:\n- `modelId` (volitelné): ID modelu, které se má porovnat\n- `providerId` (volitelné): ID poskytovatele, které se má porovnat\n- `agentId` (volitelné): ID agenta, které se má shodovat\n- `thinkingMode`: Konfigurace režimu uvažování:\n- `enabled` (boolean): Zda je režim uvažování povolen\n- `budgetTokens` (číslo, volitelné): Maximální počet tokenů pro uvažování (pokud to model podporuje)\nNastavení se shodují na základě specifičnosti (agent: 100, model: 10, poskytovatel: 1 bod).",
+          "scope": {
+            "agentId": {
+              "description": "(Volitelné) ID agenta, na které se nastavení vztahuje."
+            },
+            "modelId": {
+              "description": "(Volitelné) ID modelu"
+            },
+            "providerId": {
+              "description": "(Volitelné) ID poskytovatele, na které se nastavení vztahuje."
+            }
+          },
+          "thinkingMode": {
+            "budgetTokens": {
+              "description": "Maximální počet tokenů, které lze použít pro myšlení. Platí pouze v případě, že model podporuje rozpočet pro myšlení."
+            },
+            "description": "Konfigurace režimu myšlení.",
+            "enabled": {
+              "description": "Zda je zapnutý režim přemýšlení."
+            }
+          },
+          "title": "Nastavení režimu přemýšlení"
+        },
         "todayVariable": {
           "description": "Dělejte něco pro dnešek",
           "format": {
@@ -873,7 +926,6 @@
       "ide": {
         "agent-description": "Nastavte parametry AI agenta, včetně aktivace, výběru LLM, přizpůsobení šablony výzvy a vytvoření vlastního agenta v [AI Configuration View]({0}).",
         "agentConfiguration": {
-          "capabilityId": "Fragment ID",
           "capabilityOn": "Na",
           "customAgentLocationQuickPick": {
             "createNewFile": "Vytvořit nový soubor",
@@ -904,6 +956,10 @@
             "question": "Servery Playwright MCP nejsou spuštěny. Chcete je spustit nyní? Tím se mohou nainstalovat servery Playwright MCP."
           }
         },
+        "appTester": {
+          "description": "Umožňuje agentovi testovat aplikace prohlížeče od začátku do konce. Za tímto účelem může agent delegovat na agenta AppTester, který automatizuje interakce prohlížeče za účelem ověření implementace.",
+          "name": "Tester aplikací"
+        },
         "architectAgent": {
           "mode": {
             "plan": "Režim plánu",
@@ -913,9 +969,10 @@
             "executePlanWithCoder": "Spusťte „{0}“ pomocí Coderu."
           }
         },
+        "browseAllChats": "Procházet všechny chaty...",
         "bypassHint": "Někteří agenti, jako například Claude Code, nevyžadují jazykové modely Theia.",
         "chatDisabledMessage": {
-          "featuresTitle": "Aktuálně podporované zobrazení a funkce:"
+          "title": "Funkce AI jsou deaktivovány"
         },
         "coderAgent": {
           "mode": {
@@ -948,6 +1005,7 @@
             }
           }
         },
+        "configurationState": "Problémy s konfigurací",
         "configureAgent": {
           "header": "Nakonfigurujte výchozího agenta"
         },
@@ -957,6 +1015,7 @@
             "edit": "Výchozí režim"
           }
         },
+        "deleteChat": "Smazat chat",
         "enableAI": {
           "mdDescription": "Toto nastavení vám umožňuje přístup k nejnovějším funkcím AI (beta verze).            \n            Upozorňujeme, že tyto funkce jsou ve fázi beta, což znamená, že mohou             podléhat změnám a budou dále vylepšovány. Je důležité si uvědomit, že tyto funkce mohou generovat            kontinuální požadavky na jazykové modely (LLM), ke kterým poskytujete přístup. To může znamenat náklady, které            musíte pečlivě sledovat. Povolením této možnosti potvrzujete, že jste si těchto rizik vědomi.            \n            **Upozornění! Níže uvedená nastavení v této sekci se projeví až\n            po povolení hlavního nastavení funkce. Po povolení funkce je třeba nakonfigurovat alespoň jednoho            poskytovatele LLM níže. Viz také [dokumentace](https://theia-ide.org/docs/user_ai/)**."
         },
@@ -979,16 +1038,20 @@
             "yes": "Ano, spusťte server."
           }
         },
+        "githubCapability": {
+          "description": "Umožňuje agentovi komunikovat s GitHubem. Za tímto účelem může agent delegovat na agenta GitHubu, který může číst a zapisovat problémy, žádosti o stažení, komentáře a obsah úložiště.",
+          "name": "GitHub"
+        },
         "githubRepoName": {
           "description": "Název aktuálního repozitáře GitHub (např. „eclipse-theia/theia“)."
         },
+        "howToGetStarted": "Jak začít",
         "model-selection-description": "Vyberte, které velké jazykové modely (LLM) budou používat jednotlivé AI agenti v [zobrazení konfigurace AI]({0}).",
         "moreAgentsAvailable": {
           "header": "K dispozici je více agentů."
         },
         "noRecommendedAgents": "Nejsou k dispozici žádné doporučené agenty.",
         "openSettings": "Otevřít nastavení AI",
-        "or": "nebo",
         "orchestrator": {
           "error": {
             "noAgents": "K dispozici není žádný chatovací agent, který by mohl vyřídit požadavek. Zkontrolujte prosím svou konfiguraci, zda je některý z nich povolen."
@@ -1002,18 +1065,28 @@
           }
         },
         "prompt-template-description": "Vyberte varianty výzev a přizpůsobte šablony výzev pro agenty AI v [zobrazení konfigurace AI]({0}).",
-        "recommendedAgents": "Doporučení agenti:",
+        "recentChats": "Nedávné chaty",
+        "renameChat": "Přejmenovat chat",
         "shellAllowlist": {
           "placeholder": "Např. „git log“ (přesné) nebo „git log *“ (s argumenty)"
         },
         "shellDenylist": {
           "placeholder": "Např. „git push *“ nebo „rm -rf /“."
         },
+        "shellExecutionCapability": {
+          "description": "Umožňuje agentovi spouštět libovolné příkazy shellu na hostitelském systému. Agent pak může delegovat spouštění skriptů, které nejsou k dispozici jako úkoly, dotazovat se na systémové informace a provádět operace, pro které neexistuje žádný specializovaný nástroj.",
+          "name": "Spuštění shellu"
+        },
         "skillsConfiguration": {
-          "label": "Dovednosti",
           "location": {
             "label": "Umístění"
-          }
+          },
+          "noSkills": "Žádné dovednosti k dispozici",
+          "noSlashCommands": "Nejsou k dispozici žádné příkazy se lomítkem.",
+          "slashCommand": {
+            "allAgents": "Všichni agenti"
+          },
+          "slashCommandsSectionHeader": "Příkazy se lomítkem"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1048,6 +1121,15 @@
               "label": "Potvrdit"
             }
           }
+        },
+        "tooltip": {
+          "agent": "Agent",
+          "lastActivity": "Poslední aktivita",
+          "lastMessage": "Poslední zpráva",
+          "messages": "Zprávy",
+          "multipleExchanges": "{0} burzy",
+          "oneExchange": "1 výměna",
+          "unread": "Nepřečtené"
         },
         "variableConfiguration": {
           "selectVariable": "Vyberte proměnnou.",
@@ -1149,9 +1231,36 @@
         "copyAllSingle": "Kopírovat vše pro chat (jediný fragment výzvy se všemi nástroji)",
         "copyForPrompt": "Nástroj pro kopírování (pro chat nebo šablonu výzvy)",
         "copyForPromptTemplate": "Zkopírujte vše pro šablonu výzvy (jediný fragment výzvy se všemi nástroji)",
+        "deleteServer": "Odstranit server",
+        "deleteServerDialogMsg": "Opravdu chcete odstranit server „{0}“?",
+        "deleteServerDialogTitle": "Odstranit server MCP",
+        "deleteServerError": "Nepodařilo se odstranit server MCP: {0}",
+        "editServer": "Upravit server",
+        "editServerTitle": "Upravit server MCP",
         "environmentVariables": "Proměnné prostředí",
+        "form": {
+          "argsPlaceholder": "Oddělené mezerami, např. -y @modelcontextprotocol/server-brave-search",
+          "authHeaderPlaceholder": "Výchozí: Autorizace s nositelem",
+          "authTokenPlaceholder": "Volitelný autentizační token",
+          "autostart": "Automatické spuštění",
+          "commandPlaceholder": "Např. npx nebo uvx",
+          "commandRequired": "Pro místní servery je vyžadován příkaz.",
+          "envPlaceholder": "KEY=hodnota (jedna na řádek)",
+          "headersPlaceholder": "Záhlaví-název=hodnota (jedno na řádek)",
+          "localServer": "Místní (příkaz)",
+          "nameExists": "Server s tímto názvem již existuje.",
+          "nameRequired": "Název serveru je povinný.",
+          "remoteServer": "Vzdálený (URL)",
+          "saveChanges": "Uložit změny",
+          "serverName": "Název serveru",
+          "serverNamePlaceholder": "Např. my-mcp-server",
+          "serverType": "Typ serveru",
+          "serverUrlPlaceholder": "Např. https://mcp.example.com",
+          "serverUrlRequired": "Pro vzdálené servery je vyžadována adresa URL serveru."
+        },
         "headers": "Záhlaví",
         "noServers": "Žádné servery MCP nejsou nakonfigurovány.",
+        "saveServerError": "Nepodařilo se uložit konfiguraci serveru MCP: {0}",
         "serverAuthToken": "Autorizační token",
         "serverAuthTokenHeader": "Název záhlaví Auth",
         "serverUrl": "URL serveru",
@@ -1248,6 +1357,11 @@
         }
       },
       "session-settings-dialog": {
+        "advancedSettings": "Pokročilá nastavení (JSON)",
+        "budgetTokens": "Rozpočtové tokeny:",
+        "enableThinking": "Povolit rozšířené myšlení",
+        "thinkingMode": "Režim přemýšlení",
+        "thinkingModeNote": "Některé modely mohou toto nastavení ignorovat.",
         "title": "Nastavit parametry relace",
         "tooltip": "Nastavit parametry relace"
       },
@@ -1363,9 +1477,13 @@
       "fileChangeSetTitle": "Navrhované změny"
     },
     "ai-chat-ui": {
+      "deleteChat": "Smazat chat",
       "initiate-session-task-context": "Kontext úkolu: Zahájit relaci",
+      "navigate-back": "Navigovat zpět",
+      "navigate-forward": "Přejít vpřed",
       "open-current-session-summary": "Otevřít souhrn aktuální relace",
       "open-settings-tooltip": "Otevřít nastavení AI...",
+      "renameChat": "Přejmenovat chat",
       "scroll-lock": "Zamknout posouvání",
       "scroll-unlock": "Odemknout posouvání",
       "session-settings": "Nastavit parametry relace",
@@ -1378,11 +1496,12 @@
     },
     "ai-core": {
       "agentCompletionMessage": "Agent „{0}“ dokončil svůj úkol.",
+      "agentCompletionMessageWithSession": "Agent „{0}“ dokončil svůj úkol v „{1}“.",
       "agentCompletionTitle": "Agent „{0}“ Úkol dokončen",
-      "agentCompletionWithTask": "Agent „{0}“ dokončil úkol: {1}",
       "preferences": {
         "title": "Funkce AI"
-      }
+      },
+      "showChat": "Zobrazit chat"
     },
     "ai-editor": {
       "contextMenu": "Zeptejte se AI",
@@ -1414,8 +1533,23 @@
       "blockedServersLabel": "Servery MCP (blokováno automatické spuštění)"
     },
     "ai-terminal": {
+      "allowAllConfirm": "Rozumím, povolit vše",
+      "allowAllForever": "Vždy povolit všechny příkazy shellu...",
+      "allowAllSession": "Povolit všechny příkazy shellu pro tento chat...",
+      "allowAllSessionConfirm": "Rozumím, povolit vše pro tento chat",
+      "allowAllSessionTitle": "Povolit VŠECHNY příkazy shellu pro tento chat?",
+      "allowAllSessionWarning": "To umožní AI provádět jakékoli příkazy shellu bez potvrzení po zbytek této chatovací relace. Příkazy shellu mají plný přístup k systému a mohou provádět jakékoli příkazy, upravovat soubory mimo pracovní prostor a přistupovat k síťovým zdrojům. Příkazy na seznamu zakázaných příkazů budou i nadále blokovány.",
+      "allowAllTitle": "Povolit VŠECHNY příkazy shellu?",
+      "allowAllWarning": "To umožní AI provádět jakékoli příkazy shellu bez potvrzení. Příkazy shellu mají plný přístup k systému a mohou provádět jakékoli příkazy, upravovat soubory mimo pracovní prostor a přistupovat k síťovým zdrojům. Příkazy na seznamu zakázaných příkazů budou i nadále blokovány.",
+      "alwaysAllowPattern": "Vždy povolit {0}",
+      "alwaysAllowPatterns": "Vždy povolit {0} a {1}",
+      "alwaysAllowPatternsList": "Vždy povolit {0}",
+      "alwaysDenyPattern": "Vždy odepřít{0}",
+      "alwaysDenyPatterns": "Vždy odmítněte {0} a {1}",
+      "alwaysDenyPatternsList": "Vždy odepřít{0}",
       "cancelExecution": "Zrušit provedení příkazu",
       "canceling": "Rušení...",
+      "configurePermissions": "Konfigurace oprávnění příkazů shellu",
       "confirmExecution": "Potvrdit příkaz shellu",
       "denialReason": "Důvod",
       "executionCanceled": "Zrušeno",
@@ -1593,6 +1727,7 @@
       "couldNotRunTask": "Nelze spustit úkol „{0}“.",
       "dataBreakpoint": "datový zarážkový bod",
       "debugConfiguration": "Konfigurace ladění",
+      "debugRestricted": "Ladění je v omezeném režimu zakázáno.",
       "debugSessionInitializationFailed": "Inicializace ladicí relace selhala. Podrobnosti najdete v konzoli.",
       "debugSessionTypeNotSupported": "Typ ladicí relace „{0}“ není podporován.",
       "debugToolbarMenu": "Nabídka panelu nástrojů ladění",
@@ -1623,6 +1758,11 @@
       "unverifiedBreakpoint": "Neověřeno {0}"
     },
     "editor": {
+      "clearFormatterSetting": "Vymazat nastavení formátovače",
+      "configuredIn": "Nakonfigurováno v{0}",
+      "configuredNotInstalled": "„{0}“ nakonfigurovaný v aplikaci „{1}“, ale nenainstalovaný",
+      "configuredNotInstalledFallbackNamed": "„{0}“ nakonfigurovaný v „{1}“ není nainstalován, používá se „{2}“.",
+      "currentFormatter": "(Aktuální)",
       "diffEditor.wordWrap2": "Řádky se budou zalomovat podle nastavení `#editor.wordWrap#`.",
       "dirtyEncoding": "Soubor je poškozený. Než jej znovu otevřete s jiným kódováním, nejprve jej uložte.",
       "editor.bracketPairColorization.enabled": "Ovládá, zda je povoleno barevné zvýraznění závorek. Pomocí `#workbench.colorCustomizations#` můžete přepsat barvy zvýraznění závorek.",
@@ -1643,11 +1783,26 @@
       "editor.suggestLineHeight": "Výška řádku pro widget návrhů. Při nastavení na hodnotu „0“ se použije hodnota „#editor.lineHeight#“. Minimální hodnota je 8.",
       "editor.tabSize": "Počet mezer, kterým se rovná tabulátor. Toto nastavení je přepsáno na základě obsahu souboru, když je zapnuto `#editor.detectIndentation#`.",
       "formatOnSaveTimeout": "Časový limit v milisekundách, po jehož uplynutí se zruší formátování prováděné při ukládání souboru.",
+      "formatter": "Formátovač",
+      "noDefaultConfiguredLabel": "Není nakonfigurován žádný výchozí formátovač.",
+      "noDefaultConfiguredTooltip": "Není nakonfigurován žádný výchozí formátovač (k dispozici jsou formátovače {0}).",
+      "noEditor": "Žádný editor není aktivní",
+      "noFormatter": "Žádný formátovač",
+      "noFormatterInstalled": "Není nainstalován žádný formátovač",
+      "noFormattersAvailable": "Pro tento jazyk nejsou k dispozici žádné formátovače.",
+      "noFormattersInstalledTooltip": "Pro tento jazyk nejsou nainstalovány žádné formátovače.",
+      "onlyAvailableFormatter": "Pouze dostupný formátovač",
+      "onlyFormatterInstalled": "{0} (nainstalován pouze formátovač)",
       "persistClosedEditors": "Ovládá, zda se má historie uzavřeného editoru pro pracovní prostor zachovat i po opětovném načtení okna.",
+      "selectFormatter": "Vybrat výchozí formátovač",
+      "selectScope": "Vyberte, kam chcete nastavení uložit",
       "showAllEditors": "Zobrazit všechny otevřené editory",
+      "showFormatterInfo": "Zobrazit informace o formátovači",
       "splitHorizontal": "Rozdělený editor horizontálně",
       "splitVertical": "Rozdělený editor Vertikální",
-      "toggleStickyScroll": "Přepnout lepkavé posouvání"
+      "toggleStickyScroll": "Přepnout lepkavé posouvání",
+      "userSettingsDetail": "Použít na všechny pracovní prostory",
+      "workspaceSettingsDetail": "Použít pouze na aktuální pracovní prostor"
     },
     "external-terminal": {
       "cwd": "Vyberte aktuální pracovní adresář pro nový externí terminál"
@@ -2026,7 +2181,8 @@
       },
       "taskAlreadyRunningInTerminal": "Úloha již běží v terminálu.",
       "taskExitedWithCode": "Úloha „{0}“ byla ukončena s kódem {1}.",
-      "taskTerminalTitle": "Úkol: {0}",
+      "taskIdLabel": "#{0}",
+      "taskRestricted": "Provádění úkolů je v omezeném režimu zakázáno.",
       "taskTerminatedBySignal": "Úloha „{0}“ byla ukončena signálem {1}.",
       "terminalWillBeReusedByTasks": "Terminál bude znovu použit v úkolech."
     },

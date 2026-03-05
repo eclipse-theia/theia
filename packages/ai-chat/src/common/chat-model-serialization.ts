@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentLocation } from './chat-agents';
 
 export interface SerializableChangeSetElement {
@@ -104,6 +105,11 @@ export interface SerializableChatRequestData {
      * Maps capability fragment IDs to enabled/disabled state.
      */
     capabilityOverrides?: Record<string, boolean>;
+    /**
+     * Generic capability selections for this request.
+     * Contains user-selected skills, functions, MCP tools, etc.
+     */
+    genericCapabilitySelections?: GenericCapabilitySelections;
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {

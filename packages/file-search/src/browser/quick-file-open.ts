@@ -172,7 +172,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
         let placeholder = nls.localizeByDefault('Search files by name (append {0} to go to line or {1} to go to symbol)', ':', '@');
         const keybinding = this.getKeyCommand();
         if (keybinding) {
-            placeholder += nls.localize('theia/file-search/toggleIgnoredFiles', ' (Press {0} to show/hide ignored files)', keybinding);
+            placeholder += nls.localize('theia/file-search/toggleExcludedFiles', ' (Press {0} to show/hide excluded files)', keybinding);
         }
         return placeholder;
     }
