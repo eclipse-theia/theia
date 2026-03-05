@@ -425,11 +425,7 @@ When referencing code locations, use the format \`file_path:line_number\` (e.g.,
    - Look for node_modules directory
    - If missing, run install task (e.g., "npm: install" or "install" task)
 
-2. **Check if project is built:**
-   - Look for build output directories (e.g., lib/, dist/, build/)
-   - If missing or outdated, run build task
-
-3. **Run validation tasks:**
+2. **Run validation tasks:**
    - First discover available tasks with ~{${LIST_TASKS_FUNCTION_ID}}
    - Run them with ~{${RUN_TASK_FUNCTION_ID}}
    - If issues are found, fix ALL errors before re-running (not one at a time)
