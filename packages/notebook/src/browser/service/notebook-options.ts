@@ -106,7 +106,7 @@ export class NotebookOptionsService {
     }
 
     protected getNotebookPreferenceWithDefault<T>(key: string): T {
-        return this.preferenceService.get<T>(key, notebookPreferenceSchema.properties?.[key]?.default as T);
+        return this.preferenceService.get<T>(key, { fallback: notebookPreferenceSchema.properties?.[key]?.default as T })!;
     }
 
     protected computeOutputLineHeight(lineHeight: number, outputFontSize: number): number {

@@ -112,7 +112,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
         this.toDispose.push(
             this.preferenceService.onPreferenceChanged(e => {
                 if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
-                    const effectiveValue = this.preferenceService.get<boolean>(BYPASS_MODEL_REQUIREMENT_PREF, false);
+                    const effectiveValue = this.preferenceService.get(BYPASS_MODEL_REQUIREMENT_PREF, false);
                     if (this._modelRequirementBypassed !== effectiveValue) {
                         this._modelRequirementBypassed = effectiveValue;
                         this.notifyStateChanged();

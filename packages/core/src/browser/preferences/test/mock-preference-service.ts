@@ -37,7 +37,7 @@ export class MockPreferenceService implements PreferenceService {
     inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined {
         return undefined;
     }
-    inspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined {
+    inspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, overrideIdentifier?: string): T | undefined {
         return undefined;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

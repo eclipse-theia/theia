@@ -91,7 +91,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
     protected _scan: (changeSetElements: ChangeSetElement[]) => Promise<ScanOSSResult[]>;
 
     protected async runScan(changeSetElements: ChangeSetFileElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean): Promise<ScanOSSResult[]> {
-        const apiKey = this.preferenceService.get(SCAN_OSS_API_KEY_PREF, undefined);
+        const apiKey = this.preferenceService.get<string>(SCAN_OSS_API_KEY_PREF);
         let notifiedError = false;
         const fileResults = await Promise.all(changeSetElements.map(async fileChange => {
             if (fileChange.targetState.trim().length === 0) {

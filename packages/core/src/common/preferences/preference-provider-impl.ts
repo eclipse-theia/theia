@@ -33,7 +33,7 @@ export abstract class PreferenceProviderBase {
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected deferredChanges: PreferenceProviderDataChanges | undefined;
+    protected deferredChanges: Record<string, PreferenceProviderDataChange> | undefined;
 
     constructor() {
         this.toDispose.push(this.onDidPreferencesChangedEmitter);
@@ -43,16 +43,11 @@ export abstract class PreferenceProviderBase {
      * Informs the listeners that one or more preferences of this provider are changed.
      * The listeners are able to find what was changed from the emitted event.
      */
-    protected emitPreferencesChangedEvent(changes: PreferenceProviderDataChanges | PreferenceProviderDataChange[]): Promise<boolean> {
-        if (Array.isArray(changes)) {
-            for (const change of changes) {
-                this.mergePreferenceProviderDataChange(change);
-            }
-        } else {
-            for (const preferenceName of Object.keys(changes)) {
-                this.mergePreferenceProviderDataChange(changes[preferenceName]);
-            }
+    protected emitPreferencesChangedEvent(changes: PreferenceProviderDataChange[]): Promise<boolean> {
+        for (const change of changes) {
+            this.mergePreferenceProviderDataChange(change);
         }
+
         return this.fireDidPreferencesChanged();
     }
 
@@ -60,14 +55,15 @@ export abstract class PreferenceProviderBase {
         if (!this.deferredChanges) {
             this.deferredChanges = {};
         }
-        const current = this.deferredChanges[change.preferenceName];
+        const key = `${change.preferenceName}.${change.overrideIdentifier}`;
+        const current = this.deferredChanges[key];
         const { newValue, scope, domain } = change;
         if (!current) {
             // new
-            this.deferredChanges[change.preferenceName] = change;
+            this.deferredChanges[key] = change;
         } else if (current.oldValue === newValue) {
             // delete
-            delete this.deferredChanges[change.preferenceName];
+            delete this.deferredChanges[key];
         } else {
             // update
             Object.assign(current, { newValue, scope, domain });
@@ -78,7 +74,7 @@ export abstract class PreferenceProviderBase {
         const changes = this.deferredChanges;
         this.deferredChanges = undefined;
         if (changes && Object.keys(changes).length) {
-            this.onDidPreferencesChangedEmitter.fire(changes);
+            this.onDidPreferencesChangedEmitter.fire(Object.values(changes));
             return true;
         }
         return false;
@@ -104,23 +100,21 @@ export abstract class PreferenceProviderImpl extends PreferenceProviderBase impl
         super();
     }
 
-    get<T>(preferenceName: string, resourceUri?: string): T | undefined {
-        return this.resolve<T>(preferenceName, resourceUri).value;
+    get<T>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): T | undefined {
+        return this.resolve<T>(preferenceName, resourceUri, overrideIdentifier).value;
     }
 
-    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
-        const value = this.getPreferences(resourceUri)[preferenceName];
-        if (value !== undefined) {
-            return {
-                value: value as T,
-                configUri: this.getConfigUri(resourceUri)
-            };
-        }
-        return {};
+    resolve<T>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
+        const preferences = this.getPreferences(resourceUri);
+        const key = overrideIdentifier ? `[${overrideIdentifier}].${preferenceName}` : preferenceName;
+        return {
+            value: preferences[key] as T,
+            configUri: this.getConfigUri(resourceUri)
+        };
     }
 
     abstract getPreferences(resourceUri?: string): JSONObject;
-    abstract setPreference(key: string, value: unknown, resourceUri?: string): Promise<boolean>;
+    abstract setPreference(key: string, value: unknown, resourceUri?: string, overrideIdentifier?: string): Promise<boolean>;
 
     /**
      * Resolved when the preference provider is ready to provide preferences

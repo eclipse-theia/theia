@@ -87,12 +87,12 @@ export class AIIdeActivationServiceImpl implements AIActivationService, Frontend
         this.isAiEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, false);
         // make sure we don't miss once preferences are ready
         this.preferenceService.ready.then(() => {
-            const enableValue = this.preferenceService.get<boolean>(PREFERENCE_NAME_ENABLE_AI, false);
+            const enableValue = this.preferenceService.get(PREFERENCE_NAME_ENABLE_AI, false);
             this.updateEnableValue(enableValue);
         });
         this.toDispose.push(this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PREFERENCE_NAME_ENABLE_AI) {
-                this.updateEnableValue(this.preferenceService.get<boolean>(PREFERENCE_NAME_ENABLE_AI, false));
+                this.updateEnableValue(this.preferenceService.get(PREFERENCE_NAME_ENABLE_AI, false));
             }
         }));
         this.workspaceTrustService.getWorkspaceTrust().then(trusted => {
