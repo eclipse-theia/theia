@@ -19,12 +19,12 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as cp from 'child_process';
 import * as semver from 'semver';
 import { ApplicationPackage, ApplicationPackageOptions } from '@theia/core/shared/@theia/application-package';
-import { copyBrowserOnlyPlugins } from './browser-only/copy-plugins';
+import { createBuildContainer } from './browser-only/build-container';
+import { PrepareBrowserOnlyPluginsRunner } from './browser-only/prepare-plugins-runner';
 import { WebpackGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
 import { GeneratorOptions } from './generator/abstract-generator';
 import yargs = require('@theia/core/shared/yargs');
-import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
 
 // Declare missing exports from `@types/semver@7`
 declare module 'semver' {
@@ -113,25 +113,26 @@ export class ApplicationPackageManager {
 
         if (this.pck.isBrowserOnly()) {
             await this.prepareBrowserOnlyPlugins();
+            await this.writeBrowserOnlyExtensionsList();
         }
     }
 
     /**
-     * For browser-only: resolve plugins source path (theiaPluginsDir) and destination
-     * (lib/frontend/hostedPlugin), then delegate to copyBrowserOnlyPlugins.
+     * For browser-only: write lib/frontend/extensions.json (Theia extension packages) so the About dialog
+     * shows the same list as in the backend build (@theia/ai-chat, @theia/core, etc.), not VSIX plugins.
+     */
+    protected async writeBrowserOnlyExtensionsList(): Promise<void> {
+        const extensions = this.pck.extensionPackages.map(({ name, version }) => ({ name, version }));
+        await fs.writeJson(this.pck.lib('frontend', 'extensions.json'), extensions, { spaces: 2 });
+    }
+
+    /**
+     * For browser-only: Copy plugins to the static folder
      */
     protected async prepareBrowserOnlyPlugins(): Promise<void> {
-        const pkg = this.pck.pck;
-        const pluginsDir = typeof pkg.theiaPluginsDir === 'string' ? pkg.theiaPluginsDir : 'plugins';
-        const pluginsSource = path.resolve(this.pck.projectPath, pluginsDir);
-
-        if (!(await fs.pathExists(pluginsSource))) {
-            return;
-        }
-
-        const hostedPluginRoot = this.pck.lib('frontend', PLUGINS_BASE_PATH);
-
-        await copyBrowserOnlyPlugins(pluginsSource, hostedPluginRoot);
+        const container = createBuildContainer();
+        const runner = container.get(PrepareBrowserOnlyPluginsRunner);
+        await runner.run(this.pck);
     }
 
     async build(args: string[] = [], options: GeneratorOptions = {}): Promise<void> {

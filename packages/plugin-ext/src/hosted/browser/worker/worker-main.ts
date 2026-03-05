@@ -71,7 +71,7 @@ pluginManager.setPluginHost({
                         ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
                     }
 
-                    ctx.importScripts('./' + PLUGINS_BASE_PATH + '/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                    ctx.importScripts(`${PLUGINS_BASE_PATH}/${getPluginId(plugin.model)}/${plugin.pluginPath}`);
                 }
             }
 
@@ -94,6 +94,7 @@ pluginManager.setPluginHost({
             }>(rawPluginData.map(async plg => {
                 const pluginModel = plg.model;
                 const pluginLifecycle = plg.lifecycle;
+
                 if (pluginModel.entryPoint!.frontend) {
                     let frontendInitPath = pluginLifecycle.frontendInitPath;
                     if (frontendInitPath) {
@@ -104,7 +105,7 @@ pluginManager.setPluginHost({
                     const rawModel = await loadManifest(pluginModel);
                     const plugin: Plugin = {
                         pluginPath: pluginModel.entryPoint.frontend!,
-                        pluginFolder: pluginModel.packagePath,
+                        pluginFolder: pluginModel.packageUri,
                         pluginUri: pluginModel.packageUri,
                         model: pluginModel,
                         lifecycle: pluginLifecycle,
@@ -120,7 +121,7 @@ pluginManager.setPluginHost({
                         target: foreign,
                         plugin: {
                             pluginPath: pluginModel.entryPoint.backend,
-                            pluginFolder: pluginModel.packagePath,
+                            pluginFolder: pluginModel.packageUri,
                             pluginUri: pluginModel.packageUri,
                             model: pluginModel,
                             lifecycle: pluginLifecycle,

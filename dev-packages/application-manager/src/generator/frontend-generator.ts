@@ -75,7 +75,9 @@ export class FrontendGenerator extends AbstractGenerator {
 require('reflect-metadata');
 const { Container } = require('@theia/core/shared/inversify');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
+const { AppTargetProvider } = require('@theia/core/shared/@theia/application-package/lib/environment');
 
+AppTargetProvider.set('${this.pck.target}');
 FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.frontend.config)});
 
 ${this.ifMonaco(() => `

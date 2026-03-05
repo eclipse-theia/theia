@@ -24,7 +24,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
 import { getThemes, putTheme, MonacoThemeState, stateToTheme, ThemeServiceWithDB } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { readResourceContent } from '@theia/filesystem/lib/browser/read-resource';
+import { readResourceContent } from '@theia/core/lib/browser/resource-content-reader';
 import * as monaco from '@theia/monaco-editor-core';
 
 export interface MonacoTheme {
@@ -101,12 +101,14 @@ export class MonacoThemingService {
         includes: { [include: string]: any },
         toDispose: DisposableCollection
     ): Promise<any> {
-        const themeUri = new URI(uri);
-        const content = await readResourceContent(themeUri, this.fileService);
+        const content = await readResourceContent(uri, this.fileService);
 
         if (toDispose.disposed) {
             return;
         }
+        
+        const themeUri = new URI(uri);
+        
         if (themeUri.path.ext !== '.json') {
             const value = plistparser.parse(content);
             if (value && 'settings' in value && Array.isArray(value.settings)) {

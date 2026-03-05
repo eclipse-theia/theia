@@ -55,7 +55,7 @@ export abstract class AbstractGenerator {
 
     protected ifPackage(packageName: string | string[], value: string | (() => string), defaultValue: string | (() => string) = ''): string {
         const packages = Array.isArray(packageName) ? packageName : [packageName];
-        if (this.pck.extensionPackages.some((e: { name: string }) => packages.includes(e.name))) {
+        if (this.pck.extensionPackages.some(e => packages.includes(e.name))) {
             return typeof value === 'string' ? value : value();
         } else {
             return typeof defaultValue === 'string' ? defaultValue : defaultValue();

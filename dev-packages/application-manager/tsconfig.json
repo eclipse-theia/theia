@@ -16,6 +16,9 @@
       "path": "../../packages/plugin-ext"
     },
     {
+      "path": "../../packages/plugin-ext-vscode"
+    },
+    {
       "path": "../ffmpeg"
     },
     {

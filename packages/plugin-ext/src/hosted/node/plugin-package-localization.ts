@@ -16,13 +16,14 @@
 
 /**
  * Localization for package.json contribution strings (%key% placeholders).
- * Used by the backend when serving deployed plugins and by copy-plugins when
+ * Used by the backend when serving deployed plugins and by prepare-plugins when
  * generating browser-only list.json so the frontend receives already-localized data.
  */
 
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
 import { isObject } from '@theia/core/lib/common';
+import { localizeWithResolver } from '../../common/package-nls-localize';
 
 export interface PackageTranslation {
     translation?: Record<string, string>;
@@ -94,29 +95,12 @@ export function localizePackage<T>(
     translations: PackageTranslation,
     callback: LocalizePackageCallback
 ): T {
-    if (typeof value === 'string') {
-        if (value.length > 2 && value.startsWith('%') && value.endsWith('%')) {
-            const key = value.slice(1, -1);
-            const translated = findInMap(translations.translation, key) ?? findInMap(translations.default, key);
-            if (translated !== undefined) {
-                return translated as T;
-            }
-            const defaultVal = findInMap(translations.default, key);
-            if (defaultVal !== undefined) {
-                return callback(key, defaultVal) as T;
-            }
+    return localizeWithResolver(value, key => {
+        const translated = findInMap(translations.translation, key) ?? findInMap(translations.default, key);
+        if (translated !== undefined) {
+            return translated;
         }
-        return value;
-    }
-    if (Array.isArray(value)) {
-        return value.map(item => localizePackage(item, translations, callback)) as T;
-    }
-    if (isObject(value)) {
-        const result: Record<string, unknown> = {};
-        for (const [name, item] of Object.entries(value)) {
-            result[name] = localizePackage(item, translations, callback);
-        }
-        return result as T;
-    }
-    return value;
+        const defaultVal = findInMap(translations.default, key);
+        return defaultVal !== undefined ? callback(key, defaultVal) : undefined;
+    });
 }

@@ -19,7 +19,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { LazyLocalization, LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
 import { Localization } from '@theia/core/lib/common/i18n/localization';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers, Translation } from '../../common';
+import { DeployedPlugin, Localization as PluginLocalization, PluginIdentifiers, PluginPackage, Translation } from '../../common';
 import { loadPackageTranslations, localizePackage } from './plugin-package-localization';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
@@ -166,6 +166,15 @@ export class HostedPluginLocalizationService implements BackendApplicationContri
             console.error(`Failed to localize plugin '${pluginId}'.`, err);
         }
         return plugin;
+    }
+
+    /**
+     * Localizes a plugin manifest (package.json) using package.nls.json from pluginPath.
+     */
+    async localizeManifest(pluginPath: string, manifest: PluginPackage): Promise<PluginPackage> {
+        const locale = this.localizationProvider.getCurrentLanguage();
+        const translations = await loadPackageTranslations(pluginPath, locale);
+        return localizePackage(manifest, translations, (_, defaultVal) => defaultVal) as PluginPackage;
     }
 
     getNlsConfig(): VSCodeNlsConfig {

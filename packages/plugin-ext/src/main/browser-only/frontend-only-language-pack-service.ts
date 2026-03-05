@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 Maksim Kachurin.
+// Copyright (C) 2026 Maksim Kachurin
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/**
- * Base path where hosted plugin resources (list.json, plugin assets) are served
- * from the app origin
- */
-export const PLUGINS_BASE_PATH = 'hostedPlugin';
+import { injectable } from '@theia/core/shared/inversify';
+import { LanguagePackService, LanguagePackBundle } from '../../common/language-pack-service';
+
+@injectable()
+export class FrontendOnlyLanguagePackService implements LanguagePackService {
+
+    storeBundle(): void { }
+    deleteBundle(): void { }
+
+    getBundle(): Promise<LanguagePackBundle | undefined> {
+        return Promise.resolve(undefined);
+    }
+}

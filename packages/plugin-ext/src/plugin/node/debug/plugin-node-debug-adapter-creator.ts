@@ -24,7 +24,7 @@ import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
 import { DebugAdapterExecutable, DebugAdapterInlineImplementation, DebugAdapterNamedPipeServer, DebugAdapterServer } from '../../types-impl';
 import { ProcessDebugAdapter, SocketDebugAdapter } from '@theia/debug/lib/node/stream-debug-adapter';
-const isElectron = require('is-electron');
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 
 export class NodeDebugAdapterCreator extends PluginDebugAdapterCreator {
     public override async resolveDebugAdapterExecutable(
@@ -131,7 +131,7 @@ export class NodeDebugAdapterCreator extends PluginDebugAdapterCreator {
                     env: options.env,
                     // When running in Electron, fork will automatically add ELECTRON_RUN_AS_NODE=1 to the env,
                     // but this will cause issues when debugging Electron apps, so we'll remove it.
-                    execArgv: isElectron()
+                    execArgv: environment.electron.is()
                         ? ['-e', 'delete process.env.ELECTRON_RUN_AS_NODE;require(process.argv[1])']
                         : [],
                     silent: true

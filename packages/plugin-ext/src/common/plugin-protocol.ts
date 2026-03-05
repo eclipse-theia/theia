@@ -577,11 +577,6 @@ export interface PluginModel {
     };
     entryPoint: PluginEntryPoint;
     packageUri: string;
-    /**
-     * @deprecated since 1.1.0 - because it lead to problems with getting a relative path
-     * needed by Icon Themes to correctly load Fonts, use packageUri instead.
-     */
-    packagePath: string;
     iconUrl?: string;
     l10n?: string;
     readmeUrl?: string;
@@ -950,7 +945,7 @@ export interface ExtensionContext {
 }
 
 export interface PluginMetadata {
-    host: string;
+    host: PluginHost;
     model: PluginModel;
     lifecycle: PluginLifecycle;
     isUnderDevelopment?: boolean;
@@ -1058,7 +1053,12 @@ export interface HostedPluginServer extends RpcServer<HostedPluginClient> {
 
 }
 
+/** Backend (Node.js) plugin host id */
 export const PLUGIN_HOST_BACKEND = 'main';
+/** Frontend (browser / WebWorker) plugin host id */
+export const PLUGIN_HOST_FRONTEND = 'frontend';
+/** Identifier for where a plugin runs (RPC/messaging) */
+export type PluginHost = typeof PLUGIN_HOST_FRONTEND | typeof PLUGIN_HOST_BACKEND;
 
 export interface WorkspaceStorageKind {
     workspace?: string | undefined;
