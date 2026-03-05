@@ -291,11 +291,11 @@ describe('ChatAgentServiceImpl', () => {
             private readonly onPreferenceChangedEmitter = new Emitter<{ preferenceName: string; newValue: unknown }>();
             readonly onPreferenceChanged = this.onPreferenceChangedEmitter.event;
 
-            get<T>(preferenceName: string, defaultValue?: T): T {
+            get<T>(preferenceName: string, options?: { fallback?: T }): T | undefined {
                 if (this.preferences.has(preferenceName)) {
                     return this.preferences.get(preferenceName) as T;
                 }
-                return defaultValue as T;
+                return options?.fallback;
             }
 
             set(preferenceName: string, value: unknown): void {

@@ -167,13 +167,13 @@ describe('Preference Service', () => {
         prefSchema.registerOverride('editor.insertSpaces', 'go', false);
         assert.deepStrictEqual([], events.map(e => e.preferenceName), 'events after set in the same tick');
         assert.strictEqual(prefService.get('editor.insertSpaces'), true, 'get before');
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get before overridden');
+        assert.strictEqual(prefService.get('editor.insertSpaces', { override: 'go' }), false, 'get before overridden');
 
         toUnset.dispose();
 
         assert.deepStrictEqual([], events.map(e => e.preferenceName), 'events after unset in the same tick');
         assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after'); // removing the schema does not removes the default value
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get after overridden'); // but not the override
+        assert.strictEqual(prefService.get('editor.insertSpaces', { override: 'go' }), false, 'get after overridden'); // but not the override
 
         assert.deepStrictEqual([], events.map(e => e.preferenceName), 'events in next tick');
     });
@@ -196,22 +196,28 @@ describe('Preference Service', () => {
         let changes = await pending;
 
         assert.deepStrictEqual([
-            'editor.insertSpaces',
-            '[go].editor.insertSpaces'
-        ], Object.keys(changes).map(key => changes[key].preferenceName), 'events before');
+            { preferenceName: 'editor.insertSpaces', overrideIdentifier: undefined },
+            { preferenceName: 'editor.insertSpaces', overrideIdentifier: 'go' },
+        ], Object.values(changes).map((change: PreferenceChange) => ({
+            preferenceName: change.preferenceName,
+            overrideIdentifier: change.overrideIdentifier
+        })), 'events before');
         assert.strictEqual(prefService.get('editor.insertSpaces'), true, 'get before');
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get before overridden');
+        assert.strictEqual(prefService.get('editor.insertSpaces', { override: 'go' }), false, 'get before overridden');
 
         pending = new Promise<PreferenceChanges>(resolve => prefService.onPreferencesChanged(resolve));
         toUnset.dispose();
         changes = await pending;
 
         assert.deepStrictEqual([
-            'editor.insertSpaces',
-            '[go].editor.insertSpaces'
-        ], Object.keys(changes).map(key => changes[key].preferenceName), 'events after');
+            { preferenceName: 'editor.insertSpaces', overrideIdentifier: undefined },
+            { preferenceName: 'editor.insertSpaces', overrideIdentifier: 'go' },
+        ], Object.values(changes).map((change: PreferenceChange) => ({
+            preferenceName: change.preferenceName,
+            overrideIdentifier: change.overrideIdentifier
+        })), 'events after');
         assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get after overridden');
+        assert.strictEqual(prefService.get('editor.insertSpaces', { override: 'go' }), false, 'get after overridden');
     });
 
     function prepareServices(options?: { schema: PreferenceSchema }): {
@@ -316,15 +322,91 @@ describe('Preference Service', () => {
         });
     });
 
+    describe('get overloads', () => {
+
+        function setupSchema(): void {
+            prefSchema.addSchema({
+                scope: PreferenceScope.Folder,
+                properties: {
+                    'test.string': { type: 'string' },
+                    'test.number': { type: 'number' },
+                    'test.boolean': { type: 'boolean' },
+                    'test.array': { type: 'array', items: { type: 'string' } }
+                }
+            });
+        }
+
+        it('returns the string default when no value is stored', () => {
+            setupSchema();
+            const value: string = prefService.get('test.string', 'default');
+            expect(value).to.equal('default');
+        });
+
+        it('returns the stored string value over the default', () => {
+            setupSchema();
+            getProvider(PreferenceScope.User).setPreference('test.string', 'stored');
+            const value: string = prefService.get('test.string', 'default');
+            expect(value).to.equal('stored');
+        });
+
+        it('returns the number default when no value is stored', () => {
+            setupSchema();
+            const value: number = prefService.get('test.number', 42);
+            expect(value).to.equal(42);
+        });
+
+        it('returns the stored number value over the default', () => {
+            setupSchema();
+            getProvider(PreferenceScope.User).setPreference('test.number', 7);
+            const value: number = prefService.get('test.number', 42);
+            expect(value).to.equal(7);
+        });
+
+        it('returns the boolean default when no value is stored', () => {
+            setupSchema();
+            const value: boolean = prefService.get('test.boolean', true);
+            expect(value).to.equal(true);
+        });
+
+        it('returns the stored boolean value over the default', () => {
+            setupSchema();
+            getProvider(PreferenceScope.User).setPreference('test.boolean', false);
+            const value: boolean = prefService.get('test.boolean', true);
+            expect(value).to.equal(false);
+        });
+
+        it('returns the array default when no value is stored', () => {
+            setupSchema();
+            const value: string[] = prefService.get<string>('test.array', ['a', 'b']);
+            expect(value).to.deep.equal(['a', 'b']);
+        });
+
+        it('returns the stored array value over the default', () => {
+            setupSchema();
+            getProvider(PreferenceScope.User).setPreference('test.array', ['x', 'y']);
+            const value: string[] = prefService.get<string>('test.array', []);
+            expect(value).to.deep.equal(['x', 'y']);
+        });
+
+        it('still supports the options form alongside the new overloads', () => {
+            setupSchema();
+            expect(prefService.get('test.string', { fallback: 'opts' })).to.equal('opts');
+            expect(prefService.get('test.number', { fallback: 5 })).to.equal(5);
+            expect(prefService.get('test.boolean', { fallback: false })).to.equal(false);
+            expect(prefService.get<string[]>('test.array', { fallback: ['c'] })).to.deep.equal(['c']);
+            expect(prefService.get('test.string')).to.be.undefined;
+        });
+    });
+
     describe('overridden preferences', () => {
 
         it('get #0', () => {
             const { preferences } = prepareServices();
 
-            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
-            expect(preferences.get('[json].editor.tabSize')).to.equal(2);
+            expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(2);
         });
 
         it('get #1', () => {
@@ -332,12 +414,12 @@ describe('Preference Service', () => {
             schema.registerOverrideIdentifier('json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
-            expect(preferences.get('[json].editor.tabSize')).to.equal(4);
+            expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(4);
 
-            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
-            expect(preferences.get('[json].editor.tabSize')).to.equal(2);
+            expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(2);
         });
 
         it('get #2', () => {
@@ -345,24 +427,24 @@ describe('Preference Service', () => {
             schema.registerOverrideIdentifier('json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
-            expect(preferences.get('[json].editor.tabSize')).to.equal(4);
+            expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(4);
 
             preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
             expect(preferences.get('editor.tabSize')).to.equal(2);
-            expect(preferences.get('[json].editor.tabSize')).to.equal(2);
+            expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(2);
         });
 
         it('has', () => {
             const { preferences, schema } = prepareServices();
 
             expect(preferences.has('editor.tabSize')).to.be.true;
-            expect(preferences.has('[json].editor.tabSize')).to.be.false;
+            expect(preferences.has('editor.tabSize', undefined, 'json')).to.be.false;
 
             schema.registerOverrideIdentifier('json');
 
             expect(preferences.has('editor.tabSize')).to.be.true;
-            expect(preferences.has('[json].editor.tabSize')).to.be.true;
+            expect(preferences.has('editor.tabSize', undefined, 'json')).to.be.true;
         });
 
         it('inspect #0', () => {
@@ -377,15 +459,12 @@ describe('Preference Service', () => {
                 value: 4,
             };
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.ok(!preferences.has('[json].editor.tabSize'));
+            assert.ok(!preferences.has('editor.tabSize', undefined, 'json'));
 
             schema.registerOverrideIdentifier('json');
 
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.deepStrictEqual({
-                ...expected,
-                preferenceName: '[json].editor.tabSize'
-            }, preferences.inspect('[json].editor.tabSize'));
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
         });
 
         it('inspect #1', () => {
@@ -401,16 +480,13 @@ describe('Preference Service', () => {
             };
             preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
-            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.ok(!preferences.has('[json].editor.tabSize'));
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'), 'before override');
+            assert.ok(!preferences.has('editor.tabSize', undefined, 'json'));
 
             schema.registerOverrideIdentifier('json');
 
-            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.deepStrictEqual({
-                ...expected,
-                preferenceName: '[json].editor.tabSize'
-            }, preferences.inspect('[json].editor.tabSize'));
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'), 'after override');
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize', undefined, 'json'), 'after override with json identifier');
         });
 
         it('inspect #2', () => {
@@ -425,18 +501,17 @@ describe('Preference Service', () => {
                 value: 4
             };
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.ok(!preferences.has('[json].editor.tabSize'));
+            assert.ok(!preferences.has('editor.tabSize', undefined, 'json'));
 
             schema.registerOverrideIdentifier('json');
-            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
 
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
             assert.deepStrictEqual({
                 ...expected,
-                preferenceName: '[json].editor.tabSize',
                 globalValue: 2,
                 value: 2,
-            }, preferences.inspect('[json].editor.tabSize'));
+            }, preferences.inspect('editor.tabSize', undefined, 'json'));
         });
 
         it('onPreferenceChanged #0', async () => {
@@ -465,9 +540,8 @@ describe('Preference Service', () => {
             await preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
             assert.deepStrictEqual([
-                'editor.tabSize',
-                '[json].editor.tabSize'
-            ], events.map(e => e.preferenceName));
+                { preferenceName: 'editor.tabSize', overrideIdentifier: undefined },
+            ], events.map(e => ({ preferenceName: e.preferenceName, overrideIdentifier: e.overrideIdentifier })));
         });
 
         it('onPreferenceChanged #2', async function (): Promise<void> {
@@ -475,14 +549,14 @@ describe('Preference Service', () => {
 
             schema.registerOverrideIdentifier('json');
             schema.registerOverrideIdentifier('javascript');
-            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
             await preferences.set('editor.tabSize', 3, PreferenceScope.User);
 
             const events: PreferenceChangeEvent<{ [key: string]: any }>[] = [];
             const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, schema.getJSONSchema(PreferenceScope.Folder), { overrideIdentifier: 'json' });
             proxy.onPreferenceChanged(event => events.push(event));
 
-            await preferences.set('[javascript].editor.tabSize', 4, PreferenceScope.User);
+            await preferences.set('editor.tabSize', 4, PreferenceScope.User, undefined, 'javascript');
 
             assert.deepStrictEqual([], events.map(e => e.preferenceName), 'changes not relevant to json override should be ignored');
         });
@@ -522,18 +596,18 @@ describe('Preference Service', () => {
             });
 
             assert.strictEqual(true, preferences.get('editor.insertSpaces'));
-            assert.strictEqual(undefined, preferences.get('[go].editor.insertSpaces'));
+            assert.strictEqual(undefined, preferences.get('editor.insertSpaces', { override: 'go' }));
             assert.strictEqual(false, preferences.get('editor.formatOnSave'));
-            assert.strictEqual(undefined, preferences.get('[go].editor.formatOnSave'));
+            assert.strictEqual(undefined, preferences.get('editor.formatOnSave', { override: 'go' }));
 
             schema.registerOverrideIdentifier('go');
             prefSchema.registerOverride('editor.insertSpaces', 'go', false);
             prefSchema.registerOverride('editor.formatOnSave', 'go', true);
 
             assert.strictEqual(true, preferences.get('editor.insertSpaces'));
-            assert.strictEqual(false, preferences.get('[go].editor.insertSpaces'));
+            assert.strictEqual(false, preferences.get('editor.insertSpaces', { override: 'go' }));
             assert.strictEqual(false, preferences.get('editor.formatOnSave'));
-            assert.strictEqual(true, preferences.get('[go].editor.formatOnSave'));
+            assert.strictEqual(true, preferences.get('editor.formatOnSave', { override: 'go' }));
         });
     });
 

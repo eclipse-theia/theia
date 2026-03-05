@@ -86,7 +86,7 @@ describe('Preference Schema Provider', () => {
 
     it('Should load all preferences specified in the frontend config.', () => {
         assert.strictEqual(prefDefaults.get('editor.fontSize'), 20);
-        assert.strictEqual(prefDefaults.get('[typescript].editor.fontSize'), 24);
+        assert.strictEqual(prefDefaults.get('editor.fontSize', undefined, 'typescript'), 24);
     });
 
     it('Should favor the default specified in the package.json over a default registered by a schema', () => {
@@ -112,7 +112,7 @@ describe('Preference Schema Provider', () => {
         prefSchema.registerOverride('editor.insertSpaces', 'typescript', false);
 
         assert.strictEqual(prefDefaults.get('editor.insertSpaces'), true);
-        assert.strictEqual(prefDefaults.get('[typescript].editor.insertSpaces'), false);
-        assert.strictEqual(prefDefaults.get('[typescript].editor.fontSize'), 24);
+        assert.strictEqual(prefDefaults.get('editor.insertSpaces', undefined, 'typescript'), false);
+        assert.strictEqual(prefDefaults.get('editor.fontSize', undefined, 'typescript'), 24);
     });
 });

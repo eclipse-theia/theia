@@ -34,25 +34,25 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
-            const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+            const apiKey = this.preferenceService.get<string>(API_KEY_PREF);
             this.manager.setApiKey(apiKey);
 
-            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            const proxyUri = this.preferenceService.get<string>('http.proxy');
             this.manager.setProxyUrl(proxyUri);
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+            const models = this.preferenceService.get<string>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    const newApiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+                    const newApiKey = this.preferenceService.get<string>(API_KEY_PREF);
                     this.manager.setApiKey(newApiKey);
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                    this.handleModelChanges(this.preferenceService.get<string>(MODELS_PREF, []));
                 } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy'));
                     this.updateAllModels();
                 }
             });

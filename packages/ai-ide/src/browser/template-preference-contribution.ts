@@ -88,7 +88,7 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
 
         if (!changedPreference || changedPreference === PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF) {
             if (trusted) {
-                const relativeDirectories = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF, []);
+                const relativeDirectories = this.preferenceService.get<string>(PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF, []);
                 configProperties.directoryPaths = relativeDirectories.map(dir => {
                     const path = new Path(dir);
                     const uri = workspaceRootUri.resolve(path.toString());
@@ -101,7 +101,7 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
 
         if (!changedPreference || changedPreference === PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF) {
             if (trusted) {
-                configProperties.extensions = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF, []);
+                configProperties.extensions = this.preferenceService.get<string>(PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF, []);
             } else {
                 configProperties.extensions = [];
             }
@@ -109,7 +109,7 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
 
         if (!changedPreference || changedPreference === PROMPT_TEMPLATE_WORKSPACE_FILES_PREF) {
             if (trusted) {
-                const relativeFilePaths = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_FILES_PREF, []);
+                const relativeFilePaths = this.preferenceService.get<string>(PROMPT_TEMPLATE_WORKSPACE_FILES_PREF, []);
                 configProperties.filePaths = relativeFilePaths.map(filePath => {
                     const path = new Path(filePath);
                     const uri = workspaceRootUri.resolve(path.toString());

@@ -145,9 +145,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this.valid && this.contains(resourceUri) ? this.preferences : {};
     }
 
-    async setPreference(key: string, value: any, resourceUri?: string): Promise<boolean> {
+    async setPreference(key: string, value: any, resourceUri?: string, overrideIdentifier?: string): Promise<boolean> {
         let path: string[] | undefined;
-        if (this.toDispose.disposed || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
+        if (this.toDispose.disposed || !(path = this.getPath(key, overrideIdentifier)) || !this.contains(resourceUri)) {
             return false;
         }
         return this.doSetPreference(key, path, value);
@@ -157,10 +157,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this.preferenceStorage.writeValue(key, path, value);
     }
 
-    protected getPath(preferenceName: string): string[] | undefined {
-        const asOverride = this.preferenceOverrideService.overriddenPreferenceName(preferenceName);
-        if (asOverride?.overrideIdentifier) {
-            return [this.preferenceOverrideService.markLanguageOverride(asOverride.overrideIdentifier), asOverride.preferenceName];
+    protected getPath(preferenceName: string, overrideIdentifier?: string): string[] | undefined {
+        if (overrideIdentifier) {
+            return [`[${overrideIdentifier}]`, preferenceName];
         }
         return [preferenceName];
     }

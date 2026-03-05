@@ -260,9 +260,9 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     }
 
     protected handlePreferenceChanges(e: PreferenceProviderDataChanges): void {
-        for (const id of Object.keys(e)) {
-            this.commonlyUsedRenderers.get(id)?.handleValueChange?.();
-            this.renderers.get(id)?.handleValueChange?.();
+        for (const { preferenceName } of e) {
+            this.commonlyUsedRenderers.get(preferenceName)?.handleValueChange?.();
+            this.renderers.get(preferenceName)?.handleValueChange?.();
         }
     }
 

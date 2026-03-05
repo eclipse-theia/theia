@@ -104,12 +104,12 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
         return this.workspaceService.tryGetRoots().map(root => root.resource.toString());
     }
 
-    override resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+    override resolve<T>(preferenceName: string, resourceUri?: string, overideIdentifier?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         const groups = this.groupProvidersByConfigName(resourceUri);
         for (const group of groups.values()) {
             for (const provider of group) {
-                const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);
+                const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri, overideIdentifier);
                 if (configUri && value !== undefined) {
                     result.configUri = configUri;
                     result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
@@ -135,7 +135,7 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
         return result;
     }
 
-    async setPreference(preferenceName: string, value: any, resourceUri?: string): Promise<boolean> {
+    async setPreference(preferenceName: string, value: any, resourceUri?: string, overideIdentifier?: string): Promise<boolean> {
         const firstPathFragment = preferenceName.split('.', 1)[0];
         const defaultConfigName = this.configurations.getConfigName();
         const configName = this.configurations.isSectionName(firstPathFragment) ? firstPathFragment : defaultConfigName;
@@ -165,7 +165,7 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
 
             // Perfect match, run immediately in case we can bail out early.
             if (nameMatches && domainMatches) {
-                if (await candidate.setPreference(preferenceName, value, resourceUri)) {
+                if (await candidate.setPreference(preferenceName, value, resourceUri, overideIdentifier)) {
                     return true;
                 }
             } else if (nameMatches && pathMatches) { // Right file in the right folder.
@@ -183,7 +183,7 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
 
         for (const candidateSet of candidateSets) {
             for (const candidate of candidateSet) {
-                if (await candidate.setPreference(preferenceName, value, resourceUri)) {
+                if (await candidate.setPreference(preferenceName, value, resourceUri, overideIdentifier)) {
                     return true;
                 }
             }

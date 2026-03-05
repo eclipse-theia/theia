@@ -408,7 +408,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     protected async updateInputEnabled(): Promise<void> {
         const models = await this.languageModelRegistry.getLanguageModels();
         const hasReadyModels = models.some(model => model.status.status === 'ready');
-        const bypassed = this.preferenceService.get<boolean>(BYPASS_MODEL_REQUIREMENT_PREF, false);
+        const bypassed = this.preferenceService.get(BYPASS_MODEL_REQUIREMENT_PREF, false);
         const enabled = hasReadyModels || bypassed;
         if (this._inputEnabled !== enabled) {
             this._inputEnabled = enabled;
@@ -446,12 +446,12 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     }
 
     protected isPersistenceEnabled(): boolean {
-        const limit = this.preferenceService.get<number>(PERSISTED_SESSION_LIMIT_PREF, 25);
+        const limit = this.preferenceService.get(PERSISTED_SESSION_LIMIT_PREF, 25);
         return limit !== 0;
     }
 
     protected getMaxRows(): number {
-        return this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 3);
+        return this.preferenceService.get(WELCOME_SCREEN_SESSIONS_PREF, 3);
     }
 
     isUnread(sessionId: string): boolean {
