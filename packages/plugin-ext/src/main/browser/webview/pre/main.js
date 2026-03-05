@@ -199,9 +199,8 @@ globalThis.acquireVsCodeApi = (function() {
     };
 })();
 globalThis.acquireTheiaApi = acquireVsCodeApi;
-delete window.parent;
-delete window.top;
-delete window.frameElement;        
+window.parent = window;
+window.frameElement = null;
 `;
     }
 

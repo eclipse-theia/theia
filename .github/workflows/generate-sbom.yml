@@ -11,7 +11,7 @@ on:
         required: true
 
 env:
-  NODE_VERSION: "20.x"
+  NODE_VERSION: "22.x"
   REGISTRY_URL: "https://registry.npmjs.org"
   PRODUCT_PATH: "./"
   CDXGEN_VERSION: "11.7.0"
