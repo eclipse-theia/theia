@@ -26,7 +26,7 @@ import { CommandMenuAsToolbarItemWrapper, SubmenuAsToolbarItemWrapper, ToolbarAc
 import { KeybindingRegistry } from '../../keybinding';
 import { LabelParser } from '../../label-parser';
 import { ContextMenuRenderer } from '../../context-menu-renderer';
-import { CommandMenu, CompoundMenuNode, RenderedMenuNode } from '../../../common/menu';
+import { CommandMenu, CompoundMenuNode, MenuNode, RenderedMenuNode } from '../../../common/menu';
 import { ReactToolbarItemImpl, RenderedToolbarItemImpl, TabBarToolbarItem } from './tab-toolbar-item';
 
 /**
@@ -166,6 +166,66 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             }
         }
         return result;
+    }
+
+    collectContextKeys(widget: Widget): Set<string> {
+        const contextKeys = new Set<string>();
+        if (widget.isDisposed) {
+            return contextKeys;
+        }
+
+        for (const item of this.items.values()) {
+            const whenExpression = this.getWhenExpression(item);
+            if (whenExpression) {
+                this.contextKeyService.parseKeys(whenExpression)?.forEach(key => contextKeys.add(key));
+            }
+        }
+
+        for (const delegate of this.menuDelegates.values()) {
+            if (!delegate.isVisible(widget)) {
+                continue;
+            }
+            const menu = this.menuRegistry.getMenu(delegate.menuPath);
+            if (menu) {
+                this.collectMenuContextKeys(menu, contextKeys);
+            }
+        }
+        return contextKeys;
+    }
+
+    protected collectMenuContextKeys(menuNode: MenuNode, contextKeys: Set<string>): void {
+        const whenExpression = this.getWhenExpression(menuNode);
+        if (whenExpression) {
+            this.contextKeyService.parseKeys(whenExpression)?.forEach(key => contextKeys.add(key));
+        }
+        if (CompoundMenuNode.is(menuNode)) {
+            for (const child of menuNode.children) {
+                this.collectMenuContextKeys(child, contextKeys);
+            }
+        }
+    }
+
+    protected getWhenExpression(candidate: unknown): string | undefined {
+        if (!candidate || typeof candidate !== 'object') {
+            return undefined;
+        }
+        const candidateWithWhen = candidate as { when?: unknown };
+        if (typeof candidateWithWhen.when === 'string') {
+            return candidateWithWhen.when;
+        }
+        const candidateWithPrivateWhen = candidate as { _when?: unknown };
+        if (typeof candidateWithPrivateWhen._when === 'string') {
+            return candidateWithPrivateWhen._when;
+        }
+        const candidateWithAction = candidate as { action?: { when?: unknown } };
+        if (typeof candidateWithAction.action?.when === 'string') {
+            return candidateWithAction.action.when;
+        }
+        const candidateWithToolbarItem = candidate as { toolbarItem?: { when?: unknown } };
+        if (typeof candidateWithToolbarItem.toolbarItem?.when === 'string') {
+            return candidateWithToolbarItem.toolbarItem.when;
+        }
+        return undefined;
     }
 
     unregisterItem(id: string): void {
