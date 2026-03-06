@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import {
-    ipcMain, BrowserWindow, Menu, MenuItemConstructorOptions, webContents, WebContents, session, shell, clipboard, IpcMainEvent
+    ipcMain, BrowserWindow, Menu, MenuItemConstructorOptions, webContents, WebContents, session, shell, clipboard, IpcMainEvent,
+    app
 } from '@theia/electron/shared/electron';
 import * as nativeKeymap from '@theia/electron/shared/native-keymap';
 
@@ -57,7 +58,8 @@ import {
     CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL,
     CHANNEL_SET_THEME,
-    CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW
+    CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
+    CHANNEL_ADD_RECENT_DOCUMENT
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -253,6 +255,10 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 webContent.send('keyboardLayoutChanged', newLayout);
             }
         });
+
+        ipcMain.on(CHANNEL_ADD_RECENT_DOCUMENT, (_event, path) => {
+            app.addRecentDocument(path);
+        })
     }
 
     private isASCI(accelerator: string | undefined): boolean {
