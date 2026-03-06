@@ -1499,6 +1499,18 @@
   color: var(--theia-editorWarning-foreground);
 }
 
+/* Capability modified indicator - matches settings view style */
+.ai-templates-table tr.capability-modified {
+  border-left: 2px solid var(--theia-settings-modifiedItemIndicator);
+}
+
+/* Reset all capabilities button container */
+.capability-reset-all-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: calc(var(--theia-ui-padding) * 1.5);
+}
+
 .ai-agent-description {
   margin-bottom: calc(var(--theia-ui-padding) * 2);
   color: var(--theia-descriptionForeground);

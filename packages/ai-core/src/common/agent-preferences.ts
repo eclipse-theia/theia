@@ -82,10 +82,57 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
                         title: nls.localize('theia/ai/agents/completionNotification/title', 'Completion Notification'),
                         markdownDescription: nls.localize('theia/ai/agents/completionNotification/mdDescription',
                             'Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n\
-                - `os-notification`: Show OS/system notifications\n\
-                - `message`: Show notifications in the status bar/message area\n\
-                - `blink`: Blink or highlight the UI\n\
-                - `off`: Disable notifications for this agent')
+                    - `os-notification`: Show OS/system notifications\n\
+                    - `message`: Show notifications in the status bar/message area\n\
+                    - `blink`: Blink or highlight the UI\n\
+                    - `off`: Disable notifications for this agent')
+                    },
+                    capabilityOverrides: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/agents/capabilityOverrides/title', 'Capability Overrides'),
+                        markdownDescription: nls.localize('theia/ai/agents/capabilityOverrides/mdDescription',
+                            'User overrides for template-based capabilities. Keys are capability fragment IDs, values are enabled (true) or disabled (false).'),
+                        additionalProperties: {
+                            type: 'boolean'
+                        }
+                    },
+                    genericCapabilitySelections: {
+                        type: 'object',
+                        title: nls.localize('theia/ai/agents/genericCapabilitySelections/title', 'Generic Capability Selections'),
+                        markdownDescription: nls.localize('theia/ai/agents/genericCapabilitySelections/mdDescription',
+                            'User selections for generic capabilities such as skills, functions, and MCP tools.'),
+                        properties: {
+                            skills: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: nls.localize('theia/ai/agents/genericCapabilitySelections/skills', 'Selected skill IDs')
+                            },
+                            mcpFunctions: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: nls.localize('theia/ai/agents/genericCapabilitySelections/mcpFunctions', 'Selected MCP function IDs')
+                            },
+                            functions: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: nls.localize('theia/ai/agents/genericCapabilitySelections/functions', 'Selected function IDs')
+                            },
+                            promptFragments: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: nls.localize('theia/ai/agents/genericCapabilitySelections/promptFragments', 'Selected prompt fragment IDs')
+                            },
+                            agentDelegation: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: nls.localize('theia/ai/agents/genericCapabilitySelections/agentDelegation', 'Selected agent IDs for delegation')
+                            },
+                            variables: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: nls.localize('theia/ai/agents/genericCapabilitySelections/variables', 'Selected variable names')
+                            }
+                        }
                     }
                 },
                 required: ['languageModelRequirements']

@@ -1618,6 +1618,18 @@ div:last-child>.theia-ChatNode {
   pointer-events: none;
 }
 
+/* Unsaved changes indicator - small dot on tools icon when panel is collapsed */
+.theia-capabilities-unsaved-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--theia-activityBarBadge-background);
+  pointer-events: none;
+}
+
 /* Generic Capabilities Section */
 .theia-ChatInput-GenericCapabilitiesSection {
   border-top: var(--theia-border-width) solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
@@ -1787,10 +1799,6 @@ div:last-child>.theia-ChatNode {
   font-size: var(--theia-ui-font-size1);
 }
 
-.theia-GenericCapabilities-TreeNodeChildren {
-  /* Children container */
-}
-
 /* Tree item (leaf) */
 .theia-GenericCapabilities-TreeItem {
   display: flex;
@@ -1848,6 +1856,30 @@ div:last-child>.theia-ChatNode {
   gap: var(--theia-ui-padding);
   border-bottom: 1px solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
   padding: var(--theia-ui-padding);
+  position: relative;
+}
+
+/* Save button container in capabilities panel - always rendered inline with Generic Capabilities heading */
+.theia-ChatInput-CapabilitiesPanel-SaveButton {
+  position: absolute;
+  top: var(--theia-ui-padding);
+  right: var(--theia-ui-padding);
+  display: flex;
+  align-items: center;
+}
+
+.theia-ChatInput-CapabilitiesPanel-SaveButton .theia-button {
+  height: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) * 2 / 3);
+  min-width: 40px;
+  margin: 0;
+}
+
+.theia-ChatInput-CapabilitiesPanel-SaveButton .theia-button:disabled:hover {
+  background-color: var(--theia-button-background);
+  cursor: default;
 }
 
 .theia-ChatInput-CapabilitiesPanel-Left {
