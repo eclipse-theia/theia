@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PluginDeployerResolverContext, PluginDeployerHandler, PluginIdentifiers } from '@theia/plugin-ext';
+import { PluginDeployerResolverContext, PluginIdentifiers } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler';
@@ -28,7 +28,6 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
     static FILE_EXTENSION = '.vsix';
 
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
-    @inject(PluginDeployerHandler) protected readonly pluginDeployerHandler: PluginDeployerHandler;
 
     protected get supportedScheme(): string {
         return LocalVSIXFilePluginDeployerResolver.LOCAL_FILE;
@@ -60,24 +59,16 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
             return;
         }
 
-        const unversionedId = PluginIdentifiers.componentsToUnversionedId(components);
         const versionedId = PluginIdentifiers.componentsToVersionedId(components);
-
-        // Check if an extension with this identity is already deployed in memory
-        const existingPlugins = this.pluginDeployerHandler.getDeployedPluginsById(unversionedId);
-        if (existingPlugins.length > 0) {
-            const existingVersions = existingPlugins.map(p => p.metadata.model.version);
-            const error = new Error(
-                `Extension ${unversionedId} is already installed (version(s): ${existingVersions.join(', ')}).`
-            );
-            error.name = 'DuplicateExtensionError';
-            throw error;
-        }
 
         // Check if the deployment directory already exists on disk
         if (await existsInDeploymentDir(this.environment, versionedId)) {
-            console.log(`[${pluginResolverContext.getOriginId()}]: Extension "${versionedId}" already exists in deployment dir`);
-            return;
+            const unversionedId = PluginIdentifiers.componentsToUnversionedId(components);
+            const error = new Error(
+                `Extension ${unversionedId} is already installed (version: ${components.version}).`
+            );
+            error.name = 'DuplicateExtensionError';
+            throw error;
         }
 
         const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, versionedId);
