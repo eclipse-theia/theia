@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService, getProxyUrl } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
@@ -47,7 +48,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 }
                 return undefined;
             };
-            const proxyUrlProvider = (url: string | undefined) => getProxyUrl(url, this._proxyUrl);
+            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl);
 
             // Determine status based on API key and custom url presence
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
@@ -65,7 +66,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     apiKey: apiKeyProvider,
                     status,
                     maxTokens: modelDescription.maxTokens !== undefined ? modelDescription.maxTokens : DEFAULT_MAX_TOKENS,
-                    maxRetries: modelDescription.maxRetries
+                    maxRetries: modelDescription.maxRetries,
+                    proxy: proxyUrl
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -80,7 +82,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.maxTokens,
                         modelDescription.maxRetries,
                         this.tokenUsageService,
-                        proxyUrlProvider(modelDescription.url)
+                        proxyUrl
                     )
                 ]);
             }
@@ -120,4 +122,3 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             : { status: 'unavailable', message: 'No Anthropic API key set' };
     }
 }
-

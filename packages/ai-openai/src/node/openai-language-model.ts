@@ -105,7 +105,7 @@ export class OpenAiModel implements LanguageModel {
         public maxRetries: number = 3,
         public useResponseApi: boolean = false,
         protected readonly tokenUsageService?: TokenUsageService,
-        protected proxy?: string
+        public proxy?: string
     ) { }
 
     /**

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/common';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
@@ -81,7 +81,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
-            const proxyUrlProvider = (url: string | undefined) => getProxyUrl(url, this._proxyUrl);
+            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.openai.com', this._proxyUrl);
 
             // Determine the effective API key for status
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
@@ -102,7 +102,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     supportsStructuredOutput: modelDescription.supportsStructuredOutput,
                     status,
                     maxRetries: modelDescription.maxRetries,
-                    useResponseApi: modelDescription.useResponseApi ?? false
+                    useResponseApi: modelDescription.useResponseApi ?? false,
+                    proxy: proxyUrl
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -122,7 +123,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.maxRetries,
                         modelDescription.useResponseApi ?? false,
                         this.tokenUsageService,
-                        proxyUrlProvider(modelDescription.url)
+                        proxyUrl
                     )
                 ]);
             }

@@ -70,7 +70,7 @@ export class HuggingFaceModel implements LanguageModel {
         public readonly family?: string,
         public readonly maxInputTokens?: number,
         public readonly maxOutputTokens?: number,
-        protected readonly proxy?: string
+        public proxy?: string
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

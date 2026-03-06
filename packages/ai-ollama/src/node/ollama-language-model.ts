@@ -58,7 +58,7 @@ export class OllamaModel implements LanguageModel {
         public status: LanguageModelStatus,
         protected host: () => string | undefined,
         protected readonly tokenUsageService?: TokenUsageService,
-        protected proxy?: string
+        public proxy?: string
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

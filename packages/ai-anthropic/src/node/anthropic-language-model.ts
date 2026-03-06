@@ -207,7 +207,7 @@ export class AnthropicModel implements LanguageModel {
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService,
-        protected proxy?: string
+        public proxy?: string
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {

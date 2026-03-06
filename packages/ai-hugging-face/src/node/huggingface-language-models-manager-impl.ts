@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/common';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { HuggingFaceModel } from './huggingface-language-model';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
@@ -43,14 +43,15 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
             const apiKeyProvider = () => this.apiKey;
             const status = this.calculateStatus(this.apiKey);
 
+            const proxyUrl = getProxyUrl('https://api-inference.huggingface.co', this._proxyUrl);
+
             if (model) {
                 if (!(model instanceof HuggingFaceModel)) {
                     console.warn(`Hugging Face: model ${modelDescription.id} is not a Hugging Face model`);
                     continue;
                 }
-                await this.languageModelRegistry.patchLanguageModel(modelDescription.id, { status });
+                await this.languageModelRegistry.patchLanguageModel<HuggingFaceModel>(modelDescription.id, { status, proxy: proxyUrl });
             } else {
-                const proxyUrl = getProxyUrl('https://huggingface.co', this._proxyUrl);
                 this.languageModelRegistry.addLanguageModels([
                     new HuggingFaceModel(
                         modelDescription.id,

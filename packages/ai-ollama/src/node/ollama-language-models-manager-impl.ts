@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/common';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OllamaModel } from './ollama-language-model';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
@@ -47,16 +47,22 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
             const existingModel = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
             const hostProvider = () => this.host;
 
+            const host = hostProvider();
+            const normalizedHost = host && !host.includes('://') ? `http://${host}` : host;
+            const proxyUrl = getProxyUrl(normalizedHost ?? 'http://localhost:11434', this._proxyUrl);
+
             if (existingModel) {
                 if (!(existingModel instanceof OllamaModel)) {
                     console.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
                     continue;
                 }
+                const status = this.calculateStatus(host);
+                await this.languageModelRegistry.patchLanguageModel<OllamaModel>(modelDescription.id, {
+                    proxy: proxyUrl,
+                    status
+                });
             } else {
-                const status = this.calculateStatus(hostProvider());
-                const host = hostProvider();
-                const normalizedHost = host && !host.includes('://') ? `http://${host}` : host;
-                const proxyUrl = getProxyUrl(normalizedHost, this._proxyUrl);
+                const status = this.calculateStatus(host);
                 this.languageModelRegistry.addLanguageModels([
                     new OllamaModel(
                         modelDescription.id,
