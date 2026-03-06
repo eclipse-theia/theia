@@ -104,6 +104,8 @@ export interface TheiaCoreAPI {
     sendData(data: Uint8Array): void;
     onData(handler: (data: Uint8Array) => void): Disposable;
     useNativeElements: boolean;
+
+    addRecentDocument(path: string): void;
 }
 
 declare global {
@@ -162,3 +164,5 @@ export const CHANNEL_WRITE_CLIPBOARD = 'WriteClipboard';
 
 export const CHANNEL_KEYBOARD_LAYOUT_CHANGED = 'KeyboardLayoutChanged';
 export const CHANNEL_IPC_CONNECTION = 'IpcConnection';
+
+export const CHANNEL_ADD_RECENT_DOCUMENT = 'AddRecentDocument';

@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '@theia/core/lib/electron-common/electron-api';
 import { injectable } from '@theia/core/shared/inversify';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '../browser/workspace-service';
-import '../electron-common/electron-api';
 
 @injectable()
 export class ElectronWorkspaceService extends WorkspaceService {
@@ -26,7 +26,7 @@ export class ElectronWorkspaceService extends WorkspaceService {
         await super.setWorkspace(workspaceStat);
         if (this._workspace && !this.isUntitledWorkspace(this._workspace.resource)) {
             const fsPath = this._workspace.resource.path.fsPath();
-            window.electronTheiaWorkspace.addRecentDocument(fsPath);
+            window.electronTheiaCore.addRecentDocument(fsPath);
         }
     }
 

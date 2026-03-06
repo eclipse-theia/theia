@@ -14,13 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '../browser/workspace-service';
 import { ElectronWorkspaceService } from './electron-workspace-service';
 
-export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
-    bind(ElectronWorkspaceService).toSelf().inSingletonScope();
-    rebind(WorkspaceService).toService(ElectronWorkspaceService);
-    rebind(FrontendApplicationContribution).toService(ElectronWorkspaceService);
+export default new ContainerModule((_bind, _unbind, _isBound, rebind) => {
+    rebind(WorkspaceService).to(ElectronWorkspaceService).inSingletonScope();
 });
