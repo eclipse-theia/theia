@@ -67,11 +67,11 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         const existingPlugins = this.pluginDeployerHandler.getDeployedPluginsById(unversionedId);
         if (existingPlugins.length > 0) {
             const existingVersions = existingPlugins.map(p => p.metadata.model.version);
-            console.log(
-                'Extension ' + unversionedId + ' (version(s): ' + existingVersions.join(', ') + ') is already installed.\n' +
-                'Uninstall the existing extension before installing a new version from VSIX.'
+            const error = new Error(
+                `Extension ${unversionedId} is already installed (version(s): ${existingVersions.join(', ')}).`
             );
-            return;
+            error.name = 'DuplicateExtensionError';
+            throw error;
         }
 
         // Check if the deployment directory already exists on disk
