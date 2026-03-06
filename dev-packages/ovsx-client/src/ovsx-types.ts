@@ -183,6 +183,7 @@ export interface VSXSearchEntry {
      * `false` or `undefined`.
      */
     allVersions?: VSXAllVersions[];
+    deprecated?: boolean;
 }
 
 export type VSXExtensionNamespaceAccess = 'public' | 'restricted';
@@ -251,6 +252,7 @@ export interface VSXExtensionRaw {
     engines?: {
         [engine: string]: string;
     };
+    deprecated?: boolean;
 }
 
 export interface VSXBadge {
