@@ -176,6 +176,8 @@ export class WorkspaceTrustService {
             this.storeWorkspaceTrust(trusted);
         }
         this.onDidChangeWorkspaceTrustEmitter.fire(trusted);
+        this.windowService.setSafeToShutDown();
+        this.windowService.reload();
     }
 
     protected isWorkspaceTrustResolved(): boolean {
