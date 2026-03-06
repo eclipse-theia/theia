@@ -78,6 +78,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.updateAllModels();
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
                 }

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 TypeFox GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,24 +14,4 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const OLLAMA_LANGUAGE_MODELS_MANAGER_PATH = '/services/ollama/language-model-manager';
-export const OllamaLanguageModelsManager = Symbol('OllamaLanguageModelsManager');
-
-export interface OllamaModelDescription {
-    /**
-     * The identifier of the model which will be shown in the UI.
-     */
-    id: string;
-    /**
-     * The name or ID of the model in the Ollama environment.
-     */
-    model: string;
-}
-
-export interface OllamaLanguageModelsManager {
-    host: string | undefined;
-    setHost(host: string | undefined): Promise<void>;
-    setProxyUrl(proxyUrl: string | undefined): void;
-    createOrUpdateLanguageModels(...models: OllamaModelDescription[]): Promise<void>;
-    removeLanguageModels(...modelIds: string[]): void;
-}
+export * from './proxy-util';
