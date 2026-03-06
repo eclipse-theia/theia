@@ -840,6 +840,13 @@ export namespace QuestionResponseContent {
     }
 }
 
+export interface ResponseTokenUsage {
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly cacheCreationInputTokens?: number;
+    readonly cacheReadInputTokens?: number;
+}
+
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
     asString(): string;
@@ -907,6 +914,7 @@ export interface ChatResponseModel {
      * Indicates whether the prompt variant was customized/edited
      */
     readonly isPromptVariantEdited?: boolean;
+    readonly tokenUsage?: ResponseTokenUsage;
     toSerializable(): SerializableChatResponseData;
 }
 
@@ -2762,6 +2770,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _cancellationToken: CancellationTokenSource;
     protected _promptVariantId?: string;
     protected _isPromptVariantEdited?: boolean;
+    protected _tokenUsage?: ResponseTokenUsage;
 
     constructor(
         requestId: string,
@@ -2805,6 +2814,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._progressMessages = [];
         this._promptVariantId = data.promptVariantId;
         this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
+        this._tokenUsage = data.tokenUsage;
 
         if (data.errorMessage) {
             this._errorObject = new Error(data.errorMessage);
@@ -2884,6 +2894,15 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._isPromptVariantEdited ?? false;
     }
 
+    get tokenUsage(): ResponseTokenUsage | undefined {
+        return this._tokenUsage;
+    }
+
+    setTokenUsage(usage: ResponseTokenUsage): void {
+        this._tokenUsage = usage;
+        this._onDidChangeEmitter.fire();
+    }
+
     setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
         this._promptVariantId = variantId;
         this._isPromptVariantEdited = isEdited;
@@ -2957,6 +2976,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
             errorMessage: this.errorObject?.message,
             promptVariantId: this._promptVariantId,
             isPromptVariantEdited: this._isPromptVariantEdited,
+            tokenUsage: this._tokenUsage,
             content: this.response.content.map(c => {
                 const serialized = c.toSerializable?.();
                 if (!serialized) {

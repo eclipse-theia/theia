@@ -670,6 +670,12 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 readCachedInputTokens,
                 requestId
             });
+            request.response.setTokenUsage({
+                inputTokens,
+                outputTokens,
+                cacheCreationInputTokens: cachedInputTokens,
+                cacheReadInputTokens: readCachedInputTokens
+            });
         } catch (error) {
             this.logger.error('Failed to report token usage:', error);
         }

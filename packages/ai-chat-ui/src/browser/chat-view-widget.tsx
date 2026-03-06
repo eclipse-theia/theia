@@ -13,13 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
+import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia/ai-core';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
+import { ChatTokenUsageIndicatorWidget } from './chat-token-usage-indicator';
 import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
@@ -45,9 +46,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(MessageService)
     protected messageService: MessageService;
-
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
 
     @inject(CommandService)
     protected readonly commandService: CommandService;
@@ -81,6 +79,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     constructor(
         @inject(ChatViewTreeWidget)
         readonly treeWidget: ChatViewTreeWidget,
+        @inject(ChatTokenUsageIndicatorWidget)
+        readonly tokenIndicatorWidget: ChatTokenUsageIndicatorWidget,
         @inject(AIChatInputWidget)
         readonly inputWidget: AIChatInputWidget
     ) {
@@ -98,6 +98,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected init(): void {
         this.toDispose.pushAll([
             this.treeWidget,
+            this.tokenIndicatorWidget,
             this.inputWidget,
             this.onStateChanged(newState => {
                 const shouldScrollToEnd = !newState.locked && !newState.temporaryLocked;
@@ -109,6 +110,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
         this.treeWidget.node.classList.add('chat-tree-view-widget');
         layout.addWidget(this.treeWidget);
+        layout.addWidget(this.tokenIndicatorWidget);
         this.inputWidget.node.classList.add('chat-input-widget');
         layout.addWidget(this.inputWidget);
         this.chatSession = this.chatService.createSession();
@@ -122,6 +124,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
         this.treeWidget.onScrollLockChange = this.onScrollLockChange.bind(this);
+        this.tokenIndicatorWidget.setChatModel(this.chatSession.model);
 
         this.initListeners();
 
@@ -192,6 +195,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
                     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+                    this.tokenIndicatorWidget.setChatModel(this.chatSession.model);
                 } else {
                     console.warn(`Session with ${event.sessionId} not found.`);
                 }

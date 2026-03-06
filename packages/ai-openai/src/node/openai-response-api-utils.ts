@@ -21,7 +21,6 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     TextMessage,
-    TokenUsageService,
     ToolInvocationContext,
     ToolRequest,
     ToolRequestParameters,
@@ -77,7 +76,6 @@ export class OpenAiResponseApiUtils {
         runnerOptions: RunnerOptions,
         modelId: string,
         isStreaming: boolean,
-        tokenUsageService?: TokenUsageService,
         cancellationToken?: CancellationToken
     ): Promise<LanguageModelResponse> {
         if (cancellationToken?.isCancellationRequested) {
@@ -96,7 +94,7 @@ export class OpenAiResponseApiUtils {
                     input,
                     ...settings
                 });
-                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, modelId, tokenUsageService, cancellationToken) };
+                return { stream: this.createSimpleResponseApiStreamIterator(stream, cancellationToken) };
             } else {
                 const response = await openai.responses.create({
                     model: model as ResponsesModel,
@@ -105,19 +103,13 @@ export class OpenAiResponseApiUtils {
                     ...settings
                 });
 
-                // Record token usage if available
-                if (tokenUsageService && response.usage) {
-                    await tokenUsageService.recordTokenUsage(
-                        modelId,
-                        {
-                            inputTokens: response.usage.input_tokens,
-                            outputTokens: response.usage.output_tokens,
-                            requestId: request.requestId
-                        }
-                    );
-                }
-
-                return { text: response.output_text || '' };
+                return {
+                    text: response.output_text || '',
+                    usage: response.usage ? {
+                        input_tokens: response.usage.input_tokens,
+                        output_tokens: response.usage.output_tokens,
+                    } : undefined
+                };
             }
         }
 
@@ -133,7 +125,6 @@ export class OpenAiResponseApiUtils {
             modelId,
             this,
             isStreaming,
-            tokenUsageService,
             cancellationToken
         );
 
@@ -168,9 +159,6 @@ export class OpenAiResponseApiUtils {
 
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
-        requestId: string,
-        modelId: string,
-        tokenUsageService?: TokenUsageService,
         cancellationToken?: CancellationToken
     ): AsyncIterable<LanguageModelStreamResponsePart> {
         return {
@@ -186,15 +174,11 @@ export class OpenAiResponseApiUtils {
                                 content: event.delta
                             };
                         } else if (event.type === 'response.completed') {
-                            if (tokenUsageService && event.response?.usage) {
-                                await tokenUsageService.recordTokenUsage(
-                                    modelId,
-                                    {
-                                        inputTokens: event.response.usage.input_tokens,
-                                        outputTokens: event.response.usage.output_tokens,
-                                        requestId
-                                    }
-                                );
+                            if (event.response?.usage) {
+                                yield {
+                                    input_tokens: event.response.usage.input_tokens,
+                                    output_tokens: event.response.usage.output_tokens,
+                                };
                             }
                         } else if (event.type === 'error') {
                             console.error('Response API error:', event.message);
@@ -340,7 +324,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         protected readonly modelId: string,
         protected readonly utils: OpenAiResponseApiUtils,
         protected readonly isStreaming: boolean,
-        protected readonly tokenUsageService?: TokenUsageService,
         protected readonly cancellationToken?: CancellationToken
     ) {
         const { instructions, input } = utils.processMessages(request.messages, developerMessageSettings, model);
@@ -736,20 +719,12 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     protected async finalize(): Promise<void> {
         this.done = true;
 
-        // Record final token usage
-        if (this.tokenUsageService && (this.totalInputTokens > 0 || this.totalOutputTokens > 0)) {
-            try {
-                await this.tokenUsageService.recordTokenUsage(
-                    this.modelId,
-                    {
-                        inputTokens: this.totalInputTokens,
-                        outputTokens: this.totalOutputTokens,
-                        requestId: this.request.requestId
-                    }
-                );
-            } catch (error) {
-                console.error('Error recording token usage:', error);
-            }
+        // Yield final token usage as UsageResponsePart
+        if (this.totalInputTokens > 0 || this.totalOutputTokens > 0) {
+            this.handleIncoming({
+                input_tokens: this.totalInputTokens,
+                output_tokens: this.totalOutputTokens,
+            });
         }
 
         // Resolve any outstanding requests
