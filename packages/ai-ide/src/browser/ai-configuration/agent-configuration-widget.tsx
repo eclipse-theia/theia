@@ -805,7 +805,7 @@ interface AgentGenericCapabilitiesSettingsProps {
 const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettingsService, onSettingsChange }: AgentGenericCapabilitiesSettingsProps) => {
     const [loading, setLoading] = React.useState(false);
 
-    const handleClear = async (capabilityType: keyof GenericCapabilitySelections) => {
+    const handleReset = async (capabilityType: keyof GenericCapabilitySelections) => {
         if (loading) {
             return;
         }
@@ -818,7 +818,7 @@ const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettings
             await aiSettingsService.updateAgentSettings(agentId, { genericCapabilitySelections: newSelections });
             onSettingsChange();
         } catch (error) {
-            console.error('Failed to clear generic capability selections:', error);
+            console.error('Failed to reset generic capability selections:', error);
         } finally {
             setLoading(false);
         }
@@ -856,11 +856,11 @@ const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettings
                             <td className="template-actions-cell">
                                 <button
                                     className="theia-button secondary"
-                                    onClick={() => handleClear(type)}
+                                    onClick={() => handleReset(type)}
                                     disabled={loading}
-                                    title={nls.localizeByDefault('Clear')}
+                                    title={nls.localizeByDefault('Reset')}
                                 >
-                                    {nls.localizeByDefault('Clear')}
+                                    {nls.localizeByDefault('Reset')}
                                 </button>
                             </td>
                         </tr>

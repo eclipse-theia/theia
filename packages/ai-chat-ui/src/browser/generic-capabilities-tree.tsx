@@ -623,10 +623,10 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                     <button
                         className="theia-GenericCapabilities-Tree-SearchAction"
                         onClick={handleResetAll}
-                        aria-label={nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections')}
+                        aria-label={nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections to saved defaults')}
                         onMouseEnter={e => {
                             hoverService.requestHover({
-                                content: nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections'),
+                                content: nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections to saved defaults'),
                                 target: e.currentTarget as HTMLElement,
                                 position: 'bottom'
                             });

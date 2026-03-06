@@ -66,7 +66,6 @@ import { ChatInputFocusService } from './chat-input-focus-service';
 import { ChatFocusContribution } from './chat-focus-contribution';
 import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
 import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
-import { ChatInputSaveContribution } from './chat-input-save-contribution';
 import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
@@ -100,10 +99,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatInputCapabilitiesContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatInputCapabilitiesContribution);
     bind(KeybindingContribution).toService(ChatInputCapabilitiesContribution);
-
-    bind(ChatInputSaveContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toService(ChatInputSaveContribution);
-    bind(KeybindingContribution).toService(ChatInputSaveContribution);
 
     bindRootContributionProvider(bind, ChatResponsePartRenderer);
     bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
