@@ -16,7 +16,7 @@
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
-import { InlineActionMenuNode, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import { CountdownTimer, InlineActionMenuNode, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
@@ -195,7 +195,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     // The package may not be present, so guard via commandRegistry.getCommand().
     const hasPermissionsConfiguration = React.useMemo(() =>
         commandRegistry.getCommand('aiConfiguration:open') !== undefined,
-    [commandRegistry]);
+        [commandRegistry]);
 
     const openPermissionsConfiguration = React.useCallback(() => {
         commandRegistry.executeCommand('aiConfiguration:open', 'ai-tools-configuration-widget');
@@ -254,6 +254,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
                 onDeny={handleDeny}
                 contextMenuRenderer={contextMenuRenderer}
                 openPermissionsConfiguration={hasPermissionsConfiguration ? openPermissionsConfiguration : undefined}
+                response={response}
             />
         );
     }
@@ -315,6 +316,7 @@ interface ConfirmationUIProps {
     onDeny: (options?: { patterns?: string[]; reason?: string }) => void;
     contextMenuRenderer: ContextMenuRenderer;
     openPermissionsConfiguration?: () => void;
+    response: ToolCallChatResponseContent;
 }
 
 const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
@@ -325,7 +327,8 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
     onAllowAllSession,
     onDeny,
     contextMenuRenderer,
-    openPermissionsConfiguration
+    openPermissionsConfiguration,
+    response
 }) => (
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool confirmation">
@@ -371,6 +374,7 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                 contextMenuRenderer={contextMenuRenderer}
                 openPermissionsConfiguration={openPermissionsConfiguration}
             />
+            <CountdownTimer response={response} />
         </div>
     </div>
 );
