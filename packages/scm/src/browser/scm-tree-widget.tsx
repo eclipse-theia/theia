@@ -79,10 +79,16 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
         super.init();
         this.toDispose.push(this.themeService.onDidColorThemeChange(() => this.update()));
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.update()));
+        this.toDispose.push(this.contextService.onDidChange(e => {
+            if (e.affects(new Set(['isWorkspaceTrusted']))) {
+                this.update();
+            }
+        }));
     }
 
     protected override shouldShowWelcomeView(): boolean {
-        return this.scmService.selectedRepository === undefined;
+        return this.scmService.selectedRepository === undefined
+            || !this.contextService.match('isWorkspaceTrusted');
     }
 
     set viewMode(id: 'tree' | 'list') {
