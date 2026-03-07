@@ -181,7 +181,7 @@ export class GenericCapabilitiesServiceImpl implements GenericCapabilitiesServic
                 continue;
             }
 
-            const groupName = fn.providerName || 'Other';
+            const groupName = fn.group || fn.providerName || 'Other';
             if (!groupMap.has(groupName)) {
                 groupMap.set(groupName, []);
             }

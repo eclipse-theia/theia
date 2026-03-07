@@ -31,6 +31,7 @@ export class TaskListProvider implements ToolProvider {
         return {
             id: LIST_TASKS_FUNCTION_ID,
             name: LIST_TASKS_FUNCTION_ID,
+            group: 'Tasks',
             description: 'Lists available tasks in the workspace that can be executed with runTask. Returns an array ' +
                 'of task labels (strings). Common task types include npm scripts, shell tasks, and build tasks. ' +
                 'Use the filter parameter with an empty string "" to retrieve all tasks, or provide a substring ' +
@@ -80,6 +81,7 @@ export class TaskRunnerProvider implements ToolProvider {
         return {
             id: RUN_TASK_FUNCTION_ID,
             name: RUN_TASK_FUNCTION_ID,
+            group: 'Tasks',
             description: 'Executes a specified task by name and waits for completion. Returns the terminal output ' +
                 '(first and last 50 lines if output exceeds this limit). The task must exist in the workspace ' +
                 '(use listTasks to discover available tasks). Common task types include: build tasks ' +

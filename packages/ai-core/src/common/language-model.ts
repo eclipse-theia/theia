@@ -128,6 +128,22 @@ export interface ToolRequest<TContext extends ToolInvocationContext = ToolInvoca
     providerName?: string;
 
     /**
+     * Optional semantic group name for organizing related functions in the capabilities tree.
+     * When specified, this takes precedence over `providerName` for grouping.
+     *
+     * Use this to group logically related functions together (e.g., "Launch Configurations", "Tasks").
+     * If omitted, the function will be grouped by `providerName` (backward compatible behavior).
+     *
+     * @example
+     * // Group launch configuration functions together
+     * group: "Launch Configurations"
+     *
+     * // Group task functions together
+     * group: "Tasks"
+     */
+    group?: string;
+
+    /**
      * If set, this tool requires extra confirmation before auto-approval can be enabled.
      *
      * When a tool has this flag:
