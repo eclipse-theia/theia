@@ -317,7 +317,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     /**
      * Applies changes using Monaco utilities, including loading the model for the base file URI,
-     * computing minimal edits, and running code actions on save.
+     * applying edits, and running code actions on save.
      */
     protected async applyChangesWithMonaco(contents?: string): Promise<void> {
         let modelReference: IReference<MonacoEditorModel> | undefined;
@@ -328,17 +328,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
             const targetContent = contents ?? this.targetState;
             const currentContent = model.textEditorModel.getValue();
             if (currentContent !== targetContent) {
-                // Use Monaco's IEditorWorkerService to compute minimal edits
-                const { IEditorWorkerService } = await import('@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker');
-                const workerService = StandaloneServices.get(IEditorWorkerService);
-                const minimalEdits = await workerService.computeMoreMinimalEdits(
-                    model.textEditorModel.uri,
-                    [{ range: model.textEditorModel.getFullModelRange(), text: targetContent }]
-                );
-                if (minimalEdits && minimalEdits.length > 0) {
-                    // Use MonacoWorkspace.applyBackgroundEdit to preserve undo stack
-                    await this.monacoWorkspace.applyBackgroundEdit(model, minimalEdits);
-                }
+                const fullRange = model.textEditorModel.getFullModelRange();
+                await this.monacoWorkspace.applyBackgroundEdit(model,
+                    [{ range: fullRange, text: targetContent, forceMoveMarkers: false }]);
             }
             const languageId = model.languageId;
             const uriStr = this.uri.toString();
