@@ -45,6 +45,7 @@ export class LaunchListProvider implements ToolProvider {
         return {
             id: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
             name: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
+            group: 'Launch Configurations',
             description: 'Lists available launch configurations in the workspace. Launch configurations can be filtered by name. Each configuration includes its running status.',
             parameters: {
                 type: 'object',
@@ -107,6 +108,7 @@ export class LaunchRunnerProvider implements ToolProvider {
         return {
             id: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
+            group: 'Launch Configurations',
             description: 'Executes a specified launch configuration to start debugging.',
             parameters: {
                 type: 'object',
@@ -189,6 +191,7 @@ export class LaunchStopProvider implements ToolProvider {
         return {
             id: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
+            group: 'Launch Configurations',
             description: 'Stops an active launch configuration or debug session.',
             parameters: {
                 type: 'object',

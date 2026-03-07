@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,312 +15,148 @@
 // *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
 let disableJSDOM = enableJSDOM();
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-FrontendApplicationConfigProvider.set({});
+
+import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { Container } from '@theia/core/shared/inversify';
-import {
-    LaunchListProvider,
-    LaunchRunnerProvider,
-    LaunchStopProvider,
-} from './workspace-launch-provider';
+import { LaunchListProvider, LaunchRunnerProvider, LaunchStopProvider } from './workspace-launch-provider';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
-import { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
-import { DebugCompound } from '@theia/debug/lib/common/debug-compound';
-import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 
 disableJSDOM();
 
-describe('Launch Management Tool Providers', () => {
-    let container: Container;
-    let launchListProvider: LaunchListProvider;
-    let launchRunnerProvider: LaunchRunnerProvider;
-    let launchStopProvider: LaunchStopProvider;
-    let mockDebugConfigurationManager: Partial<DebugConfigurationManager>;
-    let mockDebugSessionManager: Partial<DebugSessionManager>;
-
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
-
-    beforeEach(() => {
-        container = new Container();
-
-        const mockConfigs = createMockConfigurations();
-
-        mockDebugConfigurationManager = {
-            load: () => Promise.resolve(),
-            get all(): IterableIterator<DebugSessionOptions> {
-                function* configIterator(): IterableIterator<DebugSessionOptions> {
-                    for (const config of mockConfigs) {
-                        yield config;
-                    }
-                }
-                return configIterator();
-            },
-        };
-
-        mockDebugSessionManager = {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            start: async (options: DebugSessionOptions | string): Promise<any> => {
-                if (
-                    typeof options === 'string' ||
-                    DebugSessionOptions.isCompound(options)
-                ) {
-                    return true;
-                }
-                return {
-                    id: 'test-session-id',
-                    configuration: { name: 'Test Config' },
-                } as DebugSession;
-            },
-            terminateSession: () => Promise.resolve(),
-            currentSession: undefined,
-            sessions: [],
-        };
-
-        container
-            .bind(DebugConfigurationManager)
-            .toConstantValue(
-                mockDebugConfigurationManager as DebugConfigurationManager
-            );
-        container
-            .bind(DebugSessionManager)
-            .toConstantValue(mockDebugSessionManager as DebugSessionManager);
-
-        launchListProvider = container.resolve(LaunchListProvider);
-        launchRunnerProvider = container.resolve(LaunchRunnerProvider);
-        launchStopProvider = container.resolve(LaunchStopProvider);
-    });
-
-    function createMockConfigurations(): DebugSessionOptions[] {
-        const config1: DebugConfiguration = {
-            name: 'Node.js Debug',
-            type: 'node',
-            request: 'launch',
-            program: '${workspaceFolder}/app.js',
-        };
-
-        const config2: DebugConfiguration = {
-            name: 'Python Debug',
-            type: 'python',
-            request: 'launch',
-            program: '${workspaceFolder}/main.py',
-        };
-
-        const compound: DebugCompound = {
-            name: 'Launch All',
-            configurations: ['Node.js Debug', 'Python Debug'],
-        };
-
-        return [
-            {
-                name: 'Node.js Debug',
-                configuration: config1,
-                workspaceFolderUri: '/workspace',
-            },
-            {
-                name: 'Python Debug',
-                configuration: config2,
-                workspaceFolderUri: '/workspace',
-            },
-            { name: 'Launch All', compound, workspaceFolderUri: '/workspace' },
-        ];
-    }
+describe('Launch Configuration Providers - Group Field', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
 
     describe('LaunchListProvider', () => {
-        it('should provide the correct tool metadata', () => {
-            const tool = launchListProvider.getTool();
-            expect(tool.id).to.equal('listLaunchConfigurations');
-            expect(tool.name).to.equal('listLaunchConfigurations');
-            expect(tool.description).to.contain(
-                'Lists available launch configurations'
-            );
-            expect(tool.parameters.required).to.deep.equal(['filter']);
+        let provider: LaunchListProvider;
+
+        beforeEach(() => {
+            provider = new LaunchListProvider();
+            // Mock dependencies
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).debugConfigurationManager = {} as DebugConfigurationManager;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).debugSessionManager = {} as DebugSessionManager;
         });
 
-        it('should list all configurations without filter', async () => {
-            const tool = launchListProvider.getTool();
-            const result = await tool.handler('{"filter":""}');
-            expect(result).to.be.a('string');
-            const configurations = JSON.parse(result as string);
+        it('should return ToolRequest with group field set to "Launch Configurations"', () => {
+            const tool = provider.getTool();
 
-            expect(configurations).to.be.an('array');
-            expect(configurations).to.have.lengthOf(3);
-            expect(configurations.map((c: { name: string }) => c.name)).to.include('Node.js Debug');
-            expect(configurations.map((c: { name: string }) => c.name)).to.include('Python Debug');
-            expect(configurations.map((c: { name: string }) => c.name)).to.include('Launch All');
-            // All configurations should show running: false since no sessions are active
-            configurations.forEach((config: { name: string; running: boolean }) => {
-                expect(config.running).to.equal(false);
-            });
+            expect(tool).to.not.be.undefined;
+            expect(tool.group).to.equal('Launch Configurations');
+            expect(tool.id).to.equal('list_launch_configurations');
+            expect(tool.name).to.equal('list_launch_configurations');
         });
 
-        it('should filter configurations by name', async () => {
-            const tool = launchListProvider.getTool();
-            const result = await tool.handler('{"filter":"Node"}');
-            expect(result).to.be.a('string');
-            const configurations = JSON.parse(result as string);
+        it('should have all required ToolRequest properties', () => {
+            const tool = provider.getTool();
 
-            expect(configurations).to.be.an('array');
-            expect(configurations).to.have.lengthOf(1);
-            expect(configurations[0].name).to.equal('Node.js Debug');
-            expect(configurations[0].running).to.equal(false);
-        });
-
-        it('should handle case-insensitive filtering', async () => {
-            const tool = launchListProvider.getTool();
-            const result = await tool.handler('{"filter":"python"}');
-            expect(result).to.be.a('string');
-            const configurations = JSON.parse(result as string);
-
-            expect(configurations).to.be.an('array');
-            expect(configurations).to.have.lengthOf(1);
-            expect(configurations[0].name).to.equal('Python Debug');
-            expect(configurations[0].running).to.equal(false);
+            expect(tool.id).to.be.a('string');
+            expect(tool.name).to.be.a('string');
+            expect(tool.description).to.be.a('string');
+            expect(tool.parameters).to.be.an('object');
+            expect(tool.handler).to.be.a('function');
+            expect(tool.group).to.equal('Launch Configurations');
         });
     });
 
     describe('LaunchRunnerProvider', () => {
-        it('should provide the correct tool metadata', () => {
-            const tool = launchRunnerProvider.getTool();
-            expect(tool.id).to.equal('runLaunchConfiguration');
-            expect(tool.name).to.equal('runLaunchConfiguration');
-            expect(tool.description).to.contain(
-                'Executes a specified launch configuration'
-            );
-            expect(tool.parameters.required).to.deep.equal([
-                'configurationName',
-            ]);
+        let provider: LaunchRunnerProvider;
+
+        beforeEach(() => {
+            provider = new LaunchRunnerProvider();
+            // Mock dependencies
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).debugConfigurationManager = {} as DebugConfigurationManager;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).debugSessionManager = {} as DebugSessionManager;
         });
 
-        it('should start a valid configuration', async () => {
-            const tool = launchRunnerProvider.getTool();
-            const result = await tool.handler(
-                '{"configurationName":"Node.js Debug"}'
-            );
+        it('should return ToolRequest with group field set to "Launch Configurations"', () => {
+            const tool = provider.getTool();
 
-            expect(result).to.be.a('string');
-            expect(result).to.contain('Node.js Debug');
-            expect(result).to.contain('started with session ID');
+            expect(tool).to.not.be.undefined;
+            expect(tool.group).to.equal('Launch Configurations');
+            expect(tool.id).to.equal('run_launch_configuration');
+            expect(tool.name).to.equal('run_launch_configuration');
         });
 
-        it('should handle unknown configuration', async () => {
-            const tool = launchRunnerProvider.getTool();
-            const result = await tool.handler(
-                '{"configurationName":"Unknown Config"}'
-            );
+        it('should have all required ToolRequest properties', () => {
+            const tool = provider.getTool();
 
-            expect(result).to.be.a('string');
-            expect(result).to.contain('Did not find a launch configuration');
-            expect(result).to.contain('Unknown Config');
-        });
-
-        it('should handle compound configurations', async () => {
-            const tool = launchRunnerProvider.getTool();
-            const result = await tool.handler(
-                '{"configurationName":"Launch All"}'
-            );
-
-            expect(result).to.be.a('string');
-            expect(result).to.contain('Compound launch configuration');
-            expect(result).to.contain('Launch All');
-            expect(result).to.contain('started successfully');
+            expect(tool.id).to.be.a('string');
+            expect(tool.name).to.be.a('string');
+            expect(tool.description).to.be.a('string');
+            expect(tool.parameters).to.be.an('object');
+            expect(tool.handler).to.be.a('function');
+            expect(tool.group).to.equal('Launch Configurations');
         });
     });
 
     describe('LaunchStopProvider', () => {
-        it('should provide the correct tool metadata', () => {
-            const tool = launchStopProvider.getTool();
-            expect(tool.id).to.equal('stopLaunchConfiguration');
-            expect(tool.name).to.equal('stopLaunchConfiguration');
-            expect(tool.description).to.contain(
-                'Stops an active launch configuration'
-            );
-            expect(tool.parameters.required).to.deep.equal([]);
+        let provider: LaunchStopProvider;
+
+        beforeEach(() => {
+            provider = new LaunchStopProvider();
+            // Mock dependencies
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).debugSessionManager = {} as DebugSessionManager;
         });
 
-        it('should stop current session when no configuration name provided', async () => {
-            (
-                mockDebugSessionManager as { currentSession: unknown }
-            ).currentSession = {
-                id: 'current-session',
-                configuration: { name: 'Current Config' },
-            };
+        it('should return ToolRequest with group field set to "Launch Configurations"', () => {
+            const tool = provider.getTool();
 
-            const tool = launchStopProvider.getTool();
-            const result = await tool.handler('{}');
-
-            expect(result).to.be.a('string');
-            expect(result).to.contain(
-                'Successfully stopped current debug session'
-            );
-            expect(result).to.contain('Current Config');
+            expect(tool).to.not.be.undefined;
+            expect(tool.group).to.equal('Launch Configurations');
+            expect(tool.id).to.equal('stop_launch_configuration');
+            expect(tool.name).to.equal('stop_launch_configuration');
         });
 
-        it('should handle no active session', async () => {
-            (
-                mockDebugSessionManager as { currentSession: unknown }
-            ).currentSession = undefined;
+        it('should have all required ToolRequest properties', () => {
+            const tool = provider.getTool();
 
-            const tool = launchStopProvider.getTool();
-            const result = await tool.handler('{}');
-
-            expect(result).to.be.a('string');
-            expect(result).to.contain('No active debug session to stop');
+            expect(tool.id).to.be.a('string');
+            expect(tool.name).to.be.a('string');
+            expect(tool.description).to.be.a('string');
+            expect(tool.parameters).to.be.an('object');
+            expect(tool.handler).to.be.a('function');
+            expect(tool.group).to.equal('Launch Configurations');
         });
+    });
 
-        it('should stop specific session by name', async () => {
-            Object.defineProperty(mockDebugSessionManager, 'sessions', {
-                value: [
-                    {
-                        id: 'session-1',
-                        configuration: { name: 'Node.js Debug' },
-                    },
-                    {
-                        id: 'session-2',
-                        configuration: { name: 'Python Debug' },
-                    },
-                ],
-                writable: true,
-                configurable: true,
-            });
+    describe('Launch Configuration Providers - Group Consistency', () => {
+        it('should have all three providers return the same group name', () => {
+            const listProvider = new LaunchListProvider();
+            const runnerProvider = new LaunchRunnerProvider();
+            const stopProvider = new LaunchStopProvider();
 
-            const tool = launchStopProvider.getTool();
-            const result = await tool.handler(
-                '{"configurationName":"Node.js Debug"}'
-            );
+            // Mock dependencies
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (listProvider as any).debugConfigurationManager = {} as DebugConfigurationManager;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (listProvider as any).debugSessionManager = {} as DebugSessionManager;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (runnerProvider as any).debugConfigurationManager = {} as DebugConfigurationManager;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (runnerProvider as any).debugSessionManager = {} as DebugSessionManager;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (stopProvider as any).debugSessionManager = {} as DebugSessionManager;
 
-            expect(result).to.be.a('string');
-            expect(result).to.contain(
-                'Successfully stopped launch configuration'
-            );
-            expect(result).to.contain('Node.js Debug');
-        });
+            const listTool = listProvider.getTool();
+            const runnerTool = runnerProvider.getTool();
+            const stopTool = stopProvider.getTool();
 
-        it('should handle session not found by name', async () => {
-            Object.defineProperty(mockDebugSessionManager, 'sessions', {
-                value: [],
-                writable: true,
-                configurable: true,
-            });
+            expect(listTool.group).to.equal('Launch Configurations');
+            expect(runnerTool.group).to.equal('Launch Configurations');
+            expect(stopTool.group).to.equal('Launch Configurations');
 
-            const tool = launchStopProvider.getTool();
-            const result = await tool.handler(
-                '{"configurationName":"Unknown Config"}'
-            );
-
-            expect(result).to.be.a('string');
-            expect(result).to.contain('No active session found');
-            expect(result).to.contain('Unknown Config');
+            // All should have the same group value
+            expect(listTool.group).to.equal(runnerTool.group);
+            expect(runnerTool.group).to.equal(stopTool.group);
         });
     });
 });

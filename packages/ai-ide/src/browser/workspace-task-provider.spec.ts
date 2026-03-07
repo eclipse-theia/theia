@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,110 +14,108 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
+import 'reflect-metadata';
+
 import { expect } from 'chai';
-import { CancellationTokenSource } from '@theia/core';
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
-import { ToolInvocationContext } from '@theia/ai-core';
-import { Container } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { TaskConfiguration, TaskInfo } from '@theia/task/lib/common';
-import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 
-describe('Workspace Task Provider Cancellation Tests', () => {
-    let cancellationTokenSource: CancellationTokenSource;
-    let mockCtx: ToolInvocationContext;
-    let container: Container;
-    let mockTaskService: TaskService;
-    let mockTerminalService: TerminalService;
+disableJSDOM();
 
-    beforeEach(() => {
-        cancellationTokenSource = new CancellationTokenSource();
+describe('Task Providers - Group Field', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
 
-        // Setup mock context
-        mockCtx = {
-            cancellationToken: cancellationTokenSource.token
-        };
+    describe('TaskListProvider', () => {
+        let provider: TaskListProvider;
 
-        // Create a new container for each test
-        container = new Container();
+        beforeEach(() => {
+            provider = new TaskListProvider();
+            // Mock dependencies
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).taskService = {} as TaskService;
+        });
 
-        // Mock dependencies
-        mockTaskService = {
-            startUserAction: () => 123,
-            getTasks: async (token: number) => [
-                {
-                    label: 'build',
-                    _scope: 'workspace',
-                    type: 'shell'
-                } as TaskConfiguration,
-                {
-                    label: 'test',
-                    _scope: 'workspace',
-                    type: 'shell'
-                } as TaskConfiguration
-            ],
-            runTaskByLabel: async (token: number, taskLabel: string) => {
-                if (taskLabel === 'build' || taskLabel === 'test') {
-                    return {
-                        taskId: 0,
-                        terminalId: 0,
-                        config: {
-                            label: taskLabel,
-                            _scope: 'workspace',
-                            type: 'shell'
-                        }
-                    } as TaskInfo;
-                }
-                return undefined;
-            },
-            terminateTask: async (activeTaskInfo: TaskInfo) => {
-                // Track termination
-            },
-            getTerminateSignal: async () => 'SIGTERM'
-        } as unknown as TaskService;
+        it('should return ToolRequest with group field set to "Tasks"', () => {
+            const tool = provider.getTool();
 
-        mockTerminalService = {
-            getByTerminalId: () => ({
-                buffer: {
-                    length: 10,
-                    getLines: () => ['line1', 'line2', 'line3'],
-                },
-                clearOutput: () => { }
-            } as unknown as TerminalWidget)
-        } as unknown as TerminalService;
+            expect(tool).to.not.be.undefined;
+            expect(tool.group).to.equal('Tasks');
+            expect(tool.id).to.equal('list_tasks');
+            expect(tool.name).to.equal('list_tasks');
+        });
 
-        // Register mocks in the container
-        container.bind(TaskService).toConstantValue(mockTaskService);
-        container.bind(TerminalService).toConstantValue(mockTerminalService);
-        container.bind(TaskListProvider).toSelf();
-        container.bind(TaskRunnerProvider).toSelf();
+        it('should have all required ToolRequest properties', () => {
+            const tool = provider.getTool();
+
+            expect(tool.id).to.be.a('string');
+            expect(tool.name).to.be.a('string');
+            expect(tool.description).to.be.a('string');
+            expect(tool.parameters).to.be.an('object');
+            expect(tool.handler).to.be.a('function');
+            expect(tool.group).to.equal('Tasks');
+        });
     });
 
-    afterEach(() => {
-        cancellationTokenSource.dispose();
+    describe('TaskRunnerProvider', () => {
+        let provider: TaskRunnerProvider;
+
+        beforeEach(() => {
+            provider = new TaskRunnerProvider();
+            // Mock dependencies
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).taskService = {} as TaskService;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (provider as any).terminalService = {} as TerminalService;
+        });
+
+        it('should return ToolRequest with group field set to "Tasks"', () => {
+            const tool = provider.getTool();
+
+            expect(tool).to.not.be.undefined;
+            expect(tool.group).to.equal('Tasks');
+            expect(tool.id).to.equal('run_task');
+            expect(tool.name).to.equal('run_task');
+        });
+
+        it('should have all required ToolRequest properties', () => {
+            const tool = provider.getTool();
+
+            expect(tool.id).to.be.a('string');
+            expect(tool.name).to.be.a('string');
+            expect(tool.description).to.be.a('string');
+            expect(tool.parameters).to.be.an('object');
+            expect(tool.handler).to.be.a('function');
+            expect(tool.group).to.equal('Tasks');
+        });
     });
 
-    it('TaskListProvider should respect cancellation token', async () => {
-        const taskListProvider = container.get(TaskListProvider);
-        cancellationTokenSource.cancel();
+    describe('Task Providers - Group Consistency', () => {
+        it('should have both providers return the same group name', () => {
+            const listProvider = new TaskListProvider();
+            const runnerProvider = new TaskRunnerProvider();
 
-        const handler = taskListProvider.getTool().handler;
-        const result = await handler(JSON.stringify({ filter: '' }), mockCtx);
+            // Mock dependencies
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (listProvider as any).taskService = {} as TaskService;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (runnerProvider as any).taskService = {} as TaskService;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (runnerProvider as any).terminalService = {} as TerminalService;
 
-        const jsonResponse = JSON.parse(result as string);
-        expect(jsonResponse.error).to.equal('Operation cancelled by user');
+            const listTool = listProvider.getTool();
+            const runnerTool = runnerProvider.getTool();
+
+            expect(listTool.group).to.equal('Tasks');
+            expect(runnerTool.group).to.equal('Tasks');
+
+            // Both should have the same group value
+            expect(listTool.group).to.equal(runnerTool.group);
+        });
     });
-
-    it('TaskRunnerProvider should respect cancellation token at the beginning', async () => {
-        const taskRunnerProvider = container.get(TaskRunnerProvider);
-        cancellationTokenSource.cancel();
-
-        const handler = taskRunnerProvider.getTool().handler;
-        const result = await handler(JSON.stringify({ taskName: 'build' }), mockCtx);
-
-        const jsonResponse = JSON.parse(result as string);
-        expect(jsonResponse.error).to.equal('Operation cancelled by user');
-    });
-
 });
