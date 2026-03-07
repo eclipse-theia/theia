@@ -257,8 +257,7 @@ export class TreeViewWelcomeWidget extends TreeWidget {
         event.stopPropagation();
 
         if (value.startsWith('command:')) {
-            const command = value.replace('command:', '');
-            this.commands.executeCommand(command);
+            open(this.openerService, new URI(value));
         } else if (value.startsWith('file:')) {
             const uri = value.replace('file:', '');
             open(this.openerService, new URI(CodeUri.file(uri).toString()));
