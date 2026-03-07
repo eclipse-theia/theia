@@ -149,9 +149,6 @@ export class PluginSharedStyle {
         if (iconUrl.startsWith(PLUGINS_BASE_PATH + '/')) {
             return new Endpoint({ path: iconUrl }).getRestUrl().toString();
         }
-        if (!/^[a-z][a-z0-9+.-]*:/i.test(iconUrl)) {
-            iconUrl = PLUGINS_BASE_PATH + '/' + iconUrl;
-        }
         
         return iconUrl;
     }

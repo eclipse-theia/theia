@@ -32,14 +32,14 @@ export interface TextContentReader {
  * - For paths under {@link PLUGINS_BASE_PATH} (e.g. hostedPlugin/pluginId/...) fetches from that path on the app origin.
  * - For file:// URIs uses the provided reader (e.g. FileService).
  */
-export async function readResourceContent(uri: string | URI, fileReader?: TextContentReader): Promise<string> {
-    let u = (typeof uri === 'string' ? new URI(uri) : uri).normalizePath();
-    const pathStr = u.path.toString().replace(/^\//, '');
+export async function readResourceContent(path: string | URI, fileReader?: TextContentReader): Promise<string> {
+    let u = (typeof path === 'string' ? new URI(path) : path).normalizePath();
 
-    // If path is under plugins base path, resolve it from current pathname
-    if (pathStr.startsWith(PLUGINS_BASE_PATH + '/')) {
+    // NOTE: Relative paths like `hostedPlugin/pluginId/...` become file URLs like `file:///hostedPlugin/pluginId/...`,
+    //       so we have to resolve them from the current pathname like `http://localhost:3000/frontend/hostedPlugin/pluginId/...`
+    if (u.toString().startsWith('file:///' + PLUGINS_BASE_PATH + '/')) {
         const baseUrl = new Endpoint().getRestUrl();
-        u = baseUrl.resolve(pathStr);
+        u = baseUrl.resolve(u.path).normalizePath();
     }
 
     // Load from http(s)://
@@ -47,7 +47,9 @@ export async function readResourceContent(uri: string | URI, fileReader?: TextCo
         const res = await fetch(u.toString());
 
         if (!res.ok) {
-            throw new Error(`Failed to load resource: ${res.status} ${res.statusText}`);
+            const err = new Error(`Failed to load resource: ${res.status} ${res.statusText}`);
+            (err as Error & { status?: number }).status = res.status;
+            throw err;
         }
 
         return res.text();

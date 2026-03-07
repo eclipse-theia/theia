@@ -19,6 +19,7 @@
 import { PluginIdentifiers, PluginModel, PluginPackage } from '../../../common/plugin-protocol';
 import { localizeWithResolver } from '../../../common/package-nls-localize';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { readResourceContent } from '@theia/core/lib/browser/resource-content-reader';
 import URI from '@theia/core/lib/common/uri';
 
 function getUri(pluginModel: PluginModel, relativePath: string): URI {
@@ -26,25 +27,15 @@ function getUri(pluginModel: PluginModel, relativePath: string): URI {
     return ownURI.parent.resolve(PluginPackage.toPluginUrl(pluginModel, relativePath));
 }
 
-function readContents(uri: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const request = new XMLHttpRequest();
-
-        request.onreadystatechange = function (): void {
-            if (this.readyState === XMLHttpRequest.DONE) {
-                if (this.status === 200) {
-                    resolve(this.response);
-                } else if (this.status === 404) {
-                    reject('NotFound');
-                } else {
-                    reject(new Error('Could not fetch plugin resource'));
-                }
-            }
-        };
-
-        request.open('GET', uri, true);
-        request.send();
-    });
+async function readContents(uri: string): Promise<string> {
+    try {
+        return await readResourceContent(uri);
+    } catch (e) {
+        if (e && typeof (e as Error & { status?: number }).status === 'number' && (e as Error & { status?: number }).status === 404) {
+            throw 'NotFound';
+        }
+        throw e;
+    }
 }
 
 async function readPluginJson(pluginModel: PluginModel, relativePath: string): Promise<any> {
