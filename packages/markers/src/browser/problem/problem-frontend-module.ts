@@ -21,6 +21,7 @@ import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
 import { FrontendApplicationContribution, bindViewContribution, ApplicationShellLayoutMigration, LabelProviderContribution } from '@theia/core/lib/browser';
+import { SaveErrorChecker } from '@theia/core/lib/browser/saveable-service';
 import { ProblemManager } from './problem-manager';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { ProblemTabBarDecorator } from './problem-tabbar-decorator';
@@ -64,5 +65,5 @@ export default new ContainerModule(bind => {
     bind(TabBarDecorator).toService(ProblemWidgetTabBarDecorator);
 
     bind(ProblemAutoSaveContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(ProblemAutoSaveContribution);
+    bind(SaveErrorChecker).toService(ProblemAutoSaveContribution);
 });

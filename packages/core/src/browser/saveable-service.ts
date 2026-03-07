@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import type { ApplicationShell } from './shell';
-import { injectable } from 'inversify';
-import { UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event } from '../common';
+import { inject, injectable, named } from 'inversify';
+import { ContributionProvider, UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event } from '../common';
 import { Navigatable, NavigatableWidget } from './navigatable-types';
 import { AutoSaveMode, Saveable, SaveableSource, SaveableWidget, SaveOptions, SaveReason, setDirty, close, PostCreationSaveableWidget, ShouldSaveDialog } from './saveable';
 import { waitForClosed, Widget } from './widgets';
@@ -24,14 +24,35 @@ import { FrontendApplicationContribution } from './frontend-application-contribu
 import { FrontendApplication } from './frontend-application';
 import throttle = require('lodash.throttle');
 
+export const SaveErrorChecker = Symbol('SaveErrorChecker');
+
+/**
+ * Contribution point for checking whether a given URI has errors.
+ * When `files.autoSaveWhenNoErrors` is enabled, auto-save will be suppressed
+ * for files where any registered checker reports errors.
+ */
+export interface SaveErrorChecker {
+    /**
+     * Returns `true` if the given URI has errors that should prevent auto-save.
+     */
+    hasErrors(uri: URI): boolean;
+    /**
+     * Event fired when the error state may have changed (e.g. diagnostics updated).
+     * The SaveableService listens to this to re-evaluate auto-save for dirty widgets.
+     */
+    onDidErrorStateChange: Event<void>;
+}
+
 @injectable()
 export class SaveableService implements FrontendApplicationContribution {
+
+    @inject(ContributionProvider) @named(SaveErrorChecker)
+    protected readonly errorCheckers: ContributionProvider<SaveErrorChecker>;
 
     protected saveThrottles = new Map<Widget, AutoSaveThrottle>();
     protected saveMode: AutoSaveMode = 'off';
     protected saveDelay = 1000;
     protected saveWhenNoErrors = false;
-    protected autoSaveErrorChecker?: (uri: URI) => boolean;
     protected shell: ApplicationShell;
 
     protected readonly onDidAutoSaveChangeEmitter = new Emitter<AutoSaveMode>();
@@ -74,31 +95,14 @@ export class SaveableService implements FrontendApplicationContribution {
         this.saveWhenNoErrors = value;
     }
 
-    /**
-     * Register a function that checks whether a given URI has errors.
-     * When `autoSaveWhenNoErrors` is enabled, auto-save will be suppressed
-     * for files where this checker returns `true`.
-     */
-    setAutoSaveErrorChecker(checker: (uri: URI) => boolean): Disposable {
-        this.autoSaveErrorChecker = checker;
-        return Disposable.create(() => {
-            if (this.autoSaveErrorChecker === checker) {
-                this.autoSaveErrorChecker = undefined;
-            }
-        });
-    }
-
-    /**
-     * Notify that conditions affecting auto-save decisions have changed
-     * (e.g., diagnostic markers were updated). This re-triggers the
-     * auto-save evaluation for all dirty widgets.
-     */
-    notifyAutoSaveConditionsChanged(): void {
-        this.onDidAutoSaveConditionsChangeEmitter.fire();
-    }
-
     onDidInitializeLayout(app: FrontendApplication): void {
         this.shell = app.shell;
+        // Listen to error state changes from all registered error checkers
+        for (const checker of this.errorCheckers.getContributions()) {
+            checker.onDidErrorStateChange(() => {
+                this.onDidAutoSaveConditionsChangeEmitter.fire();
+            });
+        }
         // Register restored editors first
         for (const widget of this.shell.widgets) {
             const saveable = Saveable.get(widget);
@@ -207,8 +211,8 @@ export class SaveableService implements FrontendApplicationContribution {
         if (saveable.autosaveable === false || !saveable.dirty) {
             return false;
         }
-        if (this.saveWhenNoErrors && this.autoSaveErrorChecker && uri) {
-            if (this.autoSaveErrorChecker(uri)) {
+        if (this.saveWhenNoErrors && uri) {
+            if (this.errorCheckers.getContributions().some(checker => checker.hasErrors(uri))) {
                 return false;
             }
         }

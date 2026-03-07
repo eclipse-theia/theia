@@ -14,30 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { SaveableService } from '@theia/core/lib/browser/saveable-service';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Emitter, Event } from '@theia/core';
+import { SaveErrorChecker } from '@theia/core/lib/browser/saveable-service';
 import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ProblemManager } from './problem-manager';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
-export class ProblemAutoSaveContribution implements FrontendApplicationContribution {
+export class ProblemAutoSaveContribution implements SaveErrorChecker {
 
     @inject(ProblemManager)
     protected readonly problemManager: ProblemManager;
 
-    @inject(SaveableService)
-    protected readonly saveableService: SaveableService;
+    protected readonly onDidErrorStateChangeEmitter = new Emitter<void>();
 
-    initialize(): void {
-        this.saveableService.setAutoSaveErrorChecker(uri => this.hasErrors(uri));
+    get onDidErrorStateChange(): Event<void> {
+        return this.onDidErrorStateChangeEmitter.event;
+    }
+
+    @postConstruct()
+    protected init(): void {
         this.problemManager.onDidChangeMarkers(() => {
-            this.saveableService.notifyAutoSaveConditionsChanged();
+            this.onDidErrorStateChangeEmitter.fire();
         });
     }
 
-    protected hasErrors(uri: URI): boolean {
+    hasErrors(uri: URI): boolean {
         const markers = this.problemManager.findMarkers({ uri });
         return markers.some(marker => marker.data.severity === DiagnosticSeverity.Error);
     }
