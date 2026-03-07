@@ -19,6 +19,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Theme } from '@theia/core/lib/common/theme';
 import { IconUrl } from '../../common/plugin-protocol';
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
 import { Reference, SyncReferenceCollection } from '@theia/core/lib/common/reference';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
@@ -145,9 +146,10 @@ export class PluginSharedStyle {
     }
 
     static toExternalIconUrl(iconUrl: string): string {
-        if (iconUrl.startsWith('hostedPlugin/')) {
+        if (iconUrl.startsWith(PLUGINS_BASE_PATH + '/')) {
             return new Endpoint({ path: iconUrl }).getRestUrl().toString();
         }
+        
         return iconUrl;
     }
 
