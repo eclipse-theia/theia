@@ -149,7 +149,7 @@ export class PluginSharedStyle {
         if (iconUrl.startsWith(PLUGINS_BASE_PATH + '/')) {
             return new Endpoint({ path: iconUrl }).getRestUrl().toString();
         }
-        
+
         return iconUrl;
     }
 

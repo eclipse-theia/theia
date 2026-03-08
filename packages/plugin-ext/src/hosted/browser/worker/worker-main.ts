@@ -181,21 +181,23 @@ const apiFactory = createAPIFactory(
 let defaultApi: typeof theia;
 
 const handler = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get: (target: any, name: string) => {
-        const plugin = pluginsModulesNames.get(name);
-        if (plugin) {
-            const apiImpl = pluginsApiImpl.get(plugin.model.id);
-            return apiImpl;
+    get: (_target: object, name: ('_empty' | keyof typeof theia)) => {
+        const plugin = pluginsModulesNames.get(ctx.frontendModuleName);
+
+        const api = plugin
+            ? pluginsApiImpl.get(plugin.model.id)
+            : (defaultApi ?? (defaultApi = apiFactory(emptyPlugin)));
+
+        // require('vscode') resolves to `theia._empty` return full API so plugin gets the whole object
+        if (name === '_empty') {
+            return api;
         }
 
-        if (!defaultApi) {
-            defaultApi = apiFactory(emptyPlugin);
-        }
-
-        return defaultApi;
+        // Direct access (theia.l10n, theia.commands, etc.) return that property from the API
+        return api![name];
     }
 };
+
 ctx['theia'] = new Proxy(Object.create(null), handler);
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);

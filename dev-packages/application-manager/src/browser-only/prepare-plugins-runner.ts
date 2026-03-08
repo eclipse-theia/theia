@@ -79,7 +79,7 @@ function resolvePluginRoot(dir: string): string | undefined {
 }
 
 function hasFrontendEntry(pkg: PluginPackage): boolean {
-    return !!(pkg.theiaPlugin?.frontend ?? pkg.browser ?? pkg.main);
+    return !!(pkg.theiaPlugin?.frontend ?? pkg.browser);
 }
 
 function hasContributes(pkg: PluginPackage): boolean {
@@ -190,7 +190,9 @@ export class PrepareBrowserOnlyPluginsRunner {
         let resolvedPath: string;
         try {
             resolvedPath = await realpath(packageRoot);
+            // Load and localize manifest
             manifest = await loadManifest(resolvedPath);
+            manifest = await this.localizationService.localizeManifest(resolvedPath, manifest);
             manifest.packagePath = resolvedPath;
         } catch {
             return undefined;
@@ -202,8 +204,6 @@ export class PrepareBrowserOnlyPluginsRunner {
 
         const pluginId = getPluginId(manifest);
         const dst = path.join(hostedPluginDir, pluginId);
-
-        manifest = await this.localizationService.localizeManifest(dst, manifest);
 
         // Copy plugin files
         await fs.copy(resolvedPath, dst, {

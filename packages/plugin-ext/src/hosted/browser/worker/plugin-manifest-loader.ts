@@ -32,7 +32,7 @@ async function readContents(uri: string): Promise<string> {
         return await readResourceContent(uri);
     } catch (e) {
         if (e && typeof (e as Error & { status?: number }).status === 'number' && (e as Error & { status?: number }).status === 404) {
-            throw 'NotFound';
+            throw new Error('NotFound');
         }
         throw e;
     }
@@ -83,7 +83,7 @@ async function loadTranslations(pluginModel: PluginModel): Promise<Record<string
     try {
         return await readPluginJson(pluginModel, 'package.nls.json');
     } catch (e) {
-        if (e !== 'NotFound') {
+        if (!(e instanceof Error && e.message === 'NotFound')) {
             throw e;
         }
         return {};

@@ -106,9 +106,9 @@ export class MonacoThemingService {
         if (toDispose.disposed) {
             return;
         }
-        
+
         const themeUri = new URI(uri);
-        
+
         if (themeUri.path.ext !== '.json') {
             const value = plistparser.parse(content);
             if (value && 'settings' in value && Array.isArray(value.settings)) {
