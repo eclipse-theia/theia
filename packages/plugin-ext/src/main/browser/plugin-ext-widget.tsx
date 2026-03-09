@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@lumino/messaging';
-import { PluginMetadata } from '../../common/plugin-protocol';
+import { PluginIdentifiers, PluginMetadata } from '../../common/plugin-protocol';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browser/hosted-plugin';
@@ -87,11 +87,18 @@ export class PluginWidget extends ReactWidget {
     }
 
     private renderPlugin(plugin: PluginMetadata): JSX.Element {
-        return <div key={plugin.model.name} className={this.createPluginClassName(plugin)}>
+        const unversionedId = PluginIdentifiers.componentsToUnversionedId(plugin.model);
+        const isRestrictedByTrust = this.pluginService.disabledByTrust.has(unversionedId);
+        return <div key={plugin.model.name} className={this.createPluginClassName(plugin, isRestrictedByTrust)}>
             <div className='column flexcontainer pluginInformationContainer'>
                 <div className='row flexcontainer'>
                     <div className={codicon('list-selection')}></div>
                     <div title={plugin.model.name} className='pluginName noWrapInfo'>{plugin.model.name}</div>
+                    {isRestrictedByTrust && (
+                        <span className='pluginRestrictedBadge' title={nls.localizeByDefault('Disabled in Restricted Mode')}>
+                            {nls.localizeByDefault('Restricted Mode')}
+                        </span>
+                    )}
                 </div>
                 <div className='row flexcontainer'>
                     <div className='pluginVersion'>{plugin.model.version}</div>
@@ -106,8 +113,11 @@ export class PluginWidget extends ReactWidget {
         </div>;
     }
 
-    protected createPluginClassName(plugin: PluginMetadata): string {
+    protected createPluginClassName(plugin: PluginMetadata, isRestrictedByTrust: boolean = false): string {
         const classNames = ['pluginHeaderContainer'];
+        if (isRestrictedByTrust) {
+            classNames.push('pluginDisabledByTrust');
+        }
         return classNames.join(' ');
     }
 

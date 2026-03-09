@@ -51,6 +51,14 @@ export interface WorkspaceRestrictionContribution {
      * Called when building the restricted mode status bar tooltip.
      */
     getRestrictions(): WorkspaceRestriction[];
+
+    /**
+     * Returns whether a window reload is required when workspace trust changes to `newTrust`.
+     * Called before reloading on trust change to avoid unnecessary reloads when no
+     * trust-restricted items are actually affected.
+     * If not implemented, the contribution is assumed not to require a reload.
+     */
+    requiresReloadOnTrustChange?(newTrust: boolean): boolean;
 }
 
 export interface WorkspaceRestriction {
@@ -166,18 +174,24 @@ export class WorkspaceTrustService {
         }
     }
 
-    setWorkspaceTrust(trusted: boolean): void {
+    async setWorkspaceTrust(trusted: boolean, reload = true): Promise<void> {
         if (this.currentTrust === trusted) {
             return;
         }
         this.currentTrust = trusted;
         this.contextKeyService.setContext('isWorkspaceTrusted', trusted);
-        if (this.workspaceTrustPref[WORKSPACE_TRUST_STARTUP_PROMPT] === WorkspaceTrustPrompt.ONCE) {
-            this.storeWorkspaceTrust(trusted);
-        }
         this.onDidChangeWorkspaceTrustEmitter.fire(trusted);
-        this.windowService.setSafeToShutDown();
-        this.windowService.reload();
+        // Persist first so settings survive the reload. windowService.reload()
+        // runs isSafeToShutDown internally, which handles unsaved-changes prompts.
+        await this.storeWorkspaceTrust(trusted);
+        if (reload && this.shouldReloadForTrustChange(trusted)) {
+            this.windowService.reload();
+        }
+    }
+
+    protected shouldReloadForTrustChange(newTrust: boolean): boolean {
+        return this.restrictionContributions.getContributions()
+            .some(c => c.requiresReloadOnTrustChange?.(newTrust) ?? false);
     }
 
     protected isWorkspaceTrustResolved(): boolean {
@@ -387,7 +401,7 @@ export class WorkspaceTrustService {
             }
             const areAllUrisTrusted = await this.areAllWorkspaceUrisTrusted();
             if (areAllUrisTrusted !== this.currentTrust) {
-                this.setWorkspaceTrust(areAllUrisTrusted);
+                await this.setWorkspaceTrust(areAllUrisTrusted);
             }
             return;
         }
@@ -399,7 +413,6 @@ export class WorkspaceTrustService {
 
             if (change.preferenceName === WORKSPACE_TRUST_ENABLED) {
                 if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
-                    this.windowService.setSafeToShutDown();
                     this.windowService.reload();
                 }
                 this.resolveWorkspaceTrust();
@@ -410,7 +423,9 @@ export class WorkspaceTrustService {
                 // For empty windows, directly update trust based on the new setting value
                 const shouldTrust = !!this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW];
                 if (this.currentTrust !== shouldTrust) {
-                    this.setWorkspaceTrust(shouldTrust);
+                    // No reload needed: in an empty window there are no workspace folders,
+                    // so no extensions are blocked by trust and no extension host restart is required.
+                    await this.setWorkspaceTrust(shouldTrust, false);
                 }
             }
         }
@@ -538,9 +553,10 @@ export class WorkspaceTrustService {
         try {
             const grantedTrust = await this.showTrustPromptDialog();
             if (grantedTrust) {
-                // User granted trust - update the state
-                this.setWorkspaceTrust(true);
+                // Persist folder trust before updating state so the preference
+                // is written before any reload that setWorkspaceTrust may trigger.
                 await this.addToTrustedFolders();
+                await this.setWorkspaceTrust(true);
             }
             this.pendingTrustRequest.resolve(grantedTrust);
             return grantedTrust;

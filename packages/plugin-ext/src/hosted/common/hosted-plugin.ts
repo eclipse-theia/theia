@@ -84,9 +84,13 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected readonly activationEvents = new Set<string>();
 
-    protected workspaceTrusted: boolean = true;
+    protected workspaceTrusted: boolean = false;
 
-    readonly disabledByTrust = new Set<string>();
+    protected readonly _disabledByTrust = new Set<string>();
+
+    get disabledByTrust(): ReadonlySet<string> {
+        return this._disabledByTrust;
+    }
 
     protected readonly onDidChangePluginsEmitter = new Emitter<void>();
     readonly onDidChangePlugins = this.onDidChangePluginsEmitter.event;
@@ -154,7 +158,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
     protected async doLoad(): Promise<void> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
 
-        this.disabledByTrust.clear();
+        this._disabledByTrust.clear();
 
         await this.beforeSyncPlugins(toDisconnect);
 
@@ -307,13 +311,13 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
         console.log(`[${this.clientId}] Loading plugin contributions`);
         for (const contributions of this.contributions.values()) {
-            const plugin = contributions.plugin.metadata;
-            const pluginId = plugin.model.id;
             if (!this.workspaceTrusted && contributions.plugin.metadata.model.untrustedWorkspacesSupport === false) {
-                this.disabledByTrust.add(PluginIdentifiers.componentsToUnversionedId(contributions.plugin.metadata.model));
+                this._disabledByTrust.add(PluginIdentifiers.componentsToUnversionedId(contributions.plugin.metadata.model));
                 continue;
             }
 
+            const plugin = contributions.plugin.metadata;
+            const pluginId = plugin.model.id;
             if (contributions.state === PluginContributions.State.INITIALIZING) {
                 contributions.state = PluginContributions.State.LOADING;
                 contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));

@@ -93,7 +93,7 @@ import { CustomEditorNavigationContribution } from './custom-editors/custom-edit
 import { bindWebviewPreferences } from '../common/webview-preferences';
 import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
 import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
-import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { WorkspaceRestriction, WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -311,6 +311,17 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
                         'Some extensions are disabled in Restricted Mode'),
                     details: Array.from(hostedPlugin.disabledByTrust)
                 }];
+            },
+            requiresReloadOnTrustChange(newTrust: boolean): boolean {
+                if (newTrust) {
+                    // Granting trust: reload only if plugins were actually blocked.
+                    return hostedPlugin.disabledByTrust.size > 0;
+                }
+                // Revoking trust: reload only if any loaded plugin declares supported: false,
+                // meaning it must be stopped now that the workspace is no longer trusted.
+                return hostedPlugin.plugins.some(
+                    p => p.model.untrustedWorkspacesSupport === false
+                );
             }
         };
     }).inSingletonScope();

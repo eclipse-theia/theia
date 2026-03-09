@@ -191,6 +191,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         return this.model.isDisabled(this.id);
     }
 
+    get disabledByTrust(): boolean {
+        return this.pluginSupport.disabledByTrust.has(this.id as PluginIdentifiers.UnversionedId);
+    }
+
     get builtin(): boolean {
         return this.model.isBuiltIn(this.id);
     }
@@ -537,7 +541,7 @@ export namespace VSXExtensionComponent {
 
 export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = VSXExtensionComponent.Props> extends AbstractVSXExtensionComponent<Props> {
     override render(): React.ReactNode {
-        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltip, verified, disabled, installed } = this.props.extension;
+        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltip, verified, disabled, disabledByTrust, installed } = this.props.extension;
 
         return <div
             className='theia-vsx-extension noselect'
@@ -563,6 +567,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                         <span className='name'>{displayName}</span>&nbsp;
                         <span className='version'>{VSXExtension.formatVersion(version)}&nbsp;
                         </span>{disabled && installed && <span className='disabled'>({nls.localizeByDefault('disabled')})</span>}
+                        {disabledByTrust && <span className='disabled' title={nls.localizeByDefault('Disabled in Restricted Mode')}>({nls.localizeByDefault('Restricted Mode')})</span>}
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}

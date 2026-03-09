@@ -118,12 +118,8 @@ class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
         this.workspaceTrusted = trusted;
     }
 
-    getDisabledByTrust(): Set<string> {
-        return this.disabledByTrust;
-    }
-
     clearDisabledByTrust(): void {
-        this.disabledByTrust.clear();
+        this._disabledByTrust.clear();
     }
 }
 
@@ -151,7 +147,7 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
             }
         }
         expect(pluginFound).to.equal(false);
-        expect(support.getDisabledByTrust().has('test.untrusted-false')).to.equal(true);
+        expect(support.disabledByTrust.has('test.untrusted-false')).to.equal(true);
     });
 
     it('should load plugin with untrustedWorkspacesSupport: true when workspace is untrusted', () => {
@@ -170,7 +166,7 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
             }
         }
         expect(pluginFound).to.equal(true);
-        expect(support.getDisabledByTrust().has('test.untrusted-true')).to.equal(false);
+        expect(support.disabledByTrust.has('test.untrusted-true')).to.equal(false);
     });
 
     it('should load plugin with untrustedWorkspacesSupport: "limited" when workspace is untrusted', () => {
@@ -189,7 +185,7 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
             }
         }
         expect(pluginFound).to.equal(true);
-        expect(support.getDisabledByTrust().has('test.untrusted-limited')).to.equal(false);
+        expect(support.disabledByTrust.has('test.untrusted-limited')).to.equal(false);
     });
 
     it('should load plugin with untrustedWorkspacesSupport: undefined when workspace is untrusted', () => {
@@ -208,7 +204,7 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
             }
         }
         expect(pluginFound).to.equal(true);
-        expect(support.getDisabledByTrust().has('test.untrusted-undefined')).to.equal(false);
+        expect(support.disabledByTrust.has('test.untrusted-undefined')).to.equal(false);
     });
 
     it('should load plugin with untrustedWorkspacesSupport: false when workspace is trusted', () => {
@@ -227,7 +223,7 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
             }
         }
         expect(pluginFound).to.equal(true);
-        expect(support.getDisabledByTrust().has('test.trusted-false')).to.equal(false);
+        expect(support.disabledByTrust.has('test.trusted-false')).to.equal(false);
     });
 
     it('should clear disabledByTrust when workspace becomes trusted on re-load', () => {
@@ -237,14 +233,14 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
         support.addPlugin(plugin);
 
         support.testLoadContributions();
-        expect(support.getDisabledByTrust().has('test.reload-trust')).to.equal(true);
-        expect(support.getDisabledByTrust().size).to.equal(1);
+        expect(support.disabledByTrust.has('test.reload-trust')).to.equal(true);
+        expect(support.disabledByTrust.size).to.equal(1);
 
         // Second load: simulate doLoad() which clears disabledByTrust before loadContributions
         support.setWorkspaceTrusted(true);
         support.clearDisabledByTrust();
         support.testLoadContributions();
-        expect(support.getDisabledByTrust().size).to.equal(0);
+        expect(support.disabledByTrust.size).to.equal(0);
     });
 
     it('should correctly populate disabledByTrust with only filtered plugins', () => {
@@ -256,8 +252,8 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
 
         support.testLoadContributions();
 
-        expect(support.getDisabledByTrust().size).to.equal(1);
-        expect(support.getDisabledByTrust().has('test.blocked')).to.equal(true);
-        expect(support.getDisabledByTrust().has('test.allowed')).to.equal(false);
+        expect(support.disabledByTrust.size).to.equal(1);
+        expect(support.disabledByTrust.has('test.blocked')).to.equal(true);
+        expect(support.disabledByTrust.has('test.allowed')).to.equal(false);
     });
 });
