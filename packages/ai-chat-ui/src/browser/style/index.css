@@ -1871,14 +1871,14 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInput-CapabilitiesPanel-SaveButton .theia-button {
   height: 100%;
   box-sizing: border-box;
-  font-size: 12px;
+  font-size: var(--theia-ui-font-size1);
   padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) * 2 / 3);
   min-width: 40px;
   margin: 0;
 }
 
 .theia-ChatInput-CapabilitiesPanel-SaveButton .theia-button:disabled:hover {
-  background-color: var(--theia-button-background);
+  background-color: var(--theia-button-disabledBackground);
   cursor: default;
 }
 
