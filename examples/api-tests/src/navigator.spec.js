@@ -40,8 +40,21 @@ describe('Navigator', function () {
         await fileService.createFolder(targetUri);
     });
 
-    afterEach(async () => {
-        await fileService.delete(targetUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
+    afterEach(async function () {
+        // On Windows, file handles may not be released immediately after move/copy operations,
+        // causing EBUSY errors on cleanup. Retry with a short delay to handle this.
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                await fileService.delete(targetUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
+                return;
+            } catch (e) {
+                if (attempt < 2) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } else {
+                    throw e;
+                }
+            }
+        }
     });
 
     /** @type {Array<['copy' | 'move', boolean]>} */
