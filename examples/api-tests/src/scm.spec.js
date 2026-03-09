@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-const { timeout } = require('@theia/core/lib/common/promise-util');
-
 // @ts-check
 describe('SCM', function () {
 
     const { assert } = chai;
+    const { timeout } = require('@theia/core/lib/common/promise-util');
 
     const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
     const Uri = require('@theia/core/lib/common/uri');

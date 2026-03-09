@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ElementHandle, Locator } from '@playwright/test';
+import { ElementHandle, Locator, Page } from '@playwright/test';
 import { TheiaPageObject } from './theia-page-object';
 import { TheiaApp } from './theia-app';
 
@@ -162,7 +162,29 @@ export class TheiaMonacoEditor extends TheiaPageObject {
     async addEditorText(text: string, lineNumber: number = 1): Promise<void> {
         const line = await this.line(lineNumber);
         await line?.click();
-        await this.page.keyboard.type(text);
+        await TheiaMonacoEditor.typeText(this.page, text);
+    }
+
+    /**
+     * Types text into a focused Monaco editor using `keyboard.insertText()`.
+     *
+     * Monaco 1.108+ uses the native EditContext API by default instead of a hidden textarea.
+     * `keyboard.type()` dispatches individual key events which are not reliably processed by EditContext,
+     * causing characters to be lost. `keyboard.insertText()` dispatches an `InputEvent` which is handled
+     * correctly by both the legacy textarea and the native EditContext input mechanisms.
+     *
+     * Newlines in the text are handled by pressing Enter between segments.
+     */
+    static async typeText(page: Page, text: string): Promise<void> {
+        const segments = text.split('\n');
+        for (let i = 0; i < segments.length; i++) {
+            if (i > 0) {
+                await page.keyboard.press('Enter');
+            }
+            if (segments[i].length > 0) {
+                await page.keyboard.insertText(segments[i]);
+            }
+        }
     }
 
     /**
