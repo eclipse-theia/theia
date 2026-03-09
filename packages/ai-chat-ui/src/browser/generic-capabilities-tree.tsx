@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
-import { CAPABILITY_TYPE_PROMPT_MAP, GenericCapabilitySelections } from '@theia/ai-core';
+import { GenericCapabilitySelections } from '@theia/ai-core';
 import { AvailableGenericCapabilities, GenericCapabilityItem, GenericCapabilityGroup } from './generic-capabilities-service';
 
 export interface GenericCapabilitiesTreeProps {
@@ -25,6 +25,8 @@ export interface GenericCapabilitiesTreeProps {
     genericCapabilities: GenericCapabilitySelections;
     /** Called when a capability type's selection changes */
     onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+    /** Called to reset all generic capabilities to stored defaults */
+    onResetGenericCapabilities: () => void;
     /** Available capabilities to select from */
     availableCapabilities: AvailableGenericCapabilities;
     /** Items already in the agent prompt that should be disabled/greyed */
@@ -115,6 +117,7 @@ const ParentCheckbox: React.FC<ParentCheckboxProps> = ({ checkboxState, name, on
 export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitiesTreeProps> = ({
     genericCapabilities,
     onGenericCapabilityChange,
+    onResetGenericCapabilities,
     availableCapabilities,
     disabledCapabilities,
     disabled,
@@ -373,16 +376,8 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
     };
 
     const handleResetAll = (): void => {
-        // Clear all selections across all capability types (except disabled items)
-        for (const { type } of CAPABILITY_TYPE_PROMPT_MAP) {
-            const disabledIds = new Set(getDisabledIds(type));
-            const currentIds = getCapabilityIds(type);
-            // Keep only disabled items that are selected
-            const remaining = currentIds.filter(id => disabledIds.has(id));
-            if (remaining.length !== currentIds.length) {
-                onGenericCapabilityChange(type, remaining);
-            }
-        }
+        // Reset to stored defaults from the parent component
+        onResetGenericCapabilities();
         // Also collapse all and clear search
         setExpandedNodes(new Set());
         setSearchQuery('');
@@ -628,10 +623,10 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
                     <button
                         className="theia-GenericCapabilities-Tree-SearchAction"
                         onClick={handleResetAll}
-                        aria-label={nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections')}
+                        aria-label={nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections to saved defaults')}
                         onMouseEnter={e => {
                             hoverService.requestHover({
-                                content: nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections'),
+                                content: nls.localize('theia/ai/chat-ui/clearAllSelections', 'Clear search string and capability selections to saved defaults'),
                                 target: e.currentTarget as HTMLElement,
                                 position: 'bottom'
                             });
