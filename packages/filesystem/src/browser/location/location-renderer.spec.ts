@@ -19,6 +19,7 @@ let disableJSDOM = enableJSDOM();
 
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
+import * as React from '@theia/core/shared/react';
 import type { FileDialogModel } from '../file-dialog/file-dialog-model';
 import { LocationListRenderer } from './location-renderer';
 import type { LocationService } from './location-service';
@@ -37,6 +38,10 @@ class TestableLocationListRenderer extends LocationListRenderer {
 
     testTryRenderFirstMatch(inputElement: HTMLInputElement, children: string[]): void {
         this.tryRenderFirstMatch(inputElement, children);
+    }
+
+    testRenderSelectInput(): React.ReactNode {
+        return this.renderSelectInput();
     }
 }
 
@@ -157,6 +162,37 @@ describe('LocationListRenderer', () => {
             r.testTryRenderFirstMatch(input, children);
 
             expect(input.value).to.equal('/home/user/xyz');
+            r.dispose();
+        });
+    });
+
+    describe('renderSelectInput', () => {
+        it('should render select with value matching the current service location', () => {
+            const host = document.createElement('div');
+            const service = createMockService();
+            const location = URI.fromFilePath('/home/user/folder');
+            service.location = location;
+            const r = new TestableLocationListRenderer({ model: service as unknown as FileDialogModel, host });
+
+            const selectElement = r.testRenderSelectInput() as React.ReactElement;
+
+            expect(selectElement.props.value).to.equal(location.toString());
+            r.dispose();
+        });
+
+        it('should update select value when service location changes across drives', () => {
+            const host = document.createElement('div');
+            const service = createMockService();
+            service.location = URI.fromFilePath('/d:/Projects/theia');
+            const r = new TestableLocationListRenderer({ model: service as unknown as FileDialogModel, host });
+
+            // Simulate the model navigating to a different drive
+            const newLocation = URI.fromFilePath('/c:/Users');
+            service.location = newLocation;
+
+            const selectElement = r.testRenderSelectInput() as React.ReactElement;
+
+            expect(selectElement.props.value).to.equal(newLocation.toString());
             r.dispose();
         });
     });

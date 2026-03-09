@@ -209,6 +209,7 @@ export class LocationListRenderer extends ReactRenderer {
         const options = this.collectLocations().map(value => this.renderLocation(value));
         return (
             <select className={`theia-select ${LocationListRenderer.Styles.LOCATION_LIST_CLASS}`}
+                value={this.service.location?.toString() ?? ''}
                 onChange={this.handleLocationChanged}>
                 {...options}
             </select>
