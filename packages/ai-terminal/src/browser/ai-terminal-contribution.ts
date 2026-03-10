@@ -77,8 +77,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                     new AiTerminalChatWidget(
                         currentTerminal,
                         this.terminalAgent,
-                        () => this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false,
-                        () => this.terminalPreferences['terminal.integrated.commandHistoryContextLimit']
+                        () => this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false
                     );
                 }
             },
@@ -101,11 +100,13 @@ class AiTerminalChatWidget {
     protected haveResult = false;
     commands: string[];
 
+    /** Maximum characters of command history to include as AI context. */
+    protected static readonly COMMAND_HISTORY_CONTEXT_LIMIT = 8000;
+
     constructor(
         protected terminalWidget: TerminalWidgetImpl,
         protected terminalAgent: AiTerminalAgent,
-        protected getEnableCommandHistory: () => boolean,
-        protected getCommandHistoryContextLimit: () => number
+        protected getEnableCommandHistory: () => boolean
     ) {
         this.chatContainer = document.createElement('div');
         this.chatContainer.className = 'ai-terminal-chat-container';
@@ -195,7 +196,7 @@ class AiTerminalChatWidget {
 
     protected getRecentTerminalCommands(): string[] {
         if (this.getEnableCommandHistory()) {
-            const characterLimit = this.getCommandHistoryContextLimit();
+            const characterLimit = AiTerminalChatWidget.COMMAND_HISTORY_CONTEXT_LIMIT;
             const commandHistory = this.terminalWidget.commandHistoryState?.commandHistory ?? [];
             return this.extractContextFromTerminalOutput(commandHistory, characterLimit);
         }
