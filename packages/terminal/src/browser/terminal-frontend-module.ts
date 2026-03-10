@@ -134,7 +134,7 @@ export default new ContainerModule(bind => {
 
     bind(FrontendApplicationContribution).toService(TerminalFrontendContribution);
 
-    bind(TerminalCommandHistoryStateImpl).toSelf();
+    bind(TerminalCommandHistoryStateImpl).toSelf().inTransientScope();
     bind(TerminalCommandHistoryStateFactory).toFactory(ctx =>
         () => ctx.container.get(TerminalCommandHistoryStateImpl)
     );
