@@ -78,10 +78,10 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         return this._raw;
     }
 
-    update(sessionId: string, data?: Omit<BPSessionData, 'sessionId'>): void {
+    update(sessionId: string, data?: Omit<BPSessionData, 'sessionId'>): boolean {
         if (!data) {
             if (!this.sessionData.has(sessionId)) {
-                return;
+                return false;
             }
             this.sessionData.delete(sessionId);
         } else {
@@ -105,6 +105,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
             // specific session's view can use getDebugProtocolBreakpoint().
             this._raw = undefined;
         }
+        return true;
     }
 
     getIdForSession(sessionId: string): number | undefined {

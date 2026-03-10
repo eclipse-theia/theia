@@ -94,7 +94,7 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
     static async editOrCreate(breakpoints: BreakpointManager, existing?: DebugFunctionBreakpoint): Promise<void> {
         const input = new SingleTextInputDialog({
             title: nls.localizeByDefault('Add Function Breakpoint'),
-            initialValue: this.name
+            initialValue: existing?.name ?? ''
         });
         const newValue = await input.open();
         if (!newValue) { return; }

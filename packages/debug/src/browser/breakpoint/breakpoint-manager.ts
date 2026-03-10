@@ -276,8 +276,9 @@ export class BreakpointManager {
         const updatedUris = new Map<string, DebugBreakpoint[]>();
         for (const bp of this.allBreakpoints()) {
             if (!bps) {
-                bp.update(sessionId, undefined);
-                MapUtils.addOrInsertWith(updatedUris, bp.uri.toString(), bp);
+                if (bp.update(sessionId, undefined)) {
+                    MapUtils.addOrInsertWith(updatedUris, bp.uri.toString(), bp);
+                }
             } else {
                 const dataForBp = bps.get(bp.id);
                 if (!dataForBp) { continue; }

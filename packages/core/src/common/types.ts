@@ -155,11 +155,3 @@ export namespace MapUtils {
         }
     }
 }
-
-export namespace IteratorUtils {
-    export function* filter<T>(input: Iterable<T>, condition: (candidate: T) => boolean): IterableIterator<T> {
-        for (const candidate of input) {
-            if (condition(candidate)) { yield candidate; }
-        }
-    }
-}
