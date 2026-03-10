@@ -18,7 +18,9 @@
 # - Removed the feature gate (`INTELLIJ_TERMINAL_COMMAND_BLOCKS_REWORKED`) so the integration always loads.
 # - Switched OSC protocol from JetBrains `OSC 1341;...` to Theia `OSC 133;...` and changed `command_started` payload
 #   to emit only the encoded command (no `command=` key); `command_finished` no longer reports exit code/current directory.
-# - Improved command capture for `command_started` by reading the last history entry (fallback to `BASH_COMMAND`).
+# - Improved command capture for `command_started`: reads the full command line from `history 1`
+#   (strips the history line number with sed) so that pipes, redirects and compound commands are
+#   captured as typed; falls back to `BASH_COMMAND` if history is unavailable.
 #
 # Source:
 # https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/bash/command-block-support-reworked.bash
@@ -54,14 +56,8 @@ __theia_command_preexec() {
   __theia_should_update_prompt="1"
 
   builtin local entered_command
-  entered_command="$(history 1 | {
-    read -r num rest
-    # rest now contains the entire command even if HISTTIMEFORMAT is set
-    printf '%s\n' "$rest"
-  })" || entered_command="${BASH_COMMAND:-}"
   entered_command="$(history 1 | sed 's/^ *[0-9]\+ *//')" || entered_command="${BASH_COMMAND:-}"
   builtin printf '\e]133;command_started;%s\a' "$(__theia_encode "$entered_command")"
-
   # Restore the original prompt, our integration will be injected back after command execution in `__theia_update_prompt`.
   PS1="$__theia_original_ps1"
 }
@@ -74,7 +70,6 @@ __theia_command_precmd() {
     __theia_install_debug_trap
     __theia_initialized="1"
     builtin printf '\e]133;initialized\a'
-    __theia_get_aliases
   elif [[ -n "$__theia_command_running" ]]; then
     builtin printf '\e]133;command_finished\a'
   fi
@@ -190,16 +185,7 @@ __theia_append_to_prompt_command() {
     fi
 }
 
-__theia_get_aliases() {
-  builtin local aliases_mapping="$(__theia_escape_json "$(alias)")"
-  builtin printf '\e]133;aliases_received;%s\a' "$aliases_mapping"
-}
 
-__theia_escape_json() {
-  builtin command sed -e 's/\\/\\\\/g'\
-      -e 's/"/\\"/g'\
-      <<< "$1"
-}
 __theia_original_ps1=""
 __theia_custom_ps1=""
 
