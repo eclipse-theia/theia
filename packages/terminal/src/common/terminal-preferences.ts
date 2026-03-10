@@ -384,6 +384,17 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: false,
             tags: ['experimental']
         },
+        'terminal.integrated.commandHistoryContextLimit': {
+            type: 'number',
+            default: 8000,
+            minimum: 500,
+            markdownDescription: nls.localize(
+                'theia/terminal/commandHistoryContextLimit',
+                'Maximum number of characters from the command history to include as context for AI features. Only applies when {0} is enabled.',
+                '`#terminal.integrated.enableCommandHistory#`'
+            ),
+            tags: ['experimental']
+        },
         'terminal.integrated.defaultProfile.windows': {
             type: 'string',
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Windows.toString())
@@ -570,6 +581,7 @@ export interface TerminalConfiguration {
     'terminal.integrated.enablePersistentSessions': boolean
     'terminal.integrated.enableCommandHistory': boolean
     'terminal.integrated.enableCommandSeparator': boolean
+    'terminal.integrated.commandHistoryContextLimit': number
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
