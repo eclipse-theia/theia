@@ -19,7 +19,18 @@
 import * as React from '@theia/core/shared/react';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider, CommandService } from '@theia/core/lib/common';
+import {
+    Emitter,
+    Event,
+    DisposableCollection,
+    Disposable,
+    MessageClient,
+    MessageType,
+    Mutable,
+    ContributionProvider,
+    CommandService,
+    CancellationError
+} from '@theia/core/lib/common';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
@@ -111,6 +122,9 @@ export class DebugSession implements CompositeTreeElement {
     protected readonly toDispose = new DisposableCollection();
 
     protected isStopping: boolean = false;
+
+    /** Maximum time to wait for the shell integration prompt before proceeding. */
+    protected readonly PROMPT_READY_TIMEOUT_MS = 3000;
 
     constructor(
         readonly id: string,
@@ -525,10 +539,15 @@ export class DebugSession implements CompositeTreeElement {
             try {
                 if (terminal.commandHistoryState && terminal.enableCommandHistory) {
                     // delay opening of the terminal until the terminal prompt appears to prevent duplicate commands in the terminal buffer
-                    await waitForEvent(terminal.commandHistoryState.onTerminalPromptShown, 3000);
+                    await waitForEvent(terminal.commandHistoryState.onTerminalPromptShown, this.PROMPT_READY_TIMEOUT_MS);
                 }
             } catch (error) {
-                console.warn(`Terminal did not emit prompt in time, using it anyway: ${error}`);
+                if (error instanceof CancellationError) {
+                    console.warn('Shell integration did not emit a prompt within the timeout; proceeding anyway.');
+                } else {
+                    console.error('Unexpected error while waiting for terminal prompt:', error);
+                    throw error;
+                }
             }
         }
         this.terminalServer.open(terminal);
