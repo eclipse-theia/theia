@@ -79,14 +79,10 @@ export interface SanitizationRule {
 
 /**
  * Checks if message might contain a URL with credentials.
- * First checks for :// (required for any URL), then checks for @ (required for credentials).
- * Short-circuits to avoid unnecessary string scanning.
+ * Checks for :// (required for any URL) and @ (required for credentials).
  */
 function mightContainUrlCredentials(message: string): boolean {
-    if (!message.includes('://')) {
-        return false;
-    }
-    return message.includes('@');
+    return message.includes('://') && message.includes('@');
 }
 
 /**
