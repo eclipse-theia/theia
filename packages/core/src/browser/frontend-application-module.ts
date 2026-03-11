@@ -123,7 +123,7 @@ import { DockPanel, RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
-import { SaveableService } from './saveable-service';
+import { SaveableService, SaveErrorChecker } from './saveable-service';
 import { SecondaryWindowHandler } from './secondary-window-handler';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { WindowTitleService } from './window/window-title-service';
@@ -461,6 +461,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(SaveableService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SaveableService);
+    bindRootContributionProvider(bind, SaveErrorChecker);
 
     bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(UserWorkingDirectoryProvider);
