@@ -8797,6 +8797,21 @@ export module '@theia/plugin' {
     export type CharacterPair = [string, string];
 
     /**
+     * Configuration for line comments.
+     */
+    export interface LineCommentRule {
+        /**
+         * The line comment token, like `//`
+         */
+        comment: string;
+        /**
+         * Whether the comment token should not be indented and placed at the first column.
+         * Defaults to false.
+         */
+        noIndent?: boolean;
+    }
+
+    /**
      * Describes how comments for a language work.
      */
     export interface CommentRule {
@@ -8804,7 +8819,7 @@ export module '@theia/plugin' {
         /**
          * The line comment token, like `// this is a comment`
          */
-        lineComment?: string;
+        lineComment?: string | LineCommentRule;
 
         /**
          * The block comment character pair, like `/* block comment *&#47;`

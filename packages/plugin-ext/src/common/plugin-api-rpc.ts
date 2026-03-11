@@ -1503,8 +1503,13 @@ export interface OutputChannelRegistryMain {
 
 export type CharacterPair = [string, string];
 
+export interface LineCommentRule {
+    comment: string;
+    noIndent?: boolean;
+}
+
 export interface CommentRule {
-    lineComment?: string;
+    lineComment?: string | LineCommentRule;
     blockComment?: CharacterPair;
 }
 
