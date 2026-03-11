@@ -50,7 +50,7 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
      * Task terminals have a 'kind' property set to 'task'.
      */
     protected isTaskTerminal(terminal: TerminalWidget): boolean {
-        return 'kind' in terminal && (terminal as { kind?: string }).kind === 'task';
+        return terminal.kind === 'task';
     }
 
     onStart(app: FrontendApplication): void {

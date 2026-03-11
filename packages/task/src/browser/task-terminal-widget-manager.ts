@@ -16,7 +16,6 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { PreferenceService } from '@theia/core/lib/common';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -28,6 +27,7 @@ import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core';
 import { TerminalManagerWidget } from '@theia/terminal-manager/lib/browser/terminal-manager-widget';
 import { TerminalManagerFrontendViewContribution } from '@theia/terminal-manager/lib/browser/terminal-manager-frontend-view-contribution';
+import { TerminalManagerPreferences } from '@theia/terminal-manager/lib/browser/terminal-manager-preferences';
 
 export interface TaskTerminalWidget extends TerminalWidget {
     readonly kind: 'task';
@@ -89,8 +89,8 @@ export class TaskTerminalWidgetManager {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(TerminalManagerPreferences)
+    protected readonly preferences: TerminalManagerPreferences;
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
@@ -154,7 +154,7 @@ export class TaskTerminalWidgetManager {
         }
 
         const { isNew, widget } = await this.getWidgetToRunTask(factoryOptions, openerOptions);
-        const isTreeMode = this.preferenceService.get<string>('terminal.grouping.mode') === 'tree';
+        const isTreeMode = this.preferences['terminal.grouping.mode'] === 'tree';
         if (isNew && isTreeMode) {
             const terminalManagerWidget = await this.widgetManager.getOrCreateWidget<TerminalManagerWidget>(TerminalManagerWidget.ID);
             terminalManagerWidget.addTerminalToTasksPage(widget);
