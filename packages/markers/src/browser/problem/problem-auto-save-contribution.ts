@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 and others.
+// Copyright (C) 2026 Safi Seid-Ahmad, K2view.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
