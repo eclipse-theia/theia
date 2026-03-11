@@ -152,8 +152,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     }
 
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void {
+        const comments = configuration.comments;
         const config: monaco.languages.LanguageConfiguration = {
-            comments: configuration.comments,
+            comments: comments ? {
+                // @monaco-uplift: Monaco doesn't support LineCommentRule yet, extract the string
+                lineComment: comments.lineComment && typeof comments.lineComment === 'object' ? comments.lineComment.comment : comments.lineComment,
+                blockComment: comments.blockComment,
+            } : undefined,
             brackets: configuration.brackets,
             wordPattern: reviveRegExp(configuration.wordPattern),
             indentationRules: reviveIndentationRule(configuration.indentationRules),
