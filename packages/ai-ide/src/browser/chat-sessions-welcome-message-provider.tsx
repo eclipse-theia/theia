@@ -295,7 +295,7 @@ function buildSessionTooltip(
         const agentId = lastRequest.response.agentId ?? requests.findLast(r => r.response.agentId)?.response.agentId;
         if (agentId) {
             const agentName = agentService.getAgent(agentId)?.name ?? agentId;
-            addDlEntry(dl, nls.localize('theia/ai/ide/tooltip/agent', 'Agent'), '@' + agentName);
+            addDlEntry(dl, nls.localizeByDefault('Agent'), '@' + agentName);
         }
     }
 
