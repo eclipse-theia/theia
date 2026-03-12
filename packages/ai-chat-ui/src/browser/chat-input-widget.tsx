@@ -1677,7 +1677,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             : []),
         ...(props.showPinnedAgent
             ? [{
-                title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/agent', 'Agent'),
+                title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localizeByDefault('Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'codicon-mention',
                 disabled: !props.isEnabled,

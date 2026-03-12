@@ -177,7 +177,7 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                 </div>
 
                 <div className="mcp-form-field">
-                    <label>{nls.localize('theia/ai/mcpConfiguration/arguments', 'Arguments')}:</label>
+                    <label>{nls.localizeByDefault('Arguments')}:</label>
                     <input
                         type="text"
                         className="theia-input"
@@ -460,7 +460,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-property-row">
-                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/arguments', 'Arguments')}:</span>
+                <span className="mcp-property-label">{nls.localizeByDefault('Arguments')}:</span>
                 <code className="mcp-property-value">{server.args.join(' ')}</code>
             </div>
         );
@@ -811,7 +811,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 </div>
                 {this.servers.length === 0 ? (
                     <div className="mcp-no-servers">
-                        {nls.localize('theia/ai/mcpConfiguration/noServers', 'No MCP servers configured')}
+                        {nls.localizeByDefault('No MCP servers configured')}
                     </div>
                 ) : (
                     this.servers.map(server => this.renderServerCard(server))
