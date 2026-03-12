@@ -181,6 +181,7 @@ export class PluginDeployerImpl implements PluginDeployer {
         const hasBeenVisited = (id: string) => visited.has(id) || (visited.add(id), false);
         const pluginsToDeploy = new Map<PluginIdentifiers.VersionedId, PluginDeployerEntry>();
         const unversionedIdsHandled = new Map<PluginIdentifiers.UnversionedId, string[]>();
+        const errors: Error[] = [];
 
         const queue: UnresolvedPluginEntry[] = [...plugins];
         while (queue.length) {
@@ -215,6 +216,7 @@ export class PluginDeployerImpl implements PluginDeployer {
                     }
                 } catch (e) {
                     console.error(`Failed to resolve plugins from '${entry.id}'`, e);
+                    errors.push(e instanceof Error ? e : new Error(String(e)));
                 }
             }));
             queue.length = 0;
@@ -228,6 +230,9 @@ export class PluginDeployerImpl implements PluginDeployer {
                     }
                 }
             }
+        }
+        if (pluginsToDeploy.size === 0 && errors.length > 0) {
+            throw errors[0];
         }
         return [...pluginsToDeploy.values()];
     }

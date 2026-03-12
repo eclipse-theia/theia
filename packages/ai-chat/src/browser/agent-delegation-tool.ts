@@ -116,6 +116,11 @@ export class AgentDelegationTool implements ToolProvider {
                     { focus: false },
                     agent
                 );
+                // Set root session ID to enable task context sharing across delegation chains
+                // Root is either the current root (for nested delegation) or current session (for first-level delegation)
+                const rootId = ctx.rootSessionId || ctx.request.session.id;
+                newSession.rootSessionId = rootId;
+                newSession.model.rootSessionId = rootId;
 
                 // Immediately restore the original active session to avoid confusing the user
                 if (currentActiveSession) {

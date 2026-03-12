@@ -95,8 +95,16 @@ export class TextEditorMain implements Disposable {
             this.toDisposeOnEditor.push(this.editor.onSelectionChanged(_ => {
                 this.updateProperties();
             }));
-            this.toDisposeOnEditor.push(monacoEditor.onDidChangeModel(() => {
-                this.setEditor(undefined);
+            this.toDisposeOnEditor.push(monacoEditor.onDidChangeModel(e => {
+                // Ignore visibility-related model changes (null ↔ model) triggered by
+                // the setModel(null) workaround in MonacoEditor.handleVisibilityChanged().
+                // cf. https://github.com/eclipse-theia/theia/issues/14880
+                // Only react to genuine model swaps where both old and new models exist.
+                // In practice, this condition is never met because MonacoEditor instances
+                // are created with a fixed document and never swap to a different model.
+                if (e.oldModelUrl && e.newModelUrl) {
+                    this.setEditor(undefined);
+                }
             }));
             this.toDisposeOnEditor.push(monacoEditor.onDidChangeCursorSelection(e => {
                 this.updateProperties(e.source);

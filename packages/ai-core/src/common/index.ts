@@ -24,6 +24,7 @@ export * from './language-model';
 export * from './language-model-alias';
 export * from './prompt-service';
 export * from './prompt-service-util';
+export * from './proxy-util';
 
 export * from './prompt-text';
 export * from './protocol';

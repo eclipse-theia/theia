@@ -17,6 +17,8 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { ChatAgentRecommendationService, RecommendedAgent } from '@theia/ai-chat/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
+import { CoderAgentId } from './coder-agent';
+import { ArchitectAgentId } from './architect-agent';
 
 @injectable()
 export class DefaultChatAgentRecommendationService implements ChatAgentRecommendationService {
@@ -24,12 +26,12 @@ export class DefaultChatAgentRecommendationService implements ChatAgentRecommend
     getRecommendedAgents(): RecommendedAgent[] {
         return [
             {
-                id: 'Coder',
+                id: CoderAgentId,
                 label: nls.localize('theia/ai/chat/agent/coder', 'Coder'),
                 description: nls.localize('theia/ai/chat/agent/coder/description', 'Code generation and modification')
             },
             {
-                id: 'Architect',
+                id: ArchitectAgentId,
                 label: nls.localize('theia/ai/chat/agent/architect', 'Architect'),
                 description: nls.localize('theia/ai/chat/agent/architect/description', 'High-level design and architecture')
             },
