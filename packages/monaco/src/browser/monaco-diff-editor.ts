@@ -117,7 +117,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     override getResourceUri(): URI {
-        return new URI(this.originalModel.uri);
+        return new URI(this.modifiedModel.uri);
     }
     override createMoveToUri(resourceUri: URI): URI {
         const [left, right] = DiffUris.decode(this.uri);
