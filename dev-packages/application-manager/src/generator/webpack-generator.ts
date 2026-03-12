@@ -369,7 +369,6 @@ for (const [entryPointName, entryPointPath] of Object.entries({
     ${this.ifPackage('@theia/filesystem', "'parcel-watcher': '@theia/filesystem/lib/node/parcel-watcher',")}
     ${this.ifPackage('@theia/plugin-ext-vscode', "'plugin-vscode-init': '@theia/plugin-ext-vscode/lib/node/plugin-vscode-init',")}
     ${this.ifPackage('@theia/api-provider-sample', "'gotd-api-init': '@theia/api-provider-sample/lib/plugin/gotd-api-init',")}
-    ${this.ifPackage('@theia/git', "'git-locator-host': '@theia/git/lib/node/git-locator/git-locator-host',")}
 })) {
     commonJsLibraries[entryPointName] = {
         import: require.resolve(entryPointPath),

@@ -18,14 +18,17 @@
 
 import { JSONValue } from '@lumino/coreutils';
 import { inject, injectable, postConstruct } from 'inversify';
-import { Disposable, DisposableCollection, Emitter, Event, deepFreeze, unreachable } from '../../common';
-import { Deferred } from '../../common/promise-util';
-import URI from '../../common/uri';
+import { Disposable, DisposableCollection } from '../disposable';
+import { Emitter, Event } from '../event';
+import { Deferred } from '../promise-util';
+import URI from '../uri';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult, PreferenceUtils } from './preference-provider';
 import { PreferenceSchemaService } from './preference-schema';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
+import { deepFreeze } from '../objects';
+import { unreachable } from '../types';
 
 /**
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.

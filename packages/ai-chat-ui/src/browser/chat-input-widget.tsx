@@ -24,6 +24,7 @@ import { GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapabil
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
+import { AISettingsService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
@@ -151,6 +152,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChatInputFocusService)
     protected readonly chatInputFocusService: ChatInputFocusService;
 
+    @inject(AISettingsService)
+    protected readonly aiSettingsService: AISettingsService;
+
     protected navigationState: ChatInputNavigationState;
 
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
@@ -241,14 +245,30 @@ export class AIChatInputWidget extends ReactWidget {
         this.update();
     };
 
+    protected handleResetGenericCapabilities = (): void => {
+        const saved = this.savedGenericCapabilitySelections ?? {};
+        this.genericCapabilitySelections = { ...saved };
+        this.update();
+    };
+
     protected async updateCapabilitiesForAgent(agentId: string, modeId?: string, preserveOverrides?: boolean): Promise<void> {
         const capabilities = await this.capabilitiesService.getCapabilitiesForAgent(agentId, modeId);
         this.capabilityDefaults = capabilities;
         if (!preserveOverrides) {
-            // Start fresh with no overrides when agent/mode changes
-            this.userCapabilityOverrides = new Map<string, boolean>;
-            // Reset generic capability selections when agent changes
-            this.genericCapabilitySelections = {};
+            // Load saved settings from preferences
+            const agentSettings = await this.aiSettingsService.getAgentSettings(agentId);
+            const savedOverrides = agentSettings?.capabilityOverrides;
+            const savedGenericSelections = agentSettings?.genericCapabilitySelections;
+
+            // Store saved state for comparison
+            this.savedCapabilityOverrides = savedOverrides ? { ...savedOverrides } : undefined;
+            this.savedGenericCapabilitySelections = savedGenericSelections ? { ...savedGenericSelections } : undefined;
+
+            // Initialize from saved settings, or empty if none
+            this.userCapabilityOverrides = savedOverrides
+                ? new Map(Object.entries(savedOverrides))
+                : new Map<string, boolean>();
+            this.genericCapabilitySelections = savedGenericSelections ?? {};
         }
 
         // Update disabled generic capabilities (already used in agent prompt)
@@ -316,6 +336,104 @@ export class AIChatInputWidget extends ReactWidget {
         }
     }
 
+    /**
+     * Checks if current capability overrides differ from saved settings.
+     */
+    protected hasCapabilityChangesFromSaved(): boolean {
+        const saved = this.savedCapabilityOverrides ?? {};
+        const savedKeys = Object.keys(saved);
+        const currentKeys = Array.from(this.userCapabilityOverrides.keys());
+
+        if (savedKeys.length !== currentKeys.length) {
+            return true;
+        }
+
+        return !currentKeys.every(key => saved[key] === this.userCapabilityOverrides.get(key));
+    }
+
+    /**
+     * Compares two string arrays for equality (order-independent).
+     */
+    protected arraysEqualUnordered(a: string[], b: string[]): boolean {
+        if (a.length !== b.length) {
+            return false;
+        }
+        const setA = new Set(a);
+        const setB = new Set(b);
+        if (setA.size !== setB.size) {
+            return false;
+        }
+        for (const item of setB) {
+            if (!setA.has(item)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if current generic capability selections differ from saved settings.
+     */
+    protected hasGenericCapabilityChangesFromSaved(): boolean {
+        const saved = this.savedGenericCapabilitySelections ?? {};
+        const current = this.genericCapabilitySelections;
+
+        const types: (keyof GenericCapabilitySelections)[] = ['skills', 'mcpFunctions', 'functions', 'promptFragments', 'agentDelegation', 'variables'];
+        for (const type of types) {
+            const savedArray = saved[type] ?? [];
+            const currentArray = current[type] ?? [];
+
+            if (!this.arraysEqualUnordered(savedArray, currentArray)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if there are any unsaved changes (capability overrides or generic selections).
+     */
+    public hasAnyChangesFromSaved(): boolean {
+        return (this.hasCapabilityChangesFromSaved() || this.hasGenericCapabilityChangesFromSaved()) && this.receivingAgent !== undefined;
+    }
+
+    /**
+     * Saves current capability selections to settings.
+     */
+    public async saveCurrentSelectionsToSettings(): Promise<void> {
+        if (!this.receivingAgent) {
+            return;
+        }
+
+        const agentId = this.receivingAgent.agentId;
+
+        // Convert userCapabilityOverrides Map to Record
+        const capabilityOverrides: Record<string, boolean> = {};
+        for (const [key, value] of this.userCapabilityOverrides) {
+            capabilityOverrides[key] = value;
+        }
+
+        try {
+            await this.aiSettingsService.updateAgentSettings(agentId, {
+                capabilityOverrides: Object.keys(capabilityOverrides).length > 0 ? capabilityOverrides : undefined,
+                genericCapabilitySelections: GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
+                    ? this.genericCapabilitySelections
+                    : undefined
+            });
+
+            // Update saved state to match current
+            this.savedCapabilityOverrides = Object.keys(capabilityOverrides).length > 0 ? { ...capabilityOverrides } : undefined;
+            this.savedGenericCapabilitySelections = GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
+                ? { ...this.genericCapabilitySelections }
+                : undefined;
+
+            this.update();
+        } catch (error) {
+            console.error('Failed to save capability selections to settings:', error);
+        }
+    }
+
     protected chatInputFocusKey: ContextKey<boolean>;
     protected chatInputFirstLineKey: ContextKey<boolean>;
     protected chatInputLastLineKey: ContextKey<boolean>;
@@ -364,6 +482,16 @@ export class AIChatInputWidget extends ReactWidget {
      * Or restored when an existing chat session can provide a previous capability override from the last request.
      */
     protected userCapabilityOverrides: Map<string, boolean> = new Map();
+    /**
+     * Stores the saved capability overrides loaded from settings.
+     * Used to compare against current selections to detect unsaved changes.
+     */
+    protected savedCapabilityOverrides: Record<string, boolean> | undefined;
+    /**
+     * Stores the saved generic capability selections loaded from settings.
+     * Used to compare against current selections to detect unsaved changes.
+     */
+    protected savedGenericCapabilitySelections: GenericCapabilitySelections | undefined;
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -653,8 +781,10 @@ export class AIChatInputWidget extends ReactWidget {
                 currentModeId: initialModeId
             };
             this.chatInputHasModesKey.set(modes.length > 1);
-            // On forced refresh (session switch), preserve restored overrides from the session
-            await this.updateCapabilitiesForAgent(agentId, initialModeId, needsRefresh);
+            // Only preserve overrides on forced refresh if the session has previous requests
+            const hasPreviousRequests = this._chatModel.getRequests().length > 0;
+            const shouldPreserveOverrides = needsRefresh && hasPreviousRequests;
+            await this.updateCapabilitiesForAgent(agentId, initialModeId, shouldPreserveOverrides);
         } else if (!agent && this.receivingAgent !== undefined) {
             this.receivingAgent = undefined;
             this.capabilityDefaults = [];
@@ -838,10 +968,13 @@ export class AIChatInputWidget extends ReactWidget {
                     isOpen: this.capabilitiesOpen,
                     onToggle: () => this.toggleCapabilities(),
                     keybindingHint: this.getCapabilitiesKeybindingHint(),
+                    hasUnsavedChanges: this.hasAnyChangesFromSaved(),
+                    onSaveToSettings: () => this.saveCurrentSelectionsToSettings(),
                 }}
                 genericCapabilitiesProps={{
                     genericCapabilities: this.genericCapabilitySelections,
                     onGenericCapabilityChange: this.handleGenericCapabilityChange,
+                    onResetGenericCapabilities: this.handleResetGenericCapabilities,
                     availableCapabilities: this.availableGenericCapabilities,
                     disabledCapabilities: this.disabledGenericCapabilities,
                     hoverService: this.hoverService,
@@ -1125,10 +1258,13 @@ interface ChatInputProperties {
         isOpen: boolean;
         onToggle: () => void;
         keybindingHint?: string;
+        hasUnsavedChanges: boolean;
+        onSaveToSettings: () => void;
     };
     genericCapabilitiesProps: {
         genericCapabilities: GenericCapabilitySelections;
         onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+        onResetGenericCapabilities: () => void;
         availableCapabilities: AvailableGenericCapabilities;
         disabledCapabilities: GenericCapabilitySelections;
         hoverService: HoverService;
@@ -1575,10 +1711,13 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         onCapabilityChange={props.capabilitiesProps.onCapabilityChange}
                         genericCapabilities={props.genericCapabilitiesProps.genericCapabilities}
                         onGenericCapabilityChange={props.genericCapabilitiesProps.onGenericCapabilityChange}
+                        onResetGenericCapabilities={props.genericCapabilitiesProps.onResetGenericCapabilities}
                         availableCapabilities={props.genericCapabilitiesProps.availableCapabilities}
                         disabledCapabilities={props.genericCapabilitiesProps.disabledCapabilities}
                         disabled={!props.isEnabled}
                         hoverService={props.hoverService}
+                        hasUnsavedChanges={props.capabilitiesProps.hasUnsavedChanges}
+                        onSaveToSettings={props.capabilitiesProps.onSaveToSettings}
                     />
                 )}
                 <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
@@ -1604,6 +1743,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         isOpen: props.capabilitiesProps.isOpen,
                         hasActiveSelections: props.capabilitiesProps.overrides.size > 0
                             || GenericCapabilitySelections.hasSelections(props.genericCapabilitiesProps.genericCapabilities),
+                        hasUnsavedChanges: props.capabilitiesProps.hasUnsavedChanges,
                         onToggle: props.capabilitiesProps.onToggle,
                         keybindingHint: props.capabilitiesProps.keybindingHint,
                     }}
@@ -1642,6 +1782,7 @@ interface ChatInputOptionsProps {
         show: boolean;
         isOpen: boolean;
         hasActiveSelections: boolean;
+        hasUnsavedChanges: boolean;
         onToggle: () => void;
         keybindingHint?: string;
     };
@@ -1735,8 +1876,8 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                         }}
                     >
                         <span className="codicon codicon-tools" />
-                        {!capabilitiesToggle.isOpen && capabilitiesToggle.hasActiveSelections && (
-                            <span className="theia-capabilities-badge-dot" />
+                        {capabilitiesToggle.hasUnsavedChanges && (
+                            <span className="theia-capabilities-unsaved-indicator" />
                         )}
                     </span>
                 )}
@@ -1764,10 +1905,13 @@ interface CapabilitiesBarProps {
     onCapabilityChange: (fragmentId: string, enabled: boolean) => void;
     genericCapabilities: GenericCapabilitySelections;
     onGenericCapabilityChange: (type: keyof GenericCapabilitySelections, ids: string[]) => void;
+    onResetGenericCapabilities: () => void;
     availableCapabilities: AvailableGenericCapabilities;
     disabledCapabilities: GenericCapabilitySelections;
     disabled?: boolean;
     hoverService: HoverService;
+    hasUnsavedChanges: boolean;
+    onSaveToSettings: () => void;
 }
 
 /**
@@ -1782,14 +1926,19 @@ const CapabilitiesBar: React.FunctionComponent<CapabilitiesBarProps> = ({
     onCapabilityChange,
     genericCapabilities,
     onGenericCapabilityChange,
+    onResetGenericCapabilities,
     availableCapabilities,
     disabledCapabilities,
     disabled,
-    hoverService
+    hoverService,
+    hasUnsavedChanges,
+    onSaveToSettings
 }) => {
     if (isOpen) {
-        // Expanded state: full panel
+        // Expanded state: full panel with save button
         const hasCapabilities = capabilities.length > 0;
+        const saveLabel = nls.localizeByDefault('Save');
+        const saveTitle = nls.localize('theia/ai/chat-ui/saveCurrentSelectionsToSettings', 'Save capability settings');
         return (
             <div className="theia-ChatInput-CapabilitiesPanel">
                 {hasCapabilities && (
@@ -1809,10 +1958,21 @@ const CapabilitiesBar: React.FunctionComponent<CapabilitiesBarProps> = ({
                     <GenericCapabilitiesSection
                         genericCapabilities={genericCapabilities}
                         onGenericCapabilityChange={onGenericCapabilityChange}
+                        onResetGenericCapabilities={onResetGenericCapabilities}
                         availableCapabilities={availableCapabilities}
                         disabledCapabilities={disabledCapabilities}
                         disabled={disabled}
                         hoverService={hoverService} />
+                </div>
+                <div className="theia-ChatInput-CapabilitiesPanel-SaveButton">
+                    <button
+                        className="theia-button"
+                        disabled={!hasUnsavedChanges || disabled}
+                        title={saveTitle}
+                        onClick={onSaveToSettings}
+                    >
+                        {saveLabel}
+                    </button>
                 </div>
             </div>
         );

@@ -64,7 +64,7 @@ async function exitHandler() {
             desc: `An array of extensions to test (defaults to the extensions in the packages folder).
                 - Each entry must have this format: {name}:{version}
                 - Entries are separated by whitespaces
-                - Example: --extensions @theia/git:1.18.0 @theia/keymaps:1.18.0`,
+                - Example: --extensions @theia/core:1.18.0 @theia/keymaps:1.18.0`,
             type: 'array'
         })
         .option('yarn', {
