@@ -37,13 +37,13 @@ jobs:
           echo "Product version: $VERSION"
 
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           ref: ${{ steps.version.outputs.PROJECT_VERSION }}
 
       - name: Setup Node SDK
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: ${{ env.REGISTRY_URL }}
@@ -61,7 +61,7 @@ jobs:
           cdxgen -r -o ${{ env.PRODUCT_PATH }}bom.json
 
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: sbom
           path: ${{ env.PRODUCT_PATH }}/bom.json
