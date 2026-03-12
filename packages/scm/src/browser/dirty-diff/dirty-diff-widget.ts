@@ -358,7 +358,10 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
     private updateActions(): void {
         this.clearActions();
         const { contextKeyService, menuModelRegistry } = this.widget;
-        contextKeyService.with({ originalResourceScheme: this.widget.previousRevisionUri.scheme }, () => {
+        contextKeyService.with({
+            originalResourceScheme: this.widget.previousRevisionUri.scheme,
+            originalResource: this.widget.previousRevisionUri.toString(),
+        }, () => {
             for (const menuPath of [SCM_CHANGE_TITLE_MENU, PLUGIN_SCM_CHANGE_TITLE_MENU]) {
                 const menu = menuModelRegistry.getMenu(menuPath);
                 if (menu) {

@@ -361,9 +361,15 @@ export class ScmTreeWidget extends TreeWidget {
     }
 
     selectNodeByUri(uri: URI): void {
-        for (const group of this.model.groups) {
-            const sourceUri = new URI(uri.path.toString());
-            const id = `${group.id}:${sourceUri.toString()}`;
+        // Use the URI as-is without coercing the scheme.
+        // Only URIs whose scheme matches the SCM resource sourceUri scheme (typically 'file')
+        // will find a matching node. Diff editors for staged changes (git: scheme) won't match,
+        // which is correct VS Code behavior. See https://github.com/eclipse-theia/theia/issues/16412
+        const uriString = uri.toString();
+        // Iterate backwards (last group first) to match VS Code behavior.
+        const groups = this.model.groups;
+        for (let i = groups.length - 1; i >= 0; i--) {
+            const id = `${groups[i].id}:${uriString}`;
             const node = this.model.getNode(id);
             if (SelectableTreeNode.is(node)) {
                 this.model.selectNode(node);
