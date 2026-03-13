@@ -19,6 +19,7 @@ import { Event } from './event';
 import { KeySequence } from './keys';
 import { CancellationToken } from './cancellation';
 import { Severity } from './severity';
+import { findSubstringIndex, matchRank } from './fuzzy-match-utils';
 
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');
@@ -303,24 +304,52 @@ export function filterItems(items: QuickPickItemOrSeparator[], filter: string): 
         return items;
     }
 
-    const filteredItems: QuickPickItemOrSeparator[] = [];
+    function matchesFilter(item: QuickPickItem): boolean {
+        return fuzzy.test(filter, item.label) ||
+            (!!item.description && fuzzy.test(filter, item.description)) ||
+            (!!item.detail && fuzzy.test(filter, item.detail));
+    }
+
+    function itemMatchRank(item: QuickPickItem): number {
+        return Math.min(
+            matchRank(item.label, filter),
+            item.description ? matchRank(item.description, filter) : 2,
+            item.detail ? matchRank(item.detail, filter) : 2
+        );
+    }
+
+    // Process items in separator groups, sorted by match rank within each group.
+    const result: QuickPickItemOrSeparator[] = [];
+    let currentSeparator: QuickPickSeparator | undefined;
+    let groupMatches: { item: QuickPickItem; rank: number }[] = [];
+
+    const flushGroup = (): void => {
+        if (groupMatches.length > 0) {
+            if (currentSeparator) {
+                result.push(currentSeparator);
+            }
+            groupMatches.sort((a, b) => a.rank - b.rank);
+            result.push(...groupMatches.map(m => m.item));
+        }
+        groupMatches = [];
+    };
+
     for (const item of items) {
         if (item.type === 'separator') {
-            filteredItems.push(item);
-        } else if (
-            fuzzy.test(filter, item.label) ||
-            (item.description && fuzzy.test(filter, item.description)) ||
-            (item.detail && fuzzy.test(filter, item.detail))
-        ) {
+            flushGroup();
+            currentSeparator = item;
+        } else if (matchesFilter(item)) {
             item.highlights = {
                 label: findMatches(item.label, filter),
                 description: item.description ? findMatches(item.description, filter) : undefined,
                 detail: item.detail ? findMatches(item.detail, filter) : undefined
             };
-            filteredItems.push(item);
+            groupMatches.push({ item, rank: itemMatchRank(item) });
         }
     }
-    return filteredItems;
+    flushGroup();
+
+    return result;
 }
 
 /**
@@ -335,6 +364,12 @@ export function findMatches(word: string, pattern: string): Array<{ start: numbe
 
     if (pattern.trim().length === 0) {
         return undefined;
+    }
+
+    // Prefer a contiguous substring highlight over scattered fuzzy character highlights.
+    const substringIndex = findSubstringIndex(word, pattern);
+    if (substringIndex !== -1) {
+        return [{ start: substringIndex, end: substringIndex + pattern.length }];
     }
 
     const delimiter = '\u0000'; // null byte that shouldn't appear in the input and is used to denote matches.
