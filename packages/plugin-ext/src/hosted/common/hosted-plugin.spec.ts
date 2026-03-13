@@ -98,11 +98,12 @@ class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
     }
 
     /**
-     * Populate the contributions map with mock deployed plugins.
+     * Populate the contributions map with mock deployed plugins in the given state.
      */
-    addPlugin(plugin: DeployedPlugin): void {
+    addPlugin(plugin: DeployedPlugin, state = PluginContributions.State.INITIALIZING): void {
         const pluginId = PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model);
         const contributions = new PluginContributions(plugin);
+        contributions.state = state;
         this.contributions.set(pluginId, contributions);
     }
 
@@ -120,6 +121,15 @@ class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
 
     clearDisabledByTrust(): void {
         this._disabledByTrust.clear();
+    }
+
+    simulateLoadCycle(): Map<string, PluginContributions[]> {
+        this._disabledByTrust.clear();
+        const result = this.testLoadContributions();
+        if (this._disabledByTrust.size > 0) {
+            this.onDidChangePluginsEmitter.fire(undefined);
+        }
+        return result;
     }
 }
 
@@ -256,4 +266,112 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
         expect(support.disabledByTrust.has('test.blocked')).to.equal(true);
         expect(support.disabledByTrust.has('test.allowed')).to.equal(false);
     });
+
+    describe('plugins deployed after initial load (re-load cycle)', () => {
+        it('should disable a newly deployed plugin with untrustedWorkspacesSupport: false on re-load', () => {
+            support.setWorkspaceTrusted(false);
+
+            const initialPlugin = createMockDeployedPlugin('test.initial', false);
+            support.addPlugin(initialPlugin);
+            support.simulateLoadCycle();
+            expect(support.disabledByTrust.has('test.initial')).to.equal(true);
+
+            const newPlugin = createMockDeployedPlugin('test.new-deploy', false);
+            support.addPlugin(newPlugin);
+            support.simulateLoadCycle();
+
+            expect(support.disabledByTrust.has('test.initial')).to.equal(true);
+            expect(support.disabledByTrust.has('test.new-deploy')).to.equal(true);
+            expect(support.disabledByTrust.size).to.equal(2);
+        });
+
+        it('should re-add previously disabled plugins to disabledByTrust on each re-load cycle', () => {
+            support.setWorkspaceTrusted(false);
+            const plugin = createMockDeployedPlugin('test.persistent', false);
+            support.addPlugin(plugin);
+
+            support.simulateLoadCycle();
+            expect(support.disabledByTrust.has('test.persistent')).to.equal(true);
+
+            support.simulateLoadCycle();
+            expect(support.disabledByTrust.has('test.persistent')).to.equal(true);
+
+            support.simulateLoadCycle();
+            expect(support.disabledByTrust.has('test.persistent')).to.equal(true);
+        });
+
+        it('should not add already-started allowed plugins to disabledByTrust on re-load', () => {
+            support.setWorkspaceTrusted(false);
+            const startedAllowed = createMockDeployedPlugin('test.started-allowed', true);
+            support.addPlugin(startedAllowed, PluginContributions.State.STARTED);
+            const startedUndefined = createMockDeployedPlugin('test.started-undefined', undefined);
+            support.addPlugin(startedUndefined, PluginContributions.State.STARTED);
+
+            support.simulateLoadCycle();
+
+            expect(support.disabledByTrust.has('test.started-allowed')).to.equal(false);
+            expect(support.disabledByTrust.has('test.started-undefined')).to.equal(false);
+            expect(support.disabledByTrust.size).to.equal(0);
+        });
+
+        it('should add already-started plugins with untrustedWorkspacesSupport: false to disabledByTrust on re-load', () => {
+            support.setWorkspaceTrusted(false);
+            const startedBlocked = createMockDeployedPlugin('test.started-blocked', false);
+            support.addPlugin(startedBlocked, PluginContributions.State.STARTED);
+
+            support.simulateLoadCycle();
+
+            expect(support.disabledByTrust.has('test.started-blocked')).to.equal(true);
+        });
+
+        it('should fire onDidChangePlugins after loadContributions when a newly deployed plugin is disabled by trust', () => {
+            support.setWorkspaceTrusted(false);
+            const existingPlugin = createMockDeployedPlugin('test.existing', false);
+            support.addPlugin(existingPlugin);
+            support.simulateLoadCycle();
+
+            const newPlugin = createMockDeployedPlugin('test.late-deploy', false);
+            support.addPlugin(newPlugin);
+
+            let eventFiredCount = 0;
+            support.onDidChangePlugins(() => { eventFiredCount++; });
+
+            support.simulateLoadCycle();
+
+            expect(support.disabledByTrust.has('test.late-deploy')).to.equal(true);
+            expect(eventFiredCount).to.equal(1);
+        });
+
+        it('should not fire onDidChangePlugins when no plugins are disabled by trust', () => {
+            support.setWorkspaceTrusted(false);
+            const allowedPlugin = createMockDeployedPlugin('test.allowed-nodeploy', true);
+            support.addPlugin(allowedPlugin);
+
+            let eventFiredCount = 0;
+            support.onDidChangePlugins(() => { eventFiredCount++; });
+
+            support.simulateLoadCycle();
+
+            expect(support.disabledByTrust.size).to.equal(0);
+            expect(eventFiredCount).to.equal(0);
+        });
+
+        it('should include both initial and newly deployed disabled plugins in disabledByTrust when workspace is untrusted', () => {
+            support.setWorkspaceTrusted(false);
+
+            const builtin = createMockDeployedPlugin('test.builtin', false);
+            support.addPlugin(builtin);
+            support.simulateLoadCycle();
+            expect(support.disabledByTrust.size).to.equal(1);
+
+            const userInstalled = createMockDeployedPlugin('test.user-installed', false);
+            support.addPlugin(userInstalled);
+            support.simulateLoadCycle();
+
+            expect(support.disabledByTrust.size).to.equal(2);
+            expect(support.disabledByTrust.has('test.builtin')).to.equal(true);
+            expect(support.disabledByTrust.has('test.user-installed')).to.equal(true);
+        });
+    });
+
 });

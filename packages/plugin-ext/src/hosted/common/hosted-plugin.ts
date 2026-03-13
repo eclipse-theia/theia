@@ -176,6 +176,9 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             return;
         }
         const contributionsByHost = this.loadContributions(toDisconnect);
+        if (this._disabledByTrust.size > 0) {
+            this.onDidChangePluginsEmitter.fire(undefined);
+        }
 
         await this.afterLoadContributions(toDisconnect);
 

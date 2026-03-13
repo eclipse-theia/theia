@@ -524,6 +524,8 @@ describe('WorkspaceTrustService', () => {
         let contextKeyServiceStub: { setContext: sinon.SinonStub };
         let onDidChangeEmitterStub: { fire: sinon.SinonStub };
 
+        let confirmRestartStub: sinon.SinonStub;
+
         beforeEach(() => {
             storeWorkspaceTrustStub = sinon.stub(
                 service as unknown as { storeWorkspaceTrust: (trust: boolean) => Promise<void> },
@@ -533,6 +535,10 @@ describe('WorkspaceTrustService', () => {
                 service as unknown as { shouldReloadForTrustChange: () => boolean },
                 'shouldReloadForTrustChange'
             );
+            confirmRestartStub = sinon.stub(
+                service as unknown as { confirmRestart: () => Promise<boolean> },
+                'confirmRestart'
+            ).resolves(true);
             windowServiceStub = { reload: sinon.stub(), setSafeToShutDown: sinon.stub() };
             (service as unknown as { windowService: typeof windowServiceStub }).windowService = windowServiceStub;
             contextKeyServiceStub = { setContext: sinon.stub() };
@@ -604,6 +610,16 @@ describe('WorkspaceTrustService', () => {
             await service.setWorkspaceTrust(true);
 
             expect(windowServiceStub.setSafeToShutDown.called).to.be.false;
+        });
+
+        it('should NOT call windowService.reload() when user cancels confirm dialog', async () => {
+            shouldReloadStub.returns(true);
+            confirmRestartStub.resolves(false);
+
+            service.setCurrentTrust(false);
+            await service.setWorkspaceTrust(true);
+
+            expect(windowServiceStub.reload.called).to.be.false;
         });
 
         it('should NOT reload when reload=false even if shouldReloadForTrustChange returns true', async () => {

@@ -81,7 +81,6 @@
   color: var(--theia-statusBarItem-prominentForeground);
   background-color: var(--theia-statusBarItem-prominentBackground);
   border-radius: 2px;
-  padding: 0 4px;
-  margin-left: 4px;
+  padding: calc(var(--theia-ui-padding) / 3 * 2);
   white-space: nowrap;
 }

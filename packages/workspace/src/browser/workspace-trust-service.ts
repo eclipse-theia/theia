@@ -185,7 +185,9 @@ export class WorkspaceTrustService {
         // runs isSafeToShutDown internally, which handles unsaved-changes prompts.
         await this.storeWorkspaceTrust(trusted);
         if (reload && this.shouldReloadForTrustChange(trusted)) {
-            this.windowService.reload();
+            if (await this.confirmRestart()) {
+                this.windowService.reload();
+            }
         }
     }
 
