@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { ApplicationShell, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -25,6 +25,9 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core';
+import { TerminalManagerWidget } from '@theia/terminal-manager/lib/browser/terminal-manager-widget';
+import { TerminalManagerFrontendViewContribution } from '@theia/terminal-manager/lib/browser/terminal-manager-frontend-view-contribution';
+import { TerminalManagerPreferences } from '@theia/terminal-manager/lib/browser/terminal-manager-preferences';
 
 export interface TaskTerminalWidget extends TerminalWidget {
     readonly kind: 'task';
@@ -86,6 +89,15 @@ export class TaskTerminalWidgetManager {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(TerminalManagerPreferences)
+    protected readonly preferences: TerminalManagerPreferences;
+
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
+
+    @inject(TerminalManagerFrontendViewContribution)
+    protected readonly terminalManagerViewContribution: TerminalManagerFrontendViewContribution;
+
     @postConstruct()
     protected init(): void {
         this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
@@ -142,7 +154,13 @@ export class TaskTerminalWidgetManager {
         }
 
         const { isNew, widget } = await this.getWidgetToRunTask(factoryOptions, openerOptions);
-        if (isNew) {
+        const isTreeMode = this.preferences['terminal.grouping.mode'] === 'tree';
+        if (isNew && isTreeMode) {
+            const terminalManagerWidget = await this.widgetManager.getOrCreateWidget<TerminalManagerWidget>(TerminalManagerWidget.ID);
+            terminalManagerWidget.addTerminalToTasksPage(widget);
+            widget.resetTerminal();
+            await this.terminalManagerViewContribution.openView({ reveal: true });
+        } else if (isNew) {
             this.shell.addWidget(widget, { area: openerOptions.widgetOptions ? openerOptions.widgetOptions.area : 'bottom' });
             widget.resetTerminal();
         } else {

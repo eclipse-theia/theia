@@ -20,6 +20,8 @@ import { PromptService } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core';
 import { GitHubChatAgentId } from './github-chat-agent';
+import { ArchitectAgentId } from './architect-agent';
+import { CoderAgentId } from './coder-agent';
 
 @injectable()
 export class AnalyzesGhTicketCommandContribution implements FrontendApplicationContribution {
@@ -47,7 +49,7 @@ export class AnalyzesGhTicketCommandContribution implements FrontendApplicationC
                 'theia/ai-ide/ticketCommand/argumentHint',
                 '<ticket-number>'
             ),
-            commandAgents: ['Architect']
+            commandAgents: [ArchitectAgentId]
         });
     }
 
@@ -168,7 +170,7 @@ Example response format:
 - [Criterion 2]
 
 ### Next Steps
-To implement this plan, you can ask @Coder to execute it.
+To implement this plan, you can ask @${CoderAgentId} to execute it.
 \`\`\`
 
 Remember: Be thorough in your analysis. It's better to ask for clarification than to create an incomplete or incorrect implementation plan.`;

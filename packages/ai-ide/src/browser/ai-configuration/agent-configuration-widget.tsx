@@ -30,6 +30,8 @@ import {
     PromptService,
     NotificationType,
     PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
+    GenericCapabilitySelections,
+    CAPABILITY_TYPE_PROMPT_MAP,
 } from '@theia/ai-core/lib/common';
 import { isChatAgent } from '@theia/ai-chat/lib/common';
 import { codicon, CommonCommands, QuickInputService } from '@theia/core/lib/browser';
@@ -94,6 +96,8 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
     protected parsedPromptParts: ParsedPrompt | undefined;
     protected isLoadingDetails = false;
     protected agentCompletionNotificationType?: NotificationType;
+    protected savedCapabilityOverrides: Record<string, boolean> | undefined;
+    protected savedGenericCapabilitySelections: GenericCapabilitySelections | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -198,17 +202,15 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                     {this.items.map(agent => {
                         const agentId = this.getItemId(agent);
                         const isSelected = this.selectedItem && this.getItemId(this.selectedItem) === agentId;
-                        return (
-                            <li
-                                key={agentId}
-                                className={`theia-TreeNode theia-CompositeTreeNode${isSelected ? ' theia-mod-selected' : ''} ${this.getItemClassName(agent)}`}
-                                onClick={() => this.handleItemSelect(agent)}
-                            >
-                                {this.renderItemPrefix(agent)}
-                                <span className="ai-configuration-list-item-label">{this.getItemLabel(agent)}</span>
-                                {this.renderItemSuffix(agent)}
-                            </li>
-                        );
+                        return <li
+                            key={agentId}
+                            className={`theia-TreeNode theia-CompositeTreeNode${isSelected ? ' theia-mod-selected' : ''} ${this.getItemClassName(agent)}`}
+                            onClick={() => this.handleItemSelect(agent)}
+                        >
+                            {this.renderItemPrefix(agent)}
+                            <span className="ai-configuration-list-item-label">{this.getItemLabel(agent)}</span>
+                            {this.renderItemSuffix(agent)}
+                        </li>;
                     })}
                 </ul>
                 <div className='configuration-agents-add'>
@@ -230,9 +232,13 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
             const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
             this.showInChatState = agentSettings?.showInChat ?? true;
             this.agentCompletionNotificationType = agentSettings?.completionNotification;
+            this.savedCapabilityOverrides = agentSettings?.capabilityOverrides;
+            this.savedGenericCapabilitySelections = agentSettings?.genericCapabilitySelections;
         } else {
             this.parsedPromptParts = undefined;
             this.agentCompletionNotificationType = undefined;
+            this.savedCapabilityOverrides = undefined;
+            this.savedGenericCapabilitySelections = undefined;
         }
         this.isLoadingDetails = false;
         this.update();
@@ -373,7 +379,27 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                     <div className="settings-section-subcategory-title">
                         {nls.localize('theia/ai/core/agentConfiguration/availableCapabilities', 'Available Capabilities')}
                     </div>
-                    <AgentCapabilities capabilities={this.parsedPromptParts.capabilities} />
+                    <AgentCapabilitiesSettings
+                        capabilities={this.parsedPromptParts.capabilities}
+                        agentId={agent.id}
+                        savedOverrides={this.savedCapabilityOverrides}
+                        aiSettingsService={this.aiSettingsService}
+                        onSettingsChange={() => this.updateParsedPromptParts()}
+                    />
+                </>
+            )}
+
+            {GenericCapabilitySelections.hasSelections(this.savedGenericCapabilitySelections) && (
+                <>
+                    <div className="settings-section-subcategory-title ai-settings-section-subcategory-title">
+                        {nls.localize('theia/ai/ide/agentConfiguration/genericCapabilitiesSettings', 'Generic Capabilities')}
+                    </div>
+                    <AgentGenericCapabilitiesSettings
+                        agentId={agent.id}
+                        savedSelections={this.savedGenericCapabilitySelections}
+                        aiSettingsService={this.aiSettingsService}
+                        onSettingsChange={() => this.updateParsedPromptParts()}
+                    />
                 </>
             )}
 
@@ -589,39 +615,119 @@ const AgentFunctions = ({ functions }: AgentFunctionsProps) => {
     </>;
 };
 
-interface AgentCapabilitiesProps {
+interface AgentCapabilitiesSettingsProps {
     capabilities: ParsedCapability[];
+    agentId: string;
+    savedOverrides: Record<string, boolean> | undefined;
+    aiSettingsService: AISettingsService;
+    onSettingsChange: () => void;
 }
-const AgentCapabilities = ({ capabilities }: AgentCapabilitiesProps) => (
-    <table className="ai-templates-table">
-        <thead>
-            <tr>
-                <th>{nls.localizeByDefault('ID')}</th>
-                <th>{nls.localizeByDefault('Name')}</th>
-                <th title={nls.localize('theia/ai/ide/agentConfiguration/enabledByDefault', 'Indicates if the feature is enabled by default')}>
-                    {nls.localizeByDefault('Default')}
-                </th>
-                <th>{nls.localizeByDefault('Description')}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {capabilities.map(capability => (
-                <tr key={capability.fragmentId}>
-                    <td className="ai-variable-name-cell">{capability.fragmentId}</td>
-                    <td className="ai-variable-name-cell">{capability.name ?? capability.fragmentId}</td>
-                    <td className="ai-variable-name-cell">
-                        {capability.defaultEnabled
-                            ? nls.localize('theia/ai/ide/agentConfiguration/capabilityOn', 'On')
-                            : nls.localizeByDefault('Off')}
-                    </td>
-                    <td className="ai-variable-description-cell">
-                        {capability.description ?? nls.localize('theia/ai/ide/agentConfiguration/noDescription', 'No description available')}
-                    </td>
-                </tr>
-            ))}
-        </tbody>
-    </table>
-);
+const AgentCapabilitiesSettings = ({ capabilities, agentId, savedOverrides, aiSettingsService, onSettingsChange }: AgentCapabilitiesSettingsProps) => {
+    const [loading, setLoading] = React.useState(false);
+
+    const handleToggle = async (fragmentId: string, currentValue: boolean) => {
+        if (loading) {
+            return;
+        }
+        setLoading(true);
+        try {
+            const newValue = !currentValue;
+            const capability = capabilities.find(c => c.fragmentId === fragmentId);
+            if (!capability) {
+                return;
+            }
+
+            const newOverrides = { ...savedOverrides };
+
+            // If new value matches default, remove the override
+            if (newValue === capability.defaultEnabled) {
+                delete newOverrides[fragmentId];
+            } else {
+                newOverrides[fragmentId] = newValue;
+            }
+
+            await aiSettingsService.updateAgentSettings(agentId, { capabilityOverrides: newOverrides });
+            onSettingsChange();
+        } catch (error) {
+            console.error('Failed to update capability settings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetAll = async () => {
+        if (loading) {
+            return;
+        }
+        setLoading(true);
+        try {
+            await aiSettingsService.updateAgentSettings(agentId, { capabilityOverrides: undefined });
+            onSettingsChange();
+        } catch (error) {
+            console.error('Failed to reset all capability settings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getCurrentValue = (capability: ParsedCapability): boolean => {
+        if (savedOverrides && capability.fragmentId in savedOverrides) {
+            return savedOverrides[capability.fragmentId];
+        }
+        return capability.defaultEnabled;
+    };
+
+    const hasOverride = (capability: ParsedCapability): boolean =>
+        savedOverrides !== undefined && capability.fragmentId in savedOverrides;
+
+    const hasAnyOverrides = savedOverrides && Object.keys(savedOverrides).length > 0;
+
+    return (
+        <>
+            {hasAnyOverrides && (
+                <div className="capability-reset-all-container">
+                    <button
+                        className="theia-button secondary"
+                        onClick={handleResetAll}
+                        disabled={loading}
+                        title={nls.localize('theia/ai/ide/agentConfiguration/resetAllCapabilities', 'Reset all capabilities to their default values')}
+                    >
+                        {nls.localize('theia/ai/ide/agentConfiguration/resetAllDefaults', 'Reset All to Defaults')}
+                    </button>
+                </div>
+            )}
+            <table className="ai-templates-table">
+                <thead>
+                    <tr>
+                        <th>{nls.localizeByDefault('ID')}</th>
+                        <th>{nls.localizeByDefault('Name')}</th>
+                        <th>{nls.localizeByDefault('Description')}</th>
+                        <th>{nls.localizeByDefault('Enabled')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {capabilities.map(capability => (
+                        <tr key={capability.fragmentId} className={hasOverride(capability) ? 'capability-modified' : ''}>
+                            <td className="ai-variable-name-cell">{capability.fragmentId}</td>
+                            <td className="ai-variable-name-cell">
+                                {capability.name ?? capability.fragmentId}
+                            </td>
+                            <td className="ai-variable-description-cell">
+                                {capability.description ?? nls.localize('theia/ai/ide/agentConfiguration/noDescription', 'No description available')}
+                            </td>
+                            <td>
+                                <div className='toggle-switch' onClick={!loading ? () => handleToggle(capability.fragmentId, getCurrentValue(capability)) : undefined}>
+                                    <input type="checkbox" checked={getCurrentValue(capability)} disabled={loading} readOnly />
+                                    <span className='toggle-slider'></span>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </>
+    );
+};
 
 interface AgentSpecificVariablesProps {
     promptVariables: string[];
@@ -687,4 +793,79 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
             </>
         )}
     </div>;
+};
+
+interface AgentGenericCapabilitiesSettingsProps {
+    agentId: string;
+    savedSelections: GenericCapabilitySelections | undefined;
+    aiSettingsService: AISettingsService;
+    onSettingsChange: () => void;
+}
+
+const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettingsService, onSettingsChange }: AgentGenericCapabilitiesSettingsProps) => {
+    const [loading, setLoading] = React.useState(false);
+
+    const handleReset = async (capabilityType: keyof GenericCapabilitySelections) => {
+        if (loading) {
+            return;
+        }
+        setLoading(true);
+        try {
+            const newSelections: GenericCapabilitySelections = {
+                ...savedSelections,
+                [capabilityType]: undefined
+            };
+            await aiSettingsService.updateAgentSettings(agentId, { genericCapabilitySelections: newSelections });
+            onSettingsChange();
+        } catch (error) {
+            console.error('Failed to reset generic capability selections:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const capabilityTypes = CAPABILITY_TYPE_PROMPT_MAP.map(m => m.type);
+
+    const getDisplayName = (type: keyof GenericCapabilitySelections): string => ({
+        skills: nls.localizeByDefault('Skills'),
+        mcpFunctions: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/mcpFunctions', 'MCP Functions'),
+        functions: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/functions', 'Functions'),
+        promptFragments: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/promptFragments', 'Prompt Fragments'),
+        agentDelegation: nls.localize('theia/ai/ide/agentConfiguration/genericCapabilityType/agentDelegation', 'Agent Delegation'),
+        variables: nls.localizeByDefault('Variables')
+    } as const)[type];
+
+    return (
+        <table className="ai-templates-table">
+            <thead>
+                <tr>
+                    <th>{nls.localizeByDefault('Type')}</th>
+                    <th>{nls.localize('theia/ai/ide/agentConfiguration/selections', 'Selections')}</th>
+                    <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {capabilityTypes
+                    .filter(type => (savedSelections?.[type]?.length ?? 0) > 0)
+                    .map(type => (
+                        <tr key={type}>
+                            <td className="ai-variable-name-cell">{getDisplayName(type)}</td>
+                            <td className="ai-variable-description-cell">
+                                {(savedSelections?.[type] ?? []).join(', ')}
+                            </td>
+                            <td className="template-actions-cell">
+                                <button
+                                    className="theia-button secondary"
+                                    onClick={() => handleReset(type)}
+                                    disabled={loading}
+                                    title={nls.localizeByDefault('Reset')}
+                                >
+                                    {nls.localizeByDefault('Reset')}
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+            </tbody>
+        </table>
+    );
 };

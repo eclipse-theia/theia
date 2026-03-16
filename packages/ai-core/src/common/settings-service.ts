@@ -16,6 +16,7 @@
 import { Event } from '@theia/core';
 import { LanguageModelRequirement } from './language-model';
 import { NotificationType } from './notification-types';
+import { GenericCapabilitySelections } from './capability-utils';
 
 export const AISettingsService = Symbol('AISettingsService');
 /**
@@ -46,4 +47,15 @@ export interface AgentSettings {
      * If undefined, defaults to 'off'.
      */
     completionNotification?: NotificationType;
+    /**
+     * User overrides for template-based capabilities.
+     * Keys are capability fragment IDs, values are enabled/disabled state.
+     * Only stores explicit user choices that differ from template defaults.
+     */
+    capabilityOverrides?: Record<string, boolean>;
+    /**
+     * User selections for generic capabilities (skills, functions, MCP tools, etc.).
+     * Stores selected IDs for each capability type.
+     */
+    genericCapabilitySelections?: GenericCapabilitySelections;
 }

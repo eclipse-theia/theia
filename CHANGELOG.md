@@ -7,6 +7,7 @@
 ## 1.70.0 - TBD
 
 - [workspace] introduced `WorkspaceSearchFilterService` to centralize search exclusion globs [#16775](https://github.com/eclipse-theia/theia/pull/16775)
+- [git] removed `@theia/git` extension code entirely (deprecated since v1.58.0) [#17148](https://github.com/eclipse-theia/theia/pull/17148)
 
 <a name="breaking_changes_1.70.0">[Breaking Changes:](#breaking_changes_1.70.0)</a>
 

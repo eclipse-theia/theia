@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
@@ -80,28 +81,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
-            const proxyUrlProvider = (url: string | undefined) => {
-                // first check if the proxy url is provided via Theia settings
-                if (this._proxyUrl) {
-                    return this._proxyUrl;
-                }
-
-                // if not fall back to the environment variables
-                let protocolVar;
-                if (url && url.startsWith('http:')) {
-                    protocolVar = 'http_proxy';
-                } else if (url && url.startsWith('https:')) {
-                    protocolVar = 'https_proxy';
-                }
-
-                if (protocolVar) {
-                    // Get the environment variable
-                    return process.env[protocolVar];
-                }
-
-                // neither the settings nor the environment variable is set
-                return undefined;
-            };
+            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.openai.com', this._proxyUrl);
 
             // Determine the effective API key for status
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
@@ -122,7 +102,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     supportsStructuredOutput: modelDescription.supportsStructuredOutput,
                     status,
                     maxRetries: modelDescription.maxRetries,
-                    useResponseApi: modelDescription.useResponseApi ?? false
+                    useResponseApi: modelDescription.useResponseApi ?? false,
+                    proxy: proxyUrl
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -142,7 +123,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.maxRetries,
                         modelDescription.useResponseApi ?? false,
                         this.tokenUsageService,
-                        proxyUrlProvider(modelDescription.url)
+                        proxyUrl
                     )
                 ]);
             }

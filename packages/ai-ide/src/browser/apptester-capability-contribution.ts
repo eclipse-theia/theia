@@ -16,9 +16,9 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AGENT_DELEGATION_FUNCTION_ID, PromptService } from '@theia/ai-core';
-import { RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
+import { PromptService } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { AppTesterChatAgentId } from './app-tester-chat-agent';
 
 @injectable()
 export class AppTesterCapabilityContribution implements FrontendApplicationContribution {
@@ -34,50 +34,134 @@ export class AppTesterCapabilityContribution implements FrontendApplicationContr
     }
 
     protected buildTemplate(): string {
-        const name = nls.localize('theia/ai/ide/appTester/name', 'App Tester');
-        const description = nls.localize('theia/ai/ide/appTester/description',
-            'Allows the agent to test browser applications end to end. For this, the agent can delegate to the AppTester agent, \
-            which automates browser interactions to verify the implementation.'
-        );
+        const name = nls.localize('theia/ai-ide/appTester/name', 'E2E Test');
+        const description = nls.localize('theia/ai-ide/appTester/description',
+            'Delegates to AppTester agent for browser-based UI verification after implementation.');
 
         return `---
 name: ${name}
 description: ${description}
 ---
-After implementing the changes, delegate to the AppTester agent to test the implementation. The changes need to be applied and built.
 
-Use the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool to delegate to the AppTester agent.
+## E2E Test
 
-**Agent ID:** 'AppTester'
-**Prompt:** Provide a description of what was implemented and should be tested, including:
-- Summary of changes made
+**E2E Testing is ENABLED.** After implementation completes, verify application behavior through AppTester browser automation.
+
+Use end-to-end application testing through browser automation to verify UI behavior
+and user flows after implementation.
+
+**When to trigger:** After Implementation Phase completes (Coder reports done + code review passes if enabled).
+
+### Prerequisites
+
+**The Coding Agent must handle ALL prerequisites proactively during implementation:**
+
+1. **Install dependencies** (npm install / yarn install)
+2. **Build the project** (compile TypeScript, bundle frontend)
+3. **Run tests** (unit tests, integration tests)
+4. **Provide build/lint/test evidence** (task names + PASS/FAIL status)
+
+**Why this matters:** AppTester relies on launch configurations which require a working build.
+Missing dependencies or builds cause ERR_CONNECTION_REFUSED errors.
+
+**If AppTester reports connection issues:** Go back to Coding Agent to fix build issues,
+then retry E2E testing.
+
+### Constraints
+
+- AppTester cannot use 'runTask' (blocks delegation) — use launch configurations only
+- Never request "Frontend" or "Electron" launch configs (open windows, cause failures)
+- Prefer configs with "Backend", "Server", or "Browser" in name
+
+### Incremental Testing Strategy
+
+**Split complex testing into multiple sequential delegations**
+
+**Benefits:**
+- Each delegation focuses on one feature area or user flow
+- Later delegations can reuse browser state from earlier ones
+- No need to repeat setup steps (login, navigation, data creation)
+- Easier to isolate which feature caused a failure
+- More manageable test scenarios for the agent
+
+### Delegation
+
+Use ~{delegateToAgent} to delegate to the following agent:
+
+**Agent:** '${AppTesterChatAgentId}'
+**When:** After Coding Agent completes implementation AND build/lint/test pass
+
+**Provide:**
+- Test scenario with specific steps
 - Expected behavior
-- Areas to focus testing on
-- **Application URL:** Specify the exact URL if known (e.g., http://localhost:3000)
-- **Application Status:** Clearly specify whether the application has started, or if the AppTester needs to launch it
-- **Launch Configuration:** If known, specify which launch configuration to use
-- **UI Navigation Instructions:** If the feature requires opening a specific view, panel, menu, or using the command palette, provide explicit instructions
+- Task context path (if exists) — for reference to completion criteria
 
-Example prompt format:
-\`\`\`
-I have implemented [description of changes].
+**For sequential delegations:**
+- **First delegation:** Include full setup (start app, navigate to page, login if needed)
+- **Subsequent delegations:** Specify to reuse existing browser session
+  - Agent will search for the existing page/tab in Chrome
+  - Can continue from the current application state
+  - No need to repeat setup steps
 
-Expected behavior: [what should happen]
+**Optional:**
+- Application URL (default: agent discovers from launch configs)
+- Launch configuration name (default: agent selects appropriate one)
+- Whether app is already running (default: assumes not running for first delegation,
+  running for subsequent delegations)
+- Whether to reuse existing browser session (default: false for first delegation,
+  true for subsequent delegations)
 
-Application URL: http://localhost:3000
-Application status: The application is running.
-(OR: Application status: Not started yet. Use launch configuration "[config-name]" to start it.)
-IMPORTANT: You CANNOT start the application using the ${RUN_TASK_FUNCTION_ID} tool, as it will block the delegation.
+**Request these behaviors:**
+- Report failures on first occurrence — do NOT retry or workaround
+- Capture exact error text and status codes, not summaries
+- Execute only provided test steps — do not infer requirements
+- Report issues objectively — do not suggest code fixes
+- For subsequent delegations: Connect to existing browser session and find the active page
 
-UI Navigation: To test this feature, you need to [e.g., "click the AI Chat icon in the left sidebar to open the AI Chat View",
-or "open the Command Palette and run 'Open Settings'", or "the feature should be visible immediately on the main page"].
+**Expected output:** Test result (PASS/FAIL/INCONCLUSIVE) with details and any issues found
 
-Please test the implementation focusing on [specific areas].
-\`\`\`
+### Planning Test Delegations
 
-**IMPORTANT:** Include as much information as possible (URL, port, launch config, UI navigation steps)
-to guide the AppTester efficiently.
+**When you have multiple test scenarios:**
 
-The AppTester will verify the implementation and report any issues found.`;
+1. **Analyze dependencies:** Which tests depend on setup from other tests?
+2. **Group related tests:** Tests that share setup can run in sequence
+3. **Order by dependency:** Tests that create state first, tests that use that state second
+4. **Delegate sequentially:** Execute one delegation, wait for result, then next delegation
+
+### Result Handling
+
+| Result | Criteria |
+|--------|----------|
+| **PASS** | All steps executed successfully, behavior matches expected |
+| **FAIL** | One or more steps failed, or behavior does not match expected |
+| **INCONCLUSIVE** | Unable to complete testing due to environment/tooling issues |
+
+**PASS:**
+- If more test scenarios exist: Continue with next delegation
+- If all tests complete: Update Task Context and proceed to Completion
+- If Task Context exists: use ~{rewriteTaskContext} to update UI Verification Status
+
+**FAIL:**
+- Stop further test delegations (don't test dependent scenarios)
+- If Task Context exists: use ~{rewriteTaskContext} to update UI Verification Status to "FAIL",
+  record issues
+- Re-delegate fix to the Coding Agent
+- After fix: restart test sequence from the beginning
+
+**INCONCLUSIVE:**
+- Stop further test delegations
+- Document environment/tooling issue
+- Ask user how to proceed (retry, skip testing, or investigate)
+
+If Task Context exists, use ~{getTaskContext} to read current state and ~{rewriteTaskContext}
+to update status.
+
+### Output
+
+- **PASS (single test):** Test verified, continue with next test or proceed to completion
+- **PASS (all tests):** All application behavior verified, proceed to completion
+- **FAIL:** Issues identified, delegate fixes to the Coding Agent
+- **INCONCLUSIVE:** Environment issues, ask user for decision`;
     }
 }
