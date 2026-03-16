@@ -217,8 +217,18 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             }
         });
 
-        ipcMain.on(CHANNEL_SET_ZOOM_LEVEL, (event, zoomLevel: number) => {
-            event.sender.setZoomLevel(zoomLevel);
+        ipcMain.on(CHANNEL_SET_ZOOM_LEVEL, (event, zoomLevel: number, windowName: string | undefined) => {
+            let electronWindow;
+            if (windowName) {
+                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            } else {
+                electronWindow = BrowserWindow.fromWebContents(event.sender);
+            }
+            if (electronWindow) {
+                electronWindow.webContents.setZoomLevel(zoomLevel);
+            } else {
+                console.warn(`There is no known window '${windowName}'. Thus, the zoom level could not be set.`);
+            }
         });
 
         ipcMain.handle(CHANNEL_GET_ZOOM_LEVEL, event => event.sender.getZoomLevel());
