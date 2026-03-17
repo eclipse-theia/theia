@@ -16,7 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import { FrontendApplicationContribution, KeybindingRegistry, StatusBar, StatusBarAlignment } from '../../browser';
-import { CommandRegistry, PreferenceService } from '../../common';
+import { CommandRegistry, nls, PreferenceService } from '../../common';
 import { PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences';
 import { renderWindowZoomActionBar } from './window-zoom-action-bar';
 
@@ -57,10 +57,11 @@ export class WindowZoomStatusBarItem implements FrontendApplicationContribution 
             this.statusBar.removeElement(WindowZoomStatusBarItem.ID);
         } else {
             this.statusBar.setElement(WindowZoomStatusBarItem.ID, {
+                name: nls.localizeByDefault('Window Zoom'),
                 text: zoomLevel > 0 ? '$(codicon-zoom-in)' : '$(codicon-zoom-out)',
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 110,
-                tooltip: this.createTooltip(zoomLevel),
+                tooltip: () => this.createTooltip(zoomLevel),
                 backgroundColor: 'var(--theia-statusBarItem-prominentBackground)',
                 color: 'var(--theia-statusBarItem-prominentForeground)'
             });

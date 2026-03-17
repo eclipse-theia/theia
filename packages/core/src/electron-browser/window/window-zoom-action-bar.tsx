@@ -28,9 +28,6 @@ export interface WindowZoomActionBarProps {
 }
 
 export class WindowZoomActionBar extends React.Component<WindowZoomActionBarProps> {
-    constructor(props: WindowZoomActionBarProps) {
-        super(props);
-    }
 
     protected getTitleWithKeybinding(command: Command): string {
         const bindings = this.props.keybindingRegistry.getKeybindingsForCommand(command.id);
