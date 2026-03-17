@@ -51,4 +51,17 @@ jobs:
         shell: bash
         run: |
           npm ci
+          # Workaround: pre-download dash-licenses JAR since the @eclipse-dash/nodejs-wrapper
+          # uses a broken Nexus 2 URL after the repo.eclipse.org upgrade to Nexus 3.
+          # We use 1.1.1-SNAPSHOT because 1.0.2 and 1.1.0 incorrectly flag internal
+          # workspace packages (link:true with no version) as restricted.
+          # See: https://github.com/eclipse-dash/nodejs-wrapper/issues/7
+          # See: https://github.com/eclipse-dash/dash-licenses/issues/534
+          # TODO: remove this workaround once the nodejs-wrapper is updated (GH-17168)
+          DASH_JAR="node_modules/@eclipse-dash/nodejs-wrapper/download/dash-licenses.jar"
+          mkdir -p "$(dirname "$DASH_JAR")"
+          # Resolve the latest 1.1.1-SNAPSHOT timestamped JAR from the Maven metadata
+          SNAP_BASE="https://repo.eclipse.org/repository/dash-maven2-snapshots/org/eclipse/dash/org.eclipse.dash.licenses/1.1.1-SNAPSHOT"
+          SNAP_JAR=$(curl -s "$SNAP_BASE/maven-metadata.xml" | grep -oP '(?<=<value>)1\.1\.1-[^<]+' | tail -1)
+          curl -L "$SNAP_BASE/org.eclipse.dash.licenses-$SNAP_JAR.jar" -o "$DASH_JAR"
           npm run license:check
