@@ -988,6 +988,11 @@ export class MutableChatModel implements ChatModel, Disposable {
                 respData
             );
             requestMap.set(requestModel.id, requestModel);
+            requestModel.onDidChange(event => {
+                if (!ChatChangeEvent.isChangeSetEvent(event)) {
+                    this._onDidChangeEmitter.fire(event);
+                }
+            }, this, this.toDispose);
         }
 
         // Restore the hierarchy structure with all alternatives
