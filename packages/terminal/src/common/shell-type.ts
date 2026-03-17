@@ -65,7 +65,7 @@ export const shellTypesToRegex: Map<string, RegExp> = new Map([
     [GeneralShellType.Zsh, /^zsh$/]
 ]);
 
-const shellAliasPatterns = [
+const shellPrefixPatterns = [
     /^noglob\s+/,
     /^nocorrect\s+/,
     /^command\s+/,
@@ -94,7 +94,7 @@ export function cleanTerminalTitle(title: string): string {
     let changed = true;
     while (changed) {
         changed = false;
-        for (const pattern of shellAliasPatterns) {
+        for (const pattern of shellPrefixPatterns) {
             const result = cleaned.replace(pattern, '');
             if (result !== cleaned) {
                 cleaned = result;
@@ -110,9 +110,6 @@ export function cleanTerminalTitle(title: string): string {
     // A single path-like token (no arguments) is likely a CWD, skip the update
     if (parts.length <= 1 && looksLikePath(cleaned)) {
         return '';
-    }
-    if (parts.length === 0) {
-        return title;
     }
     const command = parts[0];
     const baseName = command.includes('/') ? command.substring(command.lastIndexOf('/') + 1) : command;

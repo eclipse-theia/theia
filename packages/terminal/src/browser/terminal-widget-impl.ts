@@ -123,7 +123,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected enhancedPreviewNode: Node | undefined;
     protected styleElement: HTMLStyleElement | undefined;
     override lastCwd = new URI();
-    protected _hasUserTitle = false;
+    override hasUserTitle = false;
     protected _shellName: string | undefined;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
@@ -247,7 +247,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.attachCustomKeyEventHandler();
         const titleChangeListenerDispose = this.term.onTitleChange((title: string) => {
-            if (this.options.useServerTitle && !this._hasUserTitle) {
+            if (this.options.useServerTitle && !this.hasUserTitle) {
                 const cleaned = cleanTerminalTitle(title);
                 if (cleaned) {
                     // If the command is a known shell, update the tracked shell name
@@ -581,7 +581,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.transient || this.options.isPseudoTerminal) {
             return {};
         }
-        return { terminalId: this.terminalId, titleLabel: this.title.label, hasUserTitle: this._hasUserTitle };
+        return { terminalId: this.terminalId, titleLabel: this.title.label, hasUserTitle: this.hasUserTitle, shellName: this._shellName };
     }
 
     restoreState(oldState: object): void {
@@ -591,11 +591,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         if (this.restored === false) {
-            const state = oldState as { terminalId: number, titleLabel: string, hasUserTitle?: boolean };
+            const state = oldState as { terminalId: number, titleLabel: string, hasUserTitle?: boolean, shellName?: string };
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
-            this._hasUserTitle = state.hasUserTitle ?? false;
+            this.hasUserTitle = state.hasUserTitle ?? false;
+            this._shellName = state.shellName;
             this.start(state.terminalId);
         }
     }
@@ -656,7 +657,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             if (shellType) {
                 this._shellName = shellType;
                 this.onShellTypeChangedEmiter.fire(shellType);
-                if (!this._hasUserTitle && this.options.useServerTitle) {
+                if (!this.hasUserTitle && this.options.useServerTitle) {
                     this.title.label = shellType;
                     this.title.caption = shellType;
                 }
@@ -979,16 +980,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.attachCustomKeyEventHandler(e => this.customKeyHandler(e));
     }
 
-    get hasUserTitle(): boolean {
-        return this._hasUserTitle;
-    }
-
-    set hasUserTitle(value: boolean) {
-        this._hasUserTitle = value;
-    }
-
     setTitle(title: string): void {
-        this._hasUserTitle = true;
+        this.hasUserTitle = true;
         this.title.caption = title;
         this.title.label = title;
     }
