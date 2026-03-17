@@ -330,9 +330,8 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         }
 
         if (this.disabledByTrust) {
-            md += `  \r${nls.localize(
-                'theia/vsx-registry/disabledByTrust',
-                'Disabled in Restricted Mode: This extension has been disabled because it does not support this workspace trust level.'
+            md += `  \r${nls.localizeByDefault(
+                'This extension has been disabled because the current workspace is not trusted.'
             )}`;
         }
 
@@ -670,9 +669,8 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                     </div>
                     <div className='description noWrapInfo'>{description}</div>
                     {disabledByTrust && <div className='theia-vsx-extension-restricted-notice'>
-                        {nls.localize(
-                            'theia/vsx-registry/disabledByTrust',
-                            'Disabled in Restricted Mode: This extension has been disabled because it does not support this workspace trust level.'
+                        {nls.localizeByDefault(
+                            'This extension has been disabled because the current workspace is not trusted.'
                         )}
                     </div>}
                     {this.renderAction()}
