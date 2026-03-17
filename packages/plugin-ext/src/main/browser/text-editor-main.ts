@@ -147,6 +147,10 @@ export class TextEditorMain implements Disposable {
         return this.editor.diffInformation;
     }
 
+    getDiffEditor(): MonacoDiffEditor | undefined {
+        return this.editor instanceof MonacoDiffEditor ? this.editor : undefined;
+    }
+
     setSelections(selections: Selection[]): void {
         if (this.editor) {
             this.editor.getControl().setSelections(selections);
