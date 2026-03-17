@@ -179,6 +179,8 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract hasChildProcesses(): Promise<boolean>;
 
+    abstract hasUserTitle: boolean;
+
     abstract setTitle(title: string): void;
 
     abstract waitOnExit(waitOnExit?: boolean | string): void;
