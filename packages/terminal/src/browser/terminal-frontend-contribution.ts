@@ -302,6 +302,26 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
     }
 
+    async initializeLayout(): Promise<void> {
+        await this.preferenceService.ready;
+        // `terminal.grouping.mode` is defined in @theia/terminal-manager, which this package
+        // cannot depend on. Reading via generic PreferenceService; undefined safely
+        // falls through to standard terminal behavior.
+        const groupingMode = this.preferenceService.get('terminal.grouping.mode');
+        if (groupingMode === 'tree') {
+            return;
+        }
+        try {
+            const termWidget = await this.newTerminal({});
+            await termWidget.start();
+            // Use shell.addWidget directly (not this.open()) to add the terminal
+            // to the bottom panel without expanding it on startup.
+            this.shell.addWidget(termWidget, { area: 'bottom' });
+        } catch (error) {
+            console.error('Failed to initialize terminal in default layout', error);
+        }
+    }
+
     async contributeDefaultProfiles(): Promise<void> {
         if (OS.backend.isWindows) {
             this.contributedProfileStore.registerTerminalProfile('cmd', new ShellTerminalProfile(this, {
