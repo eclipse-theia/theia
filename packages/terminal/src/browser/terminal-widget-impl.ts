@@ -51,7 +51,7 @@ import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { guessShellTypeFromExecutable } from '../common/shell-type';
+import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -123,6 +123,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected enhancedPreviewNode: Node | undefined;
     protected styleElement: HTMLStyleElement | undefined;
     override lastCwd = new URI();
+    override hasUserTitle = false;
+    protected _shellName: string | undefined;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(RemoteConnectionProvider) protected readonly connectionProvider: ServiceConnectionProvider;
@@ -187,7 +189,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @postConstruct()
     protected init(): void {
         this.id = this._terminalDOMId;
-        this.setTitle(this.options.title || TerminalWidgetImpl.LABEL);
+        const initialTitle = this.options.title || TerminalWidgetImpl.LABEL;
+        this.title.label = initialTitle;
+        this.title.caption = initialTitle;
         this.setIconClass();
 
         if (this.options.kind) {
@@ -243,8 +247,21 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.attachCustomKeyEventHandler();
         const titleChangeListenerDispose = this.term.onTitleChange((title: string) => {
-            if (this.options.useServerTitle) {
-                this.title.label = title;
+            if (this.options.useServerTitle && !this.hasUserTitle) {
+                const cleaned = cleanTerminalTitle(title);
+                if (cleaned) {
+                    // If the command is a known shell, update the tracked shell name
+                    const shellType = guessShellTypeFromExecutable(cleaned);
+                    if (shellType) {
+                        this._shellName = shellType;
+                    }
+                    this.title.label = cleaned;
+                    this.title.caption = cleaned;
+                } else if (this._shellName) {
+                    // CWD/prompt title, show the current shell name
+                    this.title.label = this._shellName;
+                    this.title.caption = this._shellName;
+                }
             }
         });
         this.toDispose.push(titleChangeListenerDispose);
@@ -564,7 +581,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.transient || this.options.isPseudoTerminal) {
             return {};
         }
-        return { terminalId: this.terminalId, titleLabel: this.title.label };
+        return { terminalId: this.terminalId, titleLabel: this.title.label, hasUserTitle: this.hasUserTitle, shellName: this._shellName };
     }
 
     restoreState(oldState: object): void {
@@ -574,10 +591,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         if (this.restored === false) {
-            const state = oldState as { terminalId: number, titleLabel: string };
+            const state = oldState as { terminalId: number, titleLabel: string, hasUserTitle?: boolean, shellName?: string };
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
+            this.hasUserTitle = state.hasUserTitle ?? false;
+            this._shellName = state.shellName;
             this.start(state.terminalId);
         }
     }
@@ -636,7 +655,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             const processInfo = await this.shellTerminalServer.getProcessInfo(terminalId);
             const shellType = guessShellTypeFromExecutable(processInfo.executable);
             if (shellType) {
+                this._shellName = shellType;
                 this.onShellTypeChangedEmiter.fire(shellType);
+                if (!this.hasUserTitle && this.options.useServerTitle) {
+                    this.title.label = shellType;
+                    this.title.caption = shellType;
+                }
             }
             return terminalId;
         }
@@ -957,6 +981,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     setTitle(title: string): void {
+        this.hasUserTitle = true;
         this.title.caption = title;
         this.title.label = title;
     }
