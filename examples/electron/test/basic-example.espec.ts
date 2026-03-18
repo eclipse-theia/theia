@@ -22,13 +22,36 @@ import { app, BrowserWindow } from 'electron';
 
 const expect = chai.expect;
 
-const electronExampleDir = path.resolve(__dirname, '..', '..', '..');
+// The compiled spec is at lib/test/, so two levels up is the electron example package root.
+const electronExampleDir = path.resolve(__dirname, '..', '..');
 
 describe('basic-example-spec', function (): void {
     this.timeout(60_000);
 
     let server: http.Server | undefined;
     let mainWindow: BrowserWindow | undefined;
+
+    before(async () => {
+        if (!app.isReady()) {
+            await app.whenReady();
+        }
+
+        // Set the backend config before loading the server module, matching what main.js does.
+        // Guard against double-call in case the module was already initialized.
+        const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
+        try {
+            BackendApplicationConfigProvider.set({
+                singleInstance: false,
+                configurationFolder: '.theia'
+            });
+        } catch {
+            // Config was already set — proceed without overwriting.
+        }
+
+        // eslint-disable-next-line import/no-dynamic-require
+        const serverModule = require(path.join(electronExampleDir, 'src-gen', 'backend', 'server'));
+        server = await serverModule(0, 'localhost');
+    });
 
     after(async () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -37,29 +60,13 @@ describe('basic-example-spec', function (): void {
         if (server) {
             await new Promise<void>(resolve => server!.close(() => resolve()));
         }
-        // Remove all 'exit' listeners to prevent BackendApplication.onStop from
-        // calling terminateProcessTree, which crashes Chromium's GPU process on shutdown.
-        process.removeAllListeners('exit');
-        process.exit(0);
+        // Use Electron's app.exit() to tear down gracefully without triggering
+        // BackendApplication.onStop → terminateProcessTree, which crashes the GPU process in CI.
+        app.exit(0);
     });
 
-    it('should start the backend server', async () => {
-        if (!app.isReady()) {
-            await app.whenReady();
-        }
-
-        // Set the backend config before loading the server module, matching what main.js does
-        const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
-        BackendApplicationConfigProvider.set({
-            singleInstance: false,
-            configurationFolder: '.theia'
-        });
-
-        // eslint-disable-next-line import/no-dynamic-require
-        const serverModule = require(path.join(electronExampleDir, 'src-gen', 'backend', 'server'));
-        server = await serverModule(0, 'localhost');
+    it('should start the backend server', () => {
         expect(server).to.not.be.undefined;
-
         const address = server!.address() as AddressInfo;
         expect(address).to.not.be.null;
         expect(address.port).to.be.a('number').and.to.be.greaterThan(0);
@@ -77,10 +84,15 @@ describe('basic-example-spec', function (): void {
             }
         });
 
+        // Wait for the title to be updated asynchronously by the Theia frontend.
+        const titleUpdated = new Promise<string>(resolve =>
+            mainWindow!.webContents.once('page-title-updated', (_e, title) => resolve(title))
+        );
+
         const url = `http://localhost:${address.port}`;
         await mainWindow.loadURL(url);
 
-        const title = mainWindow.webContents.getTitle();
+        const title = await titleUpdated;
         expect(title).to.include('Theia Electron Example');
     });
 });
