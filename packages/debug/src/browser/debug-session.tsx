@@ -534,7 +534,7 @@ export class DebugSession implements CompositeTreeElement {
         }
 
         if (!terminal) {
-            terminal = await this.terminalServer.newTerminal(options);
+            terminal = await this.terminalServer.newTerminal({ ...options, kind: 'debug' });
             await terminal.start();
             try {
                 if (terminal.commandHistoryState) {

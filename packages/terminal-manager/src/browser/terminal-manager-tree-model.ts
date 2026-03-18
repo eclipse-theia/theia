@@ -17,7 +17,7 @@
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator, TreeNode } from '@theia/core/lib/browser';
 import { Emitter, nls } from '@theia/core';
-import { TerminalManagerTreeTypes, TASKS_PAGE_ID, isTasksPageNode } from './terminal-manager-types';
+import { TerminalManagerTreeTypes, TASKS_PAGE_ID } from './terminal-manager-types';
 
 @injectable()
 export class TerminalManagerTreeModel extends TreeModelImpl {
@@ -113,9 +113,6 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     deleteTerminalPage(pageId: TerminalManagerTreeTypes.PageId): void {
         const pageNode = this.getNode(pageId);
         if (TerminalManagerTreeTypes.isPageNode(pageNode) && CompositeTreeNode.is(this.root)) {
-            if (isTasksPageNode(pageNode) && pageNode.children.length > 0) {
-                return;
-            }
             const isActive = this.activePageNode === pageNode;
             this.onDidDeletePageEmitter.fire(pageNode.id);
             CompositeTreeNode.removeChild(this.root, pageNode);
