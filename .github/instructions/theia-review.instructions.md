@@ -25,7 +25,7 @@ Work through all 10 items in `doc/pull-requests.md#review-checklist`. Actively v
 - **Tests** — Tests for new behavior? Check CI via GitHub API; report ignored failures.
 - **Breaking changes** — In `CHANGELOG.md`? PR template checkbox checked?
 - **Dependencies** — New `package.json` entries justified? License check CI passing?
-- **Copyright** — New files have SPDX identifier + copyright line with current year.
+- **Copyright** — New files have SPDX identifier + copyright line with current year and contributing entity.
 - **DCO** — Every commit has `Signed-off-by: Name <email>`.
 - **i18n** — User-facing strings use `nls.localizeByDefault` or `nls.localize('theia/<pkg>/<id>', ...)`.
 
@@ -39,7 +39,7 @@ Get line numbers from `git show origin/master:<path>`, not the PR branch.
 
 ## Key Coding Rules
 
-Most commonly violated sections of `doc/coding-guidelines.md`:
+Most commonly violated rules from `doc/coding-guidelines.md` and `doc/code-organization.md`:
 
 - `undefined` not `null`; single quotes; explicit return types; semicolons always
 - Property injection (not constructor); `@postConstruct` for init; `inSingletonScope()`
@@ -47,7 +47,7 @@ Most commonly violated sections of `doc/coding-guidelines.md`:
 - No `.bind(this)` or inline arrow functions in JSX — use class property arrow functions
 - No inline styles; no hard-coded colors — use `ColorContribution` and CSS variables
 - Pass URIs between frontend/backend, never raw paths; never string-concatenate URIs
-- Platform folders: `common/` everywhere, `browser/` frontend, `node/` backend only
+- Platform folders (`doc/code-organization.md`): `common/` everywhere, `browser/` frontend, `node/` backend only
 
 ## Accessibility
 

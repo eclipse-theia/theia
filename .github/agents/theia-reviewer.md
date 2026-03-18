@@ -27,7 +27,7 @@ Read these documents — they are the authoritative source for all standards ref
 - `doc/Testing.md` — test file naming, test structure, how to run tests
 - `doc/api-management.md` — API stability, breaking change policy, deprecation rules
 
-If the PR touches `packages/plugin-ext/`, also read:
+If the PR touches `packages/plugin-ext/`, `packages/plugin-ext-vscode/`, or `packages/plugin-ext-headless/`, also read:
 
 - `.github/instructions/theia-plugin-rpc.instructions.md` — Main-Ext RPC pattern, proxy identifiers, `$`-method naming
 
@@ -67,14 +67,14 @@ To get the correct line numbers for a permalink, run `git show origin/master:<pa
 
 The full checklist is defined in `doc/pull-requests.md#review-checklist`. Work through all 10 items. Report failures as inline comments on the relevant lines, or as a PR-level summary comment where appropriate.
 
-Key things to actively verify (not just trust the author):
+Key things to actively verify (not just trust the author). Numbers match the checklist in `doc/pull-requests.md`:
 
-- **[1] Build and tests** — Are there automated tests for new behavior? Read `doc/Testing.md` for what is expected. Check the CI workflow runs on this PR via the GitHub API and report any failing jobs (lint, build, tests) — especially if the author has ignored them.
-- **[2] Breaking changes** — Check `doc/api-management.md` for what counts as a breaking change. If yes: recorded in `CHANGELOG.md`? Checkbox checked in PR template?
-- **[3] New dependencies** — Any new entries in `package.json`? Check whether the license check workflow signals a review is needed (`Found results that aren't part of the baseline`).
-- **[4] Copied code** — Any third-party code? Check the 3pp/dash license CI check.
-- **[5] Copyright headers** — Every new file needs an SPDX identifier and a copyright line with the current year.
-- **[6] i18n** — Any user-facing strings? Read `doc/coding-guidelines.md#internationalizationlocalization` for the rules.
+- **[1] Build and tests** — Are there automated tests for new behavior? Read `doc/Testing.md` for what is expected. Check the CI workflow runs on this PR via the GitHub API and report any failing jobs (lint, build, tests), especially if the author has ignored them.
+- **[3] Breaking changes** — Check `doc/api-management.md` for what counts as a breaking change. If yes: recorded in `CHANGELOG.md`? Checkbox checked in PR template?
+- **[4] New dependencies** — Any new entries in `package.json`? Check whether the license check workflow signals a review is needed (`Found results that aren't part of the baseline`).
+- **[5] Copied code** — Any third-party code? Check the 3pp/dash license CI check.
+- **[6] Copyright headers** — Every new file needs an SPDX identifier, a copyright line with the current year, and the name of the contributing entity.
+- **[10] i18n** — Any user-facing strings? Read `doc/coding-guidelines.md#internationalizationlocalization` for the rules.
 
 ---
 
@@ -95,10 +95,10 @@ Sections most commonly violated — pay particular attention to:
 
 - `#null-and-undefined` — `undefined` not `null`
 - `#dependency-injection` — property injection, `@postConstruct`, `inSingletonScope`, `bindRootContributionProvider` vs `bindContributionProvider`
-- `#react-patterns` — no `.bind(this)` or inline arrow functions in JSX; use class property arrow functions
-- `#uri-and-path-handling` — never pass raw paths across the frontend/backend boundary; never string-concatenate URIs
+- `#react` — no `.bind(this)` or inline arrow functions in JSX; use class property arrow functions
+- `#uripath` — never pass raw paths across the frontend/backend boundary; never string-concatenate URIs
 - `#internationalizationlocalization` — `nls.localizeByDefault` for VS Code strings; `nls.localize('theia/<package>/<id>', ...)` for Theia strings; parameters as args, not interpolated
-- `#css-guidelines` and `#theming` — no inline styles, no hard-coded colors, use `ColorContribution`
+- `#css` and `#theming` — no inline styles, no hard-coded colors, use `ColorContribution`
 
 ---
 
