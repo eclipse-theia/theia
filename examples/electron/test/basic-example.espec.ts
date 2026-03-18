@@ -22,7 +22,7 @@ import { app, BrowserWindow } from 'electron';
 
 const expect = chai.expect;
 
-const electronExampleDir = path.resolve(__dirname, '..', '..', '..');
+const electronExampleDir = path.resolve(__dirname, '..', '..');
 
 describe('basic-example-spec', function (): void {
     this.timeout(60_000);
