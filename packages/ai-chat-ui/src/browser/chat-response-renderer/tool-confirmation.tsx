@@ -31,20 +31,28 @@ export interface CountdownTimerProps {
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({ response }) => {
     const timeoutSeconds = response.confirmationTimeout;
     const effectiveTimeout = timeoutSeconds !== undefined && timeoutSeconds > 0 ? timeoutSeconds : 0;
+    const deadlineRef = React.useRef<number | undefined>(undefined);
+
+    const getRemainingSeconds = (): number => {
+        if (deadlineRef.current === undefined) {
+            return effectiveTimeout;
+        }
+        return Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
+    };
+
     const [remainingSeconds, setRemainingSeconds] = React.useState(effectiveTimeout);
 
     React.useEffect(() => {
         if (effectiveTimeout <= 0) {
             return;
         }
+        deadlineRef.current = Date.now() + effectiveTimeout * 1000;
         const intervalId = setInterval(() => {
-            setRemainingSeconds(prev => {
-                if (prev <= 1) {
-                    clearInterval(intervalId);
-                    return 0;
-                }
-                return prev - 1;
-            });
+            const remaining = getRemainingSeconds();
+            setRemainingSeconds(remaining);
+            if (remaining <= 0) {
+                clearInterval(intervalId);
+            }
         }, 1000);
         return () => clearInterval(intervalId);
     }, [effectiveTimeout]);
