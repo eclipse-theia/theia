@@ -519,11 +519,12 @@ describe('WorkspaceTrustService', () => {
 
     describe('setWorkspaceTrust and trust change handling', () => {
         let storeWorkspaceTrustStub: sinon.SinonStub;
+        let addToTrustedFoldersStub: sinon.SinonStub;
+        let removeFromTrustedFoldersStub: sinon.SinonStub;
         let shouldReloadStub: sinon.SinonStub;
         let windowServiceStub: { reload: sinon.SinonStub; setSafeToShutDown: sinon.SinonStub };
         let contextKeyServiceStub: { setContext: sinon.SinonStub };
         let onDidChangeEmitterStub: { fire: sinon.SinonStub };
-
         let confirmRestartStub: sinon.SinonStub;
 
         beforeEach(() => {
@@ -531,6 +532,8 @@ describe('WorkspaceTrustService', () => {
                 service as unknown as { storeWorkspaceTrust: (trust: boolean) => Promise<void> },
                 'storeWorkspaceTrust'
             ).resolves();
+            addToTrustedFoldersStub = sinon.stub(service, 'addToTrustedFolders').resolves();
+            removeFromTrustedFoldersStub = sinon.stub(service, 'removeFromTrustedFolders').resolves();
             shouldReloadStub = sinon.stub(
                 service as unknown as { shouldReloadForTrustChange: () => boolean },
                 'shouldReloadForTrustChange'
@@ -568,21 +571,27 @@ describe('WorkspaceTrustService', () => {
             expect(storeWorkspaceTrustStub.called).to.be.false;
         });
 
-        it('should store trust before checking reload', async () => {
+        it('should confirm restart before storing or firing events when reload is required', async () => {
             const callOrder: string[] = [];
+            confirmRestartStub.callsFake(async () => {
+                callOrder.push('confirm');
+                return true;
+            });
             storeWorkspaceTrustStub.callsFake(() => {
                 callOrder.push('store');
                 return Promise.resolve();
             });
-            shouldReloadStub.callsFake(() => {
-                callOrder.push('shouldReload');
-                return false;
+            onDidChangeEmitterStub.fire.callsFake(() => {
+                callOrder.push('fire');
             });
+            shouldReloadStub.returns(true);
 
             service.setCurrentTrust(false);
             await service.setWorkspaceTrust(true);
 
-            expect(callOrder).to.deep.equal(['store', 'shouldReload']);
+            expect(callOrder[0]).to.equal('confirm');
+            expect(callOrder).to.include('store');
+            expect(callOrder).to.include('fire');
         });
 
         it('should call windowService.reload() when shouldReloadForTrustChange returns true', async () => {
@@ -620,6 +629,41 @@ describe('WorkspaceTrustService', () => {
             await service.setWorkspaceTrust(true);
 
             expect(windowServiceStub.reload.called).to.be.false;
+        });
+
+        it('should leave trust state unchanged and not fire events when user cancels the restart dialog', async () => {
+            shouldReloadStub.returns(true);
+            confirmRestartStub.resolves(false);
+
+            service.setCurrentTrust(false);
+            await service.setWorkspaceTrust(true);
+
+            expect(service.getCurrentTrust()).to.equal(false);
+            expect(contextKeyServiceStub.setContext.called).to.be.false;
+            expect(onDidChangeEmitterStub.fire.called).to.be.false;
+            expect(storeWorkspaceTrustStub.called).to.be.false;
+            expect(addToTrustedFoldersStub.called).to.be.false;
+            expect(removeFromTrustedFoldersStub.called).to.be.false;
+        });
+
+        it('should call addToTrustedFolders when setting trusted=true', async () => {
+            shouldReloadStub.returns(false);
+            service.setCurrentTrust(false);
+
+            await service.setWorkspaceTrust(true);
+
+            expect(addToTrustedFoldersStub.calledOnce).to.be.true;
+            expect(removeFromTrustedFoldersStub.called).to.be.false;
+        });
+
+        it('should call removeFromTrustedFolders when setting trusted=false', async () => {
+            shouldReloadStub.returns(false);
+            service.setCurrentTrust(true);
+
+            await service.setWorkspaceTrust(false);
+
+            expect(removeFromTrustedFoldersStub.calledOnce).to.be.true;
+            expect(addToTrustedFoldersStub.called).to.be.false;
         });
 
         it('should NOT reload when reload=false even if shouldReloadForTrustChange returns true', async () => {

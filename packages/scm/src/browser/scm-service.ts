@@ -39,7 +39,7 @@ export class ScmService {
     readonly onDidAddRepository = this.onDidAddRepositoryEmitter.event;
 
     protected readonly onDidRemoveRepositoryEmitter = new Emitter<ScmRepository>();
-    readonly onDidRemoveRepository = this.onDidAddRepositoryEmitter.event;
+    readonly onDidRemoveRepository = this.onDidRemoveRepositoryEmitter.event;
 
     protected readonly onDidChangeStatusBarCommandsEmitter = new Emitter<ScmCommand[]>();
     readonly onDidChangeStatusBarCommands = this.onDidChangeStatusBarCommandsEmitter.event;

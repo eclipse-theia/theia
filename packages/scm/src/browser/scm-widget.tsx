@@ -26,7 +26,6 @@ import {
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmActionButtonWidget } from './scm-action-button-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
-import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
 import { ScmPreferences } from '../common/scm-preferences';
@@ -45,7 +44,6 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
     @inject(ScmActionButtonWidget) protected readonly actionButtonWidget: ScmActionButtonWidget;
     @inject(ScmTreeWidget) readonly resourceWidget: ScmTreeWidget;
     @inject(ScmAmendWidget) protected readonly amendWidget: ScmAmendWidget;
-    @inject(ScmNoRepositoryWidget) readonly noRepositoryWidget: ScmNoRepositoryWidget;
     @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
     @inject(BadgeService) protected readonly badgeService: BadgeService;
 
@@ -80,7 +78,6 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.containerLayout.addWidget(this.actionButtonWidget);
         this.containerLayout.addWidget(this.resourceWidget);
         this.containerLayout.addWidget(this.amendWidget);
-        this.containerLayout.addWidget(this.noRepositoryWidget);
         this.toDispose.push(this.resourceWidget.model.onNodeRefreshed(() => {
             const totalChanges = this.resourceWidget.model.scmProvider?.groups.reduce((prev, curr) => prev + curr.resources.length, 0);
             this.badgeService.showBadge(this, totalChanges ? { value: totalChanges, tooltip: nls.localizeByDefault('{0} pending changes', totalChanges) } : undefined);
@@ -135,13 +132,11 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
             this.actionButtonWidget.show();
             this.resourceWidget.show();
             this.amendWidget.show();
-            this.noRepositoryWidget.hide();
         } else {
             this.commitWidget.hide();
             this.actionButtonWidget.hide();
-            this.resourceWidget.hide();
+            this.resourceWidget.show();
             this.amendWidget.hide();
-            this.noRepositoryWidget.show();
         }
     }
 
@@ -154,7 +149,6 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         MessageLoop.sendMessage(this.actionButtonWidget, msg);
         MessageLoop.sendMessage(this.resourceWidget, msg);
         MessageLoop.sendMessage(this.amendWidget, msg);
-        MessageLoop.sendMessage(this.noRepositoryWidget, msg);
         super.onUpdateRequest(msg);
     }
 
@@ -163,7 +157,6 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.node.appendChild(this.actionButtonWidget.node);
         this.node.appendChild(this.resourceWidget.node);
         this.node.appendChild(this.amendWidget.node);
-        this.node.appendChild(this.noRepositoryWidget.node);
 
         super.onAfterAttach(msg);
         this.update();
