@@ -3,8 +3,7 @@
 <!-- Read by all Copilot features (chat, coding agent, built-in reviewer).
      Provides project context and doc references only — no feature-specific rules.
      Coding rules: .github/instructions/theia-coding.instructions.md
-     Review rules: .github/instructions/theia-review.instructions.md
-     Deep on-demand review: @theia-reviewer (.github/agents/theia-reviewer.md) -->
+     Review rules: .github/instructions/theia-review*.instructions.md -->
 
 ## Project Context
 
@@ -25,6 +24,8 @@ The authoritative references for all project standards are:
 
 ## Code Reviews
 
-For thorough pull request reviews, mention `@theia-reviewer` in a PR comment to invoke the dedicated review agent (`.github/agents/theia-reviewer.md`). It applies the full Theia review checklist, coding standards, and runs UI verification.
+Review rules are split across instruction files in `.github/instructions/` that are loaded automatically:
 
-For automatic reviews (Copilot assigned as reviewer), see `.github/instructions/theia-review.instructions.md`.
+- `theia-review.instructions.md` — review tone, priority labels, comment style
+- `theia-review-checklist.instructions.md` — PR template and review checklist verification
+- `theia-review-code.instructions.md` — codebase integration, coding rules, architecture

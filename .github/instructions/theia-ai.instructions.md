@@ -1,5 +1,6 @@
 ---
 applyTo: "packages/ai-*/**/*.ts"
+description: "DI bindings, contribution types, and delegate pattern for Theia AI packages"
 ---
 
 # Theia AI Instructions
