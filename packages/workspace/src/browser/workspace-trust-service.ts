@@ -178,16 +178,18 @@ export class WorkspaceTrustService {
         if (this.currentTrust === trusted) {
             return;
         }
+        const needsReload = reload && this.shouldReloadForTrustChange(trusted);
+        if (needsReload && !await this.confirmRestart()) {
+            return;
+        }
+        // Must be set before add/removeFromTrustedFolders to prevent handlePreferenceChange from recursing.
         this.currentTrust = trusted;
         this.contextKeyService.setContext('isWorkspaceTrusted', trusted);
         this.onDidChangeWorkspaceTrustEmitter.fire(trusted);
-        // Persist first so settings survive the reload. windowService.reload()
-        // runs isSafeToShutDown internally, which handles unsaved-changes prompts.
         await this.storeWorkspaceTrust(trusted);
-        if (reload && this.shouldReloadForTrustChange(trusted)) {
-            if (await this.confirmRestart()) {
-                this.windowService.reload();
-            }
+        await (trusted ? this.addToTrustedFolders() : this.removeFromTrustedFolders());
+        if (needsReload) {
+            this.windowService.reload();
         }
     }
 
@@ -555,9 +557,6 @@ export class WorkspaceTrustService {
         try {
             const grantedTrust = await this.showTrustPromptDialog();
             if (grantedTrust) {
-                // Persist folder trust before updating state so the preference
-                // is written before any reload that setWorkspaceTrust may trigger.
-                await this.addToTrustedFolders();
                 await this.setWorkspaceTrust(true);
             }
             this.pendingTrustRequest.resolve(grantedTrust);

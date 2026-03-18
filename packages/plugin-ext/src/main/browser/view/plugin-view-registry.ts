@@ -217,12 +217,6 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                     }
                 }
             }
-            // When workspace trust changes, re-evaluate SCM welcome content
-            // because getViewWelcomes() filters entries based on trust state.
-            // See https://github.com/eclipse-theia/theia/issues/12318
-            if (e.affects(new Set(['isWorkspaceTrusted']))) {
-                this.handleViewWelcomeChange('scm');
-            }
         });
 
         const hookDockPanelKey = (panel: TheiaDockPanel, key: ContextKey<string>) => {
@@ -590,15 +584,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     getViewWelcomes(viewId: string): ViewWelcome[] {
-        const viewWelcomes = this.viewsWelcome.get(viewId) || [];
-        // Workaround: suppress plugin-contributed SCM welcome entries in restricted mode.
-        // Plugins declaring `untrustedWorkspaces.supported: false` (e.g., vscode.git) should not
-        // contribute UI when the workspace is untrusted, but Theia does not yet read this capability.
-        // See https://github.com/eclipse-theia/theia/issues/12318
-        if (viewId === 'scm' && !this.contextKeyService.match('isWorkspaceTrusted')) {
-            return viewWelcomes.filter(w => w.when?.includes('isWorkspaceTrusted'));
-        }
-        return viewWelcomes;
+        return this.viewsWelcome.get(viewId) || [];
     }
 
     async getView(viewId: string): Promise<PluginViewWidget | undefined> {
