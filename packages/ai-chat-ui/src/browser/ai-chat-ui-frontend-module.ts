@@ -62,6 +62,7 @@ import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-w
 import { ChatInputHistoryService } from './chat-input-history';
 import { ChatInputHistoryContribution } from './chat-input-history-contribution';
 import { ChatInputModeContribution } from './chat-input-mode-contribution';
+import { ChatInputPasteContribution } from './chat-input-paste-contribution';
 import { ChatInputFocusService } from './chat-input-focus-service';
 import { ChatFocusContribution } from './chat-focus-contribution';
 import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
@@ -84,6 +85,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatInputModeContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatInputModeContribution);
     bind(KeybindingContribution).toService(ChatInputModeContribution);
+
+    bind(ChatInputPasteContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputPasteContribution);
+    bind(KeybindingContribution).toService(ChatInputPasteContribution);
 
     bind(ChatFocusContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatFocusContribution);
