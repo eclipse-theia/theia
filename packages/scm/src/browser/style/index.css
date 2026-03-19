@@ -311,3 +311,122 @@
 .theia-scm-panel {
   overflow: visible;
 }
+
+.theia-scm-repositories-container {
+  width: 100%;
+}
+
+.theia-scm-repository-item {
+  display: flex;
+  align-items: center;
+  height: var(--theia-content-line-height);
+  padding: 0 calc(var(--theia-ui-padding) * 2) 0 calc(var(--theia-ui-padding) * 2);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  gap: 4px;
+}
+
+.theia-scm-repository-item:hover {
+  background: var(--theia-list-hoverBackground);
+}
+
+.theia-scm-repository-item.selected {
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-scm-repository-item.child {
+  padding-left: calc(var(--theia-ui-padding) * 2 + 8px);
+}
+
+.theia-scm-repository-collapse-toggle {
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  width: 16px;
+  text-align: center;
+}
+
+.theia-scm-repository-child-indent {
+  display: inline-block;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.theia-scm-repository-icon {
+  flex-shrink: 0;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-scm-repository-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theia-scm-repository-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.theia-scm-repository-status-commands {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.theia-scm-repository-status-command {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: inherit;
+  white-space: nowrap;
+  font-size: var(--theia-ui-font-size0);
+  line-height: var(--theia-content-line-height);
+  text-decoration: none;
+}
+
+.theia-scm-repository-status-command:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-scm-repository-status-command.selected {
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-scm-repository-status-command .codicon {
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-scm-repository-more-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0;
+}
+
+.theia-scm-repository-item:hover .theia-scm-repository-more-button,
+.theia-scm-repository-item.selected .theia-scm-repository-more-button {
+  opacity: 1;
+}
+
+.theia-scm-repository-more-button:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-scm-repository-more-button.selected {
+  color: var(--theia-list-activeSelectionForeground);
+}

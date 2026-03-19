@@ -70,6 +70,7 @@ export class PluginMenuCommandAdapter {
             ['scm/resourceGroup/context', toScmArgs],
             ['scm/resourceState/context', toScmArgs],
             ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
+            ['scm/sourceControl/context', toScmArgs],
             ['testing/message/context', toTestMessageArgs],
             ['testing/profiles/context', noArgs],
             ['scm/change/title', (...args) => this.toScmChangeArgs(...args)],

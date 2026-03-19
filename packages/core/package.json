@@ -33,7 +33,7 @@
     "@types/uuid": "^9.0.8",
     "@types/ws": "^8.5.5",
     "@types/yargs": "^15",
-    "@vscode/codicons": "*",
+    "@vscode/codicons": "0.0.45",
     "ajv": "^6.5.3",
     "async-mutex": "^0.4.0",
     "body-parser": "^1.17.2",
