@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*.spec.ts,**/*.ui-spec.ts,**/*.slow-spec.ts"
+description: "Test structure, JSDOM setup, and common mistakes for Theia test files"
 ---
 
 # Theia Testing Instructions
@@ -59,6 +60,14 @@ disableJSDOM();
 
 For DI-based unit tests, create a minimal `Container` with only the bindings under test.
 Do not reuse the application container — test isolation is the goal.
+
+## Integration Tests
+
+Unit tests live in `packages/*/src/**/*.spec.ts`. End-to-end tests live in `examples/api-tests/src/*.spec.js` — not in unit test files. E2E tests:
+
+- Test against application APIs (`EditorManager`, `WorkspaceService`, etc.) — never DOM or CSS directly
+- Access services via `window.theia.container.get(ServiceClass)`
+- Are published so adopters can run them against their own products
 
 ## Common Mistakes
 
