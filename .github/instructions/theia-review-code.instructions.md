@@ -42,7 +42,7 @@ protected handle = () => { ... };
 
 - No inline styles; no hard-coded colors — use `ColorContribution` and CSS variables (`var(--theia-*)`)
 - Pass URIs (as strings) between frontend and backend, never raw OS paths; never string-concatenate URIs — use `new URI(str).join(segment)`
-- Platform folders — never import across boundaries: `common/` (everywhere), `browser/` (frontend, imports `common`), `node/` (backend, imports `common`), `electron-browser/` (imports `common`, `browser`), `electron-main/` (imports `common`, `node`)
+- Platform folders — never import across boundaries: `common/` (everywhere), `browser/` (imports `common`), `browser-only/` (imports `common`), `node/` (imports `common`), `electron-node/` (imports `common`, `node`), `electron-browser/` (imports `common`, `browser`), `electron-main/` (imports `common`, `node`, `electron-node`)
 - Use `console` for root-level logging, not `ILogger`
 
 ## VS Code Internal API
@@ -53,7 +53,6 @@ Never export a type, function, or variable from `@theia/monaco-editor-core/esm/v
 
 - Does the PR fit existing patterns, or is it reinventing something Theia already provides?
 - Substantial behavior or API changes need reviews from multiple contributing organizations.
-- New packages follow `packages/<name>/src/{common,browser,node}/`. Does the functionality belong in Theia core, or should it be an external extension?
 
 ## Accessibility
 

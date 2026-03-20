@@ -15,7 +15,10 @@ Lerna monorepo with packages under `packages/` (runtime extensions) and `dev-pac
 - `src/common/` — shared code (no DOM, no Node.js APIs)
 - `src/browser/` — frontend (DOM APIs, InversifyJS DI container)
 - `src/node/` — backend (Node.js APIs, InversifyJS DI container)
-- `src/electron-browser/`, `src/electron-main/` — Electron-specific
+- `src/browser-only/` — frontend without a Node.js backend (imports `common`)
+- `src/electron-node/` — Electron-specific backend (imports `common`, `node`)
+- `src/electron-browser/` — Electron renderer (imports `common`, `browser`)
+- `src/electron-main/` — Electron main process (imports `common`, `node`, `electron-node`)
 
 Extension entry points are declared in `package.json`:
 
@@ -50,6 +53,6 @@ Extension entry points are declared in `package.json`:
 
 ## API Stability
 
-- `@stable` (jsdoc tag): breaking changes require a major release and deprecation cycle
-- `@experimental` or no tag: may change in minor releases without deprecation
 - New APIs should always start as experimental
+- Breaking an experimental API is allowed in a minor release; breaking a stable API requires a major release and a deprecation cycle
+- Deprecated APIs must have a `@deprecated` JSDoc tag explaining why and what to use instead

@@ -6,9 +6,7 @@ description: "Coding conventions for the Theia coding agent: style, DI, React, U
 
 # Theia Coding Instructions
 
-<!-- Read by coding agent and chat, not by the built-in reviewer.
-     The built-in reviewer reads theia-review*.instructions.md instead (same rules, review framing).
-     This is a concise extract of the most commonly violated rules — full detail in doc/coding-guidelines.md.
+<!-- Concise extract of the most commonly violated rules — full detail in doc/coding-guidelines.md.
      Pairs with copilot-instructions.md (always read together). -->
 
 ## Code Style
