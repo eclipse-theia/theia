@@ -17,10 +17,11 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar-types';
-import { Disposable, DisposableCollection, nls } from '@theia/core';
+import { Disposable, DisposableCollection, nls, PreferenceService } from '@theia/core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service';
 import { CopilotCommands } from './copilot-command-contribution';
+import { COPILOT_ENABLED_PREF } from '../common/copilot-preferences';
 
 const COPILOT_STATUS_BAR_ID = 'copilot-auth-status';
 
@@ -39,6 +40,9 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     protected authState: CopilotAuthState = { isAuthenticated: false };
     protected readonly toDispose = new DisposableCollection();
 
@@ -50,6 +54,11 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
         }));
         this.toDispose.push(this.activationService.onDidChangeActiveStatus(() => {
             this.updateStatusBar();
+        }));
+        this.toDispose.push(this.preferenceService.onPreferenceChanged(event => {
+            if (event.preferenceName === COPILOT_ENABLED_PREF) {
+                this.updateStatusBar();
+            }
         }));
     }
 
@@ -65,7 +74,7 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
     }
 
     protected updateStatusBar(): void {
-        if (!this.activationService.isActive) {
+        if (!this.activationService.isActive || !this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true)) {
             this.statusBar.removeElement(COPILOT_STATUS_BAR_ID);
             return;
         }
