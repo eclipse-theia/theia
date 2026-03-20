@@ -8,6 +8,7 @@
 
 - [workspace] introduced `WorkspaceSearchFilterService` to centralize search exclusion globs [#16775](https://github.com/eclipse-theia/theia/pull/16775)
 - [git] removed `@theia/git` extension code entirely (deprecated since v1.58.0) [#17148](https://github.com/eclipse-theia/theia/pull/17148)
+- [debug] refactored breakpoint identity model so `BreakpointManager` is the sole owner of `DebugBreakpoint` instances, using a VSCode-style `sessionData` map for multi-session support [#17083](https://github.com/eclipse-theia/theia/pull/17083)
 
 <a name="breaking_changes_1.70.0">[Breaking Changes:](#breaking_changes_1.70.0)</a>
 
@@ -16,6 +17,13 @@
   - `SearchInWorkspaceWidget`: renamed `includeIgnoredState` to `useExcludeSettingsState` with inverted semantics (now `enabled: true` means exclusions are applied). Removed `FileSystemPreferences` injection, replaced by `searchFilterService` (`WorkspaceSearchFilterService`).
   - `QuickFileSelectService`: removed `fsPreferences` property (`FileSystemPreferences`), replaced by `searchFilterService` (`WorkspaceSearchFilterService`). Exclusion patterns are now provided via a new `getExcludePatterns` method.
 - [core] ended support for Node.js 20 [#17079](https://github.com/eclipse-theia/theia/pull/17079) - Contributed on behalf of STMicroelectronics
+- [debug] `BreakpointManager` no longer extends `MarkerManager`. Calls to `findMarkers()`, `setMarkers()`, `getMarkersByUri()`, `cleanAllMarkers()` must use the new direct methods (`getBreakpoints()`, `setBreakpoints()`, `getUris()`, `removeBreakpoints()`) [#17083](https://github.com/eclipse-theia/theia/pull/17083)
+- [debug] `DebugSessionManager` breakpoint proxy methods removed. Callers must use `BreakpointManager` directly [#17083](https://github.com/eclipse-theia/theia/pull/17083)
+- [debug] `DebugSession` no longer maintains breakpoint state (`_breakpoints`, `getSourceBreakpoints()`, `getFunctionBreakpoints()`, etc.). All breakpoint state lives in `BreakpointManager` [#17083](https://github.com/eclipse-theia/theia/pull/17083)
+- [debug] `DebugBreakpoint.update()` signature changed from `update(data: DebugBreakpointData)` to `update(sessionId, data?)`. `DebugBreakpointData` type removed [#17083](https://github.com/eclipse-theia/theia/pull/17083)
+- [debug] `BreakpointMarker`, `BREAKPOINT_KIND`, and the `Marker` import removed from `breakpoint-marker.ts` [#17083](https://github.com/eclipse-theia/theia/pull/17083)
+- [debug] `getBreakpoints()` and `getFunctionBreakpoints()` now return `readonly` arrays [#17083](https://github.com/eclipse-theia/theia/pull/17083)
+- [debug] `BreakpointsChangeEvent<T>` generic constraint changed from `T extends BaseBreakpoint` to `T extends object` [#17083](https://github.com/eclipse-theia/theia/pull/17083)
 
 ## 1.69.0 - 2/26/2026
 
