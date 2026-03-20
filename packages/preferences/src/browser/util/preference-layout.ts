@@ -323,6 +323,11 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
                 settings: ['ai-features.chat.*']
             },
             {
+                id: 'ai-features.copilot',
+                label: 'GitHub Copilot',
+                settings: ['ai-features.copilot.*']
+            },
+            {
                 id: 'ai-features.codeCompletion',
                 label: nls.localize('theia/preferences/ai-features/code-completion', 'Code Completion'),
                 settings: ['ai-features.codeCompletion.*']

@@ -31,12 +31,9 @@ import OpenAI from 'openai';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
-import { COPILOT_PROVIDER_ID } from '../common';
+import { COPILOT_PROVIDER_ID, COPILOT_USER_AGENT, getCopilotApiBaseUrl } from '../common';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
-
-const COPILOT_API_BASE_URL = 'https://api.githubcopilot.com';
-const USER_AGENT = 'Theia-Copilot/1.0.0';
 
 /**
  * Language model implementation for GitHub Copilot.
@@ -188,16 +185,13 @@ export class CopilotLanguageModel implements LanguageModel {
             throw new Error('Not authenticated with GitHub Copilot. Please sign in first.');
         }
 
-        const enterpriseUrl = this.enterpriseUrlProvider();
-        const baseURL = enterpriseUrl
-            ? `https://copilot-api.${enterpriseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}`
-            : COPILOT_API_BASE_URL;
+        const baseURL = getCopilotApiBaseUrl(this.enterpriseUrlProvider());
 
         return new OpenAI({
             apiKey: accessToken,
             baseURL,
             defaultHeaders: {
-                'User-Agent': USER_AGENT,
+                'User-Agent': COPILOT_USER_AGENT,
                 'Openai-Intent': 'conversation-edits',
                 'X-Initiator': 'user'
             }
