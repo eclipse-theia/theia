@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution, bindRootContributionProvider } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import {
     OpenFileDialogFactory,
     SaveFileDialogFactory,
@@ -34,7 +34,7 @@ import { LabelProviderContribution } from '@theia/core/lib/browser/label-provide
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WorkspaceFrontendContribution } from './workspace-frontend-contribution';
-import { WorkspaceOpenHandlerContribution, WorkspaceService } from './workspace-service';
+import { WorkspaceHandlingContribution, WorkspaceOpenHandlerContribution, WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution, EditMenuContribution } from './workspace-commands';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
@@ -66,15 +66,15 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bindWorkspacePreferences(bind);
     bindWorkspaceTrustPreferences(bind);
     bindRootContributionProvider(bind, WorkspaceOpenHandlerContribution);
+    bindRootContributionProvider(bind, WorkspaceHandlingContribution);
 
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WorkspaceService);
 
     bind(CanonicalUriService).toSelf().inSingletonScope();
-    bind(WorkspaceServer).toDynamicValue(ctx => {
-        const provider = ctx.container.get(WebSocketConnectionProvider);
-        return provider.createProxy<WorkspaceServer>(workspacePath);
-    }).inSingletonScope();
+    bind(WorkspaceServer).toDynamicValue(ctx =>
+        ServiceConnectionProvider.createLocalProxy<WorkspaceServer>(ctx.container, workspacePath)
+    ).inSingletonScope();
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution]) {
