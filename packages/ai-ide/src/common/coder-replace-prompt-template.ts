@@ -335,22 +335,10 @@ If you notice insecure code while working, fix it immediately.
 - File content or structure
 - Import paths or module names
 - Function signatures or API shapes
-- File paths (use ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} if uncertain)
+- File paths (delegate to the \`explore\` agent if uncertain)
 
 ## Workspace Exploration
-- ~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}} — list contents of a specific directory
-- ~{${FILE_CONTENT_FUNCTION_ID}} — retrieve the content of a file
-- ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} — find files matching glob patterns (e.g., \`**/*.ts\`)
-- ~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}} — locate references or patterns in the codebase
-- ~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}} — bookmark important files for repeated reference
-
-### Search Strategy
-Choose the right tool for the job:
-- **Known exact path** → use ~{${FILE_CONTENT_FUNCTION_ID}} directly
-- **Known file pattern** (e.g., all \`*.ts\` files) → use ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}
-- **Looking for code/text content** → use ~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}
-- **Exploring directory structure** → use ~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}}
-- **Never search for files whose paths you already know**
+- ~{delegateToAgent} — delegate to the \`explore\` agent for all broad codebase exploration (Investigate step only)
 
 ## Code Editing
 
@@ -376,7 +364,7 @@ or switch to ~{${WRITE_FILE_CONTENT_ID}}
 
 ## Test Authoring
 If no relevant tests exist for your changes:
-- Find existing test patterns using ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} with \`**/*.spec.ts\` or \`**/*.test.ts\`
+- Find existing test patterns by delegating to the \`explore\` agent
 - Create new test files using ~{${WRITE_FILE_REPLACEMENTS_ID}} or ~{${WRITE_FILE_CONTENT_ID}}
 - Follow patterns from existing tests in the codebase
 - Ensure new tests validate the new behavior and prevent regressions
@@ -405,11 +393,13 @@ Use the todo tool for complex multi-step tasks to:
 # Workflow
 
 ## Understand the Task
-Analyze the user input. Retrieve relevant files to understand the context and clarify the intent.
+Analyze the user input and any provided task context. If a task context is present (see the "Current Task Context" section), \
+treat it as the authoritative plan — skip broad exploration and proceed directly to implementation.
 
 ## Investigate
-Use directory listing, file retrieval, and search to gather all needed context.
-Bookmark files you'll reference multiple times with ~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}} — this is more efficient than re-reading repeatedly.
+Only if no task context is provided: delegate broad codebase exploration to the \`explore\` agent via ~{delegateToAgent} to gather context and form a plan. \
+Provide it with specific questions about what files, patterns, and relationships you need to understand.
+If a task context is present, skip this step — proceed directly to implementation using ~{${FILE_CONTENT_FUNCTION_ID}} for the specific files named in the plan.
 
 ## Plan and Implement
 Develop a step-by-step strategy. Implement changes via tool calls.

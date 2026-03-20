@@ -60,17 +60,33 @@ export class TaskContextSummaryVariableContribution implements AIVariableContrib
         const allSummaries = await Promise.all(allSummaryRequests.map(summaryRequest => resolveDependency(summaryRequest).then(resolved => resolved?.value)));
         const value = `# Current Task Context
 
-The following task context defines the task you are expected to work on. It was explicitly provided by the user and represents your primary objective.
-This context is authoritative: follow it unless you identify issues (e.g., outdated assumptions, technical conflicts, or unclear steps).
-The task context may contain errors or outdated assumptions. You are expected to identify and report these, not blindly execute incorrect instructions.
-Note: This context is a snapshot from the start of the conversation and will not update during this run.
-When deviating from the plan:
-- Explain the deviation and your reasoning before proceeding
-- Summarize all deviations at the end of your response, and suggest updates to the task context if the plan needs revision
+        The following task context defines the task you are expected to work on. It was explicitly provided by the user and represents your primary objective.
+        This context is authoritative: follow it unless you identify issues (e.g., outdated assumptions, technical conflicts, or unclear steps).
+        The task context may contain errors or outdated assumptions. You are expected to identify and report these, not blindly execute incorrect instructions.
+        Note: This context is a snapshot from the start of the conversation and will not update during this run.
 
----
+        ## How to Use This Task Context
 
-${allSummaries.map((content, index) => `## Task ${index + 1}\n\n${content}`).join('\n\n')}`;
+        A plan has already been established. **Do not perform broad, open-ended exploration of the workspace.** Instead:
+        - Trust the files, locations, and approaches identified in the plan — read only those files you need to implement the described steps.
+        - Begin implementing immediately based on the plan rather than re-investigating the problem from scratch.
+        - Only explore beyond the plan when a specific implementation detail is genuinely missing (e.g., an exact function signature or import path).
+
+        ## Executing the Plan
+
+        The plan contains numbered implementation steps. Work through them **one step at a time**, in order:
+        1. Use the todo tool to create a todo item for each step before you start.
+        2. Complete one step fully (read relevant files, make changes, validate) before moving to the next.
+        3. Mark each step as done in the todo list when complete.
+        4. Do not skip steps or batch unrelated changes across steps.
+
+        When deviating from the plan:
+        - Explain the deviation and your reasoning before proceeding
+        - Summarize all deviations at the end of your response, and suggest updates to the task context if the plan needs revision
+
+        ---
+
+        ${allSummaries.map((content, index) => `## Task ${index + 1}\n\n${content}`).join('\n\n')}`;
         return {
             ...request,
             value
