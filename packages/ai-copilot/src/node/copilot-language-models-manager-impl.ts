@@ -17,7 +17,7 @@
 import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
+import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, COPILOT_USER_AGENT, getCopilotApiBaseUrl } from '../common';
 import { CopilotLanguageModel } from './copilot-language-model';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
@@ -114,5 +114,73 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
                 });
             }
         }
+    }
+
+    async fetchAvailableModelIds(): Promise<string[]> {
+        const accessToken = await this.authService.getAccessToken();
+        if (!accessToken) {
+            return [];
+        }
+
+        const baseURL = getCopilotApiBaseUrl(this.enterpriseUrl);
+
+        try {
+            const response = await fetch(`${baseURL}/models`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'User-Agent': COPILOT_USER_AGENT,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.warn(`Copilot: failed to fetch available models: ${response.status} ${response.statusText}`);
+                return [];
+            }
+
+            const data = await response.json() as {
+                data?: Array<{ id: string; capabilities?: { family?: string } }>
+            };
+            const models = data.data ?? [];
+            const modelIds = this.deduplicateModels(models);
+            console.log(`Copilot: discovered ${modelIds.length} available models: ${modelIds.join(', ')}`);
+            return modelIds;
+        } catch (error) {
+            console.warn('Copilot: failed to fetch available models:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Deduplicates models returned by the Copilot API.
+     * The API returns both alias IDs (e.g., `gpt-4o`) and versioned IDs
+     * (e.g., `gpt-4o-2024-11-20`) for the same model family.
+     * We keep only the family alias when it exists, falling back to
+     * the versioned ID otherwise.
+     */
+    protected deduplicateModels(models: Array<{ id: string; capabilities?: { family?: string } }>): string[] {
+        const allIds = new Set(models.map(m => m.id));
+        const result: string[] = [];
+        const seenFamilies = new Set<string>();
+
+        for (const model of models) {
+            const family = model.capabilities?.family;
+            if (family && seenFamilies.has(family)) {
+                continue;
+            }
+            if (family) {
+                seenFamilies.add(family);
+                // Prefer the family alias if it exists as a model ID
+                if (allIds.has(family)) {
+                    result.push(family);
+                } else {
+                    result.push(model.id);
+                }
+            } else {
+                result.push(model.id);
+            }
+        }
+
+        return result;
     }
 }

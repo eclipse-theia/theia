@@ -23,13 +23,13 @@ import {
     CopilotAuthState,
     DeviceCodeResponse
 } from '../common/copilot-auth-service';
+import { COPILOT_USER_AGENT } from '../common';
 
-const COPILOT_CLIENT_ID = 'Iv23ctNZvWb5IGBKdyPY';
+const COPILOT_CLIENT_ID = 'Ov23liS2vINy9VOAweyv'; // 'Theia Copilot OAuth Access' Client ID
 const COPILOT_SCOPE = 'read:user';
 const COPILOT_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:device_code';
 const KEYSTORE_SERVICE = 'theia-copilot-auth';
 const KEYSTORE_ACCOUNT = 'github-copilot';
-const USER_AGENT = 'Theia-Copilot/1.0.0';
 
 /**
  * Maximum number of polling attempts for token retrieval.
@@ -87,7 +87,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'User-Agent': USER_AGENT
+                'User-Agent': COPILOT_USER_AGENT
             },
             body: JSON.stringify({
                 client_id: COPILOT_CLIENT_ID,
@@ -117,7 +117,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
-                    'User-Agent': USER_AGENT
+                    'User-Agent': COPILOT_USER_AGENT
                 },
                 body: JSON.stringify({
                     client_id: COPILOT_CLIENT_ID,
@@ -199,7 +199,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
             const response = await fetch(`${apiBaseUrl}/user`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    'User-Agent': USER_AGENT,
+                    'User-Agent': COPILOT_USER_AGENT,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             });
@@ -223,6 +223,13 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
             const stored = await this.keyStoreService.getPassword(KEYSTORE_SERVICE, KEYSTORE_ACCOUNT);
             if (stored) {
                 const credentials: StoredCredentials = JSON.parse(stored);
+                // Tokens from the current OAuth App start with 'gho_'; other prefixes (e.g. 'ghu_') indicate a token from the previous GitHub App (Iv-prefixed client ID).
+                if (!credentials.accessToken.startsWith('gho_')) {
+                    console.info('Copilot: clearing outdated GitHub App token. Please sign in again.');
+                    await this.keyStoreService.deletePassword(KEYSTORE_SERVICE, KEYSTORE_ACCOUNT);
+                    this.cachedState = { isAuthenticated: false, migrationRequired: true };
+                    return this.cachedState;
+                }
                 this.cachedState = {
                     isAuthenticated: true,
                     accountLabel: credentials.accountLabel,
