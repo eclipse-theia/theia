@@ -27,18 +27,29 @@ import { ScmRepository } from './scm-repository';
 
 disableJSDOM();
 
-function makeRepo(id: string, label: string, rootUri: string, statusBarCommands?: { title: string; command?: string; arguments?: unknown[] }[]): ScmRepository {
+interface MakeRepoOptions {
+    id: string;
+    label: string;
+    rootUri: string;
+    statusBarCommands?: { title: string; command?: string; arguments?: unknown[] }[];
+    providerContextValue?: string;
+    parentRootUri?: string;
+}
+
+function makeRepo(opts: MakeRepoOptions): ScmRepository {
     return {
         provider: {
-            id,
-            label,
-            rootUri,
+            id: opts.id,
+            label: opts.label,
+            rootUri: opts.rootUri,
             groups: [],
-            statusBarCommands,
+            statusBarCommands: opts.statusBarCommands,
+            providerContextValue: opts.providerContextValue,
             onDidChange: new Emitter<void>().event,
             onDidChangeCommitTemplate: new Emitter<string>().event,
             dispose: () => { }
-        }
+        },
+        parentRootUri: opts.parentRootUri
     } as unknown as ScmRepository;
 }
 
@@ -64,7 +75,8 @@ function createWidget(opts: CreateWidgetOptions): ScmRepositoriesWidget {
     };
 
     const mockLabelProvider = {
-        getName: (uri: object): string => String(uri).split('/').pop() ?? ''
+        getName: (uri: object): string => String(uri).split('/').pop() ?? '',
+        getLongName: (uri: object): string => String(uri)
     };
 
     const labelParser = new LabelParser();
@@ -133,42 +145,48 @@ describe('ScmRepositoriesWidget', () => {
 
     // --- Visibility ---
 
-    it('should be hidden when there are no repositories', () => {
-        expect(widget.isHidden).to.be.true;
+    it('should not programmatically show when there are no repositories', () => {
+        // The widget does not call setHidden(false) with < 2 repos.
+        // Initial visibility depends on the ViewContainer's `initiallyHidden: true`.
+        // In this standalone test the widget starts visible (no ViewContainer).
+        expect(widget.isHidden).to.be.false;
     });
 
-    it('should be hidden when there is exactly one repository', () => {
-        const repo = makeRepo('git', 'Git', '/workspace/repo1');
+    it('should not programmatically show when there is exactly one repository', () => {
+        const repo = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo1' });
         repositories.push(repo);
         onAddEmitter.fire(repo);
-        expect(widget.isHidden).to.be.true;
+        // With < 2 repos the widget does NOT call setHidden(false).
+        // It remains in its initial state (visible in standalone test, hidden in real ViewContainer).
+        expect(widget.isHidden).to.be.false;
     });
 
     it('should be visible when there are two or more repositories', () => {
-        const repo1 = makeRepo('git', 'Git', '/workspace/repo1');
-        const repo2 = makeRepo('git2', 'Git', '/workspace/repo2');
+        const repo1 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo1' });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo2' });
         repositories.push(repo1, repo2);
         onAddEmitter.fire(repo2);
         expect(widget.isHidden).to.be.false;
     });
 
-    it('should become hidden again when repositories drop below 2', () => {
-        const repo1 = makeRepo('git', 'Git', '/workspace/repo1');
-        const repo2 = makeRepo('git2', 'Git', '/workspace/repo2');
+    it('should not programmatically hide when repositories drop below 2', () => {
+        const repo1 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo1' });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo2' });
         repositories.push(repo1, repo2);
         onAddEmitter.fire(repo2);
         expect(widget.isHidden).to.be.false;
 
         repositories.splice(1, 1);
         onRemoveEmitter.fire(repo2);
-        expect(widget.isHidden).to.be.true;
+        // Widget stays visible — we never programmatically hide
+        expect(widget.isHidden).to.be.false;
     });
 
     it('should have title label "Repositories"', () => {
         expect(widget.title.label).to.equal('Repositories');
     });
 
-    // --- Rendering (uses React.act to flush synchronously) ---
+    // --- Rendering ---
 
     function renderIntoContainer(node: React.ReactNode): HTMLElement {
         const container = document.createElement('div');
@@ -178,29 +196,26 @@ describe('ScmRepositoriesWidget', () => {
     }
 
     it('should render a repo icon, folder name, and status commands for each repository', () => {
-        const repo1 = makeRepo('git', 'Git', '/workspace/myrepo', [
-            { title: '$(git-branch) main', command: 'git.checkout', arguments: [] }
-        ]);
-        const repo2 = makeRepo('git2', 'Git', '/workspace/repo2');
+        const repo1 = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/workspace/myrepo',
+            statusBarCommands: [{ title: '$(git-branch) main', command: 'git.checkout', arguments: [] }]
+        });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo2' });
         repositories.push(repo1, repo2);
         onAddEmitter.fire(repo2);
 
         const rendered = (widget as unknown as { render(): React.ReactNode }).render();
         const container = renderIntoContainer(rendered);
 
-        // Should render two repo rows
         const rows = container.querySelectorAll('.theia-scm-repository-item');
         expect(rows.length).to.equal(2);
 
-        // Find the row for myrepo by name
         const myrepoRow = Array.from(rows).find(r => r.querySelector('.theia-scm-repository-name')?.textContent === 'myrepo');
         expect(myrepoRow).to.exist;
 
-        // myrepo row: repo icon present
         const iconEl = myrepoRow!.querySelector('.theia-scm-repository-icon');
         expect(iconEl).to.exist;
 
-        // myrepo row: status command rendered
         const statusCmd = myrepoRow!.querySelector('.theia-scm-repository-status-command');
         expect(statusCmd).to.exist;
 
@@ -209,8 +224,8 @@ describe('ScmRepositoriesWidget', () => {
     });
 
     it('should apply "selected" class only to the selected repository row', () => {
-        const repo1 = makeRepo('git', 'Git', '/workspace/repo1');
-        const repo2 = makeRepo('git2', 'Git', '/workspace/repo2');
+        const repo1 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo1' });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo2' });
         repositories.push(repo1, repo2);
         selectedRepositoryRef.value = repo1;
         onAddEmitter.fire(repo2);
@@ -227,10 +242,11 @@ describe('ScmRepositoriesWidget', () => {
     });
 
     it('should execute the status command when clicked and stop propagation', async () => {
-        const repo1 = makeRepo('git', 'Git', '/workspace/repo1', [
-            { title: '$(sync) main', command: 'git.sync', arguments: ['arg1'] }
-        ]);
-        const repo2 = makeRepo('git2', 'Git', '/workspace/repo2');
+        const repo1 = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/workspace/repo1',
+            statusBarCommands: [{ title: '$(sync) main', command: 'git.sync', arguments: ['arg1'] }]
+        });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo2' });
         repositories.push(repo1, repo2);
         onAddEmitter.fire(repo2);
 
@@ -241,7 +257,6 @@ describe('ScmRepositoriesWidget', () => {
         expect(statusCmd).to.exist;
 
         statusCmd.click();
-        // Give the async execute a microtask to run
         await Promise.resolve();
 
         expect(executedCommands).to.have.length(1);
@@ -252,72 +267,197 @@ describe('ScmRepositoriesWidget', () => {
         container.remove();
     });
 
-    // --- Grouping: provider-id based nesting ---
+    // --- Grouping: parent-based nesting ---
 
-    it('should group repos with the same provider id: first as root, rest as children', () => {
-        const root = makeRepo('git', 'Git', '/projects/myrepo');
-        const wt1 = makeRepo('git', 'Git', '/tmp/wt-feature');
-        const wt2 = makeRepo('git', 'Git', '/tmp/wt-bugfix');
-        repositories.push(root, wt1, wt2);
+    it('should show worktrees nested under their parent repo with collapse toggle', () => {
+        const parent = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/projects/myrepo',
+            providerContextValue: 'repository'
+        });
+        const wt1 = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/tmp/wt-feature',
+            providerContextValue: 'worktree',
+            parentRootUri: '/projects/myrepo'
+        });
+        const wt2 = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/tmp/wt-bugfix',
+            providerContextValue: 'worktree',
+            parentRootUri: '/projects/myrepo'
+        });
+        repositories.push(parent, wt1, wt2);
         onAddEmitter.fire(wt1);
 
         const rendered = (widget as unknown as { render(): React.ReactNode }).render();
         const container = renderIntoContainer(rendered);
 
         const rows = container.querySelectorAll('.theia-scm-repository-item');
-        // 3 rows: root + 2 children (all 'git')
         expect(rows.length).to.equal(3);
 
-        // Root row has collapse toggle
+        // Parent has collapse toggle
         expect(rows[0].querySelector('.theia-scm-repository-collapse-toggle')).to.exist;
-        // Child rows have .child class
+        // Children have .child class
         expect(rows[1].classList.contains('child')).to.be.true;
         expect(rows[2].classList.contains('child')).to.be.true;
-        // Root row does not have .child class
+        // Parent does not have .child class
         expect(rows[0].classList.contains('child')).to.be.false;
 
         ReactDOM.unmountComponentAtNode(container);
         container.remove();
     });
 
-    it('should create separate groups for repos with different provider ids', () => {
-        const gitRepo = makeRepo('git', 'Git', '/workspace/myrepo');
-        const svnRepo = makeRepo('svn', 'SVN', '/workspace/other');
-        repositories.push(gitRepo, svnRepo);
-        onAddEmitter.fire(svnRepo);
+    it('should show submodules nested under their parent repo', () => {
+        const parent = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/projects/myrepo',
+            providerContextValue: 'repository'
+        });
+        const sub = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/projects/myrepo/vendor/lib',
+            providerContextValue: 'submodule',
+            parentRootUri: '/projects/myrepo'
+        });
+        repositories.push(parent, sub);
+        onAddEmitter.fire(sub);
 
         const rendered = (widget as unknown as { render(): React.ReactNode }).render();
         const container = renderIntoContainer(rendered);
 
         const rows = container.querySelectorAll('.theia-scm-repository-item');
-        // 2 rows: each is its own root (different provider ids)
+        expect(rows.length).to.equal(2);
+
+        expect(rows[0].querySelector('.theia-scm-repository-collapse-toggle')).to.exist;
+        expect(rows[1].classList.contains('child')).to.be.true;
+
+        // Submodule icon should be file-submodule
+        const subIcon = rows[1].querySelector('.theia-scm-repository-icon');
+        expect(subIcon).to.exist;
+        expect(subIcon!.className).to.include('codicon-file-submodule');
+
+        ReactDOM.unmountComponentAtNode(container);
+        container.remove();
+    });
+
+    it('should show independent nested repos flat without grouping', () => {
+        const gitRepo = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/workspace/myrepo',
+            providerContextValue: 'repository'
+        });
+        const nestedRepo = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/workspace/myrepo/nested-project',
+            providerContextValue: 'repository'
+        });
+        repositories.push(gitRepo, nestedRepo);
+        onAddEmitter.fire(nestedRepo);
+
+        const rendered = (widget as unknown as { render(): React.ReactNode }).render();
+        const container = renderIntoContainer(rendered);
+
+        const rows = container.querySelectorAll('.theia-scm-repository-item');
+        // Both repos are flat (no parent relationship set)
         expect(rows.length).to.equal(2);
         expect(rows[0].classList.contains('child')).to.be.false;
         expect(rows[1].classList.contains('child')).to.be.false;
-        // Neither has a collapse toggle (each group has only one repo)
+        // Neither has a collapse toggle
         expect(rows[0].querySelector('.theia-scm-repository-collapse-toggle')).to.not.exist;
         expect(rows[1].querySelector('.theia-scm-repository-collapse-toggle')).to.not.exist;
+
+        // Both should have codicon-repo icon
+        const icon0 = rows[0].querySelector('.theia-scm-repository-icon');
+        const icon1 = rows[1].querySelector('.theia-scm-repository-icon');
+        expect(icon0!.className).to.include('codicon-repo');
+        expect(icon1!.className).to.include('codicon-repo');
 
         ReactDOM.unmountComponentAtNode(container);
         container.remove();
     });
 
-    it('should hide children when root is collapsed', () => {
-        const root = makeRepo('git', 'Git', '/projects/myrepo');
-        const child = makeRepo('git', 'Git', '/tmp/wt-feature');
-        repositories.push(root, child);
-        onAddEmitter.fire(child);
-
-        // Collapse the root
-        (widget as unknown as { toggleCollapse(uri: string): void }).toggleCollapse(root.provider.rootUri);
+    it('should use codicon-repo-forked for worktrees', () => {
+        const parent = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/projects/myrepo'
+        });
+        const wt = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/tmp/wt-feature',
+            providerContextValue: 'worktree',
+            parentRootUri: '/projects/myrepo'
+        });
+        repositories.push(parent, wt);
+        onAddEmitter.fire(wt);
 
         const rendered = (widget as unknown as { render(): React.ReactNode }).render();
         const container = renderIntoContainer(rendered);
 
-        // Only the root row is visible (child is collapsed)
+        const rows = container.querySelectorAll('.theia-scm-repository-item');
+        const wtIcon = rows[1].querySelector('.theia-scm-repository-icon');
+        expect(wtIcon!.className).to.include('codicon-repo-forked');
+
+        ReactDOM.unmountComponentAtNode(container);
+        container.remove();
+    });
+
+    it('should handle mixed scenario: parent + worktree + submodule + independent repo', () => {
+        const parent = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/projects/myrepo',
+            providerContextValue: 'repository'
+        });
+        const wt = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/tmp/wt-feature',
+            providerContextValue: 'worktree',
+            parentRootUri: '/projects/myrepo'
+        });
+        const sub = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/projects/myrepo/vendor/lib',
+            providerContextValue: 'submodule',
+            parentRootUri: '/projects/myrepo'
+        });
+        const independent = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/other/independent-repo',
+            providerContextValue: 'repository'
+        });
+        repositories.push(parent, wt, sub, independent);
+        onAddEmitter.fire(independent);
+
+        const rendered = (widget as unknown as { render(): React.ReactNode }).render();
+        const container = renderIntoContainer(rendered);
+
+        const rows = container.querySelectorAll('.theia-scm-repository-item');
+        // parent (root with toggle) + wt (child) + sub (child) + independent (root, no toggle)
+        expect(rows.length).to.equal(4);
+
+        // First row: parent root with collapse toggle
+        expect(rows[0].querySelector('.theia-scm-repository-collapse-toggle')).to.exist;
+        expect(rows[0].classList.contains('child')).to.be.false;
+
+        // Second & third: children
+        expect(rows[1].classList.contains('child')).to.be.true;
+        expect(rows[2].classList.contains('child')).to.be.true;
+
+        // Fourth: independent, flat, no collapse toggle
+        expect(rows[3].classList.contains('child')).to.be.false;
+        expect(rows[3].querySelector('.theia-scm-repository-collapse-toggle')).to.not.exist;
+
+        ReactDOM.unmountComponentAtNode(container);
+        container.remove();
+    });
+
+    it('should hide children when parent is collapsed', () => {
+        const parent = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/projects/myrepo'
+        });
+        const child = makeRepo({
+            id: 'git', label: 'Git', rootUri: '/tmp/wt-feature',
+            providerContextValue: 'worktree',
+            parentRootUri: '/projects/myrepo'
+        });
+        repositories.push(parent, child);
+        onAddEmitter.fire(child);
+
+        // Collapse the parent
+        (widget as unknown as { toggleCollapse(uri: string): void }).toggleCollapse(parent.provider.rootUri);
+
+        const rendered = (widget as unknown as { render(): React.ReactNode }).render();
+        const container = renderIntoContainer(rendered);
+
         const rows = container.querySelectorAll('.theia-scm-repository-item');
         expect(rows.length).to.equal(1);
-        // Root row toggle should show chevron-right (collapsed)
         const toggle = rows[0].querySelector('.theia-scm-repository-collapse-toggle');
         expect(toggle).to.exist;
         expect(toggle!.className).to.include('codicon-chevron-right');
@@ -327,8 +467,8 @@ describe('ScmRepositoriesWidget', () => {
     });
 
     it('should render a ... more-button on each repository row', () => {
-        const repo1 = makeRepo('git', 'Git', '/workspace/repo1');
-        const repo2 = makeRepo('git2', 'Git', '/workspace/repo2');
+        const repo1 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo1' });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/repo2' });
         repositories.push(repo1, repo2);
         onAddEmitter.fire(repo2);
 
@@ -337,6 +477,98 @@ describe('ScmRepositoriesWidget', () => {
 
         const moreButtons = container.querySelectorAll('.theia-scm-repository-more-button');
         expect(moreButtons.length).to.equal(2);
+
+        ReactDOM.unmountComponentAtNode(container);
+        container.remove();
+    });
+
+    it('should create separate flat entries for repos with different provider ids and no parent', () => {
+        const gitRepo = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/myrepo' });
+        const svnRepo = makeRepo({ id: 'svn', label: 'SVN', rootUri: '/workspace/other' });
+        repositories.push(gitRepo, svnRepo);
+        onAddEmitter.fire(svnRepo);
+
+        const rendered = (widget as unknown as { render(): React.ReactNode }).render();
+        const container = renderIntoContainer(rendered);
+
+        const rows = container.querySelectorAll('.theia-scm-repository-item');
+        expect(rows.length).to.equal(2);
+        expect(rows[0].classList.contains('child')).to.be.false;
+        expect(rows[1].classList.contains('child')).to.be.false;
+        expect(rows[0].querySelector('.theia-scm-repository-collapse-toggle')).to.not.exist;
+        expect(rows[1].querySelector('.theia-scm-repository-collapse-toggle')).to.not.exist;
+
+        ReactDOM.unmountComponentAtNode(container);
+        container.remove();
+    });
+
+    // --- Duplicate name disambiguation ---
+
+    it('should show relative path descriptions when two repos share the same folder name', () => {
+        // Simulates: workspace at /workspace, repos /workspace/foo and /workspace/bar/foo
+        const repo1 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/foo' });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/bar/foo' });
+        repositories.push(repo1, repo2);
+        onAddEmitter.fire(repo2);
+
+        const rendered = (widget as unknown as { render(): React.ReactNode }).render();
+        const container = renderIntoContainer(rendered);
+
+        const rows = container.querySelectorAll('.theia-scm-repository-item');
+        expect(rows.length).to.equal(2);
+
+        const desc0 = rows[0].querySelector('.theia-scm-repository-description');
+        const desc1 = rows[1].querySelector('.theia-scm-repository-description');
+        expect(desc0).to.exist;
+        expect(desc1).to.exist;
+
+        // Repo at workspace root shows "/", nested repo shows relative path
+        expect(desc0!.textContent).to.equal('/');
+        expect(desc1!.textContent).to.equal('bar');
+
+        ReactDOM.unmountComponentAtNode(container);
+        container.remove();
+    });
+
+    it('should show relative descriptions when duplicate names are in sibling directories', () => {
+        const repo1 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/projects/lib' });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/vendor/lib' });
+        repositories.push(repo1, repo2);
+        onAddEmitter.fire(repo2);
+
+        const rendered = (widget as unknown as { render(): React.ReactNode }).render();
+        const container = renderIntoContainer(rendered);
+
+        const rows = container.querySelectorAll('.theia-scm-repository-item');
+        expect(rows.length).to.equal(2);
+
+        const desc0 = rows[0].querySelector('.theia-scm-repository-description');
+        const desc1 = rows[1].querySelector('.theia-scm-repository-description');
+        expect(desc0).to.exist;
+        expect(desc1).to.exist;
+
+        expect(desc0!.textContent).to.equal('projects');
+        expect(desc1!.textContent).to.equal('vendor');
+
+        ReactDOM.unmountComponentAtNode(container);
+        container.remove();
+    });
+
+    it('should not show a description path when all repos have unique folder names', () => {
+        const repo1 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/alpha' });
+        const repo2 = makeRepo({ id: 'git', label: 'Git', rootUri: '/workspace/beta' });
+        repositories.push(repo1, repo2);
+        onAddEmitter.fire(repo2);
+
+        const rendered = (widget as unknown as { render(): React.ReactNode }).render();
+        const container = renderIntoContainer(rendered);
+
+        const rows = container.querySelectorAll('.theia-scm-repository-item');
+        expect(rows.length).to.equal(2);
+
+        // No description elements since names are unique
+        expect(rows[0].querySelector('.theia-scm-repository-description')).to.not.exist;
+        expect(rows[1].querySelector('.theia-scm-repository-description')).to.not.exist;
 
         ReactDOM.unmountComponentAtNode(container);
         container.remove();
