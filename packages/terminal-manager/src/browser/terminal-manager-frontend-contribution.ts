@@ -69,6 +69,14 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
         });
     }
 
+    async initializeLayout(): Promise<void> {
+        await this.preferenceService.ready;
+        if (this.preferences.get('terminal.grouping.mode') !== 'tree') {
+            return;
+        }
+        await this.terminalManagerViewContribution.openView({ activate: false });
+    }
+
     protected async handleTabsDisplayChange(newValue: string): Promise<void> {
         if (newValue === 'tree') {
             await this.migrateTerminalsToManager();

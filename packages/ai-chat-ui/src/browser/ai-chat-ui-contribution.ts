@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { ConfirmDialog, Widget } from '@theia/core/lib/browser';
+import { ConfirmDialog, FrontendApplicationContribution, Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
     AI_CHAT_SHOW_CHATS_COMMAND,
@@ -43,7 +43,8 @@ import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferen
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
 @injectable()
-export class AIChatContribution extends AbstractViewContribution<ChatViewWidget> implements TabBarToolbarContribution {
+export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
+    implements FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
@@ -117,6 +118,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
 
         this.checkPersistedSessions();
+    }
+
+    async initializeLayout(): Promise<void> {
+        try {
+            await this.openView({ activate: false });
+        } catch (error) {
+            this.logger.error('Failed to initialize AI Chat view in default layout', error);
+        }
     }
 
     protected async checkPersistedSessions(): Promise<void> {
