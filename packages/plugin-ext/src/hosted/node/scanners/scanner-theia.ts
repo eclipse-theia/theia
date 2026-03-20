@@ -159,7 +159,6 @@ export abstract class AbstractPluginScanner implements PluginScanner {
     getModel(plugin: PluginPackage): PluginModel {
         const publisher = plugin.publisher ?? PluginIdentifiers.UNPUBLISHED;
         const result: PluginModel = {
-            packagePath: plugin.packagePath,
             packageUri: this.pluginUriFactory.createUri(plugin).toString(),
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
             id: `${publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,

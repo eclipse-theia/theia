@@ -389,14 +389,12 @@ export function createAPIFactory(
         const commands: typeof theia.commands = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             registerCommand(command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T | undefined>, thisArg?: any): Disposable {
-                // use of the ID when registering commands
-                if (typeof command === 'string') {
-                    if (handler && commandIsDeclaredInPackage(command, plugin.rawModel)) {
-                        return commandRegistry.registerHandler(command, handler, thisArg);
-                    }
-                    return commandRegistry.registerCommand({ id: command }, handler, thisArg);
+                const commandDef = typeof command === 'string' ? { id: command } : command;
+
+                if (handler && commandIsDeclaredInPackage(commandDef.id, plugin.rawModel)) {
+                    return commandRegistry.registerHandler(commandDef.id, handler, thisArg);
                 }
-                return commandRegistry.registerCommand(command, handler, thisArg);
+                return commandRegistry.registerCommand(commandDef, handler, thisArg);
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined> {
@@ -1684,8 +1682,10 @@ export class Plugin<T> implements theia.Plugin<T> {
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
 
         if (this.pluginType === 'frontend') {
-            const { origin } = new Endpoint();
-            this.pluginUri = URI.parse(origin + '/' + PluginPackage.toPluginUrl(plugin.model, ''));
+            const ownURI = new Endpoint().getRestUrl();
+            const fullURI = ownURI.parent.resolve(PluginPackage.toPluginUrl(plugin.model, ''));
+
+            this.pluginUri = URI.parse(fullURI.toString());
         } else {
             this.pluginUri = URI.parse(plugin.pluginUri);
         }

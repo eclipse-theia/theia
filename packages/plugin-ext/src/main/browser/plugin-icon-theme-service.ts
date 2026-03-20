@@ -35,6 +35,8 @@ import { FileStatNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
+import { readResourceContent } from '@theia/core/lib/browser/resource-content-reader';
 import { FileStat, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -208,17 +210,14 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             this.icons.clear();
         }));
 
-        const uri = new URI(this.uri);
-        const result = await this.fileService.read(uri);
-        const content = result.value;
+        const content = await readResourceContent(this.uri, this.fileService);
         const json: RecursivePartial<PluginIconThemeDocument> = jsoncparser.parse(content, undefined, { disallowComments: false });
         this.hidesExplorerArrows = !!json.hidesExplorerArrows;
 
-        const toUnwatch = this.fileService.watch(uri);
-        if (this.toUnload.disposed) {
-            toUnwatch.dispose();
-        } else {
-            this.toUnload.push(toUnwatch);
+        if (!this.uri.startsWith(PLUGINS_BASE_PATH + '/') && !this.toUnload.disposed) {
+            const uri = new URI(this.uri);
+
+            this.toUnload.push(this.fileService.watch(uri));
             this.toUnload.push(this.fileService.onDidFilesChange(e => {
                 if (e.contains(uri, FileChangeType.ADDED) || e.contains(uri, FileChangeType.UPDATED)) {
                     this.reload();
@@ -363,7 +362,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const iconUri = this.locationUri.resolve(iconPath);
         const relativePath = this.packageRootUri.path.relative(iconUri.path.normalize());
         return relativePath && `url('${new Endpoint({
-            path: `hostedPlugin/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}`
+            path: `${PLUGINS_BASE_PATH}/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}`
         }).getRestUrl().toString()}')`;
     }
 

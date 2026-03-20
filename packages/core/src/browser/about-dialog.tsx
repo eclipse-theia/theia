@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from 'react';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { Dialog, DialogProps } from './dialogs';
 import { ReactDialog } from './dialogs/react-dialog';
 import { ApplicationServer, ApplicationInfo, ExtensionInfo } from '../common/application-protocol';
@@ -38,6 +38,7 @@ export class AboutDialog extends ReactDialog<void> {
     protected applicationInfo: ApplicationInfo | undefined;
     protected extensionsInfos: ExtensionInfo[] = [];
     protected readonly okButton: HTMLButtonElement;
+    protected dataLoaded = false;
 
     @inject(ApplicationServer)
     protected readonly appServer: ApplicationServer;
@@ -52,11 +53,6 @@ export class AboutDialog extends ReactDialog<void> {
             title: FrontendApplicationConfigProvider.get().applicationName,
         });
         this.appendAcceptButton(Dialog.OK);
-    }
-
-    @postConstruct()
-    protected init(): void {
-        this.doInit();
     }
 
     protected async doInit(): Promise<void> {
@@ -118,7 +114,12 @@ export class AboutDialog extends ReactDialog<void> {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.update();
+        if (!this.dataLoaded) {
+            this.dataLoaded = true;
+            this.doInit();
+        } else {
+            this.update();
+        }
     }
 
     /**

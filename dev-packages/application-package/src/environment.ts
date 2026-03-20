@@ -17,6 +17,24 @@
 const isElectron: () => boolean = require('is-electron');
 
 /**
+ * Provides the application target, set at startup in the generated frontend index.
+ * One of `'browser'`, `'browser-only'`, or `'electron'`.
+ */
+export class AppTargetProvider {
+    private static KEY = Symbol('AppTargetProvider');
+
+    static set(target: string): void {
+        const g = typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : (typeof window !== 'undefined' ? window : {});
+        (g as { [key: symbol]: string })[AppTargetProvider.KEY] = target;
+    }
+
+    static get(): string | undefined {
+        const g = typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : (typeof window !== 'undefined' ? window : undefined);
+        return g ? (g as { [key: symbol]: string })[AppTargetProvider.KEY] : undefined;
+    }
+}
+
+/**
  * The electron specific environment.
  */
 class ElectronEnv {
@@ -71,6 +89,22 @@ class ElectronEnv {
 
 }
 
+/**
+ * Browser-only specific environment.
+ * `true` when the app was built with target `browser-only` (no backend plugin host).
+ */
+class BrowserOnlyEnv {
+    is(): boolean {
+        return AppTargetProvider.get() === 'browser-only';
+    }
+}
+
 const electron = new ElectronEnv();
-const environment: Readonly<{ electron: ElectronEnv }> = { electron };
+const browserOnly = new BrowserOnlyEnv();
+
+const environment: Readonly<{ electron: ElectronEnv; browserOnly: BrowserOnlyEnv }> = {
+    electron,
+    browserOnly
+};
+
 export { environment };

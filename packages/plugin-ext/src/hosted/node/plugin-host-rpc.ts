@@ -43,6 +43,7 @@ import { LocalizationExtImpl } from '../../plugin/localization-ext';
 import { RPCProtocol, ProxyIdentifier } from '../../common/rpc-protocol';
 import { PluginApiCache } from '../../plugin/node/plugin-container-module';
 import { overridePluginDependencies } from './plugin-require-override';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 
 /**
  * The full set of all possible `Ext` interfaces that a plugin manager can support.
@@ -184,13 +185,14 @@ export abstract class AbstractPluginHostRPC<PM extends AbstractPluginManagerExtI
                     try {
                         const pluginModel = plg.model;
                         const pluginLifecycle = plg.lifecycle;
+                        const pluginFolder = FileUri.fsPath(pluginModel.packageUri);
 
-                        const rawModel = await loadManifest(pluginModel.packagePath);
-                        rawModel.packagePath = pluginModel.packagePath;
+                        const rawModel = await loadManifest(pluginFolder);
+
                         if (pluginModel.entryPoint!.frontend) {
                             foreign.push({
                                 pluginPath: pluginModel.entryPoint.frontend!,
-                                pluginFolder: pluginModel.packagePath,
+                                pluginFolder,
                                 pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,
@@ -208,7 +210,7 @@ export abstract class AbstractPluginHostRPC<PM extends AbstractPluginManagerExtI
                             const pluginPath = self.getBackendPluginPath(pluginModel);
                             const plugin: Plugin = {
                                 pluginPath,
-                                pluginFolder: pluginModel.packagePath,
+                                pluginFolder,
                                 pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,

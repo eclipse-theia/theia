@@ -157,7 +157,10 @@ export class FrontendApplication {
      */
     protected attachShell(host: HTMLElement): void {
         const ref = this.getStartupIndicator(host);
-        Widget.attach(this.shell, host, ref);
+        // Insert the shell before the startup indicator if it exists, otherwise insert it at the end of the host element
+        const container = (ref?.parentElement as unknown as HTMLElement) ?? host;
+
+        Widget.attach(this.shell, container, ref);
     }
 
     /**

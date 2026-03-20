@@ -47,6 +47,7 @@ export * from './reference';
 export * from './resource';
 export * from './selection';
 export * from './selection-service';
+export * from './static-asset-paths';
 export * from './strings';
 export * from './telemetry';
 export * from './tree-preference';

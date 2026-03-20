@@ -19,6 +19,7 @@ import { Container } from '@theia/core/shared/inversify';
 import * as theia from '@theia/plugin';
 import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-api-rpc';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
@@ -70,7 +71,7 @@ pluginManager.setPluginHost({
                         ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
                     }
 
-                    ctx.importScripts('./hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                    ctx.importScripts(`${PLUGINS_BASE_PATH}/${getPluginId(plugin.model)}/${plugin.pluginPath}`);
                 }
             }
 
@@ -93,6 +94,7 @@ pluginManager.setPluginHost({
             }>(rawPluginData.map(async plg => {
                 const pluginModel = plg.model;
                 const pluginLifecycle = plg.lifecycle;
+
                 if (pluginModel.entryPoint!.frontend) {
                     let frontendInitPath = pluginLifecycle.frontendInitPath;
                     if (frontendInitPath) {
@@ -103,7 +105,7 @@ pluginManager.setPluginHost({
                     const rawModel = await loadManifest(pluginModel);
                     const plugin: Plugin = {
                         pluginPath: pluginModel.entryPoint.frontend!,
-                        pluginFolder: pluginModel.packagePath,
+                        pluginFolder: pluginModel.packageUri,
                         pluginUri: pluginModel.packageUri,
                         model: pluginModel,
                         lifecycle: pluginLifecycle,
@@ -119,7 +121,7 @@ pluginManager.setPluginHost({
                         target: foreign,
                         plugin: {
                             pluginPath: pluginModel.entryPoint.backend,
-                            pluginFolder: pluginModel.packagePath,
+                            pluginFolder: pluginModel.packageUri,
                             pluginUri: pluginModel.packageUri,
                             model: pluginModel,
                             lifecycle: pluginLifecycle,
@@ -179,21 +181,23 @@ const apiFactory = createAPIFactory(
 let defaultApi: typeof theia;
 
 const handler = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get: (target: any, name: string) => {
-        const plugin = pluginsModulesNames.get(name);
-        if (plugin) {
-            const apiImpl = pluginsApiImpl.get(plugin.model.id);
-            return apiImpl;
+    get: (_target: object, name: ('_empty' | keyof typeof theia)) => {
+        const plugin = pluginsModulesNames.get(ctx.frontendModuleName);
+
+        const api = plugin
+            ? pluginsApiImpl.get(plugin.model.id)
+            : (defaultApi ?? (defaultApi = apiFactory(emptyPlugin)));
+
+        // require('vscode') resolves to `theia._empty` return full API so plugin gets the whole object
+        if (name === '_empty') {
+            return api;
         }
 
-        if (!defaultApi) {
-            defaultApi = apiFactory(emptyPlugin);
-        }
-
-        return defaultApi;
+        // Direct access (theia.l10n, theia.commands, etc.) return that property from the API
+        return api![name];
     }
 };
+
 ctx['theia'] = new Proxy(Object.create(null), handler);
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as paths from 'path';
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import { AbstractGenerator } from './abstract-generator';
 
 export class WebpackGenerator extends AbstractGenerator {

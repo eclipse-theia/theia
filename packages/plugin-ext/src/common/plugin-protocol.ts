@@ -25,6 +25,7 @@ import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PluginIdentifiers } from './plugin-identifiers';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
+import { PLUGINS_BASE_PATH } from '@theia/core/lib/common/static-asset-paths';
 import { PreferenceSchema } from '@theia/core';
 
 export { PluginIdentifiers };
@@ -74,7 +75,7 @@ export interface PluginPackage {
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage | PluginModel, relativePath: string): string {
-        return `hostedPlugin/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
+        return `${PLUGINS_BASE_PATH}/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
     }
 }
 
@@ -583,11 +584,6 @@ export interface PluginModel {
     };
     entryPoint: PluginEntryPoint;
     packageUri: string;
-    /**
-     * @deprecated since 1.1.0 - because it lead to problems with getting a relative path
-     * needed by Icon Themes to correctly load Fonts, use packageUri instead.
-     */
-    packagePath: string;
     iconUrl?: string;
     l10n?: string;
     readmeUrl?: string;
@@ -957,7 +953,7 @@ export interface ExtensionContext {
 }
 
 export interface PluginMetadata {
-    host: string;
+    host: PluginHost;
     model: PluginModel;
     lifecycle: PluginLifecycle;
     isUnderDevelopment?: boolean;
@@ -969,11 +965,11 @@ export interface MetadataProcessor {
     process(pluginMetadata: PluginMetadata): void;
 }
 
-export function getPluginId(plugin: PluginPackage | PluginModel): string {
+export function getPluginId(plugin: Pick<PluginPackage | PluginModel, 'publisher' | 'name'>): string {
     return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
-export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): string {
+export function buildFrontendModuleName(plugin: Pick<PluginPackage | PluginModel, 'publisher' | 'name'>): string {
     return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
@@ -1065,7 +1061,12 @@ export interface HostedPluginServer extends RpcServer<HostedPluginClient> {
 
 }
 
+/** Backend (Node.js) plugin host id */
 export const PLUGIN_HOST_BACKEND = 'main';
+/** Frontend (browser / WebWorker) plugin host id */
+export const PLUGIN_HOST_FRONTEND = 'frontend';
+/** Identifier for where a plugin runs (RPC/messaging) */
+export type PluginHost = typeof PLUGIN_HOST_FRONTEND | typeof PLUGIN_HOST_BACKEND;
 
 export interface WorkspaceStorageKind {
     workspace?: string | undefined;

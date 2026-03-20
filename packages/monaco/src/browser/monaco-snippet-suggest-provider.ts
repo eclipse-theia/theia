@@ -23,6 +23,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { readResourceContent } from '@theia/core/lib/browser/resource-content-reader';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
 import * as monaco from '@theia/monaco-editor-core';
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
@@ -37,7 +38,9 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     protected readonly fileService: FileService;
 
     protected readonly snippets = new Map<string, Snippet[]>();
-    protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
+
+    /** Snippet registrations by id. Loaded lazily on first completion for each language (see loadSnippets). */
+    protected readonly registeredSnippets = new Map<symbol, RegisteredSnippetEntry>();
 
     async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.CompletionContext): Promise<monaco.languages.CompletionList | undefined> {
@@ -108,32 +111,46 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
 
+    /** Loads snippet URIs that match the given language scope. Only triggers load when completion is requested for that language. */
     protected async loadSnippets(scope: string): Promise<void> {
-        const pending: Promise<void>[] = [];
-        pending.push(...(this.pendingSnippets.get(scope) || []));
-        pending.push(...(this.pendingSnippets.get('*') || []));
-        if (pending.length) {
-            await Promise.all(pending);
+        const entries = this.getEntriesForScope(scope);
+        for (const entry of entries) {
+            if (!entry.loadPromise) {
+                entry.loadPromise = this.loadURI(entry.uri, entry.options, entry.dispose);
+            }
+        }
+        const toWait = entries
+            .map(e => e.loadPromise)
+            .filter((p): p is Promise<void> => p !== undefined);
+        if (toWait.length) {
+            await Promise.all(toWait);
         }
     }
 
+    private getEntriesForScope(scope: string): RegisteredSnippetEntry[] {
+        return [...this.registeredSnippets.values()]
+            .filter(e => this.optionsMatchesScope(e.options, scope) || this.optionsMatchesScope(e.options, '*'));
+    }
+
+    private optionsMatchesScope(options: SnippetLoadOptions, scope: string): boolean {
+        const lang = options.language;
+        if (lang === undefined || lang === '*') { return true; }
+        if (Array.isArray(lang)) { return lang.includes(scope); }
+        return lang === scope;
+    }
+
     fromURI(uri: string | URI, options: SnippetLoadOptions): Disposable {
-        const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
-        const pending = this.loadURI(uri, options, toDispose);
-        const { language } = options;
-        const scopes = Array.isArray(language) ? language : !!language ? [language] : ['*'];
-        for (const scope of scopes) {
-            const pendingSnippets = this.pendingSnippets.get(scope) || [];
-            pendingSnippets.push(pending);
-            this.pendingSnippets.set(scope, pendingSnippets);
-            toDispose.push(Disposable.create(() => {
-                const index = pendingSnippets.indexOf(pending);
-                if (index !== -1) {
-                    pendingSnippets.splice(index, 1);
-                }
-            }));
-        }
-        return toDispose;
+        const id = Symbol();
+        const dispose = new DisposableCollection();
+        const normalizedUri = (typeof uri === 'string' ? new URI(uri) : uri).normalizePath();
+        this.registeredSnippets.set(id, { uri: normalizedUri, options, dispose });
+        return Disposable.create(() => {
+            const entry = this.registeredSnippets.get(id);
+            if (entry) {
+                this.registeredSnippets.delete(id);
+                entry.dispose.dispose();
+            }
+        });
     }
 
     /**
@@ -141,8 +158,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
      */
     protected async loadURI(uri: string | URI, options: SnippetLoadOptions, toDispose: DisposableCollection): Promise<void> {
         try {
-            const resource = typeof uri === 'string' ? new URI(uri) : uri;
-            const { value } = await this.fileService.read(resource);
+            const value = await readResourceContent(uri, this.fileService);
             if (toDispose.disposed) {
                 return;
             }
@@ -238,6 +254,13 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
 export interface SnippetLoadOptions {
     language?: string | string[]
     source: string
+}
+
+interface RegisteredSnippetEntry {
+    uri: URI;
+    options: SnippetLoadOptions;
+    dispose: DisposableCollection;
+    loadPromise?: Promise<void>;
 }
 
 export interface JsonSerializedSnippets {
