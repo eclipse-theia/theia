@@ -35,6 +35,12 @@ export class ScmGroupsTreeModel extends ScmTreeModel {
             Disposable.create(() => this.toDisposeOnRepositoryChange.dispose()),
             this.scmService.onDidChangeSelectedRepository(() => {
                 this.refreshOnRepositoryChange();
+            }),
+            this.scmService.onDidAddRepository(() => {
+                this.refreshOnRepositoryChange();
+            }),
+            this.scmService.onDidRemoveRepository(() => {
+                this.refreshOnRepositoryChange();
             })
         ]);
     }

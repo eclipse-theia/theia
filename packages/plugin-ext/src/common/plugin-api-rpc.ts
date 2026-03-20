@@ -1037,7 +1037,7 @@ export interface DecorationsMain {
 }
 
 export interface ScmMain {
-    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents): Promise<void>;
+    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents, parentHandle?: number): Promise<void>;
     $updateSourceControl(sourceControlHandle: number, features: SourceControlProviderFeatures): Promise<void>;
     $unregisterSourceControl(sourceControlHandle: number): Promise<void>;
 
@@ -1062,6 +1062,7 @@ export interface SourceControlProviderFeatures {
     commitTemplate?: string;
     acceptInputCommand?: Command;
     statusBarCommands?: Command[];
+    contextValue?: string;
 }
 
 export interface SourceControlGroupFeatures {

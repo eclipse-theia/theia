@@ -1285,8 +1285,8 @@ export function createAPIFactory(
                     throw new Error('Input box not found!');
                 }
             },
-            createSourceControl(id: string, label: string, rootUri?: URI): theia.SourceControl {
-                return createAPIObject(scmExt.createSourceControl(plugin, id, label, rootUri));
+            createSourceControl(id: string, label: string, rootUri?: URI, iconPath?: theia.IconPath, parent?: theia.SourceControl): theia.SourceControl {
+                return createAPIObject(scmExt.createSourceControl(plugin, id, label, rootUri, iconPath, parent));
             }
         };
 
