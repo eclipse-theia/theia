@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TextEditorsExt, EditorChangedPropertiesData, TextEditorPositionData, TextEditorsMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { TextEditorsExt, EditorChangedPropertiesData, TextEditorPositionData, TextEditorsMain, PLUGIN_RPC_CONTEXT, TextEditorDiffInformationDto } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -120,7 +120,7 @@ export class TextEditorsExtImpl implements TextEditorsExt {
         return activeEditor.getDiffInformation();
     }
 
-    $acceptEditorDiffInformation(id: string, diffInformation: theia.TextEditorDiffInformation[] | undefined): void {
+    $acceptEditorDiffInformation(id: string, diffInformation: TextEditorDiffInformationDto[] | undefined): void {
         const textEditor = this.editorsAndDocuments.getEditor(id);
         if (!textEditor) {
             throw new Error('unknown text editor');
