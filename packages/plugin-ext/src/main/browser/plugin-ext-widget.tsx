@@ -26,7 +26,7 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common';
 
-export const PLUGINS_LABEL = nls.localize('theia/plugin-ext/plugins', 'Plugins');
+export const PLUGINS_LABEL = nls.localizeByDefault('Plugins');
 
 @injectable()
 export class PluginWidget extends ReactWidget {

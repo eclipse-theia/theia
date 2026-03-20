@@ -334,7 +334,7 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
             },
             {
                 id: 'ai-features.mcp',
-                label: nls.localize('theia/preferences/ai-features/MCP', 'MCP'),
+                label: nls.localizeByDefault('MCP'),
                 settings: ['ai-features.mcp.*']
             },
             {

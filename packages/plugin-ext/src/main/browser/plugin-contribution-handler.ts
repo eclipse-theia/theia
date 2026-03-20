@@ -209,11 +209,16 @@ export class PluginContributionHandler {
                 }
                 const langConfiguration = lang.configuration;
                 if (langConfiguration) {
+                    const comments = langConfiguration.comments;
                     pushContribution(`language.${lang.id}.configuration`, () => monaco.languages.setLanguageConfiguration(lang.id, {
                         wordPattern: this.createRegex(langConfiguration.wordPattern),
                         autoClosingPairs: langConfiguration.autoClosingPairs,
                         brackets: langConfiguration.brackets,
-                        comments: langConfiguration.comments,
+                        // @monaco-uplift: Monaco doesn't support LineCommentRule yet, extract the string
+                        comments: comments ? {
+                            lineComment: comments.lineComment && typeof comments.lineComment === 'object' ? comments.lineComment.comment : comments.lineComment,
+                            blockComment: comments.blockComment,
+                        } : undefined,
                         folding: this.convertFolding(langConfiguration.folding),
                         surroundingPairs: langConfiguration.surroundingPairs,
                         indentationRules: this.convertIndentationRules(langConfiguration.indentationRules),

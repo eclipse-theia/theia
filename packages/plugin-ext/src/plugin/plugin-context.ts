@@ -930,6 +930,7 @@ export function createAPIFactory(
             get appHost(): string { return envExt.appHost; },
             get language(): string { return envExt.language; },
             get isNewAppInstall(): boolean { return envExt.isNewAppInstall; },
+            get isAppPortable(): boolean { return envExt.isAppPortable; },
             get isTelemetryEnabled(): boolean { return telemetryExt.isTelemetryEnabled; },
             get onDidChangeTelemetryEnabled(): theia.Event<boolean> {
                 return telemetryExt.onDidChangeTelemetryEnabled;

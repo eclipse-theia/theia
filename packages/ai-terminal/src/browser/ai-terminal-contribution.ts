@@ -158,7 +158,7 @@ class AiTerminalChatWidget {
         if (userRequest) {
             this.chatInput.value = '';
 
-            this.chatResultParagraph.innerText = nls.localize('theia/ai/terminal/loading', 'Loading');
+            this.chatResultParagraph.innerText = nls.localizeByDefault('Loading');
             this.chatResultParagraph.className = 'loading';
 
             const cwd = (await this.terminalWidget.cwd).toString();
