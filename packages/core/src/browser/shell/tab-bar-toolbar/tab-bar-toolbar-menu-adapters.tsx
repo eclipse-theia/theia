@@ -27,6 +27,17 @@ import { CommandMenu, CompoundMenuNode, ContextExpressionMatcher, Group, MenuMod
 
 export const TOOLBAR_WRAPPER_ID_SUFFIX = '-as-tabbar-toolbar-item';
 
+function combineWhenExpressions(...expressions: Array<string | undefined>): string | undefined {
+    const parts = expressions.filter((expression): expression is string => !!expression);
+    if (parts.length === 0) {
+        return undefined;
+    }
+    if (parts.length === 1) {
+        return parts[0];
+    }
+    return parts.map(expression => `(${expression})`).join(' && ');
+}
+
 abstract class AbstractToolbarMenuWrapper {
 
     constructor(
@@ -128,6 +139,9 @@ export class SubmenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper impl
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
     priority?: number | undefined;
+    get when(): string | undefined {
+        return this.menuNode.when;
+    }
 
     executeCommand(widget: Widget, e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
     }
@@ -164,6 +178,10 @@ export class CommandMenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper 
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
 
+    get when(): string | undefined {
+        return this.menuNode.when;
+    }
+
     isVisible(widget: Widget): boolean {
         return this.menuNode.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget);
     }
@@ -197,6 +215,10 @@ export class ToolbarActionWrapper extends AbstractToolbarMenuWrapper implements 
         protected readonly toolbarItem: RenderedToolbarAction
     ) {
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
+    }
+
+    get when(): string | undefined {
+        return combineWhenExpressions(this.toolbarItem.when, this.menuNode?.when);
     }
 
     override isEnabled(widget?: Widget): boolean {

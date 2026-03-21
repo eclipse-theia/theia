@@ -112,7 +112,7 @@ export class MenusContributionPointHandler {
                                 }
                                 const label = cmd.label || cmd.id;
                                 const icon = cmd.iconClass;
-                                const action: CommandMenu & AcceleratorSource & { when?: string } = {
+                                const action: CommandMenu & AcceleratorSource = {
                                     id: command,
                                     sortString: order || '',
                                     when: item.when,

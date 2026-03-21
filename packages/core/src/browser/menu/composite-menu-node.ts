@@ -17,10 +17,22 @@
 import { CompoundMenuNode, ContextExpressionMatcher, Group, MenuNode, MenuPath, Submenu } from '../../common/menu/menu-types';
 import { Event } from '../../common';
 
+function combineWhenExpressions(...expressions: Array<string | undefined>): string | undefined {
+    const parts = expressions.filter((expression): expression is string => !!expression);
+    if (parts.length === 0) {
+        return undefined;
+    }
+    if (parts.length === 1) {
+        return parts[0];
+    }
+    return parts.map(expression => `(${expression})`).join(' && ');
+}
+
 export class SubMenuLink implements CompoundMenuNode {
     constructor(private readonly delegate: Submenu, private readonly _sortString?: string, private readonly _when?: string) { }
 
     get id(): string { return this.delegate.id; };
+    get when(): string | undefined { return combineWhenExpressions(this.delegate.when, this._when); }
     get onDidChange(): Event<void> | undefined { return this.delegate.onDidChange; };
     get children(): MenuNode[] { return this.delegate.children; }
     get contextKeyOverlays(): Record<string, string> | undefined { return this.delegate.contextKeyOverlays; }
@@ -29,7 +41,7 @@ export class SubMenuLink implements CompoundMenuNode {
 
     get sortString(): string { return this._sortString || this.delegate.sortString; };
     isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context) && this._when ? contextMatcher.match(this._when, context) : true;
+        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context) && (!this._when || contextMatcher.match(this._when, context));
     }
 
     isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
@@ -46,7 +58,7 @@ export abstract class AbstractCompoundMenuImpl implements MenuNode {
     protected constructor(
         readonly id: string,
         protected readonly orderString?: string,
-        protected readonly when?: string
+        readonly when?: string
     ) {
     }
 

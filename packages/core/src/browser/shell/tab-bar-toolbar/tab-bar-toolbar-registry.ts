@@ -168,6 +168,10 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         return result;
     }
 
+    /**
+     * Collects all context keys referenced by toolbar items and delegated menu nodes
+     * that may participate in rendering for the given widget.
+     */
     collectContextKeys(widget: Widget): Set<string> {
         const contextKeys = new Set<string>();
         if (widget.isDisposed) {
@@ -175,9 +179,8 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         }
 
         for (const item of this.items.values()) {
-            const whenExpression = this.getWhenExpression(item);
-            if (whenExpression) {
-                this.contextKeyService.parseKeys(whenExpression)?.forEach(key => contextKeys.add(key));
+            if (item.when) {
+                this.contextKeyService.parseKeys(item.when)?.forEach(key => contextKeys.add(key));
             }
         }
 
@@ -194,38 +197,14 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     }
 
     protected collectMenuContextKeys(menuNode: MenuNode, contextKeys: Set<string>): void {
-        const whenExpression = this.getWhenExpression(menuNode);
-        if (whenExpression) {
-            this.contextKeyService.parseKeys(whenExpression)?.forEach(key => contextKeys.add(key));
+        if (menuNode.when) {
+            this.contextKeyService.parseKeys(menuNode.when)?.forEach(key => contextKeys.add(key));
         }
         if (CompoundMenuNode.is(menuNode)) {
             for (const child of menuNode.children) {
                 this.collectMenuContextKeys(child, contextKeys);
             }
         }
-    }
-
-    protected getWhenExpression(candidate: unknown): string | undefined {
-        if (!candidate || typeof candidate !== 'object') {
-            return undefined;
-        }
-        const candidateWithWhen = candidate as { when?: unknown };
-        if (typeof candidateWithWhen.when === 'string') {
-            return candidateWithWhen.when;
-        }
-        const candidateWithPrivateWhen = candidate as { _when?: unknown };
-        if (typeof candidateWithPrivateWhen._when === 'string') {
-            return candidateWithPrivateWhen._when;
-        }
-        const candidateWithAction = candidate as { action?: { when?: unknown } };
-        if (typeof candidateWithAction.action?.when === 'string') {
-            return candidateWithAction.action.when;
-        }
-        const candidateWithToolbarItem = candidate as { toolbarItem?: { when?: unknown } };
-        if (typeof candidateWithToolbarItem.toolbarItem?.when === 'string') {
-            return candidateWithToolbarItem.toolbarItem.when;
-        }
-        return undefined;
     }
 
     unregisterItem(id: string): void {

@@ -103,6 +103,7 @@ export class ActionMenuNode implements CommandMenu {
     }
 
     get id(): string { return this.action.commandId; }
+    get when(): string | undefined { return this.action.when; }
 
     get label(): string {
         if (this.action.label) {

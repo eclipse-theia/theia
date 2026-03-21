@@ -114,6 +114,23 @@ describe('menu-model-registry', () => {
             const main = service.getMenu(['main']) as CompoundMenuNode;
             expect(menuStructureToString(main)).equals('File(0_open(1_close()),1_close())');
         });
+
+        it('Should expose linked submenu when expressions on the public node type.', () => {
+            const fileMenu = ['main', 'File'];
+            const editMenu = ['main', 'Edit'];
+            const service = createMenuRegistry({
+                registerMenus(menuRegistry: MenuModelRegistry): void {
+                    menuRegistry.registerSubmenu(fileMenu, 'File', { when: 'fileWhen' });
+                    menuRegistry.registerSubmenu(editMenu, 'Edit');
+                    menuRegistry.linkCompoundMenuNode({ newParentPath: editMenu, submenuPath: fileMenu, when: 'linkWhen' });
+                }
+            }, {
+                registerCommands(reg: CommandRegistry): void { }
+            });
+
+            const linkedFileMenu = service.getMenuNode([...editMenu, 'File']);
+            expect(linkedFileMenu?.when).equals('(fileWhen) && (linkWhen)');
+        });
     });
 });
 
