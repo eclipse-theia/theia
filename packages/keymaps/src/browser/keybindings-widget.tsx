@@ -749,11 +749,12 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      */
     addKeybinding(item: KeybindingItem): void {
         const command = item.command.id;
-        const dialog = new SingleTextInputDialog({
+        const dialog = new EditKeybindingDialog({
             title: nls.localize('theia/keymaps/addKeybindingTitle', 'Add Keybinding for {0}', item.labels.command.value),
             maxWidth: 400,
             validate: newKeybinding => this.validateKeybinding(command, undefined, newKeybinding),
-        });
+        }, this.keymapsService, item, false);
+
         dialog.open().then(async keybinding => {
             if (keybinding) {
                 await this.keymapsService.setKeybinding({
@@ -907,6 +908,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         }
     }
 }
+
 /**
  * Dialog used to edit keybindings, and reset custom keybindings.
  */
@@ -931,7 +933,6 @@ class EditKeybindingDialog extends SingleTextInputDialog {
     ) {
         super(props);
         this.item = item;
-        // Add the `Reset` button if the command currently has a custom keybinding.
         if (canReset) {
             this.appendResetButton();
         }
@@ -942,7 +943,61 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         if (this.resetButton) {
             this.addResetAction(this.resetButton, 'click');
         }
+
+        this.node.addEventListener('keydown', this.handleKeyDown, true);
+
+        setTimeout(() => {
+            const inputField = this.node.querySelector('input');
+            if (inputField) {
+                inputField.placeholder = nls.localizeByDefault('Press any key to continue...');
+            }
+        }, 100);
     }
+
+    /**
+     * Intercepts keystrokes to format them into the expected keybinding string representation.
+     * Prevents default browser text input for non-navigation keys.
+     * @param event the keyboard event.
+     */
+    protected handleKeyDown = (event: KeyboardEvent): void => {
+        const target = event.target as HTMLElement;
+        if (target.tagName.toLowerCase() !== 'input') {
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'Tab' || event.key === 'Backspace') {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const keys: string[] = [];
+
+        if (event.ctrlKey) { keys.push('ctrl'); }
+        if (event.shiftKey) { keys.push('shift'); }
+        if (event.altKey) { keys.push('alt'); }
+        if (event.metaKey) { keys.push('cmd'); }
+
+        const keyName = event.key.toLowerCase();
+        const isModifier = ['control', 'shift', 'alt', 'meta'].includes(keyName);
+
+        if (!isModifier) {
+            let finalKey = keyName;
+
+            if (finalKey === ' ') {
+                finalKey = 'space';
+            }
+            finalKey = finalKey.replace('arrow', '');
+
+            keys.push(finalKey);
+
+            const inputField = target as HTMLInputElement;
+            inputField.value = keys.join('+');
+
+            inputField.dispatchEvent(new window.Event('input', { bubbles: true }));
+        }
+    };
 
     /**
      * Add `Reset` action used to reset a custom keybinding, and close the dialog.
@@ -962,10 +1017,8 @@ class EditKeybindingDialog extends SingleTextInputDialog {
      * @returns the `Reset` button.
      */
     protected appendResetButton(): HTMLButtonElement {
-        // Create the `Reset` button.
         const resetButtonTitle = nls.localizeByDefault('Reset');
         this.resetButton = this.createButton(resetButtonTitle);
-        // Add the `Reset` button to the dialog control panel, before the `Accept` button.
         this.controlPanel.insertBefore(this.resetButton, this.acceptButton!);
         this.resetButton.title = nls.localizeByDefault('Reset Keybinding');
         this.resetButton.classList.add('secondary');
