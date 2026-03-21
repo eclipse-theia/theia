@@ -27,6 +27,7 @@ import { ActionMenuNode, GroupImpl, MenuNode } from '../../../common/menu';
 
 export interface TabBarToolbarItem {
     id: string;
+    when?: string;
     isVisible(widget: Widget): boolean;
     isEnabled(widget: Widget): boolean;
     isToggled(widget: Widget): boolean;
@@ -51,6 +52,9 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
 
     get id(): string {
         return this.action.id;
+    }
+    get when(): string | undefined {
+        return this.action.when;
     }
     get group(): string | undefined {
         return this.action.group;

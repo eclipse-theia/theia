@@ -115,6 +115,7 @@ export class MenusContributionPointHandler {
                                 const action: CommandMenu & AcceleratorSource = {
                                     id: command,
                                     sortString: order || '',
+                                    when: item.when,
                                     isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
                                         if (item.when && !contextMatcher.match(item.when, context)) {
                                             return false;
