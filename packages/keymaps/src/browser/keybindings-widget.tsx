@@ -922,7 +922,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         setTimeout(() => {
             const inputField = this.node.querySelector('input');
             if (inputField) {
-                inputField.placeholder = nls.localizeByDefault('Press desired key combination...');
+                inputField.placeholder = nls.localizeByDefault('Press any key to continue...');
             }
         }, 100);
     }
@@ -935,11 +935,11 @@ class EditKeybindingDialog extends SingleTextInputDialog {
     protected handleKeyDown = (event: KeyboardEvent): void => {
         const target = event.target as HTMLElement;
         if (target.tagName.toLowerCase() !== 'input') {
-            return; 
+            return;
         }
 
         if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'Tab' || event.key === 'Backspace') {
-            return; 
+            return;
         }
 
         event.preventDefault();
@@ -950,16 +950,16 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         if (event.ctrlKey) { keys.push('ctrl'); }
         if (event.shiftKey) { keys.push('shift'); }
         if (event.altKey) { keys.push('alt'); }
-        if (event.metaKey) { keys.push('cmd'); } 
+        if (event.metaKey) { keys.push('cmd'); }
 
         const keyName = event.key.toLowerCase();
         const isModifier = ['control', 'shift', 'alt', 'meta'].includes(keyName);
 
         if (!isModifier) {
             let finalKey = keyName;
-            
-            if (finalKey === ' ') { 
-                finalKey = 'space'; 
+
+            if (finalKey === ' ') {
+                finalKey = 'space';
             }
             finalKey = finalKey.replace('arrow', '');
 
@@ -967,10 +967,10 @@ class EditKeybindingDialog extends SingleTextInputDialog {
 
             const inputField = target as HTMLInputElement;
             inputField.value = keys.join('+');
-            
+
             inputField.dispatchEvent(new window.Event('input', { bubbles: true }));
         }
-    }
+    };
 
     /**
      * Add `Reset` action used to reset a custom keybinding, and close the dialog.
