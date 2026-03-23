@@ -21,6 +21,7 @@ import { ContainerCreateOptions } from 'dockerode';
 import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
 import { DevContainerConfiguration } from '../devcontainer-file';
 import * as Docker from 'dockerode';
+import { parseWorkspaceMount } from '../dockerode-utils';
 
 @injectable()
 export class WorkspaceCreationContribution implements ContainerCreationContribution {
@@ -28,38 +29,11 @@ export class WorkspaceCreationContribution implements ContainerCreationContribut
         containerConfig: DevContainerConfiguration, api: Docker,
         outputProvider?: ContainerOutputProvider | undefined): MaybePromise<void> {
 
-        if (containerConfig.workspaceMount && containerConfig.workspaceFolder && createOptions.HostConfig?.Mounts) {
+        if (containerConfig.workspaceMount && createOptions.HostConfig?.Mounts) {
             createOptions.HostConfig.Mounts[0] = {
                 ...createOptions.HostConfig.Mounts[0],
-                ...this.parseWorkspaceMount(containerConfig.workspaceMount as string)
+                ...parseWorkspaceMount(containerConfig.workspaceMount as string)
             };
         }
-    }
-
-    protected parseWorkspaceMount(workspaceMount: string): Partial<Docker.MountSettings> {
-
-        const mountSetting: Partial<Docker.MountSettings> = {};
-
-        const entries = workspaceMount.split(',');
-
-        for (const entry of entries) {
-            const [key, value] = entry.split('=');
-
-            if (key === 'type') {
-                mountSetting.Type = value as Docker.MountType;
-            } else if (key === 'source' || key === 'src') {
-                mountSetting.Source = value;
-            } else if (key === 'target' || key === 'dst' || key === 'destination') {
-                mountSetting.Target = value;
-            } else if (key === 'readonly' || key === 'ro') {
-                mountSetting.ReadOnly = true;
-            } else if (key === 'bind-propagation') {
-                mountSetting.BindOptions = {
-                    Propagation: value as Docker.MountPropagation
-                };
-            }
-        }
-
-        return mountSetting;
     }
 }

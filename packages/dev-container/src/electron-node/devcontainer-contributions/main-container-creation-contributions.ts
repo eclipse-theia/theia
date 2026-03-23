@@ -23,6 +23,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { RemotePortForwardingProvider } from '@theia/remote/lib/electron-common/remote-port-forwarding-provider';
 import { RemoteDockerContainerConnection } from '../remote-container-connection-provider';
 import { WorkspaceCreationContribution } from './workspace-creation-contribution';
+import { parseWorkspaceMount } from '../dockerode-utils';
 
 export function registerContainerCreationContributions(bind: interfaces.Bind): void {
     bind(ContainerCreationContribution).to(ImageFileContribution).inSingletonScope();
@@ -137,17 +138,8 @@ export class MountsContribution implements ContainerCreationContribution {
 
         createOptions.HostConfig!.Mounts!.push(...(containerConfig as NonComposeContainerBase)?.mounts
             ?.map(mount => typeof mount === 'string' ?
-                this.parseMountString(mount) :
+                parseWorkspaceMount(mount) :
                 { Source: mount.source, Target: mount.target, Type: mount.type ?? 'bind' }) ?? []);
-    }
-
-    parseMountString(mount: string): Docker.MountSettings {
-        const parts = mount.split(',');
-        return {
-            Source: parts.find(part => part.startsWith('source=') || part.startsWith('src='))?.split('=')[1]!,
-            Target: parts.find(part => part.startsWith('target=') || part.startsWith('dst='))?.split('=')[1]!,
-            Type: (parts.find(part => part.startsWith('type='))?.split('=')[1] ?? 'bind') as Docker.MountType
-        };
     }
 }
 
