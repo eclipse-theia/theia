@@ -86,6 +86,8 @@ then retry E2E testing.
 
 ### Delegation
 
+Use ~{delegateToAgent} to delegate to the following agent:
+
 **Agent:** '${AppTesterChatAgentId}'
 **When:** After Coding Agent completes implementation AND build/lint/test pass
 

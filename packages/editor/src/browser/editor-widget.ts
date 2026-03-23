@@ -78,6 +78,14 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         return this.editor.createMoveToUri(resourceUri);
     }
 
+    override getPreviewNode(): Node | undefined {
+        if (!this.isVisible && this.editor.stageForPreview) {
+            this.editor.stageForPreview();
+            queueMicrotask(() => this.editor.unstagePreview?.());
+        }
+        return this.node;
+    }
+
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.editor.focus();

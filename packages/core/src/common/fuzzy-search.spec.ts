@@ -71,13 +71,35 @@ describe('fuzzy-search', () => {
     });
 
     ([
-        ['con', ['configs', 'base.tsconfig.json', 'tsconfig.json', 'base.nyc.json', 'CONTRIBUTING.MD']],
+        // "con" prefix matches (configs, CONTRIBUTING.MD) first, then substring matches (base.tsconfig.json, tsconfig.json), then fuzzy-only (base.nyc.json)
+        ['con', ['configs', 'base.tsconfig.json', 'tsconfig.json', 'base.nyc.json', 'CONTRIBUTING.MD'],
+            ['configs', 'CONTRIBUTING.MD', 'base.tsconfig.json', 'tsconfig.json', 'base.nyc.json']],
         ['bcn', ['baconing', 'narwhal', 'a mighty bear canoe'], ['baconing', 'a mighty bear canoe']]
     ] as ([string, string[], string[]])[]).forEach(test => {
         const [pattern, items, expected] = test;
         it(`should match the order of items after the filtering with pattern: '${pattern}'`, async () => {
             expectOrder(await search(pattern, items), expected || items);
         });
+    });
+
+    it('should rank substring matches before fuzzy-only matches', async () => {
+        const results = await search('font', ['reformatting', 'fontSize', 'fontFamily']);
+        // "reformatting" contains f-o-n-t scattered but not as substring; fontSize/fontFamily do
+        expectOrder(results, ['fontSize', 'fontFamily']);
+    });
+
+    it('should preserve original order for equal-score fuzzy-only matches', async () => {
+        // Both are fuzzy-only matches for "bcn" with different scores from the fuzzy library;
+        // when scores are equal, original array order (index) should be preserved.
+        const results = await search('ab', ['xab', 'yab']);
+        expectOrder(results, ['xab', 'yab']);
+    });
+
+    it('should highlight contiguous substring range instead of scattered fuzzy ranges', async () => {
+        const results = await search('works', ['browser-only-workspace-server.ts']);
+        expect(results).to.have.length(1);
+        // "works" appears at index 13 in "browser-only-workspace-server.ts"
+        expect(results[0].ranges).to.deep.equal([{ offset: 13, length: 5 }]);
     });
 
     function expectOrder(actual: FuzzySearch.Match<string>[], expected: string[]): void {

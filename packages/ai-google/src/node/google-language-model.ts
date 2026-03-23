@@ -24,6 +24,7 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
+    TokenUsageParams,
     TokenUsageService,
     ToolCallResult,
     ToolInvocationContext,
@@ -226,6 +227,7 @@ export class GoogleModel implements LanguageModel {
                 const toolCallMap: { [key: string]: ToolCallback } = {};
                 const collectedParts: Part[] = [];
                 try {
+                    let tokenUsage: TokenUsageParams | undefined = undefined;
                     for await (const chunk of stream) {
                         if (cancellationToken?.isCancellationRequested) {
                             break;
@@ -318,18 +320,23 @@ export class GoogleModel implements LanguageModel {
                             yield { content: chunk.text };
                         }
 
-                        // Report token usage if available
-                        if (chunk.usageMetadata && that.tokenUsageService && that.id) {
+                        // Remember the token usage
+                        if (chunk.usageMetadata) {
                             const promptTokens = chunk.usageMetadata.promptTokenCount;
                             const completionTokens = chunk.usageMetadata.candidatesTokenCount;
                             if (promptTokens && completionTokens) {
-                                that.tokenUsageService.recordTokenUsage(that.id, {
+                                tokenUsage = {
                                     inputTokens: promptTokens,
                                     outputTokens: completionTokens,
                                     requestId: request.requestId
-                                }).catch(error => console.error('Error recording token usage:', error));
+                                };
                             }
                         }
+                    }
+
+                    // Report token usage if available
+                    if (tokenUsage !== undefined && that.tokenUsageService && that.id) {
+                        that.tokenUsageService.recordTokenUsage(that.id, tokenUsage).catch(error => console.error('Error recording token usage:', error));
                     }
 
                     // Process tool calls if any exist

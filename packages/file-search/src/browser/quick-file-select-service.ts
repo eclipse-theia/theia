@@ -81,8 +81,8 @@ export class QuickFileSelectService {
      */
     private static readonly Scores = {
         max: 1000,  // represents the maximum score from fuzzy matching (Infinity).
-        exact: 500, // represents the score assigned to exact matching.
-        partial: 250 // represents the score assigned to partial matching.
+        exact: 5000, // represents the score assigned to exact matching.
+        partial: 2000 // represents the score assigned to partial matching.
     };
 
     async getPicks(
@@ -184,9 +184,10 @@ export class QuickFileSelectService {
                 return 0;
             }
 
+            const lowerStr = str.toLowerCase();
             let exactMatch = true;
             const partialMatches = querySplit.reduce((matched, part) => {
-                const partMatches = str.includes(part);
+                const partMatches = lowerStr.includes(part);
                 exactMatch = exactMatch && partMatches;
                 return partMatches ? matched + QuickFileSelectService.Scores.partial : matched;
             }, 0);
@@ -206,11 +207,13 @@ export class QuickFileSelectService {
         const queryJoin = querySplit.join('');
 
         const compareByLabelScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.label) - score(l.label);
-        const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.indexOf(query) - l.label.indexOf(query);
+        const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) =>
+            r.label.toLowerCase().indexOf(query) - l.label.toLowerCase().indexOf(query);
         const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.label.localeCompare(r.label);
 
         const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
-        const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().indexOf(query) - l.uri.path.toString().indexOf(query);
+        const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) =>
+            r.uri.path.toString().toLowerCase().indexOf(query) - l.uri.path.toString().toLowerCase().indexOf(query);
         const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.uri.path.toString().localeCompare(r.uri.path.toString());
 
         return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathScore, compareByPathIndex, compareByPathLabel);

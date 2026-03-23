@@ -264,7 +264,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
         }
 
         this.oldMatchDecorations = this.editor.getControl()
-            .changeDecorations(accessor => accessor.deltaDecorations(this.oldMatchDecorations, decorations));
+            .changeDecorations(accessor => accessor.deltaDecorations(this.oldMatchDecorations, decorations)) ?? [];
     }
 
     protected setContainer(component: HTMLDivElement | null): void {

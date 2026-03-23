@@ -23,7 +23,8 @@ import {
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     IInputBox, IInputOptions, IKeyMods, IPickOptions, IQuickInput, IQuickInputButton,
-    IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickPickItemButtonEvent, IQuickPickSeparator, IQuickWidget, QuickPickInput
+    IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickPickItemButtonEvent,
+    IQuickPickSeparator, IQuickTree, IQuickTreeItem, IQuickWidget, QuickPickInput
 } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { IQuickInputOptions, IQuickInputStyles } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInput';
 import { QuickInputController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInputController';
@@ -45,6 +46,8 @@ import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core
 import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hover';
 import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
 import { Severity } from '@theia/core/lib/common/severity';
+import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 
 /**
  * Converts Theia's {@link Severity} to Monaco's {@link MonacoSeverity}.
@@ -173,8 +176,13 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
             useSeparators: options.useSeparators
         });
     }
+
     createInputBox(): IInputBox {
         return this.controller.createInputBox();
+    }
+
+    createQuickTree<T extends IQuickTreeItem>(): IQuickTree<T> {
+        return this.controller.createQuickTree();
     }
 
     open(filter: string): void {
@@ -232,6 +240,14 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.controller.accept(keyMods);
     }
 
+    toggleHover(): void {
+        return this.controller.toggleHover();
+    }
+
+    setAlignment(alignment: 'top' | 'center' | { top: number; left: number; }): void {
+        this.controller.setAlignment(alignment);
+    }
+
     private initContainer(): void {
         const container = this.container = document.createElement('div');
         container.id = 'quick-input-container';
@@ -242,6 +258,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         const contextKeyService = StandaloneServices.get(IContextKeyService);
         const instantiationService = StandaloneServices.get(IInstantiationService);
         const layoutService = StandaloneServices.get(ILayoutService);
+        const storageService = StandaloneServices.get(IStorageService);
 
         const options: IQuickInputOptions = {
             idPrefix: 'quickInput_',
@@ -256,7 +273,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
                 // @monaco-uplift: not sure what to do here
             }
         };
-        this.controller = new QuickInputController(options, layoutService, instantiationService, contextKeyService);
+        const contextMenuService = StandaloneServices.get(IContextMenuService);
+        this.controller = new QuickInputController(options, layoutService, instantiationService, contextKeyService, storageService, contextMenuService);
         this.updateLayout();
     }
 

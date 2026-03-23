@@ -57,7 +57,7 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
             if (!this.registeredSkillCommands.has(skill.name)) {
                 this.promptService.addBuiltInPromptFragment({
                     id: `skill-command-${skill.name}`,
-                    template: `{{skill:${skill.name}}}`,
+                    template: `Load the skill ${skill.name} using ~{getSkillFileContent}.`,
                     isCommand: true,
                     commandName: skill.name,
                     commandDescription: skill.description

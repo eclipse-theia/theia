@@ -192,14 +192,20 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         this.toDispose.push(this.treeWidget.model.onDidDeleteTerminalFromGroup(({
             terminalId,
         }) => this.handleTerminalDeleted(terminalId)));
-        this.toDispose.push(this.treeWidget.model.onDidRenameNode(() => this.handlePageRenamed()));
+        this.toDispose.push(this.treeWidget.model.onDidRenameNode(node => this.handleNodeRenamed(node)));
 
         this.toDispose.push(this.shell.onDidChangeActiveWidget(({ newValue }) => this.handleOnDidChangeActiveWidget(newValue)));
 
         this.toDispose.push(this.terminalManagerPreferences.onPreferenceChanged(() => this.resolveMainLayout()));
     }
 
-    protected handlePageRenamed(): void {
+    protected handleNodeRenamed(node: TerminalManagerTreeTypes.TerminalManagerTreeNode): void {
+        if (TerminalManagerTreeTypes.isTerminalNode(node)) {
+            const widget = this.terminalWidgets.get(node.id);
+            if (widget) {
+                widget.setTitle(node.label);
+            }
+        }
         this.update();
     }
 
