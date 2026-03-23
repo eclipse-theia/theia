@@ -537,7 +537,7 @@ export class DebugSession implements CompositeTreeElement {
             terminal = await this.terminalServer.newTerminal(options);
             await terminal.start();
             try {
-                if (terminal.commandHistoryState && terminal.enableCommandHistory) {
+                if (terminal.commandHistoryState) {
                     // delay opening of the terminal until the terminal prompt appears to prevent duplicate commands in the terminal buffer
                     await waitForEvent(terminal.commandHistoryState.onTerminalPromptShown, this.PROMPT_READY_TIMEOUT_MS);
                 }

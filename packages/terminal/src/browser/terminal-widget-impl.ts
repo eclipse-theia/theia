@@ -195,7 +195,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     private _currentTerminalOutput: string[];
     commandHistoryState?: TerminalCommandHistoryState;
 
-    enableCommandHistory: boolean = false;
     protected enableCommandSeparator: boolean;
 
     @postConstruct()
@@ -218,8 +217,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.title.closable = true;
         this.addClass('terminal-container');
-
-        this.commandHistoryState = this.commandHistoryStateFactory();
 
         this.term = new Terminal({
             cursorBlink: this.preferences['terminal.integrated.cursorBlinking'],
@@ -401,11 +398,19 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected updateCommandHistoryConfig(): void {
-        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
-        this.term.options.allowProposedApi = this.enableCommandHistory;
-        this.enableCommandSeparator = this.enableCommandHistory
+        const enabled = this.preferences.get('terminal.integrated.enableCommandHistory', false);
+        this.term.options.allowProposedApi = enabled;
+        this.enableCommandSeparator = enabled
             ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
             : false;
+
+        if (enabled && !this.commandHistoryState) {
+            this.commandHistoryState = this.commandHistoryStateFactory();
+            this.toDispose.push(this.commandHistoryState);
+        } else if (!enabled && this.commandHistoryState) {
+            this.commandHistoryState.dispose();
+            this.commandHistoryState = undefined;
+        }
     }
 
     /**
@@ -425,7 +430,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnCommandHistory.dispose();
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
-        if (!this.enableCommandHistory || !this.commandHistoryState) {
+        if (!this.commandHistoryState) {
             return;
         }
         this.toDisposeOnCommandHistory.push(
@@ -1031,6 +1036,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.styleElement?.remove();
         this.webglAddon?.dispose();
+        this.commandHistoryState?.dispose();
         super.dispose();
     }
 

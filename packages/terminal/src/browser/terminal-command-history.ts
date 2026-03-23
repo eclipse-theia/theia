@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Event, Emitter, Disposable } from '@theia/core';
+import { DisposableCollection, Event, Emitter } from '@theia/core';
 import { TerminalBlock, TerminalCommandHistoryState } from './base/terminal-widget';
 import { injectable } from '@theia/core/shared/inversify';
 
@@ -22,7 +22,7 @@ export const TerminalCommandHistoryStateFactory = Symbol('TerminalCommandHistory
 export type TerminalCommandHistoryStateFactory = () => TerminalCommandHistoryState;
 
 @injectable()
-export class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Disposable {
+export class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState {
     static readonly MAX_CAPACITY = 200;
 
     private _commandHistory: TerminalBlock[] = [];

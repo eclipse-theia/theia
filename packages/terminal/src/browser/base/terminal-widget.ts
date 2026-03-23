@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event, ViewColumn } from '@theia/core';
+import { Disposable, Event, ViewColumn } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { ThemeIcon } from '@theia/core/lib/common/theme';
@@ -190,16 +190,12 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract commandHistoryState?: TerminalCommandHistoryState;
 
-    /**
-     * Preference if the terminal command history is enabled
-     */
-    abstract enableCommandHistory?: boolean;
 }
 
 /**
  * State of command history in terminal.
  */
-export interface TerminalCommandHistoryState {
+export interface TerminalCommandHistoryState extends Disposable {
 
     /**
      * Array of executed commands and their output in the terminal.
