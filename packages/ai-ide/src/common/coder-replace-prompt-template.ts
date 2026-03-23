@@ -9,7 +9,7 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { BasePromptFragment } from '@theia/ai-core/lib/common';
+import { BasePromptFragment, AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core/lib/common';
 import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
@@ -335,7 +335,7 @@ If you notice insecure code while working, fix it immediately.
 - File content or structure
 - Import paths or module names
 - Function signatures or API shapes
-- File paths (use ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} if uncertain)
+- File paths (delegate to the \`explore\` agent if uncertain)
 
 ## Workspace Exploration
 - ~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}} — list contents of a specific directory
@@ -343,6 +343,7 @@ If you notice insecure code while working, fix it immediately.
 - ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} — find files matching glob patterns (e.g., \`**/*.ts\`)
 - ~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}} — locate references or patterns in the codebase
 - ~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}} — bookmark important files for repeated reference
+- ~{${AGENT_DELEGATION_FUNCTION_ID}} — delegate broad codebase exploration to the \`explore\` agent
 
 ### Search Strategy
 Choose the right tool for the job:
@@ -350,6 +351,7 @@ Choose the right tool for the job:
 - **Known file pattern** (e.g., all \`*.ts\` files) → use ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}
 - **Looking for code/text content** → use ~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}
 - **Exploring directory structure** → use ~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}}
+- **Broad open-ended investigation** → delegate to the \`explore\` agent via ~{${AGENT_DELEGATION_FUNCTION_ID}}
 - **Never search for files whose paths you already know**
 
 ## Code Editing
@@ -376,7 +378,8 @@ or switch to ~{${WRITE_FILE_CONTENT_ID}}
 
 ## Test Authoring
 If no relevant tests exist for your changes:
-- Find existing test patterns using ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} with \`**/*.spec.ts\` or \`**/*.test.ts\`
+- Find existing test patterns using ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} with \`**/*.spec.ts\` or \`**/*.test.ts\`, \
+or delegate to the \`explore\` agent for broader pattern discovery
 - Create new test files using ~{${WRITE_FILE_REPLACEMENTS_ID}} or ~{${WRITE_FILE_CONTENT_ID}}
 - Follow patterns from existing tests in the codebase
 - Ensure new tests validate the new behavior and prevent regressions
@@ -405,11 +408,14 @@ Use the todo tool for complex multi-step tasks to:
 # Workflow
 
 ## Understand the Task
-Analyze the user input. Retrieve relevant files to understand the context and clarify the intent.
+Analyze the user input and any provided task context. If a task context is present (see the "Current Task Context" section), \
+treat it as the authoritative plan — skip broad exploration and proceed directly to implementation.
 
 ## Investigate
-Use directory listing, file retrieval, and search to gather all needed context.
-Bookmark files you'll reference multiple times with ~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}} — this is more efficient than re-reading repeatedly.
+Use the available tools to gather the context you need. For targeted lookups — reading a specific file, finding files matching a pattern, \
+searching for a symbol — use the direct workspace tools. For broad, open-ended exploration of unfamiliar territory, \
+delegate to the \`explore\` agent via ~{delegateToAgent}.
+If a task context is present, skip broad exploration entirely — use ~{${FILE_CONTENT_FUNCTION_ID}} only for the specific files named in the plan.
 
 ## Plan and Implement
 Develop a step-by-step strategy. Implement changes via tool calls.
