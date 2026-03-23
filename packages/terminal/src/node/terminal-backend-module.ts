@@ -58,6 +58,7 @@ export default new ContainerModule(bind => {
     bind(MessagingService.Contribution).to(TerminalBackendContribution).inSingletonScope();
 
     bind(ShellProcess).toSelf().inTransientScope();
+    bind(ShellIntegrationInjector).toSelf().inSingletonScope();
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
@@ -65,7 +66,7 @@ export default new ContainerModule(bind => {
 
             // inject shell integration scripts and env vars only if the terminal command history is enabled
             const injectedOptions = (options.enableShellIntegration ?? false)
-                ? ShellIntegrationInjector.injectShellIntegration(options)
+                ? ctx.container.get(ShellIntegrationInjector).injectShellIntegration(options)
                 : options;
 
             child.bind(ShellProcessOptions).toConstantValue(injectedOptions);

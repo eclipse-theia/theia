@@ -18,21 +18,23 @@ import path = require('path');
 import * as fs from 'fs';
 import { GeneralShellType, guessShellTypeFromExecutable } from '../common/shell-type';
 import { ShellProcess, ShellProcessOptions } from './shell-process';
+import { injectable } from '@theia/core/shared/inversify';
 
+@injectable()
 export class ShellIntegrationInjector {
 
-    static readonly INTEGRATION_ROOT_DIR = 'shell-integrations';
+    protected readonly INTEGRATION_ROOT_DIR = 'shell-integrations';
 
-    static readonly BASH_RCFILE_FLAG = '--rcfile';
-    static readonly BASH_INTEGRATION_SCRIPT_PATH = 'bash/bash-integration.bash';
+    protected readonly BASH_RCFILE_FLAG = '--rcfile';
+    protected readonly BASH_INTEGRATION_SCRIPT_PATH = 'bash/bash-integration.bash';
 
-    static readonly ZSH_INTEGRATION_ENV_VAR = 'THEIA_ZSH_DIR';
-    static readonly ZSH_INTEGRATION_DIR = 'zsh';
-    static readonly ZDOTDIR_ENV_VAR = 'ZDOTDIR';
-    static readonly ZDOTDIR_RELATIVE_DIR = '/zsh/zdotdir/';
-    static readonly ZDOTDIR_ORIGINAL_ENV_VAR = 'THEIA_ORIGINAL_ZDOTDIR';
+    protected readonly ZSH_INTEGRATION_ENV_VAR = 'THEIA_ZSH_DIR';
+    protected readonly ZSH_INTEGRATION_DIR = 'zsh';
+    protected readonly ZDOTDIR_ENV_VAR = 'ZDOTDIR';
+    protected readonly ZDOTDIR_RELATIVE_DIR = '/zsh/zdotdir/';
+    protected readonly ZDOTDIR_ORIGINAL_ENV_VAR = 'THEIA_ORIGINAL_ZDOTDIR';
 
-    static injectShellIntegration(options: ShellProcessOptions): ShellProcessOptions {
+    injectShellIntegration(options: ShellProcessOptions): ShellProcessOptions {
         const shellExecutable = options.shell ?? ShellProcess.getShellExecutablePath();
         const shellType = guessShellTypeFromExecutable(shellExecutable);
         if (shellType === GeneralShellType.Bash) {
@@ -69,7 +71,7 @@ export class ShellIntegrationInjector {
         }
     }
 
-    private static getShellIntegrationPath(relativePath: string): string | undefined {
+    protected getShellIntegrationPath(relativePath: string): string | undefined {
         const fullPath = path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath);
         if (!fs.existsSync(fullPath)) {
             console.warn(`Shell integration file not found (application may not be bundled correctly): ${fullPath}`);
@@ -78,7 +80,7 @@ export class ShellIntegrationInjector {
         return fullPath;
     }
 
-    private static stripLoginFlag(args: string | string[] | undefined): string[] | undefined {
+    protected stripLoginFlag(args: string | string[] | undefined): string[] | undefined {
         if (args === undefined) {
             return args;
         }
