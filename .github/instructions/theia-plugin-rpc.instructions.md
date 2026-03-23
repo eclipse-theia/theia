@@ -1,5 +1,6 @@
 ---
 applyTo: "packages/plugin-ext/**/*.ts"
+description: "Main-Ext RPC pattern and proxy identifiers for Theia plugin-ext"
 ---
 
 # Theia Plugin-Ext RPC Instructions
