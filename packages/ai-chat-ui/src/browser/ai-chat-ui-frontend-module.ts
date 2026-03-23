@@ -73,6 +73,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIChatNavigationService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, AIChatContribution);
+    bind(FrontendApplicationContribution).toService(AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
 
     bind(ChatInputHistoryService).toSelf().inSingletonScope();
