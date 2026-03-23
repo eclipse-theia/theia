@@ -374,7 +374,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.enableCommandHistory': {
             type: 'boolean',
-            markdownDescription: nls.localize('theia/terminal/enableCommandHistory', 'Track terminal commands and their output separately. When enabled, AI features can better understand and analyze terminal activity. Toggling this setting will not affect already-open terminals.\n\n&nbsp;\n\nThis feature is currently only supported by task terminals and user terminals running bash or zsh.'),
+            markdownDescription: nls.localize('theia/terminal/enableCommandHistory', 'Track terminal commands and their output separately using shell injection. This enables use cases such as visually distinguishing commands in the UI and giving AI agents more structured access to terminals. Toggling this setting will not affect terminals that are already open.\n\n&nbsp;\n\nThis feature is currently only supported by task terminals and user terminals running bash or zsh.'),
             default: false,
             tags: ['experimental']
         },
