@@ -75,9 +75,9 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
                     return undefined;
                 }
 
-                const uri = FileUri.create(filePath);
+                let uri = FileUri.create(filePath);
                 if (props.fileScheme) {
-                    uri.withScheme(props.fileScheme);
+                    uri = uri.withScheme(props.fileScheme);
                 }
                 const exists = await this.fileService.exists(uri);
                 if (!exists) {

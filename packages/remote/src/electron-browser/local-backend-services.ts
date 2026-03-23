@@ -41,6 +41,7 @@ export class LocalRemoteFileSystemContribution implements FileServiceContributio
     registerFileSystemProviders(service: FileService): void {
         service.onWillActivateFileSystemProvider(event => {
             if (event.scheme === LOCAL_FILE_SCHEME) {
+                // This provider currently has limited functionality. It can not yet be used to react to listener events like onDidChangeFile
                 service.registerProvider(LOCAL_FILE_SCHEME, new Proxy(this.provider, {
                     get(target, prop): unknown {
                         const member = target[prop as keyof LocalRemoteFileSystemProvider];

@@ -42,13 +42,13 @@ export class RemoteLocalWorkspaceContribution implements WorkspaceOpenHandlerCon
         return uri.scheme === LOCAL_FILE_SCHEME;
     }
 
-    async modifyRecentWorksapces(workspaces: string[]): Promise<string[]> {
+    async modifyRecentWorkspaces(workspaces: string[]): Promise<string[]> {
         return workspaces.map(workspace => {
             const uri = new URI(workspace);
             if (uri.scheme === 'file') {
                 return uri.withScheme(LOCAL_FILE_SCHEME).toString();
             }
-            // possible check as well if a remote/dev-container worksace is from the connected remote and therefore change it to the 'file' scheme
+            // possible check as well if a remote/dev-container workspace is from the connected remote and therefore change it to the 'file' scheme
             return workspace;
         });
     }

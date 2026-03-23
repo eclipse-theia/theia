@@ -24,7 +24,7 @@ import { ContainerOutputProvider } from './container-output-provider';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
-import { LocalStorageService, StorageService } from '@theia/core/lib/browser';
+import { LocalStorageService } from '@theia/core/lib/browser';
 
 export namespace RemoteContainerCommands {
     export const REOPEN_IN_CONTAINER = Command.toLocalizedCommand({
@@ -51,7 +51,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     protected readonly workspaceStorageService: WorkspaceStorageService;
 
     @inject(LocalStorageService)
-    protected readonly storageService: StorageService;
+    protected readonly storageService: LocalStorageService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;

@@ -63,7 +63,7 @@ export class DefaultFileDialogService implements FileDialogService {
                 if (!Array.isArray(value)) {
                     return props.fileScheme ? value.uri.withScheme(props.fileScheme) : value.uri;
                 }
-                return value.map(node => node.uri);
+                return value.map(node => props.fileScheme ? node.uri.withScheme(props.fileScheme) : node.uri);
             }
         }
         return undefined;

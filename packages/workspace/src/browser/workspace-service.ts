@@ -47,7 +47,7 @@ export interface WorkspaceOpenHandlerContribution {
 
 export const WorkspaceHandlingContribution = Symbol('WorkspaceHandlingContribution');
 export interface WorkspaceHandlingContribution {
-    modifyRecentWorksapces?(workspaces: string[]): MaybePromise<string[]>;
+    modifyRecentWorkspaces?(workspaces: string[]): MaybePromise<string[]>;
 }
 
 /**
@@ -358,8 +358,8 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         let recentWorkspaces = await this.server.getRecentWorkspaces();
 
         for (const handler of this.workspaceHandlingContribution.getContributions()) {
-            if (handler.modifyRecentWorksapces) {
-                recentWorkspaces = await handler.modifyRecentWorksapces(recentWorkspaces);
+            if (handler.modifyRecentWorkspaces) {
+                recentWorkspaces = await handler.modifyRecentWorkspaces(recentWorkspaces);
             }
         }
 
