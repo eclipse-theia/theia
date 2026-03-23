@@ -448,7 +448,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                         this.addCommandSeparator();
                     }
                 } else if (oscPayload.startsWith('command_started')) {
-                    this.startNewCommand(oscPayload.split(';')[1]);
+                    const command = oscPayload.split(';')[1];
+                    if (!command) {
+                        return false;
+                    }
+                    this.startNewCommand(command);
                 }
                 return true;
             })
