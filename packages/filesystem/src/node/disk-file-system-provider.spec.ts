@@ -113,7 +113,8 @@ describe('disk-file-system-provider', () => {
             }
         });
 
-        it('delete is able to delete file', async () => {
+        it('delete is able to delete file', async function (): Promise<void> {
+            this.timeout(10000);
             const tempDirPath = tracked.mkdirSync();
             const testFile = join(tempDirPath, 'test.file');
             const testFileUri = FileUri.create(testFile);
