@@ -385,6 +385,7 @@ export class FileService {
         return Disposable.create(() => {
             this.onDidChangeFileSystemProviderRegistrationsEmitter.fire({ added: false, scheme, provider });
             this.providers.delete(scheme);
+            this.recursiveWatcherIndexes.delete(provider);
 
             providerDisposables.dispose();
         });
@@ -1473,8 +1474,6 @@ export class FileService {
         const subsumingParentKey = this.findSubsumingParent(provider, resource, options);
         if (subsumingParentKey) {
             const parentEntry = this.activeWatchers.get(subsumingParentKey) as RecursiveWatcherEntry;
-            // Reuse createWatcherEntry so recursive watchers keep their subsumedChildren/compiledExcludes
-            // fields intact for when they are later promoted.
             const entry = this.createWatcherEntry(provider, resource, options, false);
             entry.subsumingParent = parentEntry;
             this.activeWatchers.set(key, entry);
@@ -1487,9 +1486,9 @@ export class FileService {
         this.activeWatchers.set(key, entry);
 
         // (D) If this is a recursive watcher, index it and subsume existing children
-        if (options.recursive) {
+        if (this.isRecursiveWatcherEntry(entry)) {
             this.indexRecursiveWatcher(provider, resource, key);
-            this.subsumeExistingChildren(provider, resource, key, entry as RecursiveWatcherEntry);
+            this.subsumeExistingChildren(provider, resource, key, entry);
         }
 
         return this.createWatcherDisposable(key, entry);
@@ -1595,7 +1594,7 @@ export class FileService {
         // A parent can only subsume a child if the parent's excludes don't filter out
         // events the child cares about. Every exclude of the parent must also be an
         // exclude of the child; otherwise the child would silently miss events.
-        if (!this.areExcludesCompatible(parentEntry, { options: childOptions } as WatcherEntry)) {
+        if (!this.areExcludesCompatible(parentEntry, childOptions)) {
             return undefined;
         }
 
@@ -1607,7 +1606,15 @@ export class FileService {
             return false;
         }
 
-        const relativePath = parentEntry.resource.relative(childResource);
+        const caseSensitive = !!(parentEntry.provider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
+        let parentUri = parentEntry.resource;
+        let childUri = childResource;
+        if (!caseSensitive) {
+            parentUri = parentUri.withPath(parentUri.path.toString().toLowerCase());
+            childUri = childUri.withPath(childUri.path.toString().toLowerCase());
+        }
+
+        const relativePath = parentUri.relative(childUri);
         if (!relativePath) {
             return false;
         }
@@ -1625,14 +1632,14 @@ export class FileService {
      * parent must also be an exclude of the child; otherwise the parent's OS watcher
      * would filter out sub-paths the child cares about.
      */
-    private areExcludesCompatible(parentEntry: RecursiveWatcherEntry, childEntry: WatcherEntry): boolean {
-        if (!childEntry.options.recursive) {
+    private areExcludesCompatible(parentEntry: RecursiveWatcherEntry, childOptions: WatchOptions): boolean {
+        if (!childOptions.recursive) {
             return true;
         }
         if (parentEntry.compiledExcludes.length === 0) {
             return true;
         }
-        const childExcludes = new Set(childEntry.options.excludes);
+        const childExcludes = new Set(childOptions.excludes);
         return parentEntry.options.excludes.every(e => childExcludes.has(e));
     }
 
@@ -1670,7 +1677,7 @@ export class FileService {
             if (this.isExcludedByParent(parentEntry, childEntry.resource)) {
                 continue;
             }
-            if (!this.areExcludesCompatible(parentEntry, childEntry)) {
+            if (!this.areExcludesCompatible(parentEntry, childEntry.options)) {
                 continue;
             }
 
@@ -1690,7 +1697,7 @@ export class FileService {
                         continue;
                     }
                     // Check if the grandchild is compatible with the new parent
-                    if (this.isExcludedByParent(parentEntry, grandchild.resource) || !this.areExcludesCompatible(parentEntry, grandchild)) {
+                    if (this.isExcludedByParent(parentEntry, grandchild.resource) || !this.areExcludesCompatible(parentEntry, grandchild.options)) {
                         // Grandchild can't be subsumed by the new parent — give it a real watcher
                         grandchild.subsumingParent = undefined;
                         grandchild.realWatcher = grandchild.provider.watch(grandchild.resource, grandchild.options);
