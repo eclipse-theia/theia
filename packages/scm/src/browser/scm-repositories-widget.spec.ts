@@ -370,7 +370,7 @@ describe('ScmRepositoriesWidget', () => {
         container.remove();
     });
 
-    it('should use codicon-repo-forked for worktrees', () => {
+    it('should use codicon-worktree for worktrees', () => {
         const parent = makeRepo({
             id: 'git', label: 'Git', rootUri: '/projects/myrepo'
         });
@@ -387,7 +387,7 @@ describe('ScmRepositoriesWidget', () => {
 
         const rows = container.querySelectorAll('.theia-scm-repository-item');
         const wtIcon = rows[1].querySelector('.theia-scm-repository-icon');
-        expect(wtIcon!.className).to.include('codicon-repo-forked');
+        expect(wtIcon!.className).to.include('codicon-worktree');
 
         ReactDOM.unmountComponentAtNode(container);
         container.remove();
