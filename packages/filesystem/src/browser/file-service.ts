@@ -1701,6 +1701,10 @@ export class FileService {
                         // Grandchild can't be subsumed by the new parent — give it a real watcher
                         grandchild.subsumingParent = undefined;
                         grandchild.realWatcher = grandchild.provider.watch(grandchild.resource, grandchild.options);
+                        // If the promoted grandchild is recursive, re-index it so future watchers can find it
+                        if (this.isRecursiveWatcherEntry(grandchild)) {
+                            this.indexRecursiveWatcher(grandchild.provider, grandchild.resource, grandchildKey);
+                        }
                     } else {
                         grandchild.subsumingParent = parentEntry;
                         parentEntry.subsumedChildren.add(grandchildKey);

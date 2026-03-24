@@ -328,6 +328,35 @@ describe('FileService watcher deduplication', () => {
             expect(mockProvider.watchers[1].disposed).to.be.false; // parent alive
         });
 
+        it('should re-index a promoted recursive grandchild so new watchers can find it', async () => {
+            const childUri = new URI('file:///project/src');
+            const grandchildUri = new URI('file:///project/src/lib');
+            const parentUri = new URI('file:///project');
+
+            // Create a recursive child, then a grandchild under it
+            await fileService.doWatch(childUri, { recursive: true, excludes: [] });
+            await fileService.doWatch(grandchildUri, { recursive: true, excludes: [] });
+
+            // Grandchild is subsumed by child
+            expect(mockProvider.watchers).to.have.lengthOf(1);
+            expect(liveWatcherCount(mockProvider)).to.equal(1);
+
+            // Create a parent that subsumes the child. The grandchild is incompatible
+            // with the parent's excludes, so it gets promoted with its own real watcher.
+            await fileService.doWatch(parentUri, { recursive: true, excludes: ['**/lib'] });
+
+            // Parent + promoted grandchild should be the live watchers
+            expect(liveWatcherCount(mockProvider)).to.equal(2);
+
+            // Now create a watcher under the promoted grandchild — it should be subsumed
+            // by the grandchild (which must have been re-indexed for this to work)
+            const deepUri = new URI('file:///project/src/lib/utils');
+            await fileService.doWatch(deepUri, { recursive: false, excludes: [] });
+
+            // No new OS watcher — the promoted grandchild covers it
+            expect(liveWatcherCount(mockProvider)).to.equal(2);
+        });
+
         it('should not subsume excluded children when creating a new parent', async () => {
             const childUri = new URI('file:///project/node_modules/pkg');
             const parentUri = new URI('file:///project');
