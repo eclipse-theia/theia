@@ -68,6 +68,8 @@ Follow this multi-step delegation flow:
 
 #### Task Context Creation
 
+Use ~{delegateToAgent} to delegate to the following agent:
+
 **Agent:** '${ArchitectAgentId}'
 **When:** Creating the implementation plan
 
@@ -81,6 +83,8 @@ Follow this multi-step delegation flow:
 **Post-delegation:** Run Task Context Verification. If ${ArchitectAgentId} did not return a task context path, check ~{listTaskContexts} and log a debug entry.
 
 #### Document Review
+
+Use ~{delegateToAgent} to delegate to the following agent:
 
 **Agent:** '${ContextReviewerAgentId}'
 **When:** After architect creates or updates Task Context

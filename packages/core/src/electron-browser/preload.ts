@@ -207,8 +207,8 @@ const api: TheiaCoreAPI = {
         return ipcRenderer.invoke(CHANNEL_GET_ZOOM_LEVEL);
     },
 
-    setZoomLevel: function (desired: number): void {
-        ipcRenderer.send(CHANNEL_SET_ZOOM_LEVEL, desired);
+    setZoomLevel: function (desired: number, windowName?: string): void {
+        ipcRenderer.send(CHANNEL_SET_ZOOM_LEVEL, desired, windowName);
     },
     isFullScreenable: function (): boolean {
         return ipcRenderer.sendSync(CHANNEL_IS_FULL_SCREENABLE);

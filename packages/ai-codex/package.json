@@ -12,8 +12,8 @@
     "@theia/ai-chat": "1.69.0",
     "@theia/ai-chat-ui": "1.69.0",
     "@theia/editor": "1.69.0",
+    "@theia/monaco-editor-core": "1.108.201",
     "@theia/output": "1.69.0",
-    "@theia/monaco-editor-core": "^1.96.302",
     "tslib": "^2.6.2"
   },
   "publishConfig": {

@@ -65,6 +65,7 @@ import * as objects from '@theia/monaco-editor-core/esm/vs/base/common/objects';
 import { Selection } from '@theia/editor/lib/browser/editor';
 import { IHoverService, WorkbenchHoverDelegate } from '@theia/monaco-editor-core/esm/vs/platform/hover/browser/hover';
 import { setHoverDelegateFactory } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegateFactory';
+import { IMarkdownRendererService } from '@theia/monaco-editor-core/esm/vs/platform/markdown/browser/markdownRenderer';
 import { MonacoTextModelService } from './monaco-text-model-service';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
@@ -163,7 +164,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         // Ensure that a valid InstantiationService is responsible for creating hover delegates when the InstantiationService for this widget is disposed.
         // Cf. https://github.com/eclipse-theia/theia/issues/15102
         this.toDispose.push(Disposable.create(() => setHoverDelegateFactory((placement, enableInstantHover) =>
-            StandaloneServices.get(IInstantiationService).createInstance(WorkbenchHoverDelegate, placement, enableInstantHover, {})
+            StandaloneServices.get(IInstantiationService).createInstance(WorkbenchHoverDelegate, placement, { instantHover: enableInstantHover }, {})
         )));
         this.addHandlers(this.editor);
         this.editor.createContextKey('resource', document.uri);
@@ -265,16 +266,46 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
 
     handleVisibilityChanged(nowVisible: boolean): void {
         if (nowVisible) {
+            this._stagedForPreview = false;
             this.baseEditor.setModel(this.baseModel);
             this.baseEditor.restoreViewState(this.savedViewState);
             this.baseEditor.focus();
         } else {
+            this._stagedForPreview = false;
             this.savedViewState = this.baseEditor.saveViewState();
 
             // eslint-disable-next-line no-null/no-null
             this.baseEditor.setModel(null); // workaround for https://github.com/eclipse-theia/theia/issues/14880
         }
     }
+
+    /**
+     * Temporarily restores the editor model and forces a synchronous render
+     * so that the canvas content is available for visual preview capture.
+     * Must be followed by {@link unstagePreview} to clean up.
+     */
+    stageForPreview(): void {
+        if (!this.baseEditor.getModel()) {
+            this._stagedForPreview = true;
+            this.baseEditor.setModel(this.baseModel);
+            this.baseEditor.restoreViewState(this.savedViewState);
+            this.editor.render(true);
+        }
+    }
+
+    /**
+     * Reverts the model restoration performed by {@link stageForPreview}.
+     */
+    unstagePreview(): void {
+        if (this._stagedForPreview) {
+            this._stagedForPreview = false;
+            this.savedViewState = this.baseEditor.saveViewState();
+            // eslint-disable-next-line no-null/no-null
+            this.baseEditor.setModel(null);
+        }
+    }
+
+    private _stagedForPreview = false;
 
     /**
      * This property allows working with the underlying editor instance
@@ -387,25 +418,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     focus(): void {
-        /**
-         * `this.editor.focus` forcefully changes the focus editor state,
-         * regardless whether the textarea actually received the focus.
-         * It could lead to issues like https://github.com/eclipse-theia/theia/issues/7902
-         * Instead we focus the underlying textarea.
-         */
-        const node = this.editor.getDomNode();
-        if (node) {
-            const textarea = node.querySelector('textarea') as HTMLElement;
-            textarea.focus();
-        }
-    }
-
-    blur(): void {
-        const node = this.editor.getDomNode();
-        if (node) {
-            const textarea = node.querySelector('textarea') as HTMLElement;
-            textarea.blur();
-        }
+        this.editor.focus();
     }
 
     isFocused({ strict }: { strict: boolean } = { strict: false }): boolean {
@@ -804,7 +817,8 @@ class EmbeddedCodeEditor extends StandaloneCodeEditor {
         @IAccessibilityService accessibilityService: IAccessibilityService,
         @ILanguageConfigurationService languageConfigurationService: ILanguageConfigurationService,
         @ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
-        @IHoverService hoverService: IHoverService
+        @IHoverService hoverService: IHoverService,
+        @IMarkdownRendererService markdownRendererService: IMarkdownRendererService
     ) {
         super(domElement,
             { ...parentEditor.getRawOptions(), overflowWidgetsDomNode: parentEditor.getOverflowWidgetsDomNode() },
@@ -818,7 +832,8 @@ class EmbeddedCodeEditor extends StandaloneCodeEditor {
             notificationService,
             accessibilityService,
             languageConfigurationService,
-            languageFeaturesService);
+            languageFeaturesService,
+            markdownRendererService);
 
         this._parentEditor = parentEditor;
         this._overwriteOptions = options;

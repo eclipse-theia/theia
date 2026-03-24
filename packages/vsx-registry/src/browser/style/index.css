@@ -78,10 +78,7 @@
 .theia-vsx-extensions-search-bar {
   display: flex;
   align-content: center;
-  padding: var(--theia-ui-padding) 
-           max(var(--theia-scrollbar-width), var(--theia-ui-padding)) 
-           var(--theia-ui-padding) 
-           calc(var(--theia-ui-padding) * 3);
+  padding: var(--theia-ui-padding) max(var(--theia-scrollbar-width), var(--theia-ui-padding)) var(--theia-ui-padding) calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-vsx-extensions-search-bar .theia-input {
@@ -137,6 +134,29 @@
 
 .theia-vsx-extension-content .disabled {
   font-weight: bold;
+}
+
+.theia-vsx-extension.theia-vsx-extension-disabled-by-trust {
+  opacity: 0.6;
+}
+
+.theia-vsx-extension-content .title .restricted {
+  font-size: 80%;
+  color: var(--theia-statusBarItem-prominentForeground);
+  background-color: var(--theia-statusBarItem-prominentBackground);
+  border-radius: 2px;
+  padding: calc(var(--theia-ui-padding) / 3 * 2);
+  margin-left: calc(var(--theia-ui-padding) / 3 * 2);
+  white-space: nowrap;
+}
+
+.theia-vsx-extension-restricted-notice {
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-statusBarItem-prominentForeground);
+  background-color: var(--theia-statusBarItem-prominentBackground);
+  border-radius: 2px;
+  padding: calc(var(--theia-ui-padding) / 2);
+  margin-top: calc(var(--theia-ui-padding) / 2);
 }
 
 .theia-vsx-extension-content .title .version,
@@ -217,10 +237,7 @@
 
 .theia-vsx-extension-editor .header {
   display: flex;
-  padding: calc(var(--theia-ui-padding) * 3)
-           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
-           calc(var(--theia-ui-padding) * 3)
-           calc(var(--theia-ui-padding) * 3);
+  padding: calc(var(--theia-ui-padding) * 3) max(var(--theia-ui-padding), var(--theia-scrollbar-width)) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3);
   flex-shrink: 0;
   border-bottom: 1px solid hsla(0, 0%, 50%, 0.5);
   width: 100%;
@@ -356,6 +373,16 @@
   font-size: var(--theia-ui-font-size0);
   font-style: italic;
   margin-left: calc(var(--theia-ui-padding) * 5 / 3);
+}
+
+.theia-vsx-extension-editor .header .details .title .restricted {
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-statusBarItem-prominentForeground);
+  background-color: var(--theia-statusBarItem-prominentBackground);
+  border-radius: 2px;
+  padding: calc(var(--theia-ui-padding) / 3 * 2);
+  margin-left: calc(var(--theia-ui-padding) * 5 / 3);
+  white-space: nowrap;
 }
 
 .theia-vsx-extension-editor .header .details .subtitle {

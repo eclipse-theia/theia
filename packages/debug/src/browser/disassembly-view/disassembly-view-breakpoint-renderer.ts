@@ -81,7 +81,7 @@ export class BreakpointRenderer implements ITableRenderer<DisassembledInstructio
         return { currentElement, icon, disposables };
     }
 
-    renderElement(element: DisassembledInstructionEntry, index: number, templateData: BreakpointColumnTemplateData, height: number | undefined): void {
+    renderElement(element: DisassembledInstructionEntry, index: number, templateData: BreakpointColumnTemplateData): void {
         templateData.currentElement.element = element;
         this.rerenderDebugStackframe(templateData.icon, element);
     }

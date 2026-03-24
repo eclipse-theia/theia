@@ -103,11 +103,10 @@ jobs:
           npm run test:theia
 
       - name: Test (browser)
-        if: matrix.tests != 'skip' && matrix.node == '22.x'
         run: |
           npm run test:browser
 
       - name: Test (electron)
-        if: matrix.tests != 'skip' && runner.os == 'Linux'
+        if: runner.os == 'Linux'
         run: |
           xvfb-run -a npm run test:electron

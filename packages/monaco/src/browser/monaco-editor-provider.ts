@@ -36,6 +36,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
 import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { Event } from '@theia/monaco-editor-core/esm/vs/base/common/event';
 import { KeyCodeChord } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
@@ -357,7 +358,7 @@ export class MonacoEditorProvider {
     async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions): Promise<MonacoEditor> {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
-            overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ } }]);
+            overrides.push([IContextMenuService, { showContextMenu: () => {/** no op! */ }, onDidShowContextMenu: Event.None, onDidHideContextMenu: Event.None }]);
             const document = await this.getModel(uri, toDispose);
             document.suppressOpenEditorWhenDirty = true;
             const model = (await document.load()).textEditorModel;
@@ -385,7 +386,7 @@ export class MonacoEditorProvider {
     async createSimpleInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions, widgetOptions?: ICodeEditorWidgetOptions): Promise<SimpleMonacoEditor> {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
-            overrides.push([IContextMenuService, { showContextMenu: () => { /** no op! */ } }]);
+            overrides.push([IContextMenuService, { showContextMenu: () => { /** no op! */ }, onDidShowContextMenu: Event.None, onDidHideContextMenu: Event.None }]);
             const document = await this.getModel(uri, toDispose);
             document.suppressOpenEditorWhenDirty = true;
             const model = (await document.load()).textEditorModel;

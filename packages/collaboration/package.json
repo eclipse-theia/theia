@@ -7,7 +7,7 @@
     "@theia/editor": "1.69.0",
     "@theia/filesystem": "1.69.0",
     "@theia/monaco": "1.69.0",
-    "@theia/monaco-editor-core": "1.96.302",
+    "@theia/monaco-editor-core": "1.108.201",
     "@theia/workspace": "1.69.0",
     "lib0": "^0.2.52",
     "open-collaboration-protocol": "0.3.0",

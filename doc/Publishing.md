@@ -602,6 +602,7 @@ To perform the upgrade:
 
 - Run `npm upgrade` at the root of the repository.
 - Fix any compilation errors, typing errors, and failing tests.
+- Align dependency version ranges in all `package.json` files (root and sub-packages) to match the resolved versions in package-lock.json, especially if the upgrade required code changes. This ensures that adopters with existing lockfiles are forced to pull at least the minimum compatible version, rather than staying on an older locked version that may be incompatible with the updated code.
 - Open a PR with the changes ([example](https://github.com/eclipse-theia/theia/pull/15688)).
 - Run the license check review locally
 - Wait for the "IP Check" to complete ([example](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9377)).

@@ -32,6 +32,8 @@ import { ExternalAppOpenHandler } from './external-app-open-handler';
 import { ElectronUriHandlerContribution } from '../electron-uri-handler';
 import { bindRootContributionProvider } from '../../common';
 import { WindowTitleContribution } from '../../browser/window/window-title-service';
+import { WindowZoomStatusBarItem } from './window-zoom-status-bar-item';
+import '../../../src/electron-browser/style/window-zoom-action-bar.css';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ElectronMainWindowService).toDynamicValue(context =>
@@ -48,4 +50,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ExternalAppOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(ExternalAppOpenHandler);
     bindRootContributionProvider(bind, WindowTitleContribution);
+    bind(WindowZoomStatusBarItem).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(WindowZoomStatusBarItem);
 });

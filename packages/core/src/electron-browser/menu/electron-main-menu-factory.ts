@@ -233,12 +233,10 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 }
             };
 
-            if (isOSX) {
-                const role = this.roleFor(menu.id);
-                if (role) {
-                    menuItem.role = role;
-                    delete menuItem.execute;
-                }
+            const role = this.roleFor(menu.id);
+            if (role) {
+                menuItem.role = role;
+                delete menuItem.execute;
             }
             parentItems.push(menuItem);
         }

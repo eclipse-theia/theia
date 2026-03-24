@@ -32,6 +32,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarAction }
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService, MenuModelRegistry } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ScmService } from './scm-service';
+import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
@@ -142,6 +143,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
     @inject(ScmDecorationsService) protected readonly scmDecorationsService: ScmDecorationsService;
     @inject(DirtyDiffNavigator) protected readonly dirtyDiffNavigator: DirtyDiffNavigator;
+    @inject(ScmContextKeyService) protected readonly scmContextKeys: ScmContextKeyService;
 
     protected scmFocus: ContextKey<boolean>;
 
@@ -170,8 +172,9 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     onStart(): void {
         this.updateStatusBar();
-        this.scmService.onDidAddRepository(() => this.updateStatusBar());
-        this.scmService.onDidRemoveRepository(() => this.updateStatusBar());
+        this.updateScmProviderCount();
+        this.scmService.onDidAddRepository(() => { this.updateStatusBar(); this.updateScmProviderCount(); });
+        this.scmService.onDidRemoveRepository(() => { this.updateStatusBar(); this.updateScmProviderCount(); });
         this.scmService.onDidChangeSelectedRepository(() => this.updateStatusBar());
         this.scmService.onDidChangeStatusBarCommands(() => this.updateStatusBar());
         this.labelProvider.onDidChange(() => this.updateStatusBar());
@@ -184,6 +187,10 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     protected updateContextKeys(): void {
         this.scmFocus.set(this.shell.currentWidget instanceof ScmWidget);
+    }
+
+    protected updateScmProviderCount(): void {
+        this.scmContextKeys.scmProviderCount.set(this.scmService.repositories.length);
     }
 
     override registerCommands(commandRegistry: CommandRegistry): void {
