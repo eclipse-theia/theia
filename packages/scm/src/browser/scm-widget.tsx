@@ -79,12 +79,16 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.containerLayout.addWidget(this.resourceWidget);
         this.containerLayout.addWidget(this.amendWidget);
         this.toDispose.push(this.resourceWidget.model.onNodeRefreshed(() => {
-            const totalChanges = this.resourceWidget.model.scmProvider?.groups.reduce((prev, curr) => prev + curr.resources.length, 0);
+            const totalChanges = this.scmService.repositories.reduce((repoAcc, repo) =>
+                repoAcc + repo.provider.groups.reduce((groupAcc, group) => groupAcc + group.resources.length, 0), 0
+            );
             this.badgeService.showBadge(this, totalChanges ? { value: totalChanges, tooltip: nls.localizeByDefault('{0} pending changes', totalChanges) } : undefined);
         }));
 
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
+        this.toDispose.push(this.scmService.onDidAddRepository(() => this.refresh()));
+        this.toDispose.push(this.scmService.onDidRemoveRepository(() => this.refresh()));
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
         this.toDispose.push(this.scmPreferences.onPreferenceChanged(
             e => {
@@ -118,7 +122,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.toDisposeOnRefresh.dispose();
         this.toDispose.push(this.toDisposeOnRefresh);
         const repository = this.scmService.selectedRepository;
-        this.title.label = repository ? repository.provider.label : nls.localize('theia/scm/noRepositoryFound', 'No repository found');
+        this.title.label = nls.localizeByDefault('Changes');
         this.title.caption = this.title.label;
         this.update();
         if (repository) {
