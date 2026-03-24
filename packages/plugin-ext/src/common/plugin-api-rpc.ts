@@ -1249,9 +1249,22 @@ export interface TextEditorPositionData {
     [id: string]: EditorPosition;
 }
 
+export interface TextEditorDiffInformationDto {
+    readonly documentVersion: number;
+    readonly original: UriComponents | undefined;
+    readonly modified: UriComponents;
+    readonly changes: readonly {
+        readonly original: { readonly startLineNumber: number; readonly endLineNumberExclusive: number };
+        readonly modified: { readonly startLineNumber: number; readonly endLineNumberExclusive: number };
+        readonly kind: number;
+    }[];
+    readonly isStale: boolean;
+}
+
 export interface TextEditorsExt {
     $acceptEditorPropertiesChanged(id: string, props: EditorChangedPropertiesData): void;
     $acceptEditorPositionData(data: TextEditorPositionData): void;
+    $acceptEditorDiffInformation(id: string, diffInformation: TextEditorDiffInformationDto[] | undefined): void;
 }
 
 export interface SingleEditOperation {
