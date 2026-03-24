@@ -1,5 +1,5 @@
 /* ==========================================
-   Main view widget - full height with border
+   Main view widget
    ========================================== */
 
 .ai-terminal-assistant-view {
@@ -23,12 +23,97 @@
 }
 
 /* ==========================================
-   Summary widget - scrollable content area
+   Welcome / empty state view
+   ========================================== */
+
+.ai-terminal-assistant-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(var(--theia-ui-padding) * 2);
+    padding: calc(var(--theia-ui-padding) * 2) var(--theia-ui-padding);
+    color: var(--theia-descriptionForeground);
+    max-width: 400px;
+}
+
+.ai-terminal-assistant-welcome-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--theia-ui-padding) * 7);
+    height: calc(var(--theia-ui-padding) * 7);
+    border-radius: 50%;
+    background-color: var(--theia-badge-background);
+    color: var(--theia-badge-foreground);
+    font-size: 1.5em;
+}
+
+.ai-terminal-assistant-welcome-header {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+}
+
+.ai-terminal-assistant-welcome-title {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--theia-foreground);
+}
+
+.ai-terminal-assistant-welcome-subtitle {
+    margin: 0;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.ai-terminal-assistant-welcome-steps-section {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+    width: 100%;
+}
+
+.ai-terminal-assistant-welcome-steps-label {
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--theia-descriptionForeground);
+    opacity: 0.8;
+}
+
+.ai-terminal-assistant-welcome-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 4/3);
+}
+
+.ai-terminal-assistant-welcome-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--theia-ui-padding) * 4/3);
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.ai-terminal-assistant-welcome-steps li .codicon {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--theia-foreground);
+    opacity: 0.6;
+}
+
+/* ==========================================
+   Summary widget
    ========================================== */
 
 .summary-view-widget {
     flex: 1;
-    min-height: 0; /* Required for flex child scrolling */
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -36,12 +121,16 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: flex-start;
     gap: calc(var(--theia-ui-padding) * 4/3);
     padding: var(--theia-ui-padding);
 }
 
-.summary-loading {
+.summary-view-container.welcome-state {
+    height: 100%;
+    justify-content: center;
+}
+
+.ai-terminal-assistant-view .summary-loading {
     display: flex;
     align-items: center;
     gap: calc(var(--theia-ui-padding) * 2/3);
@@ -49,12 +138,16 @@
     color: var(--theia-descriptionForeground);
 }
 
-.summary-loading .codicon-loading {
+.ai-terminal-assistant-view .summary-loading .codicon-loading {
     color: var(--theia-progressBar-background);
 }
 
+.ai-summary-container {
+    width: 100%;
+}
+
 /* ==========================================
-   Buffer widget - fixed to bottom with input
+   Buffer widget
    ========================================== */
 
 .ai-terminal-buffer-widget {
@@ -62,230 +155,16 @@
     border-top: var(--theia-border-width) solid var(--theia-widget-shadow);
 }
 
-.summary-view-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    width: 100%;
-}
-
-.request-summary-button {
-    margin-left: auto;
-}
-
-.summary-view-header-title {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 4/3);
-    padding: 0px;
-    font-weight: bold;
-}
-
-.build-result-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 2/3);
+.ai-terminal-buffer-widget > div {
     padding: var(--theia-ui-padding);
 }
 
-.build-result-container .markdown-content,
-.build-result-container .markdown-content>*,
-.build-result-container .markdown-content p {
-    margin: 0;
-    padding: 0;
-}
-
-.build-result-status {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 2/3);
-    padding: 0px;
-    font-weight: 600;
-    font-size: 1.1em;
-}
-
-.build-result-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 2/3);
-    padding: 0px;
-    font-weight: bold;
-}
-
-.theia-button.secondary.secondary:hover {
-    background-color: var(--theia-list-hoverBackground);
-}
-
-.button-group {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 4/3);
-    padding: 0px;
-}
-
-.icon-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: calc(var(--theia-ui-padding) * 1/3);
-}
-
-.error-detail-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding: calc(var(--theia-ui-padding) * 4/3);
-}
-
-.error-detail-container .button-group {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 150ms ease;
-}
-
-.error-detail-container:hover .button-group,
-.error-detail-container:focus-within .button-group {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.error-detail-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-.error-detail-header-title {
-    display: flex;
-    align-items: center;
-    gap: calc(var(--theia-ui-padding) * 2/3);
-}
-
-.error-detail-header-title .error-type {
-    font-weight: 600;
-    color: var(--theia-foreground);
-}
-
-.error-detail-header-title .error-location {
-    font-weight: normal;
-    color: var(--theia-descriptionForeground);
-    font-family: var(--theia-code-font-family);
-    font-size: 0.9em;
-}
-
-.error-detail-title {
-    display: flex;
-    flex-direction: column;
-}
-
-.error-detail-title .markdown-content,
-.error-detail-title .markdown-content>*,
-.error-detail-title .markdown-content p {
-    margin: 0;
-    padding: 0;
-}
-
-.error-detail-dropdown {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 2/3);
-    padding: 0px;
-    cursor: pointer;
-}
-
-.error-detail-dropdown:hover {
-    background-color: var(--theia-list-hoverBackground);
-}
-
-.error-detail-subheader {
-    font-weight: 600;
-    color: var(--theia-foreground);
-}
-
-.error-detail-body {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 0px;
-    padding: 0px;
-}
-
-.error-detail-field {
-    width: 100%;
-    max-width: min(600px, 100%);
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: calc(var(--theia-ui-padding) * 4/3);
-    padding: 0px;
-    box-sizing: border-box;
-}
-
-.error-detail-content {
-    display: block;
-    padding: var(--theia-ui-padding);
-}
-
-.error-detail-divider {
-    width: 100%;
-    max-width: min(600px, 100%);
-    height: var(--theia-border-width);
-    background-color: var(--theia-widget-shadow);
-}
-
-.ai-summary-container {
-    width: 100%;
-}
-
-code {
-    color: var(--theia-textCodeBlock-foreground);
-    background-color: var(--theia-textCodeBlock-background);
-}
-
-.command-input-form {
-    width: 100%;
-}
-
-.command-input-field {
-    width: 100%;
-    padding: calc(var(--theia-ui-padding));
-    border: var(--theia-border-width) solid var(--theia-input-border);
-    border-radius: var(--theia-border-radius);
-    box-sizing: border-box;
-    background-color: var(--theia-input-background);
-    color: var(--theia-input-foreground);
-    font-family: inherit;
-    font-size: inherit;
-}
-
-.command-input-field:focus {
-    outline: none;
-    border-color: var(--theia-focusBorder);
-}
-
-.command-input-field:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.command-input-field::placeholder {
-    color: var(--theia-input-placeholderForeground);
-}
-
-.terminal-buffer-container {
+.ai-terminal-buffer-widget .ai-terminal-buffer-container {
     width: 100%;
     max-height: 150px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
     background-color: var(--theia-terminal-background);
     color: var(--theia-terminal-foreground);
     border: var(--theia-border-width) solid var(--theia-widget-shadow);
@@ -295,52 +174,223 @@ code {
     box-sizing: border-box;
 }
 
-.ai-terminal-buffer-widget > div {
+.ai-terminal-command-line {
+    font-family: var(--theia-code-font-family);
+    font-size: var(--theia-editor-font-size);
+    line-height: var(--theia-editor-line-height);
+    white-space: pre-wrap;
+    margin: 0;
+    padding: 0 calc(var(--theia-ui-padding) * 2) 0 calc(var(--theia-ui-padding) * 4);
+    position: relative;
+}
+
+.ai-terminal-buffer-widget .ai-terminal-command-line {
+    color: var(--theia-terminal-foreground);
+}
+
+/* ==========================================
+   Command input
+   ========================================== */
+
+.ai-terminal-buffer-widget .ai-terminal-input-form {
+    width: 100%;
+}
+
+.ai-terminal-buffer-widget .ai-terminal-input-field {
+    width: 100%;
+    padding: var(--theia-ui-padding);
+    border: var(--theia-border-width) solid var(--theia-input-border);
+    border-radius: var(--theia-border-radius);
+    box-sizing: border-box;
+    background-color: var(--theia-input-background);
+    color: var(--theia-input-foreground);
+    font-family: var(--theia-code-font-family);
+    font-size: var(--theia-editor-font-size);
+}
+
+.ai-terminal-buffer-widget .ai-terminal-input-field:focus {
+    outline: none;
+    border-color: var(--theia-focusBorder);
+}
+
+.ai-terminal-buffer-widget .ai-terminal-input-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ai-terminal-buffer-widget .ai-terminal-input-field::placeholder {
+    color: var(--theia-input-placeholderForeground);
+}
+
+/* ==========================================
+   Build result
+   ========================================== */
+
+.ai-terminal-assistant-view .build-result-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(var(--theia-ui-padding) * 2/3);
     padding: var(--theia-ui-padding);
 }
 
-.error-lines-container {
+.ai-terminal-assistant-view .build-result-status {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+/* ==========================================
+   Error detail
+   ========================================== */
+
+.ai-terminal-assistant-view .error-detail-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: calc(var(--theia-ui-padding) * 4/3);
+    border-radius: calc(var(--theia-ui-padding) * 2);
+    box-shadow: 0 1px 3px var(--theia-widget-shadow);
+}
+
+.ai-terminal-assistant-view .error-detail-container .ai-terminal-button-group {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+}
+
+.ai-terminal-assistant-view .error-detail-container:hover .ai-terminal-button-group,
+.ai-terminal-assistant-view .error-detail-container:focus-within .ai-terminal-button-group {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ai-terminal-assistant-view .error-detail-header {
+    display: flex;
+    align-items: center;
+}
+
+.ai-terminal-assistant-view .error-detail-header-title {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+}
+
+.ai-terminal-assistant-view .error-detail-header-title .error-type {
+    font-weight: 600;
+    color: var(--theia-foreground);
+}
+
+.ai-terminal-assistant-view .error-detail-header-title .error-location {
+    color: var(--theia-descriptionForeground);
+    font-family: var(--theia-code-font-family);
+    font-size: 0.9em;
+}
+
+.ai-terminal-assistant-view .error-detail-dropdown {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+    cursor: pointer;
+}
+
+.ai-terminal-assistant-view .error-detail-subheader {
+    font-weight: 600;
+    color: var(--theia-foreground);
+}
+
+.ai-terminal-assistant-view .error-detail-body {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.ai-terminal-assistant-view .error-detail-field {
+    width: 100%;
+    max-width: min(600px, 100%);
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--theia-ui-padding) * 4/3);
+    box-sizing: border-box;
+}
+
+.ai-terminal-assistant-view .error-detail-content {
+    display: block;
+    padding: var(--theia-ui-padding);
+}
+
+.ai-terminal-assistant-view .error-detail-divider {
+    width: 100%;
+    max-width: min(600px, 100%);
+    height: 0;
+    border: none;
+    border-top: var(--theia-border-width) solid var(--theia-widget-shadow);
+}
+
+/* ==========================================
+   Error lines (code context)
+   ========================================== */
+
+.ai-terminal-assistant-view .error-lines-container {
     width: 100%;
     max-width: min(600px, 100%);
     background-color: var(--theia-editor-background);
-    border: var(--theia-border-width) solid var(--theia-editorWidget-border);
     border-radius: var(--theia-border-radius);
     overflow: hidden;
     font-family: var(--theia-code-font-family);
     font-size: var(--theia-editor-font-size);
     line-height: var(--theia-editor-line-height);
     padding: calc(var(--theia-ui-padding) * 2/3) 0;
+    box-shadow: 0 1px 3px var(--theia-widget-shadow);
 }
 
-.error-lines-container .error-line {
+.ai-terminal-assistant-view .error-lines-container .error-line {
     background-color: var(--theia-errorBackground);
     color: var(--theia-errorForeground);
 }
 
-.command-line {
-    font-family: var(--theia-code-font-family);
-    font-size: var(--theia-editor-font-size);
-    line-height: var(--theia-editor-line-height);
-    color: var(--theia-terminal-foreground);
-    white-space: pre-wrap;
-    margin: 0;
-    padding: 0 calc(var(--theia-ui-padding) * 2);
-    position: relative;
-    padding-left: calc(var(--theia-ui-padding) * 6);
-}
-
 /* ==========================================
-   Typography: Paragraphs
+   Shared components
    ========================================== */
 
-.summary-view-container p,
-.summary-view-container .markdown-content p {
+.ai-terminal-assistant-view .ai-terminal-button-group {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 4/3);
+}
+
+.ai-terminal-assistant-view .ai-terminal-icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--theia-ui-padding) * 1/3);
+}
+
+.ai-terminal-assistant-view .theia-button.secondary {
+    background-color: transparent;
+    color: var(--theia-foreground)
+}
+
+.ai-terminal-assistant-view .theia-button.secondary:hover {
+    background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-terminal-assistant-view code {
+    color: var(--theia-textCodeBlock-foreground);
+    background-color: var(--theia-textCodeBlock-background);
+}
+
+.ai-terminal-assistant-view .markdown-content,
+.ai-terminal-assistant-view .markdown-content p {
     margin: 0;
     padding: 0;
 }
 
 /* ==========================================
-   Typography: Lists (ul, ol)
+   Typography: Lists
    ========================================== */
 
 .summary-view-container ul,
@@ -365,14 +415,12 @@ code {
     line-height: 1.4;
 }
 
-/* Remove extra spacing for nested lists */
 .summary-view-container li > ul,
 .summary-view-container li > ol {
     margin-top: calc(var(--theia-ui-padding) * 0.5);
     margin-bottom: 0;
 }
 
-/* Nested list styling */
 .summary-view-container ul ul {
     list-style-type: circle;
 }
@@ -381,7 +429,6 @@ code {
     list-style-type: square;
 }
 
-/* Ensure markdown content within list items has no extra spacing */
 .summary-view-container li .markdown-content,
 .summary-view-container li .markdown-content p {
     margin: 0;
@@ -393,8 +440,8 @@ code {
    Error explanation and fix steps
    ========================================== */
 
-.error-explanation-steps,
-.error-fix-steps {
+.ai-terminal-assistant-view .error-explanation-steps,
+.ai-terminal-assistant-view .error-fix-steps {
     margin: 0;
     padding: 0;
     padding-left: calc(var(--theia-ui-padding) * 3);
@@ -402,15 +449,15 @@ code {
     max-width: min(600px, 100%);
 }
 
-.error-explanation-steps li,
-.error-fix-steps li {
+.ai-terminal-assistant-view .error-explanation-steps li,
+.ai-terminal-assistant-view .error-fix-steps li {
     padding: calc(var(--theia-ui-padding) * 0.5) 0;
 }
 
-.error-explanation-steps {
+.ai-terminal-assistant-view .error-explanation-steps {
     list-style-type: disc;
 }
 
-.error-fix-steps {
+.ai-terminal-assistant-view .error-fix-steps {
     list-style-type: decimal;
 }
