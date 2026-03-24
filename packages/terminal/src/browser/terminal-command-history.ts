@@ -31,10 +31,10 @@ export class TerminalCommandHistoryStateImpl implements TerminalCommandHistorySt
     private _currentCommand: string = '';
     get currentCommand(): string { return this._currentCommand; }
 
-    private readonly _maxCapacity: number;
     private readonly toDispose = new DisposableCollection();
     private readonly onCommandStartEmitter = new Emitter<void>();
     private readonly onPromptShownEmitter = new Emitter<void>();
+    protected readonly _maxCapacity: number;
     readonly onTerminalCommandStart: Event<void> = this.onCommandStartEmitter.event;
     readonly onTerminalPromptShown: Event<void> = this.onPromptShownEmitter.event;
 
