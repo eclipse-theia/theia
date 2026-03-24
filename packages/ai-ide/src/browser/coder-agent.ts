@@ -69,8 +69,8 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
 
     override prompts: PromptVariantSet[] = [{
         id: CODER_SYSTEM_PROMPT_ID,
-        defaultVariant: getCoderPromptTemplateEdit(),
-        variants: [getCoderAgentModePromptTemplate(), getCoderAgentModeNextPromptTemplate(), getCoderPromptTemplateEditNext()]
+        defaultVariant: getCoderAgentModePromptTemplate(),
+        variants: [getCoderPromptTemplateEdit(), getCoderAgentModeNextPromptTemplate(), getCoderPromptTemplateEditNext()]
     }];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
     override async invoke(request: MutableChatRequestModel): Promise<void> {
