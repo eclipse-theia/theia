@@ -47,7 +47,6 @@ export class AiTerminalBufferWidget extends ReactWidget {
         this.update();
     }
 
-
     protected override render(): React.ReactNode {
         return (
             <AiTerminalBuffer summaryService={this.summaryService} />
@@ -82,21 +81,21 @@ const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summ
                 Toggle Terminal Visibility
             </button> */}
             <div>
-                <div className='terminal-buffer-container'>
+                <div className='ai-terminal-buffer-container'>
                     {buffer.map((line, index) => (
                         <p
                             key={index}
-                            className='command-line'
+                            className='ai-terminal-command-line'
                         >{line}</p>
                     ))}
                 </div>
-                <form className='command-input-form' onSubmit={e => (
+                <form className='ai-terminal-input-form' onSubmit={e => (
                     e.preventDefault(),
                     handleExecuteTerminalCommand()
                 )
                 }>
                     <input
-                        className='command-input-field'
+                        className='ai-terminal-input-field'
                         name='commandInput'
                         value={inputCommand}
                         placeholder='Enter command: '
@@ -106,8 +105,8 @@ const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summ
                 </form>
             </div>
         </div>
-    )
-}
+    );
+};
 
 function useTerminalBuffer(summaryService: SummaryService): {
     buffer: string[];

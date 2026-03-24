@@ -120,14 +120,14 @@ export class SummaryViewWidget extends ReactWidget implements StatefulWidget {
     };
 }
 
-type TerminalOutputSummaryProps = {
+interface TerminalOutputSummaryProps {
     summaryService: SummaryService;
     commandService: AiTerminalAssistantCommandService;
     markdownRenderer: MarkdownRenderer;
     onSummaryChange?: (summary: Summary | undefined) => void;
 };
 
-type ErrorOverviewProps = {
+interface ErrorOverviewProps {
     errorDetail: ErrorDetail;
     onOpenError: (error: ErrorDetail) => void;
     commands: Command[];
@@ -135,7 +135,7 @@ type ErrorOverviewProps = {
     onRenderMarkdown: (content: string) => React.ReactNode;
 };
 
-type ErrorDetailHeaderProps = {
+interface ErrorDetailHeaderProps {
     errorDetail: ErrorDetail;
     onDropdownToggle: () => void;
     isDropdownOpen: boolean;
@@ -145,24 +145,25 @@ type ErrorDetailHeaderProps = {
     onRenderMarkdown: (content: string) => React.ReactNode;
 };
 
-type ErrorDetailBodyProps = {
+interface ErrorDetailBodyProps {
     errorDetail: ErrorDetail;
     isDropdownOpen: boolean;
     onRenderMarkdown: (content: string) => React.ReactNode;
 };
 
-type BuildResultOverviewProps = {
+interface BuildResultOverviewProps {
     summary: Summary;
     onRenderMarkdown: (content: string) => React.ReactNode;
 };
 
-type AddOnButtonsProps = {
+interface AddOnButtonsProps {
     onExecuteCommand: (commandId: string, error: ErrorDetail) => void;
     commands: Command[];
     error: ErrorDetail;
 };
 
-const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService, markdownRenderer, onSummaryChange }: TerminalOutputSummaryProps) => {
+const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService, markdownRenderer, onSummaryChange }:
+    TerminalOutputSummaryProps) => {
     const { loading, summary } = useSummaryData(summaryService, onSummaryChange);
 
     const handleOpenError = React.useCallback(async (error: ErrorDetail) => {
@@ -173,14 +174,14 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
         commandService.executeCommand(commandId, error);
     }, [commandService]);
 
-    const renderMarkdown = React.useCallback((content: string) => {
-        return <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>;
-    }, [markdownRenderer]);
+    const renderMarkdown = React.useCallback((content: string) => <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>, [markdownRenderer]);
 
     const commands = commandService.commands;
 
+    const isWelcome = !loading && !summary;
+
     return (
-        <div className='summary-view-container'>
+        <div className={`summary-view-container${isWelcome ? ' welcome-state' : ''}`}>
             {loading ?
                 <div className='summary-loading'>
                     <span className={`${codicon('loading')} theia-animation-spin`}></span>
@@ -205,10 +206,7 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
                             )}
                         </div>
                     </div> :
-                    <div>
-                        <h3>Analyze Terminal Output with the AI Terminal Assistant</h3>
-                        <p>To start analyzing terminal output, simply run a command in the terminal or start a task in the task runner.</p>
-                    </div>
+                    <WelcomeView />
             }
         </div>
     );
@@ -262,27 +260,36 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
 
 };
 
-const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> = ({ errorDetail, commands, onOpenError, onExecuteCommand, onRenderMarkdown, onDropdownToggle, isDropdownOpen }: ErrorDetailHeaderProps) => {
-    const chevronDownIcon = codicon('chevron-down');
-    const chevronRightIcon = codicon('chevron-right');
-    const lineText = typeof errorDetail.line === 'number' ? `:${errorDetail.line}` : '';
+const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> =
+    ({
+        errorDetail,
+        commands,
+        onOpenError,
+        onExecuteCommand,
+        onRenderMarkdown,
+        onDropdownToggle,
+        isDropdownOpen,
+    }: ErrorDetailHeaderProps) => {
+        const chevronDownIcon = codicon('chevron-down');
+        const chevronRightIcon = codicon('chevron-right');
+        const lineText = typeof errorDetail.line === 'number' ? `:${errorDetail.line}` : '';
 
-    return (
-        <div className='error-detail-header'>
-            <div className='error-detail-dropdown' onClick={onDropdownToggle}>
-                {isDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
-                <div className='error-detail-header-title'>
-                    <span className='error-type'>{errorDetail.type}</span>
-                    {errorDetail.file && <span className='error-location'>{onRenderMarkdown(errorDetail.file + lineText)}</span>}
+        return (
+            <div className='error-detail-header'>
+                <div className='error-detail-dropdown' onClick={onDropdownToggle}>
+                    {isDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
+                    <div className='error-detail-header-title'>
+                        <span className='error-type'>{errorDetail.type}</span>
+                        {errorDetail.file && <span className='error-location'>{onRenderMarkdown(errorDetail.file + lineText)}</span>}
+                    </div>
+                </div>
+                <div className='ai-terminal-button-group'>
+                    {errorDetail.file && <OpenErrorInEditorButton onOpenError={() => onOpenError(errorDetail)} />}
+                    <AddOnButtons onExecuteCommand={onExecuteCommand} error={errorDetail} commands={commands} />
                 </div>
             </div>
-            <div className='button-group'>
-                {errorDetail.file && <OpenErrorInEditorButton onOpenError={() => onOpenError(errorDetail)} />}
-                <AddOnButtons onExecuteCommand={onExecuteCommand} error={errorDetail} commands={commands} />
-            </div>
-        </div>
-    );
-}
+        );
+    };
 
 const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorDetail, isDropdownOpen, onRenderMarkdown }: ErrorDetailBodyProps) => {
     const [fixDropdownOpen, setFixDropdownOpen] = React.useState<boolean>(false);
@@ -296,7 +303,7 @@ const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorD
 
     return (
         isDropdownOpen && (
-            <div className={`error-detail-body ${isDropdownOpen ? "open" : "closed"}`}>
+            <div className={`error-detail-body ${isDropdownOpen ? 'open' : 'closed'}`}>
                 <div className='error-detail-field'>
                     {
                         errorDetail.errorLines && errorDetail.errorLines.errorLines.length > 0 &&
@@ -336,27 +343,25 @@ const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorD
                 </div>
             </div>
         )
-    )
-}
+    );
+};
 
 const ErrorContext: React.FunctionComponent<{ errorLines: ErrorLines, errorIndex: number }> = ({ errorLines, errorIndex }) => {
-    const isErrorLine = (index: number) => {
-        return errorLines.errorLinesStart + index === errorIndex;
-    }
-
+    const isErrorLine = (index: number) => errorLines.errorLinesStart + index === errorIndex;
     return <div className='error-lines-container'>
         {
             errorLines.errorLines.map((line, index) => (
                 <p
                     key={index}
-                    className={`command-line ${isErrorLine(index) ? 'error-line' : ''}`}
+                    className={`ai-terminal-command-line ${isErrorLine(index) ? 'error-line' : ''}`}
                 >{line}</p>
             ))
         }
-    </div>
-}
+    </div>;
+};
 
-// const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void, disabled?: boolean }> = ({ onRequestSummary, disabled }: { onRequestSummary: () => void, disabled?: boolean }) => {
+// const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void, disabled?: boolean }> = ({ onRequestSummary, disabled }:
+// { onRequestSummary: () => void, disabled?: boolean }) => {
 //     const playButton = codicon('play');
 //     return (
 //         <button className='theia-button icon-button request-summary-button' onClick={onRequestSummary} disabled={disabled}>
@@ -384,13 +389,13 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ onExecuteCom
     }
     return (
         <>
-            {commands.map((command) => (
+            {commands.map(command => (
                 <button
                     key={command.id}
                     className='theia-button secondary'
                     onClick={() => onExecuteCommand(command.id, error)}
                 >
-                    <div className='icon-button'>
+                    <div className='ai-terminal-icon-button'>
                         <div className={chatSparkleIcon} />
                         {command.label}
                     </div>
@@ -401,14 +406,45 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ onExecuteCom
     );
 };
 
+const WelcomeView: React.FunctionComponent = () => (
+    <div className='ai-terminal-assistant-welcome'>
+        <div className='ai-terminal-assistant-welcome-header'>
+            <h3 className='ai-terminal-assistant-welcome-title'>AI Terminal Assistant</h3>
+            <p className='ai-terminal-assistant-welcome-subtitle'>
+                Automatically analyzes terminal output when a task or debug session finishes.
+            </p>
+        </div>
+        <div className='ai-terminal-assistant-welcome-steps-section'>
+            <span className='ai-terminal-assistant-welcome-steps-label'>How it works</span>
+            <ul className='ai-terminal-assistant-welcome-steps'>
+                <li>
+                    <span className={codicon('play')} />
+                    <span>Run a <strong>task</strong> via the Task Runner, or start a <strong>debug session</strong></span>
+                </li>
+                <li>
+                    <span className={codicon('terminal')} />
+                    <span>The assistant reads the terminal output once the run completes</span>
+                </li>
+                <li>
+                    <span className={codicon('pass')} />
+                    <span>Results appear here — build status, errors, and suggested fixes</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+);
 
 const Markdown: React.FunctionComponent<{ content: string, markdownRenderer: MarkdownRenderer }> = ({ content, markdownRenderer }) => {
     const ref = useMarkdownRenderer(content, markdownRenderer);
     return <div ref={ref} className="markdown-content" />;
-}
+};
 
-
-function useSummaryData(summaryService: SummaryService, onSummaryChange?: (summary: Summary | undefined) => void) {
+function useSummaryData(summaryService: SummaryService, onSummaryChange?: (summary: Summary | undefined) => void):
+    {
+        summary: Summary | undefined,
+        loading: boolean,
+        requestSummary: () => void
+    } {
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
     const [loading, setLoading] = React.useState<boolean>(false);
     const loadingRef = React.useRef(false);
@@ -448,7 +484,8 @@ function useSummaryData(summaryService: SummaryService, onSummaryChange?: (summa
 
 }
 
-function useMarkdownRenderer(content: string, markdownRenderer: MarkdownRenderer) {
+function useMarkdownRenderer(content: string, markdownRenderer: MarkdownRenderer): React.RefObject<HTMLDivElement> {
+    // eslint-disable-next-line
     const ref = React.useRef<HTMLDivElement>(null);
     React.useEffect(() => {
         if (ref.current && content) {
