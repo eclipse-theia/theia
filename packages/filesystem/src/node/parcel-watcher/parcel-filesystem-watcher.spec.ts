@@ -76,15 +76,15 @@ describe('parcel-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(200);
+        await sleep(2000);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(200);
+        await sleep(2000);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(200);
+        await sleep(2000);
 
         assert.deepStrictEqual([...actualUris], expectedUris);
     });
