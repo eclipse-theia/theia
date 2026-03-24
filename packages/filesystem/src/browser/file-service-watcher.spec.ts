@@ -467,6 +467,28 @@ describe('FileService watcher deduplication', () => {
             expect(liveWatcherCount(mockProvider)).to.equal(3);
         });
 
+        it('should not corrupt index when disposing a subsumed recursive watcher at the same URI', async () => {
+            const uri = new URI('file:///project');
+            const childUri = new URI('file:///project/src');
+
+            // Watcher A: recursive, no excludes — gets indexed
+            await fileService.doWatch(uri, { recursive: true, excludes: [] });
+
+            // Watcher B: recursive, with excludes at the same URI — subsumed by A (not indexed)
+            const bDisposable = await fileService.doWatch(uri, { recursive: true, excludes: ['**/node_modules'] });
+
+            expect(liveWatcherCount(mockProvider)).to.equal(1);
+
+            // Disposing B must NOT remove A's index entry.
+            // Without the fix, removeFromRecursiveIndex would delete /project from
+            // the tree, causing subsequent child watchers to miss A as a parent.
+            bDisposable.dispose();
+
+            // A child watcher should still be subsumed by A
+            await fileService.doWatch(childUri, { recursive: false, excludes: [] });
+            expect(liveWatcherCount(mockProvider)).to.equal(1);
+        });
+
         it('should handle disposing a subsumed child cleanly', async () => {
             const parentUri = new URI('file:///project');
             const childUri = new URI('file:///project/src');

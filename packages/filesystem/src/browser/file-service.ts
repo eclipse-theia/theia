@@ -1533,8 +1533,12 @@ export class FileService {
 
         // If this is a recursive watcher with subsumed children, promote them.
         // Remove from the index first so that promoted children don't re-parent to this dying entry.
+        // Only remove from the index if this entry has a real watcher — subsumed entries
+        // are never indexed, and removing would corrupt another watcher's index at the same URI.
         if (this.isRecursiveWatcherEntry(entry)) {
-            this.removeFromRecursiveIndex(entry.provider, entry.resource);
+            if (entry.realWatcher) {
+                this.removeFromRecursiveIndex(entry.provider, entry.resource);
+            }
             this.promoteSubsumedChildren(entry);
         }
 
@@ -1714,7 +1718,6 @@ export class FileService {
                 // Only remove the child's index entry if it has a different URI than the parent.
                 // The parent was already indexed at its URI, and removing the child's
                 // entry would delete the parent's entry if they share the same URI.
-                const caseSensitive = !!(provider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
                 if (!childEntry.resource.isEqual(parentResource, caseSensitive)) {
                     this.removeFromRecursiveIndex(provider, childEntry.resource);
                 }
