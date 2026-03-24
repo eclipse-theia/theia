@@ -209,7 +209,7 @@ export class SummaryServiceImpl implements SummaryService {
             this._isTaskRunning = false;
             this.onTaskExitedEmitter.fire();
             await this.requestSummary();
-                this.createNewTerminal().catch(err => {
+            this.createNewTerminal().catch(err => {
                 console.error('Error recreating hidden terminal after task exit:', err);
             });
         });
@@ -282,7 +282,6 @@ export class SummaryServiceImpl implements SummaryService {
         }
     }
 
-
     async logCurrentTerminalContent(): Promise<void> {
         const terminalContent = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
         console.log('the current terminal buffer:', terminalContent);
@@ -290,7 +289,11 @@ export class SummaryServiceImpl implements SummaryService {
     }
 
     async getBufferContent(): Promise<string[]> {
-        return this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length).reverse();
+        const maxLines = 100;
+        return this.currentTerminal.buffer.getLines(
+            Math.max(0, this.currentTerminal.buffer.length - maxLines),
+            maxLines
+        );
     }
 
     async writeToCurrentTerminal(command: string): Promise<void> {
@@ -347,7 +350,7 @@ export class SummaryServiceImpl implements SummaryService {
 
     async openErrorInEditor(error: ErrorDetail): Promise<void> {
         if (!error.file) {
-            throw new Error('Error does not contain file information.')
+            throw new Error('Error does not contain file information.');
         };
         const terminal = this.terminalService.lastUsedTerminal;
         if (!terminal) {
@@ -386,7 +389,7 @@ export class SummaryServiceImpl implements SummaryService {
         return {
             ...summary,
             errors: enrichedErrors,
-        }
+        };
     }
 
     protected async getErrorLines(error: ErrorDetail): Promise<ErrorLines | undefined> {
@@ -400,7 +403,7 @@ export class SummaryServiceImpl implements SummaryService {
             return undefined;
         }
         const uri: URI = new URI(fileUri);
-        const fileContent = await this.fileService.read(uri)
+        const fileContent = await this.fileService.read(uri);
         const lines = fileContent.value.split('\n');
         console.log('Fetched file content for error lines:', lines);
 
