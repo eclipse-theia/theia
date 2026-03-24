@@ -111,6 +111,7 @@ export class AiTerminalSummaryAgent implements Agent {
             this.logger.error('No language model available for the AI Terminal Agent.');
             return undefined;
         }
+        console.log(`[AI Terminal Agent] Selected model: id=${lm.id}, name=${lm.name}, vendor=${lm.vendor}`);
 
         const parameters = {
             cwd,
@@ -120,6 +121,8 @@ export class AiTerminalSummaryAgent implements Agent {
 
         const systemMessage = await this.promptService.getResolvedPromptFragment('terminal-summary-system', parameters).then(p => p?.text);
         const request = await this.promptService.getResolvedPromptFragment('terminal-summary-user', parameters).then(p => p?.text);
+        console.log('[AI Terminal Agent] SYSTEM PROMPT:', systemMessage);
+        console.log('[AI Terminal Agent] USER PROMPT:', request);
         if (!systemMessage || !request) {
             this.logger.error('The prompt service didn\'t return prompts for the AI Terminal Agent.');
             return undefined;
@@ -155,18 +158,24 @@ export class AiTerminalSummaryAgent implements Agent {
         };
 
         try {
+            const t0 = performance.now();
             const result = await this.languageModelService.sendRequest(lm, llmRequest);
+            const t1 = performance.now();
+            console.log(`[AI Terminal Agent] sendRequest completed in ${(t1 - t0).toFixed(0)}ms`);
 
             if (isLanguageModelParsedResponse(result)) {
                 // model returned structured output
                 const parsedResult = Summary.safeParse(result.parsed);
                 if (parsedResult.success) {
+                    console.log(`[AI Terminal Agent] Total time (parsed response): ${(performance.now() - t0).toFixed(0)}ms`);
                     return parsedResult.data;
                 }
             }
 
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
+            const t2 = performance.now();
+            console.log(`[AI Terminal Agent] getJsonOfResponse completed in ${(t2 - t1).toFixed(0)}ms (total: ${(t2 - t0).toFixed(0)}ms)`);
             const parsedJsonResult = Summary.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data;
