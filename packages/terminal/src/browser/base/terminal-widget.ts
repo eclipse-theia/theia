@@ -188,7 +188,7 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract waitOnExit(waitOnExit?: boolean | string): void;
 
-    abstract commandHistoryState?: TerminalCommandHistoryState;
+    abstract get commandHistoryState(): TerminalCommandHistoryState | undefined;
 
 }
 

@@ -193,7 +193,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     private _currentTerminalOutput: string[];
-    commandHistoryState?: TerminalCommandHistoryState;
+
+    private _commandHistoryState?: TerminalCommandHistoryState;
+    override get commandHistoryState(): TerminalCommandHistoryState | undefined {
+        return this._commandHistoryState;
+    }
 
     protected enableCommandSeparator: boolean;
 
@@ -287,7 +291,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 }
                 // Ensure any in-progress command block is closed even if the process exits
                 // before its OSC prompt_started bytes are flushed from the ring buffer.
-                if (this.commandHistoryState?.currentCommand) {
+                if (this._commandHistoryState?.currentCommand) {
                     this.finishCurrentCommand();
                 }
                 if (!attached) {
@@ -404,12 +408,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
             : false;
 
-        if (enabled && !this.commandHistoryState) {
-            this.commandHistoryState = this.commandHistoryStateFactory();
-            this.toDispose.push(this.commandHistoryState);
-        } else if (!enabled && this.commandHistoryState) {
-            this.commandHistoryState.dispose();
-            this.commandHistoryState = undefined;
+        if (enabled && !this._commandHistoryState) {
+            this._commandHistoryState = this.commandHistoryStateFactory();
+            this.toDispose.push(this._commandHistoryState);
+        } else if (!enabled && this._commandHistoryState) {
+            this._commandHistoryState.dispose();
+            this._commandHistoryState = undefined;
         }
     }
 
@@ -430,16 +434,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnCommandHistory.dispose();
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
-        if (!this.commandHistoryState) {
+        if (!this._commandHistoryState) {
             return;
         }
         this.toDisposeOnCommandHistory.push(
             this.term.parser.registerOscHandler(133, (oscPayload: string) => {
-                if (!this.commandHistoryState) {
+                if (!this._commandHistoryState) {
                     return false;
                 }
                 if (oscPayload === 'prompt_started') {
-                    if (this.commandHistoryState.currentCommand) {
+                    if (this._commandHistoryState.currentCommand) {
                         this.finishCurrentCommand();
                     }
                     this.promptStartMarker?.dispose();
@@ -470,16 +474,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected startNewCommand(hexEncodedCommand: string): void {
-        if (!this.commandHistoryState) {
+        if (!this._commandHistoryState) {
             return;
         }
         this.outputStartMarker?.dispose();
         this.outputStartMarker = this.term.registerMarker(0);
-        this.commandHistoryState.startCommand(hexEncodedCommand);
+        this._commandHistoryState.startCommand(hexEncodedCommand);
     }
 
     protected finishCurrentCommand(): void {
-        if (!this.commandHistoryState) {
+        if (!this._commandHistoryState) {
             return;
         }
         const startMarker = this.outputStartMarker;
@@ -494,12 +498,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
 
         const block: TerminalBlock = {
-            command: this.commandHistoryState.currentCommand,
+            command: this._commandHistoryState.currentCommand,
             output,
         };
 
         this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
-        this.commandHistoryState.finishCommand(block);
+        this._commandHistoryState.finishCommand(block);
         this.outputStartMarker = undefined;
         this.promptStartMarker = undefined;
     }
@@ -981,8 +985,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
         this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
         this.resetCommandOutputMarker();
-        if (this.commandHistoryState) {
-            this.commandHistoryState.clearCommandCollectionState();
+        if (this._commandHistoryState) {
+            this._commandHistoryState.clearCommandCollectionState();
         }
     }
 
@@ -1040,7 +1044,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.styleElement?.remove();
         this.webglAddon?.dispose();
-        this.commandHistoryState?.dispose();
+        this._commandHistoryState?.dispose();
         super.dispose();
     }
 
