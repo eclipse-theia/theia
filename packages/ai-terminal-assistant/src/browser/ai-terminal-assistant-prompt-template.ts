@@ -128,8 +128,10 @@ Execution of project \`<basename(cwd)>\` was successful. This ran the compiled c
 / Execution of project \`<basename(cwd)>\` failed with <n> error(s). This attempted to run the compiled class <ClassName> in the project.
 
 ## Common Mistakes to Avoid
-- Do NOT use project-specific variable or method names in explanationSteps (e.g., avoid "your \`bubbleSort\` method") - keep explanations generic so they apply to any project with the same error.
-- Do NOT embed markdown formatting (backticks, bold, etc.) in the \`file\` or \`type\` JSON fields - these are plain data fields. Only use backticks within \`explanationSteps\` and \`fixSteps\` strings.
+- Do NOT use project-specific variable or method names in explanationSteps (e.g., avoid "your \`bubbleSort\` method")
+- keep explanations generic so they apply to any project with the same error.
+- Do NOT embed markdown formatting (backticks, bold, etc.) in the \`file\` or \`type\` JSON fields
+- these are plain data fields. Only use backticks within \`explanationSteps\` and \`fixSteps\` strings.
 - Do NOT use vague advice like "check your code" without specifying what to check and where to look.
 - Do NOT use academic or overly formal language like "the aforementioned" or "it is imperative" - use conversational, student-friendly language.
 - Do NOT invent errors that are not present in the terminal output. Only report errors that actually appear.
@@ -201,7 +203,8 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": true,
-  "outputSummary": "Execution of project \`bar\` was successful. This ran the compiled Java class \`de.Client\` in the project. The program completed without any output or errors.",
+  "outputSummary": "Execution of project \`bar\` was successful.
+  This ran the compiled Java class \`de.Client\` in the project. The program completed without any output or errors.",
   "errors": []
 }
 \`\`\`
@@ -270,7 +273,8 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "Compilation of project \`bar\` failed with 1 error. This attempted to run the compiled Java class \`de.Client\` in the project, but a compilation problem prevented execution.",
+  "outputSummary": "Compilation of project \`bar\` failed with 1 error.
+  This attempted to run the compiled Java class \`de.Client\` in the project, but a compilation problem prevented execution.",
   "errors": [
     {
       "type": "Compilation error: Syntax error",
@@ -301,7 +305,8 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "Compilation of project \`calculator\` failed with 1 error. This attempted to compile the Java project \`calculator\`, but a type mismatch error prevented successful compilation.",
+  "outputSummary": "Compilation of project \`calculator\` failed with 1 error.
+  This attempted to compile the Java project \`calculator\`, but a type mismatch error prevented successful compilation.",
   "errors": [
     {
       "type": "Compilation error: Type mismatch",
