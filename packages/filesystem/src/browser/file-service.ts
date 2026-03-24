@@ -1711,7 +1711,13 @@ export class FileService {
                     }
                 }
                 childEntry.subsumedChildren.clear();
-                this.removeFromRecursiveIndex(provider, childEntry.resource);
+                // Only remove the child's index entry if it has a different URI than the parent.
+                // The parent was already indexed at its URI, and removing the child's
+                // entry would delete the parent's entry if they share the same URI.
+                const caseSensitive = !!(provider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
+                if (!childEntry.resource.isEqual(parentResource, caseSensitive)) {
+                    this.removeFromRecursiveIndex(provider, childEntry.resource);
+                }
             }
         }
     }
