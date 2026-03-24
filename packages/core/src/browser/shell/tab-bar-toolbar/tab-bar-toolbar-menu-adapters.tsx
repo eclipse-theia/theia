@@ -24,19 +24,9 @@ import { ContextMenuRenderer } from '../../context-menu-renderer';
 import { TabBarToolbarItem } from './tab-toolbar-item';
 import { ContextKeyService, ContextMatcher } from '../../context-key-service';
 import { CommandMenu, CompoundMenuNode, ContextExpressionMatcher, Group, MenuModelRegistry, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../../common/menu';
+import { combineWhenExpressions } from '../../menu/utils';
 
 export const TOOLBAR_WRAPPER_ID_SUFFIX = '-as-tabbar-toolbar-item';
-
-function combineWhenExpressions(...expressions: Array<string | undefined>): string | undefined {
-    const parts = expressions.filter((expression): expression is string => !!expression);
-    if (parts.length === 0) {
-        return undefined;
-    }
-    if (parts.length === 1) {
-        return parts[0];
-    }
-    return parts.map(expression => `(${expression})`).join(' && ');
-}
 
 abstract class AbstractToolbarMenuWrapper {
 

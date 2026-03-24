@@ -16,17 +16,7 @@
 
 import { CompoundMenuNode, ContextExpressionMatcher, Group, MenuNode, MenuPath, Submenu } from '../../common/menu/menu-types';
 import { Event } from '../../common';
-
-function combineWhenExpressions(...expressions: Array<string | undefined>): string | undefined {
-    const parts = expressions.filter((expression): expression is string => !!expression);
-    if (parts.length === 0) {
-        return undefined;
-    }
-    if (parts.length === 1) {
-        return parts[0];
-    }
-    return parts.map(expression => `(${expression})`).join(' && ');
-}
+import { combineWhenExpressions } from './utils';
 
 export class SubMenuLink implements CompoundMenuNode {
     constructor(private readonly delegate: Submenu, private readonly _sortString?: string, private readonly _when?: string) { }
