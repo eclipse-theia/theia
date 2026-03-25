@@ -76,8 +76,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (!result) {
             return undefined;
         }
-        if (typeof result === 'string') {
-            return <pre>{JSON.stringify(result, undefined, 2)}</pre>;
+        // eslint-disable-next-line no-null/no-null
+        if (typeof result !== 'object' || result === null) {
+            return <pre>{String(result)}</pre>;
         }
         if ('content' in result) {
             return <div className='theia-toolCall-response-content'>
