@@ -27,7 +27,7 @@ async function run() {
     const nativeDependencies = await glob('lib/backend/native/**', {
         cwd: browserAppPath
     });
-    const buildDependencies = await glob('lib/build/Release/**', {
+    const prebuildsDependencies = await glob('lib/prebuilds/**', {
         cwd: browserAppPath
     });
     const trashDependencies = await glob('lib/backend/{windows-trash.exe,macos-trash}', {
@@ -38,7 +38,7 @@ async function run() {
     archive.pipe(output);
     for (const file of [
         ...nativeDependencies,
-        ...buildDependencies,
+        ...prebuildsDependencies,
         ...trashDependencies
     ]) {
         const filePath = path.join(browserAppPath, file);

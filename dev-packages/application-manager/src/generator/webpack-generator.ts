@@ -478,8 +478,9 @@ const config = {
         'plugin-host': require.resolve('@theia/plugin-ext/lib/hosted/node/plugin-host'),`)}
         ${this.ifPackage('@theia/plugin-ext-headless', () => `// Theia Headless Plugin support:
         'plugin-host-headless': require.resolve('@theia/plugin-ext-headless/lib/hosted/node/plugin-host-headless'),`)}
-        ${this.ifPackage('@theia/process', () => `// Make sure the node-pty thread worker can be executed:
-        'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),`)}        
+        ${this.ifPackage('@theia/process', () => `// Make sure the node-pty thread workers can be executed:
+        'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),
+        'conpty_console_list_agent': require.resolve('node-pty/lib/conpty_console_list_agent'),`)}        
         ${this.ifElectron("'electron-main': require.resolve('./src-gen/backend/electron-main'),")}
         ${this.ifPackage('@theia/dev-container', () => `// VS Code Dev-Container communication:
         'dev-container-server': require.resolve('@theia/dev-container/lib/dev-container-server/dev-container-server'),`)}
@@ -503,6 +504,16 @@ const config = {
                 test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader'
+            },
+            // node-pty uses a dynamic require which needs to be rewritten to work with webpack.
+            {
+                test: /node_modules[/\\\\]node-pty[/\\\\]lib[/\\\\]utils\.js$/,
+                loader: 'string-replace-loader',
+                options: {
+                    search: /require\\(/,
+                    replace: '__non_webpack_require__(',
+                    flags: 'g'
+                }
             },
             // jsonc-parser exposes its UMD implementation by default, which
             // confuses Webpack leading to missing js in the bundles.
