@@ -45,6 +45,7 @@ import {
     ContributedTerminalProfileStore, DefaultProfileStore, DefaultTerminalProfileService,
     TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
 } from './terminal-profile-service';
+import { TerminalCommandHistoryStateFactory, TerminalCommandHistoryStateImpl } from './terminal-command-history';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -132,4 +133,9 @@ export default new ContainerModule(bind => {
     }).inSingletonScope();
 
     bind(FrontendApplicationContribution).toService(TerminalFrontendContribution);
+
+    bind(TerminalCommandHistoryStateImpl).toSelf().inTransientScope();
+    bind(TerminalCommandHistoryStateFactory).toFactory(ctx =>
+        () => ctx.container.get(TerminalCommandHistoryStateImpl)
+    );
 });
