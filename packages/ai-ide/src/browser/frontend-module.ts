@@ -122,7 +122,7 @@ import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from '
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
 import { ContextReviewerAgent } from './context-reviewer-agent';
-import { DebugCapabilityContribution } from './debug-capability-contribution';
+
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { JuniorPlanCapabilityContribution } from './junior-plan-capability-contribution';
 
@@ -352,7 +352,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
     bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
-    bind(FrontendApplicationContribution).to(DebugCapabilityContribution);
+
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(JuniorPlanCapabilityContribution);
 });

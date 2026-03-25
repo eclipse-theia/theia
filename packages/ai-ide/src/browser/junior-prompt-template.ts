@@ -140,10 +140,6 @@ Finalize and present results:
 
 **Post-delegation:** After any final delegation, run Task Context Verification before presenting results.
 
-# Capabilities
-
-{{capability:debug default on}}
-
 # Context
 
 {{contextFiles}}
