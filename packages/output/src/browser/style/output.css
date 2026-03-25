@@ -30,3 +30,146 @@
   width: 170px;
   margin-right: 4px;
 }
+
+/* ANSI text styling decorations */
+.theia-output .ansi-bold {
+  font-weight: bold;
+}
+
+.theia-output .ansi-italic {
+  font-style: italic;
+}
+
+.theia-output .ansi-underline {
+  text-decoration: underline;
+}
+
+/* ANSI foreground color decorations - scoped to .theia-output to override Monaco's .mtk1 */
+.theia-output .ansi-black-fg {
+  color: var(--theia-terminal-ansiBlack);
+}
+
+.theia-output .ansi-red-fg {
+  color: var(--theia-terminal-ansiRed);
+}
+
+.theia-output .ansi-green-fg {
+  color: var(--theia-terminal-ansiGreen);
+}
+
+.theia-output .ansi-yellow-fg {
+  color: var(--theia-terminal-ansiYellow);
+}
+
+.theia-output .ansi-blue-fg {
+  color: var(--theia-terminal-ansiBlue);
+}
+
+.theia-output .ansi-magenta-fg {
+  color: var(--theia-terminal-ansiMagenta);
+}
+
+.theia-output .ansi-cyan-fg {
+  color: var(--theia-terminal-ansiCyan);
+}
+
+.theia-output .ansi-white-fg {
+  color: var(--theia-terminal-ansiWhite);
+}
+
+.theia-output .ansi-bright-black-fg {
+  color: var(--theia-terminal-ansiBrightBlack);
+}
+
+.theia-output .ansi-bright-red-fg {
+  color: var(--theia-terminal-ansiBrightRed);
+}
+
+.theia-output .ansi-bright-green-fg {
+  color: var(--theia-terminal-ansiBrightGreen);
+}
+
+.theia-output .ansi-bright-yellow-fg {
+  color: var(--theia-terminal-ansiBrightYellow);
+}
+
+.theia-output .ansi-bright-blue-fg {
+  color: var(--theia-terminal-ansiBrightBlue);
+}
+
+.theia-output .ansi-bright-magenta-fg {
+  color: var(--theia-terminal-ansiBrightMagenta);
+}
+
+.theia-output .ansi-bright-cyan-fg {
+  color: var(--theia-terminal-ansiBrightCyan);
+}
+
+.theia-output .ansi-bright-white-fg {
+  color: var(--theia-terminal-ansiBrightWhite);
+}
+
+/* ANSI background color decorations */
+.theia-output .ansi-black-bg {
+  background-color: var(--theia-terminal-ansiBlack);
+}
+
+.theia-output .ansi-red-bg {
+  background-color: var(--theia-terminal-ansiRed);
+}
+
+.theia-output .ansi-green-bg {
+  background-color: var(--theia-terminal-ansiGreen);
+}
+
+.theia-output .ansi-yellow-bg {
+  background-color: var(--theia-terminal-ansiYellow);
+}
+
+.theia-output .ansi-blue-bg {
+  background-color: var(--theia-terminal-ansiBlue);
+}
+
+.theia-output .ansi-magenta-bg {
+  background-color: var(--theia-terminal-ansiMagenta);
+}
+
+.theia-output .ansi-cyan-bg {
+  background-color: var(--theia-terminal-ansiCyan);
+}
+
+.theia-output .ansi-white-bg {
+  background-color: var(--theia-terminal-ansiWhite);
+}
+
+.theia-output .ansi-bright-black-bg {
+  background-color: var(--theia-terminal-ansiBrightBlack);
+}
+
+.theia-output .ansi-bright-red-bg {
+  background-color: var(--theia-terminal-ansiBrightRed);
+}
+
+.theia-output .ansi-bright-green-bg {
+  background-color: var(--theia-terminal-ansiBrightGreen);
+}
+
+.theia-output .ansi-bright-yellow-bg {
+  background-color: var(--theia-terminal-ansiBrightYellow);
+}
+
+.theia-output .ansi-bright-blue-bg {
+  background-color: var(--theia-terminal-ansiBrightBlue);
+}
+
+.theia-output .ansi-bright-magenta-bg {
+  background-color: var(--theia-terminal-ansiBrightMagenta);
+}
+
+.theia-output .ansi-bright-cyan-bg {
+  background-color: var(--theia-terminal-ansiBrightCyan);
+}
+
+.theia-output .ansi-bright-white-bg {
+  background-color: var(--theia-terminal-ansiBrightWhite);
+}
