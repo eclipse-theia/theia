@@ -44,7 +44,7 @@ jobs:
           DEEPL_API_TOKEN: ${{ secrets.DEEPL_API_TOKEN }}
 
       - name: Get Actor User Data
-        uses: octokit/request-action@dad4362715ba15d7e1e68ece930a41598f522992 # v2.4.0
+        uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d # v2.4.0
         id: actor_user_data
         with:
           route: GET /users/{user}
