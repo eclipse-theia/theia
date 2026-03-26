@@ -46,7 +46,7 @@ export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreak
 
     protected doRender(): React.ReactNode {
         return <React.Fragment>
-            <span className="line-info">{this.origin.instructionReference}</span>;
+            <span className="line-info">{this.origin.instructionReference}</span>
             {this.renderActions()}
         </React.Fragment>;
     }
