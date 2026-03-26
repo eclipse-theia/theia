@@ -22,6 +22,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "capabilityOverrides": {
+          "mdDescription": "Sovrascritture dell'utente per funzionalità basate su modelli. Le chiavi sono ID di frammenti di funzionalità, i valori sono abilitati (true) o disabilitati (false).",
+          "title": "Sovrascritture delle funzionalità"
+        },
         "completionNotification": {
           "mdDescription": "Comportamento delle notifiche quando questo agente completa un'attività. Se non impostato, verrà utilizzata l'impostazione di notifica predefinita globale.\n- `os-notification`: mostra le notifiche del sistema operativo/sistema\n- `message`: mostra le notifiche nella barra di stato/area messaggi\n- `blink`: fa lampeggiare o evidenzia l'interfaccia utente\n- `off`: disabilita le notifiche per questo agente",
           "title": "Notifica di completamento"
@@ -29,6 +33,16 @@
         "enable": {
           "mdDescription": "Specifica se l'agente deve essere abilitato (vero) o disabilitato (falso).",
           "title": "Abilita agente"
+        },
+        "genericCapabilitySelections": {
+          "agentDelegation": "ID degli agenti selezionati per la delega",
+          "functions": "ID delle funzioni selezionate",
+          "mcpFunctions": "ID delle funzioni MCP selezionate",
+          "mdDescription": "Selezioni dell'utente per funzionalità generiche quali competenze, funzioni e strumenti MCP.",
+          "promptFragments": "ID dei frammenti di prompt selezionati",
+          "skills": "ID delle competenze selezionate",
+          "title": "Selezioni di funzionalità generiche",
+          "variables": "Nomi delle variabili selezionati"
         },
         "languageModelRequirements": {
           "identifier": {
@@ -187,6 +201,10 @@
             "description": "Eseguire gli strumenti automaticamente senza conferma"
           }
         },
+        "toolConfirmationTimeout": {
+          "denialReason": "Tempo di attesa per la conferma scaduto dopo {0} secondi",
+          "description": "Timeout in secondi per le finestre di dialogo di conferma dello strumento. Se impostato su un valore positivo, le conferme dello strumento verranno automaticamente rifiutate dopo la durata specificata. Impostare su 0 per disabilitare (impostazione predefinita)."
+        },
         "universal": {
           "description": "Questo agente è progettato per aiutare gli sviluppatori di software fornendo risposte concise e accurate a domande generali sulla programmazione e lo sviluppo di software. È anche il ripiego per qualsiasi domanda generica che l'utente potrebbe porre. L'agente universale attualmente non ha alcun contesto predefinito, ovvero non può accedere al contesto dell'utente corrente o all'area di lavoro."
         },
@@ -199,7 +217,6 @@
       },
       "chat-ui": {
         "addContextVariable": "Aggiungi variabile di contesto",
-        "agent": "Agente",
         "agentDelegationDescription": "Altri agenti AI a cui è possibile delegare",
         "aiDisabled": "Le funzionalità AI sono disabilitate.",
         "applyAll": "Applica tutto",
@@ -219,6 +236,7 @@
           "clearHistory": "Cancella cronologia prompt di immissione",
           "cycleMode": "Modalità Chat Ciclo",
           "nextPrompt": "Richiesta successiva",
+          "pasteWithImageSupport": "Incolla (con supporto immagini)",
           "previousPrompt": "Richiesta precedente",
           "toggleCapabilities": "Configurazione delle funzionalità di attivazione/disattivazione"
         },
@@ -244,6 +262,7 @@
           "response": {
             "label": "Risposta:"
           },
+          "restoredNotAvailable": "Risposta non disponibile per le sessioni ripristinate.",
           "starting": "Avvio della delega...",
           "status": {
             "canceled": "annullato",
@@ -269,7 +288,6 @@
         "functions": "Funzioni",
         "functionsDescription": "Funzioni integrate fornite dalle estensioni Theia",
         "genericCapabilities": "Funzionalità generiche",
-        "mcpFunctions": "MCP",
         "mcpFunctionsDescription": "Funzioni del protocollo MCP (Model Context Protocol) dai server connessi",
         "noChatAgentsAvailable": "Nessun agente di chat disponibile.",
         "noMatchingCapabilities": "Nessuna corrispondenza",
@@ -278,12 +296,12 @@
         "openOriginalFile": "Apri file originale",
         "performThisTask": "Esegui questa operazione.",
         "persistedSession": "Sessione persistente (clicca per ripristinare)",
-        "promptFragments": "Prompt",
         "promptFragmentsDescription": "Frammenti di prompt personalizzati da includere nella conversazione",
         "removeChat": "Rimuovi chat",
         "renameChat": "Rinomina chat",
         "requestNotFoundForRetry": "Richiesta non trovata per riprovare",
         "responseFrom": "Risposta da {0}",
+        "saveCurrentSelectionsToSettings": "Salva impostazioni funzionalità",
         "searchCapabilities": "Funzionalità di ricerca",
         "selectAgentQuickPickPlaceholder": "Selezionare un agente per la nuova sessione",
         "selectAllInCategory": "Seleziona tutto in questa categoria",
@@ -314,6 +332,7 @@
           "alwaysAllowConfirm": "Capisco, abilita l'approvazione automatica",
           "alwaysAllowGenericWarning": "Questo strumento richiede una conferma prima che l'approvazione automatica possa essere abilitata. Una volta abilitata, tutte le future invocazioni verranno eseguite senza conferma. Abilita questa opzione solo se ti fidi di questo strumento e comprendi i potenziali rischi.",
           "alwaysAllowTitle": "Abilitare l'approvazione automatica per \"{0}\"?",
+          "autoCancel": "Annullamento automatico in {0}",
           "canceled": "Esecuzione dello strumento annullata",
           "denied": "Esecuzione dello strumento negata",
           "deny-forever": "Rifiuta sempre",
@@ -560,11 +579,14 @@
           "signIn": "Accedi a GitHub Copilot",
           "signOut": "Esci da GitHub Copilot"
         },
+        "enabled": {
+          "mdDescription": "Abilita il provider GitHub Copilot. Una volta abilitato, viene visualizzata una voce nella barra di stato per l'autenticazione e i modelli disponibili vengono individuati dal tuo abbonamento a Copilot."
+        },
         "enterpriseUrl": {
           "mdDescription": "Dominio GitHub Enterprise per l'API Copilot (ad esempio, `github.mycompany.com`). Lasciare vuoto per GitHub.com."
         },
-        "models": {
-          "description": "Modelli GitHub Copilot da utilizzare. I modelli disponibili dipendono dall'abbonamento Copilot."
+        "modelOverrides": {
+          "mdDescription": "Sovrascrivi i modelli GitHub Copilot rilevati automaticamente. Se vuoto (impostazione predefinita), i modelli disponibili vengono rilevati dal tuo abbonamento a Copilot. Imposta ID modello espliciti per sovrascrivere il rilevamento automatico."
         },
         "signOut": {
           "confirmMessage": "Sei sicuro di voler uscire da GitHub Copilot?"
@@ -572,7 +594,8 @@
         "statusBar": {
           "signedIn": "Accesso a GitHub Copilot come {0}. Clicca per uscire.",
           "signedOut": "Non hai effettuato l'accesso a GitHub Copilot. Clicca per accedere."
-        }
+        },
+        "tokenMigration": "La tua sessione GitHub Copilot utilizzava un metodo di autenticazione obsoleto ed è stata cancellata. Effettua nuovamente l'accesso per accedere a tutti i modelli disponibili."
       },
       "core": {
         "agentConfiguration": {
@@ -743,8 +766,7 @@
           "variantsOfSystemPrompt": "Varianti di questo set di varianti di prompt:"
         },
         "promptTemplates": {
-          "description": "Cartella per l'archiviazione dei modelli di prompt personalizzati. Se non personalizzata, viene utilizzata la directory di configurazione dell'utente. Si consiglia di utilizzare una cartella sottoposta a controllo di versione per gestire le varianti dei modelli di prompt.",
-          "openLabel": "Seleziona cartella"
+          "description": "Cartella per l'archiviazione dei modelli di prompt personalizzati. Se non personalizzata, viene utilizzata la directory di configurazione dell'utente. Si consiglia di utilizzare una cartella sottoposta a controllo di versione per gestire le varianti dei modelli di prompt."
         },
         "promptVariable": {
           "argDescription": "L'ID del modello di prompt da risolvere",
@@ -877,16 +899,12 @@
         },
         "edited": "modificato",
         "exchange-card": {
-          "agentId": "Agente",
           "timestamp": "Avviato"
         },
         "open-history-tooltip": "Apri la cronologia AI...",
         "request-card": {
-          "agent": "Agente",
-          "model": "Modello",
           "promptVariant": "Variante del prompt",
           "request": "Richiesta",
-          "response": "Risposta",
           "timestamp": "Timestamp",
           "title": "Richiesta"
         },
@@ -926,15 +944,34 @@
       "ide": {
         "agent-description": "Configurare le impostazioni dell'agente AI, tra cui l'abilitazione, la selezione LLM, la personalizzazione dei modelli di prompt e la creazione di agenti personalizzati nella [Vista di configurazione AI]({0}).",
         "agentConfiguration": {
-          "capabilityOn": "Su",
           "customAgentLocationQuickPick": {
             "createNewFile": "Crea nuovo file",
             "openExistingFile": "Apri file esistente",
             "placeholder": "Scegliere dove creare o aprire un file di agenti personalizzati",
             "title": "Selezionare la posizione per il file degli agenti personalizzati"
           },
-          "enabledByDefault": "Abilitato per impostazione predefinita",
-          "noDescription": "Nessuna descrizione disponibile"
+          "genericCapabilitiesSettings": "Funzionalità generiche",
+          "genericCapabilityType": {
+            "agentDelegation": "Delega dell'agente",
+            "functions": "Funzioni",
+            "mcpFunctions": "Funzioni MCP",
+            "promptFragments": "Frammenti di prompt"
+          },
+          "noDescription": "Nessuna descrizione disponibile",
+          "resetAllCapabilities": "Ripristina tutte le funzionalità ai valori predefiniti",
+          "resetAllDefaults": "Ripristina tutte le impostazioni predefinite",
+          "selections": "Selezioni"
+        },
+        "agentMode": {
+          "confirmed": {
+            "mdDescription": "Se l'utente ha confermato l'avviso relativo alla modalità agente. La modalità agente consente modifiche autonome ai file senza ulteriore conferma. Impostare su `false` per visualizzare nuovamente la conferma alla successiva richiesta in modalità agente."
+          }
+        },
+        "agentModeConfirmation": {
+          "confirm": "Conferma",
+          "msg": "Questo agente utilizza una **modalità agentica**. Per consentire un flusso autonomo, è in grado di scrivere direttamente nei file del tuo spazio di lavoro senza ulteriore conferma.\n\nSi consiglia di utilizzare il controllo di versione (ad es. Git) in modo da poter rivedere e ripristinare le modifiche.\n\nPuoi passare alla **Modalità Modifica** utilizzando il selettore di modalità nell'area di immissione della chat qui sotto, oppure utilizzare l'agente **Architect** per la pianificazione in sola lettura.\n\nQuesta conferma viene salvata per questo spazio di lavoro e non verrà più visualizzata. Per reimpostarla o configurarla globalmente, cerca `ai-features.agentMode.confirmed` nelle Impostazioni.",
+          "question": "Vuoi procedere con la modalità Agente?",
+          "waiting": "In attesa di conferma..."
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Controllo errori Stato del server DevTools MCP: {0}",
@@ -956,13 +993,10 @@
             "question": "I server Playwright MCP non sono in esecuzione. Desideri avviarli ora? Questa operazione potrebbe comportare l'installazione dei server Playwright MCP."
           }
         },
-        "appTester": {
-          "description": "Consente all'agente di testare le applicazioni browser end-to-end. A tal fine, l'agente può delegare all'agente AppTester, che automatizza le interazioni del browser per verificare l'implementazione.",
-          "name": "App Tester"
-        },
         "architectAgent": {
           "mode": {
             "plan": "Modalità mappa",
+            "planNext": "Modalità Piano (Avanti)",
             "simple": "Modalità semplice"
           },
           "suggestion": {
@@ -973,6 +1007,9 @@
         "bypassHint": "Alcuni agenti come Claude Code non richiedono i modelli linguistici Theia.",
         "chatDisabledMessage": {
           "title": "Le funzionalità AI sono disabilitate"
+        },
+        "codeReviewerAgent": {
+          "description": "Un assistente alla revisione del codice che analizza le modifiche al codice e restituisce verdetti strutturati.         Verifica i criteri di completamento, le prove di build/lint/test e la qualità del codice."
         },
         "coderAgent": {
           "mode": {
@@ -1018,6 +1055,9 @@
         "deleteChat": "Elimina chat",
         "enableAI": {
           "mdDescription": "Questa impostazione consente di accedere alle più recenti funzionalità di intelligenza artificiale (versione beta).            \n            Si prega di notare che queste funzionalità sono in fase beta, il che significa che potrebbero             subire modifiche e saranno ulteriormente migliorate. È importante essere consapevoli che queste funzionalità potrebbero generare            richieste continue ai modelli linguistici (LLM) a cui si fornisce l'accesso. Ciò potrebbe comportare costi che è necessario            monitorare attentamente. Abilitando questa opzione, l'utente riconosce tali rischi.            \n            **Attenzione! Le impostazioni riportate di seguito in questa sezione avranno effetto solo\n            una volta abilitata l'impostazione della funzione principale. Dopo aver abilitato la funzione, è necessario configurare almeno un            fornitore LLM di seguito. Vedere anche [la documentazione](https://theia-ide.org/docs/user_ai/)**."
+        },
+        "exploreAgent": {
+          "description": "Un assistente all'esplorazione del codice che estrae e sintetizza le informazioni dal codice.         Riporta fatti su ciò che esiste, fornisce estratti di codice e descrive i modelli osservati."
         },
         "github": {
           "configureGitHubServer": {
@@ -1078,9 +1118,6 @@
           "name": "Esecuzione della shell"
         },
         "skillsConfiguration": {
-          "location": {
-            "label": "Posizione"
-          },
           "noSkills": "Nessuna competenza disponibile",
           "noSlashCommands": "Nessun comando slash disponibile",
           "slashCommand": {
@@ -1123,7 +1160,6 @@
           }
         },
         "tooltip": {
-          "agent": "Agente",
           "lastActivity": "Ultima attività",
           "lastMessage": "Ultimo messaggio",
           "messages": "Messaggi",
@@ -1133,8 +1169,7 @@
         },
         "variableConfiguration": {
           "selectVariable": "Selezionare una variabile.",
-          "usedByAgents": "Utilizzato dagli agenti",
-          "variableArgs": "Argomenti"
+          "usedByAgents": "Utilizzato dagli agenti"
         }
       },
       "llamaFile": {
@@ -1220,7 +1255,6 @@
         }
       },
       "mcpConfiguration": {
-        "arguments": "Argomenti",
         "autostart": "Avvio automatico",
         "connectServer": "Connetti",
         "connectingServer": "Connessione in corso...",
@@ -1259,7 +1293,6 @@
           "serverUrlRequired": "L'URL del server è necessario per i server remoti."
         },
         "headers": "Intestazioni",
-        "noServers": "Nessun server MCP configurato",
         "saveServerError": "Impossibile salvare la configurazione del server MCP: {0}",
         "serverAuthToken": "Token di autenticazione",
         "serverAuthTokenHeader": "Nome intestazione autenticazione",
@@ -1352,16 +1385,19 @@
           "in-progress": "SCANOSS - Esecuzione della scansione...",
           "match-count": "Risultati trovati {0}",
           "matched": "SCANOSS - Corrispondenza trovata {0}",
-          "no-match": "SCANOSS - Nessuna corrispondenza",
-          "summary": "Riepilogo"
+          "no-match": "SCANOSS - Nessuna corrispondenza"
         }
       },
       "session-settings-dialog": {
         "advancedSettings": "Impostazioni avanzate (JSON)",
         "budgetTokens": "Gettoni di budget:",
+        "confirmationTimeout": "Timeout di conferma",
+        "confirmationTimeoutNote": "Rifiuta automaticamente le conferme degli strumenti dopo il tempo specificato. Ignora l'impostazione globale per questa sessione.",
+        "enableConfirmationTimeout": "Abilita timeout di conferma",
         "enableThinking": "Abilita il pensiero esteso",
         "thinkingMode": "Modalità di pensiero",
         "thinkingModeNote": "Alcuni modelli potrebbero ignorare questa impostazione.",
+        "timeoutSeconds": "Timeout (secondi):",
         "title": "Impostazioni di sessione",
         "tooltip": "Impostazioni di sessione"
       },
@@ -1387,7 +1423,6 @@
         "askTerminalCommand": "Chiedi informazioni su un comando da terminale...",
         "hitEnterConfirm": "Premere Invio per confermare.",
         "howCanIHelp": "Come posso aiutarti?",
-        "loading": "Caricamento",
         "tryAgain": "Riprova...",
         "useArrowsAlternatives": " oppure usa ⇅ per mostrare le alternative..."
       },
@@ -1398,14 +1433,12 @@
         "inputTokens": "Token di input",
         "label": "Utilizzo dei token",
         "lastUsed": "Ultimo utilizzo",
-        "model": "Modello",
         "noData": "Non sono ancora disponibili dati sull'utilizzo dei token.",
         "note": "L'utilizzo dei token viene tracciato dall'avvio dell'applicazione e non viene conservato.",
         "outputTokens": "Token di output",
         "readCachedInputTokens": "Token di input letti dalla cache",
         "readCachedInputTokensTooltip": "Tracciato in aggiunta a \"Input Token\". Di solito molto meno costoso rispetto alla versione non memorizzata nella cache. Di solito non conta ai fini dei limiti di velocità.",
         "total": "Totale",
-        "totalTokens": "Totale token",
         "totalTokensTooltip": "\"Token di input\" + \"Token di output\""
       },
       "vercelai": {
@@ -1461,6 +1494,10 @@
           "description": "Elenco di modelli (glob o regex) per file/cartelle da escludere.",
           "title": "Modelli di file esclusi"
         },
+        "fileContentMaxSizeKB": {
+          "description": "Dimensione massima in kilobyte del contenuto restituito dallo strumento getFileContent. Durante la lettura di un file completo (senza offset/limite), i file che superano questo limite restituiscono un errore. Quando si utilizzano offset e limite, solo l'intervallo richiesto viene verificato rispetto a questo limite.",
+          "title": "Dimensione massima del contenuto del file (KB)"
+        },
         "projectInfoAgent": {
           "description": "Un assistente AI per la gestione dei modelli di informazioni di progetto. Questo agente aiuta a creare, aggiornare e rivedere il file .prompts/project-info.prompttemplate che fornisce il contesto del progetto ad altri agenti AI. È in grado di analizzare l'area di lavoro per suggerire informazioni sul progetto o aggiornare i modelli esistenti in base alle esigenze."
         },
@@ -1477,6 +1514,7 @@
       "fileChangeSetTitle": "Modifiche proposte"
     },
     "ai-chat-ui": {
+      "confirm": "Conferma",
       "deleteChat": "Elimina chat",
       "initiate-session-task-context": "Contesto dell'attività: Avvia sessione",
       "navigate-back": "Torna indietro",
@@ -1511,6 +1549,13 @@
       "addressGhReviewCommand": {
         "argumentHint": "<numero-pr>",
         "description": "Commenti di revisione dell'indirizzo su una richiesta pull GitHub"
+      },
+      "appTester": {
+        "description": "Delega all'agente AppTester per la verifica dell'interfaccia utente basata su browser dopo l'implementazione.",
+        "name": "Test E2E"
+      },
+      "codeReview": {
+        "description": "Delega all'agente di revisione del codice dopo ogni implementazione. Blocca i passaggi successivi fino al superamento della revisione."
       },
       "fixGhTicketCommand": {
         "argumentHint": "<numero-ticket>",
@@ -1620,7 +1665,8 @@
       "about": {
         "compatibility": "{0} Compatibilità",
         "defaultApi": "API predefinita di {0}",
-        "listOfExtensions": "Elenco delle estensioni"
+        "listOfExtensions": "Elenco delle estensioni",
+        "monacoEditor": "Versione dell'editor Monaco"
       },
       "common": {
         "closeAll": "Chiudi tutte le schede",
@@ -1717,7 +1763,6 @@
       "conditionalBreakpointsNotSupported": "Punti di interruzione condizionali non supportati da questo tipo di debug",
       "confirmRunToShiftedPosition_msg": "La posizione di destinazione verrà spostata a Ln {0} , Col {1}. Eseguire comunque?",
       "confirmRunToShiftedPosition_title": "Impossibile eseguire il thread corrente esattamente nella posizione specificata",
-      "consoleFilter": "Filtro (ad es. testo, !escludi)",
       "consoleFilterAriaLabel": "Filtra l'output della console di debug",
       "consoleFilterTooltip": "Filtra l'output della console in base al testo. Separa i termini multipli con virgole. Prefissa con `!` per escludere un termine.\n\nEsempi:\n\n- `testo` - mostra le righe contenenti \"testo\"\n- `testo, altro` - mostra le righe contenenti \"testo\" o \"altro\"\n- `!testo` - nasconde le righe contenenti \"testo\"\n- `testo, !altro` - mostra \"testo\" ma nasconde \"altro\"",
       "consoleSessionSelectorTooltip": "Passare da una sessione di debug all'altra. Ogni sessione di debug ha una propria console di output.",
@@ -1758,6 +1803,7 @@
       "unverifiedBreakpoint": "Non verificato {0}"
     },
     "editor": {
+      "autoSaveWhenNoErrors": "Se abilitata, limiterà il salvataggio automatico degli editor ai file che non presentano errori segnalati al momento in cui viene attivato il salvataggio automatico. Si applica solo quando è abilitata l'opzione \"{0}\".",
       "clearFormatterSetting": "Cancella impostazioni formattatore",
       "configuredIn": "Configurato in {0}",
       "configuredNotInstalled": "\"{0}\" configurato in {1} ma non installato",
@@ -1768,7 +1814,6 @@
       "editor.bracketPairColorization.enabled": "Controlla se la colorazione delle coppie di parentesi è abilitata o meno. Utilizzare `#workbench.colorCustomizations#` per sovrascrivere i colori di evidenziazione delle parentesi.",
       "editor.codeActions.triggerOnFocusChange": "Abilita l'attivazione di `#editor.codeActionsOnSave#` quando `#files.autoSave#` è impostato su `afterDelay`. Code Actions deve essere impostato su `always` per essere attivato in caso di modifiche alla finestra e al focus.",
       "editor.detectIndentation": "Controlla se `#editor.tabSize#` e `#editor.insertSpaces#` vengono rilevati automaticamente all'apertura di un file in base al contenuto del file stesso.",
-      "editor.experimental.preferTreeSitter": "Controlla se l'analisi tree sitter deve essere attivata per linguaggi specifici. Questo avrà la precedenza su `editor.experimental.treeSitterTelemetry` per i linguaggi specificati.",
       "editor.inlayHints.enabled1": "I suggerimenti inlay sono visualizzati per impostazione predefinita e vengono nascosti tenendo premuto Ctrl+Alt.",
       "editor.inlayHints.enabled2": "I suggerimenti sono nascosti per impostazione predefinita e vengono visualizzati tenendo premuto Ctrl+Alt.",
       "editor.inlayHints.fontFamily": "Controlla la famiglia di caratteri dei suggerimenti di inlay nell'editor. Se impostato su vuoto, viene utilizzato `#editor.fontFamily#`.",
@@ -1808,7 +1853,7 @@
       "cwd": "Seleziona la directory di lavoro corrente per il nuovo terminale esterno"
     },
     "file-search": {
-      "toggleIgnoredFiles": " (Premere {0} per mostrare/nascondere i file ignorati)"
+      "toggleExcludedFiles": " (Premere {0} per mostrare/nascondere i file esclusi)"
     },
     "fileDialog": {
       "showHidden": "Mostra file nascosti"
@@ -1858,46 +1903,6 @@
         "welcomePage": "Aprire la pagina di benvenuto, con contenuti utili per iniziare a utilizzare l'{0}e e le estensioni."
       },
       "telemetry": "Utilizzo dei dati e telemetria"
-    },
-    "git": {
-      "aFewSecondsAgo": "pochi secondi fa",
-      "addSignedOff": "Aggiungi Signed-off-by",
-      "added": "Aggiunto",
-      "amendReuseMessage": "Per riutilizzare l'ultimo messaggio di commit, premere \"Invio\" o \"Esc\" per annullare.",
-      "amendRewrite": "Riscrivi il messaggio di commit precedente. Premi \"Invio\" per confermare o \"Esc\" per annullare.",
-      "checkoutCreateLocalBranchWithName": "Crea un nuovo ramo locale con il nome: {0}. Premi \"Invio\" per confermare o \"Esc\" per annullare.",
-      "checkoutProvideBranchName": "Fornire un nome di ramo. ",
-      "checkoutSelectRef": "Seleziona un riferimento per effettuare il checkout o creare un nuovo ramo locale:",
-      "cloneQuickInputLabel": "Fornire la posizione del repository Git. Premere \"Invio\" per confermare o \"Esc\" per annullare.",
-      "cloneRepository": "Clona il repository Git: {0}. Premi \"Invio\" per confermare o \"Esc\" per annullare.",
-      "compareWith": "Confronta con...",
-      "compareWithBranchOrTag": "Scegli un ramo o un tag da confrontare con il ramo attualmente attivo {0}:",
-      "conflicted": "In conflitto",
-      "copied": "Copiato",
-      "diff": "Diff",
-      "dirtyDiffLinesLimit": "Non mostrare le decorazioni delle differenze sporche se il conteggio delle righe dell'editor supera questo limite.",
-      "dropStashMessage": "Stash rimosso con successo.",
-      "editorDecorationsEnabled": "Mostra le decorazioni git nell'editor.",
-      "fetchPickRemote": "Scegli un dispositivo remoto da cui eseguire il recupero:",
-      "gitDecorationsColors": "Utilizzare decorazioni colorate nel navigatore.",
-      "mergeEditor": {
-        "currentSideTitle": "Attuale",
-        "incomingSideTitle": "In arrivo"
-      },
-      "mergeQuickPickPlaceholder": "Scegli un ramo da unire al ramo attualmente attivo {0}:",
-      "missingUserInfo": "Assicurati di configurare \"user.name\" e \"user.email\" in git.",
-      "noHistoryForError": "Non è disponibile alcuna cronologia per {0}",
-      "noPreviousCommit": "Nessun commit precedente da modificare",
-      "noRepositoriesSelected": "Non sono stati selezionati repository.",
-      "prepositionIn": "in",
-      "renamed": "Rinominato",
-      "repositoryNotInitialized": "Il repository {0} non è ancora stato inizializzato.",
-      "stashChanges": "Metti da parte le modifiche. Premi \"Invio\" per confermare o \"Esc\" per annullare.",
-      "stashChangesWithMessage": "Memorizza le modifiche con il messaggio: {0}. Premi \"Invio\" per confermare o \"Esc\" per annullare.",
-      "tabTitleIndex": "{0} (Indice)",
-      "tabTitleWorkingTree": "{0} (Albero di lavoro)",
-      "toggleBlameAnnotations": "Attiva/disattiva annotazioni di responsabilità",
-      "unstaged": "Non preparato"
     },
     "keybinding-schema-updater": {
       "deprecation": "Utilizzare invece la clausola `when`."
@@ -2073,7 +2078,8 @@
         "loginTitle": "Accesso",
         "signedOut": "Disconnessione riuscita."
       },
-      "plugins": "Plugin",
+      "extensionsRestrictedMode": "Alcune estensioni sono disabilitate in modalità limitata",
+      "supportNodeGlobalNavigator": "Se abilitato, l'oggetto navigator globale nell'host dell'estensione verrà definito come fornito da Node.js. Le estensioni possono utilizzare la presenza dell'oggetto navigator come indicazione che il codice è in esecuzione in un browser. Disabilitando questa opzione (impostazione predefinita), l'oggetto navigator nell'host dell'estensione non viene definito per preservare tale presupposto.",
       "webviewTrace": "Controlla il tracciamento delle comunicazioni con le visualizzazioni web.",
       "webviewWarnIfUnsecure": "Avvisa gli utenti che le visualizzazioni web sono attualmente distribuite in modo non sicuro."
     },
@@ -2086,10 +2092,8 @@
       "openByDefault": "Apri l'anteprima invece dell'editor per impostazione predefinita."
     },
     "property-view": {
-      "created": "Creato",
       "directory": "Directory",
       "lastModified": "Ultima modifica",
-      "location": "Posizione",
       "noProperties": "Nessuna proprietà disponibile.",
       "properties": "Proprietà",
       "symbolicLink": "Collegamento simbolico"
@@ -2125,10 +2129,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Modifica ultimo commit",
       "changeRepository": "Modifica repository...",
-      "config.untrackedChanges": "Controlla il comportamento delle modifiche non tracciate.",
-      "config.untrackedChanges.hidden": "nascosto",
-      "config.untrackedChanges.mixed": "misto",
-      "config.untrackedChanges.separate": "separato",
       "dirtyDiff": {
         "close": "Chiudi Modifica Anteprima"
       },
@@ -2136,7 +2136,8 @@
       "mergeEditor": {
         "resetConfirmationTitle": "Vuoi davvero reimpostare il risultato dell'unione in questo editor?"
       },
-      "noRepositoryFound": "Nessun repository trovato",
+      "noHistoryForError": "Non è disponibile alcuna cronologia per {0}",
+      "prepositionIn": "e",
       "unamend": "Non modificare",
       "unamendCommit": "Commit non modificabile"
     },
@@ -2144,6 +2145,7 @@
       "includeIgnoredFiles": "Includi file ignorati",
       "noFolderSpecified": "Non hai aperto o specificato una cartella. Attualmente vengono cercati solo i file aperti.",
       "resultSubset": "Questo è solo un sottoinsieme di tutti i risultati. Utilizza un termine di ricerca più specifico per restringere l'elenco dei risultati.",
+      "searchExclude": "Configurare [modelli glob](https://aka.ms/vscode-glob-patterns) per escludere file e cartelle nelle ricerche full-text e nella ricerca dei file in apertura rapida. Eredita tutti i modelli glob dall'impostazione `#files.exclude#`.",
       "searchOnEditorModification": "Cerca nell'editor attivo quando modificato."
     },
     "secondary-window": {
@@ -2188,6 +2190,8 @@
     },
     "terminal": {
       "defaultProfile": "Il profilo predefinito utilizzato su {0}",
+      "enableCommandHistory": "Tieni traccia dei comandi del terminale e del loro output separatamente utilizzando l'iniezione della shell. Ciò consente casi d'uso quali la distinzione visiva dei comandi nell'interfaccia utente e l'accesso più strutturato ai terminali da parte degli agenti AI. L'attivazione o la disattivazione di questa impostazione non influirà sui terminali già aperti.\n\n&nbsp;\n\nQuesta funzionalità è attualmente supportata solo dai terminali di attività e dai terminali utente che eseguono bash o zsh.",
+      "enableCommandSeparator": "Abilita un separatore visivo tra i comandi eseguiti e il loro output nel terminale. Le modifiche si applicano solo ai comandi eseguiti dopo la modifica di questa impostazione. Funziona solo quando è abilitata l'opzione \"{0}\".",
       "enableCopy": "Abilita ctrl-c (cmd-c su macOS) per copiare il testo selezionato",
       "enablePaste": "Abilita ctrl-v (cmd-v su macOS) per incollare dagli appunti",
       "profileArgs": "Gli argomenti della shell utilizzati da questo profilo.",
@@ -2269,6 +2273,7 @@
       "confirmDialogMessage": "L'estensione \"{0}\" non è verificata e potrebbe rappresentare un rischio per la sicurezza.",
       "confirmDialogTitle": "Sei sicuro di voler procedere con l'installazione?",
       "downloadCount": "Numero di download: {0}",
+      "duplicateVSIX": "Impossibile installare {0} da VSIX. L'estensione è già installata. Disinstallare l'estensione esistente prima di installare una nuova versione da VSIX.",
       "errorFetching": "Errore durante il recupero delle estensioni.",
       "errorFetchingConfigurationHint": "Ciò potrebbe essere causato da problemi di configurazione della rete.",
       "failedInstallingVSIX": "Impossibile installare {0} da VSIX.",
@@ -2277,6 +2282,7 @@
       "onlyShowVerifiedExtensionsDescription": "Ciò consente all'{0}e di mostrare solo estensioni verificate.",
       "onlyShowVerifiedExtensionsTitle": "Mostra solo estensioni verificate",
       "recommendedExtensions": "Elenco dei nomi delle estensioni consigliate per l'uso in questo spazio di lavoro.",
+      "restrictedModeInstallWarning": "L'estensione \"{0}\" potrebbe essere disabilitata se non supporta l'esecuzione in modalità limitata. Consenti l'accesso a questo spazio di lavoro per garantire che l'estensione funzioni come previsto.",
       "searchPlaceholder": "Cerca estensioni in {0}",
       "showInstalled": "Mostra estensioni installate",
       "showRecommendedExtensions": "Controlla se vengono visualizzate le notifiche relative ai consigli sulle estensioni.",
