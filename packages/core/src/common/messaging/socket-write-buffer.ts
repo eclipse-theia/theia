@@ -23,20 +23,24 @@ export class SocketWriteBuffer {
     private bufferWritePosition = 0;
 
     buffer(data: Uint8Array): void {
-        this.ensureWriteBuffer(data.byteLength);
+        if (!this.ensureWriteBuffer(data.byteLength)) {
+            return;
+        }
         this.disconnectedBuffer?.set(data, this.bufferWritePosition);
         this.bufferWritePosition += data.byteLength;
     }
 
-    protected ensureWriteBuffer(byteLength: number): void {
+    protected ensureWriteBuffer(byteLength: number): boolean {
         if (!this.disconnectedBuffer) {
             this.disconnectedBuffer = new Uint8Array(SocketWriteBuffer.DISCONNECTED_BUFFER_SIZE);
             this.bufferWritePosition = 0;
         }
 
         if (this.bufferWritePosition + byteLength > this.disconnectedBuffer.byteLength) {
-            throw new Error(`Max disconnected buffer size exceeded by adding ${byteLength} bytes`);
+            console.warn(`Max disconnected buffer size exceeded by adding ${byteLength} bytes`);
+            return false;
         }
+        return true;
     }
 
     flush(socket: WebSocket): void {
