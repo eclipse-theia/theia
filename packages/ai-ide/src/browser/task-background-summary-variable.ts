@@ -58,11 +58,11 @@ export class TaskContextSummaryVariableContribution implements AIVariableContrib
         const allSummaryRequests = context.model.context.getVariables().filter(candidate => candidate.variable.id === TASK_CONTEXT_VARIABLE.id);
         if (!allSummaryRequests.length) { return { ...request, value: '' }; }
         const allSummaries = await Promise.all(allSummaryRequests.map(summaryRequest => resolveDependency(summaryRequest).then(resolved => resolved?.value)));
-        const value = `# Current Task Context
+        const value = `# Current Plan
 
-The user has provided the following plan as your primary objective. Trust it and implement it directly — do not re-explore the workspace from scratch.
+The user has provided the following plan as your primary objective. Trust it and implement it directly. Do not re-explore the workspace from scratch.
 Only deviate if you find genuine issues (outdated assumptions, conflicts, unclear steps); if so, explain before proceeding and summarize deviations at the end.
-Work through the plan step by step, completing each step fully before moving to the next, and use the todo tool to track progress.
+Work through the plan step by step, maintaining a todo list. Complete each step fully before moving to the next.
 
 ---
 
