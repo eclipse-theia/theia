@@ -1,0 +1,270 @@
+/********************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* ===== Main Layout ===== */
+.ai-sketchpad-widget {
+    height: 100%;
+}
+
+.ai-sketchpad-container {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ===== List Panel ===== */
+.ai-sketchpad-list {
+    width: 240px;
+    min-width: 180px;
+    max-width: 320px;
+    border-right: var(--theia-border-width) solid var(--theia-widget-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ai-sketchpad-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.ai-sketchpad-list .theia-TreeNode {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(var(--theia-ui-padding) * 0.75) var(--theia-ui-padding);
+    cursor: pointer;
+    user-select: none;
+}
+
+.ai-sketchpad-list .theia-TreeNode:hover {
+    background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-sketchpad-list .theia-TreeNode.theia-mod-selected {
+    background-color: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground);
+}
+
+.ai-sketchpad-list-item-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-sketchpad-delete-icon {
+    opacity: 0;
+    cursor: pointer;
+    color: var(--theia-icon-foreground);
+    padding: calc(var(--theia-ui-padding) / 3);
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    transition: opacity 0.15s, background-color 0.15s;
+}
+
+.ai-sketchpad-list .theia-TreeNode:hover .ai-sketchpad-delete-icon {
+    opacity: 0.6;
+}
+
+.ai-sketchpad-list .theia-TreeNode:hover .ai-sketchpad-delete-icon:hover {
+    opacity: 1;
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-errorForeground);
+}
+
+.ai-sketchpad-add-button {
+    padding: var(--theia-ui-padding);
+    border-top: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.ai-sketchpad-add-button button {
+    width: 100%;
+    margin-left: 0;
+}
+
+/* ===== Detail Panel ===== */
+.ai-sketchpad-detail {
+    flex: 1;
+    overflow-y: auto;
+    padding: calc(var(--theia-ui-padding) * 2);
+    min-width: 0;
+}
+
+.ai-sketchpad-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.ai-sketchpad-empty-message {
+    color: var(--theia-descriptionForeground);
+    font-style: italic;
+}
+
+/* ===== Form ===== */
+.ai-sketchpad-form {
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 2);
+}
+
+.ai-sketchpad-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 0.5);
+}
+
+.ai-sketchpad-form-field > label {
+    font-weight: 600;
+    font-size: var(--theia-ui-font-size2);
+    color: var(--theia-foreground);
+}
+
+.ai-sketchpad-textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-family: var(--theia-code-font-family);
+    font-size: var(--theia-code-font-size);
+}
+
+.ai-sketchpad-hint {
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+    font-style: italic;
+    margin-top: calc(var(--theia-ui-padding) * 0.25);
+}
+
+/* ===== Parameters ===== */
+.ai-sketchpad-no-params {
+    color: var(--theia-descriptionForeground);
+    font-style: italic;
+    padding: calc(var(--theia-ui-padding) * 0.5) 0;
+}
+
+.ai-sketchpad-param-list {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 0.5);
+}
+
+.ai-sketchpad-param-item {
+    border: var(--theia-border-width) solid var(--theia-widget-border);
+    border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+    padding: calc(var(--theia-ui-padding) * 0.75);
+    background-color: var(--theia-editor-background);
+}
+
+.ai-sketchpad-param-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 0.5);
+    flex-wrap: wrap;
+}
+
+.ai-sketchpad-param-name {
+    flex: 1;
+    min-width: 100px;
+    max-width: 160px;
+}
+
+.ai-sketchpad-param-desc {
+    flex: 2;
+    min-width: 120px;
+}
+
+.ai-sketchpad-param-type {
+    width: 100px;
+}
+
+.ai-sketchpad-param-required {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2 / 3);
+    cursor: pointer;
+    user-select: none;
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+    white-space: nowrap;
+}
+
+.ai-sketchpad-param-required input[type="checkbox"] {
+    margin: 0;
+}
+
+.ai-sketchpad-param-delete {
+    cursor: pointer;
+    color: var(--theia-icon-foreground);
+    padding: calc(var(--theia-ui-padding) / 3);
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    transition: background-color 0.15s;
+}
+
+.ai-sketchpad-param-delete:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-errorForeground);
+}
+
+/* ===== Nested Parameters ===== */
+.ai-sketchpad-param-nested {
+    margin-top: calc(var(--theia-ui-padding) * 0.5);
+    padding-left: calc(var(--theia-ui-padding) * 1.5);
+    border-left: calc(var(--theia-border-width) * 2) solid var(--theia-widget-border);
+}
+
+.ai-sketchpad-param-depth-1 {
+    margin-left: calc(var(--theia-ui-padding) * 3);
+}
+
+.ai-sketchpad-param-depth-2 {
+    margin-left: calc(var(--theia-ui-padding) * 6);
+}
+
+.ai-sketchpad-add-nested-btn {
+    margin-top: calc(var(--theia-ui-padding) * 0.5);
+}
+
+.ai-sketchpad-add-param-btn {
+    margin-top: calc(var(--theia-ui-padding) * 0.5);
+}
+
+/* ===== Array Item Type ===== */
+.ai-sketchpad-param-array-type {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 0.5);
+    margin-top: calc(var(--theia-ui-padding) * 0.5);
+    padding-left: calc(var(--theia-ui-padding) * 1.5);
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+}
+
+.ai-sketchpad-param-array-type select {
+    width: 100px;
+}
+
+/* ===== Actions ===== */
+.ai-sketchpad-actions {
+    display: flex;
+    gap: var(--theia-ui-padding);
+    padding-top: var(--theia-ui-padding);
+    border-top: var(--theia-border-width) solid var(--theia-widget-border);
+}
