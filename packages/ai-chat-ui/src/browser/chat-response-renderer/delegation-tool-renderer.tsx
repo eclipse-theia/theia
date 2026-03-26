@@ -16,6 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatRequestInvocation, ChatResponseContent, ChatResponseModel, ToolCallChatResponseContent } from '@theia/ai-chat';
+import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core/lib/common/tool-constants';
 import { AgentDelegationTool } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
@@ -30,6 +31,9 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
     @inject(AgentDelegationTool)
     protected agentDelegationTool: AgentDelegationTool;
+
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
 
     @inject(SubChatWidgetFactory)
     protected subChatWidgetFactory: SubChatWidgetFactory;
@@ -50,7 +54,7 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
             try {
                 const args = JSON.parse(response.arguments);
                 if (typeof args.agentId === 'string') {
-                    agentId = args.agentId;
+                    agentId = this.chatAgentService.getAgent(args.agentId)?.name ?? args.agentId;
                 }
                 if (typeof args.prompt === 'string') {
                     prompt = args.prompt;
@@ -62,7 +66,7 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
         return <DelegatedChat
             invocation={delegation?.invocation}
-            agentId={delegation?.agentName ?? agentId}
+            agentId={agentId}
             prompt={delegation?.prompt ?? prompt}
             finished={response.finished}
             parentNode={parentNode}
