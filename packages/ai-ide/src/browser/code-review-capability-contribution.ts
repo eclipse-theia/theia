@@ -60,6 +60,8 @@ Enforce quality gates through mandatory code review. Do not proceed until code c
 
 ### Delegation
 
+Use ~{delegateToAgent} to delegate to the following agent:
+
 **Agent:** '${CodeReviewerAgentId}'
 **When:** Immediately after Coding Agent reports completion
 

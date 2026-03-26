@@ -22,7 +22,8 @@ import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';
 import {
     WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
-    bindViewContribution
+    bindViewContribution,
+    OpenHandler
 } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
@@ -66,6 +67,7 @@ import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/brow
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 import { AddOrEditDataBreakpointAddress } from './breakpoint/debug-data-breakpoint-actions';
 import { WorkspaceRestrictionContribution, WorkspaceRestriction } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { DebugBreakpointOpener } from './model/debug-breakpoint-opener';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindRootContributionProvider(bind, DebugContribution);
@@ -138,6 +140,8 @@ export default new ContainerModule((bind: interfaces.Bind) => {
 
     bind(DebugSessionConfigurationLabelProvider).toSelf().inSingletonScope();
     bind(AddOrEditDataBreakpointAddress).toSelf().inSingletonScope();
+    bind(DebugBreakpointOpener).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(DebugBreakpointOpener);
 
     bind(WorkspaceRestrictionContribution).toConstantValue({
         getRestrictions(): WorkspaceRestriction[] {

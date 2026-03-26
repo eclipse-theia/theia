@@ -120,6 +120,8 @@ export class PluginScmProvider implements ScmProvider {
 
     private features: SourceControlProviderFeatures = {};
 
+    get providerContextValue(): string | undefined { return this.features.contextValue; }
+
     get handle(): number { return this._handle; }
     get label(): string { return this._label; }
     get rootUri(): string { return this._rootUri ? this._rootUri.toString() : ''; }
@@ -164,7 +166,8 @@ export class PluginScmProvider implements ScmProvider {
         private readonly _contextValue: string,
         private readonly _label: string,
         private readonly _rootUri: vscodeURI | undefined,
-        private disposables: DisposableCollection
+        private disposables: DisposableCollection,
+        readonly parentHandle?: number
     ) { }
 
     updateSourceControl(features: SourceControlProviderFeatures): void {
@@ -330,17 +333,21 @@ export class ScmMainImpl implements ScmMain {
         this.disposables.dispose();
     }
 
-    async $registerSourceControl(handle: number, id: string, label: string, rootUri: UriComponents | undefined): Promise<void> {
-        const provider = new PluginScmProvider(this.proxy, this.colors, this.sharedStyle, handle, id, label, rootUri ? vscodeURI.revive(rootUri) : undefined, this.disposables);
+    async $registerSourceControl(handle: number, id: string, label: string, rootUri: UriComponents | undefined, parentHandle?: number): Promise<void> {
+        const provider = new PluginScmProvider(
+            this.proxy, this.colors, this.sharedStyle, handle, id, label,
+            rootUri ? vscodeURI.revive(rootUri) : undefined, this.disposables, parentHandle
+        );
+        const parentRepo = parentHandle !== undefined ? this.repositories.get(parentHandle) : undefined;
         const repository = this.scmService.registerScmProvider(provider, {
             input: {
                 validator: async value => {
                     const result = await this.proxy.$validateInput(handle, value, value.length);
                     return result && { message: result[0], type: result[1] };
                 }
-            }
-        }
-        );
+            },
+            parentRootUri: parentRepo?.provider.rootUri
+        });
         this.repositories.set(handle, repository);
 
         const disposables = new DisposableCollection(

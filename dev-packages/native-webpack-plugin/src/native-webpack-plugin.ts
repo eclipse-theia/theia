@@ -23,7 +23,6 @@ import type { Compiler } from 'webpack';
 const REQUIRE_RIPGREP = '@vscode/ripgrep';
 const REQUIRE_BINDINGS = 'bindings';
 const REQUIRE_PARCEL_WATCHER = './build/Release/watcher.node';
-const REQUIRE_NODE_PTY_CONPTY = '../build/Release/conpty.node';
 
 export interface NativeWebpackPluginOptions {
     out: string;
@@ -66,11 +65,6 @@ export class NativeWebpackPlugin {
                 [REQUIRE_BINDINGS]: bindingsFile,
                 [REQUIRE_PARCEL_WATCHER]: issuer => Promise.resolve(findNativeWatcherFile(issuer))
             };
-            if (process.platform !== 'win32') {
-                // The expected conpty.node file is not available on non-windows platforms during build.
-                // We need to provide a stub that will be replaced by the real file at runtime.
-                replacements[REQUIRE_NODE_PTY_CONPTY] = () => buildFile(directory, 'conpty.js', conhostWindowsReplacement());
-            }
         });
         compiler.hooks.normalModuleFactory.tap(
             NativeWebpackPlugin.name,
@@ -99,7 +93,7 @@ export class NativeWebpackPlugin {
                 await this.copyRipgrep(ripgrepIssuer, compiler);
             }
             if (this.options.pty && nodePtyIssuer) {
-                await this.copyNodePtySpawnHelper(nodePtyIssuer, compiler);
+                await this.copyNodePtyNativeDeps(nodePtyIssuer, compiler);
             }
         });
     }
@@ -111,19 +105,28 @@ export class NativeWebpackPlugin {
         await this.copyExecutable(sourceFile, targetFile);
     }
 
-    protected async copyNodePtySpawnHelper(issuer: string, compiler: Compiler): Promise<void> {
-        const targetDirectory = path.resolve(compiler.outputPath, '..', 'build', 'Release');
+    protected async copyNodePtyNativeDeps(issuer: string, compiler: Compiler): Promise<void> {
+        const dist = `${process.platform}-${process.arch}`;
+        const src = `node-pty/prebuilds/${dist}`;
+        const targetDirectory = path.resolve(compiler.outputPath, '..', 'prebuilds', dist);
+
+        const copyFile = async (source: string): Promise<void> => {
+            const file = require.resolve(`${src}/${source}`, { paths: [issuer] });
+            const targetFile = path.join(targetDirectory, source);
+            await this.copyExecutable(file, targetFile);
+        };
+
         if (process.platform === 'win32') {
-            const agentFile = require.resolve('node-pty/build/Release/winpty-agent.exe', { paths: [issuer] });
-            const targetAgentFile = path.join(targetDirectory, 'winpty-agent.exe');
-            await this.copyExecutable(agentFile, targetAgentFile);
-            const dllFile = require.resolve('node-pty/build/Release/winpty.dll', { paths: [issuer] });
-            const targetDllFile = path.join(targetDirectory, 'winpty.dll');
-            await this.copyExecutable(dllFile, targetDllFile);
+            await copyFile('conpty.node');
+            await copyFile('conpty_console_list.node');
+            await copyFile('conpty/conpty.dll');
+            await copyFile('conpty/OpenConsole.exe');
         } else if (process.platform === 'darwin') {
-            const sourceFile = require.resolve('node-pty/build/Release/spawn-helper', { paths: [issuer] });
-            const targetFile = path.join(targetDirectory, 'spawn-helper');
-            await this.copyExecutable(sourceFile, targetFile);
+            await copyFile('spawn-helper');
+        }
+        // On non-windows platforms
+        if (process.platform !== 'win32') {
+            await copyFile('pty.node');
         }
     }
 
@@ -208,7 +211,3 @@ ${cases.join(os.EOL)}
     throw new Error(\`unhandled module: "\${jsModule}"\`);
 }`.trim();
 };
-
-const conhostWindowsReplacement = (nativePath: string = '.'): string => `
-module.exports = __non_webpack_require__('${nativePath}/native/conpty.node');
-`;

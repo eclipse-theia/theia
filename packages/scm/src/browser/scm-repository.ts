@@ -19,7 +19,8 @@ import { ScmInput, ScmInputOptions } from './scm-input';
 import { ScmProvider } from './scm-provider';
 
 export interface ScmProviderOptions {
-    input?: ScmInputOptions
+    input?: ScmInputOptions;
+    parentRootUri?: string;
 }
 
 export class ScmRepository implements Disposable {
@@ -33,6 +34,10 @@ export class ScmRepository implements Disposable {
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
 
     readonly input: ScmInput;
+
+    get parentRootUri(): string | undefined {
+        return this.options.parentRootUri;
+    }
 
     constructor(
         readonly provider: ScmProvider,

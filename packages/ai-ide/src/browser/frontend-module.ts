@@ -116,18 +116,19 @@ import { AddressGhReviewCommandContribution } from './address-pr-review-command-
 import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
 import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
-import { JuniorAgent } from './junior-agent';
+import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
 
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
-import { ContextReviewerAgent } from './context-reviewer-agent';
-import { DebugCapabilityContribution } from './debug-capability-contribution';
+
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
-import { JuniorPlanCapabilityContribution } from './junior-plan-capability-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
+
+    bind(AgentModeConfirmationServiceImpl).toSelf().inSingletonScope();
+    bind(AgentModeConfirmationService).toService(AgentModeConfirmationServiceImpl);
 
     bind(AIIdeActivationServiceImpl).toSelf().inSingletonScope();
     // rebinds the default implementation of '@theia/ai-core'
@@ -173,10 +174,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CommandChatAgent);
     bind(ChatAgent).toService(CommandChatAgent);
 
-    bind(JuniorAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(JuniorAgent);
-    bind(ChatAgent).toService(JuniorAgent);
-
     bind(ExploreAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ExploreAgent);
     bind(ChatAgent).toService(ExploreAgent);
@@ -184,10 +181,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CodeReviewerAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CodeReviewerAgent);
     bind(ChatAgent).toService(CodeReviewerAgent);
-
-    bind(ContextReviewerAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(ContextReviewerAgent);
-    bind(ChatAgent).toService(ContextReviewerAgent);
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
@@ -348,7 +341,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
     bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
-    bind(FrontendApplicationContribution).to(DebugCapabilityContribution);
+
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
-    bind(FrontendApplicationContribution).to(JuniorPlanCapabilityContribution);
 });

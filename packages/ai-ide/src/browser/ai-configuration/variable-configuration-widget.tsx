@@ -103,7 +103,7 @@ export class AIVariableConfigurationWidget extends AIListDetailConfigurationWidg
         return (
             <>
                 <div className="settings-section-subcategory-title">
-                    {nls.localize('theia/ai/ide/variableConfiguration/variableArgs', 'Arguments')}
+                    {nls.localizeByDefault('Arguments')}
                 </div>
                 <div style={{
                     display: 'grid',

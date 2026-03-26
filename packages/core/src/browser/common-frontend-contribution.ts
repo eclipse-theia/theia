@@ -159,7 +159,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected readonly undoRedoHandlerService: UndoRedoHandlerService;
 
     protected pinnedKey: ContextKey<boolean>;
-    protected inputFocus: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
         // FIXME: This request blocks valuable startup time (~200ms).
@@ -174,9 +173,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
-        this.inputFocus = this.contextKeyService.createKey<boolean>('inputFocus', false);
-        this.updateInputFocus();
-        browser.onDomEvent(document, 'focusin', () => this.updateInputFocus());
+        // Note: the 'inputFocus' context key is tracked by Monaco's ContextKeyService
+        // which sets it for <input>, <textarea>, and elements with EditContext (Monaco editors).
+        // We no longer track it separately to avoid race conditions between two focusin listeners.
 
         this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
         this.updatePinnedKey();
@@ -231,15 +230,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         document.body.classList.remove('theia-editor-highlightModifiedTabs');
         if (this.preferences['workbench.editor.highlightModifiedTabs']) {
             document.body.classList.add('theia-editor-highlightModifiedTabs');
-        }
-    }
-
-    protected updateInputFocus(): void {
-        const activeElement = document.activeElement;
-        if (activeElement) {
-            const isInput = activeElement.tagName?.toLowerCase() === 'input'
-                || activeElement.tagName?.toLowerCase() === 'textarea';
-            this.inputFocus.set(isInput);
         }
     }
 
@@ -498,7 +488,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.CUT, {
             execute: () => {
                 if (supportCut) {
-                    document.execCommand('cut');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const start = active.selectionStart ?? 0;
+                        const end = active.selectionEnd ?? 0;
+                        const selectedText = active.value.substring(start, end);
+                        if (selectedText) {
+                            this.clipboardService.writeText(selectedText);
+                            document.execCommand('insertText', false, '');
+                        }
+                    } else {
+                        document.execCommand('cut');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/cutWarn', "Please use the browser's cut command or shortcut."));
                 }
@@ -507,16 +508,34 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.COPY, {
             execute: () => {
                 if (supportCopy) {
-                    document.execCommand('copy');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const start = active.selectionStart ?? 0;
+                        const end = active.selectionEnd ?? 0;
+                        const selectedText = active.value.substring(start, end);
+                        if (selectedText) {
+                            this.clipboardService.writeText(selectedText);
+                        }
+                    } else {
+                        document.execCommand('copy');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/copyWarn', "Please use the browser's copy command or shortcut."));
                 }
             }
         });
         commandRegistry.registerCommand(CommonCommands.PASTE, {
-            execute: () => {
+            execute: async () => {
                 if (supportPaste) {
-                    document.execCommand('paste');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const text = await this.clipboardService.readText();
+                        if (text) {
+                            document.execCommand('insertText', false, text);
+                        }
+                    } else {
+                        document.execCommand('paste');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/pasteWarn', "Please use the browser's paste command or shortcut."));
                 }

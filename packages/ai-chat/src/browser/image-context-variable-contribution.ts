@@ -209,44 +209,69 @@ export class ImageContextVariableContribution implements AIVariableContribution,
         return variable?.wsRelativePath ? this.makeAbsolute(variable.wsRelativePath) : undefined;
     }
 
-    async handlePaste(event: ClipboardEvent, context: AIVariableContext): Promise<AIVariablePasteResult | undefined> {
-        if (!event.clipboardData?.items) { return undefined; }
+    async handlePaste(event: ClipboardEvent, _context: AIVariableContext): Promise<AIVariablePasteResult | undefined> {
+        // Try event.clipboardData first (works with legacy textarea-based Monaco input),
+        // then fall back to navigator.clipboard.read() (works with EditContext-based input
+        // in Monaco 1.108+ where clipboardData may not contain image items).
+        const variables = await this.extractImagesFromClipboardData(event) ?? await this.extractImagesFromClipboardAPI();
+        return variables && variables.length > 0 ? { variables } : undefined;
+    }
+
+    protected async extractImagesFromClipboardData(event: ClipboardEvent): Promise<AIVariableResolutionRequest[] | undefined> {
+        if (!event.clipboardData?.items) {
+            return undefined;
+        }
 
         const variables: AIVariableResolutionRequest[] = [];
-
         for (const item of event.clipboardData.items) {
             if (item.type.startsWith('image/')) {
                 const blob = item.getAsFile();
                 if (blob) {
                     try {
-                        const dataUrl = await this.readFileAsDataURL(blob);
-                        // Extract the base64 data by removing the data URL prefix
-                        // Format is like: data:image/png;base64,BASE64DATA
-                        const imageData = dataUrl.substring(dataUrl.indexOf(',') + 1);
+                        const base64Data = await this.blobToBase64(blob);
                         variables.push(ImageContextVariable.createRequest({
-                            data: imageData,
+                            data: base64Data,
                             name: blob.name || `pasted-image-${Date.now()}.png`,
-                            mimeType: blob.type
+                            mimeType: blob.type || item.type
                         }));
                     } catch (error) {
-                        console.error('Failed to process pasted image:', error);
+                        this.logger.error('Failed to process pasted image from clipboardData:', error);
                     }
                 }
             }
         }
-
-        return variables.length > 0 ? { variables } : undefined;
+        return variables.length > 0 ? variables : undefined;
     }
 
-    private readFileAsDataURL(blob: Blob): Promise<string> {
+    protected async extractImagesFromClipboardAPI(): Promise<AIVariableResolutionRequest[] | undefined> {
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            const variables: AIVariableResolutionRequest[] = [];
+            for (const item of clipboardItems) {
+                const imageType = item.types.find(type => type.startsWith('image/'));
+                if (imageType) {
+                    const blob = await item.getType(imageType);
+                    const base64Data = await this.blobToBase64(blob);
+                    variables.push(ImageContextVariable.createRequest({
+                        data: base64Data,
+                        name: `pasted-image-${Date.now()}.${imageType.split('/')[1]}`,
+                        mimeType: imageType
+                    }));
+                }
+            }
+            return variables.length > 0 ? variables : undefined;
+        } catch (error) {
+            this.logger.error('Failed to read image from clipboard API:', error);
+            return undefined;
+        }
+    }
+
+    protected blobToBase64(blob: Blob): Promise<string> {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = e => {
-                if (!e.target?.result) {
-                    reject(new Error('Failed to read file as data URL'));
-                    return;
-                }
-                resolve(e.target.result as string);
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                resolve(dataUrl.substring(dataUrl.indexOf(',') + 1));
             };
             reader.onerror = () => reject(reader.error);
             reader.readAsDataURL(blob);

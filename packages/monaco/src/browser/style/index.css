@@ -6,7 +6,6 @@
 
 #quick-input-container {
   position: fixed;
-  right: 50%;
   z-index: 1000000;
 }
 
@@ -271,9 +270,6 @@
   border-radius: 2px;
 }
 
-.quick-input-header > .quick-input-inline-action-bar {
-  display: none;
-}
 
 .monaco-editor .overlay-button {
   padding: 6px 11px;
@@ -294,4 +290,8 @@
 
 .monaco-diff-editor .gutter .action-item .action-label {
   color: var(--theia-editorGutter-itemGlyphForeground);
+}
+
+.monaco-diff-editor .gutter .gutterItem .background {
+  display: none;
 }

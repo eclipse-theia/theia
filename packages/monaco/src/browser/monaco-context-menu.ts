@@ -32,13 +32,9 @@ export class MonacoContextMenuService implements IContextMenuService {
     declare readonly _serviceBrand: undefined;
 
     protected readonly onDidShowContextMenuEmitter = new Emitter<void>();
-    get onDidShowContextMenu(): Event<void> {
-        return this.onDidShowContextMenuEmitter.event;
-    };
+    readonly onDidShowContextMenu: Event<void> = this.onDidShowContextMenuEmitter.event;
     protected readonly onDidHideContextMenuEmitter = new Emitter<void>();
-    get onDidHideContextMenu(): Event<void> {
-        return this.onDidShowContextMenuEmitter.event;
-    };
+    readonly onDidHideContextMenu: Event<void> = this.onDidHideContextMenuEmitter.event;
 
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
 

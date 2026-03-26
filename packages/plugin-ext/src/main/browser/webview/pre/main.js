@@ -154,29 +154,29 @@ globalThis.acquireVsCodeApi = (function() {
 
     let state = ${state ? `JSON.parse(${JSON.stringify(state)})` : undefined};
 
-    const forwardConsoleLog = (level, msg, args) => {
+    const forwardConsoleLog = (level, msg, ...args) => {
         let message, optionalParams;
         try {
             if (msg) {
                 message = JSON.stringify(msg) ?? null;
             }
-            if (args) {
+            if (args.length > 0) {
                 optionalParams = JSON.stringify(args) ?? null;
             }
         } catch (e) {
             // Log non serializable objects inside of view
-            originalConsole[level](msg, args);
+            originalConsole[level](msg, ...args);
             return;
         }
         originalPostMessage({ command: 'onconsole', data: { level, message, optionalParams } }, targetOrigin);
     };
 
-    console.log = (message, args) => forwardConsoleLog('log', message, args);
-    console.info = (message, args) => forwardConsoleLog('info', message, args);
-    console.warn = (message, args) => forwardConsoleLog('warn', message, args);
-    console.error = (message, args) => forwardConsoleLog('error', message, args);
-    console.debug = (message, args) => forwardConsoleLog('debug', message, args);
-    console.trace = (message, args) => forwardConsoleLog('trace', message, args);
+    console.log = (message, ...args) => forwardConsoleLog('log', message, ...args);
+    console.info = (message, ...args) => forwardConsoleLog('info', message, ...args);
+    console.warn = (message, ...args) => forwardConsoleLog('warn', message, ...args);
+    console.error = (message, ...args) => forwardConsoleLog('error', message, ...args);
+    console.debug = (message, ...args) => forwardConsoleLog('debug', message, ...args);
+    console.trace = (message, ...args) => forwardConsoleLog('trace', message, ...args);
 
     return () => {
         if (acquired) {

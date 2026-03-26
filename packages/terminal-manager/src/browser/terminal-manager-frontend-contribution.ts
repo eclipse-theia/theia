@@ -45,6 +45,38 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
 
     protected commandHandlerDisposables = new DisposableCollection();
 
+    /**
+     * Check if a terminal is a task terminal.
+     * Task terminals have a 'kind' property set to 'task'.
+     */
+    protected isTaskTerminal(terminal: TerminalWidget): boolean {
+        return terminal.kind === 'task';
+    }
+
+    /**
+     * Check if a terminal is a debug terminal.
+     * Debug terminals have a 'kind' property set to 'debug'.
+     */
+    protected isDebugTerminal(terminal: TerminalWidget): boolean {
+        return terminal.kind === 'debug';
+    }
+
+    /**
+     * Register a listener to route debug terminals to numbered pages in the terminal manager.
+     */
+    protected registerTerminalListener(): void {
+        this.commandHandlerDisposables.push(
+            this.terminalFrontendContribution.onDidCreateTerminal(async terminal => {
+                if (this.isDebugTerminal(terminal)) {
+                    const managerWidget = await this.widgetManager.getOrCreateWidget<TerminalManagerWidget>(TerminalManagerWidget.ID);
+                    if (managerWidget instanceof TerminalManagerWidget) {
+                        managerWidget.addTerminalPage(terminal);
+                    }
+                }
+            })
+        );
+    }
+
     onStart(app: FrontendApplication): void {
         this.preferenceService.ready.then(() => {
             this.preferenceService.onPreferenceChanged(change => {
@@ -58,7 +90,16 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
             }
             console.debug('Terminal tab style is tree. Override command handlers accordingly.');
             this.registerHandlers();
+            this.registerTerminalListener();
         });
+    }
+
+    async initializeLayout(): Promise<void> {
+        await this.preferenceService.ready;
+        if (this.preferences.get('terminal.grouping.mode') !== 'tree') {
+            return;
+        }
+        await this.terminalManagerViewContribution.openView({ activate: false });
     }
 
     protected async handleTabsDisplayChange(newValue: string): Promise<void> {
@@ -89,7 +130,11 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
 
         // Before terminal manager attachment to precede creation of default widget.
         for (const terminal of bottomTerminals) {
-            managerWidget.addTerminalPage(terminal);
+            if (this.isTaskTerminal(terminal)) {
+                managerWidget.addTerminalToTasksPage(terminal);
+            } else {
+                managerWidget.addTerminalPage(terminal);
+            }
             terminal.show(); // Clear hidden flag that may have been set by dock panel on removal.
         }
 

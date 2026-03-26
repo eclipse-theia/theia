@@ -345,7 +345,15 @@ export class DynamicMenuWidget extends MenuWidget {
                     const enabled = node.isEnabled(nodePath, ...(this.args || []));
                     const toggled = node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false;
                     phCommandRegistry.addCommand(id, {
-                        execute: () => { node.run(nodePath, ...(this.args || [])); },
+                        execute: () => {
+                            // Restore focus to the previously focused element before executing
+                            // the command so that focus-dependent commands like clipboard
+                            // operations target the correct element instead of the menu.
+                            if (this.previousFocusedElement) {
+                                this.previousFocusedElement.focus({ preventScroll: true });
+                            }
+                            node.run(nodePath, ...(this.args || []));
+                        },
                         isEnabled: () => enabled,
                         isToggled: () => toggled,
                         isVisible: () => true,

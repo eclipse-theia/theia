@@ -24,6 +24,52 @@ import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 
+export interface CountdownTimerProps {
+    response: ToolCallChatResponseContent;
+}
+
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ response }) => {
+    const timeoutSeconds = response.confirmationTimeout;
+    const effectiveTimeout = timeoutSeconds !== undefined && timeoutSeconds > 0 ? timeoutSeconds : 0;
+    const deadlineRef = React.useRef<number | undefined>(undefined);
+
+    const getRemainingSeconds = (): number => {
+        if (deadlineRef.current === undefined) {
+            return effectiveTimeout;
+        }
+        return Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
+    };
+
+    const [remainingSeconds, setRemainingSeconds] = React.useState(effectiveTimeout);
+
+    React.useEffect(() => {
+        if (effectiveTimeout <= 0) {
+            return;
+        }
+        deadlineRef.current = Date.now() + effectiveTimeout * 1000;
+        const intervalId = setInterval(() => {
+            const remaining = getRemainingSeconds();
+            setRemainingSeconds(remaining);
+            if (remaining <= 0) {
+                clearInterval(intervalId);
+            }
+        }, 1000);
+        return () => clearInterval(intervalId);
+    }, [effectiveTimeout]);
+
+    if (remainingSeconds <= 0) {
+        // eslint-disable-next-line no-null/no-null
+        return null;
+    }
+
+    return (
+        <div className='theia-tool-confirmation-countdown'>
+            {nls.localize('theia/ai/chat-ui/toolconfirmation/autoCancel',
+                'Auto-cancels in {0}', `${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, '0')}`)}
+        </div>
+    );
+};
+
 export type ToolConfirmationState = 'pending' | 'waiting' | 'allowed' | 'denied' | 'rejected';
 
 export type ConfirmationScope = 'once' | 'session' | 'forever';
@@ -407,6 +453,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
                 onDeny={handleDeny}
                 contextMenuRenderer={contextMenuRenderer}
             />
+            <CountdownTimer response={response} />
         </div>
     );
 };
@@ -417,6 +464,8 @@ export interface WithToolCallConfirmationProps {
     toolConfirmationManager: ToolConfirmationManager;
     toolRequest?: ToolRequest;
     chatId: string;
+    getArgumentsLabel?: (toolName: string | undefined, args: string | undefined) => string;
+    showArgsTooltip?: (response: ToolCallChatResponseContent, target: HTMLElement | undefined) => void;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
 }
@@ -431,12 +480,17 @@ export function withToolCallConfirmation<P extends object>(
             toolConfirmationManager,
             toolRequest,
             chatId,
+            getArgumentsLabel,
+            showArgsTooltip,
             requestCanceled,
             contextMenuRenderer,
             ...componentProps
         } = props;
 
         const { confirmationState } = useToolConfirmationState(response, confirmationMode);
+        const pendingRef = React.useRef<HTMLElement | undefined>(undefined);
+
+        const argsLabel = getArgumentsLabel?.(response.name, response.arguments) ?? '';
 
         const handleAllow = React.useCallback((scope: ConfirmationScope = 'once') => {
             if (scope === 'forever' && response.name) {
@@ -474,8 +528,12 @@ export function withToolCallConfirmation<P extends object>(
 
         if (confirmationState === 'pending') {
             return (
-                <div className="theia-tool-confirmation-status pending">
+                <div className="theia-tool-confirmation-status pending"
+                    ref={(el: HTMLElement | null) => { pendingRef.current = el ?? undefined; }}
+                    onMouseEnter={() => showArgsTooltip?.(response, pendingRef.current)}
+                >
                     <span className={`${codicon('loading')} theia-animation-spin`}></span> {response.name}
+                    (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                 </div>
             );
         }

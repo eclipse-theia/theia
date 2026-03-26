@@ -25,6 +25,7 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { environment, isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/common/file-uri';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
@@ -92,7 +93,6 @@ const HOSTED_INSTANCE_START_TIMEOUT_MS = 30000;
 const THEIA_INSTANCE_REGEX = /.*Theia app listening on (.*).*\./;
 const PROCESS_OPTIONS = {
     cwd: process.cwd(),
-    env: { ...process.env }
 };
 
 @injectable()
@@ -115,6 +115,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     @inject(RequestService)
     protected readonly request: RequestService;
 
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
+
     isRunning(): boolean {
         return this.isPluginRunning;
     }
@@ -136,12 +139,25 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         let command: string[];
         let processOptions: cp.SpawnOptions;
         if (pluginUri.scheme === 'file') {
-            processOptions = { ...PROCESS_OPTIONS };
+            processOptions = { ...PROCESS_OPTIONS, env: { ...process.env } };
             // get filesystem path that work cross operating systems
             processOptions.env!.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
 
-            // Disable all the other plugins on this instance
-            processOptions.env!.THEIA_PLUGINS = '';
+            // Use an isolated config directory for the hosted instance so that its
+            // workspace state (recentworkspace.json, etc.) does not overwrite the
+            // main application's state.
+            const configDirUri = await this.envVariablesServer.getConfigDirUri();
+            const configDirPath = FileUri.fsPath(configDirUri);
+            const hostedConfigDir = path.join(configDirPath, 'hosted-instance');
+            await fs.ensureDir(hostedConfigDir);
+            processOptions.env!.THEIA_CONFIG_DIR = hostedConfigDir;
+
+            if (environment.electron.is()) {
+                // When running in Electron, the backend process uses the Electron binary as its
+                // Node.js runtime. Set ELECTRON_RUN_AS_NODE so the spawned backend instance runs
+                // as a plain Node.js process rather than launching a new Electron app window.
+                processOptions.env!.ELECTRON_RUN_AS_NODE = '1';
+            }
             command = await this.getStartCommand(port, debugConfig);
         } else {
             throw new Error('Not supported plugin location: ' + pluginUri.toString());
@@ -242,21 +258,13 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     protected async getStartCommand(port?: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
 
         const processArguments = process.argv;
-        let command: string[];
-        if (environment.electron.is()) {
-            command = ['npm', 'run', 'theia', 'start'];
-        } else {
-            command = processArguments.filter((arg, index, args) => {
-                // remove --port=X and --port X arguments if set
-                // remove --plugins arguments
-                if (arg.startsWith('--port') || args[index - 1] === '--port') {
-                    return;
-                } else {
-                    return arg;
-                }
-
-            });
-        }
+        const command = processArguments.filter((arg, index, args) => {
+            // remove --port=X and --port X arguments if set
+            if (arg.startsWith('--port') || args[index - 1] === '--port') {
+                return false;
+            }
+            return true;
+        });
         if (process.env.HOSTED_PLUGIN_HOSTNAME) {
             command.push('--hostname=' + process.env.HOSTED_PLUGIN_HOSTNAME);
         }

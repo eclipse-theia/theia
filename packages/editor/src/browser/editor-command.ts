@@ -209,6 +209,7 @@ export class EditorCommandContribution implements CommandContribution {
 
     static readonly AUTOSAVE_PREFERENCE: string = 'files.autoSave';
     static readonly AUTOSAVE_DELAY_PREFERENCE: string = 'files.autoSaveDelay';
+    static readonly AUTOSAVE_WHEN_NO_ERRORS_PREFERENCE: string = 'files.autoSaveWhenNoErrors';
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -245,12 +246,15 @@ export class EditorCommandContribution implements CommandContribution {
         this.preferencesService.ready.then(() => {
             this.saveResourceService.autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE) ?? 'off';
             this.saveResourceService.autoSaveDelay = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) ?? 1000;
+            this.saveResourceService.autoSaveWhenNoErrors = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_WHEN_NO_ERRORS_PREFERENCE) ?? false;
         });
         this.preferencesService.onPreferenceChanged(e => {
             if (e.preferenceName === EditorCommandContribution.AUTOSAVE_PREFERENCE) {
                 this.saveResourceService.autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE) ?? 'off';
             } else if (e.preferenceName === EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) {
                 this.saveResourceService.autoSaveDelay = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_DELAY_PREFERENCE) ?? 1000;
+            } else if (e.preferenceName === EditorCommandContribution.AUTOSAVE_WHEN_NO_ERRORS_PREFERENCE) {
+                this.saveResourceService.autoSaveWhenNoErrors = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_WHEN_NO_ERRORS_PREFERENCE) ?? false;
             }
         });
     }

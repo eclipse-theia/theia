@@ -78,13 +78,13 @@
 
 html,
 body {
+    overflow: hidden;
     height: 100vh;
 }
 
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
     font-family: var(--theia-ui-font-family);
     background: var(--theia-editor-background);
     color: var(--theia-foreground);

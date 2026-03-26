@@ -38,7 +38,7 @@ import {
     NotAvailableToolCallRenderer,
     ThinkingPartRenderer,
     ProgressPartRenderer,
-    DelegationResponseRenderer,
+    DelegationToolRenderer,
     TextPartRenderer,
 } from './chat-response-renderer';
 import { UnknownPartRenderer } from './chat-response-renderer/unknown-part-renderer';
@@ -62,6 +62,7 @@ import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-w
 import { ChatInputHistoryService } from './chat-input-history';
 import { ChatInputHistoryContribution } from './chat-input-history-contribution';
 import { ChatInputModeContribution } from './chat-input-mode-contribution';
+import { ChatInputPasteContribution } from './chat-input-paste-contribution';
 import { ChatInputFocusService } from './chat-input-focus-service';
 import { ChatFocusContribution } from './chat-focus-contribution';
 import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-capabilities-service';
@@ -72,6 +73,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIChatNavigationService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, AIChatContribution);
+    bind(FrontendApplicationContribution).toService(AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
 
     bind(ChatInputHistoryService).toSelf().inSingletonScope();
@@ -84,6 +86,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatInputModeContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatInputModeContribution);
     bind(KeybindingContribution).toService(ChatInputModeContribution);
+
+    bind(ChatInputPasteContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputPasteContribution);
+    bind(KeybindingContribution).toService(ChatInputPasteContribution);
 
     bind(ChatFocusContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatFocusContribution);
@@ -167,7 +173,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ProgressPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
-    bind(ChatResponsePartRenderer).to(DelegationResponseRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(DelegationToolRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(UnknownPartRenderer).inSingletonScope();
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()

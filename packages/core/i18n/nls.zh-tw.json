@@ -22,6 +22,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "capabilityOverrides": {
+          "mdDescription": "針對基於範本的功能,使用者可進行覆寫設定。鍵值為功能片段 ID,值為啟用 (true) 或停用 (false)。",
+          "title": "功能覆寫"
+        },
         "completionNotification": {
           "mdDescription": "此代理完成任務時的通知行為。若未設定,將採用全域預設通知設定。\n                - `os-notification`:顯示作業系統/系統通知\n                - `message`:於狀態列/訊息區顯示通知\n                - `blink`:閃爍或突出顯示介面\n                - `off`:停用此代理的通知功能",
           "title": "完成通知"
@@ -29,6 +33,16 @@
         "enable": {
           "mdDescription": "指定代理程式應啟用(true)或停用(false)。",
           "title": "啟用代理程式"
+        },
+        "genericCapabilitySelections": {
+          "agentDelegation": "用於委派的精選代理 ID",
+          "functions": "選定的功能 ID",
+          "mcpFunctions": "選定的 MCP 功能 ID",
+          "mdDescription": "針對技能、功能及 MCP 工具等通用功能的用戶選項。",
+          "promptFragments": "選定的提示片段 ID",
+          "skills": "選定的技能 ID",
+          "title": "通用功能選項",
+          "variables": "選定的變數名稱"
         },
         "languageModelRequirements": {
           "identifier": {
@@ -187,6 +201,10 @@
             "description": "自動執行工具,無需確認"
           }
         },
+        "toolConfirmationTimeout": {
+          "denialReason": "確認操作已於 {0} 秒後超時",
+          "description": "工具確認對話方塊的超時時間(以秒為單位)。若設定為正數,工具確認將在指定時間後自動被拒絕。設定為 0 則會停用此功能(預設值)。"
+        },
         "universal": {
           "description": "此智能助手旨在協助軟體開發人員,針對通用程式設計與軟體開發問題提供簡明精準的解答。同時亦作為使用者提出任何通用問題時的備援方案。此通用型助手目前預設不具備任何上下文,即無法存取當前使用者情境或工作區。"
         },
@@ -199,7 +217,6 @@
       },
       "chat-ui": {
         "addContextVariable": "新增上下文變數",
-        "agent": "代理",
         "agentDelegationDescription": "可委派的其他 AI 代理程式",
         "aiDisabled": "AI 功能已停用",
         "applyAll": "全部套用",
@@ -219,6 +236,7 @@
           "clearHistory": "清除輸入提示歷史記錄",
           "cycleMode": "循環聊天模式",
           "nextPrompt": "下一提示",
+          "pasteWithImageSupport": "貼上(支援圖片)",
           "previousPrompt": "上一個提示",
           "toggleCapabilities": "切換功能設定"
         },
@@ -244,6 +262,7 @@
           "response": {
             "label": "回應:"
           },
+          "restoredNotAvailable": "已還原的會話無法取得回應。",
           "starting": "開始委派...",
           "status": {
             "canceled": "已取消",
@@ -269,7 +288,6 @@
         "functions": "功能",
         "functionsDescription": "Theia 擴充套件提供的內建函數",
         "genericCapabilities": "通用功能",
-        "mcpFunctions": "MCP",
         "mcpFunctionsDescription": "來自連線伺服器的模型上下文協定(MCP)功能",
         "noChatAgentsAvailable": "目前沒有可用的聊天代理程式。",
         "noMatchingCapabilities": "無匹配功能",
@@ -278,12 +296,12 @@
         "openOriginalFile": "開啟原始檔案",
         "performThisTask": "執行此任務。",
         "persistedSession": "持久化會話(點擊恢復)",
-        "promptFragments": "提示",
         "promptFragmentsDescription": "對話中需包含的自訂提示片段",
         "removeChat": "移除聊天功能",
         "renameChat": "重新命名聊天",
         "requestNotFoundForRetry": "請求未找到,請重試",
         "responseFrom": "來自 {0} 的回應",
+        "saveCurrentSelectionsToSettings": "儲存功能設定",
         "searchCapabilities": "搜尋功能",
         "selectAgentQuickPickPlaceholder": "為新工作階段選擇代理程式",
         "selectAllInCategory": "選取此類別中的所有項目",
@@ -314,6 +332,7 @@
           "alwaysAllowConfirm": "我理解,啟用自動批准",
           "alwaysAllowGenericWarning": "此工具需經確認後方能啟用自動批准功能。啟用後,所有後續調用將無需確認直接執行。僅當您信任此工具且理解潛在風險時,才應啟用此功能。",
           "alwaysAllowTitle": "是否為「{0}」啟用自動批准?",
+          "autoCancel": "{0} 中的自動取消功能",
           "canceled": "工具執行已取消",
           "denied": "工具執行遭拒絕",
           "deny-forever": "永遠拒絕",
@@ -560,11 +579,14 @@
           "signIn": "登入 GitHub Copilot",
           "signOut": "登出 GitHub Copilot"
         },
+        "enabled": {
+          "mdDescription": "啟用 GitHub Copilot 提供者。啟用後,狀態列會顯示一個項目以進行驗證,並從您的 Copilot 訂閱中偵測可用的模型。"
+        },
         "enterpriseUrl": {
           "mdDescription": "Copilot API 的 GitHub Enterprise 網域(例如 `github.mycompany.com`)。若使用 GitHub.com 則留空。"
         },
-        "models": {
-          "description": "GitHub Copilot 可用模型。實際可用模型取決於您的 Copilot 訂閱方案。"
+        "modelOverrides": {
+          "mdDescription": "覆寫自動偵測到的 GitHub Copilot 模型。若為空(預設值),系統將從您的 Copilot 訂閱中偵測可用模型。請設定明確的模型 ID 以覆寫自動偵測功能。"
         },
         "signOut": {
           "confirmMessage": "您確定要登出 GitHub Copilot 嗎?"
@@ -572,7 +594,8 @@
         "statusBar": {
           "signedIn": "已以 {0} 身分登入 GitHub Copilot。點擊此處登出。",
           "signedOut": "尚未登入 GitHub Copilot。點擊登入。"
-        }
+        },
+        "tokenMigration": "您的 GitHub Copilot 會話使用了過時的驗證方法,因此已清除。請重新登入以存取所有可用模型。"
       },
       "core": {
         "agentConfiguration": {
@@ -743,8 +766,7 @@
           "variantsOfSystemPrompt": "此提示變體集的變體:"
         },
         "promptTemplates": {
-          "description": "用於儲存自訂提示模板的資料夾。若未自訂,則使用使用者設定目錄。請考慮使用受版本控制的資料夾來管理您的提示模板變體。",
-          "openLabel": "選擇資料夾"
+          "description": "用於儲存自訂提示模板的資料夾。若未自訂,則使用使用者設定目錄。請考慮使用受版本控制的資料夾來管理您的提示模板變體。"
         },
         "promptVariable": {
           "argDescription": "提示模板識別碼需解析",
@@ -877,16 +899,12 @@
         },
         "edited": "編輯",
         "exchange-card": {
-          "agentId": "代理",
           "timestamp": "已啟動"
         },
         "open-history-tooltip": "開啟 AI 歷史紀錄...",
         "request-card": {
-          "agent": "代理",
-          "model": "模型",
           "promptVariant": "提示變體",
           "request": "請求",
-          "response": "回應",
           "timestamp": "時間戳記",
           "title": "請求"
         },
@@ -926,15 +944,34 @@
       "ide": {
         "agent-description": "在 [AI 設定檢視窗] ({0}) 中配置 AI 代理設定,包含啟用狀態、大型語言模型選取、提示字串範本自訂,以及自訂代理建立。",
         "agentConfiguration": {
-          "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "建立新檔案",
             "openExistingFile": "開啟現有檔案",
             "placeholder": "選擇建立或開啟自訂代理程式檔案的位置",
             "title": "選擇自訂代理程式檔案的位置"
           },
-          "enabledByDefault": "預設啟用",
-          "noDescription": "無可用說明"
+          "genericCapabilitiesSettings": "通用功能",
+          "genericCapabilityType": {
+            "agentDelegation": "代理委派",
+            "functions": "功能",
+            "mcpFunctions": "MCP 功能",
+            "promptFragments": "提示片段"
+          },
+          "noDescription": "無可用說明",
+          "resetAllCapabilities": "將所有功能重設為預設值",
+          "resetAllDefaults": "將所有設定重置為預設值",
+          "selections": "選項"
+        },
+        "agentMode": {
+          "confirmed": {
+            "mdDescription": "使用者是否已確認代理模式警告。代理模式允許在無需進一步確認的情況下自動修改檔案。若設定為 `false`,則在下一次代理模式請求時將再次顯示確認訊息。"
+          }
+        },
+        "agentModeConfirmation": {
+          "confirm": "確認",
+          "msg": "此代理程式採用 **代理模式**。為啟用自主流程,它能夠在無需進一步確認的情況下,直接寫入您的工作區檔案。\n\n建議使用版本控制系統(例如 Git),以便您能檢視並還原變更。\n\n您可以透過下方聊天輸入區的模式選擇器切換至 **編輯模式**,或使用 **Architect** 代理程式進行唯讀規劃。\n\n此確認設定將儲存於此工作區,且不會再次顯示。若要重設或進行全域設定,請在「設定」中搜尋 `ai-features.agentMode.confirmed`。",
+          "question": "您要繼續使用代理模式嗎?",
+          "waiting": "等待確認中..."
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "錯誤檢查開發工具 MCP 伺服器狀態:{0}",
@@ -956,13 +993,10 @@
             "question": "Playwright MCP 伺服器未運行。是否現在啟動?此操作可能安裝 Playwright MCP 伺服器。"
           }
         },
-        "appTester": {
-          "description": "允許代理程式對瀏覽器應用程式進行端對端測試。為此,代理程式可委派給 AppTester 代理程式,該代理程式能自動化瀏覽器互動以驗證實作。",
-          "name": "應用程式測試員"
-        },
         "architectAgent": {
           "mode": {
             "plan": "平面模式",
+            "planNext": "規劃模式(下一步)",
             "simple": "簡易模式"
           },
           "suggestion": {
@@ -973,6 +1007,9 @@
         "bypassHint": "部分代理程式(如Claude Code)無需使用Theia語言模型",
         "chatDisabledMessage": {
           "title": "AI 功能已停用"
+        },
+        "codeReviewerAgent": {
+          "description": "一款能分析程式碼變更並回傳結構化評估結果的程式碼審查助手。         會檢查完成標準、建置／語法檢查／測試證明,以及程式碼品質。"
         },
         "coderAgent": {
           "mode": {
@@ -1018,6 +1055,9 @@
         "deleteChat": "刪除對話",
         "enableAI": {
           "mdDescription": "此設定可讓您存取最新的人工智慧功能(測試版)。            \n            請注意,這些功能處於測試階段,可能隨時調整並持續改進。請務必知悉,這些功能可能對您授權存取的語言模型(LLMs)產生持續性請求,可能產生相關費用,需密切監控。 啟用此選項即表示您已知悉相關風險。            \n            **請注意！本節下方設定僅在主功能啟用後生效。啟用功能後,您需於下方至少設定一組            LLM供應商。詳見[官方文件](https://theia-ide.org/docs/user_ai/)**。"
+        },
+        "exploreAgent": {
+          "description": "一款從程式碼庫中提取並提煉資訊的程式碼庫探索助手。         報告現有內容的相關事實、提供程式碼片段,並描述觀察到的模式。"
         },
         "github": {
           "configureGitHubServer": {
@@ -1078,9 +1118,6 @@
           "name": "殼層執行"
         },
         "skillsConfiguration": {
-          "location": {
-            "label": "位置"
-          },
           "noSkills": "無可用技能",
           "noSlashCommands": "無可用斜線指令",
           "slashCommand": {
@@ -1123,7 +1160,6 @@
           }
         },
         "tooltip": {
-          "agent": "代理",
           "lastActivity": "最後活動",
           "lastMessage": "最後訊息",
           "messages": "訊息",
@@ -1133,8 +1169,7 @@
         },
         "variableConfiguration": {
           "selectVariable": "請選擇一個變數。",
-          "usedByAgents": "供代理程式使用",
-          "variableArgs": "參數"
+          "usedByAgents": "供代理程式使用"
         }
       },
       "llamaFile": {
@@ -1220,7 +1255,6 @@
         }
       },
       "mcpConfiguration": {
-        "arguments": "參數",
         "autostart": "自動啟動",
         "connectServer": "連接",
         "connectingServer": "正在連接...",
@@ -1259,7 +1293,6 @@
           "serverUrlRequired": "遠端伺服器需提供伺服器網址"
         },
         "headers": "標題",
-        "noServers": "未設定任何 MCP 伺服器",
         "saveServerError": "儲存 MCP 伺服器設定失敗:{0}",
         "serverAuthToken": "授權憑證",
         "serverAuthTokenHeader": "驗證標頭名稱",
@@ -1352,16 +1385,19 @@
           "in-progress": "SCANOSS - 執行掃描中...",
           "match-count": "找到 {0} 項匹配結果",
           "matched": "SCANOSS - 找到 {0} 匹配項目",
-          "no-match": "SCANOSS - 無匹配結果",
-          "summary": "摘要"
+          "no-match": "SCANOSS - 無匹配結果"
         }
       },
       "session-settings-dialog": {
         "advancedSettings": "進階設定 (JSON)",
         "budgetTokens": "預算代幣:",
+        "confirmationTimeout": "確認超時",
+        "confirmationTimeoutNote": "在指定時間後自動拒絕工具確認視窗。此設定將覆寫本次工作階段的全球偏好設定。",
+        "enableConfirmationTimeout": "啟用確認超時",
         "enableThinking": "啟用擴展思考",
         "thinkingMode": "思考模式",
         "thinkingModeNote": "某些型號可能忽略此設定。",
+        "timeoutSeconds": "超時 (秒):",
         "title": "設定工作階段設定",
         "tooltip": "設定工作階段設定"
       },
@@ -1387,7 +1423,6 @@
         "askTerminalCommand": "詢問關於終端機指令...",
         "hitEnterConfirm": "按下 Enter 鍵以確認",
         "howCanIHelp": "我能為您提供什麼協助?",
-        "loading": "載入中",
         "tryAgain": "請重新嘗試...",
         "useArrowsAlternatives": " 或使用 ⇅ 顯示替代選項..."
       },
@@ -1398,14 +1433,12 @@
         "inputTokens": "輸入令牌",
         "label": "代幣使用",
         "lastUsed": "最後使用",
-        "model": "模型",
         "noData": "目前尚無可用代幣使用數據。",
         "note": "代幣使用情況自應用程式啟動時起進行追蹤,且不會持久化儲存。",
         "outputTokens": "輸出代幣",
         "readCachedInputTokens": "從快取讀取輸入代幣",
         "readCachedInputTokensTooltip": "此項目額外追蹤於「輸入代幣」之下。通常比未快取的處理方式成本低得多,且通常不計入速率限制。",
         "total": "總計",
-        "totalTokens": "總代幣數",
         "totalTokensTooltip": "輸入代幣 + 輸出代幣"
       },
       "vercelai": {
@@ -1461,6 +1494,10 @@
           "description": "用於排除檔案/資料夾的模式清單(通配符或正規表達式)。",
           "title": "排除檔案模式"
         },
+        "fileContentMaxSizeKB": {
+          "description": "getFileContent 工具所返回內容的最大大小(以千位元組為單位)。當讀取完整檔案(未指定偏移量/限制)時,若檔案超過此限制,系統將返回錯誤。當使用偏移量和限制時,僅針對所請求的範圍進行此限制檢查。",
+          "title": "檔案內容最大大小 (KB)"
+        },
         "projectInfoAgent": {
           "description": "一款管理專案資訊模板的人工智慧助理。此代理程式協助建立、更新及審閱 .prompts/project-info.prompttemplate 檔案,該檔案為其他 AI 代理程式提供專案背景資訊。它能分析您的工作區以建議專案資訊,或根據需求更新現有模板。"
         },
@@ -1477,6 +1514,7 @@
       "fileChangeSetTitle": "建議修改內容"
     },
     "ai-chat-ui": {
+      "confirm": "確認",
       "deleteChat": "刪除對話",
       "initiate-session-task-context": "任務背景:啟動會話",
       "navigate-back": "返回",
@@ -1511,6 +1549,13 @@
       "addressGhReviewCommand": {
         "argumentHint": "<pr-number>",
         "description": "處理 GitHub 拉取請求的審閱意見"
+      },
+      "appTester": {
+        "description": "在實作後,將瀕臨的任務委派給 AppTester 代理程式,以進行基於瀏覽器的 UI 驗證。",
+        "name": "端到端測試"
+      },
+      "codeReview": {
+        "description": "在每次實作後將任務委派給代碼審查員代理。若審查未通過,則暫停後續步驟。"
       },
       "fixGhTicketCommand": {
         "argumentHint": "<票號>",
@@ -1620,7 +1665,8 @@
       "about": {
         "compatibility": "{0} 相容性",
         "defaultApi": "預設的{0}API",
-        "listOfExtensions": "擴充功能清單"
+        "listOfExtensions": "擴充功能清單",
+        "monacoEditor": "Monaco Editor 版本"
       },
       "common": {
         "closeAll": "關閉所有分頁",
@@ -1717,7 +1763,6 @@
       "conditionalBreakpointsNotSupported": "此除錯類型不支援條件式中斷點",
       "confirmRunToShiftedPosition_msg": "目標位置將移至行{0},列{1}。仍要執行嗎?",
       "confirmRunToShiftedPosition_title": "無法將當前執行緒精確執行至指定位置",
-      "consoleFilter": "篩選器(例如:文字、!排除)",
       "consoleFilterAriaLabel": "過濾除錯控制台輸出",
       "consoleFilterTooltip": "透過文字過濾控制台輸出。多個術語以逗號分隔。以 `!` 前置符排除特定術語。\n\n範例:\n\n- `文字` - 顯示包含「文字」的行\n- `文字, 其他` - 顯示包含「文字」或「其他」的行\n- `!文字` - 隱藏包含「文字」的行\n- `文字, !其他` - 顯示「文字」但隱藏「其他」",
       "consoleSessionSelectorTooltip": "在不同除錯工作階段之間切換。每個除錯工作階段皆擁有獨立的控制台輸出。",
@@ -1758,6 +1803,7 @@
       "unverifiedBreakpoint": "未經核實的 {0}"
     },
     "editor": {
+      "autoSaveWhenNoErrors": "啟用此功能後,將限制編輯器的自動儲存功能,僅針對在觸發自動儲存時未報告任何錯誤的檔案進行儲存。此設定僅在啟用「{0}」時生效。",
       "clearFormatterSetting": "清除格式化設定",
       "configuredIn": "設定於 {0}",
       "configuredNotInstalled": "在 {1} 中設定但未安裝的「{0}」",
@@ -1768,7 +1814,6 @@
       "editor.bracketPairColorization.enabled": "控制括號配對著色功能是否啟用。使用 `#workbench.colorCustomizations#` 可覆寫括號高亮顏色。",
       "editor.codeActions.triggerOnFocusChange": "當 `#files.autoSave#` 設定為 `afterDelay` 時,啟用觸發 `#editor.codeActionsOnSave#`。若需在視窗與焦點變更時觸發程式碼動作,必須將其設定為 `always`。",
       "editor.detectIndentation": "控制在開啟檔案時,是否依據檔案內容自動偵測 `#editor.tabSize#` 與 `#editor.insertSpaces#` 設定值。",
-      "editor.experimental.preferTreeSitter": "控制是否為特定語言啟用樹解析器(tree sitter)的語法分析功能。此設定將優先於 `editor.experimental.treeSitterTelemetry` 對指定語言的設定。",
       "editor.inlayHints.enabled1": "內嵌提示預設顯示,按住 Ctrl+Alt 即可隱藏",
       "editor.inlayHints.enabled2": "內嵌提示預設為隱藏狀態,按住 Ctrl+Alt 鍵時會顯示",
       "editor.inlayHints.fontFamily": "控制編輯器內嵌提示的字型家族。若設定為空值,則使用 `#editor.fontFamily#`。",
@@ -1808,7 +1853,7 @@
       "cwd": "為新外部終端機選取當前工作目錄"
     },
     "file-search": {
-      "toggleIgnoredFiles": " (按下{0}鍵可顯示/隱藏忽略檔案)"
+      "toggleExcludedFiles": " (按下 {0} 可顯示/隱藏排除的檔案)"
     },
     "fileDialog": {
       "showHidden": "顯示隱藏檔案"
@@ -1858,46 +1903,6 @@
         "welcomePage": "開啟歡迎頁面,內容旨在協助使用者開始使用{0}及其擴充功能。"
       },
       "telemetry": "資料使用與遙測"
-    },
-    "git": {
-      "aFewSecondsAgo": "數秒前",
-      "addSignedOff": "添加 Signed-off-by 簽署聲明",
-      "added": "新增",
-      "amendReuseMessage": "若要重複使用上次提交訊息,請按下「Enter」鍵;若要取消,請按下「Escape」鍵。",
-      "amendRewrite": "重新編寫先前提交訊息。按下「Enter」確認或「Escape」取消。",
-      "checkoutCreateLocalBranchWithName": "建立名為「{0}」的新本地分支。按下「Enter」確認或「Escape」取消。",
-      "checkoutProvideBranchName": "請提供分支名稱。 ",
-      "checkoutSelectRef": "選擇要檢出的參考資料或建立新的本地分支:",
-      "cloneQuickInputLabel": "請提供 Git 儲存庫位置。按下「Enter」確認或「Escape」取消。",
-      "cloneRepository": "複製 Git 儲存庫:{0}。按下「Enter」鍵確認或「Escape」鍵取消。",
-      "compareWith": "與...比較",
-      "compareWithBranchOrTag": "請選擇要與當前活躍的{0}分支進行比對的分支或標籤:",
-      "conflicted": "衝突",
-      "copied": "複製",
-      "diff": "差異",
-      "dirtyDiffLinesLimit": "若編輯器的行數超過此限制,則不顯示修改差異標記。",
-      "dropStashMessage": "Stash 已成功移除。",
-      "editorDecorationsEnabled": "在編輯器中顯示 Git 裝飾符號。",
-      "fetchPickRemote": "選擇要從遠端取得的項目:",
-      "gitDecorationsColors": "在導覽器中使用色彩裝飾。",
-      "mergeEditor": {
-        "currentSideTitle": "當前",
-        "incomingSideTitle": "傳入"
-      },
-      "mergeQuickPickPlaceholder": "請選擇要合併至當前活躍分支的分支:{0}",
-      "missingUserInfo": "請務必在 Git 中設定您的 'user.name' 與 'user.email'。",
-      "noHistoryForError": "{0} 目前尚無可用歷史記錄",
-      "noPreviousCommit": "無先前提交可供修改",
-      "noRepositoriesSelected": "未選取任何儲存庫。",
-      "prepositionIn": "在",
-      "renamed": "已重新命名",
-      "repositoryNotInitialized": "儲存庫 {0} 尚未初始化。",
-      "stashChanges": "暫存變更。按下「Enter」確認或「Escape」取消。",
-      "stashChangesWithMessage": "將變更暫存並附註解:{0}。按下 'Enter' 確認或 'Escape' 取消。",
-      "tabTitleIndex": "{0} (索引)",
-      "tabTitleWorkingTree": "{0} (工作樹)",
-      "toggleBlameAnnotations": "切換責備註解",
-      "unstaged": "未提交狀態"
     },
     "keybinding-schema-updater": {
       "deprecation": "請改用 `when` 子句。"
@@ -2073,7 +2078,8 @@
         "loginTitle": "登入",
         "signedOut": "已成功登出。"
       },
-      "plugins": "外掛程式",
+      "extensionsRestrictedMode": "在受限模式下,某些擴充功能已被停用",
+      "supportNodeGlobalNavigator": "若啟用此選項,擴充功能主機中的全域 navigator 物件將定義為由 Node.js 所提供。擴充功能可透過 navigator 物件的存在,作為程式碼正在瀏覽器中執行的提示。停用此選項(預設值)將在擴充功能主機中取消定義 navigator,以維持此假設。",
       "webviewTrace": "控制與網頁檢視器的通訊追蹤功能。",
       "webviewWarnIfUnsecure": "警告使用者當前部署的網頁檢視器存在安全性風險。"
     },
@@ -2086,10 +2092,8 @@
       "openByDefault": "預設開啟預覽視窗而非編輯器。"
     },
     "property-view": {
-      "created": "建立",
       "directory": "目錄",
       "lastModified": "最後修改時間",
-      "location": "位置",
       "noProperties": "無可用屬性。",
       "properties": "屬性",
       "symbolicLink": "符號連結"
@@ -2125,10 +2129,6 @@
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最後一次提交",
       "changeRepository": "變更儲存庫...",
-      "config.untrackedChanges": "控制未追蹤變更的行為模式。",
-      "config.untrackedChanges.hidden": "隱藏",
-      "config.untrackedChanges.mixed": "混合",
-      "config.untrackedChanges.separate": "分離",
       "dirtyDiff": {
         "close": "關閉 變更 預覽檢視"
       },
@@ -2136,7 +2136,8 @@
       "mergeEditor": {
         "resetConfirmationTitle": "您確定要重置此編輯器中的合併結果嗎?"
       },
-      "noRepositoryFound": "未找到儲存庫",
+      "noHistoryForError": "{0} 目前沒有可用歷史紀錄",
+      "prepositionIn": "以及",
       "unamend": "不修改",
       "unamendCommit": "不修改提交"
     },
@@ -2144,6 +2145,7 @@
       "includeIgnoredFiles": "包含忽略檔案",
       "noFolderSpecified": "您尚未開啟或指定任何資料夾。目前僅搜尋已開啟的檔案。",
       "resultSubset": "此僅為所有結果的子集。請使用更具體的搜尋詞彙以縮小結果清單範圍。",
+      "searchExclude": "設定 [通配符模式](https://aka.ms/vscode-glob-patterns) 以在全文搜尋及快速開啟的檔案搜尋中排除特定檔案與資料夾。此設定會繼承 `#files.exclude#` 設定中的所有通配符模式。",
       "searchOnEditorModification": "當編輯器內容被修改時,自動搜尋當前編輯器。"
     },
     "secondary-window": {
@@ -2188,6 +2190,8 @@
     },
     "terminal": {
       "defaultProfile": "{0} 預設使用的設定檔",
+      "enableCommandHistory": "透過 shell 注入功能,分別追蹤終端機指令及其輸出內容。此功能可實現諸如在 UI 中視覺區分指令,以及讓 AI 代理程式以更結構化的方式存取終端機等應用情境。切換此設定不會影響已開啟的終端機。\n\n&nbsp;\n\n此功能目前僅支援執行 bash 或 zsh 的任務終端機與使用者終端機。",
+      "enableCommandSeparator": "在終端機中,於已執行的命令與其輸出結果之間啟用視覺分隔線。此變更僅適用於修改此設定後執行的命令。僅在啟用「{0}」時生效。",
       "enableCopy": "啟用 Ctrl+C(macOS 為 Cmd+C)以複製選取文字",
       "enablePaste": "啟用 Ctrl+V(macOS 為 Cmd+V)以從剪貼簿貼上內容",
       "profileArgs": "此設定檔使用的殼層參數。",
@@ -2269,6 +2273,7 @@
       "confirmDialogMessage": "擴充功能「{0}」尚未經過驗證,可能存在安全風險。",
       "confirmDialogTitle": "您確定要繼續安裝嗎?",
       "downloadCount": "下載次數:{0}",
+      "duplicateVSIX": "無法從 VSIX 安裝「{0}」。該擴充功能已安裝。請先卸載現有擴充功能,再從 VSIX 安裝新版本。",
       "errorFetching": "取得擴充功能時發生錯誤。",
       "errorFetchingConfigurationHint": "此問題可能由網路設定異常所致。",
       "failedInstallingVSIX": "無法從 VSIX 安裝 {0}。",
@@ -2277,6 +2282,7 @@
       "onlyShowVerifiedExtensionsDescription": "此設定可讓「{0}」僅顯示已驗證的擴充功能。",
       "onlyShowVerifiedExtensionsTitle": "僅顯示已驗證的擴充功能",
       "recommendedExtensions": "此工作區推薦使用的擴充功能名稱清單。",
+      "restrictedModeInstallWarning": "若「{0}」擴充功能不支援在受限模式下運行,可能會被停用。請信任此工作區,以確保擴充功能能如預期運作。",
       "searchPlaceholder": "在{0}中搜尋擴充功能",
       "showInstalled": "顯示已安裝的擴充功能",
       "showRecommendedExtensions": "控制是否顯示擴充功能推薦通知。",
