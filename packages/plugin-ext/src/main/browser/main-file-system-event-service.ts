@@ -21,21 +21,24 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { MAIN_RPC_CONTEXT, FileSystemEvents } from '../../common/plugin-api-rpc';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { MAIN_RPC_CONTEXT, FileSystemEvents, MainFileSystemEventServiceShape } from '../../common/plugin-api-rpc';
+import { UriComponents } from '../../common/uri-components';
+import { URI } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileChangeType } from '@theia/filesystem/lib/common/files';
+import { FileChangeType, WatchOptions } from '@theia/filesystem/lib/common/files';
 
-export class MainFileSystemEventService {
+export class MainFileSystemEventService implements MainFileSystemEventServiceShape {
 
     private readonly toDispose = new DisposableCollection();
+    private readonly watches = new Map<number, Disposable>();
 
     constructor(
         rpc: RPCProtocol,
-        container: interfaces.Container
+        container: interfaces.Container,
+        private readonly fileService = container.get(FileService)
     ) {
         const proxy = rpc.getProxy(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService);
-        const fileService = container.get(FileService);
 
         this.toDispose.push(fileService.onDidFilesChange(event => {
             // file system events - (changes the editor and others make)
@@ -72,5 +75,17 @@ export class MainFileSystemEventService {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    $watch(session: number, resource: UriComponents, options: WatchOptions): void {
+        this.watches.set(session, this.fileService.watch(URI.fromComponents(resource), options));
+    }
+
+    $unwatch(session: number): void {
+        const watch = this.watches.get(session);
+        if (watch) {
+            watch.dispose();
+            this.watches.delete(session);
+        }
     }
 }

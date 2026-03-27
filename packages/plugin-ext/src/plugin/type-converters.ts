@@ -22,7 +22,7 @@ import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
 } from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
-import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
+import { LanguageFilter, LanguageSelector } from '@theia/editor/lib/common/language-selector';
 import { MarkdownString as PluginMarkdownStringImpl } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
@@ -246,27 +246,21 @@ export function fromDocumentSelector(selector: theia.DocumentSelector | undefine
         return {
             language: selector.language,
             scheme: selector.scheme,
-            pattern: fromGlobPattern(selector.pattern!)
+            pattern: selector.pattern && fromGlobPattern(selector.pattern)
         } as LanguageFilter;
     }
 
 }
 
-export function fromGlobPattern(pattern: theia.GlobPattern): string | RelativePattern {
+export function fromGlobPattern(pattern: theia.GlobPattern): string | types.RelativePattern {
     if (typeof pattern === 'string') {
         return pattern;
     }
 
-    if (isRelativePattern(pattern)) {
-        return new types.RelativePattern(pattern.baseUri, pattern.pattern);
-    }
-
-    return pattern;
-}
-
-function isRelativePattern(obj: {}): obj is theia.RelativePattern {
-    const rp = obj as theia.RelativePattern;
-    return rp && typeof rp.baseUri === 'string' && typeof rp.pattern === 'string';
+    return new types.RelativePattern(
+        pattern.baseUri ?? pattern.base, // preserve backwards compatibility with older extensions: legacy relative pattern shape did not have the `baseUri` property
+        pattern.pattern
+    );
 }
 
 export function fromCompletionItemKind(kind?: types.CompletionItemKind): model.CompletionItemKind {
