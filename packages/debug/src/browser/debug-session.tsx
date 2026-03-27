@@ -367,7 +367,8 @@ export class DebugSession implements CompositeTreeElement {
                 pathFormat: 'path',
                 supportsVariableType: false,
                 supportsVariablePaging: false,
-                supportsRunInTerminalRequest: true
+                supportsRunInTerminalRequest: true,
+                supportsArgsCanBeInterpretedByShell: true
             });
             this.updateCapabilities(response?.body || {});
             this.didReceiveCapabilities.resolve();
@@ -501,10 +502,23 @@ export class DebugSession implements CompositeTreeElement {
         return this.connection.onDidCustomEvent;
     }
 
-    protected async runInTerminal({ arguments: { title, cwd, args, env } }: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
+    protected async runInTerminal(request: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
+        // Move the destructuring down here to keep the line length under 180 characters
+        const { title, cwd, args, env, argsCanBeInterpretedByShell } = request.arguments;
         const terminal = await this.doCreateTerminal({ title, cwd, env, useServerTitle: false });
         const { processId } = terminal;
-        await terminal.executeCommand({ cwd, args, env });
+
+        // If the debug adapter requests shell interpretation (e.g., expanding $USER or > output.txt),
+        // we join the arguments into a single raw command string and send it directly.
+        // This prevents Theia from automatically wrapping the variables in single quotes.
+        if (argsCanBeInterpretedByShell) {
+            const rawCommand = args.join(' ') + '\r';
+            await terminal.sendText(rawCommand);
+        } else {
+            // Fallback to standard execution where Theia safely escapes the arguments array
+            await terminal.executeCommand({ cwd, args, env });
+        }
+
         return { processId: await processId };
     }
 
