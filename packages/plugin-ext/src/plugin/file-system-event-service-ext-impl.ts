@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 /**
- * **IMPORTANT** this code is running in the plugin host process and should be closed as possible to VS Code counterpart:
+ * **IMPORTANT** this code is running in the plugin host process and should be close as possible to VS Code counterpart:
  * https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/api/common/extHostFileSystemEventService.ts
  * One should be able to diff them to see differences.
  */
@@ -28,7 +28,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/tslint/config */
 
-import { Emitter, WaitUntilEvent, AsyncEmitter, WaitUntilData } from '@theia/core/lib/common/event';
+import { Emitter, Event as EventNamespace, WaitUntilEvent, AsyncEmitter, WaitUntilData } from '@theia/core/lib/common/event';
 import { IRelativePattern, parse } from '@theia/core/lib/common/glob';
 import { UriComponents } from '../common/uri-components';
 import { Disposable, URI, WorkspaceEdit } from './types-impl';
@@ -157,7 +157,10 @@ export class ExtHostFileSystemEventService implements ExtHostFileSystemEventServ
         private readonly _extHostDocumentsAndEditors: ExtHostDocumentsAndEditors,
         private readonly _mainThreadTextEditors: MainThreadTextEditorsShape = rpc.getProxy(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN)
     ) {
-        //
+        // Language services often watch every component of source trees (including dependencies),
+        // which can result in hundreds of watchers in large projects.
+        // Disable the leak warning (maxListeners 0 = unbounded) to avoid false positives.
+        EventNamespace.setMaxListeners(this._onFileSystemEvent.event, 0);
     }
 
     // --- file events
