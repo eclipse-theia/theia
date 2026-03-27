@@ -34,7 +34,7 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             type: 'boolean',
             title: nls.localize('theia/ai/workspace/considerGitignore/title', 'Consider .gitignore'),
             description: nls.localize('theia/ai/workspace/considerGitignore/description',
-                'If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).'),
+                'If enabled, excludes files/folders matched by .gitignore rules found in each workspace root directory.'),
             default: true
         },
         [USER_EXCLUDE_PATTERN_PREF]: {

@@ -67,7 +67,9 @@ describe('Workspace Functions Cancellation Tests', () => {
 
         // Mock dependencies
         const mockWorkspaceService = {
-            roots: [{ resource: new URI('file:///workspace') }]
+            roots: Promise.resolve([{ resource: new URI('file:///workspace') }]),
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
         } as unknown as WorkspaceService;
 
         const mockFileService = {
@@ -175,7 +177,8 @@ describe('Workspace Functions Cancellation Tests', () => {
         };
 
         const handler = getWorkspaceFileList.getTool().handler;
-        const result = await handler(JSON.stringify({ path: '' }), mockCtx);
+        // Use a path that triggers file resolution (root name + subdirectory)
+        const result = await handler(JSON.stringify({ path: 'workspace/dir' }), mockCtx);
 
         expect(result).to.include('Operation cancelled by user');
     });
@@ -208,7 +211,9 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
         container = new Container();
 
         const mockWorkspaceService = {
-            roots: [{ resource: new URI('file:///workspace') }]
+            roots: Promise.resolve([{ resource: new URI('file:///workspace') }]),
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
         } as unknown as WorkspaceService;
 
         const mockFileService = {
@@ -311,7 +316,9 @@ describe('FileContentFunction handler', () => {
         container = new Container();
 
         const mockWorkspaceService = {
-            roots: [{ resource: new URI('file:///workspace') }]
+            roots: Promise.resolve([{ resource: new URI('file:///workspace') }]),
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
         } as unknown as WorkspaceService;
 
         mockResolve = async () => ({
@@ -687,7 +694,9 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
         container = new Container();
 
         const mockWorkspaceService = {
-            roots: [{ resource: new URI('file:///workspace') }]
+            roots: Promise.resolve([{ resource: new URI('file:///workspace') }]),
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
         } as unknown as WorkspaceService;
 
         const mockFileService = {
@@ -733,5 +742,470 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
     it('returns undefined when pattern key is missing', () => {
         const result = getArgumentsShortLabel(JSON.stringify({ glob: '**/*.ts' }));
         expect(result).to.be.undefined;
+    });
+});
+
+describe('WorkspaceFunctionScope Multi-Root Tests', () => {
+    let container: Container;
+    let workspaceScope: WorkspaceFunctionScope;
+
+    let disableJSDOMInner: () => void;
+    before(() => {
+        disableJSDOMInner = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOMInner();
+    });
+
+    beforeEach(() => {
+        container = new Container();
+    });
+
+    describe('getRootMapping', () => {
+        it('returns single root with its basename', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [{ resource: new URI('file:///home/user/my-project') }],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const mapping = workspaceScope.getRootMapping();
+            expect(mapping.size).to.equal(1);
+            expect(mapping.get('my-project')?.toString()).to.equal('file:///home/user/my-project');
+        });
+
+        it('returns multiple roots with their basenames', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///home/user/frontend') },
+                    { resource: new URI('file:///home/user/backend') },
+                    { resource: new URI('file:///home/user/shared') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const mapping = workspaceScope.getRootMapping();
+            expect(mapping.size).to.equal(3);
+            expect(mapping.get('frontend')?.toString()).to.equal('file:///home/user/frontend');
+            expect(mapping.get('backend')?.toString()).to.equal('file:///home/user/backend');
+            expect(mapping.get('shared')?.toString()).to.equal('file:///home/user/shared');
+        });
+
+        it('uses first-wins for duplicate basenames (sorted by URI)', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///alice/app') },
+                    { resource: new URI('file:///bob/app') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const mapping = workspaceScope.getRootMapping();
+            // Only one entry for 'app' — the first by URI sort order wins.
+            // The other root is still reachable via resolveRelativePath fallback.
+            expect(mapping.size).to.equal(1);
+            expect(mapping.get('app')?.toString()).to.equal('file:///alice/app');
+        });
+    });
+
+    describe('toWorkspaceRelativePath', () => {
+        it('returns root-prefixed path for file in single root', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [{ resource: new URI('file:///home/user/project') }],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const uri = new URI('file:///home/user/project/src/index.ts');
+            const result = workspaceScope.toWorkspaceRelativePath(uri);
+            expect(result).to.equal('project/src/index.ts');
+        });
+
+        it('returns root-prefixed path for file in multi-root workspace', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///home/user/frontend') },
+                    { resource: new URI('file:///home/user/backend') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const frontendFile = new URI('file:///home/user/frontend/src/App.tsx');
+            expect(workspaceScope.toWorkspaceRelativePath(frontendFile)).to.equal('frontend/src/App.tsx');
+
+            const backendFile = new URI('file:///home/user/backend/src/server.ts');
+            expect(workspaceScope.toWorkspaceRelativePath(backendFile)).to.equal('backend/src/server.ts');
+        });
+
+        it('returns undefined for file outside workspace', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [{ resource: new URI('file:///home/user/project') }],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const uri = new URI('file:///etc/passwd');
+            const result = workspaceScope.toWorkspaceRelativePath(uri);
+            expect(result).to.be.undefined;
+        });
+
+        it('returns just root name for the root directory itself', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [{ resource: new URI('file:///home/user/project') }],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const uri = new URI('file:///home/user/project');
+            const result = workspaceScope.toWorkspaceRelativePath(uri);
+            // When the URI is the root itself, it returns just the root name
+            expect(result).to.equal('project');
+        });
+    });
+
+    describe('resolveRelativePath', () => {
+        function createScope(roots: string[]): WorkspaceFunctionScope {
+            const rootObjects = roots.map(r => ({ resource: new URI(r) }));
+            const mockWorkspaceService = {
+                tryGetRoots: () => rootObjects,
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            return container.get(WorkspaceFunctionScope);
+        }
+
+        describe('Phase 1 — root+relative', () => {
+            it('resolves path with matching root prefix', () => {
+                workspaceScope = createScope(['file:///home/user/frontend', 'file:///home/user/backend']);
+                const result = workspaceScope.resolveRelativePath('backend/src/server.ts');
+                expect(result.toString()).to.equal('file:///home/user/backend/src/server.ts');
+            });
+
+            it('returns the root URI when path is just a root name', () => {
+                workspaceScope = createScope(['file:///home/user/frontend', 'file:///home/user/backend']);
+                const result = workspaceScope.resolveRelativePath('frontend');
+                expect(result.toString()).to.equal('file:///home/user/frontend');
+            });
+
+            it('root name takes priority over subdirectory with same name', () => {
+                // Root named 'src' exists, AND another root has a 'src/' subdirectory
+                workspaceScope = createScope(['file:///home/user/src', 'file:///home/user/app']);
+                const result = workspaceScope.resolveRelativePath('src/index.ts');
+                expect(result.toString()).to.equal('file:///home/user/src/index.ts');
+            });
+        });
+
+        describe('Phase 2 — supra-relative', () => {
+            it('resolves when root basename appears with matching preceding components', () => {
+                workspaceScope = createScope(['file:///home/user/backend']);
+                // 'user/backend/src/file.ts' — 'backend' matches root basename, 'user' matches preceding component
+                const result = workspaceScope.resolveRelativePath('user/backend/src/file.ts');
+                expect(result.toString()).to.equal('file:///home/user/backend/src/file.ts');
+            });
+
+            it('resolves with full preceding path match', () => {
+                workspaceScope = createScope(['file:///home/user/backend']);
+                const result = workspaceScope.resolveRelativePath('home/user/backend/src/file.ts');
+                expect(result.toString()).to.equal('file:///home/user/backend/src/file.ts');
+            });
+
+            it('does not match when preceding components differ', () => {
+                // Must use multi-root so Phase 3 (single-root fallback) doesn't short-circuit
+                workspaceScope = createScope(['file:///home/user/frontend', 'file:///home/user/backend']);
+                // 'other/backend/src/file.ts' — 'other' does NOT match any suffix of 'home/user'
+                expect(() => workspaceScope.resolveRelativePath('other/backend/src/file.ts')).to.throw(/Could not resolve path/);
+            });
+
+            it('resolves with no preceding components (just root basename at start)', () => {
+                // This should be caught by Phase 1 (root+relative) since the first segment IS the root name
+                workspaceScope = createScope(['file:///home/user/backend']);
+                const result = workspaceScope.resolveRelativePath('backend/src/file.ts');
+                expect(result.toString()).to.equal('file:///home/user/backend/src/file.ts');
+            });
+
+            it('resolves supra-relative path in multi-root workspace', () => {
+                workspaceScope = createScope(['file:///home/user/frontend', 'file:///home/user/backend']);
+                const result = workspaceScope.resolveRelativePath('user/backend/src/file.ts');
+                expect(result.toString()).to.equal('file:///home/user/backend/src/file.ts');
+            });
+        });
+
+        describe('Phase 3 — single-root fallback', () => {
+            it('resolves unprefixed path relative to the single root', () => {
+                workspaceScope = createScope(['file:///home/user/project']);
+                const result = workspaceScope.resolveRelativePath('src/index.ts');
+                expect(result.toString()).to.equal('file:///home/user/project/src/index.ts');
+            });
+
+            it('resolves new file path relative to single root', () => {
+                workspaceScope = createScope(['file:///home/user/project']);
+                const result = workspaceScope.resolveRelativePath('new-file.ts');
+                expect(result.toString()).to.equal('file:///home/user/project/new-file.ts');
+            });
+        });
+
+        describe('Phase 4 — error for unresolvable multi-root paths', () => {
+            it('throws when unprefixed path cannot be resolved in multi-root', () => {
+                workspaceScope = createScope(['file:///home/user/frontend', 'file:///home/user/backend']);
+                expect(() => workspaceScope.resolveRelativePath('src/index.ts')).to.throw(/Could not resolve path/);
+            });
+
+            it('error message lists available roots', () => {
+                workspaceScope = createScope(['file:///home/user/frontend', 'file:///home/user/backend']);
+                try {
+                    workspaceScope.resolveRelativePath('src/index.ts');
+                    expect.fail('Expected an error');
+                } catch (e: unknown) {
+                    const error = e as Error;
+                    expect(error.message).to.include('frontend');
+                    expect(error.message).to.include('backend');
+                }
+            });
+
+            it('does not throw when root prefix is provided in multi-root', () => {
+                workspaceScope = createScope(['file:///home/user/frontend', 'file:///home/user/backend']);
+                const result = workspaceScope.resolveRelativePath('frontend/src/index.ts');
+                expect(result.toString()).to.equal('file:///home/user/frontend/src/index.ts');
+            });
+        });
+
+        describe('normalization', () => {
+            it('normalizes backslash paths', () => {
+                workspaceScope = createScope(['file:///home/user/project']);
+                const result = workspaceScope.resolveRelativePath('project\\src\\index.ts');
+                expect(result.toString()).to.equal('file:///home/user/project/src/index.ts');
+            });
+
+            it('resolves .. segments', () => {
+                workspaceScope = createScope(['file:///home/user/project']);
+                const result = workspaceScope.resolveRelativePath('project/src/../src/index.ts');
+                expect(result.toString()).to.equal('file:///home/user/project/src/index.ts');
+            });
+
+            it('normalizes redundant separators', () => {
+                workspaceScope = createScope(['file:///home/user/project']);
+                const result = workspaceScope.resolveRelativePath('project/src//index.ts');
+                expect(result.path.toString()).to.include('project/src/index.ts');
+            });
+
+            it('handles trailing slashes', () => {
+                workspaceScope = createScope(['file:///home/user/project']);
+                const result = workspaceScope.resolveRelativePath('project/src/');
+                expect(result.path.toString()).to.include('project/src');
+            });
+        });
+
+        describe('duplicate root basenames', () => {
+            it('round-trips the mapped root correctly', () => {
+                workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
+                const mapping = workspaceScope.getRootMapping();
+                expect(mapping.size).to.equal(1);
+                expect(mapping.get('app')?.toString()).to.equal('file:///workspace/a/app');
+
+                // Round-trip for the mapped root
+                const uri = mapping.get('app')!.resolve('src/index.ts');
+                const relPath = workspaceScope.toWorkspaceRelativePath(uri)!;
+                expect(relPath).to.equal('app/src/index.ts');
+                const resolved = workspaceScope.resolveRelativePath(relPath);
+                expect(resolved.toString()).to.equal(uri.toString());
+            });
+
+            it('unmapped root returns undefined from toWorkspaceRelativePath', () => {
+                workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
+                const uri = new URI('file:///workspace/b/app').resolve('src/unique.ts');
+                const relPath = workspaceScope.toWorkspaceRelativePath(uri);
+                expect(relPath).to.be.undefined;
+            });
+
+            it('resolves app/path to the mapped root (Phase 1)', () => {
+                // Phase 1 always resolves to the mapped root by name
+                workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
+                const result = workspaceScope.resolveRelativePath('app/src/only-here.ts');
+                // Always goes to the mapped root (a/app)
+                expect(result.toString()).to.equal('file:///workspace/a/app/src/only-here.ts');
+            });
+        });
+    });
+
+    describe('getRootMapping duplicate basename stability', () => {
+        it('assigns the same root to a name regardless of tryGetRoots order', () => {
+            // First ordering
+            const mockWorkspaceServiceA = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///workspace/b/app') },
+                    { resource: new URI('file:///workspace/a/app') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceA);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            const scopeA = container.get(WorkspaceFunctionScope);
+            const mappingA = scopeA.getRootMapping();
+
+            // Reverse ordering in a fresh container
+            const container2 = new Container();
+            const mockWorkspaceServiceB = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///workspace/a/app') },
+                    { resource: new URI('file:///workspace/b/app') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container2.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceB);
+            container2.bind(FileService).toConstantValue({} as FileService);
+            container2.bind(PreferenceService).toConstantValue({ get: () => false });
+            container2.bind(WorkspaceFunctionScope).toSelf();
+            const scopeB = container2.get(WorkspaceFunctionScope);
+            const mappingB = scopeB.getRootMapping();
+
+            // Both orderings should produce the same winner for 'app'
+            // (first by URI sort order: file:///workspace/a/app)
+            expect(mappingA.size).to.equal(1);
+            expect(mappingB.size).to.equal(1);
+            expect(mappingA.get('app')?.toString()).to.equal(mappingB.get('app')?.toString());
+            expect(mappingA.get('app')?.toString()).to.equal('file:///workspace/a/app');
+        });
+    });
+
+    describe('getContainingRoot', () => {
+        it('returns the most specific root for nested roots', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///projects/monorepo') },
+                    { resource: new URI('file:///projects/monorepo/packages/shared') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            // File in nested root should resolve to the more specific root
+            const fileInNested = new URI('file:///projects/monorepo/packages/shared/src/utils.ts');
+            const result = workspaceScope.getContainingRoot(fileInNested);
+            expect(result?.toString()).to.equal('file:///projects/monorepo/packages/shared');
+
+            // File in parent root (outside nested) should resolve to parent
+            const fileInParent = new URI('file:///projects/monorepo/src/main.ts');
+            const resultParent = workspaceScope.getContainingRoot(fileInParent);
+            expect(resultParent?.toString()).to.equal('file:///projects/monorepo');
+        });
+
+        it('returns undefined for file outside all workspace roots', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///home/user/project') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const externalFile = new URI('file:///tmp/outside.ts');
+            const result = workspaceScope.getContainingRoot(externalFile);
+            expect(result).to.be.undefined;
+        });
+    });
+
+    describe('round-trip consistency', () => {
+        it('toWorkspaceRelativePath and resolveRelativePath are inverses', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///home/user/frontend') },
+                    { resource: new URI('file:///home/user/backend') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            const originalUri = new URI('file:///home/user/backend/src/index.ts');
+            const relativePath = workspaceScope.toWorkspaceRelativePath(originalUri)!;
+            const resolvedUri = workspaceScope.resolveRelativePath(relativePath);
+
+            expect(resolvedUri.toString()).to.equal(originalUri.toString());
+        });
+
+        it('paths from toWorkspaceRelativePath always have a root prefix that resolves directly', () => {
+            const mockWorkspaceService = {
+                tryGetRoots: () => [
+                    { resource: new URI('file:///home/user/frontend') },
+                    { resource: new URI('file:///home/user/backend') }
+                ],
+                onWorkspaceChanged: () => ({ dispose: () => { } })
+            } as unknown as WorkspaceService;
+
+            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(FileService).toConstantValue({} as FileService);
+            container.bind(PreferenceService).toConstantValue({ get: () => false });
+            container.bind(WorkspaceFunctionScope).toSelf();
+            workspaceScope = container.get(WorkspaceFunctionScope);
+
+            // Test for each root
+            const roots = workspaceScope.getRootMapping();
+            for (const [rootName, rootUri] of roots) {
+                const fileUri = rootUri.resolve('src/app.ts');
+                const relPath = workspaceScope.toWorkspaceRelativePath(fileUri)!;
+                expect(relPath.startsWith(rootName + '/')).to.be.true;
+                const resolved = workspaceScope.resolveRelativePath(relPath);
+                expect(resolved.toString()).to.equal(fileUri.toString());
+            }
+        });
     });
 });
