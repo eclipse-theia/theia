@@ -24,11 +24,11 @@ import { Keybinding } from '@theia/core/lib/common/keybinding';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
     KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope,
-    SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget, ContextMenuRenderer, SELECTED_CLASS
+    SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget, ContextMenuRenderer, SELECTED_CLASS, KeyCode
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { DisposableCollection, isOSX, isObject } from '@theia/core';
+import { DisposableCollection, Disposable, isOSX, isObject } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 
 /**
@@ -898,6 +898,9 @@ class EditKeybindingDialog extends SingleTextInputDialog {
      */
     protected resetButton: HTMLButtonElement | undefined;
 
+    //Tracks resources that need to be disposed of when the dialog closes.
+    protected readonly keystrokeDisposable = new DisposableCollection();
+
     constructor(
         @inject(SingleTextInputDialogProps) props: SingleTextInputDialogProps,
         @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
@@ -917,14 +920,22 @@ class EditKeybindingDialog extends SingleTextInputDialog {
             this.addResetAction(this.resetButton, 'click');
         }
 
-        this.node.addEventListener('keydown', this.handleKeyDown, true);
+        window.addEventListener('keydown', this.handleKeyDown, { capture: true });
+        this.keystrokeDisposable.push(Disposable.create(() => {
+            window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
+        }));
 
         setTimeout(() => {
             const inputField = this.node.querySelector('input');
             if (inputField) {
-                inputField.placeholder = nls.localizeByDefault('Press any key to continue...');
+                inputField.placeholder = nls.localizeByDefault('Press desired key combination and then press ENTER.');
             }
         }, 100);
+    }
+
+    protected override onBeforeDetach(msg: Message): void {
+        super.onBeforeDetach(msg);
+        this.keystrokeDisposable.dispose();
     }
 
     /**
@@ -938,38 +949,23 @@ class EditKeybindingDialog extends SingleTextInputDialog {
             return;
         }
 
-        if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'Tab' || event.key === 'Backspace') {
+        //Only letting Enter and Escape bypass the capture
+        if(event.key === 'Enter' || event.key === 'Escape'){
             return;
         }
 
         event.preventDefault();
         event.stopPropagation();
 
-        const keys: string[] = [];
+        const keyCode = KeyCode.createKeyCode(event);
 
-        if (event.ctrlKey) { keys.push('ctrl'); }
-        if (event.shiftKey) { keys.push('shift'); }
-        if (event.altKey) { keys.push('alt'); }
-        if (event.metaKey) { keys.push('cmd'); }
-
-        const keyName = event.key.toLowerCase();
-        const isModifier = ['control', 'shift', 'alt', 'meta'].includes(keyName);
-
-        if (!isModifier) {
-            let finalKey = keyName;
-
-            if (finalKey === ' ') {
-                finalKey = 'space';
-            }
-            finalKey = finalKey.replace('arrow', '');
-
-            keys.push(finalKey);
-
-            const inputField = target as HTMLInputElement;
-            inputField.value = keys.join('+');
-
-            inputField.dispatchEvent(new window.Event('input', { bubbles: true }));
+        if(keyCode.isModifierOnly()){
+            return;
         }
+
+        const inputField = target as HTMLInputElement;
+        inputField.value = keyCode.toString();
+        inputField.dispatchEvent(new window.Event('input', { bubbles: true}))
     };
 
     /**
