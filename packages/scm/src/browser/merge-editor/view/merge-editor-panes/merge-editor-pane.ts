@@ -241,6 +241,6 @@ export abstract class MergeEditorPane extends BoxPanel {
 
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.editorWidget.activate();
+        this.editorWidget.editor.focus();
     }
 }

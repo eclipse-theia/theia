@@ -66,6 +66,7 @@ export class MergeEditorFactory {
             const [baseEditorWidget, side1EditorWidget, side2EditorWidget, resultEditorWidget] = await Promise.all(
                 [createEditorWidget(baseUri), createEditorWidget(side1Uri), createEditorWidget(side2Uri), createEditorWidget(resultUri)]
             );
+            resultEditorWidget.navigationHistorySupport = true;
             const resultDocument = MonacoEditor.get(resultEditorWidget)!.document;
             const hasConflictMarkers = resultDocument.textEditorModel.getLinesContent().some(lineContent => lineContent.startsWith('<<<<<<<'));
             return this.createMergeEditorContainer({
@@ -92,6 +93,7 @@ export class MergeEditorFactory {
         }
         editor.getControl().updateOptions({ folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false } });
         editor.setShouldDisplayDirtyDiff(false);
+        editorWidget.navigationHistorySupport = false;
         return editorWidget;
     }
 
