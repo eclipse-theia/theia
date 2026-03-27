@@ -33,7 +33,8 @@ import { GitHubRepoService } from '../common/github-repo-protocol';
 export const GITHUB_REPO_NAME_VARIABLE: AIVariable = {
     id: 'github-repo-name-provider',
     name: 'githubRepoName',
-    description: nls.localize('theia/ai/ide/githubRepoName/description', 'The name of the current GitHub repository (e.g., "eclipse-theia/theia")')
+    description: nls.localize('theia/ai/ide/githubRepoName/description',
+        'The GitHub repositories associated with the workspace roots (e.g., "eclipse-theia/theia")')
 };
 
 @injectable()
@@ -71,19 +72,47 @@ export class GitHubRepoVariableContribution implements AIVariableContribution, A
                 return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
             }
 
-            // Get the filesystem path from the workspace root URI
-            const workspaceRoot = workspaceRoots[0].resource;
-            const workspacePath = workspaceRoot.path.fsPath();
+            const repoResults = await Promise.all(
+                workspaceRoots.map(async root => {
+                    const rootPath = root.resource.path.fsPath();
+                    const rootName = root.resource.path.base;
+                    try {
+                        const info = await this.gitHubRepoService.getGitHubRepoInfo(rootPath);
+                        return info ? { rootName, repoName: `${info.owner}/${info.repo}` } : undefined;
+                    } catch {
+                        return undefined;
+                    }
+                })
+            );
 
-            // Use the backend service to get GitHub repository information
-            const repoInfo = await this.gitHubRepoService.getGitHubRepoInfo(workspacePath);
+            const found = repoResults.filter((r): r is { rootName: string; repoName: string } => r !== undefined);
 
-            if (!repoInfo) {
+            if (found.length === 0) {
                 return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
             }
 
-            const repoName = `${repoInfo.owner}/${repoInfo.repo}`;
-            return { variable: request.variable, value: `You are currently working with the GitHub repository: **${repoName}**` };
+            const uniqueRepos = new Map<string, string[]>();
+            for (const { rootName, repoName } of found) {
+                const roots = uniqueRepos.get(repoName);
+                if (roots) {
+                    roots.push(rootName);
+                } else {
+                    uniqueRepos.set(repoName, [rootName]);
+                }
+            }
+
+            if (uniqueRepos.size === 1) {
+                const [repoName] = uniqueRepos.keys();
+                return { variable: request.variable, value: `You are currently working with the GitHub repository: **${repoName}**` };
+            }
+
+            const lines = Array.from(uniqueRepos.entries()).map(
+                ([repoName, roots]) => `- **${repoName}** (${roots.join(', ')})`
+            );
+            return {
+                variable: request.variable,
+                value: `You are currently working with the following GitHub repositories:\n${lines.join('\n')}`
+            };
 
         } catch (error) {
             console.warn('Failed to resolve GitHub repository name:', error);

@@ -77,11 +77,14 @@ export class ChangeSetFileService {
     getAdditionalInfo(uri: URI): string | undefined {
         const wsUri = this.wsService.getWorkspaceRootUri(uri);
         if (wsUri) {
+            const isMultiRoot = this.wsService.tryGetRoots().length > 1;
+            const rootName = wsUri.path.base;
             const wsRelative = wsUri.relative(uri);
             if (wsRelative?.hasDir) {
-                return wsRelative.dir.toString();
+                const dirPath = wsRelative.dir.toString();
+                return isMultiRoot ? `${rootName} · ${dirPath}` : dirPath;
             }
-            return '';
+            return isMultiRoot ? rootName : '';
         }
         return this.labelProvider.getLongName(uri.parent);
     }

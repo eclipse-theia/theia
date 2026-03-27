@@ -18,8 +18,19 @@ import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core
 import { CancellationToken } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
+import { TaskConfiguration, TaskScope } from '@theia/task/lib/common/task-protocol';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { LIST_TASKS_FUNCTION_ID, RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions';
+
+import URI from '@theia/core/lib/common/uri';
+
+export interface TaskListEntry {
+    /** The task label as defined in tasks.json or by a task provider */
+    label: string;
+    /** The workspace root name this task belongs to, or undefined for global/workspace-scoped tasks */
+    workspaceRoot?: string;
+}
 
 @injectable()
 export class TaskListProvider implements ToolProvider {
@@ -27,16 +38,19 @@ export class TaskListProvider implements ToolProvider {
     @inject(TaskService)
     protected readonly taskService: TaskService;
 
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
+
     getTool(): ToolRequest {
         return {
             id: LIST_TASKS_FUNCTION_ID,
             name: LIST_TASKS_FUNCTION_ID,
             description: 'Lists available tasks in the workspace that can be executed with runTask. Returns an array ' +
-                'of task labels (strings). Common task types include npm scripts, shell tasks, and build tasks. ' +
+                'of objects, each with a "label" (the task name) and optionally a "workspaceRoot" (the root name the task belongs to). ' +
                 'Use the filter parameter with an empty string "" to retrieve all tasks, or provide a substring ' +
                 'to filter (e.g., "test" returns tasks containing "test" in the name). ' +
-                'Example return: ["npm: build", "npm: test", "npm: lint"]. ' +
-                'Always call this before runTask to discover exact task names.',
+                'Example return: [{"label": "npm: build", "workspaceRoot": "frontend"}, {"label": "npm: test", "workspaceRoot": "backend"}]. ' +
+                'Always call this before runTask to discover exact task names and their workspace roots.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -54,16 +68,37 @@ export class TaskListProvider implements ToolProvider {
                 }
                 const filterArgs: { filter: string } = JSON.parse(argString);
                 const tasks = await this.getAvailableTasks(filterArgs.filter);
-                const taskString = JSON.stringify(tasks);
-                return taskString;
+                return JSON.stringify(tasks);
             }
         };
     }
-    private async getAvailableTasks(filter: string = ''): Promise<string[]> {
+
+    private async getAvailableTasks(filter: string = ''): Promise<TaskListEntry[]> {
         const userActionToken = this.taskService.startUserAction();
         const tasks = await this.taskService.getTasks(userActionToken);
         const filteredTasks = tasks.filter(task => task.label.toLowerCase().includes(filter.toLowerCase()));
-        return filteredTasks.map(task => task.label);
+        return filteredTasks.map(task => this.toTaskListEntry(task));
+    }
+
+    private toTaskListEntry(task: TaskConfiguration): TaskListEntry {
+        const entry: TaskListEntry = { label: task.label };
+        const rootName = this.resolveRootName(task._scope);
+        if (rootName) {
+            entry.workspaceRoot = rootName;
+        }
+        return entry;
+    }
+
+    private resolveRootName(scope: string | TaskScope.Workspace | TaskScope.Global): string | undefined {
+        if (typeof scope !== 'string') {
+            return undefined;
+        }
+        try {
+            const uri = new URI(scope);
+            return this.workspaceScope.getRootName(uri);
+        } catch {
+            return undefined;
+        }
     }
 }
 
@@ -76,6 +111,9 @@ export class TaskRunnerProvider implements ToolProvider {
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
 
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
+
     getTool(): ToolRequest {
         return {
             id: RUN_TASK_FUNCTION_ID,
@@ -86,6 +124,7 @@ export class TaskRunnerProvider implements ToolProvider {
                 '(e.g., "npm: build"), test tasks (e.g., "npm: test"), and lint tasks (e.g., "npm: lint"). ' +
                 'If the task fails, the error output is included in the response. Tasks may take significant ' +
                 'time to complete (builds can take minutes). The operation can be cancelled by the user. ' +
+                'If multiple tasks share the same label, specify the workspaceRoot parameter to disambiguate. ' +
                 'Do NOT use this for tasks you haven\'t discovered via listTasks first.',
             parameters: {
                 type: 'object',
@@ -93,6 +132,11 @@ export class TaskRunnerProvider implements ToolProvider {
                     taskName: {
                         type: 'string',
                         description: 'The exact name/label of the task to execute, as returned by listTasks.'
+                    },
+                    workspaceRoot: {
+                        type: 'string',
+                        description: 'The workspace root name the task belongs to (as returned by listTasks). ' +
+                            'Required when multiple tasks share the same label across different workspace roots.'
                     }
                 },
                 required: ['taskName']
@@ -104,11 +148,54 @@ export class TaskRunnerProvider implements ToolProvider {
 
     private async handleRunTask(argString: string, cancellationToken?: CancellationToken): Promise<string> {
         try {
-            const args: { taskName: string } = JSON.parse(argString);
+            const args: { taskName: string; workspaceRoot?: string } = JSON.parse(argString);
 
             const token = this.taskService.startUserAction();
+            const allTasks = await this.taskService.getTasks(token);
 
-            const taskInfo = await this.taskService.runTaskByLabel(token, args.taskName);
+            const matchingTasks = allTasks.filter(task => task.label === args.taskName);
+
+            if (matchingTasks.length === 0) {
+                return `Did not find a task for the label: '${args.taskName}'`;
+            }
+
+            let taskToRun: TaskConfiguration;
+
+            if (matchingTasks.length === 1) {
+                taskToRun = matchingTasks[0];
+            } else if (args.workspaceRoot) {
+                const rootMapping = this.workspaceScope.getRootMapping();
+                const rootUri = rootMapping.get(args.workspaceRoot);
+                if (!rootUri) {
+                    const availableRoots = Array.from(rootMapping.keys()).join(', ');
+                    return `Unknown workspace root '${args.workspaceRoot}'. Available roots: ${availableRoots}`;
+                }
+                const rootUriStr = rootUri.toString();
+                const filtered = matchingTasks.filter(
+                    task => typeof task._scope === 'string' && task._scope === rootUriStr
+                );
+                if (filtered.length === 0) {
+                    return `No task '${args.taskName}' found in workspace root '${args.workspaceRoot}'. `
+                        + 'The task may be defined in a different root. Use listTasks to check.';
+                }
+                taskToRun = filtered[0];
+            } else {
+                const rootNames = matchingTasks.map(task => {
+                    if (typeof task._scope === 'string') {
+                        try {
+                            const name = this.workspaceScope.getRootName(new URI(task._scope));
+                            return name ?? '(unknown)';
+                        } catch {
+                            return '(unknown)';
+                        }
+                    }
+                    return '(global)';
+                });
+                return `Ambiguous task name '${args.taskName}' — found in multiple workspace roots: ${rootNames.join(', ')}. `
+                    + 'Please specify the workspaceRoot parameter to disambiguate.';
+            }
+
+            const taskInfo = await this.taskService.runTask(taskToRun);
             if (!taskInfo) {
                 return `Did not find a task for the label: '${args.taskName}'`;
             }
@@ -148,4 +235,3 @@ export class TaskRunnerProvider implements ToolProvider {
         }
     }
 }
-

@@ -16,6 +16,7 @@
 
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
@@ -26,10 +27,13 @@ import {
     RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
 } from '../common/workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions';
 
 export interface LaunchConfigurationInfo {
     name: string;
     running: boolean;
+    /** The workspace root name this configuration belongs to, if scoped to a folder */
+    workspaceRoot?: string;
 }
 
 @injectable()
@@ -41,11 +45,15 @@ export class LaunchListProvider implements ToolProvider {
     @inject(DebugSessionManager)
     protected readonly debugSessionManager: DebugSessionManager;
 
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
+
     getTool(): ToolRequest {
         return {
             id: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
             name: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
-            description: 'Lists available launch configurations in the workspace. Each result includes the configuration name and whether it is currently running. ' +
+            description: 'Lists available launch configurations in the workspace. Each result includes the configuration name, whether it is currently running, ' +
+                'and optionally a "workspaceRoot" (the root name the configuration belongs to). ' +
                 'Optionally provide a filter substring to narrow results by name. If omitted, all configurations are returned. ' +
                 'Always call this before runLaunchConfiguration to discover exact configuration names.',
             parameters: {
@@ -75,14 +83,31 @@ export class LaunchListProvider implements ToolProvider {
         for (const options of this.debugConfigurationManager.all) {
             const name = this.getDisplayName(options);
             if (name.toLowerCase().includes(filter.toLowerCase())) {
-                configurations.push({
+                const entry: LaunchConfigurationInfo = {
                     name,
                     running: runningSessions.has(name)
-                });
+                };
+                const rootName = this.resolveRootName(options.workspaceFolderUri);
+                if (rootName) {
+                    entry.workspaceRoot = rootName;
+                }
+                configurations.push(entry);
             }
         }
 
         return configurations;
+    }
+
+    private resolveRootName(workspaceFolderUri: string | undefined): string | undefined {
+        if (!workspaceFolderUri) {
+            return undefined;
+        }
+        try {
+            const uri = new URI(workspaceFolderUri);
+            return this.workspaceScope.getRootName(uri);
+        } catch {
+            return undefined;
+        }
     }
 
     private getDisplayName(options: DebugSessionOptions): string {
@@ -104,12 +129,16 @@ export class LaunchRunnerProvider implements ToolProvider {
     @inject(DebugSessionManager)
     protected readonly debugSessionManager: DebugSessionManager;
 
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
+
     getTool(): ToolRequest {
         return {
             id: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
             description: 'Starts a launch configuration and returns immediately — the application continues running in the background. ' +
                 'Use listLaunchConfigurations first to discover available configuration names and check whether one is already running. ' +
+                'If multiple configurations share the same name, specify the workspaceRoot parameter to disambiguate. ' +
                 'The response includes the debug session ID on success. If the configuration name doesn\'t match any available configuration, returns an error.',
             parameters: {
                 type: 'object',
@@ -117,6 +146,11 @@ export class LaunchRunnerProvider implements ToolProvider {
                     configurationName: {
                         type: 'string',
                         description: 'The name of the launch configuration to execute.'
+                    },
+                    workspaceRoot: {
+                        type: 'string',
+                        description: 'The workspace root name the configuration belongs to (as returned by listLaunchConfigurations). ' +
+                            'Required when multiple configurations share the same name across different workspace roots.'
                     }
                 },
                 required: ['configurationName']
@@ -127,13 +161,48 @@ export class LaunchRunnerProvider implements ToolProvider {
 
     private async handleRunLaunchConfiguration(argString: string, cancellationToken?: CancellationToken): Promise<string> {
         try {
-            const args: { configurationName: string } = JSON.parse(argString);
+            const args: { configurationName: string; workspaceRoot?: string } = JSON.parse(argString);
 
             await this.debugConfigurationManager.load();
 
-            const options = this.findConfigurationByName(args.configurationName);
-            if (!options) {
+            const allMatches = this.findAllConfigurationsByName(args.configurationName);
+
+            if (allMatches.length === 0) {
                 return `Did not find a launch configuration for the name: '${args.configurationName}'`;
+            }
+
+            let options: DebugSessionOptions;
+
+            if (allMatches.length === 1) {
+                options = allMatches[0];
+            } else if (args.workspaceRoot) {
+                const rootMapping = this.workspaceScope.getRootMapping();
+                const rootUri = rootMapping.get(args.workspaceRoot);
+                if (!rootUri) {
+                    const availableRoots = Array.from(rootMapping.keys()).join(', ');
+                    return `Unknown workspace root '${args.workspaceRoot}'. Available roots: ${availableRoots}`;
+                }
+                const rootUriStr = rootUri.toString();
+                const filtered = allMatches.filter(opt => opt.workspaceFolderUri === rootUriStr);
+                if (filtered.length === 0) {
+                    return `No launch configuration '${args.configurationName}' found in workspace root '${args.workspaceRoot}'. `
+                        + 'The configuration may be defined in a different root. Use listLaunchConfigurations to check.';
+                }
+                options = filtered[0];
+            } else {
+                const rootNames = allMatches.map(opt => {
+                    if (opt.workspaceFolderUri) {
+                        try {
+                            const name = this.workspaceScope.getRootName(new URI(opt.workspaceFolderUri));
+                            return name ?? '(unknown)';
+                        } catch {
+                            return '(unknown)';
+                        }
+                    }
+                    return '(global)';
+                });
+                return `Ambiguous launch configuration name '${args.configurationName}' — found in multiple workspace roots: ${rootNames.join(', ')}. `
+                    + 'Please specify the workspaceRoot parameter to disambiguate.';
             }
 
             const session = await this.debugSessionManager.start(options);
@@ -162,14 +231,15 @@ export class LaunchRunnerProvider implements ToolProvider {
         }
     }
 
-    private findConfigurationByName(name: string): DebugSessionOptions | undefined {
+    private findAllConfigurationsByName(name: string): DebugSessionOptions[] {
+        const results: DebugSessionOptions[] = [];
         for (const options of this.debugConfigurationManager.all) {
             const displayName = this.getDisplayName(options);
             if (displayName === name) {
-                return options;
+                results.push(options);
             }
         }
-        return undefined;
+        return results;
     }
 
     private getDisplayName(options: DebugSessionOptions): string {
@@ -188,18 +258,27 @@ export class LaunchStopProvider implements ToolProvider {
     @inject(DebugSessionManager)
     protected readonly debugSessionManager: DebugSessionManager;
 
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
+
     getTool(): ToolRequest {
         return {
             id: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
             description: 'Stops an active launch configuration or debug session. If a configuration name is provided, stops the session matching that name. ' +
-                'If no name is provided, stops the currently active session. Returns an error if no matching active session is found.',
+                'If no name is provided, stops the currently active session. ' +
+                'If multiple sessions share the same configuration name, specify the workspaceRoot parameter to disambiguate. ' +
+                'Returns an error if no matching active session is found.',
             parameters: {
                 type: 'object',
                 properties: {
                     configurationName: {
                         type: 'string',
                         description: 'The name of the launch configuration to stop. If not provided, stops the current active session.'
+                    },
+                    workspaceRoot: {
+                        type: 'string',
+                        description: 'The workspace root name to disambiguate when multiple sessions share the same configuration name.'
                     }
                 },
                 required: []
@@ -210,13 +289,46 @@ export class LaunchStopProvider implements ToolProvider {
 
     private async handleStopLaunchConfiguration(argString: string): Promise<string> {
         try {
-            const args: { configurationName?: string } = JSON.parse(argString);
+            const args: { configurationName?: string; workspaceRoot?: string } = JSON.parse(argString);
 
             if (args.configurationName) {
-                // Find and stop specific session by configuration name
-                const session = this.findSessionByConfigurationName(args.configurationName);
-                if (!session) {
+                const matchingSessions = this.findSessionsByConfigurationName(args.configurationName);
+
+                if (matchingSessions.length === 0) {
                     return `No active session found for launch configuration: '${args.configurationName}'`;
+                }
+
+                let session: DebugSession;
+
+                if (matchingSessions.length === 1) {
+                    session = matchingSessions[0];
+                } else if (args.workspaceRoot) {
+                    const rootMapping = this.workspaceScope.getRootMapping();
+                    const rootUri = rootMapping.get(args.workspaceRoot);
+                    if (!rootUri) {
+                        const availableRoots = Array.from(rootMapping.keys()).join(', ');
+                        return `Unknown workspace root '${args.workspaceRoot}'. Available roots: ${availableRoots}`;
+                    }
+                    const rootUriStr = rootUri.toString();
+                    const filtered = matchingSessions.filter(s => s.options.workspaceFolderUri === rootUriStr);
+                    if (filtered.length === 0) {
+                        return `No active session for '${args.configurationName}' in workspace root '${args.workspaceRoot}'.`;
+                    }
+                    session = filtered[0];
+                } else {
+                    const rootNames = matchingSessions.map(s => {
+                        if (s.options.workspaceFolderUri) {
+                            try {
+                                const name = this.workspaceScope.getRootName(new URI(s.options.workspaceFolderUri));
+                                return name ?? '(unknown)';
+                            } catch {
+                                return '(unknown)';
+                            }
+                        }
+                        return '(global)';
+                    });
+                    return `Ambiguous: multiple active sessions for '${args.configurationName}' in workspace roots: ${rootNames.join(', ')}. `
+                        + 'Please specify the workspaceRoot parameter to disambiguate.';
                 }
 
                 await this.debugSessionManager.terminateSession(session);
@@ -240,8 +352,8 @@ export class LaunchStopProvider implements ToolProvider {
         }
     }
 
-    private findSessionByConfigurationName(configurationName: string): DebugSession | undefined {
-        return this.debugSessionManager.sessions.find(
+    private findSessionsByConfigurationName(configurationName: string): DebugSession[] {
+        return this.debugSessionManager.sessions.filter(
             session => session.configuration.name === configurationName
         );
     }

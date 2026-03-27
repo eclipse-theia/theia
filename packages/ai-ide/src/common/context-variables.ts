@@ -16,3 +16,4 @@
 
 export const CONTEXT_FILES_VARIABLE_ID = 'contextFiles';
 export const TASK_CONTEXT_SUMMARY_VARIABLE_ID = 'taskContextSummary';
+export const WORKSPACE_ROOTS_VARIABLE_ID = 'workspaceRoots';

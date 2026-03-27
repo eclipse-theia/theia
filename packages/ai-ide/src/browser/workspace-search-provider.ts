@@ -46,15 +46,15 @@ export class WorkspaceSearchProvider implements ToolProvider {
             id: SEARCH_IN_WORKSPACE_FUNCTION_ID,
             name: SEARCH_IN_WORKSPACE_FUNCTION_ID,
             description: 'Searches file contents within the workspace for lines matching the given search term. ' +
-            'Returns up to 30 matching results by default (configurable via preferences). If results are truncated, ' +
-            'refine your search with fileExtensions or subDirectoryPath filters. ' +
-            'The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). ' +
-            'Returns a list of matches including: file path, line number, and the matching line content. ' +
-            'Multi-word patterns must match exactly (including spaces, case-insensitively). ' +
-            'For best results, use specific search terms and filter by file extensions or subdirectories. ' +
-            'For complex searches, prefer multiple simpler queries over one complex regex. ' +
-            'Use this for finding code patterns, function usages, or text across the codebase. ' +
-            'Do NOT use this for finding files by name - use findFilesByPattern instead.',
+                'Returns up to 30 matching results by default (configurable via preferences). If results are truncated, ' +
+                'refine your search with fileExtensions or subDirectoryPath filters. ' +
+                'The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). ' +
+                'Returns a list of matches including: file path, line number, and the matching line content. ' +
+                'Multi-word patterns must match exactly (including spaces, case-insensitively). ' +
+                'For best results, use specific search terms and filter by file extensions or subdirectories. ' +
+                'For complex searches, prefer multiple simpler queries over one complex regex. ' +
+                'Use this for finding code patterns, function usages, or text across the codebase. ' +
+                'Do NOT use this for finding files by name - use findFilesByPattern instead.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -75,8 +75,9 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     },
                     subDirectoryPath: {
                         type: 'string',
-                        description: 'Optional subdirectory path to limit search scope. Use relative paths from workspace root ' +
-                            '(e.g., "packages/ai-ide/src", "packages/core/src/browser"). If not specified, searches entire workspace.'
+                        description: 'Optional subdirectory path to limit search scope. Use the format "<rootName>/<relativePath>" ' +
+                            '(e.g., "frontend/src", "backend/packages/core/src/browser"). To search within a specific root, ' +
+                            'use just the root name (e.g., "backend"). If not specified, searches all workspace roots.'
                     }
                 },
                 required: ['query', 'useRegExp']
@@ -86,14 +87,21 @@ export class WorkspaceSearchProvider implements ToolProvider {
     }
 
     private async determineSearchRoots(subDirectoryPath?: string): Promise<string[]> {
-        const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-
-        if (!subDirectoryPath) {
-            return [workspaceRoot.toString()];
+        const rootMapping = this.workspaceScope.getRootMapping();
+        if (rootMapping.size === 0) {
+            throw new Error('No workspace has been opened yet');
         }
 
-        const subDirUri = workspaceRoot.resolve(subDirectoryPath);
-        this.workspaceScope.ensureWithinWorkspace(subDirUri, workspaceRoot);
+        if (!subDirectoryPath) {
+            return Array.from(rootMapping.values()).map(uri => uri.toString());
+        }
+
+        const subDirUri = await this.workspaceScope.resolveRelativePath(subDirectoryPath);
+        const containingRoot = this.workspaceScope.getContainingRoot(subDirUri);
+        if (!containingRoot) {
+            throw new Error(`Subdirectory '${subDirectoryPath}' is not within any workspace root`);
+        }
+        this.workspaceScope.ensureWithinWorkspace(subDirUri, containingRoot);
 
         try {
             const stat = await this.fileService.resolve(subDirUri);
@@ -195,8 +203,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
             const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
 
-            const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-            const formattedResults = optimizeSearchResults(finalResults, workspaceRoot);
+            const formattedResults = optimizeSearchResults(finalResults, this.workspaceScope);
 
             let numberOfMatchesInFinalResults = 0;
             for (const result of finalResults) {
@@ -218,4 +225,3 @@ export class WorkspaceSearchProvider implements ToolProvider {
         }
     }
 }
-

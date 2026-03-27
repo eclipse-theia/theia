@@ -533,6 +533,8 @@ export class CodexChatAgent implements ChatAgent {
         }
     }
 
+    // TODO: multi-root workspace support - currently only uses the first (primary) workspace root.
+    // In a multi-root workspace, the root URI should be resolved based on the context of the current chat request (e.g., the file being discussed).
     protected async getWorkspaceRootUri(): Promise<URI | undefined> {
         const roots = await this.workspaceService.roots;
         if (roots && roots.length > 0) {

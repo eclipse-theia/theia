@@ -71,9 +71,11 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
 
         try {
             const content = await this.fileService.readFile(uri);
+            const relativePath = this.wsService.getRootPrefixedPath(uri)
+                ?? await this.wsService.getWorkspaceRelativePath(uri);
             return {
                 variable: request.variable,
-                value: await this.wsService.getWorkspaceRelativePath(uri),
+                value: relativePath,
                 contextValue: content.value.toString(),
             };
         } catch (error) {
@@ -103,9 +105,26 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
     }
 
     protected async makeAbsolute(pathStr: string): Promise<URI | undefined> {
-        const path = new Path(Path.normalizePathSeparator(pathStr));
+        const normalizedPath = Path.normalizePathSeparator(pathStr);
+        const path = new Path(normalizedPath);
+
         if (!path.isAbsolute) {
             const workspaceRoots = this.wsService.tryGetRoots();
+
+            const segments = normalizedPath.split('/');
+            if (segments.length > 0) {
+                const potentialRootName = segments[0];
+                for (const root of workspaceRoots) {
+                    if (root.resource.path.base === potentialRootName) {
+                        const restOfPath = segments.slice(1).join('/');
+                        const uri = restOfPath ? root.resource.resolve(restOfPath) : root.resource;
+                        if (await this.fileService.exists(uri)) {
+                            return uri;
+                        }
+                    }
+                }
+            }
+
             const wsUris = workspaceRoots.map(root => root.resource.resolve(path));
             for (const uri of wsUris) {
                 if (await this.fileService.exists(uri)) {
@@ -113,6 +132,7 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
                 }
             }
         }
+
         const argUri = new URI(pathStr);
         if (await this.fileService.exists(argUri)) {
             return argUri;

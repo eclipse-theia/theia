@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { BasePromptFragment } from '@theia/ai-core/lib/common';
+import { WORKSPACE_ROOTS_VARIABLE_ID } from '../common/context-variables';
 
 export const EXPLORE_SYSTEM_PROMPT_ID = 'explore-system';
 
@@ -113,6 +114,8 @@ For each file, include ONLY what is needed for the task:
 6. If a requested symbol or feature is not found, report "Not Found" with the exact queries and paths checked.
 
 # Context
+
+{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
 
 {{contextFiles}}
 
