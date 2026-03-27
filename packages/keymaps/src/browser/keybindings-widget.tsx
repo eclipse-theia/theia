@@ -898,7 +898,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
      */
     protected resetButton: HTMLButtonElement | undefined;
 
-    //Tracks resources that need to be disposed of when the dialog closes.
+    // Tracks resources that need to be disposed of when the dialog closes.
     protected readonly keystrokeDisposable = new DisposableCollection();
 
     constructor(
@@ -949,8 +949,8 @@ class EditKeybindingDialog extends SingleTextInputDialog {
             return;
         }
 
-        //Only letting Enter and Escape bypass the capture
-        if(event.key === 'Enter' || event.key === 'Escape'){
+        // Only letting Enter and Escape bypass the capture
+        if (event.key === 'Enter' || event.key === 'Escape') {
             return;
         }
 
@@ -959,13 +959,13 @@ class EditKeybindingDialog extends SingleTextInputDialog {
 
         const keyCode = KeyCode.createKeyCode(event);
 
-        if(keyCode.isModifierOnly()){
+        if (keyCode.isModifierOnly()) {
             return;
         }
 
         const inputField = target as HTMLInputElement;
         inputField.value = keyCode.toString();
-        inputField.dispatchEvent(new window.Event('input', { bubbles: true}))
+        inputField.dispatchEvent(new window.Event('input', { bubbles: true}));
     };
 
     /**
