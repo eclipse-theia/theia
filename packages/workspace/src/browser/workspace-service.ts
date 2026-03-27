@@ -755,6 +755,31 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         return uri.path.fsPath();
     }
 
+    /**
+     * Returns a workspace-relative path prefixed with the containing root's
+     * directory name, e.g. `backend/src/index.ts`.
+     *
+     * In a single-root workspace the root name is still included so that the
+     * format is consistent regardless of how many roots are open.
+     *
+     * Falls back to the absolute filesystem path if the URI is not contained
+     * in any workspace root.
+     *
+     * @param uri URI of the file
+     */
+    getRootPrefixedPath(uri: URI): string {
+        const rootUri = this.getWorkspaceRootUri(uri);
+        if (!rootUri) {
+            return uri.path.fsPath();
+        }
+        const rootName = rootUri.path.base;
+        const relative = rootUri.relative(uri);
+        if (!relative || relative.toString() === '') {
+            return rootName;
+        }
+        return `${rootName}/${relative.toString()}`;
+    }
+
     areWorkspaceRoots(uris: URI[]): boolean {
         if (!uris.length) {
             return false;

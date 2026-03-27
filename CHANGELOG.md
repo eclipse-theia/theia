@@ -29,6 +29,7 @@
 - [ai-chat] fixed forward change events for restored chat request models [#17171](https://github.com/eclipse-theia/theia/pull/17171)
 - [ai-chat] fixed undo/redo history preservation when applying AI suggestions [#17044](https://github.com/eclipse-theia/theia/pull/17044)
 - [ai-chat] multiple chat fixes [#17081](https://github.com/eclipse-theia/theia/pull/17081)
+- [ai-chat] removed `FileValidationState.INVALID_SECONDARY` enum value as all workspace roots are now treated equally with multi-root support [#17262](https://github.com/eclipse-theia/theia/pull/17262)
 - [ai-chat-ui] enhanced the UI and UX of the ClaudeCode AskUserQuestion tool [#17003](https://github.com/eclipse-theia/theia/pull/17003)
 - [ai-chat-ui] prevent Chat UI crash when tool call returns a primitive value [#17203](https://github.com/eclipse-theia/theia/pull/17203)
 - [ai-chat-ui] sorted capabilities items by name [#17092](https://github.com/eclipse-theia/theia/pull/17092)
@@ -46,6 +47,7 @@
 - [ai-ide] provided multiple agents to allow for full software engineering flow [#17125](https://github.com/eclipse-theia/theia/pull/17125)
 - [ai-ide] removed beta labels from AI features [#17210](https://github.com/eclipse-theia/theia/pull/17210)
 - [ai-ide] removed junior contributions for release [#17222](https://github.com/eclipse-theia/theia/pull/17222)
+- [ai-ide] removed deprecated `WorkspaceFunctionScope.getWorkspaceRoot()` and `WorkspaceFunctionScope.isInPrimaryWorkspace()` methods in favor of multi-root equivalents [#17262](https://github.com/eclipse-theia/theia/pull/17262)
 - [claude] updated CLAUDE.md file [#17093](https://github.com/eclipse-theia/theia/pull/17093)
 - [core] added precheck optimization to LoggerSanitizer rules [#17139](https://github.com/eclipse-theia/theia/pull/17139) - contributed on behalf of STMicroelectronics
 - [core] added window zoom status bar item and fixed secondary window zoom [#17164](https://github.com/eclipse-theia/theia/pull/17164)

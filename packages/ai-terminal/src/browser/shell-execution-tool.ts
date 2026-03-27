@@ -25,7 +25,7 @@ import {
     ShellExecutionCanceledResult,
     combineAndTruncate
 } from '../common/shell-execution-server';
-import { CancellationToken, generateUuid } from '@theia/core';
+import { CancellationToken, generateUuid, Path } from '@theia/core';
 
 @injectable()
 export class ShellExecutionTool implements ToolProvider {
@@ -129,14 +129,16 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                     },
                     cwd: {
                         type: 'string',
-                        description: 'Working directory for command execution. Can be absolute or relative to workspace root. Defaults to the workspace root.'
+                        description: 'Working directory for command execution. MUST always be provided. ' +
+                            'Use a workspace-relative path (e.g., "backend", "frontend/src") ' +
+                            'or an absolute filesystem path.'
                     },
                     timeout: {
                         type: 'number',
                         description: 'Timeout in milliseconds. Default: 120000 (2 minutes). Max: 600000 (10 minutes).'
                     }
                 },
-                required: ['command', 'description']
+                required: ['command', 'description', 'cwd']
             },
             handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
             checkAutoAction: (argString: string): AutoActionResult | undefined => {
@@ -164,13 +166,11 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
     protected async executeCommand(argString: string, ctx?: unknown): Promise<ShellExecutionToolResult | ShellExecutionCanceledResult> {
         const args: {
             command: string;
-            cwd?: string;
+            cwd: string;
             timeout?: number;
         } = JSON.parse(argString);
 
-        // Get workspace root to pass to backend for path resolution
-        const rootUri = this.workspaceService.getWorkspaceRootUri(undefined);
-        const workspaceRoot = rootUri?.path.fsPath();
+        const resolvedCwd = this.resolveCwd(args.cwd);
 
         // Generate execution ID and get tool call ID from context
         const executionId = generateUuid();
@@ -187,11 +187,9 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         });
 
         try {
-            // Call the backend service (path resolution happens on the backend)
             const result = await this.shellServer.execute({
                 command: args.command,
-                cwd: args.cwd,
-                workspaceRoot,
+                cwd: resolvedCwd,
                 timeout: args.timeout,
                 executionId,
             });
@@ -224,7 +222,36 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         }
     }
 
-    protected extractToolCallId(ctx: unknown): string | undefined {
+    /**
+     * Resolves a cwd value to an absolute filesystem path.
+     * Handles: absolute paths (pass-through), root-relative paths (<rootName>/...),
+     * and bare root names.
+     */
+    private resolveCwd(cwd: string): string {
+        const normalized = Path.normalizePathSeparator(cwd);
+
+        if (new Path(normalized).isAbsolute) {
+            return normalized;
+        }
+
+        const segments = normalized.split('/');
+        const roots = this.workspaceService.tryGetRoots();
+        for (const root of roots) {
+            if (root.resource.path.base === segments[0]) {
+                const rest = segments.slice(1).join('/');
+                const resolved = rest ? root.resource.resolve(rest) : root.resource;
+                return resolved.path.fsPath();
+            }
+        }
+
+        if (roots.length === 1) {
+            return roots[0].resource.resolve(normalized).path.fsPath();
+        }
+
+        return cwd;
+    }
+
+    protected extractToolCallId(ctx?: unknown): string | undefined {
         if (ctx && typeof ctx === 'object' && 'toolCallId' in ctx) {
             return (ctx as { toolCallId?: string }).toolCallId;
         }

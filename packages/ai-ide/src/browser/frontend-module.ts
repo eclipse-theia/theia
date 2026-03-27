@@ -293,6 +293,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .inSingletonScope();
 
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
+
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
