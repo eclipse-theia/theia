@@ -816,7 +816,7 @@ export class RelativePattern {
     }
     set baseUri(baseUri: URI) {
         this._baseUri = baseUri;
-        this.base = baseUri.fsPath;
+        this._base = baseUri.fsPath;
     }
 
     constructor(base: theia.WorkspaceFolder | URI | string, public pattern: string) {

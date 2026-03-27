@@ -8182,10 +8182,8 @@ export module '@theia/plugin' {
          * A glob pattern that filters the file events on their absolute path must be provided. Optionally,
          * flags to ignore certain kinds of events can be provided. To stop listening to events the watcher must be disposed.
          *
-         * *Note* that only files within the current {@link workspace.workspaceFolders workspace folders} can be watched.
-         *
          * @param globPattern A {@link GlobPattern glob pattern} that is applied to the absolute paths of created, changed,
-         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain {@link WorkspaceFolder workspace folder}.
+         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain folder.
          * @param ignoreCreateEvents Ignore when files have been created.
          * @param ignoreChangeEvents Ignore when files have been changed.
          * @param ignoreDeleteEvents Ignore when files have been deleted.
