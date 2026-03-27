@@ -141,19 +141,18 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.getOrCreateByUri(uri, { ...options, counter: this.nextCounter() });
     }
 
-    protected readonly recentlyVisibleIds: string[] = [];
+    protected readonly recentlyVisibleEditors: EditorWidget[] = [];
     protected get recentlyVisible(): EditorWidget | undefined {
-        const id = this.recentlyVisibleIds[0];
-        return id && this.all.find(w => w.id === id) || undefined;
+        return this.recentlyVisibleEditors[0];
     }
     protected addRecentlyVisible(widget: EditorWidget): void {
         this.removeRecentlyVisible(widget);
-        this.recentlyVisibleIds.unshift(widget.id);
+        this.recentlyVisibleEditors.unshift(widget);
     }
     protected removeRecentlyVisible(widget: EditorWidget): void {
-        const index = this.recentlyVisibleIds.indexOf(widget.id);
+        const index = this.recentlyVisibleEditors.indexOf(widget);
         if (index !== -1) {
-            this.recentlyVisibleIds.splice(index, 1);
+            this.recentlyVisibleEditors.splice(index, 1);
         }
     }
 
@@ -227,14 +226,15 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 // Check the target tabbar for an existing widget.
                 const tabbar = insertionOptions.addOptions.ref && this.shell.getTabBarFor(insertionOptions.addOptions.ref);
                 if (tabbar) {
+                    // Note: there can be multiple editor widgets with the given URI in the target tabbar
+                    // (e.g., a regular editor widget and an editor widget within the 3-way merge editor).
+                    // Try to find the most recently visible editor widget with the given URI in the target tabbar.
                     const currentUri = uri.toString();
-                    for (const title of tabbar.titles) {
-                        if (title.owner instanceof EditorWidget) {
-                            const { uri: otherWidgetUri, id } = this.extractIdFromWidget(title.owner);
-                            if (otherWidgetUri === currentUri) {
-                                return await super.open(uri, { counter: id, ...options });
-                            }
-                        }
+                    const predicate = (widget: EditorWidget) => widget.editor.uri.toString() === currentUri && tabbar.titles.find(title => title.owner.contains(widget));
+                    const existingWidget = this.recentlyVisibleEditors.find(predicate) ?? this.all.find(predicate);
+                    if (existingWidget) {
+                        const { id } = this.extractIdFromWidget(existingWidget);
+                        return await super.open(uri, { counter: id, ...options });
                     }
                 }
                 // If the user has opted to prefer to open an existing editor even if it's on a different tab, check if we have anything about the URI.
@@ -356,7 +356,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     protected getCounterForUri(uri: URI): number | undefined {
         const idWithoutCounter = EditorWidgetFactory.createID(uri);
-        const counterOfMostRecentlyVisibleEditor = this.recentlyVisibleIds.find(id => id.startsWith(idWithoutCounter))?.slice(idWithoutCounter.length + 1);
+        const counterOfMostRecentlyVisibleEditor = this.recentlyVisibleEditors.find(widget => widget.id.startsWith(idWithoutCounter))?.id.slice(idWithoutCounter.length + 1);
         return counterOfMostRecentlyVisibleEditor === undefined ? undefined : parseInt(counterOfMostRecentlyVisibleEditor);
     }
 

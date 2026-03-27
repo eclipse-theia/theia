@@ -67,10 +67,12 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             this.editorManager.onCurrentEditorChanged(this.onCurrentEditorChanged.bind(this)),
             this.editorManager.onCreated(widget => {
                 this.locationStack.removeClosedEditor(widget.editor.uri);
-                widget.disposed.connect(() => this.locationStack.addClosedEditor({
-                    uri: widget.editor.uri,
-                    viewState: widget.editor.storeViewState()
-                }));
+                if (widget.navigationHistorySupport) {
+                    widget.disposed.connect(() => this.locationStack.addClosedEditor({
+                        uri: widget.editor.uri,
+                        viewState: widget.editor.storeViewState()
+                    }));
+                }
             })
         ]);
         this.commandRegistry.registerHandler(EditorCommands.GO_BACK.id, {
@@ -238,7 +240,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
 
     protected onCurrentEditorChanged(editorWidget: EditorWidget | undefined): void {
         this.toDisposePerCurrentEditor.dispose();
-        if (editorWidget) {
+        if (editorWidget?.navigationHistorySupport) {
             const { editor } = editorWidget;
             this.toDisposePerCurrentEditor.pushAll([
                 // Instead of registering an `onCursorPositionChanged` listener, we treat the zero length selection as a cursor position change.
