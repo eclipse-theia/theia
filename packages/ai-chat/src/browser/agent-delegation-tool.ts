@@ -29,6 +29,7 @@ import {
     ChatSession,
     ChatRequestInvocation,
 } from '../common';
+import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
 
 @injectable()
 export class AgentDelegationTool implements ToolProvider {
@@ -50,7 +51,8 @@ export class AgentDelegationTool implements ToolProvider {
                 'Delegate a task or question to a specific AI agent. IMPORTANT: When you delegate a task or question to a specific AI agent using this tool, ' +
                 'remember that each sub-agent operates solely within its specialized capabilities and tools and does not have access to previous conversation context ' +
                 ' or external systems. Therefore, it is crucial to provide all necessary context and detailed information directly within your request to ensure accurate ' +
-                'and effective task completion.',
+                'and effective task completion. ' +
+                'You may optionally pass a taskContextId to make a specific task context (e.g. a plan) available to the delegated agent via its system prompt.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -63,6 +65,10 @@ export class AgentDelegationTool implements ToolProvider {
                         type: 'string',
                         description:
                             'The task, question, or prompt to pass to the specified agent.',
+                    },
+                    taskContextId: {
+                        type: 'string',
+                        description: 'Optional task context ID to make available to the delegated agent. The agent will see the task context in its system prompt.',
                     },
                 },
                 required: ['agentId', 'prompt'],
@@ -88,7 +94,7 @@ export class AgentDelegationTool implements ToolProvider {
 
         try {
             const args = JSON.parse(arg_string);
-            const { agentId, prompt } = args;
+            const { agentId, prompt, taskContextId } = args;
 
             if (!agentId || !prompt) {
                 const errorMsg = 'Both agentId and prompt parameters are required.';
@@ -121,11 +127,19 @@ export class AgentDelegationTool implements ToolProvider {
                     { focus: false },
                     agent
                 );
+
                 // Set root session ID to enable task context sharing across delegation chains
                 // Root is either the current root (for nested delegation) or current session (for first-level delegation)
                 const rootId = ctx.rootSessionId || ctx.request.session.id;
                 newSession.rootSessionId = rootId;
                 newSession.model.rootSessionId = rootId;
+
+                if (taskContextId) {
+                    newSession.model.context.addVariables({
+                        variable: TASK_CONTEXT_VARIABLE,
+                        arg: taskContextId
+                    });
+                }
 
                 // Immediately restore the original active session to avoid confusing the user
                 if (currentActiveSession) {
