@@ -136,10 +136,11 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
     }
 }
 
-class ReconnectableSocketChannel extends AbstractChannel {
-    private socket: Socket | undefined;
-    private socketBuffer = new SocketWriteBuffer();
-    private disposables = new DisposableCollection();
+@injectable()
+export class ReconnectableSocketChannel extends AbstractChannel {
+    protected socket: Socket | undefined;
+    protected socketBuffer = new SocketWriteBuffer();
+    protected disposables = new DisposableCollection();
 
     connect(socket: Socket): void {
         this.disposables = new DisposableCollection();
