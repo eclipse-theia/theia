@@ -1,7 +1,7 @@
 {
-  "name": "@theia/native-webpack-plugin",
+  "name": "@theia/bundle-plugin",
   "version": "1.70.0",
-  "description": "Webpack Plugin for native dependencies of Theia.",
+  "description": "Contains bundler plugins for Theia.",
   "publishConfig": {
     "access": "public"
   },
