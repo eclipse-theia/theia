@@ -51,6 +51,13 @@ export module '@theia/plugin' {
     }
 
     export namespace scm {
-        export function createSourceControl(id: string, label: string, rootUri?: Uri, iconPath?: IconPath, parent?: SourceControl): SourceControl;
+        export function createSourceControl(
+            id: string,
+            label: string,
+            rootUri?: Uri,
+            iconPath?: IconPath,
+            isHidden?: boolean,
+            parent?: SourceControl
+        ): SourceControl;
     }
 }
