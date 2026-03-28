@@ -219,6 +219,10 @@ export class DebugSessionManager {
     async start(options: DebugSessionOptions): Promise<DebugSession | boolean | undefined>;
     async start(name: string): Promise<DebugSession | boolean | undefined>;
     async start(optionsOrName: DebugSessionOptions | string): Promise<DebugSession | boolean | undefined> {
+        // Immediately update context keys to prevent concurrent START commands
+        // from firing before the async session setup completes
+        this.inDebugModeKey.set(true);
+        this.debugStateKey.set('running');
         if (typeof optionsOrName === 'string') {
             const options = this.debugConfigurationManager.find(optionsOrName);
             return !!options && this.start(options);
