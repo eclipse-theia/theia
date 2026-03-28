@@ -81,6 +81,14 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected readonly activationEvents = new Set<string>();
 
+    protected workspaceTrusted: boolean = false;
+
+    protected readonly _disabledByTrust = new Set<string>();
+
+    get disabledByTrust(): ReadonlySet<string> {
+        return this._disabledByTrust;
+    }
+
     protected readonly onDidChangePluginsEmitter = new Emitter<void>();
     readonly onDidChangePlugins = this.onDidChangePluginsEmitter.event;
 
@@ -147,6 +155,8 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
     protected async doLoad(): Promise<void> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
 
+        this._disabledByTrust.clear();
+
         await this.beforeSyncPlugins(toDisconnect);
 
         // process empty plugins as well in order to properly remove stale plugin widgets
@@ -163,6 +173,9 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             return;
         }
         const contributionsByHost = this.loadContributions(toDisconnect);
+        if (this._disabledByTrust.size > 0) {
+            this.onDidChangePluginsEmitter.fire(undefined);
+        }
 
         await this.afterLoadContributions(toDisconnect);
 
@@ -298,9 +311,13 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
 
         for (const contributions of this.contributions.values()) {
+            if (!this.workspaceTrusted && contributions.plugin.metadata.model.untrustedWorkspacesSupport === false) {
+                this._disabledByTrust.add(PluginIdentifiers.componentsToUnversionedId(contributions.plugin.metadata.model));
+                continue;
+            }
+
             const plugin = contributions.plugin.metadata;
             const pluginId = plugin.model.id;
-
             if (contributions.state === PluginContributions.State.INITIALIZING) {
                 contributions.state = PluginContributions.State.LOADING;
                 contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));

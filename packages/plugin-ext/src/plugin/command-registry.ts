@@ -22,10 +22,11 @@ import * as theia from '@theia/plugin';
 import * as model from '../common/plugin-api-rpc-model';
 import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Disposable } from './types-impl';
+import { Disposable, URI } from './types-impl';
 import { DisposableCollection } from '@theia/core';
 import { KnownCommands } from './known-commands';
 import { ArgumentProcessor } from '../common/commands';
+import { isUriComponents } from './type-converters';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
@@ -42,6 +43,16 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
         this.argumentProcessors = [];
         this.commandsConverter = new CommandsConverter(this);
+        this.registerArgumentProcessor({
+            processArgument: arg => {
+                // Revive URI-like plain objects that lost their class identity during RPC/JSON serialization
+                // (e.g. command arguments from markdown links parsed by CommandOpenHandler)
+                if (isUriComponents(arg) && !(arg instanceof URI)) {
+                    return URI.revive(arg);
+                }
+                return arg;
+            }
+        });
     }
 
     get converter(): CommandsConverter {

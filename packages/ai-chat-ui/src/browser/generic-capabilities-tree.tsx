@@ -202,10 +202,10 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
 
         return [
             buildFlatRootNode('skills', nls.localizeByDefault('Skills'), 'skills', availableCapabilities.skills),
-            buildGroupedRootNode('mcp', nls.localize('theia/ai/chat-ui/mcpFunctions', 'MCP'), 'mcpFunctions', availableCapabilities.mcpFunctions),
+            buildGroupedRootNode('mcp', nls.localizeByDefault('MCP'), 'mcpFunctions', availableCapabilities.mcpFunctions),
             buildFlatRootNode('agents', nls.localizeByDefault('Agents'), 'agentDelegation', availableCapabilities.agentDelegation),
             buildGroupedRootNode('functions', nls.localize('theia/ai/chat-ui/functions', 'Functions'), 'functions', availableCapabilities.functions),
-            buildFlatRootNode('prompts', nls.localize('theia/ai/chat-ui/promptFragments', 'Prompts'), 'promptFragments', availableCapabilities.promptFragments),
+            buildFlatRootNode('prompts', nls.localizeByDefault('Prompts'), 'promptFragments', availableCapabilities.promptFragments),
             buildFlatRootNode('variables', nls.localizeByDefault('Variables'), 'variables', availableCapabilities.variables),
         ].filter((node): node is TreeNodeData => node !== undefined);
     }, [availableCapabilities, genericCapabilities, disabledCapabilities]);

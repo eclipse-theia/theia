@@ -19,12 +19,10 @@ import URI from '@theia/core/lib/common/uri';
 import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
-import {
-    FrontendApplicationContribution, LabelProvider
-} from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProvider, OnWillStopAction } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, environment, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
 import { WorkspacePreferences } from '../common/workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from '@theia/core/shared/ajv';
@@ -43,6 +41,11 @@ export interface WorkspaceOpenHandlerContribution {
     canHandle(uri: URI): MaybePromise<boolean>;
     openWorkspace(uri: URI, options?: WorkspaceInput): MaybePromise<void>;
     getWorkspaceLabel?(uri: URI): MaybePromise<string | undefined>;
+}
+
+export const WorkspaceHandlingContribution = Symbol('WorkspaceHandlingContribution');
+export interface WorkspaceHandlingContribution {
+    modifyRecentWorkspaces?(workspaces: string[]): MaybePromise<string[]>;
 }
 
 /**
@@ -103,6 +106,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
 
     @inject(ContributionProvider) @named(WorkspaceOpenHandlerContribution)
     protected readonly openHandlerContribution: ContributionProvider<WorkspaceOpenHandlerContribution>;
+
+    @inject(ContributionProvider) @named(WorkspaceHandlingContribution)
+    protected readonly workspaceHandlingContribution: ContributionProvider<WorkspaceHandlingContribution>;
 
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {
@@ -340,14 +346,46 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
-     * on unload, we set our workspace root as the last recently used on the backend.
+     * On unload, we set our workspace root as the last recently used on the backend.
+     *
+     * In the browser, we use `onStop` (fire-and-forget) because `onWillStop` actions
+     * are never executed during browser tab close and returning an `OnWillStopAction`
+     * would trigger an unwanted "Leave site?" confirmation dialog.
+     *
+     * In Electron, we use `onWillStop` so the workspace is persisted before the window closes.
      */
     onStop(): void {
+        if (!environment.electron.is()) {
+            this.setMostRecentlyUsedWorkspace();
+        }
+    }
+
+    onWillStop(): OnWillStopAction | undefined {
+        if (environment.electron.is() && this.workspace) {
+            return {
+                reason: 'Set workspace root as most recently used',
+                action: async () => {
+                    await this.setMostRecentlyUsedWorkspace();
+                    return true;
+                }
+            };
+        }
+    }
+
+    protected setMostRecentlyUsedWorkspace(): void {
         this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
     }
 
     async recentWorkspaces(): Promise<string[]> {
-        return this.server.getRecentWorkspaces();
+        let recentWorkspaces = await this.server.getRecentWorkspaces();
+
+        for (const handler of this.workspaceHandlingContribution.getContributions()) {
+            if (handler.modifyRecentWorkspaces) {
+                recentWorkspaces = await handler.modifyRecentWorkspaces(recentWorkspaces);
+            }
+        }
+
+        return recentWorkspaces;
     }
 
     async removeRecentWorkspace(uri: string): Promise<void> {
@@ -387,7 +425,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         throw new Error(`Could not find a handler to open the workspace with uri ${uri.toString()}.`);
     }
 
-    async canHandle(uri: URI): Promise<boolean> {
+    canHandle(uri: URI): boolean {
         return uri.scheme === 'file';
     }
 

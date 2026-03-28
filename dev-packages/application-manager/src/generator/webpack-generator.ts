@@ -95,6 +95,12 @@ const plugins = [
                 from: path.join(resolvePackagePath('@theia/plugin-ext-vscode', __dirname), '..', 'lib', 'node', 'context', 'plugin-vscode-init-fe.js'),
                 to: path.resolve(__dirname, 'lib', 'frontend', 'context', 'plugin-vscode-init-fe.js')
             }`)}
+            ${this.ifPackage('@theia/terminal', `,
+            {
+                // copy shell integration scripts
+                from: path.join(resolvePackagePath('@theia/terminal', __dirname), '..', 'src', 'node', 'shell-integrations'),
+                to: path.resolve(__dirname, 'lib', 'backend', 'shell-integrations')
+            }`)}
         ]
     }),
     new webpack.ProvidePlugin({
@@ -114,7 +120,6 @@ module.exports = [{
     devtool: 'source-map',
     entry: {
         bundle: path.resolve(__dirname, 'src-gen/frontend/index.js'),
-        ${this.ifMonaco(() => "'editor.worker': '@theia/monaco-editor-core/esm/vs/editor/editor.worker.js'")}
     },
     output: {
         filename: '[name].js',
@@ -221,6 +226,15 @@ module.exports = [{
             'os': false,
             'timers': false
         },
+        ${this.ifMonaco(() => `alias: {
+            // Replace Monaco's nls module with Theia's localization-aware version.
+            // ESM exports are immutable so we cannot override localize/localize2 at runtime.
+            // Using the resolved absolute path ensures that both external imports
+            // (e.g. '@theia/monaco-editor-core/esm/vs/nls') and internal relative
+            // imports within Monaco (e.g. '../nls.js') are redirected.
+            [path.join(resolvePackagePath('@theia/monaco-editor-core', __dirname), '..', 'esm', 'vs', 'nls.js')]:
+                path.join(resolvePackagePath('@theia/monaco', __dirname), '..', 'lib', 'browser', 'monaco-nls.js')
+        },`)}
         extensions: ['.js']
     },
     stats: {
@@ -237,6 +251,33 @@ module.exports = [{
         }
     ]
 },
+${this.ifMonaco(() => `{
+    // The Monaco editor worker must be built separately without the NLS alias.
+    // The NLS alias redirects to monaco-nls.ts which imports from @theia/core,
+    // and those modules are not available in the web worker context.
+    mode,
+    devtool: 'source-map',
+    entry: {
+        'editor.worker': '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWebWorkerMain.js'
+    },
+    output: {
+        filename: '[name].js',
+        path: outputPath,
+        devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+        globalObject: 'self'
+    },
+    target: 'webworker',
+    cache: staticCompression,
+    resolve: {
+        extensions: ['.js']
+    },
+    ignoreWarnings: [
+        {
+            module: /@theia\\/monaco-editor-core/,
+            message: /require function is used in a way in which dependencies cannot be statically extracted/
+        }
+    ]
+},`)}
 {
     mode,
     plugins: [
@@ -282,6 +323,15 @@ module.exports = [{
             'os': false,
             'timers': false
         },
+        ${this.ifMonaco(() => `alias: {
+            // Replace Monaco's nls module with Theia's localization-aware version.
+            // ESM exports are immutable so we cannot override localize/localize2 at runtime.
+            // Using the resolved absolute path ensures that both external imports
+            // (e.g. '@theia/monaco-editor-core/esm/vs/nls') and internal relative
+            // imports within Monaco (e.g. '../nls.js') are redirected.
+            [path.join(resolvePackagePath('@theia/monaco-editor-core', __dirname), '..', 'esm', 'vs', 'nls.js')]:
+                path.join(resolvePackagePath('@theia/monaco', __dirname), '..', 'lib', 'browser', 'monaco-nls.js')
+        },`)}
         extensions: ['.js']
     },
     stats: {
@@ -434,8 +484,9 @@ const config = {
         'plugin-host': require.resolve('@theia/plugin-ext/lib/hosted/node/plugin-host'),`)}
         ${this.ifPackage('@theia/plugin-ext-headless', () => `// Theia Headless Plugin support:
         'plugin-host-headless': require.resolve('@theia/plugin-ext-headless/lib/hosted/node/plugin-host-headless'),`)}
-        ${this.ifPackage('@theia/process', () => `// Make sure the node-pty thread worker can be executed:
-        'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),`)}        
+        ${this.ifPackage('@theia/process', () => `// Make sure the node-pty thread workers can be executed:
+        'worker/conoutSocketWorker': require.resolve('node-pty/lib/worker/conoutSocketWorker'),
+        'conpty_console_list_agent': require.resolve('node-pty/lib/conpty_console_list_agent'),`)}        
         ${this.ifElectron("'electron-main': require.resolve('./src-gen/backend/electron-main'),")}
         ${this.ifPackage('@theia/dev-container', () => `// VS Code Dev-Container communication:
         'dev-container-server': require.resolve('@theia/dev-container/lib/dev-container-server/dev-container-server'),`)}
@@ -459,6 +510,16 @@ const config = {
                 test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader'
+            },
+            // node-pty uses a dynamic require which needs to be rewritten to work with webpack.
+            {
+                test: /node_modules[/\\\\]node-pty[/\\\\]lib[/\\\\]utils\.js$/,
+                loader: 'string-replace-loader',
+                options: {
+                    search: /require\\(/,
+                    replace: '__non_webpack_require__(',
+                    flags: 'g'
+                }
             },
             // jsonc-parser exposes its UMD implementation by default, which
             // confuses Webpack leading to missing js in the bundles.

@@ -244,7 +244,7 @@ export const CodeWrapper = (props: {
             wordWrap: 'off',
             codeLens: false,
             inlayHints: { enabled: 'off' },
-            hover: { enabled: false }
+            hover: { enabled: 'off' }
         });
         editor.document.textEditorModel.setValue(props.content);
         editor.getControl().onContextMenu(e => props.contextMenuCallback(e.event));

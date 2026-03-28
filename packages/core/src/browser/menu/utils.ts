@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Arm and others.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,28 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import * as React from '@theia/core/shared/react';
-import { ReactWidget } from '@theia/core/lib/browser';
-import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { nls } from '@theia/core/lib/common/nls';
-
-@injectable()
-export class ScmNoRepositoryWidget extends ReactWidget {
-
-    static ID = 'scm-no-repository-widget';
-
-    constructor() {
-        super();
-        this.addClass('theia-scm-no-repository');
-        this.id = ScmNoRepositoryWidget.ID;
+export function combineWhenExpressions(...expressions: Array<string | undefined>): string | undefined {
+    const parts = expressions.filter((expression): expression is string => !!expression);
+    if (parts.length === 0) {
+        return undefined;
     }
-
-    protected render(): React.ReactNode {
-        return <AlertMessage
-            type='WARNING'
-            header={nls.localize('theia/scm/noRepositoryFound', 'No repository found')}
-        />;
+    if (parts.length === 1) {
+        return parts[0];
     }
-
+    return parts.map(expression => `(${expression})`).join(' && ');
 }

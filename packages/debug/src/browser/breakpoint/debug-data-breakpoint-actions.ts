@@ -95,7 +95,7 @@ export class AddOrEditDataBreakpointAddress implements CommandHandler {
 
         const src: DataBreakpointSource = { type: DataBreakpointSourceType.Address, ...range };
         if (existingBreakpoint) {
-            this.breakpointManager.removeDataBreakpoint(existingBreakpoint.id);
+            this.breakpointManager.removeDataBreakpoint(existingBreakpoint);
         }
 
         this.breakpointManager.addDataBreakpoint(DataBreakpoint.create({ dataId: info.dataId, accessType }, { ...info, canPersist: true }, src));

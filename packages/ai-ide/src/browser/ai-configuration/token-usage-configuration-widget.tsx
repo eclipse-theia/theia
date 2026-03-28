@@ -85,7 +85,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
         const columns: TableColumn<ModelTokenUsageData>[] = [
             {
                 id: 'model',
-                label: nls.localize('theia/ai/tokenUsage/model', 'Model'),
+                label: nls.localizeByDefault('Model'),
                 className: 'token-usage-model-column',
                 renderCell: item => <span>{item.modelId}</span>
             },
@@ -137,7 +137,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
             },
             {
                 id: 'total-tokens',
-                label: nls.localize('theia/ai/tokenUsage/totalTokens', 'Total Tokens'),
+                label: nls.localizeByDefault('Total Tokens'),
                 className: 'token-usage-column',
                 renderCell: item => {
                     const totalTokens = item.inputTokens + item.outputTokens + (item.cachedInputTokens ?? 0);

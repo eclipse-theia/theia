@@ -676,12 +676,23 @@ class SourceControlImpl implements theia.SourceControl {
     private readonly onDidChangeSelectionEmitter = new Emitter<boolean>();
     readonly onDidChangeSelection = this.onDidChangeSelectionEmitter.event;
 
+    private _contextValue: string | undefined = undefined;
+
+    get contextValue(): string | undefined {
+        return this._contextValue;
+    }
+
+    set contextValue(contextValue: string | undefined) {
+        this._contextValue = contextValue;
+        this.proxy.$updateSourceControl(this.handle, { contextValue });
+    }
+
     private readonly onDidDisposeEmitter = new Emitter<void>();
     readonly onDidDispose = this.onDidDisposeEmitter.event;
 
     readonly onDidDisposeParent: Event<void>;
 
-    private handle: number = SourceControlImpl.handlePool++;
+    readonly handle: number = SourceControlImpl.handlePool++;
 
     constructor(
         private plugin: Plugin,
@@ -694,7 +705,7 @@ class SourceControlImpl implements theia.SourceControl {
         _parent?: SourceControlImpl
     ) {
         this.inputBox = new ScmInputBoxImpl(plugin, this.proxy, this.handle);
-        this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri);
+        this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri, _parent?.handle);
         this.onDidDisposeParent = _parent ? _parent.onDidDispose : Event.None;
     }
 
@@ -824,9 +835,11 @@ export class ScmExtImpl implements ScmExt {
         });
     }
 
-    createSourceControl(extension: Plugin, id: string, label: string, rootUri: theia.Uri | undefined): theia.SourceControl {
+    createSourceControl(extension: Plugin, id: string, label: string, rootUri: theia.Uri | undefined,
+        iconPath?: theia.IconPath, parent?: theia.SourceControl): theia.SourceControl {
         const handle = ScmExtImpl.handlePool++;
-        const sourceControl = new SourceControlImpl(extension, this.proxy, this.commands, id, label, rootUri);
+        const parentImpl = parent ? this.findSourceControlImpl(parent) : undefined;
+        const sourceControl = new SourceControlImpl(extension, this.proxy, this.commands, id, label, rootUri, iconPath, parentImpl);
         this.sourceControls.set(handle, sourceControl);
 
         const sourceControls = this.sourceControlsByExtension.get(extension.model.id) || [];
@@ -834,6 +847,15 @@ export class ScmExtImpl implements ScmExt {
         this.sourceControlsByExtension.set(extension.model.id, sourceControls);
 
         return sourceControl;
+    }
+
+    private findSourceControlImpl(apiObject: theia.SourceControl): SourceControlImpl | undefined {
+        for (const impl of this.sourceControls.values()) {
+            if (impl.id === apiObject.id && impl.rootUri?.toString() === apiObject.rootUri?.toString()) {
+                return impl;
+            }
+        }
+        return undefined;
     }
 
     getLastInputBox(extension: Plugin): ScmInputBoxImpl | undefined {

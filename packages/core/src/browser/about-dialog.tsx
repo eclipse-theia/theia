@@ -21,7 +21,7 @@ import { ReactDialog } from './dialogs/react-dialog';
 import { ApplicationServer, ApplicationInfo, ExtensionInfo } from '../common/application-protocol';
 import { Message } from './widgets/widget';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
+import { DEFAULT_SUPPORTED_API_VERSION, DEFAULT_SUPPORTED_MONACO_VERSION } from '@theia/application-package/lib/api';
 import { WindowService } from './window/window-service';
 import { Key, KeyCode } from './keys';
 import { nls } from '../common/nls';
@@ -69,6 +69,7 @@ export class AboutDialog extends ReactDialog<void> {
         const versionLabel = nls.localizeByDefault('Version');
         const defaultApiLabel = nls.localize('theia/core/about/defaultApi', 'Default {0} API', 'VS Code');
         const compatibilityLabel = nls.localize('theia/core/about/compatibility', '{0} Compatibility', 'VS Code');
+        const monacoLabel = nls.localize('theia/core/about/monacoEditor', 'Monaco Editor Version');
 
         return <>
             <h3>{detailsLabel}</h3>
@@ -84,6 +85,7 @@ export class AboutDialog extends ReactDialog<void> {
                         {compatibilityLabel}
                     </a>
                 </p>
+                <p>{`${monacoLabel}: ${DEFAULT_SUPPORTED_MONACO_VERSION}`}</p>
             </div>
         </>;
     }

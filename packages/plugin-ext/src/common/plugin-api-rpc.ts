@@ -1036,7 +1036,7 @@ export interface DecorationsMain {
 }
 
 export interface ScmMain {
-    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents): Promise<void>;
+    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents, parentHandle?: number): Promise<void>;
     $updateSourceControl(sourceControlHandle: number, features: SourceControlProviderFeatures): Promise<void>;
     $unregisterSourceControl(sourceControlHandle: number): Promise<void>;
 
@@ -1061,6 +1061,7 @@ export interface SourceControlProviderFeatures {
     commitTemplate?: string;
     acceptInputCommand?: Command;
     statusBarCommands?: Command[];
+    contextValue?: string;
 }
 
 export interface SourceControlGroupFeatures {
@@ -1247,9 +1248,22 @@ export interface TextEditorPositionData {
     [id: string]: EditorPosition;
 }
 
+export interface TextEditorDiffInformationDto {
+    readonly documentVersion: number;
+    readonly original: UriComponents | undefined;
+    readonly modified: UriComponents;
+    readonly changes: readonly {
+        readonly original: { readonly startLineNumber: number; readonly endLineNumberExclusive: number };
+        readonly modified: { readonly startLineNumber: number; readonly endLineNumberExclusive: number };
+        readonly kind: number;
+    }[];
+    readonly isStale: boolean;
+}
+
 export interface TextEditorsExt {
     $acceptEditorPropertiesChanged(id: string, props: EditorChangedPropertiesData): void;
     $acceptEditorPositionData(data: TextEditorPositionData): void;
+    $acceptEditorDiffInformation(id: string, diffInformation: TextEditorDiffInformationDto[] | undefined): void;
 }
 
 export interface SingleEditOperation {
@@ -1501,8 +1515,13 @@ export interface OutputChannelRegistryMain {
 
 export type CharacterPair = [string, string];
 
+export interface LineCommentRule {
+    comment: string;
+    noIndent?: boolean;
+}
+
 export interface CommentRule {
-    lineComment?: string;
+    lineComment?: string | LineCommentRule;
     blockComment?: CharacterPair;
 }
 

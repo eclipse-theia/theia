@@ -33,12 +33,14 @@ import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
+import { AgentModeConfirmationService } from './agent-mode-confirmation-service';
 
 export const CoderAgentId = 'Coder';
 
 @injectable()
 export class CoderAgent extends AbstractModeAwareChatAgent {
     @inject(ChatService) protected readonly chatService: ChatService;
+    @inject(AgentModeConfirmationService) protected readonly agentModeConfirmation: AgentModeConfirmationService;
     id: string = CoderAgentId;
     name = CoderAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
@@ -69,14 +71,32 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
 
     override prompts: PromptVariantSet[] = [{
         id: CODER_SYSTEM_PROMPT_ID,
-        defaultVariant: getCoderPromptTemplateEdit(),
-        variants: [getCoderAgentModePromptTemplate(), getCoderAgentModeNextPromptTemplate(), getCoderPromptTemplateEditNext()]
+        defaultVariant: getCoderAgentModePromptTemplate(),
+        variants: [getCoderPromptTemplateEdit(), getCoderAgentModeNextPromptTemplate(), getCoderPromptTemplateEditNext()]
     }];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
+
     override async invoke(request: MutableChatRequestModel): Promise<void> {
+        if (this.isAgentModeRequest(request) && !this.agentModeConfirmation.isAcknowledged()) {
+            const confirmed = await this.agentModeConfirmation.requestConfirmation(request);
+            if (!confirmed) {
+                request.response.complete();
+                return;
+            }
+        }
         await super.invoke(request);
         this.suggest(request);
     }
+
+    protected isAgentModeRequest(request: MutableChatRequestModel): boolean {
+        const modeId = request.request.modeId;
+        if (modeId) {
+            return modeId === CODER_AGENT_MODE_TEMPLATE_ID || modeId === CODER_AGENT_MODE_NEXT_TEMPLATE_ID;
+        }
+        const effectiveVariantId = this.getEffectiveVariantIdWithMode(undefined);
+        return effectiveVariantId === CODER_AGENT_MODE_TEMPLATE_ID || effectiveVariantId === CODER_AGENT_MODE_NEXT_TEMPLATE_ID;
+    }
+
     async suggest(context: ChatSession | ChatRequestModel): Promise<void> {
         const contextIsRequest = ChatRequestModel.is(context);
         const model = contextIsRequest ? context.session : context.model;

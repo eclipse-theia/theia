@@ -50,7 +50,7 @@ export class TheiaTextEditor extends TheiaEditor {
     }
 
     protected async typeTextAndHitEnter(text: string): Promise<void> {
-        await this.page.keyboard.type(text);
+        await TheiaMonacoEditor.typeText(this.page, text);
         await this.page.keyboard.press('Enter');
     }
 
@@ -107,7 +107,7 @@ export class TheiaTextEditor extends TheiaEditor {
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
-        await this.page.keyboard.type(newText);
+        await TheiaMonacoEditor.typeText(this.page, newText);
     }
 
     async addTextToNewLineAfterLineByLineNumber(lineNumber: number, newText: string): Promise<void> {
@@ -115,7 +115,7 @@ export class TheiaTextEditor extends TheiaEditor {
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
-        await this.page.keyboard.type(newText);
+        await TheiaMonacoEditor.typeText(this.page, newText);
     }
 
     protected async selectLine(lineLocator: Locator | undefined): Promise<void> {

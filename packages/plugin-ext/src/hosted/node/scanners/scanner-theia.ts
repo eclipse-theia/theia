@@ -176,7 +176,15 @@ export abstract class AbstractPluginScanner implements PluginScanner {
             licenseUrl: this.getLicenseUrl(plugin),
             readmeUrl: this.getReadmeUrl(plugin)
         };
+        this.applyTrustExtraction(plugin, result);
         return result;
+    }
+
+    protected applyTrustExtraction(plugin: PluginPackage, result: PluginModel): void {
+        const untrustedWorkspacesSupport = plugin.capabilities?.untrustedWorkspaces?.supported;
+        if (untrustedWorkspacesSupport !== undefined) {
+            result.untrustedWorkspacesSupport = untrustedWorkspacesSupport;
+        }
     }
 
     protected getReadmeUrl(plugin: PluginPackage): string | undefined {

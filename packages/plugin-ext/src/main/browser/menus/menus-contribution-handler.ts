@@ -22,6 +22,7 @@ import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmRepositoriesWidget, SCM_SOURCE_CONTROL_TITLE_MENU } from '@theia/scm/lib/browser/scm-repositories-widget';
 import { KeybindingRegistry, QuickCommandService, codicon } from '@theia/core/lib/browser';
 import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
@@ -61,6 +62,7 @@ export class MenusContributionPointHandler {
             isVisible: widget => CodeEditorWidgetUtil.is(widget)
         });
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);
+        this.tabBarToolbar.registerMenuDelegate(SCM_SOURCE_CONTROL_TITLE_MENU, widget => widget instanceof ScmRepositoriesWidget);
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => !CodeEditorWidgetUtil.is(widget));
     }
 
@@ -115,6 +117,7 @@ export class MenusContributionPointHandler {
                                 const action: CommandMenu & AcceleratorSource = {
                                     id: command,
                                     sortString: order || '',
+                                    when: item.when,
                                     isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
                                         if (item.when && !contextMatcher.match(item.when, context)) {
                                             return false;

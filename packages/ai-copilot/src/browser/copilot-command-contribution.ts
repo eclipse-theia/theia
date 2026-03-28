@@ -20,7 +20,7 @@ import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service';
 import { CopilotAuthDialog, CopilotAuthDialogProps } from './copilot-auth-dialog';
-import { COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences';
+import { COPILOT_ENABLED_PREF, COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences';
 
 export namespace CopilotCommands {
     export const SIGN_IN: Command = Command.toLocalizedCommand(
@@ -86,7 +86,7 @@ export class CopilotCommandContribution implements CommandContribution, Disposab
                 }
             },
             isEnabled: () => !this.authState.isAuthenticated,
-            isVisible: () => this.activationService.isActive
+            isVisible: () => this.activationService.isActive && this.isCopilotEnabled()
         });
 
         registry.registerCommand(CopilotCommands.SIGN_OUT, {
@@ -102,7 +102,11 @@ export class CopilotCommandContribution implements CommandContribution, Disposab
                 }
             },
             isEnabled: () => this.authState.isAuthenticated,
-            isVisible: () => this.activationService.isActive
+            isVisible: () => this.activationService.isActive && this.isCopilotEnabled()
         });
+    }
+
+    protected isCopilotEnabled(): boolean {
+        return this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true);
     }
 }

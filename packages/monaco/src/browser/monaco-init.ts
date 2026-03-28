@@ -27,41 +27,16 @@
  * is allowed.
  */
 
-// Before importing anything from monaco we need to override its localization function
-import * as MonacoNls from '@theia/monaco-editor-core/esm/vs/nls';
-import { nls } from '@theia/core/lib/common/nls';
-import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';
-
-function localize(label: string, ...args: FormatType[]): MonacoNls.ILocalizedString {
-    const original = Localization.format(label, args);
-    if (nls.locale) {
-        const defaultKey = nls.getDefaultKey(label);
-        if (defaultKey) {
-            return {
-                original,
-                value: nls.localize(defaultKey, label, ...args)
-            };
-        }
-    }
-    return {
-        original,
-        value: original
-    };
-}
-
-Object.assign(MonacoNls, {
-    localize(_key: string, label: string, ...args: FormatType[]): string {
-        return localize(label, ...args).value;
-    },
-    localize2(_key: string, label: string, ...args: FormatType[]): MonacoNls.ILocalizedString {
-        return localize(label, ...args);
-    }
-});
+// Monaco's localization override is handled by a webpack alias that replaces
+// @theia/monaco-editor-core/esm/vs/nls with packages/monaco/src/browser/monaco-nls.ts.
+// See webpack-generator.ts for the alias configuration.
 
 import { Container } from '@theia/core/shared/inversify';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { SyncDescriptor } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/descriptors';
+import { IInstantiationService, createDecorator } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
 import { MonacoEditorServiceFactory, MonacoEditorServiceFactoryType } from './monaco-editor-service';
 import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
 import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
@@ -84,6 +59,10 @@ import { IHoverService } from '@theia/monaco-editor-core/esm/vs/platform/hover/b
 import { setBaseLayerHoverDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate2';
 import { IWorkspaceContextService } from '@theia/monaco-editor-core/esm/vs/platform/workspace/common/workspace';
 import { MonacoWorkspaceContextService } from './monaco-workspace-context-service';
+import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService';
+import { Event } from '@theia/monaco-editor-core/esm/vs/base/common/event';
+import * as dom from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
+import { mainWindow } from '@theia/monaco-editor-core/esm/vs/base/browser/window';
 
 export const contentHoverWidgetPatcher = createContentHoverWidgetPatcher();
 
@@ -151,9 +130,63 @@ class MonacoWorkspaceContextServiceConstructor {
     }
 }
 
+/**
+ * Layout service that returns the Theia application shell as the main container
+ * instead of the first Monaco editor's container DOM node. This ensures that
+ * Monaco UI elements like the quick input are positioned relative to the full
+ * application layout rather than a single editor.
+ */
+class MonacoLayoutService {
+    readonly onDidLayoutMainContainer = Event.None;
+    readonly onDidLayoutActiveContainer = Event.None;
+    readonly onDidLayoutContainer = Event.None;
+    readonly onDidChangeActiveContainer = Event.None;
+    readonly onDidAddContainer = Event.None;
+    readonly mainContainerOffset = { top: 0, quickPickTop: 0 };
+    readonly activeContainerOffset = { top: 0, quickPickTop: 0 };
+
+    get mainContainer(): HTMLElement {
+        return mainWindow.document.getElementById('theia-app-shell') ?? mainWindow.document.body;
+    }
+
+    get activeContainer(): HTMLElement {
+        return this.mainContainer;
+    }
+
+    get mainContainerDimension(): dom.IDimension {
+        return dom.getClientArea(this.mainContainer);
+    }
+
+    get activeContainerDimension(): dom.IDimension {
+        return dom.getClientArea(this.activeContainer);
+    }
+
+    get containers(): Iterable<HTMLElement> {
+        return [this.mainContainer];
+    }
+
+    getContainer(): HTMLElement {
+        return this.activeContainer;
+    }
+
+    whenContainerStylesLoaded(): undefined {
+        return undefined;
+    }
+
+    focus(): void {
+        this.mainContainer.focus();
+    }
+}
+
+class MonacoLayoutServiceConstructor {
+    constructor() {
+        return new MonacoLayoutService();
+    }
+}
+
 export namespace MonacoInit {
     export function init(container: Container): void {
-        StandaloneServices.initialize({
+        const overrides: Record<string, SyncDescriptor<unknown>> = {
             [ICodeEditorService.toString()]: new SyncDescriptor(MonacoEditorServiceConstructor, [container]),
             [IConfigurationService.toString()]: new SyncDescriptor(MonacoConfigurationServiceConstructor, [container]),
             [ITextModelService.toString()]: new SyncDescriptor(MonacoTextModelServiceConstructor, [container]),
@@ -162,8 +195,55 @@ export namespace MonacoInit {
             [ICommandService.toString()]: new SyncDescriptor(MonacoCommandServiceConstructor, [container]),
             [IQuickInputService.toString()]: new SyncDescriptor(MonacoQuickInputImplementationConstructor, [container]),
             [IStandaloneThemeService.toString()]: new SyncDescriptor(MonacoStandaloneThemeServiceConstructor, []),
-            [IWorkspaceContextService.toString()]: new SyncDescriptor(MonacoWorkspaceContextServiceConstructor, [container])
-        });
+            [IWorkspaceContextService.toString()]: new SyncDescriptor(MonacoWorkspaceContextServiceConstructor, [container]),
+            [ILayoutService.toString()]: new SyncDescriptor(MonacoLayoutServiceConstructor, [])
+        };
+
+        // Try the standard initialization path first.
+        StandaloneServices.initialize(overrides);
+
+        // If StandaloneServices was already initialized (e.g., by a premature StandaloneServices.get() call
+        // triggered as a side-effect during module loading), the call above is a no-op and our overrides are
+        // silently dropped.  Detect this situation, warn about it, and inject our service descriptors directly
+        // into the internal service collection so that they are used when the services are next resolved.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const instantiationService = StandaloneServices.get(IInstantiationService) as any;
+        const serviceCollection: ServiceCollection | undefined = instantiationService?._services;
+        if (serviceCollection) {
+            const patchedServices: string[] = [];
+            const alreadyInstantiatedServices: string[] = [];
+            for (const serviceId of Object.keys(overrides)) {
+                const serviceIdentifier = createDecorator(serviceId);
+                const existing = serviceCollection.get(serviceIdentifier);
+                if (existing instanceof SyncDescriptor && existing !== overrides[serviceId]) {
+                    // The override was not applied by initialize() – patch it in manually.
+                    serviceCollection.set(serviceIdentifier, overrides[serviceId]);
+                    patchedServices.push(serviceId);
+                } else if (existing !== undefined && !(existing instanceof SyncDescriptor) && existing !== overrides[serviceId]) {
+                    // The service was already instantiated – we cannot override it anymore.
+                    alreadyInstantiatedServices.push(serviceId);
+                }
+            }
+            if (patchedServices.length > 0) {
+                console.warn(
+                    'StandaloneServices was already initialized before MonacoInit.init() was called. '
+                    + 'This typically happens when a StandaloneServices.get() call is triggered as a side-effect during module loading. '
+                    + 'The following Theia service overrides had to be patched in after the fact: '
+                    + patchedServices.join(', ')
+                    + '. Investigate the module loading order to prevent premature initialization.'
+                );
+            }
+            if (alreadyInstantiatedServices.length > 0) {
+                console.error(
+                    'StandaloneServices was already initialized and the following services were already instantiated '
+                    + 'before MonacoInit.init() could apply Theia overrides: '
+                    + alreadyInstantiatedServices.join(', ')
+                    + '. These services are using the default Monaco implementations instead of Theia\'s. '
+                    + 'This may cause unexpected behavior. Investigate which code triggers premature service resolution.'
+                );
+            }
+        }
+
         // Make sure the global base hover delegate is initialized as otherwise the quick input will throw an error and not update correctly
         // in case no Monaco editor was constructed before and items with keybindings are shown. See #15042.
         setBaseLayerHoverDelegate(StandaloneServices.get(IHoverService));

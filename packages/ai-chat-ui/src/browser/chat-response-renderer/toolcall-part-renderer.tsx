@@ -76,8 +76,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (!result) {
             return undefined;
         }
-        if (typeof result === 'string') {
-            return <pre>{JSON.stringify(result, undefined, 2)}</pre>;
+        // eslint-disable-next-line no-null/no-null
+        if (typeof result !== 'object' || result === null) {
+            return <pre>{String(result)}</pre>;
         }
         if ('content' in result) {
             return <div className='theia-toolCall-response-content'>
@@ -187,6 +188,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
 }) => {
     const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
     const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
+    const pendingRef = React.useRef<HTMLElement | undefined>(undefined);
+    const allowedRef = React.useRef<HTMLElement | undefined>(undefined);
+
+    const argsLabel = getArgumentsLabel(response.name, response.arguments);
 
     const formatReason = (reason: unknown): string => {
         if (!reason) {
@@ -248,20 +253,28 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         onMouseEnter={() => showArgsTooltip(response, summaryRef.current)}
                     >
                         {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                        (<span className='theia-toolCall-args-label'>{getArgumentsLabel(response.name, response.arguments)}</span>)
+                        (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                     </summary>
                     <div className='theia-toolCall-response-result'>
                         {responseRenderer(response)}
                     </div>
                 </details>
             ) : confirmationState === 'pending' ? (
-                <span className='theia-toolCall-pending'>
+                <span className='theia-toolCall-pending'
+                    ref={(el: HTMLElement | null) => { pendingRef.current = el ?? undefined; }}
+                    onMouseEnter={() => showArgsTooltip(response, pendingRef.current)}
+                >
                     <Spinner /> {response.name}
+                    (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                 </span>
             ) : (
                 confirmationState === 'allowed' && !requestCanceled && (
-                    <span className='theia-toolCall-allowed'>
+                    <span className='theia-toolCall-allowed'
+                        ref={(el: HTMLElement | null) => { allowedRef.current = el ?? undefined; }}
+                        onMouseEnter={() => showArgsTooltip(response, allowedRef.current)}
+                    >
                         <Spinner /> {nls.localizeByDefault('Running')} {response.name}
+                        (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                     </span>
                 )
             )}

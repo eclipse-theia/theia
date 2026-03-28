@@ -1036,38 +1036,79 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected onPaste(event: ClipboardEvent): void {
+        // Check synchronously whether the clipboard contains images.
+        // If so, prevent the default paste to avoid Monaco also inserting
+        // the text representation of the clipboard alongside our image reference.
+        const hasImages = this.clipboardDataHasImages(event.clipboardData);
+        if (hasImages) {
+            event.preventDefault();
+        }
         this.variableService.getPasteResult(event, { type: 'ai-chat-input-widget' }).then(result => {
-            const position = this.editorRef?.getControl().getPosition();
-            const textsToInsert: string[] = [];
+            this.processPasteResult(result);
+        });
+    }
 
-            result.variables.forEach(variable => {
-                if (ImageContextVariable.isImageContextRequest(variable)) {
-                    // Register with short ID and insert short reference at cursor position
-                    const shortId = this.registerPendingImage(variable);
-                    textsToInsert.push(`#${variable.variable.name}:${shortId}`);
-                } else {
-                    this.addContext(variable);
-                }
-            });
+    /**
+     * Paste images from the clipboard using the async Clipboard API.
+     * Called from the keybinding contribution when Ctrl+V is pressed in the chat input,
+     * because Electron/Theia's paste command (document.execCommand('paste')) does not
+     * produce a DOM paste event for image clipboard content.
+     * @returns true if images were found and pasted, false otherwise.
+     */
+    async pasteFromClipboard(): Promise<boolean> {
+        const result = await this.variableService.getPasteResult(
+            new ClipboardEvent('paste'), { type: 'ai-chat-input-widget' }
+        );
+        const hasImages = result.variables.some(v => ImageContextVariable.isImageContextRequest(v));
+        if (hasImages) {
+            this.processPasteResult(result);
+        }
+        return hasImages;
+    }
 
-            // Insert any text from the paste result
-            if (result.text) {
-                textsToInsert.push(result.text);
-            }
+    protected processPasteResult(result: { variables: AIVariableResolutionRequest[], text?: string }): void {
+        const position = this.editorRef?.getControl().getPosition();
+        const textsToInsert: string[] = [];
 
-            // Insert all collected text at cursor position
-            if (position && textsToInsert.length > 0) {
-                this.editorRef?.getControl().executeEdits('paste', [{
-                    range: {
-                        startLineNumber: position.lineNumber,
-                        startColumn: position.column,
-                        endLineNumber: position.lineNumber,
-                        endColumn: position.column
-                    },
-                    text: textsToInsert.join(' ')
-                }]);
+        result.variables.forEach(variable => {
+            if (ImageContextVariable.isImageContextRequest(variable)) {
+                // Register with short ID and insert short reference at cursor position
+                const shortId = this.registerPendingImage(variable);
+                textsToInsert.push(`#${variable.variable.name}:${shortId}`);
+            } else {
+                this.addContext(variable);
             }
         });
+
+        // Insert any text from the paste result
+        if (result.text) {
+            textsToInsert.push(result.text);
+        }
+
+        // Insert all collected text at cursor position
+        if (position && textsToInsert.length > 0) {
+            this.editorRef?.getControl().executeEdits('paste', [{
+                range: {
+                    startLineNumber: position.lineNumber,
+                    startColumn: position.column,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column
+                },
+                text: textsToInsert.join(' ')
+            }]);
+        }
+    }
+
+    protected clipboardDataHasImages(clipboardData: DataTransfer | null): boolean {
+        if (!clipboardData?.items) {
+            return false;
+        }
+        for (const item of clipboardData.items) {
+            if (item.type.startsWith('image/')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected onEscape(): void {
@@ -1347,7 +1388,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 // Disable code lens and inlay hints to avoid console errors from other contributions
                 codeLens: false,
                 inlayHints: { enabled: 'off' },
-                hover: { enabled: true },
+                hover: { enabled: 'on' },
                 autoSizing: false, // we handle the sizing ourselves
                 scrollBeyondLastLine: false,
                 scrollBeyondLastColumn: 0,
@@ -1636,7 +1677,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             : []),
         ...(props.showPinnedAgent
             ? [{
-                title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/agent', 'Agent'),
+                title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localizeByDefault('Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'codicon-mention',
                 disabled: !props.isEnabled,

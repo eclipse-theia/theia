@@ -22,6 +22,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "capabilityOverrides": {
+          "mdDescription": "Şablon tabanlı yetenekler için kullanıcı geçersiz kılmaları. Anahtarlar yetenek parçası kimlikleridir, değerler ise etkin (true) veya devre dışı (false)dır.",
+          "title": "Yetenek Geçersiz Kılmaları"
+        },
         "completionNotification": {
           "mdDescription": "Bu aracı bir görevi tamamladığında bildirim davranışı. Ayarlanmamışsa, genel varsayılan bildirim ayarı kullanılır.\n- `os-notification`: İşletim sistemi/sistem bildirimlerini göster\n- `message`: Durum çubuğu/mesaj alanında bildirimleri göster\n- `blink`: Kullanıcı arayüzünü yanıp sönme veya vurgula\n- `off`: Bu aracı için bildirimleri devre dışı bırak",
           "title": "Tamamlama Bildirimi"
@@ -29,6 +33,16 @@
         "enable": {
           "mdDescription": "Ajanın etkinleştirilmesi (true) veya devre dışı bırakılması (false) gerektiğini belirtir.",
           "title": "Aracıyı Etkinleştir"
+        },
+        "genericCapabilitySelections": {
+          "agentDelegation": "Yetki devri için seçilen aracı kimlikleri",
+          "functions": "Seçilen işlev kimlikleri",
+          "mcpFunctions": "Seçilen MCP işlev kimlikleri",
+          "mdDescription": "Beceri, işlev ve MCP araçları gibi genel yetenekler için kullanıcı seçimleri.",
+          "promptFragments": "Seçilen komut istemi parçası kimlikleri",
+          "skills": "Seçilen beceri kimlikleri",
+          "title": "Genel Yetenek Seçenekleri",
+          "variables": "Seçilen değişken adları"
         },
         "languageModelRequirements": {
           "identifier": {
@@ -187,6 +201,10 @@
             "description": "Onay almadan araçları otomatik olarak çalıştır"
           }
         },
+        "toolConfirmationTimeout": {
+          "denialReason": "{0} saniye sonra onay zaman aşımına uğradı",
+          "description": "Araç onay iletişim kutuları için saniye cinsinden zaman aşımı süresi. Pozitif bir değere ayarlandığında, araç onayları belirtilen süre sonunda otomatik olarak reddedilir. Devre dışı bırakmak için 0 olarak ayarlayın (varsayılan)."
+        },
         "universal": {
           "description": "Bu ajan, genel programlama ve yazılım geliştirme sorularına kısa ve doğru cevaplar vererek yazılım geliştiricilere yardımcı olmak için tasarlanmıştır. Ayrıca, kullanıcının sorabileceği genel sorular için de yedek çözümdür. Evrensel ajan şu anda varsayılan olarak herhangi bir bağlama sahip değildir, yani mevcut kullanıcı bağlamına veya çalışma alanına erişemez."
         },
@@ -199,7 +217,6 @@
       },
       "chat-ui": {
         "addContextVariable": "Bağlam değişkeni ekle",
-        "agent": "Ajan",
         "agentDelegationDescription": "Delege edilebilecek diğer AI ajanları",
         "aiDisabled": "AI özellikleri devre dışıdır",
         "applyAll": "Tümünü Uygula",
@@ -219,6 +236,7 @@
           "clearHistory": "Giriş İstem Geçmişini Temizle",
           "cycleMode": "Sohbet Modu Döngüsü",
           "nextPrompt": "Sonraki İstem",
+          "pasteWithImageSupport": "Yapıştır (görüntü desteği ile)",
           "previousPrompt": "Önceki İstem",
           "toggleCapabilities": "Yetenek Yapılandırmasını Değiştir"
         },
@@ -244,6 +262,7 @@
           "response": {
             "label": "Yanıt:"
           },
+          "restoredNotAvailable": "Geri yüklenen oturumlar için yanıt mevcut değildir.",
           "starting": "Delegasyon başlatılıyor...",
           "status": {
             "canceled": "iptal edildi",
@@ -269,7 +288,6 @@
         "functions": "İşlevler",
         "functionsDescription": "Theia uzantıları tarafından sağlanan yerleşik işlevler",
         "genericCapabilities": "Genel Yetenekler",
-        "mcpFunctions": "MCP",
         "mcpFunctionsDescription": "Bağlı sunuculardan Model Bağlam Protokolü (MCP) işlevleri",
         "noChatAgentsAvailable": "Sohbet temsilcisi mevcut değil.",
         "noMatchingCapabilities": "Eşleşen özellik yok",
@@ -278,12 +296,12 @@
         "openOriginalFile": "Orijinal Dosyayı Aç",
         "performThisTask": "Bu görevi gerçekleştirin.",
         "persistedSession": "Kalıcı oturum (geri yüklemek için tıklayın)",
-        "promptFragments": "İstemi",
         "promptFragmentsDescription": "Sohbete eklenecek özel komut istemi parçaları",
         "removeChat": "Sohbeti Kaldır",
         "renameChat": "Sohbeti Yeniden Adlandır",
         "requestNotFoundForRetry": "Yeniden denemek için istek bulunamadı",
         "responseFrom": "{0}'dan gelen yanıt",
+        "saveCurrentSelectionsToSettings": "Yetenek ayarlarını kaydet",
         "searchCapabilities": "Arama yetenekleri",
         "selectAgentQuickPickPlaceholder": "Yeni oturum için bir aracı seçin",
         "selectAllInCategory": "Bu kategorideki tümünü seç",
@@ -314,6 +332,7 @@
           "alwaysAllowConfirm": "Anladım, otomatik onayı etkinleştir",
           "alwaysAllowGenericWarning": "Bu araç, otomatik onay etkinleştirilmeden önce onay gerektirir. Etkinleştirildikten sonra, gelecekteki tüm çağrılar onay olmadan yürütülecektir. Bu aracı güveniyorsanız ve olası riskleri anlıyorsanız etkinleştirin.",
           "alwaysAllowTitle": "\"{0}\" için Otomatik Onay'ı etkinleştirin?",
+          "autoCancel": "{0}'da otomatik iptal",
           "canceled": "Araç yürütme iptal edildi",
           "denied": "Araç yürütme reddedildi",
           "deny-forever": "Her Zaman Reddet",
@@ -560,11 +579,14 @@
           "signIn": "GitHub Copilot'a giriş yapın",
           "signOut": "GitHub Copilot'tan çıkış yapın"
         },
+        "enabled": {
+          "mdDescription": "GitHub Copilot sağlayıcısını etkinleştirin. Etkinleştirildiğinde, kimlik doğrulama için bir durum çubuğu girişi görünür ve Copilot aboneliğinizden kullanılabilir modeller tespit edilir."
+        },
         "enterpriseUrl": {
           "mdDescription": "Copilot API için GitHub Enterprise etki alanı (ör. `github.mycompany.com`). GitHub.com için boş bırakın."
         },
-        "models": {
-          "description": "Kullanılacak GitHub Copilot modelleri. Kullanılabilir modeller, Copilot aboneliğinize bağlıdır."
+        "modelOverrides": {
+          "mdDescription": "Otomatik olarak keşfedilen GitHub Copilot modellerini geçersiz kılın. Boş bırakıldığında (varsayılan), Copilot aboneliğinizden kullanılabilir modeller keşfedilir. Otomatik keşfi geçersiz kılmak için açık model kimlikleri ayarlayın."
         },
         "signOut": {
           "confirmMessage": "GitHub Copilot'tan çıkış yapmak istediğinizden emin misiniz?"
@@ -572,7 +594,8 @@
         "statusBar": {
           "signedIn": "{0} olarak GitHub Copilot'a giriş yaptınız. Çıkmak için tıklayın.",
           "signedOut": "GitHub Copilot'a giriş yapmadınız. Giriş yapmak için tıklayın."
-        }
+        },
+        "tokenMigration": "GitHub Copilot oturumunuzda eski bir kimlik doğrulama yöntemi kullanıldı ve oturum silindi. Kullanılabilir tüm modellere erişmek için lütfen tekrar oturum açın."
       },
       "core": {
         "agentConfiguration": {
@@ -743,8 +766,7 @@
           "variantsOfSystemPrompt": "Bu komut istemi varyantı setinin varyantları:"
         },
         "promptTemplates": {
-          "description": "Özelleştirilmiş komut istemi şablonlarını depolamak için kullanılan klasör. Özelleştirilmezse, kullanıcı yapılandırma dizini kullanılır. Komut istemi şablonlarının varyantlarını yönetmek için sürüm kontrolü altında olan bir klasör kullanmayı düşünün.",
-          "openLabel": "Klasörü Seç"
+          "description": "Özelleştirilmiş komut istemi şablonlarını depolamak için kullanılan klasör. Özelleştirilmezse, kullanıcı yapılandırma dizini kullanılır. Komut istemi şablonlarının varyantlarını yönetmek için sürüm kontrolü altında olan bir klasör kullanmayı düşünün."
         },
         "promptVariable": {
           "argDescription": "Çözülmesi gereken komut istemi şablonu kimliği",
@@ -877,16 +899,12 @@
         },
         "edited": "düzenlendi",
         "exchange-card": {
-          "agentId": "Ajan",
           "timestamp": "Başladı"
         },
         "open-history-tooltip": "AI geçmişini aç...",
         "request-card": {
-          "agent": "Ajan",
-          "model": "Model",
           "promptVariant": "Komut İstemi Varyantı",
           "request": "Talep",
-          "response": "Yanıt",
           "timestamp": "Zaman damgası",
           "title": "Talep"
         },
@@ -926,15 +944,34 @@
       "ide": {
         "agent-description": "[AI Yapılandırma Görünümü]({0}) içinde etkinleştirme, LLM seçimi, komut istemi şablonu özelleştirme ve özel ajan oluşturma dahil olmak üzere AI ajan ayarlarını yapılandırın.",
         "agentConfiguration": {
-          "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "Yeni dosya oluştur",
             "openExistingFile": "Mevcut dosyayı aç",
             "placeholder": "Özel ajan dosyasını nerede oluşturacağınızı veya açacağınızı seçin",
             "title": "Özel Ajanlar Dosyası için Konum Seç"
           },
-          "enabledByDefault": "Varsayılan olarak etkin",
-          "noDescription": "Açıklama mevcut değil"
+          "genericCapabilitiesSettings": "Genel Yetenekler",
+          "genericCapabilityType": {
+            "agentDelegation": "Aracı Yetki Devri",
+            "functions": "İşlevler",
+            "mcpFunctions": "MCP İşlevleri",
+            "promptFragments": "Komut İstemi Parçaları"
+          },
+          "noDescription": "Açıklama mevcut değil",
+          "resetAllCapabilities": "Tüm özellikleri varsayılan değerlerine sıfırla",
+          "resetAllDefaults": "Tümünü Varsayılanlara Sıfırla",
+          "selections": "Seçimler"
+        },
+        "agentMode": {
+          "confirmed": {
+            "mdDescription": "Kullanıcının ajan modu uyarısını onaylayıp onaylamadığı. Ajan modu, ek onay gerektirmeden özerk dosya değişikliklerine izin verir. Bir sonraki ajan modu isteğinde onay mesajını tekrar görmek için `false` olarak ayarlayın."
+          }
+        },
+        "agentModeConfirmation": {
+          "confirm": "Onayla",
+          "msg": "Bu ajan **ajans modu** kullanır. Otonom akışı etkinleştirmek için, ek bir onay almadan çalışma alanı dosyalarınıza doğrudan yazabilir.\n\nDeğişiklikleri gözden geçirebilmeniz ve geri alabilmeniz için sürüm kontrolü (ör. Git) kullanmanız önerilir.\n\nAşağıdaki sohbet giriş alanındaki mod seçiciyi kullanarak **Düzenleme Modu**'na geçebilir veya salt okunur planlama için **Architect** ajanını kullanabilirsiniz.\n\nBu onay, bu çalışma alanı için kaydedilir ve bir daha gösterilmez. Bunu sıfırlamak veya genel olarak yapılandırmak için Ayarlar'da `ai-features.agentMode.confirmed` öğesini arayın.",
+          "question": "Ajan Modu ile devam etmek istiyor musunuz?",
+          "waiting": "Onay bekleniyor..."
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Hata kontrolü DevTools MCP sunucu durumu: {0}",
@@ -956,13 +993,10 @@
             "question": "Playwright MCP sunucuları çalışmıyor. Şimdi başlatmak ister misiniz? Bu, Playwright MCP sunucularını yükleyebilir."
           }
         },
-        "appTester": {
-          "description": "Ajanın tarayıcı uygulamalarını uçtan uca test etmesini sağlar. Bunun için ajan, uygulamayı doğrulamak üzere tarayıcı etkileşimlerini otomatikleştiren AppTester ajanına yetki verebilir.",
-          "name": "Uygulama Testçisi"
-        },
         "architectAgent": {
           "mode": {
             "plan": "Plan Modu",
+            "planNext": "Plan Modu (Sonraki)",
             "simple": "Basit Mod"
           },
           "suggestion": {
@@ -973,6 +1007,9 @@
         "bypassHint": "Claude Code gibi bazı ajanlar Theia Dil Modellerine ihtiyaç duymaz.",
         "chatDisabledMessage": {
           "title": "AI Özellikleri Devre Dışı Bırakıldı"
+        },
+        "codeReviewerAgent": {
+          "description": "Kod değişikliklerini analiz eden ve yapılandırılmış kararlar veren bir kod inceleme asistanı. Tamamlanma kriterlerini, derleme/lint/test kanıtlarını ve kod kalitesini kontrol eder."
         },
         "coderAgent": {
           "mode": {
@@ -1018,6 +1055,9 @@
         "deleteChat": "Sohbeti Sil",
         "enableAI": {
           "mdDescription": "Bu ayar, en son AI özelliklerine (Beta sürümü) erişmenizi sağlar.            \n            Bu özelliklerin beta aşamasında olduğunu, yani değişikliklere uğrayabileceğini ve daha da geliştirileceğini lütfen unutmayın. Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli istekler gönderebileceğini bilmeniz önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek, bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar,\n            ana özellik ayarı etkinleştirildikten sonra geçerli olacaktır. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere](https://theia-ide.org/docs/user_ai/) bakın**."
+        },
+        "exploreAgent": {
+          "description": "Kod tabanından bilgileri ayıklayan ve özetleyen bir kod tabanı keşif asistanı.         Mevcut durumla ilgili bilgileri raporlar, kod alıntıları sunar ve gözlemlenen kalıpları açıklar."
         },
         "github": {
           "configureGitHubServer": {
@@ -1078,9 +1118,6 @@
           "name": "Kabuk Yürütme"
         },
         "skillsConfiguration": {
-          "location": {
-            "label": "Konum"
-          },
           "noSkills": "Kullanılabilir beceri yok",
           "noSlashCommands": "Kullanılabilir eğik çizgi komutu yok",
           "slashCommand": {
@@ -1123,7 +1160,6 @@
           }
         },
         "tooltip": {
-          "agent": "Ajan",
           "lastActivity": "Son etkinlik",
           "lastMessage": "Son mesaj",
           "messages": "Mesajlar",
@@ -1133,8 +1169,7 @@
         },
         "variableConfiguration": {
           "selectVariable": "Lütfen bir Değişken seçin.",
-          "usedByAgents": "Ajanlar tarafından kullanılır.",
-          "variableArgs": "Argümanlar"
+          "usedByAgents": "Ajanlar tarafından kullanılır."
         }
       },
       "llamaFile": {
@@ -1220,7 +1255,6 @@
         }
       },
       "mcpConfiguration": {
-        "arguments": "Argümanlar",
         "autostart": "Otomatik başlatma",
         "connectServer": "Bağlan",
         "connectingServer": "Bağlanılıyor...",
@@ -1259,7 +1293,6 @@
           "serverUrlRequired": "Uzak sunucular için sunucu URL'si gereklidir."
         },
         "headers": "Başlıklar",
-        "noServers": "Yapılandırılmış MCP sunucusu yok",
         "saveServerError": "MCP sunucu yapılandırması kaydedilemedi: {0}",
         "serverAuthToken": "Kimlik Doğrulama Jetonu",
         "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı",
@@ -1352,16 +1385,19 @@
           "in-progress": "SCANOSS - Tarama yapılıyor...",
           "match-count": "{0}'da eşleşme(ler) bulundu",
           "matched": "SCANOSS - Eşleşen {0} bulundu",
-          "no-match": "SCANOSS - Eşleşme yok",
-          "summary": "Özet"
+          "no-match": "SCANOSS - Eşleşme yok"
         }
       },
       "session-settings-dialog": {
         "advancedSettings": "Gelişmiş Ayarlar (JSON)",
         "budgetTokens": "Bütçe jetonları:",
+        "confirmationTimeout": "Onay Zaman Aşımı",
+        "confirmationTimeoutNote": "Belirtilen süreden sonra araç onaylarını otomatik olarak reddet. Bu oturum için genel tercihi geçersiz kılar.",
+        "enableConfirmationTimeout": "Onay zaman aşımını etkinleştir",
         "enableThinking": "Genişletilmiş düşünmeyi etkinleştirin",
         "thinkingMode": "Düşünme Modu",
         "thinkingModeNote": "Bazı modeller bu ayarı yok sayabilir.",
+        "timeoutSeconds": "Zaman aşımı (saniye):",
         "title": "Oturum Ayarlarını Yap",
         "tooltip": "Oturum Ayarlarını Yap"
       },
@@ -1387,7 +1423,6 @@
         "askTerminalCommand": "Terminal komutu hakkında soru sor...",
         "hitEnterConfirm": "Onaylamak için Enter tuşuna basın.",
         "howCanIHelp": "Nasıl yardımcı olabilirim?",
-        "loading": "Yükleme",
         "tryAgain": "Tekrar deneyin...",
         "useArrowsAlternatives": " veya ⇅ kullanarak alternatifleri göster..."
       },
@@ -1398,14 +1433,12 @@
         "inputTokens": "Giriş Belirteçleri",
         "label": "Token Kullanımı",
         "lastUsed": "Son Kullanım",
-        "model": "Model",
         "noData": "Henüz token kullanım verisi mevcut değildir.",
         "note": "Token kullanımı, uygulamanın başlangıcından itibaren izlenir ve kalıcı değildir.",
         "outputTokens": "Çıktı Belirteçleri",
         "readCachedInputTokens": "Önbellekten Okunan Giriş Belirteçleri",
         "readCachedInputTokensTooltip": "\"Giriş Jetonu\"na ek olarak izlenir. Genellikle önbelleğe alınmamış halinden çok daha ucuzdur. Genellikle oran sınırlarına dahil edilmez.",
         "total": "Toplam",
-        "totalTokens": "Toplam Jeton",
         "totalTokensTooltip": "'Giriş Belirteçleri' + 'Çıkış Belirteçleri'"
       },
       "vercelai": {
@@ -1461,6 +1494,10 @@
           "description": "Hariç tutulacak dosyalar/klasörler için desenlerin (glob veya regex) listesi.",
           "title": "Hariç Tutulan Dosya Kalıpları"
         },
+        "fileContentMaxSizeKB": {
+          "description": "getFileContent aracı tarafından döndürülen içeriğin kilobayt cinsinden maksimum boyutu. Tam bir dosya okunurken (ofset/sınır yok), bu sınırı aşan dosyalar bir hata döndürür. Ofset ve sınır kullanıldığında, yalnızca istenen aralık bu sınıra göre kontrol edilir.",
+          "title": "Dosya İçeriği Maksimum Boyutu (KB)"
+        },
         "projectInfoAgent": {
           "description": "Proje bilgisi şablonlarını yönetmek için bir AI asistanı. Bu ajan, diğer AI ajanlarına projenizle ilgili bağlam bilgisi sağlayan .prompts/project-info.prompttemplate dosyasını oluşturmaya, güncellemeye ve incelemeye yardımcı olur. Çalışma alanınızı analiz ederek proje bilgileri önerebilir veya gereksinimlerinize göre mevcut şablonları güncelleyebilir."
         },
@@ -1477,6 +1514,7 @@
       "fileChangeSetTitle": "Önerilen değişiklikler"
     },
     "ai-chat-ui": {
+      "confirm": "Onayla",
       "deleteChat": "Sohbeti Sil",
       "initiate-session-task-context": "Görev Bağlamı: Oturumu Başlat",
       "navigate-back": "Geri Dön",
@@ -1511,6 +1549,13 @@
       "addressGhReviewCommand": {
         "argumentHint": "<pr-numara>",
         "description": "GitHub çekme isteğindeki adres inceleme yorumları"
+      },
+      "appTester": {
+        "description": "Uygulama sonrası tarayıcı tabanlı kullanıcı arayüzü doğrulaması için AppTester ajanı görevlendirir.",
+        "name": "E2E Testi"
+      },
+      "codeReview": {
+        "description": "Her uygulamadan sonra kod inceleme aracısına devreder. İnceleme geçene kadar sonraki adımları engeller."
       },
       "fixGhTicketCommand": {
         "argumentHint": "<bilet numarası>",
@@ -1620,7 +1665,8 @@
       "about": {
         "compatibility": "{0} Uyumluluk",
         "defaultApi": "VarsayılanAPI {0}",
-        "listOfExtensions": "Uzantıların listesi"
+        "listOfExtensions": "Uzantıların listesi",
+        "monacoEditor": "Monaco Editor Sürümü"
       },
       "common": {
         "closeAll": "Tüm Sekmeleri Kapat",
@@ -1717,7 +1763,6 @@
       "conditionalBreakpointsNotSupported": "Bu hata ayıklama türü tarafından desteklenmeyen koşullu kesme noktaları",
       "confirmRunToShiftedPosition_msg": "Hedef konum Ln {0}, Col {1} konumuna kaydırılacaktır. Yine de çalıştırmak ister misiniz?",
       "confirmRunToShiftedPosition_title": "Geçerli iş parçacığını tam olarak belirtilen konuma çalıştıramıyor",
-      "consoleFilter": "Filtre (ör. metin, !hariç tut)",
       "consoleFilterAriaLabel": "Hata ayıklama konsolu çıktısını filtrele",
       "consoleFilterTooltip": "Konsol çıktısını metne göre filtreleyin. Birden fazla terimi virgülle ayırın. Bir terimi hariç tutmak için önüne `!` ekleyin.\n\nÖrnekler:\n\n- `metin` - \"metin\" içeren satırları göster\n- `metin, diğer` - \"metin\" veya \"diğer\" içeren satırları göster\n- `!metin` - \"metin\" içeren satırları gizle\n- `metin, !diğer` - \"metin\"i göster, ancak \"diğer\"i gizle",
       "consoleSessionSelectorTooltip": "Hata ayıklama oturumları arasında geçiş yapın. Her hata ayıklama oturumunun kendi konsol çıkışı vardır.",
@@ -1758,6 +1803,7 @@
       "unverifiedBreakpoint": "Doğrulanmamış {0}"
     },
     "editor": {
+      "autoSaveWhenNoErrors": "Etkinleştirildiğinde, otomatik kaydetme işlevini, otomatik kaydetme tetiklendiği anda içinde hata bildirilmeyen dosyalarla sınırlayacaktır. Yalnızc{0}i etkinleştirildiğinde geçerlidir.",
       "clearFormatterSetting": "Biçimlendirici ayarını temizle",
       "configuredIn": "{0}'da yapılandırılmıştır.",
       "configuredNotInstalled": "{1}'da yapılandırılmış ancak yüklenmemiş \"{0}\"",
@@ -1768,7 +1814,6 @@
       "editor.bracketPairColorization.enabled": "Köşeli parantez çiftlerinin renklendirilmesinin etkin olup olmadığını kontrol eder. Köşeli parantezlerin vurgu renklerini geçersiz kılmak için `#workbench.colorCustomizations#` kullanın.",
       "editor.codeActions.triggerOnFocusChange": "`#files.autoSave#` `afterDelay` olarak ayarlandığında `#editor.codeActionsOnSave#` tetiklemesini etkinleştirin. Pencere ve odak değişiklikleri için tetiklenebilmesi için Code Actions `always` olarak ayarlanmalıdır.",
       "editor.detectIndentation": "Bir dosya açıldığında, dosya içeriğine göre `#editor.tabSize#` ve `#editor.insertSpaces#` özelliklerinin otomatik olarak algılanıp algılanmayacağını kontrol eder.",
-      "editor.experimental.preferTreeSitter": "Belirli diller için ağaç oturucu ayrıştırmanın etkinleştirilip etkinleştirilmeyeceğini kontrol eder. Bu, belirtilen diller için `editor.experimental.treeSitterTelemetry` öğesinden öncelikli olacaktır.",
       "editor.inlayHints.enabled1": "Inlay ipuçları varsayılan olarak gösterilir ve Ctrl+Alt tuşları basılı tutulduğunda gizlenir.",
       "editor.inlayHints.enabled2": "Inlay ipuçları varsayılan olarak gizlidir ve Ctrl+Alt tuşları basılı tutulduğunda gösterilir.",
       "editor.inlayHints.fontFamily": "Editördeki inlay ipuçlarının yazı tipi ailesini kontrol eder. Boş olarak ayarlandığında, `#editor.fontFamily#` kullanılır.",
@@ -1808,7 +1853,7 @@
       "cwd": "Yeni harici terminal için geçerli çalışma dizinini seçin"
     },
     "file-search": {
-      "toggleIgnoredFiles": " (Yoksayılan dosyaları göstermek/gizlemek için {0} tuşlarına basın)"
+      "toggleExcludedFiles": " (Hariç tutulan dosyaları göstermek/gizlemek için {0} tuşlarına basın)"
     },
     "fileDialog": {
       "showHidden": "Gizli dosyaları göster"
@@ -1858,46 +1903,6 @@
         "welcomePage": "{0}'ye ve uzantılara başlamak için yardımcı olacak içeriği içeren Hoş Geldiniz sayfasını açın."
       },
       "telemetry": "Veri Kullanımı ve Telemetri"
-    },
-    "git": {
-      "aFewSecondsAgo": "birkaç saniye önce",
-      "addSignedOff": "İmza ekle",
-      "added": "Eklendi",
-      "amendReuseMessage": "Son commit mesajını yeniden kullanmak için 'Enter' tuşuna basın veya iptal etmek için 'Escape' tuşuna basın.",
-      "amendRewrite": "Önceki taahhüt mesajını yeniden yazın. Onaylamak için 'Enter' tuşuna, iptal etmek için 'Escape' tuşuna basın.",
-      "checkoutCreateLocalBranchWithName": "{0} adında yeni bir yerel dal oluşturun. Onaylamak için 'Enter' tuşuna, iptal etmek için 'Escape' tuşuna basın.",
-      "checkoutProvideBranchName": "Lütfen bir dal adı girin. ",
-      "checkoutSelectRef": "Ödeme yapmak için bir referans seçin veya yeni bir yerel dal oluşturun:",
-      "cloneQuickInputLabel": "Lütfen bir Git deposu konumu belirtin. Onaylamak için 'Enter' tuşuna, iptal etmek için 'Escape' tuşuna basın.",
-      "cloneRepository": "Git deposunu klonlayın: {0}. Onaylamak için 'Enter' tuşuna, iptal etmek için 'Escape' tuşuna basın.",
-      "compareWith": "Karşılaştır...",
-      "compareWithBranchOrTag": "{0}'un şu anda etkin olan dalıyla karşılaştırmak için bir dal veya etiket seçin:",
-      "conflicted": "Çakışan",
-      "copied": "Kopyalandı",
-      "diff": "Diff",
-      "dirtyDiffLinesLimit": "Editörün satır sayısı bu sınırı aşarsa, kirli fark dekorasyonlarını göstermeyin.",
-      "dropStashMessage": "Stash başarıyla kaldırıldı.",
-      "editorDecorationsEnabled": "Editörde git süslemelerini göster.",
-      "fetchPickRemote": "Almak için bir uzak sunucu seçin:",
-      "gitDecorationsColors": "Navigatörde renkli süsleme kullanın.",
-      "mergeEditor": {
-        "currentSideTitle": "Güncel",
-        "incomingSideTitle": "Gelen"
-      },
-      "mergeQuickPickPlaceholder": "{0}'ın şu anda etkin olan dalına birleştirilecek bir dal seçin:",
-      "missingUserInfo": "Git'te \"user.name\" ve \"user.email\" ayarlarınızı yaptığınızdan emin olun.",
-      "noHistoryForError": "{0} için geçmiş mevcut değildir.",
-      "noPreviousCommit": "Değişiklik yapmak için önceki bir taahhüt yok",
-      "noRepositoriesSelected": "Hiçbir depo seçilmedi.",
-      "prepositionIn": "ve",
-      "renamed": "Yeniden adlandırıldı",
-      "repositoryNotInitialized": "Depo {0} henüz başlatılmamıştır.",
-      "stashChanges": "Değişiklikleri saklayın. Onaylamak için 'Enter' tuşuna, iptal etmek için 'Escape' tuşuna basın.",
-      "stashChangesWithMessage": "Mesajla değişiklikleri sakla: {0}. Onaylamak için 'Enter' tuşuna, iptal etmek için 'Escape' tuşuna bas.",
-      "tabTitleIndex": "{0} (Dizin)",
-      "tabTitleWorkingTree": "{0} (Çalışma ağacı)",
-      "toggleBlameAnnotations": "Suçlama Açıklamalarını Değiştir",
-      "unstaged": "Hazırlanmamış"
     },
     "keybinding-schema-updater": {
       "deprecation": "Bunun yerine `when` cümlesini kullanın."
@@ -2073,7 +2078,8 @@
         "loginTitle": "Giriş",
         "signedOut": "Oturum başarıyla kapatıldı."
       },
-      "plugins": "Eklentiler",
+      "extensionsRestrictedMode": "Kısıtlı Modda bazı uzantılar devre dışıdır",
+      "supportNodeGlobalNavigator": "Etkinleştirilirse, uzantı ana bilgisayarındaki genel navigator nesnesi Node.js tarafından sağlandığı şekilde tanımlanacaktır. Uzantılar, navigator nesnesinin varlığını kodun bir tarayıcıda çalıştığına dair bir ipucu olarak kullanabilir. Bunu devre dışı bırakmak (varsayılan ayar), bu varsayımı korumak için uzantı ana bilgisayarındaki navigator'ı tanımdan kaldırır.",
       "webviewTrace": "Web görünümleriyle iletişim izlemeyi kontrol eder.",
       "webviewWarnIfUnsecure": "Kullanıcılara, web görünümlerinin şu anda güvenli olmayan bir şekilde dağıtıldığını bildirir."
     },
@@ -2086,10 +2092,8 @@
       "openByDefault": "Varsayılan olarak düzenleyici yerine önizlemeyi açın."
     },
     "property-view": {
-      "created": "Oluşturuldu",
       "directory": "Dizin",
       "lastModified": "Son değiştirilme tarihi",
-      "location": "Konum",
       "noProperties": "Kullanılabilir özellik yok.",
       "properties": "Özellikler",
       "symbolicLink": "Sembolik bağlantı"
@@ -2125,10 +2129,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Son taahhüdü değiştir",
       "changeRepository": "Depoyu Değiştir...",
-      "config.untrackedChanges": "İzlenmeyen değişikliklerin nasıl davranacağını kontrol eder.",
-      "config.untrackedChanges.hidden": "gizli",
-      "config.untrackedChanges.mixed": "karışık",
-      "config.untrackedChanges.separate": "ayrı",
       "dirtyDiff": {
         "close": "Kapat Değiştir Peek Görünümü"
       },
@@ -2136,7 +2136,8 @@
       "mergeEditor": {
         "resetConfirmationTitle": "Bu düzenleyicide birleştirme sonucunu gerçekten sıfırlamak istiyor musunuz?"
       },
-      "noRepositoryFound": "Depo bulunamadı",
+      "noHistoryForError": "{0} için geçmiş bilgisi mevcut değildir.",
+      "prepositionIn": "ve",
       "unamend": "Değiştirilemez",
       "unamendCommit": "Değiştirilemez taahhüt"
     },
@@ -2144,6 +2145,7 @@
       "includeIgnoredFiles": "Yoksayılan Dosyaları Dahil Et",
       "noFolderSpecified": "Bir klasör açmamış veya belirtmemişsiniz. Şu anda yalnızca açık dosyalar aranmaktadır.",
       "resultSubset": "Bu, tüm sonuçların yalnızca bir alt kümesidir. Sonuç listesini daraltmak için daha spesifik bir arama terimi kullanın.",
+      "searchExclude": "Tam metin aramalarında ve hızlı açma özelliğindeki dosya aramalarında dosya ve klasörleri hariç tutmak için [glob kalıplarını](https://aka.ms/vscode-glob-patterns) yapılandırın. Tüm glob kalıplarını `#files.exclude#` ayarından devralır.",
       "searchOnEditorModification": "Değiştirildiğinde etkin düzenleyiciyi ara."
     },
     "secondary-window": {
@@ -2188,6 +2190,8 @@
     },
     "terminal": {
       "defaultProfile": "{0}'da kullanılan varsayılan profil",
+      "enableCommandHistory": "Shell enjeksiyonunu kullanarak terminal komutlarını ve çıktılarını ayrı ayrı izleyin. Bu, kullanıcı arayüzünde komutları görsel olarak ayırt etme ve AI ajanlarına terminallere daha yapılandırılmış erişim sağlama gibi kullanım senaryolarını mümkün kılar. Bu ayarın değiştirilmesi, halihazırda açık olan terminalleri etkilemez.\n\n&nbsp;\n\nBu özellik şu anda yalnızca bash veya zsh çalıştıran görev terminalleri ve kullanıcı terminalleri tarafından desteklenmektedir.",
+      "enableCommandSeparator": "Terminalde yürütülen komutlar ile bunların çıktıları arasında görsel bir ayırıcı etkinleştirin. Değişiklikler, yalnızca bu ayar değiştirildikten sonra yürütülen komutlar için geçerlidir. Yalnızc{0}i etkinleştirildiğinde çalışır.",
       "enableCopy": "Seçili metni kopyalamak için ctrl-c (macOS'ta cmd-c) tuşlarını etkinleştirin.",
       "enablePaste": "Panodan yapıştırmak için ctrl-v (macOS'ta cmd-v) tuşlarını etkinleştirin.",
       "profileArgs": "Bu profilin kullandığı kabuk argümanları.",
@@ -2269,6 +2273,7 @@
       "confirmDialogMessage": "\"{0}\" uzantısı doğrulanmamıştır ve güvenlik riski oluşturabilir.",
       "confirmDialogTitle": "Yüklemeye devam etmek istediğinizden emin misiniz?",
       "downloadCount": "İndirme sayısı: {0}",
+      "duplicateVSIX": "{0}'i VSIX'ten yükleyemedi. Uzantı zaten yüklü. VSIX'ten yeni bir sürümü yüklemeden önce mevcut uzantıyı kaldırın.",
       "errorFetching": "Uzantıları almada hata oluştu.",
       "errorFetchingConfigurationHint": "Bu durum, ağ yapılandırma sorunlarından kaynaklanıyor olabilir.",
       "failedInstallingVSIX": "VSIX'ten {0}'ın yüklenmesi başarısız oldu.",
@@ -2277,6 +2282,7 @@
       "onlyShowVerifiedExtensionsDescription": "Bu, {0}'un yalnızca doğrulanmış uzantıları göstermesini sağlar.",
       "onlyShowVerifiedExtensionsTitle": "Yalnızca Doğrulanmış Uzantıları Göster",
       "recommendedExtensions": "Bu çalışma alanında kullanılması önerilen uzantıların adlarının listesi.",
+      "restrictedModeInstallWarning": "\"{0}\" uzantısı, Kısıtlı Modda çalışmayı desteklemiyorsa devre dışı bırakılabilir. Uzantının beklendiği gibi çalışmasını sağlamak için bu çalışma alanına güvenin.",
       "searchPlaceholder": "{0}'da Uzantıları Ara",
       "showInstalled": "Yüklü Uzantıları Göster",
       "showRecommendedExtensions": "Uzantı önerileri için bildirimlerin gösterilip gösterilmeyeceğini kontrol eder.",

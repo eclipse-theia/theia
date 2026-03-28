@@ -144,9 +144,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                         return completionHandler();
                     }
                 },
-                freeInlineCompletions: completions => {
-                    this.inlineCodeCompletionProvider.freeInlineCompletions(completions);
-                }
+                disposeInlineCompletions: () => { /* no-op */ }
             }
         );
     }

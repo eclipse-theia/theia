@@ -125,7 +125,7 @@ export class AISkillsConfigurationWidget extends ReactWidget {
                                     <th className="skill-name-column">{nls.localizeByDefault('Name')}</th>
                                     <th className="skill-description-column">{nls.localizeByDefault('Description')}</th>
                                     <th className="skill-location-column">
-                                        {nls.localize('theia/ai/ide/skillsConfiguration/location/label', 'Location')}
+                                        {nls.localizeByDefault('Location')}
                                     </th>
                                     <th className="skill-open-column"></th>
                                 </tr>

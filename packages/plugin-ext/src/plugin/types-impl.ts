@@ -24,7 +24,8 @@
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { illegalArgument } from '../common/errors';
 import type * as theia from '@theia/plugin';
-import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
+import { UriComponents } from '../common/uri-components';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { SymbolKind } from '../common/plugin-api-rpc-model';

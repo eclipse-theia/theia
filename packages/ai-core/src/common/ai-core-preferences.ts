@@ -48,7 +48,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             typeDetails: {
                 isFilepath: true,
                 selectionProps: {
-                    openLabel: nls.localize('theia/ai/core/promptTemplates/openLabel', 'Select Folder'),
+                    openLabel: nls.localizeByDefault('Select Folder'),
                     canSelectFiles: false,
                     canSelectFolders: true,
                     canSelectMany: false

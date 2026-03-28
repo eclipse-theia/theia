@@ -22,6 +22,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "capabilityOverrides": {
+          "mdDescription": "テンプレートベースの機能に対するユーザーによる上書き設定。キーは機能フラグメントID、値は有効(true)または無効(false)です。",
+          "title": "機能のオーバーライド"
+        },
         "completionNotification": {
           "mdDescription": "このエージェントがタスクを完了した際の通知動作。設定されていない場合、グローバルデフォルトの通知設定が使用されます。\n                - `os-notification`: OS/システム通知を表示\n                - `message`: ステータスバー/メッセージ領域に通知を表示\n                - `blink`: UIを点滅またはハイライト表示\n                - `off`: このエージェントの通知を無効化",
           "title": "補完通知"
@@ -29,6 +33,16 @@
         "enable": {
           "mdDescription": "エージェントを有効化(true)するか無効化(false)するかを指定します。",
           "title": "エージェントを有効にする"
+        },
+        "genericCapabilitySelections": {
+          "agentDelegation": "委任用に選択されたエージェントID",
+          "functions": "選択された関数ID",
+          "mcpFunctions": "選択されたMCP関数ID",
+          "mdDescription": "スキル、機能、MCPツールなどの一般的な機能に対するユーザーの選択。",
+          "promptFragments": "選択されたプロンプト断片のID",
+          "skills": "選択されたスキルID",
+          "title": "一般的な機能の選択",
+          "variables": "選択された変数名"
         },
         "languageModelRequirements": {
           "identifier": {
@@ -187,6 +201,10 @@
             "description": "確認なしでツールを自動的に実行する"
           }
         },
+        "toolConfirmationTimeout": {
+          "denialReason": "{0}秒後に確認のタイムアウトが発生しました",
+          "description": "ツールの確認ダイアログのタイムアウト時間(秒単位)。正の値に設定すると、指定した時間が経過するとツールの確認は自動的に拒否されます。無効にするには 0 に設定してください(デフォルト)。"
+        },
         "universal": {
           "description": "このエージェントは、一般的なプログラミングやソフトウェア開発に関する質問に対して簡潔かつ正確な回答を提供することで、ソフトウェア開発者を支援するよう設計されています。また、ユーザーが尋ねる可能性のあるあらゆる汎用的な質問に対する代替手段でもあります。ユニバーサルエージェントは現在、デフォルトではコンテキストを一切保持しておらず、つまり現在のユーザーコンテキストやワークスペースにアクセスすることはできません。"
         },
@@ -199,7 +217,6 @@
       },
       "chat-ui": {
         "addContextVariable": "コンテキスト変数を追加",
-        "agent": "エージェント",
         "agentDelegationDescription": "委任可能な他のAIエージェント",
         "aiDisabled": "AI機能は無効化されています",
         "applyAll": "すべて適用",
@@ -219,6 +236,7 @@
           "clearHistory": "入力プロンプト履歴をクリア",
           "cycleMode": "サイクルチャットモード",
           "nextPrompt": "次のプロンプト",
+          "pasteWithImageSupport": "貼り付け(画像対応)",
           "previousPrompt": "前のプロンプト",
           "toggleCapabilities": "機能設定の切り替え"
         },
@@ -244,6 +262,7 @@
           "response": {
             "label": "応答:"
           },
+          "restoredNotAvailable": "復元されたセッションでは応答が利用できません。",
           "starting": "委任を開始します...",
           "status": {
             "canceled": "キャンセル済み",
@@ -269,7 +288,6 @@
         "functions": "機能",
         "functionsDescription": "Theia拡張機能によって提供される組み込み関数",
         "genericCapabilities": "汎用機能",
-        "mcpFunctions": "MCP",
         "mcpFunctionsDescription": "接続済みサーバーからのモデルコンテキストプロトコル(MCP)機能",
         "noChatAgentsAvailable": "チャットエージェントは利用できません。",
         "noMatchingCapabilities": "一致する機能はありません",
@@ -278,12 +296,12 @@
         "openOriginalFile": "元のファイルを開く",
         "performThisTask": "このタスクを実行してください。",
         "persistedSession": "永続化されたセッション(クリックで復元)",
-        "promptFragments": "プロンプト",
         "promptFragmentsDescription": "会話に含めるカスタムプロンプトフラグメント",
         "removeChat": "チャットを削除",
         "renameChat": "チャットの名前変更",
         "requestNotFoundForRetry": "リクエストが見つかりません。再試行してください。",
         "responseFrom": "{0}からの応答",
+        "saveCurrentSelectionsToSettings": "機能設定の保存",
         "searchCapabilities": "検索機能",
         "selectAgentQuickPickPlaceholder": "新しいセッション用のエージェントを選択してください",
         "selectAllInCategory": "このカテゴリのすべてを選択",
@@ -314,6 +332,7 @@
           "alwaysAllowConfirm": "承知しました、自動承認を有効化します",
           "alwaysAllowGenericWarning": "このツールは自動承認を有効化する前に確認が必要です。有効化後は、今後のすべての呼び出しが確認なしで実行されます。このツールを信頼し、潜在的なリスクを理解している場合にのみ有効化してください。",
           "alwaysAllowTitle": "「{0}」の自動承認を有効にしますか?",
+          "autoCancel": "{0} での自動キャンセル",
           "canceled": "ツールの実行がキャンセルされました",
           "denied": "ツールの実行が拒否されました",
           "deny-forever": "常に拒否",
@@ -560,11 +579,14 @@
           "signIn": "GitHub Copilot にサインイン",
           "signOut": "GitHub Copilot からサインアウトする"
         },
+        "enabled": {
+          "mdDescription": "GitHub Copilot プロバイダーを有効にします。有効にすると、認証用のステータスバー項目が表示され、Copilot サブスクリプションから利用可能なモデルが検出されます。"
+        },
         "enterpriseUrl": {
           "mdDescription": "Copilot API用のGitHub Enterpriseドメイン(例:`github.mycompany.com`)。GitHub.comの場合は空欄のままにしてください。"
         },
-        "models": {
-          "description": "使用するGitHub Copilotモデル。利用可能なモデルはCopilotのサブスクリプションによって異なります。"
+        "modelOverrides": {
+          "mdDescription": "自動的に検出された GitHub Copilot モデルを上書きします。空の場合(デフォルト)、Copilot サブスクリプションから利用可能なモデルが検出されます。自動検出を上書きするには、明示的なモデル ID を設定してください。"
         },
         "signOut": {
           "confirmMessage": "GitHub Copilotからログアウトしてもよろしいですか?"
@@ -572,7 +594,8 @@
         "statusBar": {
           "signedIn": "GitHub Copilot に {0} としてサインインしています。クリックしてサインアウトします。",
           "signedOut": "GitHub Copilot にサインインしていません。クリックしてサインインしてください。"
-        }
+        },
+        "tokenMigration": "GitHub Copilotのセッションで古い認証方法が使用されたため、セッションがクリアされました。利用可能なすべてのモデルにアクセスするには、再度サインインしてください。"
       },
       "core": {
         "agentConfiguration": {
@@ -743,8 +766,7 @@
           "variantsOfSystemPrompt": "このプロンプトバリエーションセットのバリエーション:"
         },
         "promptTemplates": {
-          "description": "カスタマイズされたプロンプトテンプレートを保存するフォルダ。カスタマイズされていない場合はユーザー設定ディレクトリが使用されます。プロンプトテンプレートのバリエーションを管理するため、バージョン管理下にあるフォルダの使用をご検討ください。",
-          "openLabel": "フォルダを選択"
+          "description": "カスタマイズされたプロンプトテンプレートを保存するフォルダ。カスタマイズされていない場合はユーザー設定ディレクトリが使用されます。プロンプトテンプレートのバリエーションを管理するため、バージョン管理下にあるフォルダの使用をご検討ください。"
         },
         "promptVariable": {
           "argDescription": "プロンプトテンプレートIDを解決する",
@@ -877,16 +899,12 @@
         },
         "edited": "編集済み",
         "exchange-card": {
-          "agentId": "エージェント",
           "timestamp": "開始"
         },
         "open-history-tooltip": "AIの履歴を開く...",
         "request-card": {
-          "agent": "エージェント",
-          "model": "モデル",
           "promptVariant": "プロンプトのバリエーション",
           "request": "リクエスト",
-          "response": "応答",
           "timestamp": "タイムスタンプ",
           "title": "リクエスト"
         },
@@ -926,15 +944,34 @@
       "ide": {
         "agent-description": "[AI設定ビュー]({0})で、有効化、LLM選択、プロンプトテンプレートのカスタマイズ、カスタムエージェント作成を含むAIエージェント設定を構成します。",
         "agentConfiguration": {
-          "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "新規ファイルを作成",
             "openExistingFile": "既存のファイルを開く",
             "placeholder": "カスタムエージェントファイルを作成または開く場所を選択してください",
             "title": "カスタムエージェントファイルの保存場所を選択"
           },
-          "enabledByDefault": "デフォルトで有効",
-          "noDescription": "説明はありません"
+          "genericCapabilitiesSettings": "一般的な機能",
+          "genericCapabilityType": {
+            "agentDelegation": "エージェントの委任",
+            "functions": "機能",
+            "mcpFunctions": "MCP 関数",
+            "promptFragments": "プロンプトの断片"
+          },
+          "noDescription": "説明はありません",
+          "resetAllCapabilities": "すべての機能をデフォルト値にリセットする",
+          "resetAllDefaults": "すべてをデフォルトにリセット",
+          "selections": "選択項目"
+        },
+        "agentMode": {
+          "confirmed": {
+            "mdDescription": "ユーザーがエージェントモードの警告を確認したかどうか。エージェントモードでは、追加の確認なしにファイルを自動的に変更できます。次のエージェントモードの要求時に再度確認を表示するには、`false` に設定してください。"
+          }
+        },
+        "agentModeConfirmation": {
+          "confirm": "確認",
+          "msg": "このエージェントは**エージェントモード**を使用します。自律的な処理を可能にするため、追加の確認なしにワークスペースのファイルに直接書き込むことができます。\n\n変更内容をレビューしたり元に戻したりできるように、バージョン管理システム(例:Git)の使用を推奨します。\n\n下のチャット入力エリアにあるモードセレクターを使用して**編集モード**に切り替えるか、読み取り専用の計画作成には**Architect**エージェントをご利用ください。\n\nこの確認設定はワークスペースごとに保存され、再度表示されることはありません。リセットまたはグローバルに設定するには、設定画面で `ai-features.agentMode.confirmed` を探してください。",
+          "question": "エージェントモードで続行しますか?",
+          "waiting": "確認を待っています..."
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "DevTools MCP サーバーの状態を確認中: {0}",
@@ -956,13 +993,10 @@
             "question": "Playwright MCP サーバーが実行されていません。今すぐ起動しますか?これにより Playwright MCP サーバーがインストールされる可能性があります。"
           }
         },
-        "appTester": {
-          "description": "エージェントがブラウザアプリケーションをエンドツーエンドでテストできるようにします。このため、エージェントはAppTesterエージェントに委譲でき、             これによりブラウザ操作が自動化され実装が検証されます。",
-          "name": "アプリテスター"
-        },
         "architectAgent": {
           "mode": {
             "plan": "プランモード",
+            "planNext": "プランモード(次へ)",
             "simple": "シンプルモード"
           },
           "suggestion": {
@@ -973,6 +1007,9 @@
         "bypassHint": "Claude Codeのような一部のエージェントはTheia言語モデルを必要としません",
         "chatDisabledMessage": {
           "title": "AI機能は無効化されています"
+        },
+        "codeReviewerAgent": {
+          "description": "コードの変更を分析し、構造化された評価結果を返すコードレビューアシスタント。完了基準、ビルド／リンティング／テストの結果、およびコード品質をチェックします。"
         },
         "coderAgent": {
           "mode": {
@@ -1018,6 +1055,9 @@
         "deleteChat": "チャットを削除",
         "enableAI": {
           "mdDescription": "この設定により、最新のAI機能(ベータ版)にアクセスできます。            \n            これらの機能はベータ段階にあるため、変更される可能性があり、さらに改善される点にご注意ください。これらの機能は、アクセスを許可した言語モデル(LLM)に対して継続的なリクエストを生成する可能性があることを認識することが重要です。これにより、注意深く監視する必要のあるコストが発生する可能性があります。 このオプションを有効化することで、これらのリスクを認識したものとみなされます。            \n            **ご注意！このセクションの以下の設定は、\n            メイン機能設定が有効になって初めて有効になります。機能を有効化した後、以下のLLMプロバイダーを少なくとも1つ設定する必要があります。詳細は[ドキュメント](https://theia-ide.org/docs/user_ai/)も参照してください**。"
+        },
+        "exploreAgent": {
+          "description": "コードベースから情報を抽出して要約する、コードベース探索アシスタント。         コードベースに何が存在するかに関する事実を報告し、コードの抜粋を提供し、観察されたパターンを説明します。"
         },
         "github": {
           "configureGitHubServer": {
@@ -1078,9 +1118,6 @@
           "name": "シェル実行"
         },
         "skillsConfiguration": {
-          "location": {
-            "label": "場所"
-          },
           "noSkills": "利用可能なスキルはありません",
           "noSlashCommands": "スラッシュコマンドは利用できません",
           "slashCommand": {
@@ -1123,7 +1160,6 @@
           }
         },
         "tooltip": {
-          "agent": "エージェント",
           "lastActivity": "最終アクティビティ",
           "lastMessage": "最後のメッセージ",
           "messages": "メッセージ",
@@ -1133,8 +1169,7 @@
         },
         "variableConfiguration": {
           "selectVariable": "変数を選択してください。",
-          "usedByAgents": "エージェントが使用する",
-          "variableArgs": "引数"
+          "usedByAgents": "エージェントが使用する"
         }
       },
       "llamaFile": {
@@ -1220,7 +1255,6 @@
         }
       },
       "mcpConfiguration": {
-        "arguments": "引数",
         "autostart": "自動起動",
         "connectServer": "接続",
         "connectingServer": "接続中...",
@@ -1259,7 +1293,6 @@
           "serverUrlRequired": "リモートサーバーにはサーバーURLが必要です"
         },
         "headers": "ヘッダー",
-        "noServers": "MCPサーバーが設定されていません",
         "saveServerError": "MCPサーバー設定の保存に失敗しました: {0}",
         "serverAuthToken": "認証トークン",
         "serverAuthTokenHeader": "認証ヘッダー名",
@@ -1352,16 +1385,19 @@
           "in-progress": "SCANOSS - スキャンを実行中...",
           "match-count": "{0}件の一致が見つかりました",
           "matched": "SCANOSS - {0} の一致が見つかりました",
-          "no-match": "SCANOSS - 一致なし",
-          "summary": "概要"
+          "no-match": "SCANOSS - 一致なし"
         }
       },
       "session-settings-dialog": {
         "advancedSettings": "詳細設定 (JSON)",
         "budgetTokens": "予算トークン:",
+        "confirmationTimeout": "確認タイムアウト",
+        "confirmationTimeoutNote": "指定した時間が経過すると、ツールの確認ダイアログを自動的に拒否します。このセッションでは、グローバル設定よりも優先されます。",
+        "enableConfirmationTimeout": "確認のタイムアウトを有効にする",
         "enableThinking": "拡張思考を有効にする",
         "thinkingMode": "思考モード",
         "thinkingModeNote": "一部のモデルではこの設定が無視される場合があります。",
+        "timeoutSeconds": "タイムアウト(秒):",
         "title": "セッション設定を設定する",
         "tooltip": "セッション設定を設定する"
       },
@@ -1387,7 +1423,6 @@
         "askTerminalCommand": "ターミナルコマンドについて質問する...",
         "hitEnterConfirm": "Enterキーを押して確定",
         "howCanIHelp": "ご用件をお聞かせください。",
-        "loading": "読み込み中",
         "tryAgain": "もう一度試してください...",
         "useArrowsAlternatives": " または⇅を使用して代替案を表示..."
       },
@@ -1398,14 +1433,12 @@
         "inputTokens": "入力トークン",
         "label": "トークン使用例",
         "lastUsed": "最後に使用した",
-        "model": "モデル",
         "noData": "トークン使用データはまだ利用できません。",
         "note": "トークンの使用状況はアプリケーション起動時から追跡されますが、永続化されません。",
         "outputTokens": "出力トークン",
         "readCachedInputTokens": "キャッシュから読み込まれた入力トークン",
         "readCachedInputTokensTooltip": "「入力トークン」に加えて追跡されます。通常、キャッシュされていない場合よりもはるかに低コストです。通常、レート制限にはカウントされません。",
         "total": "合計",
-        "totalTokens": "総トークン数",
         "totalTokensTooltip": "'入力トークン' + '出力トークン'"
       },
       "vercelai": {
@@ -1461,6 +1494,10 @@
           "description": "除外するファイル/フォルダ用のパターン(globまたは正規表現)のリスト。",
           "title": "除外ファイルパターン"
         },
+        "fileContentMaxSizeKB": {
+          "description": "getFileContent ツールが返すコンテンツの最大サイズ(キロバイト単位)。ファイル全体を読み込む場合(offset や limit を指定しない場合)、この制限を超えるファイルはエラーを返します。offset および limit を指定して使用する場合、要求された範囲のみがこの制限に対してチェックされます。",
+          "title": "ファイル内容の最大サイズ(KB)"
+        },
         "projectInfoAgent": {
           "description": "プロジェクト情報テンプレートを管理するAIアシスタント。このエージェントは、他のAIエージェントにプロジェクトのコンテキストを提供する.prompts/project-info.prompttemplateファイルの作成、更新、レビューを支援します。ワークスペースを分析してプロジェクト情報を提案したり、要件に基づいて既存のテンプレートを更新したりできます。"
         },
@@ -1477,6 +1514,7 @@
       "fileChangeSetTitle": "変更案"
     },
     "ai-chat-ui": {
+      "confirm": "確認",
       "deleteChat": "チャットを削除",
       "initiate-session-task-context": "タスクコンテキスト: セッションの開始",
       "navigate-back": "戻る",
@@ -1511,6 +1549,13 @@
       "addressGhReviewCommand": {
         "argumentHint": "<pr-number>",
         "description": "GitHubプルリクエストに対するレビューコメントへの対応"
+      },
+      "appTester": {
+        "description": "実装後のブラウザベースのUI検証については、AppTesterエージェントに委譲します。",
+        "name": "E2Eテスト"
+      },
+      "codeReview": {
+        "description": "各実装後にコードレビュー担当者に委譲します。レビューが通過するまで次のステップを保留します。"
       },
       "fixGhTicketCommand": {
         "argumentHint": "<チケット番号>",
@@ -1620,7 +1665,8 @@
       "about": {
         "compatibility": "{0} 互換性",
         "defaultApi": "デフォルトの{0}API",
-        "listOfExtensions": "拡張機能の一覧"
+        "listOfExtensions": "拡張機能の一覧",
+        "monacoEditor": "Monaco Editor バージョン"
       },
       "common": {
         "closeAll": "すべてのタブを閉じる",
@@ -1717,7 +1763,6 @@
       "conditionalBreakpointsNotSupported": "このデバッグタイプでは条件付きブレークポイントをサポートしていません",
       "confirmRunToShiftedPosition_msg": "ターゲット位置は行{0}、列{1}にシフトされます。実行しますか?",
       "confirmRunToShiftedPosition_title": "現在のスレッドを指定された位置に正確に実行できません",
-      "consoleFilter": "フィルター(例:テキスト、!除外)",
       "consoleFilterAriaLabel": "デバッグコンソールの出力をフィルタリングする",
       "consoleFilterTooltip": "テキストでコンソール出力をフィルタリングします。複数の用語はコンマで区切ります。除外する用語には `!` を接頭辞として付けます。\n\n例:\n\n- `text` - \"text\"を含む行を表示\n- `text, other` - \"text\"または\"other\"を含む行を表示\n- `!text` - \"text\"を含む行を非表示\n- `text, !other` - \"text\"を表示し、\"other\"を非表示",
       "consoleSessionSelectorTooltip": "デバッグセッションを切り替えます。各デバッグセッションには独自のコンソール出力があります。",
@@ -1758,6 +1803,7 @@
       "unverifiedBreakpoint": "未検証 {0}"
     },
     "editor": {
+      "autoSaveWhenNoErrors": "有効にすると、自動保存がトリガーされた時点でエラーが報告されていないファイルに対してのみ、エディタの自動保存が制限されます。{0}が有効になっている場合にのみ適用されます。",
       "clearFormatterSetting": "フォーマッタ設定をクリア",
       "configuredIn": "{0} で設定済み",
       "configuredNotInstalled": "{1}で設定されているがインストールされていない「{0}」",
@@ -1768,7 +1814,6 @@
       "editor.bracketPairColorization.enabled": "括弧ペアの色分けを有効にするかどうかを制御します。括弧のハイライト色を上書きするには `#workbench.colorCustomizations#` を使用してください。",
       "editor.codeActions.triggerOnFocusChange": "`#files.autoSave#` が `afterDelay` に設定されている場合に `#editor.codeActionsOnSave#` のトリガーを有効化します。ウィンドウおよびフォーカス変更時にトリガーされるには、Code Actions を `always` に設定する必要があります。",
       "editor.detectIndentation": "ファイルを開いた際に、ファイルの内容に基づいて `#editor.tabSize#` および `#editor.insertSpaces#` が自動的に検出されるかどうかを制御します。",
-      "editor.experimental.preferTreeSitter": "特定の言語に対してツリーシッター解析を有効にするかどうかを制御します。指定された言語については、`editor.experimental.treeSitterTelemetry`よりも優先されます。",
       "editor.inlayHints.enabled1": "インレイヒントはデフォルトで表示され、Ctrl+Altキーを押すと非表示になります",
       "editor.inlayHints.enabled2": "インレイヒントはデフォルトで非表示となっており、Ctrl+Altキーを押しながら操作すると表示されます",
       "editor.inlayHints.fontFamily": "エディタ内のインレイヒントのフォントファミリーを制御します。空に設定すると、`#editor.fontFamily#` が使用されます。",
@@ -1808,7 +1853,7 @@
       "cwd": "新しい外部ターミナル用の現在の作業ディレクトリを選択"
     },
     "file-search": {
-      "toggleIgnoredFiles": " ({0}を押すと無視されたファイルの表示/非表示を切り替えられます)"
+      "toggleExcludedFiles": " ({0}を押すと、除外されたファイルの表示/非表示を切り替えられます)"
     },
     "fileDialog": {
       "showHidden": "隠しファイルを表示"
@@ -1858,46 +1903,6 @@
         "welcomePage": "{0}と拡張機能の使い始めを支援するコンテンツを含むウェルカムページを開く。"
       },
       "telemetry": "データ使用量とテレメトリ"
-    },
-    "git": {
-      "aFewSecondsAgo": "数秒前",
-      "addSignedOff": "署名済み",
-      "added": "追加",
-      "amendReuseMessage": "前回のコミットメッセージを再利用するには「Enter」キーを押すか、「Escape」キーを押してキャンセルしてください。",
-      "amendRewrite": "前回のコミットメッセージを書き換えます。確認するには「Enter」キーを、キャンセルするには「Escape」キーを押してください。",
-      "checkoutCreateLocalBranchWithName": "新しいローカルブランチを作成します。名前: `{0}`。確認するには「Enter」キーを、キャンセルするには「Escape」キーを押してください。",
-      "checkoutProvideBranchName": "ブランチ名をご提供ください。 ",
-      "checkoutSelectRef": "参照を選択してチェックアウトするか、新しいローカルブランチを作成してください:",
-      "cloneQuickInputLabel": "Gitリポジトリの場所を指定してください。確認するには「Enter」キーを、キャンセルするには「Escape」キーを押してください。",
-      "cloneRepository": "Gitリポジトリをクローンします: {0}。確認するには「Enter」キーを、キャンセルするには「Escape」キーを押してください。",
-      "compareWith": "比較対象...",
-      "compareWithBranchOrTag": "現在アクティブな{0}ブランチと比較するブランチまたはタグを選択してください:",
-      "conflicted": "競合状態",
-      "copied": "コピー",
-      "diff": "Diff",
-      "dirtyDiffLinesLimit": "エディタの行数がこの制限を超える場合、変更箇所を示す装飾を表示しない。",
-      "dropStashMessage": "スタッシュが正常に削除されました。",
-      "editorDecorationsEnabled": "エディタ内でgitの装飾を表示する。",
-      "fetchPickRemote": "フェッチするリモートを選択してください:",
-      "gitDecorationsColors": "ナビゲーターでカラー装飾を使用する。",
-      "mergeEditor": {
-        "currentSideTitle": "現在の",
-        "incomingSideTitle": "受信"
-      },
-      "mergeQuickPickPlaceholder": "現在アクティブな{0}ブランチにマージするブランチを選択してください:",
-      "missingUserInfo": "gitで「user.name」と「user.email」の設定を必ず行ってください。",
-      "noHistoryForError": "{0} の履歴は利用できません。",
-      "noPreviousCommit": "修正のための過去のコミットなし",
-      "noRepositoriesSelected": "リポジトリが選択されていません。",
-      "prepositionIn": "in",
-      "renamed": "改名",
-      "repositoryNotInitialized": "リポジトリ {0} はまだ初期化されていません。",
-      "stashChanges": "変更を一時保存します。確認するには「Enter」キーを、キャンセルするには「Escape」キーを押してください。",
-      "stashChangesWithMessage": "変更をメッセージ付きで一時保存: {0}。確認するには「Enter」キーを、キャンセルするには「Escape」キーを押してください。",
-      "tabTitleIndex": "{0} (索引)",
-      "tabTitleWorkingTree": "{0} (作業ツリー)",
-      "toggleBlameAnnotations": "非難注釈の切り替え",
-      "unstaged": "未ステージング"
     },
     "keybinding-schema-updater": {
       "deprecation": "代わりに`when`句を使用してください。"
@@ -2073,7 +2078,8 @@
         "loginTitle": "ログイン",
         "signedOut": "サインアウトに成功しました。"
       },
-      "plugins": "プラグイン",
+      "extensionsRestrictedMode": "制限モードでは、一部の拡張機能が無効になっています",
+      "supportNodeGlobalNavigator": "有効にすると、拡張機能ホスト内のグローバルなnavigatorオブジェクトは、Node.jsで提供されるものと同様に定義されます。拡張機能は、navigatorオブジェクトの存在を、コードがブラウザ上で実行されているというヒントとして利用できます。これを無効にすると(デフォルト設定)、この前提を維持するために、拡張機能ホスト内のnavigatorは未定義となります。",
       "webviewTrace": "WebView との通信トレースを制御します。",
       "webviewWarnIfUnsecure": "WebViewが現在安全でない状態でデプロイされていることをユーザーに警告します。"
     },
@@ -2086,10 +2092,8 @@
       "openByDefault": "デフォルトではエディターではなくプレビューを開く。"
     },
     "property-view": {
-      "created": "作成",
       "directory": "ディレクトリ",
       "lastModified": "最終更新日",
-      "location": "場所",
       "noProperties": "プロパティは利用できません。",
       "properties": "プロパティ",
       "symbolicLink": "シンボリックリンク"
@@ -2125,10 +2129,6 @@
       "amendHeadCommit": "HEAD コミット",
       "amendLastCommit": "最後のコミットを修正する",
       "changeRepository": "リポジトリを変更...",
-      "config.untrackedChanges": "未追跡の変更の挙動を制御します。",
-      "config.untrackedChanges.hidden": "非表示",
-      "config.untrackedChanges.mixed": "混合",
-      "config.untrackedChanges.separate": "分離する",
       "dirtyDiff": {
         "close": "閉じる 変更 プレビュー表示"
       },
@@ -2136,7 +2136,8 @@
       "mergeEditor": {
         "resetConfirmationTitle": "このエディターでマージ結果を本当にリセットしますか?"
       },
-      "noRepositoryFound": "リポジトリが見つかりません",
+      "noHistoryForError": "{0}には履歴がありません",
+      "prepositionIn": "および",
       "unamend": "変更不可",
       "unamendCommit": "コミットを修正しない"
     },
@@ -2144,6 +2145,7 @@
       "includeIgnoredFiles": "除外ファイルを含める",
       "noFolderSpecified": "フォルダーを開いていないか、指定していません。現在検索されるのは開いているファイルのみです。",
       "resultSubset": "これは検索結果の一部のみです。より具体的な検索語句を使用して結果リストを絞り込んでください。",
+      "searchExclude": "全文検索およびクイックオープンでのファイル検索において、ファイルやフォルダを除外するための [グロブパターン](https://aka.ms/vscode-glob-patterns) を設定します。`#files.exclude#` 設定からすべてのグロブパターンを継承します。",
       "searchOnEditorModification": "編集中のファイルが変更された際に、アクティブなエディタを検索します。"
     },
     "secondary-window": {
@@ -2188,6 +2190,8 @@
     },
     "terminal": {
       "defaultProfile": "{0} で使用されるデフォルトのプロファイル",
+      "enableCommandHistory": "シェルインジェクションを使用して、ターミナルコマンドとその出力を個別に追跡します。これにより、UI上でコマンドを視覚的に区別したり、AIエージェントがターミナルにより構造化されたアクセスを行えるようになるなどのユースケースが可能になります。この設定を切り替えても、すでに開いているターミナルには影響しません。\n\n&nbsp;\n\nこの機能は現在、bashまたはzshを実行しているタスクターミナルおよびユーザーターミナルでのみサポートされています。",
+      "enableCommandSeparator": "ターミナル内で、実行されたコマンドとその出力の間に視覚的な区切り線を表示します。変更は、この設定を変更した後に実行されるコマンドにのみ適用されます。{0}が有効になっている場合にのみ機能します。",
       "enableCopy": "選択したテキストをコピーするには、Ctrl+C(macOSではCmd+C)を有効にしてください",
       "enablePaste": "Ctrl+V(macOSではCmd+V)を有効にしてクリップボードから貼り付け",
       "profileArgs": "このプロファイルが使用するシェル引数。",
@@ -2269,6 +2273,7 @@
       "confirmDialogMessage": "拡張機能「{0}」は未検証であり、セキュリティ上のリスクをもたらす可能性があります。",
       "confirmDialogTitle": "インストールを続行してもよろしいですか?",
       "downloadCount": "ダウンロード数: {0}",
+      "duplicateVSIX": "VSIXからの{0}のインストールに失敗しました。この拡張機能はすでにインストールされています。VSIXから新しいバージョンをインストールする前に、既存の拡張機能をアンインストールしてください。",
       "errorFetching": "拡張機能の取得に失敗しました。",
       "errorFetchingConfigurationHint": "これはネットワーク設定の問題が原因である可能性があります。",
       "failedInstallingVSIX": "{0}のVSIXからのインストールに失敗しました。",
@@ -2277,6 +2282,7 @@
       "onlyShowVerifiedExtensionsDescription": "これにより、{0}は検証済みの拡張機能のみを表示できるようになります。",
       "onlyShowVerifiedExtensionsTitle": "検証済み拡張機能のみを表示",
       "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名称一覧。",
+      "restrictedModeInstallWarning": "拡張機能「{0}」は、制限モードでの実行に対応していない場合、無効化される可能性があります。拡張機能が期待どおりに動作するようにするには、このワークスペースを信頼してください。",
       "searchPlaceholder": "{0} で拡張機能を検索",
       "showInstalled": "インストール済み拡張機能を表示",
       "showRecommendedExtensions": "拡張機能の推奨に関する通知を表示するかどうかを制御します。",

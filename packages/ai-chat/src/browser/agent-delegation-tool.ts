@@ -29,11 +29,12 @@ import {
     ChatSession,
     ChatRequestInvocation,
 } from '../common';
-import { DelegationResponseContent } from './delegation-response-content';
 
 @injectable()
 export class AgentDelegationTool implements ToolProvider {
     static ID = AGENT_DELEGATION_FUNCTION_ID;
+
+    protected readonly pendingDelegations = new Map<string, { agentName: string; prompt: string; invocation: ChatRequestInvocation }>();
 
     @inject(ChatAgentServiceFactory)
     protected readonly getChatAgentService: () => ChatAgentService;
@@ -71,6 +72,10 @@ export class AgentDelegationTool implements ToolProvider {
                 return this.delegateToAgent(arg_string, ctx);
             },
         };
+    }
+
+    getDelegation(toolCallId: string): { agentName: string; prompt: string; invocation: ChatRequestInvocation } | undefined {
+        return this.pendingDelegations.get(toolCallId);
     }
 
     private async delegateToAgent(
@@ -168,11 +173,23 @@ export class AgentDelegationTool implements ToolProvider {
             }
 
             if (response) {
-                // Add the response content immediately to enable streaming
-                // The renderer will handle the streaming updates
-                ctx.response.response.addContent(
-                    new DelegationResponseContent(agent.name, prompt, response)
-                );
+                // Store the invocation in the registry so the renderer can access it
+                if (ctx.toolCallId) {
+                    this.pendingDelegations.set(ctx.toolCallId, {
+                        agentName: agent.name,
+                        prompt,
+                        invocation: response
+                    });
+                    // Clean up when the delegated session is deleted
+                    const chatService = this.getChatService();
+                    const toolCallId = ctx.toolCallId;
+                    const sessionEventListener = chatService.onSessionEvent(event => {
+                        if (event.type === 'deleted' && event.sessionId === newSession.id) {
+                            this.pendingDelegations.delete(toolCallId);
+                            sessionEventListener.dispose();
+                        }
+                    });
+                }
 
                 try {
                     // Wait for completion to return the final result as tool output
@@ -189,7 +206,7 @@ export class AgentDelegationTool implements ToolProvider {
                     return stringResult;
                 } catch (completionError) {
                     if (
-                        completionError.message &&
+                        completionError instanceof Error &&
                         completionError.message.includes('cancelled')
                     ) {
                         return 'Operation cancelled by user';
@@ -215,7 +232,6 @@ export class AgentDelegationTool implements ToolProvider {
      * Sets up monitoring of the ChangeSet in the delegated session and bubbles changes to the parent session.
      * @param delegatedSession The session created for the delegated agent
      * @param parentModel The parent session model that should receive the bubbled changes
-     * @param agentName The name of the agent for attribution purposes
      */
     private setupChangeSetBubbling(
         delegatedSession: ChatSession,
@@ -231,7 +247,6 @@ export class AgentDelegationTool implements ToolProvider {
      * Bubbles the ChangeSet from the delegated session to the parent session.
      * @param delegatedSession The session from which to bubble changes
      * @param parentModel The parent session model to receive the bubbled changes
-     * @param agentName The name of the agent for attribution purposes
      */
     private bubbleChangeSet(
         delegatedSession: ChatSession,

@@ -32,6 +32,7 @@ import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { insertFinalNewline } from '@theia/monaco/lib/browser/monaco-utilities';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { ChangeSetElement } from '../common';
 import { SerializableChangeSetElement } from '../common/chat-model-serialization';
 import { createChangeSetFileUri } from './change-set-file-resource';
@@ -99,6 +100,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     @inject(MonacoCodeActionService)
     protected readonly codeActionService: MonacoCodeActionService;
+
+    @inject(MonacoWorkspace)
+    protected readonly monacoWorkspace: MonacoWorkspace;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
@@ -313,27 +317,27 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     /**
      * Applies changes using Monaco utilities, including loading the model for the base file URI,
-     * setting the value to the intended state, and running code actions on save.
+     * applying edits, and running code actions on save.
      */
     protected async applyChangesWithMonaco(contents?: string): Promise<void> {
         let modelReference: IReference<MonacoEditorModel> | undefined;
-
         try {
             modelReference = await this.monacoTextModelService.createModelReference(this.uri);
             const model = modelReference.object;
             model.suppressOpenEditorWhenDirty = true;
             const targetContent = contents ?? this.targetState;
-            model.textEditorModel.setValue(targetContent);
-
+            const currentContent = model.textEditorModel.getValue();
+            if (currentContent !== targetContent) {
+                const fullRange = model.textEditorModel.getFullModelRange();
+                await this.monacoWorkspace.applyBackgroundEdit(model,
+                    [{ range: fullRange, text: targetContent, forceMoveMarkers: false }]);
+            }
             const languageId = model.languageId;
             const uriStr = this.uri.toString();
-
             await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
             await this.applyFormatting(model, languageId, uriStr);
-
             await model.save();
             this.state = 'applied';
-
         } catch (error) {
             console.error('Failed to apply changes with Monaco:', error);
             await this.writeChanges(contents);

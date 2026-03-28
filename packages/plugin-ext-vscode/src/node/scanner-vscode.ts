@@ -75,6 +75,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             readmeUrl: this.getReadmeUrl(plugin),
             licenseUrl: this.getLicenseUrl(plugin)
         };
+        this.applyTrustExtraction(plugin, result);
         return result;
     }
 

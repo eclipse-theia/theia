@@ -389,8 +389,7 @@ Choose the agent to use by default. You can always override this by mentioning *
             </div>
             <LocalizedMarkdown
                 localizationKey="theia/ai/ide/chatDisabledMessage/features"
-                defaultMarkdown={`This will activate the AI features in the app. Please remember, these features are **in a beta state**,
-so they may change and we are working on improving them.
+                defaultMarkdown={`This will activate the AI features in the app.
 
 Please support us by [providing feedback](https://github.com/eclipse-theia/theia)!
 

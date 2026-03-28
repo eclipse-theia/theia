@@ -102,13 +102,13 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
             infoNode.children.push(this.createResultLineNode('isFile', nls.localizeByDefault('File'), fileStatObject.isFile, infoNode));
             infoNode.children.push(this.createResultLineNode('isSymbolicLink', nls.localize('theia/property-view/symbolicLink', 'Symbolic link'),
                 fileStatObject.isSymbolicLink, infoNode));
-            infoNode.children.push(this.createResultLineNode('location', nls.localize('theia/property-view/location', 'Location'),
+            infoNode.children.push(this.createResultLineNode('location', nls.localizeByDefault('Location'),
                 this.getLocationString(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('name', nls.localizeByDefault('Name'), this.getFileName(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('path', nls.localizeByDefault('Path'), this.getFilePath(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('lastModification', nls.localize('theia/property-view/lastModified', 'Last modified'),
                 this.getLastModificationString(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('created', nls.localize('theia/property-view/created', 'Created'),
+            infoNode.children.push(this.createResultLineNode('created', nls.localizeByDefault('Created'),
                 this.getCreationTimeString(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('size', nls.localizeByDefault('Size'), this.getSizeString(fileStatObject), infoNode));
             this.refreshModelChildren();
