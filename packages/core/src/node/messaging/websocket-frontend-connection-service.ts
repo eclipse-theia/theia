@@ -15,9 +15,9 @@
 
 import { Channel, WriteBuffer } from '../../common/message-rpc';
 import { MessagingService } from './messaging-service';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
 import { Socket } from 'socket.io';
-import { ConnectionHandlers } from './default-messaging-service';
+import { ConnectionHandlers, MessagingContainer } from './default-messaging-service';
 import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
 import { FrontendConnectionService } from './frontend-connection-service';
 import { AbstractChannel } from '../../common/message-rpc/channel';
@@ -32,6 +32,9 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     @inject(WebsocketEndpoint)
     protected readonly websocketServer: WebsocketEndpoint;
+
+    @inject(MessagingContainer)
+    protected readonly container: interfaces.Container;
 
     protected readonly wsHandlers = new ConnectionHandlers();
     protected readonly connectionsByFrontend = new Map<string, ReconnectableSocketChannel>();
@@ -94,7 +97,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     protected createConnection(socket: Socket, frontEndId: string): ReconnectableSocketChannel {
         console.info(`creating connection for ${frontEndId}`);
-        const channel = new ReconnectableSocketChannel();
+        const channel = this.container.get(ReconnectableSocketChannel);
         channel.connect(socket);
 
         this.connectionsByFrontend.set(frontEndId, channel);
@@ -139,7 +142,10 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 @injectable()
 export class ReconnectableSocketChannel extends AbstractChannel {
     protected socket: Socket | undefined;
-    protected socketBuffer = new SocketWriteBuffer();
+
+    @inject(SocketWriteBuffer)
+    protected socketBuffer: SocketWriteBuffer;
+
     protected disposables = new DisposableCollection();
 
     connect(socket: Socket): void {

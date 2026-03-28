@@ -33,7 +33,8 @@ export class WebSocketConnectionSource implements ConnectionSource {
     @inject(FrontendIdProvider)
     protected readonly frontendIdProvider: FrontendIdProvider;
 
-    protected readonly writeBuffer = new SocketWriteBuffer();
+    @inject(SocketWriteBuffer)
+    protected readonly writeBuffer: SocketWriteBuffer;
 
     private _socket: Socket;
     get socket(): Socket {
