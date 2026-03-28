@@ -273,9 +273,8 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             // Only collapse when search was cleared, not on every re-render
             setExpandedNodes(new Set());
         }
-    // Only react to search query and filtered tree changes, not focusedNodeId
-    // Including focusedNodeId would cause all nodes to re-expand on every click while filtering
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only react to search query and filtered tree changes, not focusedNodeId.
+    // Including focusedNodeId would cause all nodes to re-expand on every click while filtering.
     }, [searchQuery, filteredTree]);
 
     // Get all visible node IDs for keyboard navigation
