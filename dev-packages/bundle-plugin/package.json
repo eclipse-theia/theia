@@ -1,7 +1,7 @@
 {
-  "name": "@theia/native-esbuild-plugin",
-  "version": "1.57.0",
-  "description": "ESBuild Plugin for native dependencies of Theia.",
+  "name": "@theia/bundle-plugin",
+  "version": "1.70.0",
+  "description": "Contains bundler plugins for Theia.",
   "publishConfig": {
     "access": "public"
   },
@@ -32,5 +32,6 @@
     "detect-libc": "^2.0.2",
     "tslib": "^2.6.2",
     "webpack": "^5.76.0"
-  }
+  },
+  "gitHead": "21358137e41342742707f660b8e222f940a27652"
 }

@@ -1,5 +1,5 @@
 /**
- * This file can be edited to the ESBuild build process.
+ * This file can be edited to adjust the ESBuild build process.
  * To reset, delete this file and rerun theia build again.
  */
 import { browserOptions, watch } from './gen-esbuild.browser.mjs';
@@ -19,16 +19,12 @@ if (watch) {
     ]);
 } else {
     try {
-        await Promise.all([
-            browserContext.rebuild(),
-            nodeContext.rebuild(),
-            electronContext.rebuild(),
-        ]);
-        await Promise.all([
-            browserContext.dispose(),
-            nodeContext.dispose(),
-            electronContext.dispose(),
-        ]);
+        await browserContext.rebuild();
+        await browserContext.dispose();
+        await nodeContext.rebuild();
+        await nodeContext.dispose();
+        await electronContext.rebuild();
+        await electronContext.dispose();
     } catch (err) {
         process.exit(1);
     }

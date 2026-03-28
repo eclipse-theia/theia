@@ -13,13 +13,10 @@
       "path": "../application-package"
     },
     {
+      "path": "../bundle-plugin"
+    },
+    {
       "path": "../ffmpeg"
-    },
-    {
-      "path": "../native-esbuild-plugin"
-    },
-    {
-      "path": "../native-webpack-plugin"
     }
   ]
 }

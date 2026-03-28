@@ -32,6 +32,39 @@ function resolveModulePath(module: string): string {
     return path.resolve(modulePath, '..');
 }
 
+/**
+ * Redirects Monaco's nls module to Theia's localization-aware version.
+ *
+ * esbuild's `alias` option cannot be used for this because it rejects absolute paths as keys.
+ * This plugin catches both package-style imports (`@theia/monaco-editor-core/esm/vs/nls`)
+ * and relative imports from within Monaco's source tree (e.g. `../nls.js`), which are
+ * identified by the importing file residing inside `monaco-editor-core`.
+ *
+ * If `@theia/monaco` is not installed the plugin is a no-op.
+ */
+export function monacoNlsPlugin(): Plugin {
+    const monacoPackagePath = resolvePackagePath('@theia/monaco', process.cwd());
+    const redirectTarget = monacoPackagePath
+        ? path.join(monacoPackagePath, '..', 'lib', 'browser', 'monaco-nls.js')
+        : undefined;
+    return {
+        name: 'monaco-nls',
+        setup(build: PluginBuild): void {
+            if (!redirectTarget) {
+                return;
+            }
+            build.onResolve({ filter: /nls(\.js)?$/ }, args => {
+                if (
+                    args.path.startsWith('@theia/monaco-editor-core') ||
+                    args.resolveDir.includes('monaco-editor-core')
+                ) {
+                    return { path: redirectTarget };
+                }
+            });
+        }
+    };
+}
+
 export function problemMatcherPlugin(watch: boolean, type: string): Plugin {
     const buildType = watch ? 'watch' : 'build';
     const prefix = `[${buildType}/${type}]`;
@@ -59,7 +92,7 @@ export interface NativeDependenciesPluginOptions {
 
 export function nativeDependenciesPlugin(options: NativeDependenciesPluginOptions): Plugin {
     const plugin = new PluginImpl(options);
-    // create wrapper over plugin
+    // create wrapper object over plugin
     // esbuild validates the plugin object and expects no additional properties
     return {
         name: plugin.name,
@@ -69,7 +102,7 @@ export function nativeDependenciesPlugin(options: NativeDependenciesPluginOption
 
 class PluginImpl implements Plugin {
 
-    name = '@theia/native-esbuild-plugin';
+    name = '@theia/esbuild-plugin';
 
     private bindings: Record<string, string> = {};
     private options: NativeDependenciesPluginOptions;
@@ -126,6 +159,16 @@ class PluginImpl implements Plugin {
             contents: 'exports.rgPath = require("path").join(__dirname, `./native/rg${process.platform === "win32" ? ".exe" : ""}`);',
             loader: 'js'
         }));
+        build.onLoad({ filter: /node_modules[/\\]node-pty[/\\]lib[/\\]utils\.js$/ }, async args => {
+            let contents = await fs.promises.readFile(args.path, 'utf8');
+            // node-pty's loadNativeModule() uses dynamic require() calls with paths computed
+            // at runtime (e.g. require(dir + "/" + name + ".node")). Routing them through a
+            // local alias prevents esbuild from attempting static analysis of those paths,
+            // so Node.js resolves them at runtime relative to the bundle's __dirname, where
+            // the prebuilt .node files are placed by copyNodePtySpawnHelper().
+            contents = 'const __nativePtyRequire = require;\n' + contents.replace(/\brequire\(/g, '__nativePtyRequire(');
+            return { contents, loader: 'js' };
+        });
         build.onEnd(() => {
             if (this.options.trash) {
                 copyTrashHelper(outdir);
@@ -183,18 +226,27 @@ async function copyRipgrep(outdir: string): Promise<void> {
 }
 
 async function copyNodePtySpawnHelper(outdir: string): Promise<void> {
-    const targetDirectory = path.resolve(outdir, '..', 'build', 'Release');
+    const dist = `${process.platform}-${process.arch}`;
+    const src = `node-pty/prebuilds/${dist}`;
+    const targetDirectory = path.resolve(outdir, '..', 'prebuilds', dist);
+
+    const copyFile = async (source: string): Promise<void> => {
+        const file = require.resolve(`${src}/${source}`);
+        const targetFile = path.join(targetDirectory, source);
+        await copyExecutable(file, targetFile);
+    };
+
     if (process.platform === 'win32') {
-        const agentFile = join(resolveModulePath('node-pty'), 'build', 'Release', 'winpty-agent.exe');
-        const targetAgentFile = path.join(targetDirectory, 'winpty-agent.exe');
-        await copyExecutable(agentFile, targetAgentFile);
-        const dllFile = join(resolveModulePath('node-pty'), 'build', 'Release', 'winpty.dll');
-        const targetDllFile = path.join(targetDirectory, 'winpty.dll');
-        await copyExecutable(dllFile, targetDllFile);
+        await copyFile('conpty.node');
+        await copyFile('conpty_console_list.node');
+        await copyFile('conpty/conpty.dll');
+        await copyFile('conpty/OpenConsole.exe');
     } else if (process.platform === 'darwin') {
-        const sourceFile = join(resolveModulePath('node-pty'), 'build', 'Release', 'spawn-helper');
-        const targetFile = path.join(targetDirectory, 'spawn-helper');
-        await copyExecutable(sourceFile, targetFile);
+        await copyFile('spawn-helper');
+    }
+    // On non-windows platforms
+    if (process.platform !== 'win32') {
+        await copyFile('pty.node');
     }
 }
 

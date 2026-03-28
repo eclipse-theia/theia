@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/materialcolors.css';
-import '@phosphor/widgets/style/index.css';
+import '@lumino/widgets/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';

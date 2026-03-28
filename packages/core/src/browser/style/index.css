@@ -14,9 +14,36 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/*-----------------------------------------------------------------------------
+| Import children style files
+|----------------------------------------------------------------------------*/
 
-@import url("~@lumino/widgets/style/index.css");
-@import url("~font-awesome/css/font-awesome.min.css");
+@import "./os.css";
+@import "./dockpanel.css";
+@import "./dialog.css";
+@import "./menus.css";
+@import "./sidepanel.css";
+@import "./tabs.css";
+@import "./scrollbars.css";
+@import "./tree.css";
+@import "./status-bar.css";
+@import "./tree-decorators.css";
+@import "./about.css";
+@import "./search-box.css";
+@import "./ansi.css";
+@import "./view-container.css";
+@import "./notification.css";
+@import "./alert-messages.css";
+@import "./icons.css";
+@import "./widget.css";
+@import "./quick-title-bar.css";
+@import "./progress-bar.css";
+@import "./breadcrumbs.css";
+@import "./tooltip.css";
+@import "./split-widget.css";
+@import "./symbol-icon.css";
+@import "./card.css";
+
 
 /*-----------------------------------------------------------------------------
 | General
@@ -35,17 +62,13 @@
    */
 
     --theia-ui-font-scale-factor: 1.2;
-  --theia-ui-font-size0: calc(
-    var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor)
-  );
-  --theia-ui-font-size1: 13px; /* Base font size */
-  --theia-ui-font-size2: calc(
-    var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor)
-  );
-  --theia-ui-font-size3: calc(
-    var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor)
-  );
-  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
+    --theia-ui-font-size0: calc(var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor));
+    --theia-ui-font-size1: 13px;
+    /* Base font size */
+    --theia-ui-font-size2: calc(var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor));
+    --theia-ui-font-size3: calc(var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor));
+    --theia-ui-icon-font-size: 14px;
+    /* Ensures px perfect FontAwesome icons */
     --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
     /* Content fonts: Family, size and color (bright to dark)
@@ -184,8 +207,10 @@ blockquote {
 
 .theia-preload::after {
     animation: 1s theia-preload-rotate infinite;
-  color: #777; /* color works on both light and dark themes */
-  content: "\eb19"; /* codicon-load */
+    color: #777;
+    /* color works on both light and dark themes */
+    content: "\eb19";
+    /* codicon-load */
     font: normal normal normal 72px/1 codicon;
 }
 
@@ -193,6 +218,7 @@ blockquote {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
@@ -232,12 +258,18 @@ blockquote {
 
 .noselect,
 .no-select {
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently
+    -webkit-touch-callout: none;
+    /* iOS Safari */
+    -webkit-user-select: none;
+    /* Safari */
+    -khtml-user-select: none;
+    /* Konqueror HTML */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
     -o-user-select: none;
 }
@@ -326,33 +358,3 @@ button.secondary[disabled],
 .theia-cursor-no-drop:active {
     cursor: no-drop;
 }
-
-/*-----------------------------------------------------------------------------
-| Import children style files
-|----------------------------------------------------------------------------*/
-
-@import "./os.css";
-@import "./dockpanel.css";
-@import "./dialog.css";
-@import "./menus.css";
-@import "./sidepanel.css";
-@import "./tabs.css";
-@import "./scrollbars.css";
-@import "./tree.css";
-@import "./status-bar.css";
-@import "./tree-decorators.css";
-@import "./about.css";
-@import "./search-box.css";
-@import "./ansi.css";
-@import "./view-container.css";
-@import "./notification.css";
-@import "./alert-messages.css";
-@import "./icons.css";
-@import "./widget.css";
-@import "./quick-title-bar.css";
-@import "./progress-bar.css";
-@import "./breadcrumbs.css";
-@import "./tooltip.css";
-@import "./split-widget.css";
-@import "./symbol-icon.css";
-@import "./card.css";
