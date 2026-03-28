@@ -409,9 +409,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 if (this.manager.state === DebugState.Stopped && this.manager.currentThread) {
                     this.manager.currentThread.continue();
                 }
-            },
-            // When there is a debug session, F5 should always be captured by this command
-            isEnabled: () => this.manager.state !== DebugState.Inactive
+            }
         });
         registry.registerCommand(DebugCommands.PAUSE, {
             execute: () => this.manager.currentThread && this.manager.currentThread.pause(),
@@ -866,7 +864,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         keybindings.registerKeybinding({
             command: DebugCommands.START.id,
             keybinding: 'f5',
-            when: '!inDebugMode'
+            when: 'debugState == inactive'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.START_NO_DEBUG.id,
@@ -902,7 +900,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         keybindings.registerKeybinding({
             command: DebugCommands.CONTINUE.id,
             keybinding: 'f5',
-            when: 'inDebugMode'
+            when: 'debugState == stopped'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.PAUSE.id,
@@ -1009,32 +1007,40 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return widget;
     }
 
+    protected _startLock = false;
     async start(noDebug?: boolean, debugSessionOptions?: DebugSessionOptions): Promise<void> {
-        let current = debugSessionOptions || this.configurations.current;
-        // If no configurations are currently present, create the `launch.json` and prompt users to select the config.
-        if (!current) {
-            await this.configurations.addConfiguration();
+        if (this._startLock) {
             return;
         }
-
-        if (noDebug !== undefined) {
-            if (current.configuration) {
-                current = {
-                    ...current,
-                    configuration: {
-                        ...current.configuration,
-                        noDebug
-                    }
-                };
-            } else {
-                current = {
-                    ...current,
-                    noDebug
-                };
+        this._startLock = true;
+        try {
+            let current = debugSessionOptions || this.configurations.current;
+            // If no configurations are currently present, create the `launch.json` and prompt users to select the config.
+            if (!current) {
+                await this.configurations.addConfiguration();
+                return;
             }
-        }
 
-        await this.manager.start(current);
+            if (noDebug !== undefined) {
+                if (current.configuration) {
+                    current = {
+                        ...current,
+                        configuration: {
+                            ...current.configuration,
+                            noDebug
+                        }
+                    };
+                } else {
+                    current = {
+                        ...current,
+                        noDebug
+                    };
+                }
+            }
+            await this.manager.start(current);
+        } finally {
+            this._startLock = false;
+        }
     }
 
     async runTo(uri: URI, line: number, column?: number): Promise<void> {
