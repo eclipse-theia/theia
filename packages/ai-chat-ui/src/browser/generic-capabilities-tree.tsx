@@ -268,14 +268,15 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             collectIds(filteredTree);
             setExpandedNodes(allIds);
 
-            if (focusedNodeId && !allIds.has(focusedNodeId)) {
-                setFocusedNodeId(undefined);
-            }
+            setFocusedNodeId(current => current && !allIds.has(current) ? undefined : current);
         } else if (prev.trim()) {
             // Only collapse when search was cleared, not on every re-render
             setExpandedNodes(new Set());
         }
-    }, [searchQuery, filteredTree, focusedNodeId]);
+    // Only react to search query and filtered tree changes, not focusedNodeId
+    // Including focusedNodeId would cause all nodes to re-expand on every click while filtering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery, filteredTree]);
 
     // Get all visible node IDs for keyboard navigation
     const getVisibleNodeIds = React.useCallback((): string[] => {
