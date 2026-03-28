@@ -24,8 +24,9 @@ import { MessagingListener, MessagingListenerContribution } from './messaging-li
 import { FrontendConnectionService } from './frontend-connection-service';
 import { BackendApplicationContribution } from '../backend-application';
 import { connectionCloseServicePath } from '../../common/messaging/connection-management';
-import { WebsocketFrontendConnectionService } from './websocket-frontend-connection-service';
+import { ReconnectableSocketChannel, WebsocketFrontendConnectionService } from './websocket-frontend-connection-service';
 import { WebsocketEndpoint } from './websocket-endpoint';
+import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
 
 export const messagingBackendModule = new ContainerModule(bind => {
     bindRootContributionProvider(bind, ConnectionContainerModule);
@@ -36,6 +37,8 @@ export const messagingBackendModule = new ContainerModule(bind => {
     bind(MessagingContainer).toDynamicValue(({ container }) => container).inSingletonScope();
     bind(WebsocketEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(WebsocketEndpoint);
+    bind(SocketWriteBuffer).toSelf();
+    bind(ReconnectableSocketChannel).toSelf();
     bind(WebsocketFrontendConnectionService).toSelf().inSingletonScope();
     bind(FrontendConnectionService).toService(WebsocketFrontendConnectionService);
     bind(MessagingListener).toSelf().inSingletonScope();
