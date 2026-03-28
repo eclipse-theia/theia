@@ -48,13 +48,13 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): React.ReactNode {
         const delegation = response.id ? this.agentDelegationTool.getDelegation(response.id) : undefined;
 
-        let agentId = response.name ?? AGENT_DELEGATION_FUNCTION_ID;
+        let agentName = response.name ?? AGENT_DELEGATION_FUNCTION_ID;
         let prompt = '';
         if (response.arguments) {
             try {
                 const args = JSON.parse(response.arguments);
                 if (typeof args.agentId === 'string') {
-                    agentId = this.chatAgentService.getAgent(args.agentId)?.name ?? args.agentId;
+                    agentName = this.chatAgentService.getAgent(args.agentId)?.name ?? args.agentId;
                 }
                 if (typeof args.prompt === 'string') {
                     prompt = args.prompt;
@@ -66,7 +66,7 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
         return <DelegatedChat
             invocation={delegation?.invocation}
-            agentId={agentId}
+            agentName={agentName}
             prompt={delegation?.prompt ?? prompt}
             finished={response.finished}
             parentNode={parentNode}
@@ -77,7 +77,7 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
 interface DelegatedChatProps {
     invocation?: ChatRequestInvocation;
-    agentId: string;
+    agentName: string;
     prompt: string;
     finished?: boolean;
     parentNode: ResponseNode;
@@ -140,7 +140,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
     }
 
     override render(): React.ReactNode {
-        const { agentId, prompt } = this.props;
+        const { agentName, prompt } = this.props;
         const hasNode = !!this.state.node;
         const isComplete = this.state.node?.response.isComplete ?? false;
         const isCanceled = this.state.node?.response.isCanceled ?? false;
@@ -176,7 +176,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                     <summary className='delegation-summary'>
                         <div className='delegation-header'>
                             <span className='delegation-agent'>
-                                <span className='codicon codicon-copilot-large' /> {agentId}
+                                <span className='codicon codicon-copilot-large' /> {agentName}
                             </span>
                             <span className='delegation-status'>
                                 <span className={`codicon ${statusIcon} delegation-status-icon`}></span>
