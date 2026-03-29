@@ -84,7 +84,12 @@ export class MergeEditorFactory {
     }
 
     protected async createEditorWidget(uri: URI, disposables: DisposableCollection): Promise<EditorWidget> {
-        const editorWidget = await this.editorManager.createByUri(uri);
+        const editorWidget = await this.editorManager.createByUri(uri, {
+            // Note that regular editor widgets have their counters restored between sessions, unlike editor widgets contained in a merge editor.
+            // Therefore, it is important to ensure that counters of editor widgets in a merge editor cannot conflict with counters of regular editor widgets,
+            // including those that have not yet been restored. See https://github.com/eclipse-theia/theia/issues/17256.
+            counter: Date.now()
+        });
         disposables.push(editorWidget);
         const editor = MonacoEditor.get(editorWidget);
         if (!editor) {
