@@ -136,6 +136,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             }
             popup.popup({
                 window: electronWindow,
+                x,
+                y,
                 callback: () => {
                     this.openPopups.delete(menuId);
                     event.sender.send(CHANNEL_ON_CLOSE_POPUP, menuId);

@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import * as React from 'react';
+import { buttonKeyboardProps, isActivationKey } from '../keyboard/keyboard-utils';
 
 export interface CardActionButton {
     /** Icon class (e.g., codicon) */
@@ -69,13 +70,21 @@ export const Card = React.memo(function Card(props: CardProps): React.ReactEleme
     } = props;
 
     const isInteractive = onClick !== undefined;
+    const [hasFocus, setHasFocus] = React.useState(false);
 
     const handleKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+        if (onClick && isActivationKey(e)) {
             e.preventDefault();
             onClick();
         }
     }, [onClick]);
+
+    const handleFocus = React.useCallback(() => setHasFocus(true), []);
+    const handleBlur = React.useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setHasFocus(false);
+        }
+    }, []);
 
     const cardClasses = [
         'theia-Card',
@@ -94,6 +103,8 @@ export const Card = React.memo(function Card(props: CardProps): React.ReactEleme
             role={isInteractive ? 'button' : undefined}
             tabIndex={isInteractive ? 0 : undefined}
             onKeyDown={isInteractive ? handleKeyDown : undefined}
+            onFocus={actionButtons ? handleFocus : undefined}
+            onBlur={actionButtons ? handleBlur : undefined}
         >
             {icon && (
                 <div className={`theia-Card-icon ${icon}`}></div>
@@ -115,7 +126,7 @@ export const Card = React.memo(function Card(props: CardProps): React.ReactEleme
                                     key={i}
                                     className={`theia-Card-action-btn ${btn.iconClass}`}
                                     title={btn.title}
-                                    aria-label={btn.title}
+                                    {...buttonKeyboardProps(btn.title, hasFocus ? 0 : -1)}
                                     onClick={btn.onClick}
                                 />
                             ))}
