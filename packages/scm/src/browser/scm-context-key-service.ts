@@ -48,6 +48,21 @@ export class ScmContextKeyService {
         return this._scmProviderCount;
     }
 
+    protected _scmHistoryItemRef: ContextKey<string | undefined>;
+    get scmHistoryItemRef(): ContextKey<string | undefined> {
+        return this._scmHistoryItemRef;
+    }
+
+    protected _scmCurrentHistoryItemRefHasRemote: ContextKey<boolean>;
+    get scmCurrentHistoryItemRefHasRemote(): ContextKey<boolean> {
+        return this._scmCurrentHistoryItemRefHasRemote;
+    }
+
+    protected _scmCurrentHistoryItemRefHasBase: ContextKey<boolean>;
+    get scmCurrentHistoryItemRefHasBase(): ContextKey<boolean> {
+        return this._scmCurrentHistoryItemRefHasBase;
+    }
+
     @postConstruct()
     protected init(): void {
         this._scmProvider = this.contextKeyService.createKey<string | undefined>('scmProvider', undefined);
@@ -55,6 +70,9 @@ export class ScmContextKeyService {
         this._scmResourceGroup = this.contextKeyService.createKey<string | undefined>('scmResourceGroup', undefined);
         this._scmResourceGroupState = this.contextKeyService.createKey<string | undefined>('scmResourceGroupState', undefined);
         this._scmProviderCount = this.contextKeyService.createKey<number>('scm.providerCount', 0);
+        this._scmHistoryItemRef = this.contextKeyService.createKey<string | undefined>('scmHistoryItemRef', undefined);
+        this._scmCurrentHistoryItemRefHasRemote = this.contextKeyService.createKey<boolean>('scmCurrentHistoryItemRefHasRemote', false);
+        this._scmCurrentHistoryItemRefHasBase = this.contextKeyService.createKey<boolean>('scmCurrentHistoryItemRefHasBase', false);
     }
 
     match(expression: string | undefined): boolean {
