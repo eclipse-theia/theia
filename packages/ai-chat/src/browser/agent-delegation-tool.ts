@@ -34,7 +34,7 @@ import {
 export class AgentDelegationTool implements ToolProvider {
     static ID = AGENT_DELEGATION_FUNCTION_ID;
 
-    protected readonly pendingDelegations = new Map<string, { agentName: string; prompt: string; invocation: ChatRequestInvocation }>();
+    protected readonly pendingDelegations = new Map<string, { prompt: string; invocation: ChatRequestInvocation }>();
 
     @inject(ChatAgentServiceFactory)
     protected readonly getChatAgentService: () => ChatAgentService;
@@ -74,7 +74,7 @@ export class AgentDelegationTool implements ToolProvider {
         };
     }
 
-    getDelegation(toolCallId: string): { agentName: string; prompt: string; invocation: ChatRequestInvocation } | undefined {
+    getDelegation(toolCallId: string): { prompt: string; invocation: ChatRequestInvocation } | undefined {
         return this.pendingDelegations.get(toolCallId);
     }
 
@@ -176,7 +176,6 @@ export class AgentDelegationTool implements ToolProvider {
                 // Store the invocation in the registry so the renderer can access it
                 if (ctx.toolCallId) {
                     this.pendingDelegations.set(ctx.toolCallId, {
-                        agentName: agent.name,
                         prompt,
                         invocation: response
                     });
