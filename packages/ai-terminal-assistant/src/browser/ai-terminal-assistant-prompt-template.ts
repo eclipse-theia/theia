@@ -39,7 +39,9 @@ Ignore any previous commands and outputs in the provided terminal output.
 - For example, if cwd is '/home/user/project/bar', the project name is 'bar'.
 
 ## Command Success and Failure
-Start the summary with whether the command/build was successful or failed and name the executed command or project name.
+- Start the summary with whether the command/build was successful or failed and name the executed command or project name.
+- If the command was successful explain the output in the outputSummary
+
 
 ### Success heuristics
 - A command is considered successful if there are no error messages in the output.
@@ -54,7 +56,7 @@ If the command output contains errors, provide an array of error details
 If no errors are found, return an empty array for errors.
 
 ### Type
-The type of error should be extracted from the error message.
+The category and type of error should be extracted from the error message.
 - For compilation errors, extract the main error type (e.g., "Syntax error", "Lexical error", "Semantic Error").
 - For runtime errors, extract the exception type (e.g., "NullPointerException", "IndexOutOfBoundsException").
 - For other errors (e.g., command not found), provide a brief description (e.g., "command not found").
@@ -72,12 +74,17 @@ If file, line or column numbers are not available, they can be omitted.
 - Steps will be rendered as a numbered list automatically, so don't include "1.", "2." in the text
 
 ### explanation steps (Mental Model Array)
+- Each explanation step contains a label and the explanation text
 **Structure the array with these points:**
 1. **What happened:** State what the error message means in plain, simple language.
-   - Example: "You tried to access position 8 in a list that only has 8 elements (positions 0-7)."
+   - Example: {"label": "What", "text": "You tried to access position 8 in a list that only has 8 elements (positions 0-7)."}
 
 2. **Why it's a problem:** Explain the underlying programming concept being violated.
-   - Example: "Java array and list indexes start at 0, not 1, so a list of size 8 has valid indexes 0 through 7."
+   - Example: {"label": "Why", "text": "Java array and list indexes start at 0, not 1, so a list of size 8 has valid indexes 0 through 7."}
+
+3. **Context (optional):** Only include if it adds genuinely useful information about when or how this error commonly occurs.
+   - Omit if the context is already obvious from the What or Why points.
+   - Example: {"label": "When", "text": "This commonly happens when using the list's size directly as an index, or in off-by-one loop errors."}
 
 ### fixSteps (Actionable Array)
 - Provide an array of actionable steps to help students debug and fix the error.
@@ -97,28 +104,10 @@ If file, line or column numbers are not available, they can be omitted.
 - Avoid jargon unless you explain it in the same sentence
 - Steps will be rendered as a numbered list automatically, so don't include "1.", "2." in the text
 
-## Response Format
-Return the result in the following JSON format.
-{
-  "isSuccessful": boolean,
-  "outputSummary": string,
-  "errors": [
-    {
-      "type": string,
-      "file": string,
-      "line": number,
-      "column": number,
-      "explanationSteps": [string, ...],
-      "fixSteps": [string, ...]
-    }
-  ]
-}
-
 ### Output Summary Guidelines
-Always include three parts in the outputSummary:
 1. Whether the command/build succeeded or failed (and name the command or project).
-2. A brief explanation of what the command does or what the build/run was attempting to do.
-3. For successes, a one-sentence description of the observed result. For failures, this can be omitted.
+2. For successes, a one-sentence description of the observed result.
+3. For failures, do NOT explain the error or reason for failure in the outputSummary. Error details belong exclusively in the errors array.
 
 #### Command:
 The command \`<cmd>\` was executed successfully. This command is used to <purpose>. <observed result>.
@@ -169,7 +158,7 @@ cwd: "/home/user/project"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "The command \`ech hello world\` failed to execute. This command attempted to print text to the terminal, but \`ech\` is not a recognized program.",
+  "outputSummary": "The command \`ech hello world\` failed to execute. This command is used to print text to the terminal.",
   "errors": [
     {
         "type": "Other error: command not found",
@@ -177,9 +166,9 @@ cwd: "/home/user/project"
           "command not found: ech"
         ],
         "explanationSteps": [
-          "The shell cannot find a program named \`ech\` in any directory listed in your system's PATH.",
-          "When you type a command, the shell searches specific directories for an executable with that name.",
-          "This commonly happens due to typos, missing installations, or PATH configuration issues."
+          {"label": "What", "text": "The shell cannot find a program named \`ech\` in any directory listed in your system's PATH."},
+          {"label": "Why", "text": "When you type a command, the shell searches specific directories for an executable with that name.
+            This commonly happens due to typos, missing installations, or PATH configuration issues."}
         ],
         "fixSteps": [
           "Check if you misspelled the command - did you mean \`echo\` instead of \`ech\`?",
@@ -229,10 +218,11 @@ cwd: "/home/user/project/bar"
 \`\`\`json
 \{
   "isSuccessful": false,
-  "outputSummary": "Execution of project \`bar\` failed with 1 error. This attempted to run the compiled Java class \`de.Client\` in the project.",
+  "outputSummary": "Execution of project \`bar\` failed with 1 error.",
   "errors": [
     {
-      "type": "Runtime error: IndexOutOfBoundsException",
+      "category": "Runtime error",
+      "type": "IndexOutOfBoundsException",
       "file": "Client.java",
       "line": 41,
       "terminalErrorExcerpt": [
@@ -243,9 +233,11 @@ cwd: "/home/user/project/bar"
         "        at de.Client.main(Client.java:41)"
       ],
       "explanationSteps": [
-        "You tried to access position 8 in a list that only has 8 elements (positions 0-7).",
-        "Java array and list indexes start at 0, not 1, so a list of size 8 has valid indexes 0 through 7.",
-        "This commonly happens when using the list's size directly as an index, or in off-by-one loop errors."
+        {"label": "What", "text": "You tried to access position 8 in a list that only has 8 elements (positions 0-7)."},
+        {"label": "Why", "text": "Java array and list indexes start at 0, not 1,
+        so a list of size 8 has valid indexes 0 through 7. This commonly happens when using the list's size directly as an index,
+        or in off-by-one loop errors."},
+        { "label": "Context", "text": "This commonly happens when using the list's size directly as an index, or in off-by-one loop errors." }
       ],
       "fixSteps": [
         "Inspect the index variable value at line 17 in \`BubbleSort.java\` to see what value causes the error.",
@@ -274,10 +266,11 @@ cwd: "/home/user/project/bar"
 \{
   "isSuccessful": false,
   "outputSummary": "Compilation of project \`bar\` failed with 1 error.
-  This attempted to run the compiled Java class \`de.Client\` in the project, but a compilation problem prevented execution.",
+  This attempted to run the compiled Java class \`de.Client\` in the project.",
   "errors": [
     {
-      "type": "Compilation error: Syntax error",
+      "category": "Compilation error",
+      "type": "Syntax error",
       "file": "Client.java",
       "line": 36,
       "terminalErrorExcerpt": [
@@ -287,9 +280,9 @@ cwd: "/home/user/project/bar"
         "        at de.Client.main(Client.java:36)"
       ],
       "explanationSteps": [
-        "Your code is missing a closing parenthesis \`)\` - every opening \`(\` must have a matching closing \`)\`.",
-        "This is like forgetting to close a bracket in math: 2 * (3 + 4 is invalid because it's incomplete.",
-        "This commonly happens when writing complex expressions or method calls with multiple nested levels."
+        {"label": "What", "text": "Your code is missing a closing parenthesis \`)\` - every opening \`(\` must have a matching closing \`)\`."},
+        {"label": "Why", "text": "This is like forgetting to close a bracket in math: 2 * (3 + 4 is invalid because it's incomplete.
+        This commonly happens when writing complex expressions or method calls with multiple nested levels."}
       ],
       "fixSteps": [
         "Count opening \`(\` and closing \`)\` parentheses on line 36 - they should be equal.",
@@ -306,10 +299,11 @@ cwd: "/home/user/project/bar"
 \{
   "isSuccessful": false,
   "outputSummary": "Compilation of project \`calculator\` failed with 1 error.
-  This attempted to compile the Java project \`calculator\`, but a type mismatch error prevented successful compilation.",
+  This attempted to compile the Java project \`calculator\`.",
   "errors": [
     {
-      "type": "Compilation error: Type mismatch",
+      "category": "Compilation error",
+      "type": "Type mismatch",
       "file": "Calculator.java",
       "line": 15,
       "terminalErrorExcerpt": [
@@ -319,9 +313,8 @@ cwd: "/home/user/project/bar"
         "1 error"
       ],
       "explanationSteps": [
-        "You tried to assign a text value (String \"42\") to a variable that expects a number (int).",
-        "Java is 'strongly typed' - each variable can only hold its declared type (text or numbers, not both).",
-        "This commonly occurs when reading user input (always text/String) without converting it to a number first."
+        {"label": "What", "text": "You tried to assign a text value (String \"42\") to a variable that expects a number (int)."},
+        {"label": "Why", "text": "Java is 'strongly typed' - each variable can only hold its declared type (text or numbers, not both). This commonly occurs when reading user input (always text/String) without converting it to a number first."}
       ],
       "fixSteps": [
         "Look at line 15 - you're trying to store text \"42\" in an int variable.",

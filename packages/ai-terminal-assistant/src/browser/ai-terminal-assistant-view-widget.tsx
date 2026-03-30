@@ -47,6 +47,10 @@ export class AiTerminalAssistantViewWidget extends BaseWidget {
     protected readonly aiTerminalAssistantPreferences: AiTerminalAssistantPreferences;
 
     protected _isStandAlone: boolean;
+    protected _resizeObserver: ResizeObserver | undefined;
+
+    protected static readonly WIDE_LAYOUT_THRESHOLD = 1000;
+
     constructor(
         @inject(SummaryViewWidget)
         protected readonly summaryViewWidget: SummaryViewWidget,
@@ -97,6 +101,22 @@ export class AiTerminalAssistantViewWidget extends BaseWidget {
 
         // Set initial border state
         this.updateBorderClass(this.summaryService.currentSummary);
+
+        this._resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                this.updateLayoutClass(entry.contentRect.width);
+            }
+        });
+        this._resizeObserver.observe(this.node);
+        this.toDispose.push({ dispose: () => this._resizeObserver?.disconnect() });
+    }
+
+    protected updateLayoutClass(width: number): void {
+        if (width >= AiTerminalAssistantViewWidget.WIDE_LAYOUT_THRESHOLD) {
+            this.addClass('layout-wide');
+        } else {
+            this.removeClass('layout-wide');
+        }
     }
 
     protected updateBorderClass(summary: Summary | undefined): void {

@@ -31,6 +31,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AiTerminalAssistantPreferences } from './ai-terminal-assistant-preferences';
+import { IEditorDecorationsCollection } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 
 export interface SummaryRequest {
     cwd: string;
@@ -150,6 +151,8 @@ export class SummaryServiceImpl implements SummaryService {
 
     protected _isStandAlone: boolean;
 
+    protected decorationsCollection: IEditorDecorationsCollection;
+
     @postConstruct()
     protected initialize(): void {
         this.initializeHiddenTerminal();
@@ -172,6 +175,7 @@ export class SummaryServiceImpl implements SummaryService {
         //         }
         //     });
         // });
+
 
         this._isStandAlone = this.aiTerminalAssistantPreferences['terminal.aiAssistant.mode'] === 'standalone';
 
@@ -234,12 +238,14 @@ export class SummaryServiceImpl implements SummaryService {
                     this.onTaskExitedEmitter.fire();
                     console.log('Task exited.');
                     await this.requestSummary();
+                    // create a new terminal to have clean terminal for the next command
                     this.createNewTerminal().catch(err => {
                         console.error('Error recreating hidden terminal after task exit:', err);
                     });
                 }
             }, 500);
         });
+
     }
 
     protected initializeHiddenTerminal(): void {
@@ -365,7 +371,10 @@ export class SummaryServiceImpl implements SummaryService {
 
         const monacoEditor = this.monacoEditorService.getActiveCodeEditor();
         if (monacoEditor) {
-            monacoEditor.createDecorationsCollection([{
+            if (this.decorationsCollection) {
+                this.decorationsCollection.clear();
+            }
+            this.decorationsCollection = monacoEditor.createDecorationsCollection([{
                 range: new monaco.Range(error.line || 1, 1, error.line || 1, 1),
                 options: {
                     className: 'error-line-decoration',
@@ -468,27 +477,18 @@ export class SummaryServiceImpl implements SummaryService {
         if (!this._isStandAlone) {
             return;
         }
-        const task: boolean = true;
 
-        if (task) {
-            this._currentTerminal = await this.terminalService.newTerminal({
-                title: 'Hidden TaskTerminal',
-                destroyTermOnClose: true,
-                hideFromUser: true,
-                kind: 'task',
-            });
-        } else {
-            this._currentTerminal = await this.terminalService.newTerminal({
-                title: 'Hidden Terminal',
-                destroyTermOnClose: true,
-                hideFromUser: true,
-            });
-        }
+        this._currentTerminal = await this.terminalService.newTerminal({
+            title: 'Hidden TaskTerminal',
+            destroyTermOnClose: true,
+            kind: 'task',
+        });
 
         // Set up output listener BEFORE starting to catch early output
         this.currentTerminal.onOutput(output => {
             if (this._isTaskRunning) {
-                this._terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length).reverse();
+                const lines = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
+                this._terminalBuffer = lines.reverse();
                 this.onCurrentTerminalBufferChangedEmitter.fire();
             }
         });
@@ -497,8 +497,7 @@ export class SummaryServiceImpl implements SummaryService {
         // This allows xterm.js to initialize without showing the terminal to the user
         if (this.hiddenTerminalContainer) {
             Widget.attach(this.currentTerminal, this.hiddenTerminalContainer);
-            // Show the widget to ensure phosphor considers it visible
-            this.currentTerminal.show();
+            // this.currentTerminal.show();
         }
 
         // Start the terminal process - this will also trigger onDidOpen when connected

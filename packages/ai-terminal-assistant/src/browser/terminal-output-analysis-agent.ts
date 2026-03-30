@@ -35,13 +35,19 @@ const ErrorLines = z.object({
     errorLinesStart: z.number()
 });
 export type ErrorLines = z.infer<typeof ErrorLines>;
+const ExplanationStep = z.object({
+    label: z.string(),
+    text: z.string()
+})
+export type ExplanationStep = z.infer<typeof ExplanationStep>;
 const ErrorDetail = z.object({
+    category: z.string(),
     type: z.string(),
     file: z.string().optional(),
     line: z.number().optional(),
     column: z.number().optional(),
     errorLines: ErrorLines.optional(),
-    explanationSteps: z.array(z.string()),
+    explanationSteps: z.array(ExplanationStep),
     fixSteps: z.array(z.string()),
 });
 export type ErrorDetail = z.infer<typeof ErrorDetail>;

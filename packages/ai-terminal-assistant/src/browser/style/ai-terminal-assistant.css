@@ -112,7 +112,7 @@
    ========================================== */
 
 .summary-view-widget {
-    flex: 1;
+    flex: 0 1 auto;
     min-height: 0;
     overflow-y: auto;
 }
@@ -122,7 +122,8 @@
     flex-direction: column;
     align-items: flex-start;
     gap: calc(var(--theia-ui-padding) * 4/3);
-    padding: var(--theia-ui-padding);
+    padding: calc(var(--theia-ui-padding) * 2);
+    max-width: 800px;
 }
 
 .summary-view-container.welcome-state {
@@ -147,21 +148,61 @@
 }
 
 /* ==========================================
+   Wide layout: buffer side-by-side with summary
+   ========================================== */
+
+.ai-terminal-assistant-view.layout-wide {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.ai-terminal-assistant-view.layout-wide .summary-view-widget {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-y: auto;
+    border-right: var(--theia-border-width) solid var(--theia-widget-shadow);
+}
+
+.ai-terminal-assistant-view.layout-wide .ai-terminal-buffer-widget {
+    flex: 0 0 500px;
+    min-width: 200px;
+    border-top: none;
+    border-left: none;
+    overflow-y: hidden;
+}
+
+/* ==========================================
    Buffer widget
    ========================================== */
 
 .ai-terminal-buffer-widget {
-    flex-shrink: 0;
+    flex: 1;
     border-top: var(--theia-border-width) solid var(--theia-widget-shadow);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
-.ai-terminal-buffer-widget > div {
+.ai-terminal-buffer-widget .ai-terminal-buffer-inner {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     padding: var(--theia-ui-padding);
+    box-sizing: border-box;
+}
+
+.ai-terminal-buffer-widget .ai-terminal-buffer-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 .ai-terminal-buffer-widget .ai-terminal-buffer-container {
     width: 100%;
-    max-height: 150px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column-reverse;
@@ -198,7 +239,7 @@
 
 .ai-terminal-buffer-widget .ai-terminal-input-field {
     width: 100%;
-    padding: var(--theia-ui-padding);
+    padding: calc(var(--theia-ui-padding) * 0.4) var(--theia-ui-padding);
     border: var(--theia-border-width) solid var(--theia-input-border);
     border-radius: var(--theia-border-radius);
     box-sizing: border-box;
@@ -228,16 +269,24 @@
 
 .ai-terminal-assistant-view .build-result-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
     gap: calc(var(--theia-ui-padding) * 2/3);
     padding: var(--theia-ui-padding);
 }
 
-.ai-terminal-assistant-view .build-result-status {
+.ai-terminal-assistant-view .build-result-icon {
+    font-size: 24px;
+    align-self: center;
+}
+
+.ai-terminal-assistant-view .build-result-content {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: calc(var(--theia-ui-padding) * 2/3);
+}
+
+.ai-terminal-assistant-view .build-result-status {
     font-weight: 600;
     font-size: 1.1em;
 }
@@ -246,11 +295,18 @@
    Error detail
    ========================================== */
 
+.ai-terminal-assistant-view .error-overview-list {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) * 2);
+    width: 100%;
+}
+
 .ai-terminal-assistant-view .error-detail-container {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: calc(var(--theia-ui-padding) * 4/3);
+    padding: calc(var(--theia-ui-padding) * 2);
     border-radius: calc(var(--theia-ui-padding) * 2);
     box-shadow: 0 1px 3px var(--theia-widget-shadow);
 }
@@ -274,19 +330,27 @@
 
 .ai-terminal-assistant-view .error-detail-header-title {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: calc(var(--theia-ui-padding) * 2/3);
+}
+
+.ai-terminal-assistant-view .error-detail-header-title .error-category {
+    font-weight: 600;
+    color: var(--theia-descriptionForeground);
 }
 
 .ai-terminal-assistant-view .error-detail-header-title .error-type {
     font-weight: 600;
-    color: var(--theia-foreground);
+    color: var(--theia-errorForeground);
 }
 
 .ai-terminal-assistant-view .error-detail-header-title .error-location {
     color: var(--theia-descriptionForeground);
     font-family: var(--theia-code-font-family);
     font-size: 0.9em;
+    border: var(--theia-border-width) solid var(--theia-widget-shadow);
+    border-radius: var(--theia-border-radius);
+    padding: 0 calc(var(--theia-ui-padding) * 0.5);
 }
 
 .ai-terminal-assistant-view .error-detail-dropdown {
@@ -449,13 +513,28 @@
     max-width: min(600px, 100%);
 }
 
-.ai-terminal-assistant-view .error-explanation-steps li,
 .ai-terminal-assistant-view .error-fix-steps li {
     padding: calc(var(--theia-ui-padding) * 0.5) 0;
 }
 
 .ai-terminal-assistant-view .error-explanation-steps {
-    list-style-type: disc;
+    list-style-type: none;
+    padding: calc(var(--theia-ui-padding) * 0.75) 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: calc(var(--theia-ui-padding) * 2);
+    row-gap: calc(var(--theia-ui-padding) * 0.5);
+}
+
+.ai-terminal-assistant-view .error-explanation-steps li,
+.ai-terminal-assistant-view .error-explanation-step-content {
+    display: contents;
+}
+
+.ai-terminal-assistant-view .error-explanation-label {
+    font-weight: bold;
+    margin-left: calc(var(--theia-ui-padding) * 2);
+    align-self: center;
 }
 
 .ai-terminal-assistant-view .error-fix-steps {

@@ -19,7 +19,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { SummaryService } from './ai-terminal-assistant-service';
-import { Summary, ErrorDetail, ErrorLines } from './terminal-output-analysis-agent';
+import { Summary, ErrorDetail, ErrorLines, ExplanationStep } from './terminal-output-analysis-agent';
 import { AiTerminalAssistantCommandService } from './ai-terminal-assistant-command-service';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
@@ -222,11 +222,11 @@ const BuildResultOverview: React.FunctionComponent<BuildResultOverviewProps> = (
 
     return (
         <div className='build-result-container'>
-            <div className='build-result-status'>
-                <div className={statusIcon} />
-                {statusText}
+            <div className={`${statusIcon} build-result-icon`} />
+            <div className='build-result-content'>
+                <div className='build-result-status'>{statusText}</div>
+                {onRenderMarkdown(summary.outputSummary)}
             </div>
-            {onRenderMarkdown(summary.outputSummary)}
         </div>
     );
 };
@@ -279,6 +279,7 @@ const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> =
                 <div className='error-detail-dropdown' onClick={onDropdownToggle}>
                     {isDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
                     <div className='error-detail-header-title'>
+                        <span className='error-category'>{errorDetail.category}</span>
                         <span className='error-type'>{errorDetail.type}</span>
                         {errorDetail.file && <span className='error-location'>{onRenderMarkdown(errorDetail.file + lineText)}</span>}
                     </div>
@@ -313,9 +314,12 @@ const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorD
                 <div className='error-detail-field'>
                     {/* <span className='error-detail-subheader'>Description:</span> */}
                     <ul className='error-explanation-steps'>
-                        {errorDetail.explanationSteps.map((step, idx) => (
+                        {errorDetail.explanationSteps.map((step: ExplanationStep, idx) => (
                             <li key={idx}>
-                                {onRenderMarkdown(step)}
+                                <div className='error-explanation-step-content'>
+                                    <span className='error-explanation-label'>{step.label}</span>
+                                    {onRenderMarkdown(step.text)}
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -328,7 +332,7 @@ const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorD
                             onClick={handleToggleFixDropdown}
                         >
                             {fixDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
-                            <span className='error-detail-subheader'>Fix (click to expand)</span>
+                            <span className='error-detail-subheader'>Proposed fix</span>
                         </div>
                         {fixDropdownOpen && (
                             <ol className='error-fix-steps'>
@@ -374,9 +378,11 @@ const ErrorContext: React.FunctionComponent<{ errorLines: ErrorLines, errorIndex
 const OpenErrorInEditorButton: React.FunctionComponent<{ onOpenError: () => void }> = ({ onOpenError }: { onOpenError: () => void }) => {
     const goToFileIcon = codicon('go-to-file');
     return (
-        <button className='theia-button secondary icon-button' onClick={onOpenError}>
-            <div className={goToFileIcon} />
-            Open in Editor
+        <button className='theia-button secondary' onClick={onOpenError}>
+            <div className='ai-terminal-icon-button'>
+                <div className={goToFileIcon} />
+                Edit File
+            </div>
         </button>
     );
 };
