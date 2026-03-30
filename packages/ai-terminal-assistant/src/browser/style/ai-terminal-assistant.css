@@ -311,18 +311,6 @@
     box-shadow: 0 1px 3px var(--theia-widget-shadow);
 }
 
-.ai-terminal-assistant-view .error-detail-container .ai-terminal-button-group {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 150ms ease;
-}
-
-.ai-terminal-assistant-view .error-detail-container:hover .ai-terminal-button-group,
-.ai-terminal-assistant-view .error-detail-container:focus-within .ai-terminal-button-group {
-    opacity: 1;
-    pointer-events: auto;
-}
-
 .ai-terminal-assistant-view .error-detail-header {
     display: flex;
     align-items: center;
@@ -435,11 +423,11 @@
 
 .ai-terminal-assistant-view .theia-button.secondary {
     background-color: transparent;
-    color: var(--theia-foreground)
+    color: var(--theia-foreground);
 }
 
 .ai-terminal-assistant-view .theia-button.secondary:hover {
-    background-color: var(--theia-list-hoverBackground);
+    background-color: var(--theia-toolbar-hoverBackground);
 }
 
 .ai-terminal-assistant-view code {
