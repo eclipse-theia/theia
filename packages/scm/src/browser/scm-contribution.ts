@@ -411,6 +411,147 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
      */
     registerColors(colors: ColorRegistry): void {
         colors.register(
+            // SCM Graph lane colors (matching VS Code's scm.graph.* color IDs)
+            {
+                id: 'scmGraph.historyItemHoverDefaultLabelForeground',
+                defaults: {
+                    dark: '#0078d4',
+                    light: '#0078d4',
+                    hcDark: '#0078d4',
+                    hcLight: '#0078d4'
+                },
+                description: 'Default foreground color for history item labels in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverAdditionsForeground',
+                defaults: {
+                    dark: '#81b88b',
+                    light: '#388a34',
+                    hcDark: '#81b88b',
+                    hcLight: '#388a34'
+                },
+                description: 'Foreground color for additions in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverDeletionsForeground',
+                defaults: {
+                    dark: '#c74e39',
+                    light: '#a1260d',
+                    hcDark: '#c74e39',
+                    hcLight: '#a1260d'
+                },
+                description: 'Foreground color for deletions in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverLabelForeground',
+                defaults: {
+                    dark: '#e2e2e2',
+                    light: '#3b3b3b',
+                    hcDark: '#ffffff',
+                    hcLight: '#000000'
+                },
+                description: 'Foreground color for labels in the SCM history graph on hover.'
+            },
+            {
+                id: 'scmGraph.historyItemRefForeground',
+                defaults: {
+                    dark: 'badge.foreground',
+                    light: 'badge.foreground',
+                    hcDark: 'badge.foreground',
+                    hcLight: 'badge.foreground'
+                },
+                description: 'Foreground color for ref badge labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemRefColor',
+                defaults: {
+                    dark: '#0078d4',
+                    light: '#0078d4',
+                    hcDark: '#0078d4',
+                    hcLight: '#0078d4'
+                },
+                description: 'Color for ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemRemoteRefColor',
+                defaults: {
+                    dark: '#b267e6',
+                    light: '#8b009b',
+                    hcDark: '#b267e6',
+                    hcLight: '#8b009b'
+                },
+                description: 'Color for remote ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemTagRefColor',
+                defaults: {
+                    dark: '#d7ba7d',
+                    light: '#8d6914',
+                    hcDark: '#d7ba7d',
+                    hcLight: '#8d6914'
+                },
+                description: 'Color for tag ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.historyItemBaseRefColor',
+                defaults: {
+                    dark: '#a1260d',
+                    light: '#a1260d',
+                    hcDark: '#a1260d',
+                    hcLight: '#a1260d'
+                },
+                description: 'Color for base ref labels in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground1',
+                defaults: {
+                    dark: '#ffb000',
+                    light: '#ffb000',
+                    hcDark: '#ffb000',
+                    hcLight: '#ffb000'
+                },
+                description: 'Foreground color 1 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground2',
+                defaults: {
+                    dark: '#dc267f',
+                    light: '#dc267f',
+                    hcDark: '#dc267f',
+                    hcLight: '#dc267f'
+                },
+                description: 'Foreground color 2 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground3',
+                defaults: {
+                    dark: '#994f00',
+                    light: '#994f00',
+                    hcDark: '#994f00',
+                    hcLight: '#994f00'
+                },
+                description: 'Foreground color 3 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground4',
+                defaults: {
+                    dark: '#40b0a6',
+                    light: '#40b0a6',
+                    hcDark: '#40b0a6',
+                    hcLight: '#40b0a6'
+                },
+                description: 'Foreground color 4 for additional lanes in the SCM history graph.'
+            },
+            {
+                id: 'scmGraph.foreground5',
+                defaults: {
+                    dark: '#b66dff',
+                    light: '#b66dff',
+                    hcDark: '#b66dff',
+                    hcLight: '#b66dff'
+                },
+                description: 'Foreground color 5 for additional lanes in the SCM history graph.'
+            },
             {
                 id: ScmColors.editorGutterModifiedBackground, defaults: {
                     dark: '#1B81A8',

@@ -18,11 +18,13 @@
 
 import { Disposable, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
 export interface ScmProvider extends Disposable {
     readonly id: string;
     readonly label: string;
     readonly rootUri: string;
+    readonly handle?: number;
 
     readonly acceptInputCommand?: ScmCommand;
 
@@ -41,6 +43,8 @@ export interface ScmProvider extends Disposable {
     readonly onDidChangeActionButton?: Event<ScmActionButton | undefined>;
 
     readonly providerContextValue?: string;
+
+    readonly historyProvider?: ScmHistoryProvider;
 }
 
 export const ScmResourceGroup = Symbol('ScmResourceGroup');
@@ -101,4 +105,67 @@ export interface ScmActionButton {
     secondaryCommands?: ScmCommand[][];
     enabled?: boolean;
     description?: string;
+}
+
+export interface ScmHistoryItemRef {
+    readonly id: string;
+    readonly name: string;
+    readonly description?: string;
+    readonly revision?: string;
+    readonly icon?: string;
+    readonly category?: string;
+}
+
+export interface ScmHistoryItemRefsChangeEvent {
+    readonly added: readonly ScmHistoryItemRef[];
+    readonly removed: readonly ScmHistoryItemRef[];
+    readonly modified: readonly ScmHistoryItemRef[];
+}
+
+export interface ScmHistoryOptions {
+    readonly cursor?: string;
+    readonly limit?: number | { id: string };
+    readonly historyItemRefs?: readonly string[];
+}
+
+export interface ScmHistoryItemStatistics {
+    readonly files: number;
+    readonly insertions: number;
+    readonly deletions: number;
+}
+
+export interface ScmHistoryItem {
+    readonly id: string;
+    readonly parentIds?: readonly string[];
+    readonly subject: string;
+    readonly message?: string;
+    readonly author?: string;
+    readonly authorEmail?: string;
+    readonly authorIcon?: string;
+    readonly displayId?: string;
+    readonly timestamp?: number;
+    readonly tooltip?: string;
+    readonly statistics?: ScmHistoryItemStatistics;
+    readonly references?: readonly ScmHistoryItemRef[];
+}
+
+export interface ScmHistoryItemChange {
+    readonly uri: string;
+    readonly originalUri?: string;
+    readonly modifiedUri?: string;
+    readonly renameUri?: string;
+}
+
+export interface ScmHistoryProvider {
+    readonly currentHistoryItemRef?: ScmHistoryItemRef;
+    readonly currentHistoryItemRemoteRef?: ScmHistoryItemRef;
+    readonly currentHistoryItemBaseRef?: ScmHistoryItemRef;
+    readonly onDidChangeCurrentHistoryItemRefs: Event<void>;
+    readonly onDidChangeHistoryItemRefs: Event<ScmHistoryItemRefsChangeEvent>;
+
+    provideHistoryItemRefs(historyItemRefs: string[] | undefined, token: CancellationToken): Promise<ScmHistoryItemRef[] | undefined>;
+    provideHistoryItems(options: ScmHistoryOptions, token: CancellationToken): Promise<ScmHistoryItem[] | undefined>;
+    provideHistoryItemChanges(historyItemId: string, historyItemParentId: string | undefined, token: CancellationToken): Promise<ScmHistoryItemChange[] | undefined>;
+    resolveHistoryItem(historyItemId: string, token: CancellationToken): Promise<ScmHistoryItem | undefined>;
+    resolveHistoryItemRefsCommonAncestor(historyItemRefs: string[], token: CancellationToken): Promise<string | undefined>;
 }

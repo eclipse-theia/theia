@@ -27,14 +27,24 @@ import {
     ScmMain,
     SourceControlProviderFeatures,
     ScmRawResourceSplices, ScmRawResourceGroup,
-    ScmActionButton as RpcScmActionButton
+    ScmActionButton as RpcScmActionButton,
+    ScmHistoryItemRefDto,
+    ScmHistoryItemDto,
+    ScmHistoryItemChangeDto,
+    ScmHistoryOptionsDto,
+    ScmHistoryItemRefsChangeEventDto
 } from '../../common/plugin-api-rpc';
-import { ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand, ScmActionButton } from '@theia/scm/lib/browser/scm-provider';
+import {
+    ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand, ScmActionButton,
+    ScmHistoryProvider, ScmHistoryItemRef, ScmHistoryItemRefsChangeEvent,
+    ScmHistoryOptions, ScmHistoryItem, ScmHistoryItemChange
+} from '@theia/scm/lib/browser/scm-provider';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
+import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
 import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
@@ -104,6 +114,197 @@ export class PluginScmResource implements ScmResource {
     }
 }
 
+function historyItemRefFromDto(dto: ScmHistoryItemRefDto): ScmHistoryItemRef {
+    return {
+        id: dto.id,
+        name: dto.name,
+        description: dto.description,
+        revision: dto.revision,
+        icon: dto.icon ? (ThemeIcon.isThemeIcon(dto.icon) ? ThemeIcon.asClassName(dto.icon) :
+            'light' in dto.icon ? vscodeURI.revive(dto.icon.light).toString() : vscodeURI.revive(dto.icon as UriComponents).toString()) : undefined,
+        category: dto.category,
+    };
+}
+
+function historyItemFromDto(dto: ScmHistoryItemDto): ScmHistoryItem {
+    return {
+        id: dto.id,
+        parentIds: dto.parentIds,
+        subject: dto.subject,
+        message: typeof dto.message === 'string' ? dto.message : dto.message?.value,
+        author: dto.author,
+        authorEmail: dto.authorEmail,
+        authorIcon: dto.authorIcon ? (ThemeIcon.isThemeIcon(dto.authorIcon) ? ThemeIcon.asClassName(dto.authorIcon) :
+            'light' in dto.authorIcon ? vscodeURI.revive(dto.authorIcon.light).toString() : vscodeURI.revive(dto.authorIcon as UriComponents).toString()) : undefined,
+        displayId: dto.displayId,
+        timestamp: dto.timestamp,
+        tooltip: typeof dto.tooltip === 'string' ? dto.tooltip : dto.tooltip?.value,
+        statistics: dto.statistics ? {
+            files: dto.statistics.files,
+            insertions: dto.statistics.insertions,
+            deletions: dto.statistics.deletions,
+        } : undefined,
+        references: dto.references ? dto.references.map(historyItemRefFromDto) : undefined,
+    };
+}
+
+function historyItemChangeFromDto(dto: ScmHistoryItemChangeDto): ScmHistoryItemChange {
+    return {
+        uri: vscodeURI.revive(dto.uri).toString(),
+        originalUri: dto.originalUri ? vscodeURI.revive(dto.originalUri).toString() : undefined,
+        modifiedUri: dto.modifiedUri ? vscodeURI.revive(dto.modifiedUri).toString() : undefined,
+        renameUri: dto.renameUri ? vscodeURI.revive(dto.renameUri).toString() : undefined,
+    };
+}
+
+export class PluginScmHistoryProvider implements ScmHistoryProvider {
+
+    private readonly onDidChangeCurrentHistoryItemRefsEmitter = new Emitter<void>();
+    readonly onDidChangeCurrentHistoryItemRefs: Event<void> = this.onDidChangeCurrentHistoryItemRefsEmitter.event;
+
+    private readonly onDidChangeHistoryItemRefsEmitter = new Emitter<ScmHistoryItemRefsChangeEvent>();
+    readonly onDidChangeHistoryItemRefs: Event<ScmHistoryItemRefsChangeEvent> = this.onDidChangeHistoryItemRefsEmitter.event;
+
+    private _currentHistoryItemRef: ScmHistoryItemRef | undefined;
+    get currentHistoryItemRef(): ScmHistoryItemRef | undefined { return this._currentHistoryItemRef; }
+
+    private _currentHistoryItemRemoteRef: ScmHistoryItemRef | undefined;
+    get currentHistoryItemRemoteRef(): ScmHistoryItemRef | undefined { return this._currentHistoryItemRemoteRef; }
+
+    private _currentHistoryItemBaseRef: ScmHistoryItemRef | undefined;
+    get currentHistoryItemBaseRef(): ScmHistoryItemRef | undefined { return this._currentHistoryItemBaseRef; }
+
+    private readonly disposables = new DisposableCollection();
+    private pendingRequests = new Set<CancellationTokenSource>();
+
+    constructor(
+        private readonly proxy: ScmExt,
+        private readonly handle: number
+    ) {
+        this.disposables.push(this.onDidChangeCurrentHistoryItemRefsEmitter);
+        this.disposables.push(this.onDidChangeHistoryItemRefsEmitter);
+    }
+
+    updateFromFeatures(features: SourceControlProviderFeatures): void {
+        if (features.currentHistoryItemRef !== undefined) {
+            this._currentHistoryItemRef = features.currentHistoryItemRef ? historyItemRefFromDto(features.currentHistoryItemRef) : undefined;
+        }
+        if (features.currentHistoryItemRemoteRef !== undefined) {
+            this._currentHistoryItemRemoteRef = features.currentHistoryItemRemoteRef ? historyItemRefFromDto(features.currentHistoryItemRemoteRef) : undefined;
+        }
+        if (features.currentHistoryItemBaseRef !== undefined) {
+            this._currentHistoryItemBaseRef = features.currentHistoryItemBaseRef ? historyItemRefFromDto(features.currentHistoryItemBaseRef) : undefined;
+        }
+    }
+
+    fireDidChangeCurrentHistoryItemRefs(): void {
+        this.onDidChangeCurrentHistoryItemRefsEmitter.fire();
+    }
+
+    fireDidChangeHistoryItemRefs(event: ScmHistoryItemRefsChangeEventDto): void {
+        this.onDidChangeHistoryItemRefsEmitter.fire({
+            added: event.added.map(historyItemRefFromDto),
+            removed: event.removed.map(historyItemRefFromDto),
+            modified: event.modified.map(historyItemRefFromDto),
+        });
+    }
+
+    async provideHistoryItemRefs(historyItemRefs: string[] | undefined, token: CancellationToken): Promise<ScmHistoryItemRef[] | undefined> {
+        const cts = new CancellationTokenSource();
+        const listener = token.onCancellationRequested(() => cts.cancel());
+        this.pendingRequests.add(cts);
+        try {
+            const result = await this.proxy.$provideHistoryItemRefs(this.handle, historyItemRefs, cts.token);
+            if (!result) {
+                return undefined;
+            }
+            return result.map(historyItemRefFromDto);
+        } finally {
+            listener.dispose();
+            this.pendingRequests.delete(cts);
+            cts.dispose();
+        }
+    }
+
+    async provideHistoryItems(options: ScmHistoryOptions, token: CancellationToken): Promise<ScmHistoryItem[] | undefined> {
+        const dto: ScmHistoryOptionsDto = {
+            cursor: options.cursor,
+            limit: options.limit,
+            historyItemRefs: options.historyItemRefs ? [...options.historyItemRefs] : undefined,
+        };
+        const cts = new CancellationTokenSource();
+        const listener = token.onCancellationRequested(() => cts.cancel());
+        this.pendingRequests.add(cts);
+        try {
+            const result = await this.proxy.$provideHistoryItems(this.handle, dto, cts.token);
+            if (!result) {
+                return undefined;
+            }
+            return result.map(historyItemFromDto);
+        } finally {
+            listener.dispose();
+            this.pendingRequests.delete(cts);
+            cts.dispose();
+        }
+    }
+
+    async provideHistoryItemChanges(historyItemId: string, historyItemParentId: string | undefined, token: CancellationToken): Promise<ScmHistoryItemChange[] | undefined> {
+        const cts = new CancellationTokenSource();
+        const listener = token.onCancellationRequested(() => cts.cancel());
+        this.pendingRequests.add(cts);
+        try {
+            const result = await this.proxy.$provideHistoryItemChanges(this.handle, historyItemId, historyItemParentId, cts.token);
+            if (!result) {
+                return undefined;
+            }
+            return result.map(historyItemChangeFromDto);
+        } finally {
+            listener.dispose();
+            this.pendingRequests.delete(cts);
+            cts.dispose();
+        }
+    }
+
+    async resolveHistoryItem(historyItemId: string, token: CancellationToken): Promise<ScmHistoryItem | undefined> {
+        const cts = new CancellationTokenSource();
+        const listener = token.onCancellationRequested(() => cts.cancel());
+        this.pendingRequests.add(cts);
+        try {
+            const result = await this.proxy.$resolveHistoryItem(this.handle, historyItemId, cts.token);
+            if (!result) {
+                return undefined;
+            }
+            return historyItemFromDto(result);
+        } finally {
+            listener.dispose();
+            this.pendingRequests.delete(cts);
+            cts.dispose();
+        }
+    }
+
+    async resolveHistoryItemRefsCommonAncestor(historyItemRefs: string[], token: CancellationToken): Promise<string | undefined> {
+        const cts = new CancellationTokenSource();
+        const listener = token.onCancellationRequested(() => cts.cancel());
+        this.pendingRequests.add(cts);
+        try {
+            return await this.proxy.$resolveHistoryItemRefsCommonAncestor(this.handle, historyItemRefs, cts.token) ?? undefined;
+        } finally {
+            listener.dispose();
+            this.pendingRequests.delete(cts);
+            cts.dispose();
+        }
+    }
+
+    dispose(): void {
+        for (const cts of this.pendingRequests) {
+            cts.cancel();
+            cts.dispose();
+        }
+        this.pendingRequests.clear();
+        this.disposables.dispose();
+    }
+}
+
 export class PluginScmProvider implements ScmProvider {
 
     private _id = this.contextValue;
@@ -117,6 +318,11 @@ export class PluginScmProvider implements ScmProvider {
 
     private _actionButton: ScmActionButton | undefined;
     get actionButton(): ScmActionButton | undefined { return this._actionButton; }
+
+    private _historyProvider: PluginScmHistoryProvider | undefined;
+    get historyProvider(): ScmHistoryProvider | undefined {
+        return this._historyProvider;
+    }
 
     private features: SourceControlProviderFeatures = {};
 
@@ -172,7 +378,21 @@ export class PluginScmProvider implements ScmProvider {
 
     updateSourceControl(features: SourceControlProviderFeatures): void {
         this.features = { ...this.features, ...features };
+
+        if (typeof features.hasHistoryProvider !== 'undefined') {
+            if (features.hasHistoryProvider && !this._historyProvider) {
+                this._historyProvider = new PluginScmHistoryProvider(this.proxy, this.handle);
+            } else if (!features.hasHistoryProvider && this._historyProvider) {
+                this._historyProvider.dispose();
+                this._historyProvider = undefined;
+            }
+        }
+
         this.onDidChangeEmitter.fire();
+
+        if (this._historyProvider) {
+            this._historyProvider.updateFromFeatures(features);
+        }
 
         if (typeof features.commitTemplate !== 'undefined') {
             this.onDidChangeCommitTemplateEmitter.fire(this.commitTemplate!);
@@ -303,7 +523,10 @@ export class PluginScmProvider implements ScmProvider {
         this.onDidChangeActionButtonEmitter.fire(actionButton);
     }
 
-    dispose(): void { }
+    dispose(): void {
+        this._historyProvider?.dispose();
+        this._historyProvider = undefined;
+    }
 }
 
 export class ScmMainImpl implements ScmMain {
@@ -521,5 +744,25 @@ export class ScmMainImpl implements ScmMain {
         } : undefined;
 
         provider.updateActionButton(converted);
+    }
+
+    $onDidChangeCurrentHistoryItemRefs(sourceControlHandle: number): void {
+        const repository = this.repositories.get(sourceControlHandle);
+        if (!repository) {
+            return;
+        }
+        const provider = repository.provider as PluginScmProvider;
+        const historyProvider = provider.historyProvider as PluginScmHistoryProvider | undefined;
+        historyProvider?.fireDidChangeCurrentHistoryItemRefs();
+    }
+
+    $onDidChangeHistoryItemRefs(sourceControlHandle: number, event: ScmHistoryItemRefsChangeEventDto): void {
+        const repository = this.repositories.get(sourceControlHandle);
+        if (!repository) {
+            return;
+        }
+        const provider = repository.provider as PluginScmProvider;
+        const historyProvider = provider.historyProvider as PluginScmHistoryProvider | undefined;
+        historyProvider?.fireDidChangeHistoryItemRefs(event);
     }
 }
