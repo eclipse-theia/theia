@@ -76,11 +76,11 @@ const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summ
     // }, [summaryService]);
 
     return (
-        <div>
-            {/* <button className='theia-button secondary toggle-terminal-visibility-button' onClick={handleToggleTerminalVisibility}>
+        <div className='ai-terminal-buffer-inner'>
+             {/*<button className='theia-button secondary toggle-terminal-visibility-button' onClick={handleToggleTerminalVisibility}>
                 Toggle Terminal Visibility
-            </button> */}
-            <div>
+            </button>*/}
+            <div className='ai-terminal-buffer-content'>
                 <div className='ai-terminal-buffer-container'>
                     {buffer.map((line, index) => (
                         <p
@@ -101,6 +101,7 @@ const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summ
                         placeholder='Enter command: '
                         disabled={isInputDisabled}
                         onChange={e => setInputCommand(e.target.value)}
+                        autoComplete='off'
                     />
                 </form>
             </div>
