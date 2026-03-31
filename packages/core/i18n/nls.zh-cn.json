@@ -624,7 +624,7 @@
           "description": "返回系统中可用的代理列表"
         },
         "aiConfiguration": {
-          "label": "AI配置[测试版]"
+          "label": "AI配置"
         },
         "blinkTitle": {
           "agentCompleted": "Theia - 代理完成",
@@ -927,7 +927,7 @@
           "tooltip": "解释换行符"
         },
         "view": {
-          "label": "AI 代理历史记录 [测试版]",
+          "label": "AI 代理历史记录",
           "noAgent": "没有可用代理。",
           "noAgentSelected": "未选择代理。",
           "noHistoryForAgent": "所选代理“{0}”无历史记录可用"
@@ -1054,7 +1054,7 @@
         },
         "deleteChat": "删除聊天记录",
         "enableAI": {
-          "mdDescription": "此设置允许您访问最新的人工智能功能(测试版)。            \n            请注意,这些功能处于测试阶段,可能随时变更并持续优化。需特别注意:这些功能可能持续向您授权访问的语言模型(LLMs)发起请求,由此产生的费用需密切监控。 启用此选项即表示您已知晓上述风险。            \n            **请注意！本节下方设置仅在主功能启用后生效。启用功能后,您需在下方至少配置一个LLM提供商。详情参见[文档](https://theia-ide.org/docs/user_ai/)**。"
+          "mdDescription": "此设置允许您访问最新的人工智能功能。            \n            需特别注意:这些功能可能持续向您授权访问的语言模型(LLMs)发起请求,由此产生的费用需密切监控。 启用此选项即表示您已知晓上述风险。            \n            **请注意！本节下方设置仅在主功能启用后生效。启用功能后,您需在下方至少配置一个LLM提供商。详情参见[文档](https://theia-ide.org/docs/user_ai/)**。"
         },
         "exploreAgent": {
           "description": "一款代码库探索助手,能够从代码库中提取并提炼信息。它会报告现有内容的相关事实,提供代码片段,并描述观察到的模式。"
@@ -1893,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE 的 AI 支持功能现已推出(测试版)！",
+        "header": "Theia IDE 的 AI 支持功能现已推出！",
         "openAIChatView": "立即打开AI聊天视图,了解如何开始！"
       },
       "apiComparator": "{0} API兼容性",

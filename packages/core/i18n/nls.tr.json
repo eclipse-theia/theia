@@ -624,7 +624,7 @@
           "description": "Sistemde kullanılabilir ajanların listesini döndürür."
         },
         "aiConfiguration": {
-          "label": "AI Yapılandırması [Beta]"
+          "label": "AI Yapılandırması"
         },
         "blinkTitle": {
           "agentCompleted": "Theia - Ajan Tamamlandı",
@@ -927,7 +927,7 @@
           "tooltip": "Yeni satırları yorumla"
         },
         "view": {
-          "label": "AI Ajan Geçmişi [Beta]",
+          "label": "AI Ajan Geçmişi",
           "noAgent": "Kullanılabilir ajan yok.",
           "noAgentSelected": "Ajan seçilmedi.",
           "noHistoryForAgent": "Seçilen \"{0}\" ajanı için geçmiş mevcut değil."
@@ -1054,7 +1054,7 @@
         },
         "deleteChat": "Sohbeti Sil",
         "enableAI": {
-          "mdDescription": "Bu ayar, en son AI özelliklerine (Beta sürümü) erişmenizi sağlar.            \n            Bu özelliklerin beta aşamasında olduğunu, yani değişikliklere uğrayabileceğini ve daha da geliştirileceğini lütfen unutmayın. Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli istekler gönderebileceğini bilmeniz önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek, bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar,\n            ana özellik ayarı etkinleştirildikten sonra geçerli olacaktır. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere](https://theia-ide.org/docs/user_ai/) bakın**."
+          "mdDescription": "Bu ayar, en son AI özelliklerine erişmenizi sağlar.            \n            Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli istekler gönderebileceğini bilmeniz önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek, bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar,\n            ana özellik ayarı etkinleştirildikten sonra geçerli olacaktır. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere](https://theia-ide.org/docs/user_ai/) bakın**."
         },
         "exploreAgent": {
           "description": "Kod tabanından bilgileri ayıklayan ve özetleyen bir kod tabanı keşif asistanı.         Mevcut durumla ilgili bilgileri raporlar, kod alıntıları sunar ve gözlemlenen kalıpları açıklar."
@@ -1893,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE'de AI Desteği mevcuttur (Beta Sürümü)!",
+        "header": "Theia IDE'de AI Desteği mevcuttur!",
         "openAIChatView": "Başlamak için şimdi AI Sohbet Görünümünü açın!"
       },
       "apiComparator": "{0} API Uyumluluğu",
