@@ -74,6 +74,7 @@ import { DefaultSkillService, SkillService } from './skill-service';
 import { SkillPromptCoordinator } from './skill-prompt-coordinator';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from './prompt-variable-contribution';
+import { ProductNameVariableContribution } from './product-name-variable-contribution';
 import { CapabilityVariableContribution } from '../common/capability-variable-contribution';
 import { GenericCapabilitiesVariableContribution } from './generic-capabilities-variable-contribution';
 import { GenericCapabilitiesPromptFragmentContribution } from './generic-capabilities-prompt-fragment-contribution';
@@ -153,6 +154,7 @@ export default new ContainerModule(bind => {
     bind(SkillsVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(SkillsVariableContribution);
     bind(AIVariableContribution).to(CapabilityVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(ProductNameVariableContribution).inSingletonScope();
 
     bind(GenericCapabilitiesVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(GenericCapabilitiesVariableContribution);

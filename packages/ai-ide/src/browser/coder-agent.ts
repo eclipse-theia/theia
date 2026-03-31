@@ -30,6 +30,7 @@ import {
 } from '../common/coder-replace-prompt-template';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
@@ -51,9 +52,10 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
     override iconClass: string = 'codicon codicon-code';
 
     override description = nls.localize('theia/ai/workspace/coderAgent/description',
-        'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
-        and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
-        tasks involving file changes.');
+        'An AI assistant integrated into {0}, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files' +
+        ' and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other' +
+        ' tasks involving file changes.',
+        FrontendApplicationConfigProvider.get().applicationName);
 
     protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
         {
