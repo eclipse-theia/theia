@@ -14,32 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as http from 'http';
-import * as https from 'https';
-import { getProxyAgent, ProxyAgent } from './proxy';
+import type { Dispatcher } from 'undici';
+import { getProxyAgent } from './proxy';
 import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from './common-request-service';
-import { createGunzip } from 'zlib';
-
-export interface RawRequestFunction {
-    (options: http.RequestOptions, callback?: (res: http.IncomingMessage) => void): http.ClientRequest;
-}
 
 export interface NodeRequestOptions extends RequestOptions {
-    agent?: ProxyAgent | http.Agent | https.Agent | boolean;
     strictSSL?: boolean;
-    getRawRequest?(options: NodeRequestOptions): RawRequestFunction;
-};
+    dispatcher?: Dispatcher;
+}
 
 export class NodeRequestService implements RequestService {
     protected proxyUrl?: string;
     protected strictSSL?: boolean;
     protected authorization?: string;
-
-    protected getNodeRequest(options: RequestOptions): RawRequestFunction {
-        const endpoint = new URL(options.url);
-        const module = endpoint.protocol === 'https:' ? https : http;
-        return module.request;
-    }
 
     protected async getProxyUrl(url: string): Promise<string | undefined> {
         return this.proxyUrl;
@@ -60,11 +47,12 @@ export class NodeRequestService implements RequestService {
     protected async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
         const { strictSSL } = this;
         options.strictSSL = options.strictSSL ?? strictSSL;
-        const agent = options.agent ? options.agent : getProxyAgent(options.url || '', process.env, {
-            proxyUrl: await this.getProxyUrl(options.url),
-            strictSSL: options.strictSSL
-        });
-        options.agent = agent;
+        if (!options.dispatcher) {
+            options.dispatcher = getProxyAgent(options.url || '', process.env, {
+                proxyUrl: await this.getProxyUrl(options.url),
+                strictSSL: options.strictSSL
+            });
+        }
 
         const authorization = options.proxyAuthorization || this.authorization;
         if (authorization) {
@@ -74,100 +62,68 @@ export class NodeRequestService implements RequestService {
             };
         }
 
-        options.headers = {
-            'Accept-Encoding': 'gzip',
-            ...(options.headers || {}),
-        };
-
         return options;
     }
 
-    request(options: NodeRequestOptions, token?: CancellationToken): Promise<RequestContext> {
-        return new Promise(async (resolve, reject) => {
-            options = await this.processOptions(options);
+    async request(options: NodeRequestOptions, token?: CancellationToken): Promise<RequestContext> {
+        options = await this.processOptions(options);
 
-            const endpoint = new URL(options.url);
-            const rawRequest = options.getRawRequest
-                ? options.getRawRequest(options)
-                : this.getNodeRequest(options);
+        const headers: Record<string, string> = { ...(options.headers || {}) };
 
-            const opts: https.RequestOptions = {
-                hostname: endpoint.hostname,
-                port: endpoint.port ? parseInt(endpoint.port) : (endpoint.protocol === 'https:' ? 443 : 80),
-                protocol: endpoint.protocol,
-                path: endpoint.pathname + endpoint.search,
-                method: options.type || 'GET',
-                headers: options.headers,
-                agent: options.agent as https.Agent,
-                rejectUnauthorized: !!options.strictSSL
-            };
+        if (options.user && options.password) {
+            headers['Authorization'] = 'Basic ' + Buffer.from(options.user + ':' + options.password).toString('base64');
+        }
 
-            if (options.user && options.password) {
-                opts.auth = options.user + ':' + options.password;
-            }
+        const signals: AbortSignal[] = [];
+        if (options.timeout) {
+            signals.push(AbortSignal.timeout(options.timeout));
+        }
 
-            const timeoutHandler = () => {
-                reject('timeout');
-            };
-
-            const req = rawRequest(opts, async res => {
-                const followRedirects = options.followRedirects ?? 3;
-                if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && followRedirects > 0 && res.headers.location) {
-                    req.off('timeout', timeoutHandler);
-                    this.request({
-                        ...options,
-                        url: res.headers.location,
-                        followRedirects: followRedirects - 1
-                    }, token).then(resolve, reject);
-                } else {
-                    const chunks: Uint8Array[] = [];
-
-                    const stream = res.headers['content-encoding'] === 'gzip' ? res.pipe(createGunzip()) : res;
-
-                    stream.on('data', chunk => {
-                        chunks.push(chunk);
-                    });
-
-                    stream.on('end', () => {
-                        req.off('timeout', timeoutHandler);
-                        const buffer = Buffer.concat(chunks);
-                        resolve({
-                            url: options.url,
-                            res: {
-                                headers: res.headers as Headers,
-                                statusCode: res.statusCode
-                            },
-                            buffer
-                        });
-                    });
-
-                    stream.on('error', err => {
-                        reject(err);
-                    });
-                }
+        let tokenAbortController: AbortController | undefined;
+        if (token) {
+            tokenAbortController = new AbortController();
+            signals.push(tokenAbortController.signal);
+            token.onCancellationRequested(() => {
+                tokenAbortController!.abort();
             });
+        }
 
-            req.on('error', err => {
-                reject(err);
-            });
+        const signal = signals.length > 0
+            ? (signals.length === 1 ? signals[0] : AbortSignal.any(signals))
+            : undefined;
 
-            req.on('timeout', timeoutHandler);
+        const fetchOptions: RequestInit & { dispatcher?: Dispatcher } = {
+            method: options.type || 'GET',
+            headers,
+            redirect: 'follow',
+            signal,
+        };
 
-            if (options.timeout) {
-                req.setTimeout(options.timeout);
-            }
+        if (options.dispatcher) {
+            fetchOptions.dispatcher = options.dispatcher;
+        }
 
-            if (options.data) {
-                req.write(options.data);
-            }
+        if (options.data) {
+            fetchOptions.body = options.data;
+        }
 
-            req.end();
+        const response = await fetch(options.url, fetchOptions);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-            token?.onCancellationRequested(() => {
-                req.destroy();
-                reject();
-            });
+        const responseHeaders: Headers = {};
+        response.headers.forEach((value, key) => {
+            responseHeaders[key] = value;
         });
+
+        return {
+            url: options.url,
+            res: {
+                headers: responseHeaders,
+                statusCode: response.status
+            },
+            buffer
+        };
     }
 
     async resolveProxy(url: string): Promise<string | undefined> {
