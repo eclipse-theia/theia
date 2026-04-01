@@ -31,7 +31,7 @@ export class SampleOutputChannelWithSeverity
         channel.append('inlineInfo1 ');
         channel.append('inlineWarning ', OutputChannelSeverity.Warning);
         channel.append('inlineError ', OutputChannelSeverity.Error);
-        channel.append('inlineInfo2', OutputChannelSeverity.Info);
+        channel.appendLine('inlineInfo2', OutputChannelSeverity.Info);
 
         // ANSI color code samples
         channel.appendLine('\x1b[31mANSI red text\x1b[0m');

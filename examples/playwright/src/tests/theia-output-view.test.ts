@@ -67,7 +67,7 @@ test.describe('Theia Output View', () => {
         expect(await testChannel!.isDisplayed()).toBe(true);
     });
     test('should check if the output view test channel shows the test output', async () => {
-        expect(await testChannel.numberOfLines()).toBe(5);
+        expect(await testChannel.numberOfLines()).toBe(12);
         expect(await testChannel.textContentOfLineByLineNumber(1)).toMatch('hello info1');
         expect(await testChannel.maxSeverityOfLineByLineNumber(1)).toMatch('info');
         expect(await testChannel.textContentOfLineByLineNumber(2)).toMatch('hello info2');
@@ -80,6 +80,27 @@ test.describe('Theia Output View', () => {
             'inlineInfo1 inlineWarning inlineError inlineInfo2'
         );
         expect(await testChannel.maxSeverityOfLineByLineNumber(5)).toMatch('error');
+    });
+    test('should check if the output view test channel shows ANSI colored output', async () => {
+        expect(await testChannel.textContentOfLineByLineNumber(6)).toMatch('ANSI red text');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(6)).toContain('ansi-red-fg');
+        expect(await testChannel.textContentOfLineByLineNumber(7)).toMatch('ANSI green text');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(7)).toContain('ansi-green-fg');
+        expect(await testChannel.textContentOfLineByLineNumber(8)).toMatch('ANSI yellow and ANSI blue on the same line');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(8)).toContain('ansi-yellow-fg');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(8)).toContain('ansi-blue-fg');
+        expect(await testChannel.textContentOfLineByLineNumber(9)).toMatch('ANSI bold magenta');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(9)).toContain('ansi-bold');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(9)).toContain('ansi-magenta-fg');
+        expect(await testChannel.textContentOfLineByLineNumber(10)).toMatch('ANSI underlined cyan');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(10)).toContain('ansi-underline');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(10)).toContain('ansi-cyan-fg');
+        expect(await testChannel.textContentOfLineByLineNumber(11)).toMatch('Mixed: ANSI error and ANSI success in one line');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(11)).toContain('ansi-red-fg');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(11)).toContain('ansi-green-fg');
+        expect(await testChannel.textContentOfLineByLineNumber(12)).toMatch('ANSI white on red background');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(12)).toContain('ansi-white-fg');
+        expect(await testChannel.ansiClassesOfLineByLineNumber(12)).toContain('ansi-red-bg');
     });
 
 });
