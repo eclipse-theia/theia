@@ -52,6 +52,15 @@ export class TerminalCopyOnSelectionHandler {
         return false;
     }
 
+    /**
+     * Synchronously copy text to clipboard using document.execCommand('copy')
+     * with the document-level copy event interceptor.
+     */
+    syncCopy(text: string): void {
+        this.textToCopy = text;
+        this.executeCommandCopy();
+    }
+
     private executeCommandCopy(): void {
         try {
             this.interceptCopy = true;

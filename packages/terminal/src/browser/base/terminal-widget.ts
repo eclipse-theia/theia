@@ -169,6 +169,10 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract selectAll(): void;
 
+    abstract getSelection(): string;
+
+    abstract hasSelection(): boolean;
+
     abstract writeLine(line: string): void;
 
     abstract write(data: string): void;
