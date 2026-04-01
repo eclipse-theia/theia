@@ -29,9 +29,9 @@
     "clean": "theiaext clean"
   },
   "dependencies": {
-    "@electron/get": "^2.0.0",
+    "@electron/get": "^2.0.3",
     "tslib": "^2.6.2",
-    "unzipper": "^0.9.11"
+    "unzipper": "^0.9.15"
   },
   "devDependencies": {
     "@types/unzipper": "^0.9.2"

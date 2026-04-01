@@ -12,9 +12,9 @@
     "@theia/preferences": "1.70.0",
     "@theia/workspace": "1.70.0",
     "limiter": "^2.1.0",
-    "luxon": "^2.4.0",
+    "luxon": "^2.5.2",
     "p-debounce": "^2.1.0",
-    "semver": "^7.5.4",
+    "semver": "^7.7.4",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
