@@ -17,7 +17,7 @@
 import '../../../src/browser/style/merge-editor.css';
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { CommandContribution, DisposableCollection, InMemoryResources, MenuContribution, generateUuid, URI } from '@theia/core';
+import { CommandContribution, DisposableCollection, MEMORY_TEXT_READONLY, MenuContribution, generateUuid, URI } from '@theia/core';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FrontendApplicationContribution, KeybindingContribution, NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
@@ -57,7 +57,6 @@ export class MergeEditorFactory {
     constructor(
         protected readonly container: interfaces.Container,
         protected readonly editorManager = container.get(EditorManager),
-        protected readonly inMemoryResources = container.get(InMemoryResources)
     ) { }
 
     async createMergeEditor({ baseUri, side1Uri, side2Uri, resultUri }: MergeUris): Promise<MergeEditor> {
@@ -93,9 +92,7 @@ export class MergeEditorFactory {
      * merge conflicts where there is no common ancestor (git index stage 1).
      */
     protected async createEmptyFallbackEditorWidget(originalUri: URI, disposables: DisposableCollection): Promise<EditorWidget> {
-        const fallbackUri = new URI(`merge-editor-base://${generateUuid()}/${originalUri.path.base}`);
-        const resource = this.inMemoryResources.add(fallbackUri, '');
-        disposables.push(resource);
+        const fallbackUri = new URI().withScheme(MEMORY_TEXT_READONLY).withPath(`${generateUuid()}/${originalUri.path.base}`);
         return this.createEditorWidget(fallbackUri, disposables);
     }
 
