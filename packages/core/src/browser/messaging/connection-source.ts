@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Channel, Event } from '../../common';
+import { Channel } from '../../common/message-rpc/channel';
+import { Event } from '../../common/event';
 
 export const ConnectionSource = Symbol('ConnectionSource');
 
