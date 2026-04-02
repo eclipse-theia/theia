@@ -105,6 +105,8 @@ import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
 import { TodoWriteTool } from './todo-tool';
 import { TodoToolRenderer } from './todo-tool-renderer';
+import { UserInteractionTool } from './user-interaction-tool';
+import { UserInteractionToolRenderer } from './user-interaction-tool-renderer';
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
@@ -124,6 +126,7 @@ import { CodeReviewerAgent } from './code-reviewer-agent';
 import { ContextReviewerAgent } from './context-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { JuniorPlanCapabilityContribution } from './junior-plan-capability-contribution';
+import { PRReviewAgent } from './review/pr-review-agent';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -191,6 +194,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ContextReviewerAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ContextReviewerAgent);
     bind(ChatAgent).toService(ContextReviewerAgent);
+
+    bind(PRReviewAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(PRReviewAgent);
+    bind(ChatAgent).toService(PRReviewAgent);
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
@@ -339,7 +346,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(ListTaskContextsFunction, bind);
     bindToolProvider(RewriteTaskContextFunction, bind);
     bindToolProvider(TodoWriteTool, bind);
+    bindToolProvider(UserInteractionTool, bind);
     bind(ChatResponsePartRenderer).to(TodoToolRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(UserInteractionToolRenderer).inSingletonScope();
 
     bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);

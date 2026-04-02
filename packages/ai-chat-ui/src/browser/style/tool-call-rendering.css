@@ -1,0 +1,311 @@
+.tool-call.container {
+    border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    border-radius: var(--theia-ui-padding);
+    margin: var(--theia-ui-padding) 0;
+    background-color: var(--theia-editorWidget-background);
+    overflow: visible;
+}
+
+.tool-call.header {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+    border-radius: var(--theia-ui-padding);
+}
+
+.tool-call.container.expanded .tool-call.header {
+    border-radius: var(--theia-ui-padding) var(--theia-ui-padding) 0 0;
+}
+
+.tool-call.header.finished {
+    cursor: pointer;
+}
+
+.tool-call.header.finished:hover {
+    background-color: var(--theia-list-hoverBackground);
+}
+
+.tool-call.header.error {
+    background-color: var(--theia-inputValidation-errorBackground);
+    cursor: pointer;
+}
+
+.tool-call.header.error:hover {
+    background-color: var(--theia-inputValidation-errorBackground);
+    filter: brightness(1.1);
+}
+
+.tool-call.header .codicon.codicon-terminal,
+.tool-call.header .codicon.codicon-comment-discussion {
+    flex-shrink: 0;
+    color: var(--theia-descriptionForeground);
+    font-size: var(--theia-ui-font-size2);
+}
+
+.tool-call.command-preview,
+.tool-call.title-preview {
+    font-family: var(--theia-ui-font-family-mono);
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-foreground);
+    background-color: var(--theia-textCodeBlock-background);
+    padding: 2px 6px;
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.tool-call.meta-badges {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.tool-call.duration {
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+    font-family: var(--theia-ui-font-family-mono);
+}
+
+.tool-call.exit-code {
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    font-family: var(--theia-ui-font-family-mono);
+    background-color: var(--theia-charts-red);
+    color: var(--theia-button-foreground);
+}
+
+.tool-call.status-icon {
+    flex-shrink: 0;
+}
+
+.tool-call.status-icon.success {
+    color: var(--theia-charts-green);
+}
+
+.tool-call.status-icon.failure {
+    color: var(--theia-charts-red);
+}
+
+.tool-call.status-label {
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+}
+
+.tool-call.status-label.error {
+    color: var(--theia-errorForeground);
+}
+
+.tool-call.status-label.canceled {
+    color: var(--theia-errorForeground);
+}
+
+.tool-call.status-label.canceling {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) / 2);
+    color: var(--theia-descriptionForeground);
+}
+
+.tool-call.expanded-content {
+    padding: calc(var(--theia-ui-padding) * 2);
+    border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.tool-call.full-command-container {
+    position: relative;
+    margin-bottom: var(--theia-ui-padding);
+}
+
+.tool-call.full-command-container .tool-call.copy-button {
+    position: absolute;
+    top: var(--theia-ui-padding);
+    right: var(--theia-ui-padding);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.tool-call.full-command-container:hover .tool-call.copy-button {
+    opacity: 1;
+}
+
+.tool-call.full-command-container .tool-call.full-command {
+    margin-bottom: 0;
+    padding-right: 32px;
+}
+
+.tool-call.full-command {
+    display: flex;
+    gap: var(--theia-ui-padding);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+    background-color: var(--theia-textCodeBlock-background);
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    margin-bottom: var(--theia-ui-padding);
+}
+
+.tool-call.prompt {
+    font-family: var(--theia-ui-font-family-mono);
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-descriptionForeground);
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.tool-call.full-command code {
+    font-family: var(--theia-ui-font-family-mono);
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-foreground);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.tool-call.meta-row {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+    margin-bottom: var(--theia-ui-padding);
+}
+
+.tool-call.meta-row .codicon {
+    opacity: 0.7;
+}
+
+.tool-call.error-message {
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+    margin-bottom: var(--theia-ui-padding);
+    background-color: var(--theia-inputValidation-errorBackground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    color: var(--theia-errorForeground);
+    font-size: var(--theia-ui-font-size1);
+}
+
+.tool-call.output-box {
+    margin-top: var(--theia-ui-padding);
+    background-color: var(--theia-textCodeBlock-background);
+    border-radius: calc(var(--theia-ui-padding) / 2);
+}
+
+.tool-call.output-header {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+    border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.tool-call.output-header .codicon {
+    font-size: var(--theia-ui-font-size1);
+}
+
+.tool-call.output-header .tool-call.copy-button {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.tool-call.output-box:hover .tool-call.output-header .tool-call.copy-button {
+    opacity: 1;
+}
+
+.tool-call.copy-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    background-color: transparent;
+    color: var(--theia-descriptionForeground);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.tool-call.copy-button:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+    color: var(--theia-foreground);
+}
+
+.tool-call.output {
+    font-family: var(--theia-ui-font-family-mono);
+    font-size: var(--theia-ui-font-size0);
+    line-height: 1.4;
+    color: var(--theia-foreground);
+    background-color: transparent;
+    border-radius: 0;
+    padding: calc(var(--theia-ui-padding) * 1.5);
+    margin: 0;
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.tool-call.no-output {
+    color: var(--theia-descriptionForeground);
+    font-style: italic;
+    font-size: var(--theia-ui-font-size0);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+}
+
+.tool-call.cancel-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: calc(var(--theia-ui-padding) / 2);
+    background-color: transparent;
+    color: var(--theia-descriptionForeground);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.tool-call.cancel-button:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+    color: var(--theia-debugIcon-stopForeground);
+}
+
+.tool-call.cancel-button:active {
+    background-color: var(--theia-toolbar-activeBackground, var(--theia-toolbar-hoverBackground));
+}
+
+.tool-call.header.running {}
+
+.tool-call.header.canceling {
+    background-color: var(--theia-inputValidation-warningBackground);
+}
+
+.tool-call.header.canceled {
+    background-color: var(--theia-inputValidation-errorBackground);
+    cursor: pointer;
+}
+
+.tool-call.header.canceled:hover {
+    background-color: var(--theia-inputValidation-errorBackground);
+    filter: brightness(1.1);
+}
+
+.tool-call.header.pending {
+    color: var(--theia-descriptionForeground);
+}
+
+.tool-call.pending-text {
+    color: var(--theia-descriptionForeground);
+    font-style: italic;
+}

@@ -1632,3 +1632,96 @@
   margin-top: calc(var(--theia-ui-padding) / 2);
   margin-bottom: var(--theia-ui-padding);
 }
+
+/* User Interaction Tool Renderer Styles */
+.user-interaction-tool.title {
+  font-weight: 600;
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.user-interaction-tool.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: 0 calc(var(--theia-ui-padding) * 2) var(--theia-ui-padding);
+}
+
+.user-interaction-tool.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  background-color: var(--theia-button-secondaryBackground);
+  color: var(--theia-button-secondaryForeground);
+  border: 1px solid var(--theia-button-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  transition: background-color 0.15s;
+}
+
+.user-interaction-tool.link-button:hover {
+  background-color: var(--theia-button-secondaryHoverBackground);
+}
+
+.user-interaction-tool.message {
+  padding: 0 calc(var(--theia-ui-padding) * 2);
+  color: var(--theia-foreground);
+  line-height: 1.5;
+}
+
+.user-interaction-tool.message p {
+  margin: 0 0 calc(var(--theia-ui-padding) / 2) 0;
+}
+
+.user-interaction-tool.message p:last-child {
+  margin-bottom: 0;
+}
+
+.user-interaction-tool.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+}
+
+.user-interaction-tool.option-button {
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 3);
+  font-size: var(--theia-ui-font-size1);
+  min-width: 100px;
+}
+
+.user-interaction-tool.option-button.selected {
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  border-color: var(--theia-button-background);
+}
+
+.user-interaction-tool.option-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.user-interaction-tool.pending-text {
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+.user-interaction-tool.custom-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+}
+
+.user-interaction-tool.custom-input-field {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.user-interaction-tool.custom-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--theia-ui-padding);
+}
