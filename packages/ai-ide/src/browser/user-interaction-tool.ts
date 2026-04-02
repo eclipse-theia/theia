@@ -18,6 +18,7 @@ import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MEMORY_TEXT, ResourceProvider } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -56,6 +57,9 @@ export class UserInteractionTool implements ToolProvider {
 
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceScope: WorkspaceFunctionScope;
+
+    @inject(ResourceProvider)
+    protected readonly resourceProvider: ResourceProvider;
 
     protected readonly pendingInteractions = new Map<string, Deferred<string>>();
 
@@ -175,8 +179,15 @@ export class UserInteractionTool implements ToolProvider {
             const right = resolveContentRef(link.rightRef);
             const leftUri = this.resolveUri(left, workspaceRoot);
             const rightUri = this.resolveUri(right, workspaceRoot);
+
+            const resolvedLeftUri = await this.canResolveUri(leftUri)
+                ? leftUri
+                : this.emptyContentUri(left.path);
+            const resolvedRightUri = await this.canResolveUri(rightUri)
+                ? rightUri
+                : this.emptyContentUri(right.path);
             const diffLabel = link.label || this.buildDiffLabel(left, right);
-            const diffUri = DiffUris.encode(leftUri, rightUri, diffLabel);
+            const diffUri = DiffUris.encode(resolvedLeftUri, resolvedRightUri, diffLabel);
             await open(this.openerService, diffUri);
         } else {
             if (left.gitRef) {
@@ -253,6 +264,26 @@ export class UserInteractionTool implements ToolProvider {
             return selectedValue;
         } finally {
             this.pendingInteractions.delete(toolCallId);
+        }
+    }
+
+    protected emptyContentUri(path: string): URI {
+        return new URI().withScheme(MEMORY_TEXT).withPath(path);
+    }
+
+    protected async canResolveUri(uri: URI): Promise<boolean> {
+        try {
+            const resource = await this.resourceProvider(uri);
+            try {
+                await resource.readContents();
+                return true;
+            } catch {
+                return false;
+            } finally {
+                resource.dispose();
+            }
+        } catch {
+            return false;
         }
     }
 
