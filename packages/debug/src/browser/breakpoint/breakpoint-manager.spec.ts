@@ -1104,3 +1104,76 @@ describe('BreakpointManager — updateBreakpoint', () => {
         expect(events).to.have.length(0);
     });
 });
+
+describe('BreakpointManager — onDidChangeMarkers catch-all', () => {
+
+    let manager: BreakpointManager;
+
+    beforeEach(() => {
+        ({ manager } = createManager());
+    });
+
+    it('fires when a source breakpoint is added', () => {
+        const uris: URI[] = [];
+        manager.onDidChangeMarkers(uri => uris.push(uri));
+
+        manager.setBreakpoints(FILE_A, [makeSourceBreakpoint(FILE_A, 1)]);
+        expect(uris).to.have.length(1);
+        expect(uris[0].toString()).to.equal(FILE_A.toString());
+    });
+
+    it('fires when a function breakpoint is added', () => {
+        const uris: URI[] = [];
+        manager.onDidChangeMarkers(uri => uris.push(uri));
+
+        manager.addFunctionBreakpoint(makeFunctionBreakpoint('myFunc'));
+        expect(uris).to.have.length(1);
+        expect(uris[0].toString()).to.equal(BreakpointManager.FUNCTION_URI.toString());
+    });
+
+    it('fires when an instruction breakpoint is added', () => {
+        const uris: URI[] = [];
+        manager.onDidChangeMarkers(uri => uris.push(uri));
+
+        manager.addInstructionBreakpoint('0xDEAD', 0);
+        expect(uris).to.have.length(1);
+        expect(uris[0].toString()).to.equal(BreakpointManager.INSTRUCTION_URI.toString());
+    });
+
+    it('fires when a data breakpoint is added', () => {
+        const uris: URI[] = [];
+        manager.onDidChangeMarkers(uri => uris.push(uri));
+
+        manager.addDataBreakpoint(makeDataBreakpoint('d1'));
+        expect(uris).to.have.length(1);
+        expect(uris[0].toString()).to.equal(BreakpointManager.DATA_URI.toString());
+    });
+
+    it('fires when a function breakpoint is removed', () => {
+        manager.addFunctionBreakpoint(makeFunctionBreakpoint('fn'));
+        const wrapper = manager.getFunctionBreakpoints()[0];
+
+        const uris: URI[] = [];
+        manager.onDidChangeMarkers(uri => uris.push(uri));
+
+        manager.removeFunctionBreakpoint(wrapper);
+        expect(uris).to.have.length(1);
+    });
+
+    it('fires for each type during enableAllBreakpoints', () => {
+        manager.setBreakpoints(FILE_A, [makeSourceBreakpoint(FILE_A, 1, { enabled: false })]);
+        manager.addFunctionBreakpoint(makeFunctionBreakpoint('fn'));
+        manager.addInstructionBreakpoint('0xABC', 0);
+        manager.addDataBreakpoint(makeDataBreakpoint('d1'));
+
+        // Disable all first so enableAllBreakpoints has work to do
+        manager.enableAllBreakpoints(false);
+
+        const uris: URI[] = [];
+        manager.onDidChangeMarkers(uri => uris.push(uri));
+
+        manager.enableAllBreakpoints(true);
+        // Should fire once per breakpoint type that changed
+        expect(uris).to.have.length.greaterThanOrEqual(4);
+    });
+});
