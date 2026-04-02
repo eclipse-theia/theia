@@ -1183,6 +1183,21 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
+     * Checks if a task is currently running.
+     * A task is considered running if it exists in the runningTasks map AND has not yet exited.
+     * @param taskId The task ID to check
+     * @returns true if the task is still running, false otherwise
+     */
+    isTaskRunning(taskId: number): boolean {
+        const taskEntry = this.runningTasks.get(taskId);
+        if (!taskEntry) {
+            return false;
+        }
+        // Task is running if the terminateSignal deferred is still unresolved
+        return taskEntry.terminateSignal.state === 'unresolved';
+    }
+
+    /**
      * Request workspace trust from the user. Returns true if the workspace is trusted,
      * false if the user declined to trust the workspace.
      */
