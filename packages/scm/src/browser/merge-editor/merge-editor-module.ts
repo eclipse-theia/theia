@@ -106,7 +106,9 @@ export class MergeEditorFactory {
         if (!editor) {
             throw new Error('The merge editor only supports Monaco editors as its parts');
         }
-        editor.getControl().updateOptions({ folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false } });
+        const options: MonacoEditor.IOptions = { glyphMargin: false, folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false } };
+        editor.getControl().updateOptions(options);
+        editor.getControl().onDidChangeConfiguration(() => editor.getControl().updateOptions(options));
         editor.setShouldDisplayDirtyDiff(false);
         return editorWidget;
     }
