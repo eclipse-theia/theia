@@ -64,7 +64,10 @@ export class MergeEditorFactory {
         const createEditorWidget = (uri: URI) => this.createEditorWidget(uri, toDisposeOnError);
         try {
             const [baseEditorWidget, side1EditorWidget, side2EditorWidget, resultEditorWidget] = await Promise.all([
-                createEditorWidget(baseUri).catch(() => this.createEmptyFallbackEditorWidget(baseUri, toDisposeOnError)),
+                createEditorWidget(baseUri).catch(e => {
+                    console.warn('Base URI resolution failed, using empty fallback:', e);
+                    return this.createEmptyFallbackEditorWidget(baseUri, toDisposeOnError);
+                }),
                 createEditorWidget(side1Uri),
                 createEditorWidget(side2Uri),
                 createEditorWidget(resultUri)
