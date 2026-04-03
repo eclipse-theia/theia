@@ -4,6 +4,19 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.71.0 - TBD
+
+- [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275)
+
+<a name="breaking_changes_1.71.0">[Breaking Changes:](#breaking_changes_1.71.0)</a>
+
+- [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275):
+  - Removed protected field `editorCounters: Map<string, number>`
+  - Removed protected method `checkCounterForWidget(widget)`
+  - Removed protected method `removeFromCounter(widget)`
+  - Removed protected method `createCounterForUri(uri)` (replaced by `nextCounter()`)
+  - Removed protected method `getOrCreateCounterForUri(uri)`
+
 ## 1.70.0 - 3/26/2026
 
 - [ai] added proxy support to AI providers [#17085](https://github.com/eclipse-theia/theia/pull/17085)
