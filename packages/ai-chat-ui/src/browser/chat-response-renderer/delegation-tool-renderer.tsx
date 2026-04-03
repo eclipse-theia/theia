@@ -16,12 +16,15 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatRequestInvocation, ChatResponseContent, ChatResponseModel, ToolCallChatResponseContent } from '@theia/ai-chat';
+import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core/lib/common/tool-constants';
+import { ToolInvocationRegistry } from '@theia/ai-core';
 import { AgentDelegationTool } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ResponseNode } from '../chat-tree-view';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
-import { CompositeTreeNode } from '@theia/core/lib/browser';
+import { withToolCallConfirmation } from './tool-confirmation';
+import { CompositeTreeNode, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { DisposableCollection, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 
@@ -33,6 +36,15 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
     @inject(SubChatWidgetFactory)
     protected subChatWidgetFactory: SubChatWidgetFactory;
+
+    @inject(ToolConfirmationManager)
+    protected toolConfirmationManager: ToolConfirmationManager;
+
+    @inject(ToolInvocationRegistry)
+    protected toolInvocationRegistry: ToolInvocationRegistry;
+
+    @inject(ContextMenuRenderer)
+    protected contextMenuRenderer: ContextMenuRenderer;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response) && response.name === AGENT_DELEGATION_FUNCTION_ID) {
@@ -60,13 +72,24 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
             }
         }
 
-        return <DelegatedChat
+        const chatId = parentNode.sessionId;
+        const toolRequest = this.toolInvocationRegistry.getFunction(AGENT_DELEGATION_FUNCTION_ID);
+        const confirmationMode = this.toolConfirmationManager.getConfirmationMode(AGENT_DELEGATION_FUNCTION_ID, chatId, toolRequest);
+
+        return <DelegatedChatWithConfirmation
             invocation={delegation?.invocation}
             agentId={delegation?.agentName ?? agentId}
             prompt={delegation?.prompt ?? prompt}
             finished={response.finished}
             parentNode={parentNode}
             subChatWidgetFactory={this.subChatWidgetFactory}
+            response={response}
+            confirmationMode={confirmationMode}
+            toolConfirmationManager={this.toolConfirmationManager}
+            toolRequest={toolRequest}
+            chatId={chatId}
+            requestCanceled={parentNode.response.isCanceled}
+            contextMenuRenderer={this.contextMenuRenderer}
         />;
     }
 }
@@ -206,6 +229,8 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         );
     }
 }
+
+const DelegatedChatWithConfirmation = withToolCallConfirmation(DelegatedChat);
 
 function mapResponseToNode(response: ChatResponseModel, parentNode: ResponseNode): ResponseNode {
     return {
