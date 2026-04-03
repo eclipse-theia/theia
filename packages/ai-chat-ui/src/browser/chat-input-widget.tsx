@@ -24,7 +24,7 @@ import { GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapabil
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
-import { AISettingsService } from '@theia/ai-core/lib/common';
+import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
@@ -154,6 +154,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(AISettingsService)
     protected readonly aiSettingsService: AISettingsService;
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
 
     protected navigationState: ChatInputNavigationState;
 
@@ -630,6 +633,13 @@ export class AIChatInputWidget extends ReactWidget {
             this.refreshCapabilities();
         }));
 
+        // When the default mode changes externally (e.g. via AI Configuration),
+        // sync the mode selector. Deferred via queueMicrotask so the prompt service's
+        // internal state is fully updated before we read agent.modes.
+        this.toDispose.push(this.promptService.onSelectedVariantChange(() => {
+            queueMicrotask(() => this.syncSelectedModeWithDefault());
+        }));
+
         // Listen for generic capabilities changes
         if (this.genericCapabilitiesService) {
             this.updateAvailableGenericCapabilities();
@@ -790,6 +800,30 @@ export class AIChatInputWidget extends ReactWidget {
             this.capabilityDefaults = [];
             this.userCapabilityOverrides = new Map();
             this.chatInputHasModesKey.set(false);
+            this.update();
+        }
+    }
+
+    /**
+     * Syncs the selected mode in the UI with the agent's current default mode.
+     * Called when the default mode changes externally (e.g. via AI Configuration).
+     */
+    protected syncSelectedModeWithDefault(): void {
+        if (!this.receivingAgent) {
+            return;
+        }
+        const agent = this.chatAgentService.getAgent(this.receivingAgent.agentId);
+        if (!agent?.modes) {
+            return;
+        }
+        const updatedModes = agent.modes;
+        const newDefault = updatedModes.find(m => m.isDefault);
+        if (newDefault && newDefault.id !== this.receivingAgent.currentModeId) {
+            this.receivingAgent = {
+                ...this.receivingAgent,
+                modes: updatedModes,
+                currentModeId: newDefault.id
+            };
             this.update();
         }
     }
