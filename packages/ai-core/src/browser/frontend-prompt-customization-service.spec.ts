@@ -14,8 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
+import 'reflect-metadata';
+
 import { expect } from 'chai';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
+import { CustomizationSource, DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
+
+disableJSDOM();
 
 describe('Prompt Template Parser', () => {
 
@@ -197,6 +206,176 @@ Template`;
 
             expect(result.metadata?.name).to.be.undefined;
             expect(result.metadata?.description).to.be.undefined;
+        });
+    });
+
+    describe('DefaultPromptFragmentCustomizationService - addTemplate conflict resolution', () => {
+        before(() => disableJSDOM = enableJSDOM());
+        after(() => disableJSDOM());
+
+        interface FragmentEntry {
+            id: string;
+            template: string;
+            sourceUri: string;
+            sourceUris: string[];
+            priority: number;
+            origin: CustomizationSource;
+            customizationId: string;
+        }
+
+        /**
+         * Test subclass that exposes the protected `addTemplate` and `provenanceLabel`
+         * methods so we can unit-test conflict resolution without mocking the filesystem.
+         */
+        class TestableCustomizationService extends DefaultPromptFragmentCustomizationService {
+            // Prevent @postConstruct from running (it touches preferences)
+            protected override init(): void { }
+
+            public testAddTemplate(
+                active: Map<string, FragmentEntry>,
+                id: string,
+                template: string,
+                sourceUri: string,
+                all: Map<string, FragmentEntry>,
+                priority: number,
+                origin: CustomizationSource
+            ): void {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (this as any).addTemplate(active, id, template, sourceUri, all, priority, origin);
+            }
+
+            public testProvenanceLabel(sourceUri: string): string {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                return (this as any).provenanceLabel(sourceUri);
+            }
+        }
+
+        let service: TestableCustomizationService;
+        let activeMap: Map<string, FragmentEntry>;
+        let allMap: Map<string, FragmentEntry>;
+
+        beforeEach(() => {
+            service = new TestableCustomizationService();
+            activeMap = new Map();
+            allMap = new Map();
+        });
+
+        it('adds a fragment when no conflict exists', () => {
+            const uri = 'file:///rootA/.prompts/project-info.prompttemplate';
+            service.testAddTemplate(
+                activeMap, 'project-info', 'Content A', uri, allMap, 2, CustomizationSource.FOLDER
+            );
+
+            expect(activeMap.has('project-info')).to.be.true;
+            expect(activeMap.get('project-info')!.template).to.equal('Content A');
+            expect(activeMap.get('project-info')!.sourceUris).to.deep.equal([uri]);
+        });
+
+        it('higher priority replaces lower priority', () => {
+            service.testAddTemplate(
+                activeMap, 'project-info', 'Low priority',
+                'file:///rootA/.prompts/project-info.prompttemplate', allMap, 1, CustomizationSource.CUSTOMIZED
+            );
+            service.testAddTemplate(
+                activeMap, 'project-info', 'High priority',
+                'file:///rootB/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER
+            );
+
+            expect(activeMap.get('project-info')!.template).to.equal('High priority');
+        });
+
+        it('same source URI updates in place', () => {
+            const uri = 'file:///rootA/.prompts/project-info.prompttemplate';
+            service.testAddTemplate(activeMap, 'project-info', 'Original', uri, allMap, 2, CustomizationSource.FOLDER);
+            service.testAddTemplate(activeMap, 'project-info', 'Updated', uri, allMap, 2, CustomizationSource.FOLDER);
+
+            expect(activeMap.get('project-info')!.template).to.equal('Updated');
+            expect(activeMap.get('project-info')!.sourceUris).to.deep.equal([uri]);
+        });
+
+        it('equal priority from different sources concatenates with provenance labels', () => {
+            service.testAddTemplate(
+                activeMap, 'project-info', 'Content A',
+                'file:///rootA/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER
+            );
+            service.testAddTemplate(
+                activeMap, 'project-info', 'Content B',
+                'file:///rootB/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER
+            );
+
+            const entry = activeMap.get('project-info')!;
+            expect(entry.sourceUris).to.have.lengthOf(2);
+            expect(entry.template).to.contain('Content A');
+            expect(entry.template).to.contain('Content B');
+            expect(entry.template).to.contain('### rootA');
+            expect(entry.template).to.contain('### rootB');
+        });
+
+        it('three-way merge concatenates all sources in order', () => {
+            service.testAddTemplate(
+                activeMap, 'project-info', 'Content A',
+                'file:///rootA/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER
+            );
+            service.testAddTemplate(
+                activeMap, 'project-info', 'Content B',
+                'file:///rootB/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER
+            );
+            service.testAddTemplate(
+                activeMap, 'project-info', 'Content C',
+                'file:///rootC/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER
+            );
+
+            const entry = activeMap.get('project-info')!;
+            expect(entry.sourceUris).to.have.lengthOf(3);
+            expect(entry.template).to.contain('### rootA');
+            expect(entry.template).to.contain('### rootB');
+            expect(entry.template).to.contain('### rootC');
+            // Verify ordering: A before B before C
+            const idxA = entry.template.indexOf('Content A');
+            const idxB = entry.template.indexOf('Content B');
+            const idxC = entry.template.indexOf('Content C');
+            expect(idxA).to.be.lessThan(idxB);
+            expect(idxB).to.be.lessThan(idxC);
+        });
+
+        it('provenanceLabel extracts grandparent directory name from URI', () => {
+            // For "file:///home/user/my-project/.prompts/foo.prompttemplate"
+            // parent is ".prompts", grandparent is "my-project"
+            const label = service.testProvenanceLabel(
+                'file:///home/user/my-project/.prompts/foo.prompttemplate'
+            );
+            expect(label).to.equal('my-project');
+        });
+
+        it('provenanceLabel falls back to parent if grandparent is empty', () => {
+            expect(service.testProvenanceLabel('file:///.prompts/foo.prompttemplate'))
+                .to.equal('.prompts');
+        });
+
+        it('merged entry preserves primary sourceUri for backwards compatibility', () => {
+            const uriA = 'file:///rootA/.prompts/project-info.prompttemplate';
+            const uriB = 'file:///rootB/.prompts/project-info.prompttemplate';
+            service.testAddTemplate(activeMap, 'project-info', 'Content A', uriA, allMap, 2, CustomizationSource.FOLDER);
+            service.testAddTemplate(activeMap, 'project-info', 'Content B', uriB, allMap, 2, CustomizationSource.FOLDER);
+
+            const entry = activeMap.get('project-info')!;
+            // Primary sourceUri should be the first one added
+            expect(entry.sourceUri).to.equal(uriA);
+            // All sources tracked
+            expect(entry.sourceUris).to.deep.equal([uriA, uriB]);
+        });
+
+        it('all map tracks each source independently', () => {
+            const uriA = 'file:///rootA/.prompts/project-info.prompttemplate';
+            const uriB = 'file:///rootB/.prompts/project-info.prompttemplate';
+            service.testAddTemplate(activeMap, 'project-info', 'Content A', uriA, allMap, 2, CustomizationSource.FOLDER);
+            service.testAddTemplate(activeMap, 'project-info', 'Content B', uriB, allMap, 2, CustomizationSource.FOLDER);
+
+            // allCustomizations is keyed by sourceUri, so both should be present
+            expect(allMap.has(uriA)).to.be.true;
+            expect(allMap.has(uriB)).to.be.true;
+            expect(allMap.get(uriA)!.template).to.equal('Content A');
+            expect(allMap.get(uriB)!.template).to.equal('Content B');
         });
     });
 });

@@ -96,7 +96,7 @@ export class WorkspaceFunctionScope {
         for (const root of sortedRoots) {
             const basename = root.resource.path.base;
             if (mapping.has(basename)) {
-                console.warn(
+                console.debug(
                     `Multiple workspace roots share the basename '${basename}'. ` +
                     `Only '${mapping.get(basename)!.toString()}' is addressable as '${basename}'. ` +
                     `'${root.resource.toString()}' can still be accessed but may require full paths.`
