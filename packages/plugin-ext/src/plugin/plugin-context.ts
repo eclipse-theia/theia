@@ -1061,12 +1061,8 @@ export function createAPIFactory(
             registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider): theia.Disposable {
                 return languagesExt.registerDocumentHighlightProvider(selector, provider, pluginToPluginInfo(plugin));
             },
-            /**
-             * @stubbed
-             * @monaco-uplift: wait until API is available in Monaco (1.85.0+)
-             */
             registerMultiDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.MultiDocumentHighlightProvider): theia.Disposable {
-                return Disposable.NULL;
+                return languagesExt.registerMultiDocumentHighlightProvider(selector, provider, pluginToPluginInfo(plugin));
             },
             registerWorkspaceSymbolProvider(provider: theia.WorkspaceSymbolProvider): theia.Disposable {
                 return languagesExt.registerWorkspaceSymbolProvider(provider, pluginToPluginInfo(plugin));

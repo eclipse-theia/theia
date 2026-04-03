@@ -74,7 +74,6 @@ export module '@theia/plugin' {
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A multi-document highlight provider.
          * @returns A {@link Disposable} that unregisters this provider when being disposed.
-         * @stubbed
          */
         export function registerMultiDocumentHighlightProvider(selector: DocumentSelector, provider: MultiDocumentHighlightProvider): Disposable;
     }
