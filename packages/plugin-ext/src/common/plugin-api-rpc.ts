@@ -46,6 +46,7 @@ import {
     InlineValue,
     InlineValueContext,
     DocumentHighlight,
+    MultiDocumentHighlightDto,
     FormattingOptions,
     ChainedCacheId,
     Definition,
@@ -1824,6 +1825,8 @@ export interface LanguagesExt {
     $provideEvaluatableExpression(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<EvaluatableExpression | undefined>;
     $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: CancellationToken): Promise<InlineValue[] | undefined>;
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;
+    $provideMultiDocumentHighlights(handle: number, resource: UriComponents, position: Position, otherResources: UriComponents[], token: CancellationToken):
+        Promise<MultiDocumentHighlightDto[] | undefined>;
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents,
         options: FormattingOptions, token: CancellationToken): Promise<TextEdit[] | undefined>;
     $provideDocumentRangeFormattingEdits(handle: number, resource: UriComponents, range: Range,
@@ -1919,6 +1922,7 @@ export interface LanguagesMain {
     $registerInlineValuesProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $emitInlineValuesEvent(eventHandle: number, event?: any): void;
     $registerDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerMultiDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[], documentation?: CodeActionProviderDocumentation): void;
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
