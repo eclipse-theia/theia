@@ -351,7 +351,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     protected nextCounter(): number {
-        return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+        return Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 100) + 100);
     }
 
     protected getCounterForUri(uri: URI): number | undefined {

@@ -6,13 +6,13 @@
 
 ## 1.71.0 - TBD
 
-- [editor] replaced the per-URI editor counter system in `EditorManager` with a global monotonic counter [#17275](https://github.com/eclipse-theia/theia/pull/17275)
+- [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275)
 
 <a name="breaking_changes_1.71.0">[Breaking Changes:](#breaking_changes_1.71.0)</a>
 
-- [editor] replaced the per-URI editor counter system in `EditorManager` with a global monotonic counter [#17275](https://github.com/eclipse-theia/theia/pull/17275):
+- [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275):
   - Removed protected field `editorCounters: Map<string, number>`
-  - Removed protected method `checkCounterForWidget(widget)` (replaced by `ratchetCounter(widget)`)
+  - Removed protected method `checkCounterForWidget(widget)`
   - Removed protected method `removeFromCounter(widget)`
   - Removed protected method `createCounterForUri(uri)` (replaced by `nextCounter()`)
   - Removed protected method `getOrCreateCounterForUri(uri)`
