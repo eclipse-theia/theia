@@ -27,12 +27,20 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalBlock } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { AskAITerminalInputFactory, AskAiTerminalOverlay } from './ask-ai-ai-terminal-widget';
+import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
     label: 'Ask AI',
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/askAi');
+
+const AI_TERMINAL_ASK_AI_COMMAND = Command.toLocalizedCommand({
+    id: 'ai-terminal:askAi',
+    label: 'Ask AI about Command',
+    iconClass: codicon('sparkle')
+}, 'theia/ai/terminal/askAiTerminal');
 
 @injectable()
 export class AiTerminalCommandContribution implements CommandContribution, MenuContribution, KeybindingContribution {
@@ -55,6 +63,12 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     @inject(TerminalPreferences)
     protected readonly terminalPreferences: TerminalPreferences;
 
+    @inject(AskAITerminalInputFactory)
+    protected readonly askAITerminalInputFactory: AskAITerminalInputFactory;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: AI_TERMINAL_COMMAND.id,
@@ -67,6 +81,11 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             when: ENABLE_AI_CONTEXT_KEY,
             commandId: AI_TERMINAL_COMMAND.id,
             icon: AI_TERMINAL_COMMAND.iconClass
+        });
+        menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_AI_ACTIONS, {
+            when: ENABLE_AI_CONTEXT_KEY,
+            commandId: AI_TERMINAL_ASK_AI_COMMAND.id,
+            icon: AI_TERMINAL_ASK_AI_COMMAND.iconClass
         });
     }
     registerCommands(commands: CommandRegistry): void {
@@ -86,6 +105,28 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 this.agentService.isEnabled(this.terminalAgent.id)
                 && this.shell.currentWidget instanceof TerminalWidgetImpl
                 && (this.shell.currentWidget as TerminalWidgetImpl).kind === 'user'
+        }));
+        commands.registerCommand(AI_TERMINAL_ASK_AI_COMMAND, this.commandHandlerFactory({
+            execute: (terminalBlock: TerminalBlock) => {
+                const currentTerminal = this.terminalService.currentTerminal;
+                if (currentTerminal instanceof TerminalWidgetImpl) {
+                    if (currentTerminal.node.querySelector('.ai-terminal-ask-overlay')) {
+                        return;
+                    }
+                    const overlay = new AskAiTerminalOverlay(
+                        currentTerminal,
+                        this.askAITerminalInputFactory,
+                        chatRequest => {
+                            const text = `Terminal Output:\nCommand: ${terminalBlock.command}\nOutput: ${terminalBlock.output}\n\n${chatRequest.text}`;
+                            const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+                            this.chatService.sendRequest(session.id, { ...chatRequest, text });
+                        },
+                        () => {/* No Op */}
+                    );
+                    currentTerminal.onDispose(() => overlay.dispose());
+                }
+            },
+            isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
         }));
     }
 }
