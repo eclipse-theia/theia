@@ -31,7 +31,7 @@ import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/she
 
 import '../../src/browser/style/ai-terminal.css';
 import '../../src/browser/style/shell-execution-tool.css';
-import { AskAITerminalInputArgs, AskAITerminalInputConfiguration, AskAITerminalInputFactory, AskAITerminalInputWidget } from './ask-ai-ai-terminal-widget';
+import { AskAITerminalInputArgs, AskAITerminalInputConfiguration, AskAITerminalInputFactory, AskAITerminalInputWidget } from './ask-ai-terminal-widget';
 
 export default new ContainerModule(bind => {
     bind(AiTerminalCommandContribution).toSelf().inSingletonScope();

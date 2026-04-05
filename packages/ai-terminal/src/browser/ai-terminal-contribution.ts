@@ -27,7 +27,7 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalBlock } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { AskAITerminalInputFactory, AskAiTerminalOverlay } from './ask-ai-ai-terminal-widget';
+import { AskAITerminalInputFactory, AskAITerminalOverlay } from './ask-ai-terminal-widget';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
@@ -113,7 +113,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                     if (currentTerminal.node.querySelector('.ai-terminal-ask-overlay')) {
                         return;
                     }
-                    const overlay = new AskAiTerminalOverlay(
+                    const overlay = new AskAITerminalOverlay(
                         currentTerminal,
                         this.askAITerminalInputFactory,
                         chatRequest => {
@@ -123,7 +123,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                         },
                         () => {/* No Op */}
                     );
-                    currentTerminal.onDispose(() => overlay.dispose());
+                    overlay.addDisposable(currentTerminal.onTerminalDidClose(() => overlay.dispose()));
                 }
             },
             isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
