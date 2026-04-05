@@ -17,7 +17,7 @@
 import { ChatAgentLocation, ChatRequest, MutableChatModel } from '@theia/ai-chat';
 import { AIChatInputConfiguration, AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
-import { generateUuid, URI } from '@theia/core';
+import { Disposable, DisposableCollection, generateUuid, ILogger, URI } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 
@@ -26,7 +26,7 @@ export interface AskAITerminalInputConfiguration extends AIChatInputConfiguratio
 
 export const AskAITerminalInputArgs = Symbol('AskAITerminalInputArgs');
 export interface AskAITerminalInputArgs {
-    onSubmit: (request: ChatRequest) => void;
+    onSubmit: (request: ChatRequest) => void | Promise<void>;
     onCancel: () => void;
 }
 
@@ -45,6 +45,9 @@ export class AskAITerminalInputWidget extends AIChatInputWidget {
 
     @inject(AskAITerminalInputConfiguration) @optional()
     protected override readonly configuration: AskAITerminalInputConfiguration | undefined;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     protected readonly resourceId = generateUuid();
     protected override heightInLines = 3;
@@ -66,31 +69,36 @@ export class AskAITerminalInputWidget extends AIChatInputWidget {
         this.chatModel = new MutableChatModel(ChatAgentLocation.Panel);
 
         this.setEnabled(true);
-        this.onQuery = this.handleSubmit.bind(this);
-        this.onCancel = this.handleCancel.bind(this);
+        this.onQuery = this.handleSubmit;
+        this.onCancel = this.handleCancel;
     }
 
     protected override getResourceUri(): URI {
         return new URI(`ask-ai:/input-${this.resourceId}.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
     }
 
-    protected handleSubmit(query: string, mode?: string): Promise<void> {
+    protected readonly handleSubmit = async (query: string, mode?: string): Promise<void> => {
         const userInput = query.trim();
-        if (userInput) {
-            const request: ChatRequest = {
-                text: userInput,
-                variables: this._chatModel.context.getVariables(),
-                modeId: mode
-            };
-
-            this.args?.onSubmit(request);
+        if (!userInput) {
+            return;
         }
-        return Promise.resolve();
-    }
 
-    protected handleCancel(): void {
+        const request: ChatRequest = {
+            text: userInput,
+            variables: this._chatModel.context.getVariables(),
+            modeId: mode
+        };
+
+        try {
+            await this.args?.onSubmit(request);
+        } catch (error) {
+            this.logger.error('Failed to submit Ask AI terminal request.', error);
+        }
+    };
+
+    protected readonly handleCancel = (): void => {
         this.args?.onCancel();
-    }
+    };
 
     protected override onEscape(): void {
         this.handleCancel();
@@ -123,7 +131,7 @@ export class AskAITerminalInputWidget extends AIChatInputWidget {
             const agent = this.resolveAgentFromParsedRequest(parsedRequest);
             this.updateAgentState(agent);
         } catch (error) {
-            console.warn('Failed to determine receiving agent:', error);
+            this.logger.warn('Failed to determine Ask AI terminal receiving agent.', error);
             if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
@@ -134,43 +142,48 @@ export class AskAITerminalInputWidget extends AIChatInputWidget {
     }
 }
 
-export class AskAiTerminalOverlay {
-
-    protected containerNode: HTMLDivElement;
-    protected inputWidget: AskAITerminalInputWidget;
-    protected terminalWidget: TerminalWidgetImpl;
+export class AskAITerminalOverlay implements Disposable {
+    protected readonly toDispose = new DisposableCollection();
+    protected readonly containerNode: HTMLDivElement;
+    protected readonly inputWidget: AskAITerminalInputWidget;
 
     constructor(
-        terminalWidget: TerminalWidgetImpl,
+        protected readonly terminalWidget: TerminalWidgetImpl,
         inputWidgetFactory: AskAITerminalInputFactory,
-        onSubmit: (chatRequest: ChatRequest) => void,
+        onSubmit: (chatRequest: ChatRequest) => void | Promise<void>,
         onCancel: () => void
     ) {
-        // 1. Overlay container in the terminal's DOM
-        this.terminalWidget = terminalWidget;
         this.containerNode = document.createElement('div');
         this.containerNode.className = 'ai-terminal-ask-overlay';
         terminalWidget.node.appendChild(this.containerNode);
+        this.toDispose.push(Disposable.create(() => {
+            if (this.containerNode.parentNode) {
+                this.terminalWidget.node.removeChild(this.containerNode);
+            }
+        }));
 
-        // 2. Create input widget via factory (factory binds args via child container)
-        // Wrap callbacks to self-dispose when the overlay is dismissed
         this.inputWidget = inputWidgetFactory({
-            onSubmit: request => { onSubmit(request); this.dispose(); },
-            onCancel: () => { onCancel(); this.dispose(); }
+            onSubmit: async request => {
+                await onSubmit(request);
+                this.dispose();
+            },
+            onCancel: () => {
+                onCancel();
+                this.dispose();
+            }
         });
+        this.toDispose.push(this.inputWidget);
 
-        // 3. Drop the widget's React root node into the overlay div
         this.containerNode.appendChild(this.inputWidget.node);
-
-        // 4. Activate and render
         this.inputWidget.activate();
         this.inputWidget.update();
     }
 
+    addDisposable(disposable: Disposable): void {
+        this.toDispose.push(disposable);
+    }
+
     dispose(): void {
-        this.inputWidget.dispose();
-        if (this.containerNode.parentNode) {
-            this.terminalWidget.node.removeChild(this.containerNode);
-        }
+        this.toDispose.dispose();
     }
 }
