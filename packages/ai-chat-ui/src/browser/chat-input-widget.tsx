@@ -317,6 +317,19 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
+     * Extracts the mode ID from the last request in the chat model.
+     * Used to restore the user's selected mode when switching sessions or on reload.
+     */
+    protected getLastModeIdFromModel(chatModel: ChatModel): string | undefined {
+        const requests = chatModel.getRequests();
+        if (requests.length === 0) {
+            return undefined;
+        }
+        const lastRequest = requests[requests.length - 1];
+        return lastRequest.request.modeId;
+    }
+
+    /**
      * Extracts generic capability selections from the last request in the chat model.
      * Used to restore user's selections when switching sessions or on reload.
      */
@@ -784,7 +797,11 @@ export class AIChatInputWidget extends ReactWidget {
         if (agent && (agentId !== previousAgentId || needsRefresh)) {
             const modes = agent.modes ?? [];
             const defaultMode = modes.find(m => m.isDefault);
-            const initialModeId = defaultMode?.id;
+            const hasPreviousRequests = this._chatModel.getRequests().length > 0;
+            const restoredModeId = needsRefresh && hasPreviousRequests
+                ? this.getLastModeIdFromModel(this._chatModel)
+                : undefined;
+            const initialModeId = restoredModeId ?? defaultMode?.id;
             this.receivingAgent = {
                 agentId: agentId,
                 modes,
@@ -792,7 +809,6 @@ export class AIChatInputWidget extends ReactWidget {
             };
             this.chatInputHasModesKey.set(modes.length > 1);
             // Only preserve overrides on forced refresh if the session has previous requests
-            const hasPreviousRequests = this._chatModel.getRequests().length > 0;
             const shouldPreserveOverrides = needsRefresh && hasPreviousRequests;
             await this.updateCapabilitiesForAgent(agentId, initialModeId, shouldPreserveOverrides);
         } else if (!agent && this.receivingAgent !== undefined) {
