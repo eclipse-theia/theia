@@ -14,26 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { extractJsonStringField } from '@theia/ai-chat-ui/lib/common/toolcall-utils';
-
-export interface ShellExecutionInput {
-    command: string;
-    cwd?: string;
-    timeout?: number;
-}
-
 /**
- * Parses shell execution input from potentially incomplete JSON.
- * During streaming, extracts partial command value via regex when JSON.parse fails.
+ * Extracts a string field value from potentially incomplete JSON.
+ * Tries JSON.parse first, then falls back to regex extraction for streaming scenarios.
  */
-export function parseShellExecutionInput(args: string | undefined): ShellExecutionInput {
-    if (!args) {
-        return { command: '' };
+export function extractJsonStringField(json: string | undefined, fieldName: string): string | undefined {
+    if (!json) {
+        return undefined;
     }
-
     try {
-        return JSON.parse(args);
+        const parsed = JSON.parse(json);
+        if (parsed && typeof parsed === 'object' && fieldName in parsed && typeof parsed[fieldName] === 'string') {
+            return parsed[fieldName];
+        }
     } catch {
-        return { command: extractJsonStringField(args, 'command') ?? '' };
+        const regex = new RegExp('"' + fieldName + '"\\s*:\\s*"([^"]*)"?');
+        const match = regex.exec(json);
+        return match?.[1];
     }
+    return undefined;
 }

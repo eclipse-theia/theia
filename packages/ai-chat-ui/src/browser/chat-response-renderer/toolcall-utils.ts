@@ -16,6 +16,8 @@
 
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
+export { extractJsonStringField } from '../../common/toolcall-utils';
+
 const SHORT_STRING_THRESHOLD = 50;
 const MAX_CONDENSED_LENGTH = 80;
 const MAX_CONDENSED_VALUE_LENGTH = 30;
