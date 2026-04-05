@@ -56,6 +56,7 @@ import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type';
 import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
+import { TerminalBlockHoverOverlayController } from './terminal-block-hover-overlay-controller';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -189,14 +190,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly toDisposeOnCommandHistory = new DisposableCollection();
     protected outputStartMarker: IMarker | undefined;
     protected promptStartMarker: IMarker | undefined;
-
-    protected blockHoverOverlayContainer: HTMLElement | undefined;
-    protected readonly commandBlockOverlays: Array<{
-        element: HTMLElement;
-        startMarker: IMarker;
-        endMarker: IMarker;
-    }> = [];
-    protected pendingOverlayUpdate = false;
+    protected blockHoverOverlayController: TerminalBlockHoverOverlayController | undefined;
 
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
@@ -206,8 +200,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     private _currentTerminalOutput: string[];
     protected enableCommandSeparator: boolean;
     protected enableHoverActions: boolean;
-
-    protected markerMap: WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>> = new WeakMap();
     private _commandHistoryState?: TerminalCommandHistoryState;
     override get commandHistoryState(): TerminalCommandHistoryState | undefined {
         return this._commandHistoryState;
@@ -493,16 +485,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             })
         );
         if (this.enableHoverActions) {
+            this.initializeBlockHoverOverlayController();
             this.toDisposeOnCommandHistory.pushAll([
-                this.term.onScroll(() => this.updateBlockOverlays()),
-                this.term.onResize(() => this.updateBlockOverlays()),
                 Disposable.create(() => {
-                    for (const { element, startMarker, endMarker } of this.commandBlockOverlays) {
-                        element.remove();
-                        if (!startMarker.isDisposed) { startMarker.dispose(); }
-                        if (!endMarker.isDisposed) { endMarker.dispose(); }
-                    }
-                    this.commandBlockOverlays.length = 0;
+                    this.blockHoverOverlayController?.dispose();
+                    this.blockHoverOverlayController = undefined;
                 })
             ]);
         }
@@ -547,10 +534,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         };
 
         if (this.enableHoverActions) {
-            this.addTerminalBlockHoverAction(
+            this.blockHoverOverlayController?.addBlock(
+                block,
                 this.promptStartMarker,
                 endMarker ?? undefined,
-                block
             );
         }
 
@@ -582,135 +569,27 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.commandSeparatorDecorations.push(renderListener);
     }
 
-    private addTerminalBlockHoverAction(
-        commandStartMarker: IMarker | undefined,
-        endMarker: IMarker | undefined,
-        block: TerminalBlock,
-    ): void {
-        if (!commandStartMarker || commandStartMarker.isDisposed || !endMarker || endMarker.isDisposed || !this.blockHoverOverlayContainer) {
+    protected initializeBlockHoverOverlayController(): void {
+        if (this.blockHoverOverlayController || !this.term.element) {
             return;
         }
-        const currentAbsLine = this.term.buffer.active.baseY + this.term.buffer.active.cursorY;
-        const trackStart = this.term.registerMarker(commandStartMarker.line - currentAbsLine);
-        const trackEnd = this.term.registerMarker(endMarker.line - currentAbsLine);
-
-        if (!trackStart || !trackEnd) {
-            trackStart?.dispose();
-            trackEnd?.dispose();
-            return;
-        }
-
-        this.markerMap.set(block, { [TerminalBlockBoundary.Top]: trackStart, [TerminalBlockBoundary.Bottom]: trackEnd });
-
-        const hoverOverlay = document.createElement('div');
-        hoverOverlay.classList.add('terminal-command-hover');
-        hoverOverlay.style.display = 'none';
-
-        const button = document.createElement('button');
-        button.classList.add('terminal-block-actions-button', 'codicon', 'codicon-ellipsis');
-        button.title = nls.localize('theia/terminal/blockActions', 'Terminal Block Actions');
-        button.addEventListener('mouseenter', () => hoverOverlay.classList.add('active'));
-        button.addEventListener('mouseleave', () => hoverOverlay.classList.remove('active'));
-        const hoverAction = (event: MouseEvent) => {
-            event.stopPropagation();
-            event.preventDefault();
-            this.contextMenuRenderer.render({
-                menuPath: TerminalMenus.TERMINAL_BLOCK_ACTIONS,
-                anchor: event,
-                args: [block],
-                includeAnchorArg: false,
-                context: this.node
-            });
-        };
-
-        button.addEventListener('click', hoverAction);
-        hoverOverlay.appendChild(button);
-
-        this.blockHoverOverlayContainer.appendChild(hoverOverlay);
-        this.commandBlockOverlays.push({ element: hoverOverlay, startMarker: trackStart, endMarker: trackEnd });
-        this.updateBlockOverlays();
-    }
-
-    /**
-     * Initializes a transparent overlay container on top of the xterm canvas.
-     * Individual command block highlights are absolutely positioned divs inside this container,
-     * updated on scroll/resize rather than relying on xterm decorations. This makes the hover
-     * effect visible at any scroll position and reflow-safe (xterm keeps marker.line accurate).
-     */
-    protected initializeBlockHoverOverlay(): void {
-        if (this.blockHoverOverlayContainer || !this.term.element) { return; }
-        const container = document.createElement('div');
-        container.className = 'terminal-block-overlay';
-        this.term.element.appendChild(container);
-        this.blockHoverOverlayContainer = container;
-
-        // xterm's public terminal.onScroll suppresses the event for user-initiated scrollback
-        // navigation (Viewport._handleScroll fires onRequestScrollLines with suppressScrollEvent=true).
-        // We therefore attach directly to the DOM scroll event on .xterm-viewport to catch all
-        // user scroll interactions in the scrollback buffer.
-        const viewport = this.term.element.querySelector('.xterm-viewport');
-        if (viewport) {
-            const scrollHandler = () => this.updateBlockOverlays();
-            viewport.addEventListener('scroll', scrollHandler);
-            this.toDispose.push(Disposable.create(() => viewport.removeEventListener('scroll', scrollHandler)));
-        }
-    }
-
-    /**
-     * Schedules a single overlay update per animation frame. Coalesces rapid scroll/output
-     * events (onScroll fires once per output line) so the DOM is updated at most once per
-     * rendered frame regardless of output throughput.
-     */
-    protected updateBlockOverlays(): void {
-        if (this.pendingOverlayUpdate) { return; }
-        this.pendingOverlayUpdate = true;
-        requestAnimationFrame(() => {
-            this.pendingOverlayUpdate = false;
-            this.doUpdateBlockOverlays();
+        this.blockHoverOverlayController = new TerminalBlockHoverOverlayController({
+            term: this.term,
+            renderBlockMenu: (event, block) => {
+                this.contextMenuRenderer.render({
+                    menuPath: TerminalMenus.TERMINAL_BLOCK_ACTIONS,
+                    anchor: event,
+                    args: [block],
+                    includeAnchorArg: false,
+                    context: this.node
+                });
+            }
         });
-    }
-
-    /**
-     * Repositions all command block overlays based on the current viewport scroll position.
-     * Prunes entries whose markers have been disposed (scrolled off scrollback).
-     */
-    protected doUpdateBlockOverlays(): void {
-        if (!this.blockHoverOverlayContainer || !this.term.element) {
-            return;
-        }
-        const screen = this.term.element.querySelector('.xterm-screen') as HTMLElement | null;
-        if (!screen || this.term.rows === 0) { return; }
-        const rowHeight = screen.clientHeight / this.term.rows;
-        if (rowHeight <= 0) { return; }
-        const viewportY = this.term.buffer.active.viewportY;
-        const termHeight = this.term.rows * rowHeight;
-        for (let i = this.commandBlockOverlays.length - 1; i >= 0; i--) {
-            const { element, startMarker, endMarker } = this.commandBlockOverlays[i];
-            if (startMarker.isDisposed || endMarker.isDisposed) {
-                element.remove();
-                this.commandBlockOverlays.splice(i, 1);
-                continue;
-            }
-            const startPx = (startMarker.line - viewportY) * rowHeight;
-            const endPx = (endMarker.line - viewportY) * rowHeight;
-            const visibleTop = Math.max(0, startPx);
-            const visibleBottom = Math.min(termHeight, endPx);
-            if (visibleBottom <= visibleTop) {
-                element.style.display = 'none';
-            } else {
-                element.style.display = 'flex';
-                element.style.top = `${visibleTop}px`;
-                element.style.height = `${visibleBottom - visibleTop}px`;
-            }
-        }
+        this.blockHoverOverlayController.initialize();
     }
 
     scrollToBlockBoundary(terminalBlock: TerminalBlock, boundary: TerminalBlockBoundary = TerminalBlockBoundary.Top): void {
-        const marker = this.markerMap.get(terminalBlock)?.[boundary];
-        if (!marker) {
-            return;
-        }
-        this.term.scrollToLine(marker.line);
+        this.blockHoverOverlayController?.scrollToBoundary(terminalBlock, boundary);
     }
 
     protected setIconClass(): void {
@@ -1111,7 +990,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         this.term.open(this.node);
-        this.initializeBlockHoverOverlay();
+        if (this.enableHoverActions) {
+            this.initializeBlockHoverOverlayController();
+        }
 
         interface ViewportType {
             register(d: Disposable): void;
@@ -1246,8 +1127,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.webglAddon?.dispose();
         this._commandHistoryState?.dispose();
         this.toDisposeOnCommandHistory.dispose();
-        this.blockHoverOverlayContainer?.remove();
-        this.blockHoverOverlayContainer = undefined;
         super.dispose();
     }
 
