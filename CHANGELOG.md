@@ -16,6 +16,7 @@
   - Removed protected method `removeFromCounter(widget)`
   - Removed protected method `createCounterForUri(uri)` (replaced by `nextCounter()`)
   - Removed protected method `getOrCreateCounterForUri(uri)`
+- [plugin-ext] changed the timing of plugin contribution loading: `beforeLoadContributions` now waits for `attached_shell` instead of `initialized_layout`. Overrides of `beforeLoadContributions` or `loadContributions` that assume the full layout is already initialized may need to adjust their logic [#17278](https://github.com/eclipse-theia/theia/pull/17278)
 
 ## 1.70.0 - 3/26/2026
 
