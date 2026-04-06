@@ -27,6 +27,8 @@ import * as React from '@theia/core/shared/react';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { WalkthroughService } from './walkthrough-service';
+import { WalkthroughSection } from './walkthrough-section';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -113,6 +115,9 @@ export class GettingStartedWidget extends ReactWidget {
     @inject(MarkdownRenderer)
     protected readonly markdownRenderer: MarkdownRenderer;
 
+    @inject(WalkthroughService)
+    protected readonly walkthroughService: WalkthroughService;
+
     @postConstruct()
     protected init(): void {
         this.doInit();
@@ -131,6 +136,7 @@ export class GettingStartedWidget extends ReactWidget {
         const extensions = await this.appServer.getExtensionsInfos();
         this.aiIsIncluded = extensions.find(ext => ext.name === '@theia/ai-core') !== undefined;
         this.update();
+        this.toDispose.push(this.walkthroughService.onDidChangeWalkthroughs(() => this.update()));
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -174,6 +180,11 @@ export class GettingStartedWidget extends ReactWidget {
                 <div className='flex-grid'>
                     <div className='col'>
                         {this.renderSettings()}
+                    </div>
+                </div>
+                <div className='flex-grid'>
+                    <div className='col'>
+                        {this.renderWalkthroughs()}
                     </div>
                 </div>
                 <div className='flex-grid'>
@@ -348,6 +359,10 @@ export class GettingStartedWidget extends ReactWidget {
                 </a>
             </div>
         </div>;
+    }
+
+    protected renderWalkthroughs(): React.ReactNode {
+        return <WalkthroughSection walkthroughService={this.walkthroughService} markdownRenderer={this.markdownRenderer} />;
     }
 
     /**
