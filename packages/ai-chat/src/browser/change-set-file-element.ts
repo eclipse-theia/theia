@@ -108,6 +108,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected _state: ChangeSetElementState;
 
     private _originalContent: string | undefined;
+    protected _isApplying = false;
     protected _initialized = false;
     protected _initializationPromise: Promise<void> | undefined;
     protected _targetStateWithCodeActions: string | undefined;
@@ -163,17 +164,19 @@ export class ChangeSetFileElement implements ChangeSetElement {
         }
         this.toDispose.push(this.fileService.onDidFilesChange(async event => {
             if (!event.contains(this.uri)) { return; }
+            if (this._isApplying) { return; }
             if (!this._initialized && this._initializationPromise) {
                 // make sure we are initialized
                 await this._initializationPromise;
             }
-            // If we are applied, the tricky thing becomes the question what to revert to; otherwise, what to apply.
-            const newContent = await this.changeSetFileService.read(this.uri).catch(() => '');
-            this.readOnlyResource.update({ contents: newContent });
+            const newContent = (await this.changeSetFileService.read(this.uri).catch(() => undefined)) ?? '';
             if (newContent === this._originalContent) {
                 this.state = 'pending';
             } else if (newContent === this.targetState) {
                 this.state = 'applied';
+            } else if (this.state === 'applied') {
+                this._changeResource?.update({ contents: newContent });
+                this.onDidChangeEmitter.fire();
             } else {
                 this.state = 'stale';
             }
@@ -298,21 +301,31 @@ export class ChangeSetFileElement implements ChangeSetElement {
         await this.ensureInitialized();
         if (!await this.confirm('Apply')) { return; }
 
-        if (this.type === 'delete') {
-            await this.changeSetFileService.delete(this.uri);
-            this.state = 'applied';
-            this.changeSetFileService.closeDiff(this.readOnlyUri);
-            return;
-        }
+        this._isApplying = true;
+        try {
+            if (this.type === 'delete') {
+                await this.changeSetFileService.delete(this.uri);
+                this.state = 'applied';
+                this.changeSetFileService.closeDiff(this.readOnlyUri);
+                return;
+            }
 
-        // Load Monaco model for the base file URI and apply changes
-        await this.applyChangesWithMonaco(contents);
-        this.changeSetFileService.closeDiff(this.readOnlyUri);
+            // Load Monaco model for the base file URI and apply changes
+            await this.applyChangesWithMonaco(contents);
+            this.changeSetFileService.closeDiff(this.readOnlyUri);
+        } finally {
+            this._isApplying = false;
+        }
     }
 
     async writeChanges(contents?: string): Promise<void> {
-        await this.changeSetFileService.writeFrom(this.changedUri, this.uri, contents ?? this.targetState);
-        this.state = 'applied';
+        this._isApplying = true;
+        try {
+            await this.changeSetFileService.writeFrom(this.changedUri, this.uri, contents ?? this.targetState);
+            this.state = 'applied';
+        } finally {
+            this._isApplying = false;
+        }
     }
 
     /**
@@ -320,29 +333,34 @@ export class ChangeSetFileElement implements ChangeSetElement {
      * applying edits, and running code actions on save.
      */
     protected async applyChangesWithMonaco(contents?: string): Promise<void> {
-        let modelReference: IReference<MonacoEditorModel> | undefined;
+        this._isApplying = true;
         try {
-            modelReference = await this.monacoTextModelService.createModelReference(this.uri);
-            const model = modelReference.object;
-            model.suppressOpenEditorWhenDirty = true;
-            const targetContent = contents ?? this.targetState;
-            const currentContent = model.textEditorModel.getValue();
-            if (currentContent !== targetContent) {
-                const fullRange = model.textEditorModel.getFullModelRange();
-                await this.monacoWorkspace.applyBackgroundEdit(model,
-                    [{ range: fullRange, text: targetContent, forceMoveMarkers: false }]);
+            let modelReference: IReference<MonacoEditorModel> | undefined;
+            try {
+                modelReference = await this.monacoTextModelService.createModelReference(this.uri);
+                const model = modelReference.object;
+                model.suppressOpenEditorWhenDirty = true;
+                const targetContent = contents ?? this.targetState;
+                const currentContent = model.textEditorModel.getValue();
+                if (currentContent !== targetContent) {
+                    const fullRange = model.textEditorModel.getFullModelRange();
+                    await this.monacoWorkspace.applyBackgroundEdit(model,
+                        [{ range: fullRange, text: targetContent, forceMoveMarkers: false }]);
+                }
+                const languageId = model.languageId;
+                const uriStr = this.uri.toString();
+                await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
+                await this.applyFormatting(model, languageId, uriStr);
+                await model.save();
+                this.state = 'applied';
+            } catch (error) {
+                console.error('Failed to apply changes with Monaco:', error);
+                await this.writeChanges(contents);
+            } finally {
+                modelReference?.dispose();
             }
-            const languageId = model.languageId;
-            const uriStr = this.uri.toString();
-            await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
-            await this.applyFormatting(model, languageId, uriStr);
-            await model.save();
-            this.state = 'applied';
-        } catch (error) {
-            console.error('Failed to apply changes with Monaco:', error);
-            await this.writeChanges(contents);
         } finally {
-            modelReference?.dispose();
+            this._isApplying = false;
         }
     }
 
@@ -446,11 +464,16 @@ export class ChangeSetFileElement implements ChangeSetElement {
     async revert(): Promise<void> {
         await this.ensureInitialized();
         if (!await this.confirm('Revert')) { return; }
-        this.state = 'pending';
-        if (this.type === 'add') {
-            await this.changeSetFileService.delete(this.uri);
-        } else if (this._originalContent) {
-            await this.changeSetFileService.write(this.uri, this._originalContent);
+        this._isApplying = true;
+        try {
+            this.state = 'pending';
+            if (this.type === 'add') {
+                await this.changeSetFileService.delete(this.uri);
+            } else if (this._originalContent) {
+                await this.changeSetFileService.write(this.uri, this._originalContent);
+            }
+        } finally {
+            this._isApplying = false;
         }
     }
 
