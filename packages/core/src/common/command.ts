@@ -198,6 +198,13 @@ export class CommandRegistry implements CommandService {
     // List of recently used commands.
     protected _recent: string[] = [];
 
+    /**
+     * Unidirectional alias map: target command ID → alias command ID.
+     * When the target (e.g., a native Theia command) is executed,
+     * events also fire for the alias (e.g., a VS Code command ID).
+     */
+    protected readonly _aliases = new Map<string, string>();
+
     protected readonly onWillExecuteCommandEmitter = new Emitter<WillExecuteCommandEvent>();
     readonly onWillExecuteCommand = this.onWillExecuteCommandEmitter.event;
 
@@ -274,6 +281,34 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
+     * Register a unidirectional alias from a target command to an alias command.
+     * When the target command is executed, {@link onDidExecuteCommand} and
+     * {@link onWillExecuteCommand} will also fire for the alias ID.
+     *
+     * This does NOT affect command handlers, enablement, or visibility —
+     * only event emission.
+     *
+     * @param aliasId - The alias command ID (e.g., a VS Code command ID)
+     * @param targetId - The target command ID (e.g., the native Theia command ID)
+     * @returns a `Disposable` that removes the alias
+     */
+    registerAlias(aliasId: string, targetId: string): Disposable {
+        this._aliases.set(targetId, aliasId);
+        return Disposable.create(() => {
+            if (this._aliases.get(targetId) === aliasId) {
+                this._aliases.delete(targetId);
+            }
+        });
+    }
+
+    /**
+     * Returns the alias ID registered for the given command ID, or `undefined`.
+     */
+    getAlias(commandId: string): string | undefined {
+        return this._aliases.get(commandId);
+    }
+
+    /**
      * Register the given handler for the given command identifier.
      *
      * If there is already a handler for the given command
@@ -340,6 +375,10 @@ export class CommandRegistry implements CommandService {
             await this.fireWillExecuteCommand(commandId, args);
             const result = await handler.execute(...args);
             this.onDidExecuteCommandEmitter.fire({ commandId, args });
+            const alias = this._aliases.get(commandId);
+            if (alias) {
+                this.onDidExecuteCommandEmitter.fire({ commandId: alias, args });
+            }
             return result;
         }
         throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.`), { code: 'NO_ACTIVE_HANDLER' });
@@ -348,6 +387,10 @@ export class CommandRegistry implements CommandService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected async fireWillExecuteCommand(commandId: string, args: any[] = []): Promise<void> {
         await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId, args }, 30000);
+        const alias = this._aliases.get(commandId);
+        if (alias) {
+            await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId: alias, args }, 30000);
+        }
     }
 
     /**

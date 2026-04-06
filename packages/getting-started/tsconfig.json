@@ -22,6 +22,9 @@
       "path": "../keymaps"
     },
     {
+      "path": "../plugin-ext"
+    },
+    {
       "path": "../preview"
     },
     {
