@@ -15,17 +15,19 @@
 // *****************************************************************************
 
 import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from '@theia/ai-core';
-import { MaybePromise, QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from '@theia/core';
+import { MaybePromise, nls, QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 const TERMINAL_COMMAND_BLOCK: AIVariable = {
     id: 'ai-terminal:terminal-command-block',
-    description: 'Stores an executed terminal command and its corresponding output.',
+    description: nls.localize('theia/ai/terminal/terminalCommandBlockAIVariable/description', 'Stores an executed terminal command and its corresponding output.'),
     name: 'terminalCommand',
     args: [{
         name: 'index',
-        description: 'Index of the command block in the terminal history. Defaults to the last command if not specified.'
+        description: nls.localize('theia/ai/terminal/terminalCommandBlockAIVariable/index/description',
+            'Index of the command block in the terminal history. Defaults to the last command if not specified.'
+        )
     }]
 };
 
