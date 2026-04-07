@@ -84,6 +84,7 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                                 : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
                             toolCallContent.confirmationTimeout = timeoutSeconds;
                             toolCallContent.requestUserConfirmation();
+                            request.response.fireInteractionNeeded(toolCallContent);
                             confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
                         }
 

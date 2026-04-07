@@ -43,6 +43,13 @@ export class QuestionPartRenderer
         return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} />;
     }
 
+    renderConfirmation(question: QuestionResponseContent, node: ResponseNode): ReactNode {
+        if (question.multiSelect) {
+            return <MultiSelectQuestion question={question} node={node} openerService={this.openerService} />;
+        }
+        return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} />;
+    }
+
 }
 
 function isResolved(question: QuestionResponseContent): boolean {

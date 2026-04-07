@@ -126,6 +126,32 @@ export function useToolConfirmationState(
     return { confirmationState, rejectionReason };
 }
 
+export function createConfirmationHandlers(
+    toolId: string | undefined,
+    response: ToolCallChatResponseContent,
+    toolConfirmationManager: ToolConfirmationManager,
+    chatId: string,
+    toolRequest?: ToolRequest
+): { handleAllow: (scope: ConfirmationScope) => void; handleDeny: (scope: ConfirmationScope, reason?: string) => void } {
+    const handleAllow = (scope: ConfirmationScope): void => {
+        if (scope === 'forever' && toolId) {
+            toolConfirmationManager.setConfirmationMode(toolId, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
+        } else if (scope === 'session' && toolId) {
+            toolConfirmationManager.setSessionConfirmationMode(toolId, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
+        }
+        response.confirm();
+    };
+    const handleDeny = (scope: ConfirmationScope, reason?: string): void => {
+        if (scope === 'forever' && toolId) {
+            toolConfirmationManager.setConfirmationMode(toolId, ToolConfirmationPreferenceMode.DISABLED);
+        } else if (scope === 'session' && toolId) {
+            toolConfirmationManager.setSessionConfirmationMode(toolId, ToolConfirmationPreferenceMode.DISABLED, chatId);
+        }
+        response.deny(reason);
+    };
+    return { handleAllow, handleDeny };
+}
+
 export interface ToolConfirmationCallbacks {
     toolRequest?: ToolRequest;
     onAllow: (scope: ConfirmationScope) => void;

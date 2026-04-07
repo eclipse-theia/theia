@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { AGENT_DELEGATION_FUNCTION_ID, ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
+import { Disposable } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     assertChatContext,
@@ -114,6 +115,7 @@ export class AgentDelegationTool implements ToolProvider {
             }
 
             let newSession;
+            let childModelDisposable: Disposable | undefined;
             try {
                 // FIXME: this creates a new conversation visible in the UI (Panel), which we don't want
                 // It is not possible to start a session without specifying a location (default=Panel)
@@ -148,6 +150,9 @@ export class AgentDelegationTool implements ToolProvider {
 
                 // Setup ChangeSet bubbling from delegated session to parent session
                 this.setupChangeSetBubbling(newSession, ctx.request.session);
+
+                // Setup parent-child model link for interactionNeeded event propagation
+                childModelDisposable = ctx.request.session.addChildModel(newSession.model as MutableChatModel);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
@@ -209,7 +214,8 @@ export class AgentDelegationTool implements ToolProvider {
                     const result = await response.responseCompleted;
                     const stringResult = result.response.asString();
 
-                    // Clean up the session after completion (no need to await)
+                    // Clean up the session and parent-child link after completion
+                    childModelDisposable?.dispose();
                     const chatService = this.getChatService();
                     chatService.deleteSession(newSession.id).catch(error => {
                         console.error('Failed to delete delegated session', error);

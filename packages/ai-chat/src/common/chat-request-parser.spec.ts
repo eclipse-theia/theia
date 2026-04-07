@@ -323,6 +323,9 @@ describe('ChatRequestParserImpl', () => {
             invoke: async () => undefined,
         });
 
+        // Set up the parser's agent service so it can recognise agents during parsing
+        chatAgentService.getAgents.returns([createAgent('agentA'), createAgent('agentB')]);
+
         const tool = new AgentDelegationTool();
         (tool as unknown as { getChatAgentService: () => unknown }).getChatAgentService = () => ({
             getAgent: sinon.stub().withArgs('agentA').returns(createAgent('agentA')),
@@ -365,7 +368,7 @@ describe('ChatRequestParserImpl', () => {
             {
                 cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
                 request: {
-                    session: { changeSet: { setTitle: sinon.stub(), addElements: sinon.stub() } },
+                    session: { changeSet: { setTitle: sinon.stub(), addElements: sinon.stub() }, addChildModel: sinon.stub().returns({ dispose: sinon.stub() }) },
                 },
                 response: {
                     cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
