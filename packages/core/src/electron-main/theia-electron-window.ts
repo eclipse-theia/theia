@@ -140,6 +140,9 @@ export class TheiaElectronWindow {
 
     protected async doCloseWindow(): Promise<void> {
         this.closeIsConfirmed = true;
+        // Hide the window immediately so the user perceives an instant close.
+        // This is done after veto checks have passed to ensure save dialogs remain visible.
+        this._window.hide();
         await TheiaRendererAPI.sendAboutToClose(this._window.webContents);
         this._window.close();
     }
