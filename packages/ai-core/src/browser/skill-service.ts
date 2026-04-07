@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DisposableCollection, Emitter, Event, ILogger, URI } from '@theia/core';
 import { Path } from '@theia/core/lib/common/path';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -37,6 +38,9 @@ export interface SkillService {
 
     /** Event fired when skills change */
     readonly onSkillsChanged: Event<void>;
+
+    /** Promise that resolves when initial skill loading is complete */
+    readonly ready: Promise<void>;
 }
 
 @injectable()
@@ -67,6 +71,11 @@ export class DefaultSkillService implements SkillService {
     protected lastSkillDirectoriesValue: string | undefined;
 
     protected updateDebounceTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    protected _ready = new Deferred<void>();
+    get ready(): Promise<void> {
+        return this._ready.promise;
+    }
 
     @postConstruct()
     protected init(): void {
@@ -113,6 +122,7 @@ export class DefaultSkillService implements SkillService {
         // Wait for workspace to be ready before initial update
         this.workspaceService.ready.then(() => {
             this.update().then(() => {
+                this._ready.resolve();
                 // Only after initial update, start listening for changes
                 this.lastSkillDirectoriesValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
 
