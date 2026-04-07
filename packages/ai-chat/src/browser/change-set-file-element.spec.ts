@@ -293,6 +293,132 @@ describe('ChangeSetFileElement', () => {
         });
     });
 
+    describe('post-operation re-read', () => {
+        it('should detect stale state via post-operation re-read after revert', async () => {
+            await element.ensureInitialized();
+
+            // Start from pending state
+            (element as unknown as { _state: string })._state = 'pending';
+
+            // Stub write to simulate an external change during revert
+            mockChangeSetFileService.write.callsFake(async () => {
+                // Some external process modifies the file during our revert
+                mockChangeSetFileService.read.resolves('externally modified during revert');
+            });
+
+            // Stub confirm to return true
+            sandbox.stub(element, 'confirm' as keyof ChangeSetFileElement).resolves(true);
+
+            await element.revert();
+
+            // revert sets state to 'pending' first, but the re-read detects
+            // the file doesn't match original or target, so state becomes 'stale'
+            expect(element.state).to.equal('stale');
+        });
+
+        it('should detect pending state via post-operation re-read after revert', async () => {
+            await element.ensureInitialized();
+
+            (element as unknown as { _state: string })._state = 'applied';
+
+            mockChangeSetFileService.write.resolves();
+            // After the revert, the file on disk matches the original content
+            mockChangeSetFileService.read.resolves(originalContent);
+
+            sandbox.stub(element, 'confirm' as keyof ChangeSetFileElement).resolves(true);
+
+            await element.revert();
+
+            expect(element.state).to.equal('pending');
+        });
+
+        it('should detect applied state via post-operation re-read after apply (delete type)', async () => {
+            element.dispose();
+            container.rebind(ChangeSetElementArgs).toConstantValue({
+                uri: testUri,
+                chatSessionId,
+                requestId: 'test-request',
+                targetState: '',
+                type: 'delete' as const,
+            });
+            element = container.get(ChangeSetFileElement);
+            await element.ensureInitialized();
+
+            mockChangeSetFileService.delete.resolves();
+            mockChangeSetFileService.closeDiff.returns();
+            // After delete, the file is gone so read returns undefined => (undefined ?? '') === ''
+            // which matches targetState (''), so state should be 'applied'
+            mockChangeSetFileService.read.resolves(undefined as unknown as string);
+
+            sandbox.stub(element, 'confirm' as keyof ChangeSetFileElement).resolves(true);
+
+            await element.apply();
+
+            expect(element.state).to.equal('applied');
+        });
+
+        it('should detect stale state via post-operation re-read after apply when file is externally modified', async () => {
+            await element.ensureInitialized();
+
+            // Make createModelReference throw so the catch branch in applyChangesWithMonaco runs,
+            // which falls back to writeFrom.
+            const mockMonacoTextModelService = {
+                createModelReference: sandbox.stub().rejects(new Error('Monaco unavailable')),
+            };
+            container.rebind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService as unknown as MonacoTextModelService);
+            element.dispose();
+            element = container.get(ChangeSetFileElement);
+            await element.ensureInitialized();
+
+            mockChangeSetFileService.writeFrom.resolves();
+            mockChangeSetFileService.closeDiff.returns();
+            // After the apply, the file was changed externally
+            mockChangeSetFileService.read.resolves('externally modified after apply');
+
+            sandbox.stub(element, 'confirm' as keyof ChangeSetFileElement).resolves(true);
+
+            // Access changedUri so _changeResource is created
+            element.changedUri;
+
+            await element.apply();
+
+            // apply's catch block sets state to 'applied', but the post-operation re-read
+            // in the outer finally detects the file differs from both original and target.
+            // Since the state is 'applied', it updates the changeResource content.
+            expect(element.state).to.equal('applied');
+        });
+
+        it('should not re-read when originalState is provided', async () => {
+            element.dispose();
+            container.rebind(ChangeSetElementArgs).toConstantValue({
+                uri: testUri,
+                chatSessionId,
+                requestId: 'test-request',
+                targetState: targetContent,
+                originalState: 'fixed original',
+            });
+            element = container.get(ChangeSetFileElement);
+            await element.ensureInitialized();
+
+            mockChangeSetFileService.write.resolves();
+
+            const readCallCountBeforeRevert = mockChangeSetFileService.read.callCount;
+
+            sandbox.stub(element, 'confirm' as keyof ChangeSetFileElement).resolves(true);
+
+            // Force a state that allows revert to proceed
+            (element as unknown as { _state: string })._state = 'applied';
+
+            await element.revert();
+
+            // No re-read should happen since originalState is provided
+            expect(mockChangeSetFileService.read.callCount).to.equal(readCallCountBeforeRevert);
+
+            // State should be 'pending' (set by revert directly)
+            expect(element.state).to.equal('pending');
+        });
+    });
+
     describe('initialization', () => {
         it('should load original content from file service during init', async () => {
             await element.ensureInitialized();

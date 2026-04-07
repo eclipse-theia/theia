@@ -169,18 +169,32 @@ export class ChangeSetFileElement implements ChangeSetElement {
                 // make sure we are initialized
                 await this._initializationPromise;
             }
-            const newContent = (await this.changeSetFileService.read(this.uri).catch(() => undefined)) ?? '';
-            if (newContent === this._originalContent) {
-                this.state = 'pending';
-            } else if (newContent === this.targetState) {
-                this.state = 'applied';
-            } else if (this.state === 'applied') {
-                this._changeResource?.update({ contents: newContent });
-                this.onDidChangeEmitter.fire();
-            } else {
-                this.state = 'stale';
-            }
+            await this.reevaluateFileState();
         }));
+    }
+
+    /**
+     * Re-reads the file from disk and transitions state accordingly.
+     * This is shared between the file-change listener and the post-operation re-read
+     * so that external changes that were suppressed by the `_isApplying` guard are picked up.
+     * When `originalState` is provided via props, this is a no-op because the element
+     * is not tracking the on-disk file.
+     */
+    protected async reevaluateFileState(): Promise<void> {
+        if (this.elementProps.originalState) {
+            return;
+        }
+        const newContent = (await this.changeSetFileService.read(this.uri).catch(() => undefined)) ?? '';
+        if (newContent === this._originalContent) {
+            this.state = 'pending';
+        } else if (newContent === this.targetState) {
+            this.state = 'applied';
+        } else if (this.state === 'applied') {
+            this._changeResource?.update({ contents: newContent });
+            this.onDidChangeEmitter.fire();
+        } else {
+            this.state = 'stale';
+        }
     }
 
     get uri(): URI {
@@ -315,52 +329,41 @@ export class ChangeSetFileElement implements ChangeSetElement {
             this.changeSetFileService.closeDiff(this.readOnlyUri);
         } finally {
             this._isApplying = false;
-        }
-    }
-
-    async writeChanges(contents?: string): Promise<void> {
-        this._isApplying = true;
-        try {
-            await this.changeSetFileService.writeFrom(this.changedUri, this.uri, contents ?? this.targetState);
-            this.state = 'applied';
-        } finally {
-            this._isApplying = false;
+            await this.reevaluateFileState();
         }
     }
 
     /**
      * Applies changes using Monaco utilities, including loading the model for the base file URI,
      * applying edits, and running code actions on save.
+     *
+     * This is a pure helper — callers are responsible for the `_isApplying` guard.
      */
     protected async applyChangesWithMonaco(contents?: string): Promise<void> {
-        this._isApplying = true;
+        let modelReference: IReference<MonacoEditorModel> | undefined;
         try {
-            let modelReference: IReference<MonacoEditorModel> | undefined;
-            try {
-                modelReference = await this.monacoTextModelService.createModelReference(this.uri);
-                const model = modelReference.object;
-                model.suppressOpenEditorWhenDirty = true;
-                const targetContent = contents ?? this.targetState;
-                const currentContent = model.textEditorModel.getValue();
-                if (currentContent !== targetContent) {
-                    const fullRange = model.textEditorModel.getFullModelRange();
-                    await this.monacoWorkspace.applyBackgroundEdit(model,
-                        [{ range: fullRange, text: targetContent, forceMoveMarkers: false }]);
-                }
-                const languageId = model.languageId;
-                const uriStr = this.uri.toString();
-                await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
-                await this.applyFormatting(model, languageId, uriStr);
-                await model.save();
-                this.state = 'applied';
-            } catch (error) {
-                console.error('Failed to apply changes with Monaco:', error);
-                await this.writeChanges(contents);
-            } finally {
-                modelReference?.dispose();
+            modelReference = await this.monacoTextModelService.createModelReference(this.uri);
+            const model = modelReference.object;
+            model.suppressOpenEditorWhenDirty = true;
+            const targetContent = contents ?? this.targetState;
+            const currentContent = model.textEditorModel.getValue();
+            if (currentContent !== targetContent) {
+                const fullRange = model.textEditorModel.getFullModelRange();
+                await this.monacoWorkspace.applyBackgroundEdit(model,
+                    [{ range: fullRange, text: targetContent, forceMoveMarkers: false }]);
             }
+            const languageId = model.languageId;
+            const uriStr = this.uri.toString();
+            await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
+            await this.applyFormatting(model, languageId, uriStr);
+            await model.save();
+            this.state = 'applied';
+        } catch (error) {
+            console.error('Failed to apply changes with Monaco:', error);
+            await this.changeSetFileService.writeFrom(this.changedUri, this.uri, contents ?? this.targetState);
+            this.state = 'applied';
         } finally {
-            this._isApplying = false;
+            modelReference?.dispose();
         }
     }
 
@@ -455,8 +458,13 @@ export class ChangeSetFileElement implements ChangeSetElement {
         this.changeResource.update({
             contents: this.targetState,
             onSave: async content => {
-                // Use Monaco utilities when saving from the change resource
-                await this.applyChangesWithMonaco(content);
+                this._isApplying = true;
+                try {
+                    await this.applyChangesWithMonaco(content);
+                } finally {
+                    this._isApplying = false;
+                    await this.reevaluateFileState();
+                }
             }
         });
     }
@@ -474,6 +482,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
             }
         } finally {
             this._isApplying = false;
+            await this.reevaluateFileState();
         }
     }
 
