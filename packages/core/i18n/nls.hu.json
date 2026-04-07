@@ -624,7 +624,7 @@
           "description": "Visszaadja a rendszerben elérhető ügynökök listáját."
         },
         "aiConfiguration": {
-          "label": "AI konfiguráció [Béta]"
+          "label": "AI konfiguráció"
         },
         "blinkTitle": {
           "agentCompleted": "Theia – Ügynök befejezte",
@@ -927,7 +927,7 @@
           "tooltip": "Új sorok értelmezése"
         },
         "view": {
-          "label": "AI ügynök története [Béta]",
+          "label": "AI ügynök története",
           "noAgent": "Nincs elérhető ügynök.",
           "noAgentSelected": "Nincs kiválasztott ügynök.",
           "noHistoryForAgent": "A kiválasztott ügynök „{0}” esetében nincs elérhető előzmény."
@@ -1054,7 +1054,7 @@
         },
         "deleteChat": "Csevegés törlése",
         "enableAI": {
-          "mdDescription": "Ez a beállítás lehetővé teszi a legújabb AI-funkciók (béta verzió) elérését.            \n            Felhívjuk figyelmét, hogy ezek a funkciók béta fázisban vannak, ami azt jelenti, hogy változásokon mehetnek keresztül és tovább fogják fejleszteni őket. Fontos tudni, hogy ezek a funkciók folyamatos kéréseket generálhatnak az Ön által hozzáférhetővé tett nyelvi modellekhez (LLM-ek). Ez olyan költségeket eredményezhet, amelyeket szorosan figyelnie kell. Ennek az opciónak az engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az alábbi beállítások csak akkor lépnek hatályba,\n            ha a fő funkció beállítása engedélyezve van. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell konfigurálnia az alábbiak közül. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "Ez a beállítás lehetővé teszi a legújabb AI-funkciók elérését.            \n            Fontos tudni, hogy ezek a funkciók folyamatos kéréseket generálhatnak az Ön által hozzáférhetővé tett nyelvi modellekhez (LLM-ek). Ez olyan költségeket eredményezhet, amelyeket szorosan figyelnie kell. Ennek az opciónak az engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az alábbi beállítások csak akkor lépnek hatályba,\n            ha a fő funkció beállítása engedélyezve van. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell konfigurálnia az alábbiak közül. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
         },
         "exploreAgent": {
           "description": "Kódbázis-felfedező asszisztens, amely kivonja és összefoglalja a kódbázisból származó információkat.         Jelentéseket készít a meglévő elemekről, kódrészleteket nyújt, és leírja a megfigyelt mintákat."
@@ -1893,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Az AI támogatás elérhető a Theia IDE-ben (béta verzió)!",
+        "header": "Az AI támogatás elérhető a Theia IDE-ben!",
         "openAIChatView": "Nyissa meg most az AI Chat View-t, hogy megtudja, hogyan kezdje el!"
       },
       "apiComparator": "{0} API-kompatibilitás",

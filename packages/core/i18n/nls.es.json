@@ -624,7 +624,7 @@
           "description": "Devuelve la lista de agentes disponibles en el sistema."
         },
         "aiConfiguration": {
-          "label": "Configuración de IA [Beta]"
+          "label": "Configuración de IA"
         },
         "blinkTitle": {
           "agentCompleted": "Theia - Agente completado",
@@ -927,7 +927,7 @@
           "tooltip": "Interpretar saltos de línea"
         },
         "view": {
-          "label": "Historial del agente de IA [Beta]",
+          "label": "Historial del agente de IA",
           "noAgent": "No hay ningún agente disponible.",
           "noAgentSelected": "No se ha seleccionado ningún agente.",
           "noHistoryForAgent": "No hay historial disponible para el agente seleccionado «{0}»."
@@ -1054,7 +1054,7 @@
         },
         "deleteChat": "Eliminar chat",
         "enableAI": {
-          "mdDescription": "Esta configuración le permite acceder a las últimas capacidades de IA (versión beta).            \n            Tenga en cuenta que estas funciones se encuentran en fase beta, lo que significa que pueden             sufrir cambios y se seguirán mejorando. Es importante tener en cuenta que estas funciones pueden generar            solicitudes continuas a los modelos de lenguaje (LLM) a los que proporciona acceso. Esto podría incurrir en costes que            deberá supervisar de cerca. Al habilitar esta opción, usted reconoce estos riesgos.            \n            **¡Tenga en cuenta que los ajustes que se indican a continuación en esta sección solo surtirán efecto\n            una vez que se haya habilitado el ajuste de la función principal. Después de habilitar la función, debe configurar al menos un            proveedor de LLM a continuación. Consulte también [la documentación](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "Esta configuración le permite acceder a las últimas capacidades de IA.            \n            Es importante tener en cuenta que estas funciones pueden generar            solicitudes continuas a los modelos de lenguaje (LLM) a los que proporciona acceso. Esto podría incurrir en costes que            deberá supervisar de cerca. Al habilitar esta opción, usted reconoce estos riesgos.            \n            **¡Tenga en cuenta que los ajustes que se indican a continuación en esta sección solo surtirán efecto\n            una vez que se haya habilitado el ajuste de la función principal. Después de habilitar la función, debe configurar al menos un            proveedor de LLM a continuación. Consulte también [la documentación](https://theia-ide.org/docs/user_ai/)**."
         },
         "exploreAgent": {
           "description": "Un asistente de exploración del código fuente que extrae y sintetiza información del código fuente. Informa sobre lo que existe, proporciona fragmentos de código y describe los patrones observados."
@@ -1893,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "¡Ya está disponible la compatibilidad con IA en el IDE Theia (versión beta)!",
+        "header": "¡Ya está disponible la compatibilidad con IA en el IDE Theia!",
         "openAIChatView": "¡Abre ahora la vista de chat con IA para aprender cómo empezar!"
       },
       "apiComparator": "{0} Compatibilidad con API",
