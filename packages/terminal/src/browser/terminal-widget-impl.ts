@@ -732,6 +732,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.selectAll();
     }
 
+    getSelection(): string {
+        return this.term.getSelection();
+    }
+
+    hasSelection(): boolean {
+        return this.term.hasSelection();
+    }
+
     async hasChildProcesses(): Promise<boolean> {
         return this.shellTerminalServer.hasChildProcesses(await this.processId);
     }

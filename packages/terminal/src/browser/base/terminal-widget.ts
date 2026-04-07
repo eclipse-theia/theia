@@ -169,6 +169,18 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract selectAll(): void;
 
+    /**
+     * Get the current selection text from the terminal.
+     * @returns the selected text, or empty string if no selection
+     */
+    abstract getSelection(): string;
+
+    /**
+     * Check whether the terminal has an active text selection.
+     * @returns true if text is selected, false otherwise
+     */
+    abstract hasSelection(): boolean;
+
     abstract writeLine(line: string): void;
 
     abstract write(data: string): void;
