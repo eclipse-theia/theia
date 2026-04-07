@@ -624,7 +624,7 @@
           "description": "Gibt die Liste der im System verfügbaren Agenten zurück."
         },
         "aiConfiguration": {
-          "label": "KI-Konfiguration [Beta]"
+          "label": "KI-Konfiguration"
         },
         "blinkTitle": {
           "agentCompleted": "Theia – Agent abgeschlossen",
@@ -927,7 +927,7 @@
           "tooltip": "Zeilenumbrüche interpretieren"
         },
         "view": {
-          "label": "AI-Agent-Verlauf [Beta]",
+          "label": "AI-Agent-Verlauf",
           "noAgent": "Kein Agent verfügbar.",
           "noAgentSelected": "Kein Agent ausgewählt.",
           "noHistoryForAgent": "Für den ausgewählten Agenten „{0}“ ist kein Verlauf verfügbar."
@@ -1054,7 +1054,7 @@
         },
         "deleteChat": "Chat löschen",
         "enableAI": {
-          "mdDescription": "Mit dieser Einstellung können Sie auf die neuesten KI-Funktionen (Beta-Version) zugreifen.            \n            Bitte beachten Sie, dass sich diese Funktionen in einer Beta-Phase befinden, was bedeutet, dass sie Änderungen unterliegen und weiter verbessert werden können. Es ist wichtig zu wissen, dass diese Funktionen kontinuierliche Anfragen an die Sprachmodelle (LLMs) generieren können, auf die Sie Zugriff gewähren. Dies kann Kosten verursachen, die Sie genau überwachen müssen. Durch Aktivieren dieser Option erkennen Sie diese Risiken an.            \n            **Bitte beachten Sie! Die Einstellungen in diesem Abschnitt werden erst wirksam,\n            wenn die Hauptfunktion aktiviert ist. Nach Aktivierung der Funktion müssen Sie mindestens einen            LLM-Anbieter unten konfigurieren. Siehe auch [die Dokumentation](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "Mit dieser Einstellung können Sie auf die neuesten KI-Funktionen zugreifen.            \n            Es ist wichtig zu wissen, dass diese Funktionen kontinuierliche Anfragen an die Sprachmodelle (LLMs) generieren können, auf die Sie Zugriff gewähren. Dies kann Kosten verursachen, die Sie genau überwachen müssen. Durch Aktivieren dieser Option erkennen Sie diese Risiken an.            \n            **Bitte beachten Sie! Die Einstellungen in diesem Abschnitt werden erst wirksam,\n            wenn die Hauptfunktion aktiviert ist. Nach Aktivierung der Funktion müssen Sie mindestens einen            LLM-Anbieter unten konfigurieren. Siehe auch [die Dokumentation](https://theia-ide.org/docs/user_ai/)**."
         },
         "exploreAgent": {
           "description": "Ein Assistent zur Erkundung der Codebasis, der Informationen aus der Codebasis extrahiert und aufbereitet. Er berichtet über vorhandene Fakten, liefert Codeausschnitte und beschreibt beobachtete Muster."
@@ -1893,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "AI-Unterstützung in der Theia IDE ist verfügbar (Beta-Version)!",
+        "header": "AI-Unterstützung in der Theia IDE ist verfügbar!",
         "openAIChatView": "Öffnen Sie jetzt die KI-Chat-Ansicht, um zu erfahren, wie Sie beginnen können!"
       },
       "apiComparator": "{0} API-Kompatibilität",
