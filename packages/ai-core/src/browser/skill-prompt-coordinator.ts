@@ -30,7 +30,10 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
 
     protected registeredSkillCommands = new Set<string>();
 
-    onStart(): void {
+    async onStart(): Promise<void> {
+        // Wait for skills to be loaded before registering commands
+        await this.skillService.ready;
+
         // Register initial skills
         this.updateSkillCommands();
 
