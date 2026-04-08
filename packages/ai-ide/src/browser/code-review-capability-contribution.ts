@@ -43,6 +43,10 @@ name: ${name}
 description: ${description}
 ---
 
+### Team Extension
+
+- **${CodeReviewerAgentId}** — Reviews code changes for correctness, quality, and alignment with requirements.
+
 ## Code Review
 
 **Code Review is ENABLED.** Review all Coding Agent completions via code-reviewer
@@ -60,25 +64,22 @@ Enforce quality gates through mandatory code review. Do not proceed until code c
 
 ### Delegation
 
-Use ~{delegateToAgent} to delegate to the following agent:
-
 **Agent:** '${CodeReviewerAgentId}'
-**When:** Immediately after Coding Agent reports completion
 
 **Provide:**
-- Task name
-- Modified files list
-- Requirements summary
-- Task context path (if exists) — reviewer will use ~{getTaskContext} to read completion criteria
-- Build/lint/test evidence from Coding Agent (task names + PASS/FAIL status)
+- Modified files list and summary of changes (from Coder's output)
+- Requirements summary or taskContextId (if exists) — reviewer will use getTaskContext to read completion criteria
+- Build/lint/test evidence from Coder (task names + PASS/FAIL status)
 - If revision attempt: which attempt number and previously flagged issues
 
 **Expected output:** Verdict (PASS / REVISE / REJECT) with explanation
 
+**Post-delegation:** Run Task Context Verification before proceeding.
+
 ### Verdict Handling
 
 **PASS:**
-- If Task Context exists: use ~{rewriteTaskContext} to move item to Completed Items
+- If Task Context exists: use editTaskContext to move item to Completed Items
 - Proceed to next step
 
 **REVISE:**
@@ -88,7 +89,7 @@ Use ~{delegateToAgent} to delegate to the following agent:
 
 **REJECT:**
 - Inform user: "Code review identified fundamental issues requiring replanning"
-- Return to Planning phase
+- Delegate to the agent responsible for planning the solution
 
 ### Escalation (after 3 failures)
 
@@ -99,12 +100,6 @@ Present to user:
 - Recurring issues: [List from reviewer feedback]
 - Options: Adjust requirements, Revise approach, or Accept with documented trade-offs
 
-Wait for user decision.
-
-### Output
-
-- **PASS:** Code verified, proceed to next step
-- **REVISE:** Delegate feedback to Coding Agent for fixes
-- **REJECT:** Fundamental issues identified, return to Planning`;
+Wait for user decision.`;
     }
 }

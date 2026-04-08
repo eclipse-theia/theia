@@ -18,7 +18,7 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-a
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { juniorSystemPrompt, JUNIOR_SYSTEM_PROMPT_ID } from './junior-prompt-template';
+import { juniorSystemPrompt, juniorSystemNextPrompt, JUNIOR_SYSTEM_PROMPT_ID } from './junior-prompt-template';
 
 export const JuniorAgentId = 'junior';
 
@@ -35,7 +35,7 @@ export class JuniorAgent extends AbstractStreamParsingChatAgent {
         'A senior software architect and task coordinator that analyzes requirements, \
         delegates implementation work to specialized agents, and coordinates the software development workflow.');
 
-    override prompts = [{ id: JUNIOR_SYSTEM_PROMPT_ID, defaultVariant: juniorSystemPrompt, variants: [] }];
+    override prompts = [{ id: JUNIOR_SYSTEM_PROMPT_ID, defaultVariant: juniorSystemPrompt, variants: [juniorSystemNextPrompt] }];
     protected override systemPromptId: string = JUNIOR_SYSTEM_PROMPT_ID;
     override iconClass: string = 'codicon codicon-organization';
 }
