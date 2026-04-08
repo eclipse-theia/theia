@@ -152,6 +152,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
     private subscribeToInvocation(invocation?: ChatRequestInvocation): void {
         this.toDispose.dispose();
         this.toDispose = new DisposableCollection();
+        this.trackedInteractionIds.clear();
         if (!invocation) {
             return;
         }
@@ -194,6 +195,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
 
     override componentWillUnmount(): void {
         this.toDispose.dispose();
+        this.trackedInteractionIds.clear();
     }
 
     private removeResolvedInteractions(): void {
@@ -285,6 +287,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                                 <span className={`codicon ${statusIcon} delegation-status-icon`}></span>
                                 <span className='delegation-status-text'>{statusText}</span>
                             </span>
+                            <span className={`delegation-toggle-arrow${isOpen ? ' open' : ''}`} />
                         </div>
                         {showInteractionsInSummary && (
                             <div className='delegation-pending-confirmations'>

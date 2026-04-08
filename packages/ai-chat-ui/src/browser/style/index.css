@@ -1354,21 +1354,23 @@ div:last-child>.theia-ChatNode {
   background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.delegation-summary::before {
+.delegation-toggle-arrow::before {
   content: "\25BC";
-  /* Down arrow */
-  position: absolute;
-  right: var(--theia-ui-padding);
-  top: var(--theia-ui-padding);
-  transform: translateY(25%);
   transition: transform 0.2s ease;
-  color: var(--theia-descriptionForeground);
-  font-size: var(--theia-ui-font-size1);
+  display: inline-block;
+  transform: rotate(-90deg);
 }
 
-.delegation-response-details:not([open]) .delegation-summary::before {
-  transform: translateY(25%) rotate(-90deg);
-  /* Right arrow when closed */
+.delegation-toggle-arrow.open::before {
+  transform: rotate(0deg);
+}
+
+.delegation-toggle-arrow {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .delegation-response-details:not([open]) .delegation-summary {
@@ -1407,8 +1409,6 @@ div:last-child>.theia-ChatNode {
   align-items: center;
   gap: var(--theia-ui-padding);
   font-size: var(--theia-ui-font-size1);
-  /* Leave space for the arrow */
-  margin-right: calc(var(--theia-ui-padding) * 3);
 }
 
 .delegation-status-icon {
