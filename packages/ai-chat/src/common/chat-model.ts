@@ -2789,7 +2789,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _promptVariantId?: string;
     protected _isPromptVariantEdited?: boolean;
     protected _tokenUsage?: ResponseTokenUsage;
-    private _tokenUsageEntries: ResponseTokenUsage[] = [];
+    protected _tokenUsageEntries: ResponseTokenUsage[] = [];
 
     constructor(
         requestId: string,

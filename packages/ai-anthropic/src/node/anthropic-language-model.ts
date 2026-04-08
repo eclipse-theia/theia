@@ -285,59 +285,75 @@ export class AnthropicModel implements LanguageModel {
                 const currentMessages: Message[] = [];
                 let currentMessage: Message | undefined = undefined;
                 let currentOutputTokens: number = 0;
+                let usageYielded = false;
 
-                for await (const event of stream) {
-                    if (event.type === 'content_block_start') {
-                        const contentBlock = event.content_block;
+                try {
+                    for await (const event of stream) {
+                        if (event.type === 'content_block_start') {
+                            const contentBlock = event.content_block;
 
-                        if (contentBlock.type === 'thinking') {
-                            yield { thought: contentBlock.thinking, signature: contentBlock.signature ?? '' };
-                        }
-                        if (contentBlock.type === 'text') {
-                            yield { content: contentBlock.text };
-                        }
-                        if (contentBlock.type === 'tool_use') {
-                            toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
-                            yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
-                        }
-                    } else if (event.type === 'content_block_delta') {
-                        const delta = event.delta;
-                        if (delta.type === 'thinking_delta') {
-                            yield { thought: delta.thinking, signature: '' };
-                        }
-                        if (delta.type === 'signature_delta') {
-                            yield { thought: '', signature: delta.signature };
-                        }
-                        if (delta.type === 'text_delta') {
-                            yield { content: delta.text };
-                        }
-                        if (toolCall && delta.type === 'input_json_delta') {
-                            toolCall.args += delta.partial_json;
-                            yield { tool_calls: [{ function: { arguments: delta.partial_json } }] };
-                        }
-                    } else if (event.type === 'content_block_stop') {
-                        if (toolCall && toolCall.index === event.index) {
-                            toolCalls.push(toolCall);
-                            toolCall = undefined;
-                        }
-                    } else if (event.type === 'message_delta') {
-                        currentOutputTokens = event.usage.output_tokens;
-                        if (event.delta.stop_reason === 'max_tokens') {
-                            if (toolCall) {
-                                yield { tool_calls: [{ finished: true, id: toolCall.id }] };
+                            if (contentBlock.type === 'thinking') {
+                                yield { thought: contentBlock.thinking, signature: contentBlock.signature ?? '' };
                             }
-                            throw new Error(`The response was stopped because it exceeded the max token limit of ${event.usage.output_tokens}.`);
+                            if (contentBlock.type === 'text') {
+                                yield { content: contentBlock.text };
+                            }
+                            if (contentBlock.type === 'tool_use') {
+                                toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
+                                yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
+                            }
+                        } else if (event.type === 'content_block_delta') {
+                            const delta = event.delta;
+                            if (delta.type === 'thinking_delta') {
+                                yield { thought: delta.thinking, signature: '' };
+                            }
+                            if (delta.type === 'signature_delta') {
+                                yield { thought: '', signature: delta.signature };
+                            }
+                            if (delta.type === 'text_delta') {
+                                yield { content: delta.text };
+                            }
+                            if (toolCall && delta.type === 'input_json_delta') {
+                                toolCall.args += delta.partial_json;
+                                yield { tool_calls: [{ function: { arguments: delta.partial_json } }] };
+                            }
+                        } else if (event.type === 'content_block_stop') {
+                            if (toolCall && toolCall.index === event.index) {
+                                toolCalls.push(toolCall);
+                                toolCall = undefined;
+                            }
+                        } else if (event.type === 'message_delta') {
+                            currentOutputTokens = event.usage.output_tokens;
+                            if (event.delta.stop_reason === 'max_tokens') {
+                                if (toolCall) {
+                                    yield { tool_calls: [{ finished: true, id: toolCall.id }] };
+                                }
+                                throw new Error(`The response was stopped because it exceeded the max token limit of ${event.usage.output_tokens}.`);
+                            }
+                        } else if (event.type === 'message_start') {
+                            currentMessages.push(event.message);
+                            currentMessage = event.message;
+                            currentOutputTokens = 0;
+                        } else if (event.type === 'message_stop') {
+                            if (currentMessage) {
+                                usageYielded = true;
+                                yield {
+                                    input_tokens: currentMessage.usage.input_tokens,
+                                    output_tokens: currentOutputTokens,
+                                    cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens || undefined,
+                                    cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens || undefined,
+                                };
+                            }
                         }
-                    } else if (event.type === 'message_start') {
-                        currentMessages.push(event.message);
-                        currentMessage = event.message;
-                        currentOutputTokens = 0;
-                    } else if (event.type === 'message_stop') {
+                    }
+                } finally {
+                    // Yield partial usage data when stream is aborted before message_stop
+                    if (!usageYielded && currentMessage) {
                         yield {
-                            input_tokens: currentMessage!.usage.input_tokens,
+                            input_tokens: currentMessage.usage.input_tokens,
                             output_tokens: currentOutputTokens,
-                            cache_creation_input_tokens: currentMessage!.usage.cache_creation_input_tokens || undefined,
-                            cache_read_input_tokens: currentMessage!.usage.cache_read_input_tokens || undefined,
+                            cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens || undefined,
+                            cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens || undefined,
                         };
                     }
                 }

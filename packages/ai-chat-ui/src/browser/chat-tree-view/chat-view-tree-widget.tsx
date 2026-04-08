@@ -57,6 +57,7 @@ import {
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { formatTokenCount } from '../chat-token-usage-indicator';
@@ -604,16 +605,23 @@ export class ChatViewTreeWidget extends TreeWidget {
                         const hasTokenInfo = tokenUsage && (tokenUsage.inputTokens > 0 || tokenUsage.outputTokens > 0);
                         const tokenInfo = hasTokenInfo
                             ? nls.localize('theia/ai/chat-ui/chat-view-tree-widget/tokenInfo',
-                                'Input: {0} · Output: {1}',
+                                'Token Usage — Input: {0} · Output: {1}',
                                 formatTokenCount(tokenUsage.inputTokens),
                                 formatTokenCount(tokenUsage.outputTokens))
                             : undefined;
-                        const hoverContent = agentDescription && tokenInfo
-                            ? agentDescription + '\n\n' + tokenInfo
-                            : agentDescription ?? tokenInfo;
-                        if (hoverContent) {
+                        if (agentDescription || tokenInfo) {
+                            const md = new MarkdownStringImpl();
+                            if (agentDescription) {
+                                md.appendMarkdown(agentDescription);
+                            }
+                            if (agentDescription && tokenInfo) {
+                                md.appendMarkdown('\n\n---\n\n');
+                            }
+                            if (tokenInfo) {
+                                md.appendMarkdown(tokenInfo);
+                            }
                             this.hoverService.requestHover({
-                                content: hoverContent,
+                                content: md,
                                 target: agentLabel.current!,
                                 position: 'right'
                             });

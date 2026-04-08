@@ -330,6 +330,79 @@ describe('AnthropicModel', () => {
             expect(usageParts[1].output_tokens).to.equal(80);
         });
 
+        it('should yield partial usage when stream is aborted before message_stop', async () => {
+            // Simulates a user cancellation: message_start fires (giving input_tokens),
+            // some content streams, message_delta gives output_tokens, then the stream
+            // is aborted before message_stop. The partial usage should still be yielded.
+            const abortError = new Error('Stream aborted');
+            function buildAbortingAnthropic(streamEvents: object[], abortAfterIndex: number): Anthropic {
+                return {
+                    messages: {
+                        stream: (_params: object) => {
+                            async function* iterate(): AsyncGenerator<object> {
+                                for (let i = 0; i < streamEvents.length; i++) {
+                                    if (i === abortAfterIndex) {
+                                        throw abortError;
+                                    }
+                                    yield streamEvents[i];
+                                }
+                            }
+                            const iter = iterate();
+                            (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                            (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                            return iter;
+                        }
+                    }
+                } as unknown as Anthropic;
+            }
+
+            const events = [
+                { type: 'message_start', message: { usage: { input_tokens: 2000, output_tokens: 0 } } },
+                { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+                { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'Hello' } },
+                { type: 'message_delta', delta: { stop_reason: undefined }, usage: { output_tokens: 15 } },
+                // Abort happens here (index 4) — before message_stop
+                { type: 'message_stop' },
+            ];
+
+            const model = new class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return buildAbortingAnthropic(events, 4);
+                }
+            }(
+                'test-id', 'claude-opus-4-5', { status: 'ready' },
+                true, false, () => 'test-key', undefined
+            );
+
+            const request: UserRequest = {
+                messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+                agentId: 'test',
+                sessionId: 'test-session',
+                requestId: 'test-req'
+            };
+            const response = await model.request(request);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            let caughtError: Error | undefined;
+            if ('stream' in response) {
+                try {
+                    for await (const part of response.stream) {
+                        parts.push(part);
+                    }
+                } catch (e) {
+                    caughtError = e as Error;
+                }
+            }
+
+            // The abort error should propagate
+            expect(caughtError).to.equal(abortError);
+
+            // But partial usage should have been yielded in the finally block
+            const usageParts = parts.filter(isUsageResponsePart);
+            expect(usageParts).to.have.lengthOf(1);
+            expect(usageParts[0].input_tokens).to.equal(2000);
+            expect(usageParts[0].output_tokens).to.equal(15);
+        });
+
         it('should only yield usage at message_stop, not at message_delta', async () => {
             // Usage is only emitted at message_stop for per-turn recording.
             const events = [

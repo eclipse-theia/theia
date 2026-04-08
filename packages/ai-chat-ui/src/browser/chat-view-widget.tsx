@@ -68,6 +68,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     @inject(AIChatNavigationService)
     protected readonly navigationService: AIChatNavigationService;
 
+    @inject(ChatTokenUsageIndicatorWidget)
+    readonly tokenIndicatorWidget: ChatTokenUsageIndicatorWidget;
+
     protected chatSession: ChatSession;
 
     protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
@@ -79,8 +82,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     constructor(
         @inject(ChatViewTreeWidget)
         readonly treeWidget: ChatViewTreeWidget,
-        @inject(ChatTokenUsageIndicatorWidget)
-        readonly tokenIndicatorWidget: ChatTokenUsageIndicatorWidget,
         @inject(AIChatInputWidget)
         readonly inputWidget: AIChatInputWidget
     ) {

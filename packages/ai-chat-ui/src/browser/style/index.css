@@ -2018,21 +2018,21 @@ div:last-child>.theia-ChatNode {
 
 /* Token usage indicator styles */
 .chat-token-usage-indicator-widget {
-  padding: 6px 12px;
-  border-top: 1px solid var(--theia-sideBarSectionHeader-border);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
 }
 
 .chat-token-usage-indicator {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: calc(var(--theia-ui-padding) * 2 / 3);
 }
 
 .token-usage-bar-container {
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
+  height: calc(var(--theia-ui-padding) * 2 / 3);
+  border-radius: calc(var(--theia-ui-padding) / 3);
   background: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
   overflow: hidden;
   display: flex;
@@ -2040,13 +2040,8 @@ div:last-child>.theia-ChatNode {
 
 .token-usage-bar {
   height: 100%;
-  border-radius: 2px;
+  border-radius: calc(var(--theia-ui-padding) / 3);
   transition: width 0.3s ease;
-}
-
-.token-usage-bar.token-usage-forecast {
-  opacity: 0.35;
-  border-radius: 0;
 }
 
 .token-usage-bar.token-usage-none {
@@ -2054,19 +2049,19 @@ div:last-child>.theia-ChatNode {
 }
 
 .token-usage-bar.token-usage-green {
-  background: var(--theia-successForeground, var(--theia-charts-green));
+  background: var(--theia-successBackground);
 }
 
 .token-usage-bar.token-usage-yellow {
-  background: var(--theia-editorWarning-foreground, var(--theia-charts-yellow));
+  background: var(--theia-warningBackground);
 }
 
 .token-usage-bar.token-usage-red {
-  background: var(--theia-errorForeground, var(--theia-charts-red));
+  background: var(--theia-errorBackground);
 }
 
 .token-usage-label {
-  font-size: 11px;
+  font-size: var(--theia-ui-font-size0);
   color: var(--theia-descriptionForeground);
   font-family: var(--theia-ui-font-family);
   white-space: nowrap;

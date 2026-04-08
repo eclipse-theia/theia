@@ -16,9 +16,10 @@
 
 import { ReactWidget } from '@theia/core/lib/browser';
 import { Disposable } from '@theia/core';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ChatModel, ResponseTokenUsage } from '@theia/ai-chat';
+import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { CHAT_VIEW_TOKEN_USAGE_ENABLED } from './chat-view-preferences';
 
@@ -70,6 +71,38 @@ export interface ChatTokenUsageIndicatorProps {
     totalTokens?: number;
 }
 
+export function getLatestTokenUsage(chatModel?: ChatModel): ResponseTokenUsage | undefined {
+    if (!chatModel) {
+        return undefined;
+    }
+    const requests = chatModel.getRequests();
+    for (let i = requests.length - 1; i >= 0; i--) {
+        const usage = requests[i].response.tokenUsage;
+        if (usage) {
+            return usage;
+        }
+    }
+    return undefined;
+}
+
+function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalTokens: number): string {
+    if (!usage) {
+        return '';
+    }
+    const parts: string[] = [
+        nls.localizeByDefault('Input: {0}', formatTokenCount(usage.inputTokens)),
+        nls.localizeByDefault('Output: {0}', formatTokenCount(usage.outputTokens)),
+    ];
+    if (usage.cacheReadInputTokens) {
+        parts.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipCacheRead', 'Cache read: {0}', formatTokenCount(usage.cacheReadInputTokens)));
+    }
+    if (usage.cacheCreationInputTokens) {
+        parts.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipCacheCreate', 'Cache creation: {0}', formatTokenCount(usage.cacheCreationInputTokens)));
+    }
+    parts.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipTotal', 'Total: {0} / {1}', formatTokenCount(totalTokens), formatTokenCount(CHAT_CONTEXT_WINDOW_SIZE)));
+    return parts.join('\n');
+}
+
 export const ChatTokenUsageIndicator: React.FC<ChatTokenUsageIndicatorProps> = ({ chatModel, totalTokens: totalTokensProp }) => {
     const totalTokens = totalTokensProp ?? computeSessionTokenUsage(chatModel);
     if (totalTokens === 0) {
@@ -78,9 +111,11 @@ export const ChatTokenUsageIndicator: React.FC<ChatTokenUsageIndicatorProps> = (
 
     const colorClass = getUsageColorClass(totalTokens);
     const pct = Math.min((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100, 100);
+    const usage = getLatestTokenUsage(chatModel);
+    const tooltip = buildBarTooltip(usage, totalTokens);
 
     return (
-        <div className='chat-token-usage-indicator'>
+        <div className='chat-token-usage-indicator' title={tooltip}>
             <div className='token-usage-bar-container'>
                 <div
                     className={`token-usage-bar ${colorClass}`}
@@ -111,6 +146,18 @@ export class ChatTokenUsageIndicatorWidget extends ReactWidget {
         this.addClass('chat-token-usage-indicator-widget');
     }
 
+    @postConstruct()
+    protected init(): void {
+        this.preferenceListener = this.preferenceService?.onPreferenceChanged(change => {
+            if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
+                this.update();
+            }
+        });
+        if (this.preferenceListener) {
+            this.toDispose.push(this.preferenceListener);
+        }
+    }
+
     protected isEnabled(): boolean {
         return this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
     }
@@ -122,18 +169,11 @@ export class ChatTokenUsageIndicatorWidget extends ReactWidget {
         this.modelListener?.dispose();
         this.chatModel = model;
         this.modelListener = model.onDidChange(() => this.update());
-        this.preferenceListener?.dispose();
-        this.preferenceListener = this.preferenceService?.onPreferenceChanged(change => {
-            if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
-                this.update();
-            }
-        });
         this.update();
     }
 
     override dispose(): void {
         this.modelListener?.dispose();
-        this.preferenceListener?.dispose();
         super.dispose();
     }
 

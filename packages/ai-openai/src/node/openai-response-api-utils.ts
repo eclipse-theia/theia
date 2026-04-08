@@ -163,6 +163,8 @@ export class OpenAiResponseApiUtils {
     ): AsyncIterable<LanguageModelStreamResponsePart> {
         return {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
+                let lastUsage: { input_tokens: number; output_tokens: number } | undefined;
+                let usageYielded = false;
                 try {
                     for await (const event of stream) {
                         if (cancellationToken?.isCancellationRequested) {
@@ -175,9 +177,19 @@ export class OpenAiResponseApiUtils {
                             };
                         } else if (event.type === 'response.completed') {
                             if (event.response?.usage) {
+                                usageYielded = true;
                                 yield {
                                     input_tokens: event.response.usage.input_tokens,
                                     output_tokens: event.response.usage.output_tokens,
+                                };
+                            }
+                        } else if (event.type === 'response.created' || event.type === 'response.in_progress') {
+                            // Track partial usage from in-progress events if available
+                            const responseEvent = event as { response?: { usage?: { input_tokens: number; output_tokens: number } } };
+                            if (responseEvent.response?.usage) {
+                                lastUsage = {
+                                    input_tokens: responseEvent.response.usage.input_tokens,
+                                    output_tokens: responseEvent.response.usage.output_tokens,
                                 };
                             }
                         } else if (event.type === 'error') {
@@ -185,9 +197,11 @@ export class OpenAiResponseApiUtils {
                             throw new Error(`Response API error: ${event.message}`);
                         }
                     }
-                } catch (error) {
-                    console.error('Error in Response API stream:', error);
-                    throw error;
+                } finally {
+                    // Yield partial usage data when stream is aborted before response.completed
+                    if (!usageYielded && lastUsage && (lastUsage.input_tokens > 0 || lastUsage.output_tokens > 0)) {
+                        yield lastUsage;
+                    }
                 }
             }
         };
