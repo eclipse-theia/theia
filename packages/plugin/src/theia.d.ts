@@ -2844,7 +2844,7 @@ export module '@theia/plugin' {
          * @param id id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
          * @param color optional `ThemeColor` for the icon. The color is currently only used in {@link TreeItem}.
          */
-        private constructor(id: string, color?: ThemeColor);
+        constructor(id: string, color?: ThemeColor);
     }
 
     /**
