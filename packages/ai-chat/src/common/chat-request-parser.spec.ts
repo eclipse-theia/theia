@@ -351,11 +351,12 @@ describe('ChatRequestParserImpl', () => {
                 id: 'session-1',
                 model: {
                     changeSet: {
-                        onDidChange: sinon.stub().returns({}),
+                        onDidChange: sinon.stub().returns({ dispose: sinon.stub() }),
                         getElements: sinon.stub().returns([]),
                         setTitle: sinon.stub(),
                         addElements: sinon.stub(),
-                    }
+                    },
+                    onDidChange: sinon.stub().returns({ dispose: sinon.stub() })
                 }
             }),
             sendRequest,
@@ -368,7 +369,7 @@ describe('ChatRequestParserImpl', () => {
             {
                 cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
                 request: {
-                    session: { changeSet: { setTitle: sinon.stub(), addElements: sinon.stub() }, addChildModel: sinon.stub().returns({ dispose: sinon.stub() }) },
+                    session: { changeSet: { setTitle: sinon.stub(), addElements: sinon.stub() } },
                 },
                 response: {
                     cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
