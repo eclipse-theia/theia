@@ -256,11 +256,14 @@ export class AgentDelegationTool implements ToolProvider {
         parentResponse: MutableChatResponseModel
     ): Disposable {
 
-        // Forward interactionNeeded events to the parent response model
-        // so the UI (which subscribes to response.onInteractionNeeded) can display them
-        const interactionForwarding = childModel.onDidChange(event => {
+        // Forward child session events to the parent response model so the UI can react:
+        // - interactionNeeded: displays confirmation dialogs in collapsed delegation summary
+        // - responseChanged: triggers cleanup of resolved interactions in the parent UI
+        const eventForwarding = childModel.onDidChange(event => {
             if (ChatChangeEvent.isInteractionNeededEvent(event)) {
                 parentResponse.fireInteractionNeeded(event.contentPart);
+            } else if (event.kind === 'responseChanged') {
+                parentResponse.notifyChanged();
             }
         });
 
@@ -275,7 +278,7 @@ export class AgentDelegationTool implements ToolProvider {
 
         return {
             dispose: () => {
-                interactionForwarding.dispose();
+                eventForwarding.dispose();
                 changeSetForwarding.dispose();
             }
         };

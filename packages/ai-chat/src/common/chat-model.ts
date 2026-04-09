@@ -1089,7 +1089,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     addChildModel(child: MutableChatModel): Disposable {
         const disposable = new DisposableCollection();
         disposable.push(child.onDidChange(event => {
-            if (ChatChangeEvent.isInteractionNeededEvent(event)) {
+            if (ChatChangeEvent.isInteractionNeededEvent(event) || event.kind === 'responseChanged') {
                 this._onDidChangeEmitter.fire(event);
             }
         }));
@@ -3025,6 +3025,10 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
     fireInteractionNeeded(contentPart: InteractiveContent & ChatResponseContent): void {
         this._onInteractionNeededEmitter.fire(contentPart);
+    }
+
+    notifyChanged(): void {
+        this._onDidChangeEmitter.fire();
     }
 
     error(error: Error): void {
