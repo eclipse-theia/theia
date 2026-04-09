@@ -401,13 +401,16 @@ export interface InteractiveContent {
     readonly interactionId: string | undefined;
     /** Whether the interaction has been resolved (e.g., confirmed/denied, option selected). */
     readonly isResolved: boolean;
+    /** Resolves when the interaction is resolved. Used for cleanup in delegation chains. */
+    readonly whenResolved: Promise<void>;
 }
 
 export namespace InteractiveContent {
     export function is(content: unknown): content is InteractiveContent {
         return typeof content === 'object' && !!content
             && 'interactionId' in content
-            && 'isResolved' in content;
+            && 'isResolved' in content
+            && 'whenResolved' in content;
     }
 }
 
@@ -1089,7 +1092,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     addChildModel(child: MutableChatModel): Disposable {
         const disposable = new DisposableCollection();
         disposable.push(child.onDidChange(event => {
-            if (ChatChangeEvent.isInteractionNeededEvent(event) || event.kind === 'responseChanged') {
+            if (ChatChangeEvent.isInteractionNeededEvent(event)) {
                 this._onDidChangeEmitter.fire(event);
             }
         }));
@@ -2367,6 +2370,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._whenFinished;
     }
 
+    get whenResolved(): Promise<void> {
+        return this._whenFinished;
+    }
+
     createConfirmationPromise(): Promise<boolean> {
         if (!this._confirmationResolver) {
             this._confirmed = new Promise<boolean>((resolve, reject) => {
@@ -2626,6 +2633,8 @@ export class QuestionResponseContentImpl implements QuestionResponseContent, Int
     public header?: string;
     public onSkip?: () => void;
     protected _selectedOptions: { text: string; value?: string }[] | undefined;
+    protected _resolvedResolver?: () => void;
+    readonly whenResolved: Promise<void>;
 
     constructor(
         question: string,
@@ -2653,6 +2662,13 @@ export class QuestionResponseContentImpl implements QuestionResponseContent, Int
         this.onSkip = questionOptions?.onSkip;
         this._selectedOptions = questionOptions?.selectedOptions ??
             (questionOptions?.selectedOption ? [questionOptions.selectedOption] : undefined);
+        if (this._selectedOptions) {
+            this.whenResolved = Promise.resolve();
+        } else {
+            this.whenResolved = new Promise<void>(resolve => {
+                this._resolvedResolver = resolve;
+            });
+        }
         if (!this.isReadOnly && this.request) {
             this.request.response.fireInteractionNeeded(this);
         }
@@ -2672,6 +2688,7 @@ export class QuestionResponseContentImpl implements QuestionResponseContent, Int
 
     set selectedOption(option: { text: string; value?: string } | undefined) {
         this._selectedOptions = option ? [option] : undefined;
+        this._resolvedResolver?.();
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
@@ -2682,6 +2699,7 @@ export class QuestionResponseContentImpl implements QuestionResponseContent, Int
 
     set selectedOptions(options: { text: string; value?: string }[] | undefined) {
         this._selectedOptions = options;
+        this._resolvedResolver?.();
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
