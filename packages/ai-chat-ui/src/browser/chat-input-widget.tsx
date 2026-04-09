@@ -28,6 +28,7 @@ import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
@@ -52,6 +53,12 @@ import { CapabilityChip, CapabilityChipsRow } from './chat-capabilities-panel';
 import { ChatInputFocusService } from './chat-input-focus-service';
 import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service';
 import { GenericCapabilitiesSection } from './generic-capabilities-section';
+import { PreferenceService } from '@theia/core/lib/common/preferences';
+import { CHAT_VIEW_TOKEN_USAGE_ENABLED } from './chat-view-preferences';
+import {
+    computeSessionTokenUsage, getUsageColorClass,
+    getLatestTokenUsage, buildBarTooltip, CHAT_CONTEXT_WINDOW_SIZE
+} from './chat-token-usage-indicator-util';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
 type Unpin = () => void;
@@ -157,6 +164,11 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(PromptService)
     protected readonly promptService: PromptService;
+
+    @inject(PreferenceService) @optional()
+    protected readonly preferenceService: PreferenceService | undefined;
+
+    protected tokenUsageEnabled = false;
 
     protected navigationState: ChatInputNavigationState;
 
@@ -641,6 +653,15 @@ export class AIChatInputWidget extends ReactWidget {
             this.navigationState = new ChatInputNavigationState(this.historyService);
         });
         this.initializeContextKeys();
+        this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
+        if (this.preferenceService) {
+            this.toDispose.push(this.preferenceService.onPreferenceChanged(change => {
+                if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
+                    this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
+                    this.update();
+                }
+            }));
+        }
         // Listen for prompt fragment changes to refresh capabilities
         this.toDispose.push(this.capabilitiesService.onDidChangeCapabilities(() => {
             this.refreshCapabilities();
@@ -1029,6 +1050,7 @@ export class AIChatInputWidget extends ReactWidget {
                     disabledCapabilities: this.disabledGenericCapabilities,
                     hoverService: this.hoverService,
                 }}
+                tokenUsageEnabled={this.tokenUsageEnabled}
             />
         );
     }
@@ -1360,6 +1382,7 @@ interface ChatInputProperties {
         disabledCapabilities: GenericCapabilitySelections;
         hoverService: HoverService;
     };
+    tokenUsageEnabled?: boolean;
 }
 
 // Utility to check if we have task context in the chat model
@@ -1787,13 +1810,20 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Show mode selector if agent has multiple modes
     const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
 
+    // Token usage computation
+    const totalTokens = props.tokenUsageEnabled ? computeSessionTokenUsage(props.chatModel) : 0;
+    const showTokenUsage = props.tokenUsageEnabled && totalTokens > 0;
+    const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens) : '';
+    const tokenIsWarningOrError = tokenColorClass === 'token-usage-yellow' || tokenColorClass === 'token-usage-red';
+    const tokenTooltip = showTokenUsage ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens) : undefined;
+
     return (
         <div className="theia-ChatInput" data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
             {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
             {props.showChangeSet && changeSetUI?.elements &&
                 <ChangeSetBox changeSet={changeSetUI} />
             }
-            <div className='theia-ChatInput-Editor-Box'>
+            <div className={`theia-ChatInput-Editor-Box${tokenIsWarningOrError ? ` token-usage-border-${tokenColorClass}` : ''}`}>
                 {props.showCapabilities !== false && (
                     <CapabilitiesBar
                         isOpen={props.capabilitiesProps.isOpen}
@@ -1822,6 +1852,11 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     rightOptions={rightOptions}
                     isEnabled={props.isEnabled}
                     hoverService={props.hoverService}
+                    tokenUsage={showTokenUsage ? {
+                        percent: Math.min((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100, 100),
+                        colorClass: tokenColorClass,
+                        tooltip: tokenTooltip,
+                    } : undefined}
                     modeSelectorProps={{
                         show: showModeSelector,
                         modes: props.modeSelectorProps.receivingAgentModes,
@@ -1847,12 +1882,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 /**
  * Returns an onMouseEnter handler that shows a hover tooltip via HoverService.
  */
-function hoverHandler(hoverService: HoverService, content: string): (e: React.MouseEvent) => void {
+function hoverHandler(hoverService: HoverService, content: string | MarkdownString, position: 'top' | 'bottom' = 'bottom'): (e: React.MouseEvent) => void {
     return (e: React.MouseEvent) => {
         hoverService.requestHover({
             content,
             target: e.currentTarget as HTMLElement,
-            position: 'bottom'
+            position
         });
     };
 }
@@ -1862,6 +1897,11 @@ interface ChatInputOptionsProps {
     rightOptions: Option[];
     isEnabled?: boolean;
     hoverService: HoverService;
+    tokenUsage?: {
+        percent: number;
+        colorClass: string;
+        tooltip?: MarkdownString;
+    };
     modeSelectorProps: {
         show: boolean;
         modes?: ChatMode[];
@@ -1884,6 +1924,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     rightOptions,
     isEnabled,
     hoverService,
+    tokenUsage,
     modeSelectorProps,
     capabilitiesToggle
 }) => {
@@ -1897,6 +1938,21 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
         // CSS order property positions them visually (left on left, right on right)
         <div className="theia-ChatInputOptions">
             <div className="theia-ChatInputOptions-right">
+                {tokenUsage && (
+                    <span
+                        className={`token-usage-badge ${tokenUsage.colorClass}`}
+                        {...(tokenUsage.tooltip && { onMouseEnter: hoverHandler(hoverService, tokenUsage.tooltip, 'top') })}
+                    >
+                        <span
+                            className='token-usage-ring'
+                            style={{
+                                background: `conic-gradient(var(--token-usage-fill) ${tokenUsage.percent}%, var(--token-usage-track) ${tokenUsage.percent}%)`
+                            }}
+                        >
+                            <span className='token-usage-ring-inner' />
+                        </span>
+                    </span>
+                )}
                 {rightOptions.map((option, index) => (
                     <span
                         key={index}

@@ -60,7 +60,7 @@ import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-va
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { formatTokenCount } from '../chat-token-usage-indicator';
+import { formatTokenCount } from '../chat-token-usage-indicator-util';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
@@ -604,10 +604,9 @@ export class ChatViewTreeWidget extends TreeWidget {
                         const tokenUsage = isResponseNode(node) ? node.response.tokenUsage : undefined;
                         const hasTokenInfo = tokenUsage && (tokenUsage.inputTokens > 0 || tokenUsage.outputTokens > 0);
                         const tokenInfo = hasTokenInfo
-                            ? nls.localize('theia/ai/chat-ui/chat-view-tree-widget/tokenInfo',
-                                'Token Usage — Input: {0} · Output: {1}',
-                                formatTokenCount(tokenUsage.inputTokens),
-                                formatTokenCount(tokenUsage.outputTokens))
+                            ? `${nls.localize('theia/ai/chat-ui/tokenUsageLabel', 'Token Usage')}: ${nls.localizeByDefault(
+                                'Input: {0}', formatTokenCount(tokenUsage.inputTokens))} | ${nls.localizeByDefault(
+                                'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
                             : undefined;
                         if (agentDescription || tokenInfo) {
                             const md = new MarkdownStringImpl();

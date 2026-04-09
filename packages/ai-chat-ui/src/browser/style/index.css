@@ -2016,53 +2016,48 @@ div:last-child>.theia-ChatNode {
   background-color: var(--theia-scrollbarSlider-hoverBackground);
 }
 
-/* Token usage indicator styles */
-.chat-token-usage-indicator-widget {
-  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
-  border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+/* Token usage: border tinting on warning/error (repeated with :has for focus specificity) */
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-yellow,
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-yellow:has(.monaco-editor.focused) {
+  border-color: var(--theia-warningBackground);
 }
 
-.chat-token-usage-indicator {
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-red,
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-red:has(.monaco-editor.focused) {
+  border-color: var(--theia-errorBackground);
+}
+
+/* Token usage badge next to send button */
+.token-usage-badge {
+  cursor: default;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: calc(var(--theia-ui-padding) * 2 / 3);
+  margin-right: calc(var(--theia-ui-padding) / 2);
+  --token-usage-fill: var(--theia-descriptionForeground);
+  --token-usage-track: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
 }
 
-.token-usage-bar-container {
-  width: 100%;
-  height: calc(var(--theia-ui-padding) * 2 / 3);
-  border-radius: calc(var(--theia-ui-padding) / 3);
-  background: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
-  overflow: hidden;
+.token-usage-badge.token-usage-yellow {
+  --token-usage-fill: var(--theia-warningBackground);
+}
+
+.token-usage-badge.token-usage-red {
+  --token-usage-fill: var(--theia-errorBackground);
+}
+
+/* Circular progress ring */
+.token-usage-ring {
+  width: var(--theia-icon-size);
+  height: var(--theia-icon-size);
+  border-radius: 50%;
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.token-usage-bar {
-  height: 100%;
-  border-radius: calc(var(--theia-ui-padding) / 3);
-  transition: width 0.3s ease;
-}
-
-.token-usage-bar.token-usage-none {
-  background: transparent;
-}
-
-.token-usage-bar.token-usage-green {
-  background: var(--theia-successBackground);
-}
-
-.token-usage-bar.token-usage-yellow {
-  background: var(--theia-warningBackground);
-}
-
-.token-usage-bar.token-usage-red {
-  background: var(--theia-errorBackground);
-}
-
-.token-usage-label {
-  font-size: var(--theia-ui-font-size0);
-  color: var(--theia-descriptionForeground);
-  font-family: var(--theia-ui-font-family);
-  white-space: nowrap;
+.token-usage-ring-inner {
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  background: var(--theia-editor-background);
 }

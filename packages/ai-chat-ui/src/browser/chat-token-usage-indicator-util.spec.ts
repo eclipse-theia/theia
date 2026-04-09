@@ -14,29 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-let disableJSDOM = enableJSDOM();
-
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-FrontendApplicationConfigProvider.set({});
-
 import { expect } from 'chai';
-import * as React from '@theia/core/shared/react';
-import { createRoot, Root } from 'react-dom/client';
-import { flushSync } from 'react-dom';
 import { Emitter, Event } from '@theia/core';
 import { ChatModel, ChatRequestModel, ResponseTokenUsage } from '@theia/ai-chat';
 import {
-    ChatTokenUsageIndicator,
+    CHAT_CONTEXT_WINDOW_SIZE,
     computeSessionTokenUsage,
     formatTokenCount,
     getUsageColorClass
-} from './chat-token-usage-indicator';
+} from './chat-token-usage-indicator-util';
 
-const CHAT_CONTEXT_WINDOW_SIZE = 200000;
-const CHAT_CONTEXT_WINDOW_WARNING_THRESHOLD = 180000;
-
-disableJSDOM();
+const CHAT_CONTEXT_WINDOW_WARNING_THRESHOLD = 0.9 * CHAT_CONTEXT_WINDOW_SIZE;
 
 function createMockRequest(tokenUsage?: ResponseTokenUsage, isComplete = true): Partial<ChatRequestModel> {
     return {
@@ -57,28 +45,6 @@ function createMockChatModel(requests: Partial<ChatRequestModel>[]): ChatModel {
 }
 
 describe('ChatTokenUsageIndicator', () => {
-    let container: HTMLElement;
-    let root: Root;
-
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
-
-    beforeEach(() => {
-        container = document.createElement('div');
-        document.body.appendChild(container);
-        root = createRoot(container);
-    });
-
-    afterEach(() => {
-        root.unmount();
-        container.remove();
-    });
-
     describe('formatTokenCount', () => {
         it('should return "-" for undefined', () => {
             expect(formatTokenCount(undefined)).to.equal('-');
@@ -232,110 +198,6 @@ describe('ChatTokenUsageIndicator', () => {
             ]);
             // Last request with usage: 3000+1000 = 4000
             expect(computeSessionTokenUsage(model)).to.equal(4000);
-        });
-    });
-
-    describe('component rendering', () => {
-        it('should render nothing with no chatModel (totalTokens is 0)', () => {
-            flushSync(() => {
-                root.render(
-                    React.createElement(ChatTokenUsageIndicator, {
-                        chatModel: undefined
-                    })
-                );
-            });
-            const indicator = container.querySelector('.chat-token-usage-indicator');
-            expect(indicator).to.not.exist;
-        });
-
-        it('should render nothing when chatModel has no token usage', () => {
-            const model = createMockChatModel([createMockRequest(undefined)]);
-            flushSync(() => {
-                root.render(
-                    React.createElement(ChatTokenUsageIndicator, {
-                        chatModel: model
-                    })
-                );
-            });
-            const indicator = container.querySelector('.chat-token-usage-indicator');
-            expect(indicator).to.not.exist;
-        });
-
-        it('should show total tokens in the label', () => {
-            const model = createMockChatModel([
-                createMockRequest({ inputTokens: 50000, outputTokens: 2000 })
-            ]);
-            flushSync(() => {
-                root.render(React.createElement(ChatTokenUsageIndicator, { chatModel: model }));
-            });
-            const label = container.querySelector('.token-usage-label');
-            expect(label).to.exist;
-            // 50000+2000 = 52000 => '52.0k'
-            expect(label?.textContent).to.contain('52.0k');
-        });
-
-        it('should show only last request total in the label', () => {
-            const model = createMockChatModel([
-                createMockRequest({ inputTokens: 10000, outputTokens: 5000 }),
-                createMockRequest({ inputTokens: 20000, outputTokens: 15000 })
-            ]);
-            flushSync(() => {
-                root.render(React.createElement(ChatTokenUsageIndicator, { chatModel: model }));
-            });
-            const label = container.querySelector('.token-usage-label');
-            // Only last request: 20000+15000 = 35000 => '35.0k'
-            expect(label?.textContent).to.contain('35.0k');
-        });
-
-        it('should color based on total tokens', () => {
-            // total=185k => yellow (above 180k threshold)
-            const model = createMockChatModel([
-                createMockRequest({ inputTokens: 170000, outputTokens: 15000 })
-            ]);
-            flushSync(() => {
-                root.render(React.createElement(ChatTokenUsageIndicator, { chatModel: model }));
-            });
-            const bar = container.querySelector('.token-usage-bar');
-            expect(bar?.classList.contains('token-usage-yellow')).to.equal(true);
-        });
-
-        it('should apply green class when total is below threshold', () => {
-            const model = createMockChatModel([
-                createMockRequest({ inputTokens: 100, outputTokens: 50 })
-            ]);
-            flushSync(() => {
-                root.render(React.createElement(ChatTokenUsageIndicator, { chatModel: model }));
-            });
-            const bar = container.querySelector('.token-usage-bar');
-            expect(bar?.classList.contains('token-usage-green')).to.equal(true);
-        });
-
-        it('should apply red class when total is at or above budget', () => {
-            const model = createMockChatModel([
-                createMockRequest({ inputTokens: 195000, outputTokens: 10000 })
-            ]);
-            flushSync(() => {
-                root.render(React.createElement(ChatTokenUsageIndicator, { chatModel: model }));
-            });
-            const bar = container.querySelector('.token-usage-bar');
-            expect(bar?.classList.contains('token-usage-red')).to.equal(true);
-        });
-
-        it('should include cache tokens in the total shown in label', () => {
-            const model = createMockChatModel([
-                createMockRequest({
-                    inputTokens: 1000,
-                    outputTokens: 100,
-                    cacheCreationInputTokens: 500,
-                    cacheReadInputTokens: 2000
-                })
-            ]);
-            flushSync(() => {
-                root.render(React.createElement(ChatTokenUsageIndicator, { chatModel: model }));
-            });
-            const label = container.querySelector('.token-usage-label');
-            // 1000+100+500+2000 = 3600 => '3.6k'
-            expect(label?.textContent).to.contain('3.6k');
         });
     });
 });
