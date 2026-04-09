@@ -101,7 +101,8 @@ export function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalToke
     if (cacheParts.length > 0) {
         lines.push(cacheParts.join(' | '));
     }
-    lines.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipTotal', 'Total: {0} / {1}', formatTokenCount(totalTokens), formatTokenCount(CHAT_CONTEXT_WINDOW_SIZE)));
+    const pct = Math.round((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100);
+    lines.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipTotal', 'Total: {0} / {1} ({2}%)', formatTokenCount(totalTokens), formatTokenCount(CHAT_CONTEXT_WINDOW_SIZE), pct));
     return { value: lines.join('  \n') };
 }
 
