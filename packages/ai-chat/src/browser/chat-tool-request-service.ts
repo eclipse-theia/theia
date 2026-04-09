@@ -39,12 +39,11 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected readonly preferences: ChatToolPreferences;
 
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {
-        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
-
         return {
             ...toolRequest,
             handler: async (arg_string: string, ctx?: ToolInvocationContext) => {
                 const toolCallId = ctx?.toolCallId;
+                const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
 
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
