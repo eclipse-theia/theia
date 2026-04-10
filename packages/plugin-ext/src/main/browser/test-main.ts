@@ -411,6 +411,7 @@ class TestControllerImpl implements TestController {
     readonly deltaBuilder = new AccumulatingTreeDeltaEmitter<string, TestItemImpl>(300);
     canRefresh: boolean;
     canResolveChildren: boolean = false;
+    private hasTriggeredInitialResolve: boolean = false;
     readonly items = new TestItemCollection(this, item => item.path, () => this.deltaBuilder);
 
     constructor(private readonly proxy: TestingExt, readonly id: string, public label: string) {
@@ -510,8 +511,8 @@ class TestControllerImpl implements TestController {
         }
         if ('canResolve' in change) {
             this.canResolveChildren = change.canResolve!;
-            if (change.canResolve) {
-                // Trigger root-level test discovery, matching VS Code behavior
+            if (change.canResolve && !this.hasTriggeredInitialResolve) {
+                this.hasTriggeredInitialResolve = true;
                 this.resolveChildren();
             }
         }

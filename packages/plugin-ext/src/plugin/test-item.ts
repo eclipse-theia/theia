@@ -132,9 +132,14 @@ export class TestItemCollection implements theia.TestItemCollection {
         return this.values.size;
     }
     replace(items: readonly theia.TestItem[]): void {
-        const toRemove = this.values.values.map(item => item.id);
-        items.forEach(item => this.add(item));
-        toRemove.forEach(key => this.delete(key));
+        const toDelete = new Set(this.values.values.map(item => item.id));
+        for (const item of items) {
+            toDelete.delete(item.id);
+            this.add(item);
+        }
+        for (const id of toDelete) {
+            this.delete(id);
+        }
     }
 
     forEach(callback: (item: theia.TestItem, collection: theia.TestItemCollection) => unknown, thisArg?: unknown): void {
