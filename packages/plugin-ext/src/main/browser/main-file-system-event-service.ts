@@ -78,7 +78,12 @@ export class MainFileSystemEventService implements MainFileSystemEventServiceSha
     }
 
     $watch(session: number, resource: UriComponents, options: WatchOptions): void {
-        this.watches.set(session, this.fileService.watch(URI.fromComponents(resource), options));
+        if (this.watches.has(session)) {
+            throw new Error(`There is already a watch request for the key ${session}`);
+        }
+        const watch = this.fileService.watch(URI.fromComponents(resource), options);
+        this.toDispose.push(watch);
+        this.watches.set(session, watch);
     }
 
     $unwatch(session: number): void {
