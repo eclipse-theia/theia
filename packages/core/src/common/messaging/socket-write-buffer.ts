@@ -19,10 +19,14 @@ import { WebSocket } from './web-socket-channel';
 
 @injectable()
 export class SocketWriteBuffer {
-    protected static DISCONNECTED_BUFFER_SIZE = 100 * 1024;
+    private static readonly DEFAULT_DISCONNECTED_BUFFER_SIZE = 100 * 1024;
 
     protected disconnectedBuffer: Uint8Array | undefined;
     protected bufferWritePosition = 0;
+
+    protected get maxBufferSize(): number {
+        return SocketWriteBuffer.DEFAULT_DISCONNECTED_BUFFER_SIZE;
+    }
 
     buffer(data: Uint8Array): void {
         this.ensureWriteBuffer(data.byteLength);
@@ -32,7 +36,7 @@ export class SocketWriteBuffer {
 
     protected ensureWriteBuffer(byteLength: number): void {
         if (!this.disconnectedBuffer) {
-            this.disconnectedBuffer = new Uint8Array(SocketWriteBuffer.DISCONNECTED_BUFFER_SIZE);
+            this.disconnectedBuffer = new Uint8Array(this.maxBufferSize);
             this.bufferWritePosition = 0;
         }
 

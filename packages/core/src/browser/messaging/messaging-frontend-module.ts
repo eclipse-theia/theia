@@ -26,6 +26,7 @@ import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
 const backendServiceProvider = Symbol('backendServiceProvider');
 
 export const messagingFrontendModule = new ContainerModule(bind => {
+    // Transient: each connection source gets its own private buffer instance.
     bind(SocketWriteBuffer).toSelf();
     bind(ConnectionCloseService).toDynamicValue(ctx => WebSocketConnectionProvider.createProxy(ctx.container, connectionCloseServicePath)).inSingletonScope();
     bind(BrowserFrontendIdProvider).toSelf().inSingletonScope();

@@ -37,6 +37,7 @@ export const messagingBackendModule = new ContainerModule(bind => {
     bind(MessagingContainer).toDynamicValue(({ container }) => container).inSingletonScope();
     bind(WebsocketEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(WebsocketEndpoint);
+    // Transient: each connection gets its own private buffer and channel instances.
     bind(SocketWriteBuffer).toSelf();
     bind(ReconnectableSocketChannel).toSelf();
     bind(WebsocketFrontendConnectionService).toSelf().inSingletonScope();

@@ -149,6 +149,7 @@ export class ReconnectableSocketChannel extends AbstractChannel {
     protected disposables = new DisposableCollection();
 
     connect(socket: Socket): void {
+        this.disposables.dispose();
         this.disposables = new DisposableCollection();
         this.socket = socket;
         const errorHandler = (err: Error) => {
