@@ -46,6 +46,7 @@ import {
     TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
 } from './terminal-profile-service';
 import { TerminalCommandHistoryStateFactory, TerminalCommandHistoryStateImpl } from './terminal-command-history';
+import { TerminalBlockHoverOverlayController, TerminalBlockHoverOverlayControllerFactory } from './terminal-block-hover-overlay-controller';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -137,5 +138,10 @@ export default new ContainerModule(bind => {
     bind(TerminalCommandHistoryStateImpl).toSelf().inTransientScope();
     bind(TerminalCommandHistoryStateFactory).toFactory(ctx =>
         () => ctx.container.get(TerminalCommandHistoryStateImpl)
+    );
+
+    bind(TerminalBlockHoverOverlayControllerFactory).toFactory(
+        () => (options: Parameters<TerminalBlockHoverOverlayControllerFactory>[0]) =>
+            new TerminalBlockHoverOverlayController(options)
     );
 });

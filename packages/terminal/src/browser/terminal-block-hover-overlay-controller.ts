@@ -24,6 +24,10 @@ export interface TerminalBlockHoverOverlayControllerOptions {
     readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
 }
 
+export const TerminalBlockHoverOverlayControllerFactory = Symbol('TerminalBlockHoverOverlayControllerFactory');
+export type TerminalBlockHoverOverlayControllerFactory =
+    (options: TerminalBlockHoverOverlayControllerOptions) => TerminalBlockHoverOverlayController;
+
 /**
  * Owns the terminal block hover overlay DOM, marker tracking, and refresh lifecycle.
  */
