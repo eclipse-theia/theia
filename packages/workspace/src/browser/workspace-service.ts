@@ -762,21 +762,22 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      * In a single-root workspace the root name is still included so that the
      * format is consistent regardless of how many roots are open.
      *
-     * Returns `undefined` if the URI is not contained in any workspace root.
+     * Falls back to the absolute filesystem path if the URI is not contained
+     * in any workspace root.
      *
      * @param uri URI of the file
      */
-    getRootPrefixedPath(uri: URI): string | undefined {
+    getRootPrefixedPath(uri: URI): string {
         const rootUri = this.getWorkspaceRootUri(uri);
         if (!rootUri) {
-            return undefined;
+            return uri.path.fsPath();
         }
         const rootName = rootUri.path.base;
         const relative = rootUri.relative(uri);
         if (!relative || relative.toString() === '') {
             return rootName;
         }
-        return `${rootName}/${relative.toString()}`;
+        return [rootName, relative.toString()].join(uri.path.separator);
     }
 
     areWorkspaceRoots(uris: URI[]): boolean {

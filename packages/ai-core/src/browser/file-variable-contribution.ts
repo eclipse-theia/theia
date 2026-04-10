@@ -71,8 +71,7 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
 
         try {
             const content = await this.fileService.readFile(uri);
-            const relativePath = this.wsService.getRootPrefixedPath(uri)
-                ?? await this.wsService.getWorkspaceRelativePath(uri);
+            const relativePath = this.wsService.getRootPrefixedPath(uri);
             return {
                 variable: request.variable,
                 value: relativePath,

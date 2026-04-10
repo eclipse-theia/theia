@@ -87,8 +87,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                 const selectedItem = quickPick.selectedItems[0];
                 if (selectedItem && FileQuickPickItem.is(selectedItem)) {
                     quickPick.dispose();
-                    const rootPrefixedPath = this.wsService.getRootPrefixedPath(selectedItem.uri)
-                        ?? await this.wsService.getWorkspaceRelativePath(selectedItem.uri);
+                    const rootPrefixedPath = this.wsService.getRootPrefixedPath(selectedItem.uri);
                     resolve(rootPrefixedPath);
                 }
             });
@@ -124,8 +123,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
                 if (selectedItem && FileQuickPickItem.is(selectedItem)) {
                     quickPick.dispose();
-                    const filePath = this.wsService.getRootPrefixedPath(selectedItem.uri)
-                        ?? await this.wsService.getWorkspaceRelativePath(selectedItem.uri);
+                    const filePath = this.wsService.getRootPrefixedPath(selectedItem.uri);
                     const fileName = selectedItem.uri.displayName;
                     const base64Data = await fileToBase64(selectedItem.uri, this.fileService, this.logger);
                     const mimeType = getMimeTypeFromExtension(selectedItem.uri.path.toString());
@@ -283,34 +281,30 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
         const picks = await this.quickFileSelectService.getPicks(userInput, CancellationToken.None);
 
-        return Promise.all(
-            picks
-                .filter(FileQuickPickItem.is)
-                // only show files with highlights, if the user started typing to filter down the results
-                .filter(p => !userInput || p.highlights?.label)
-                .map(async (pick, index) => {
-                    const relativePath = this.wsService.getRootPrefixedPath(pick.uri)
-                        ?? await this.wsService.getWorkspaceRelativePath(pick.uri);
-                    const parentPath = this.wsService.getRootPrefixedPath(pick.uri.parent)
-                        ?? await this.wsService.getWorkspaceRelativePath(pick.uri.parent);
-                    return {
-                        label: pick.label,
-                        kind: monaco.languages.CompletionItemKind.File,
-                        range,
-                        insertText: `${prefix}${relativePath}`,
-                        detail: parentPath,
-                        // don't let monaco filter the items, as we only return picks that are filtered
-                        filterText: userInput,
-                        // keep the order of the items, but move them to the end of the list
-                        sortText: `ZZ${index.toString().padStart(4, '0')}_${pick.label}`,
-                        command: {
-                            title: VARIABLE_ADD_CONTEXT_COMMAND.label!,
-                            id: VARIABLE_ADD_CONTEXT_COMMAND.id,
-                            arguments: [FILE_VARIABLE.name, relativePath]
-                        }
-                    };
-                })
-        );
+        return picks
+            .filter(FileQuickPickItem.is)
+            // only show files with highlights, if the user started typing to filter down the results
+            .filter(p => !userInput || p.highlights?.label)
+            .map((pick, index) => {
+                const relativePath = this.wsService.getRootPrefixedPath(pick.uri);
+                const parentPath = this.wsService.getRootPrefixedPath(pick.uri.parent);
+                return {
+                    label: pick.label,
+                    kind: monaco.languages.CompletionItemKind.File,
+                    range,
+                    insertText: `${prefix}${relativePath}`,
+                    detail: parentPath,
+                    // don't let monaco filter the items, as we only return picks that are filtered
+                    filterText: userInput,
+                    // keep the order of the items, but move them to the end of the list
+                    sortText: `ZZ${index.toString().padStart(4, '0')}_${pick.label}`,
+                    command: {
+                        title: VARIABLE_ADD_CONTEXT_COMMAND.label!,
+                        id: VARIABLE_ADD_CONTEXT_COMMAND.id,
+                        arguments: [FILE_VARIABLE.name, relativePath]
+                    }
+                };
+            });
     }
 
     /**
@@ -348,8 +342,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
             const texts: string[] = [];
             for (const uri of uris) {
                 if (await this.fileService.exists(uri)) {
-                    const wsRelativePath = this.wsService.getRootPrefixedPath(uri)
-                        ?? await this.wsService.getWorkspaceRelativePath(uri);
+                    const wsRelativePath = this.wsService.getRootPrefixedPath(uri);
                     const fileName = uri.displayName;
 
                     if (wsRelativePath && this.isImageFile(wsRelativePath)) {

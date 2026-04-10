@@ -27,6 +27,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { dump, load } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**
  * Default template entry for creating custom agents
@@ -138,6 +139,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     @inject(ConfigurableInMemoryResources)
     protected readonly inMemoryResources: ConfigurableInMemoryResources;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     /** Stores URI strings of template files from directories currently being monitored for changes. */
     protected trackedTemplateURIs = new Set<string>();
@@ -322,16 +326,17 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     /**
      * Extracts a human-readable provenance label from a source URI.
-     * Uses the grandparent directory name (i.e. the workspace root name for
-     * a file like `<root>/.prompts/project-info.prompttemplate`).
+     * Returns the name of the workspace root that contains the file,
+     * falling back to the file's own base name if it is not inside any root.
      */
     protected provenanceLabel(uri: string): string {
         try {
             const parsed = new URI(uri);
-            // e.g. for "file:///home/user/my-project/.prompts/foo.prompttemplate"
-            // parent is ".prompts", grandparent is "my-project"
-            const grandparent = parsed.parent.parent;
-            return grandparent.path.base || parsed.parent.path.base || uri;
+            const rootUri = this.workspaceService.getWorkspaceRootUri(parsed);
+            if (rootUri) {
+                return rootUri.path.base;
+            }
+            return parsed.path.base || uri;
         } catch {
             return uri;
         }

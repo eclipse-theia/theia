@@ -78,13 +78,18 @@ export class ChangeSetFileService {
         const wsUri = this.wsService.getWorkspaceRootUri(uri);
         if (wsUri) {
             const isMultiRoot = this.wsService.tryGetRoots().length > 1;
-            const rootName = wsUri.path.base;
             const wsRelative = wsUri.relative(uri);
-            if (wsRelative?.hasDir) {
-                const dirPath = wsRelative.dir.toString();
-                return isMultiRoot ? `${rootName} · ${dirPath}` : dirPath;
+            if (isMultiRoot) {
+                const rootName = wsUri.path.base;
+                if (wsRelative?.hasDir) {
+                    return `${rootName} · ${wsRelative.dir.toString()}`;
+                }
+                return rootName;
             }
-            return isMultiRoot ? rootName : '';
+            if (wsRelative?.hasDir) {
+                return wsRelative.dir.toString();
+            }
+            return '';
         }
         return this.labelProvider.getLongName(uri.parent);
     }

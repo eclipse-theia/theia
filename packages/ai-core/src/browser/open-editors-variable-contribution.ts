@@ -81,7 +81,7 @@ export class OpenEditorsVariableContribution implements AIVariableContribution, 
         return openFiles.join(', ');
     }
 
-    protected getWorkspaceRelativePath(uri: URI): string | undefined {
+    protected getWorkspaceRelativePath(uri: URI): string {
         return this.workspaceService.getRootPrefixedPath(uri);
     }
 }

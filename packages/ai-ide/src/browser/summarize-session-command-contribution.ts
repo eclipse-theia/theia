@@ -79,8 +79,7 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
 
                 if (existingTaskContext.uri) {
                     if (await this.fileService.exists(existingTaskContext.uri)) {
-                        const wsRelativePath = this.wsService.getRootPrefixedPath(existingTaskContext.uri)
-                            ?? await this.wsService.getWorkspaceRelativePath(existingTaskContext.uri);
+                        const wsRelativePath = this.wsService.getRootPrefixedPath(existingTaskContext.uri);
                         const fileVariable: AIVariableResolutionRequest = {
                             variable: FILE_VARIABLE,
                             arg: wsRelativePath
