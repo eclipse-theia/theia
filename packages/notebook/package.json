@@ -9,7 +9,7 @@
     "@theia/monaco": "1.70.0",
     "@theia/monaco-editor-core": "1.108.201",
     "@theia/outline-view": "1.70.0",
-    "advanced-mark.js": "^2.6.0",
+    "advanced-mark.js": "^2.7.0",
     "react-perfect-scrollbar": "^1.5.8",
     "tslib": "^2.6.2"
   },
