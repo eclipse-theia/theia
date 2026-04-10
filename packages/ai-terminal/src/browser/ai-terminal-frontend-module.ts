@@ -67,7 +67,15 @@ export default new ContainerModule(bind => {
             showSuggestions: false,
             showCapabilities: false
         } satisfies AskAITerminalInputConfiguration);
-        container.bind(AskAITerminalInputWidget).toSelf().inSingletonScope();
-        return container.get(AskAITerminalInputWidget);
+        container.bind(AskAITerminalInputWidget).toSelf().inTransientScope();
+        const widget = container.get(AskAITerminalInputWidget);
+        // Release the child container when the widget is disposed to prevent
+        // the parent container from retaining a reference to it indefinitely.
+        const originalDispose = widget.dispose.bind(widget);
+        widget.dispose = () => {
+            container.unbindAll();
+            originalDispose();
+        };
+        return widget;
     });
 });
