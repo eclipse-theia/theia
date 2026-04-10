@@ -25,6 +25,7 @@ import * as React from '@theia/core/shared/react';
 import { Disposable, DisposableCollection, Event, nls } from '@theia/core';
 import { TestExecutionStateManager } from './test-execution-state-manager';
 import { TestOutputUIModel } from './test-output-ui-model';
+import { TestOutputViewContribution } from './test-output-view-contribution';
 
 class TestRunNode implements TreeNode, SelectableTreeNode {
     constructor(readonly counter: number, readonly id: string, readonly run: TestRun, readonly parent: CompositeTreeNode) { }
@@ -181,6 +182,7 @@ export class TestRunTreeWidget extends TreeWidget {
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(TestExecutionStateManager) protected readonly stateManager: TestExecutionStateManager;
     @inject(TestOutputUIModel) protected readonly uiModel: TestOutputUIModel;
+    @inject(TestOutputViewContribution) protected readonly testOutputView: TestOutputViewContribution;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -211,11 +213,20 @@ export class TestRunTreeWidget extends TreeWidget {
             } else if (node instanceof TestItemNode) {
                 this.uiModel.selectedOutputSource = {
                     get output(): readonly TestOutputItem[] {
-                        return node.parent.run.getOutput(node.item);
+                        const itemOutput = node.parent.run.getOutput(node.item);
+                        return itemOutput.length > 0 ? itemOutput : node.parent.run.getOutput();
                     },
-                    onDidAddTestOutput: Event.map(node.parent.run.onDidChangeTestOutput, evt => evt.filter(item => item[0] === node.item).map(item => item[1]))
+                    onDidAddTestOutput: Event.map(node.parent.run.onDidChangeTestOutput, evt => {
+                        const itemEvents = evt.filter(item => item[0] === node.item).map(item => item[1]);
+                        return itemEvents.length > 0 ? itemEvents : evt.map(item => item[1]);
+                    })
                 };
                 this.uiModel.selectedTestState = node.parent.run.getTestState(node.item);
+            }
+        });
+        this.model.onOpenNode(node => {
+            if (node instanceof TestRunNode || node instanceof TestItemNode) {
+                this.testOutputView.openView({ activate: true });
             }
         });
     }
