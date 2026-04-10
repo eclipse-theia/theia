@@ -335,7 +335,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             command: AI_SHOW_SETTINGS_COMMAND.id,
             group: 'ai-settings',
             priority: 3,
-            tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI settings...'),
+            tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI Settings'),
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });

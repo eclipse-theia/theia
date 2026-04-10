@@ -18,6 +18,7 @@ import { ChatSessionSettings, CommonChatSessionSettings } from '@theia/ai-chat';
 import { InMemoryResources, URI, nls } from '@theia/core';
 import { AbstractDialog, Message } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
+import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -253,7 +254,14 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.render();
+        // flushSync ensures React commits the render synchronously so that
+        // attachEditorContainer can query the DOM immediately afterwards.
+        // Without this, React 18 may defer the commit when invoked outside a
+        // browser event handler (e.g. from an Electron IPC callback from an
+        // Electron-rendered native menu), causing attachEditorContainer to
+        // find no .session-settings-advanced element and the Monaco editor
+        // to initialize inside a detached, zero-size node.
+        flushSync(() => this.render());
         this.attachEditorContainer();
         this.createJsonEditor();
     }

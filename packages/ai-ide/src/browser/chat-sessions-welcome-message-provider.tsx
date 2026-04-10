@@ -22,7 +22,7 @@ import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-v
 import { ChatSessionCardActionContribution } from './chat-session-card-action-contribution';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
-import { Card, CardActionButton, codicon, HoverService } from '@theia/core/lib/browser';
+import { Card, CardActionButton, codicon, HoverService, buttonKeyboardProps, isActivationKey } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -535,7 +535,9 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                         renderCard={this.renderSessionCard}
                     />
                     <div className="theia-WelcomeMessage-BrowseAllLink">
-                        <a onClick={this.handleBrowseAllChats}>
+                        <a {...buttonKeyboardProps(nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...'))}
+                            onClick={this.handleBrowseAllChats}
+                            onKeyDown={this.handleBrowseAllChatsKeyDown}>
                             {nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...')}
                         </a>
                     </div>
@@ -580,5 +582,12 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     protected handleBrowseAllChats = (): void => {
         this.commandRegistry.executeCommand(AI_CHAT_SHOW_CHATS_COMMAND.id);
+    };
+
+    protected handleBrowseAllChatsKeyDown = (e: React.KeyboardEvent): void => {
+        if (isActivationKey(e)) {
+            e.preventDefault();
+            this.handleBrowseAllChats();
+        }
     };
 }
