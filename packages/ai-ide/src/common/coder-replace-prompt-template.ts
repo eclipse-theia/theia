@@ -24,7 +24,7 @@ import {
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
 } from './workspace-functions';
 import { TODO_WRITE_FUNCTION_ID } from './todo-tool';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID, WORKSPACE_ROOTS_VARIABLE_ID } from './context-variables';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {
     SUGGEST_FILE_CONTENT_ID,
@@ -243,8 +243,6 @@ Do NOT ask for confirmation on:
 - When referencing code, use \`file_path:line_number\` format (e.g., \`src/utils.ts:42\`)
 
 # Context
-
-{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
 
 ## Provided Files
 The following files have been provided for additional context. Some may be referred to by the user (e.g., "this file" or "the attachment"). \
@@ -608,8 +606,6 @@ or shares content for review — respond conversationally. Only search for files
 
 # Context
 
-{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
-
 ## Provided Files
 The following files have been provided for additional context. Some may be referred to by the user (e.g., "this file" or "the attachment"). \
 Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understand your task.
@@ -701,8 +697,6 @@ Use the following function to retrieve a list of problems in a file if the user 
 Be aware this function operates on the workspace. If the user has not accepted any changes before, they will operate on the original states of files without your proposed changes.
 
 ## Additional Context
-
-{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
 
 The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachment"). \
 Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}

@@ -73,7 +73,6 @@ import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-conf
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
-import { WorkspaceRootsVariableContribution } from './workspace-roots-variable';
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
@@ -290,8 +289,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
 
-    bind(WorkspaceRootsVariableContribution).toSelf().inSingletonScope();
-    bind(AIVariableContribution).toService(WorkspaceRootsVariableContribution);
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);

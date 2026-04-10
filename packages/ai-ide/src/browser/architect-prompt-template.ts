@@ -18,7 +18,7 @@ import { PromptVariantSet } from '@theia/ai-core/lib/common';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from '../common/workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID, WORKSPACE_ROOTS_VARIABLE_ID } from '../common/context-variables';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../common/context-variables';
 import {
     CREATE_TASK_CONTEXT_FUNCTION_ID,
     GET_TASK_CONTEXT_FUNCTION_ID,
@@ -186,8 +186,6 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
 
 # Context
 
-{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
-
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 {{prompt:project-info}}
@@ -220,8 +218,6 @@ Use the following functions to interact with the workspace files as needed:
 3. **Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
 
 ## Additional Context
-
-{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
 
 The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachment"). \
 Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
@@ -452,8 +448,6 @@ When editing a plan:
 3. Summarize what you changed in chat
 
 # Context
-
-{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
 
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 

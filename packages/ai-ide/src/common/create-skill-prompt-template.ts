@@ -18,7 +18,7 @@ import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID,
     FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from './workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID, WORKSPACE_ROOTS_VARIABLE_ID } from './context-variables';
+import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {
     SUGGEST_FILE_CONTENT_ID,
@@ -141,8 +141,6 @@ This skill provides instructions for performing comprehensive code reviews.
 \`\`\`
 
 ## Additional Context
-
-{{${WORKSPACE_ROOTS_VARIABLE_ID}}}
 
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 

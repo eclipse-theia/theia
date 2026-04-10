@@ -777,7 +777,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (!relative || relative.toString() === '') {
             return rootName;
         }
-        return [rootName, relative.toString()].join(uri.path.separator);
+        return `${rootName}/${relative.toString()}`;
     }
 
     areWorkspaceRoots(uris: URI[]): boolean {
