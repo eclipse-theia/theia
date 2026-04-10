@@ -32,7 +32,7 @@ const TERMINAL_COMMAND_BLOCK: AIVariable = {
 };
 
 interface CommandBlockQuickPickItem extends QuickPickItem {
-      blockIndex: number;
+    blockIndex: number;
 }
 
 namespace CommandBlockQuickPickItem {
@@ -68,7 +68,7 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
             return {
                 variable: TERMINAL_COMMAND_BLOCK,
                 value: terminal.buffer.getLines(Math.max(terminal.buffer.length - 50, 0), 50).join('\n'),
-            }
+            };
         }
         const commandHistory = terminal.commandHistoryState.commandHistory;
         const commandIndex = request.arg !== undefined ? parseInt(request.arg) : commandHistory.length - 1;
@@ -79,7 +79,7 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
         return {
             variable: TERMINAL_COMMAND_BLOCK,
             value: `${block.command}\n${block.output}`
-        }
+        };
     }
 
     protected async pickCommandBlock(): Promise<string | undefined> {
@@ -106,7 +106,7 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
             });
             quickPick.onDidHide(() => {
                 resolve(undefined);
-            })
+            });
         });
     }
 }
