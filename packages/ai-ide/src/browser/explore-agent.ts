@@ -37,4 +37,5 @@ export class ExploreAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [{ id: EXPLORE_SYSTEM_PROMPT_ID, defaultVariant: exploreSystemPrompt, variants: [] }];
     protected override systemPromptId: string = EXPLORE_SYSTEM_PROMPT_ID;
+    override iconClass: string = 'codicon codicon-compass';
 }

@@ -36,5 +36,5 @@ export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [projectInfoSystemVariants, projectInfoTemplateVariants];
     protected override systemPromptId: string | undefined = projectInfoSystemVariants.id;
-
+    override iconClass: string = 'codicon codicon-repo';
 }

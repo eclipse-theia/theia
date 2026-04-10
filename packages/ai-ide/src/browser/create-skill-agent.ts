@@ -35,6 +35,7 @@ export class CreateSkillAgent extends AbstractModeAwareChatAgent {
         identifier: 'default/universal',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
+    override iconClass: string = 'codicon codicon-wand';
 
     override description = nls.localize('theia/ai/workspace/createSkillAgent/description',
         'An AI assistant for creating new skills. Skills provide reusable instructions and domain knowledge for AI agents. ' +

@@ -48,6 +48,7 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
         identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
+    override iconClass: string = 'codicon codicon-code';
 
     override description = nls.localize('theia/ai/workspace/coderAgent/description',
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
