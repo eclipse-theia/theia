@@ -43,7 +43,8 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
             ...toolRequest,
             handler: async (arg_string: string, ctx?: ToolInvocationContext) => {
                 const toolCallId = ctx?.toolCallId;
-                const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
+                const sessionId = request.session.rootSessionId ?? request.session.id;
+                const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, sessionId, toolRequest);
 
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
