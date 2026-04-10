@@ -146,6 +146,7 @@ export class AskAITerminalOverlay implements Disposable {
     protected readonly toDispose = new DisposableCollection();
     protected readonly containerNode: HTMLDivElement;
     protected readonly inputWidget: AskAITerminalInputWidget;
+    protected disposed = false;
 
     constructor(
         protected readonly terminalWidget: TerminalWidgetImpl,
@@ -184,6 +185,10 @@ export class AskAITerminalOverlay implements Disposable {
     }
 
     dispose(): void {
+        if (this.disposed) {
+            return;
+        }
+        this.disposed = true;
         this.toDispose.dispose();
     }
 }

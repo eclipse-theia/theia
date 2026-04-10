@@ -123,7 +123,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                         },
                         () => {/* No Op */}
                     );
-                    overlay.addDisposable(currentTerminal.onTerminalDidClose(() => overlay.dispose()));
+                    overlay.addDisposable(currentTerminal.onDidDispose(() => overlay.dispose()));
                 }
             },
             isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
