@@ -58,7 +58,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type.js';
 import { TerminalCommandHistoryStateFactory } from './terminal-command-history.js';
-import { TerminalBlockHoverOverlayController } from './terminal-block-hover-overlay-controller.js';
+import { TerminalBlockHoverOverlayController, TerminalBlockHoverOverlayControllerFactory } from './terminal-block-hover-overlay-controller.js';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -170,6 +170,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
     @inject(TerminalCommandHistoryStateFactory) protected readonly commandHistoryStateFactory: TerminalCommandHistoryStateFactory;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(TerminalBlockHoverOverlayControllerFactory) protected readonly blockHoverOverlayControllerFactory: TerminalBlockHoverOverlayControllerFactory;
 
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
@@ -619,7 +620,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.blockHoverOverlayController || !this.term.element) {
             return;
         }
-        this.blockHoverOverlayController = new TerminalBlockHoverOverlayController({
+        this.blockHoverOverlayController = this.blockHoverOverlayControllerFactory({
             term: this.term,
             renderBlockMenu: (event, block) => {
                 this.contextMenuRenderer.render({
@@ -632,6 +633,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             }
         });
         this.blockHoverOverlayController.initialize();
+        // Always register disposal in toDispose so the controller is cleaned up
+        // regardless of which path (open() or updateCommandHistoryHandlers()) created it.
+        this.toDispose.push(Disposable.create(() => {
+            this.blockHoverOverlayController?.dispose();
+            this.blockHoverOverlayController = undefined;
+        }));
     }
 
     scrollToBlockBoundary(terminalBlock: TerminalBlock, boundary: TerminalBlockBoundary = TerminalBlockBoundary.Top): void {
