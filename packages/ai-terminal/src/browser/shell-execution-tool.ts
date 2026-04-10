@@ -107,8 +107,8 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                     cwd: {
                         type: 'string',
                         description: 'Working directory for command execution. MUST always be provided. ' +
-                            'Use the <rootName> or <rootName>/<relativePath> format (e.g., "backend", "frontend/src"). ' +
-                            'Can also be an absolute filesystem path.'
+                            'Use a workspace-relative path (e.g., "backend", "frontend/src") ' +
+                            'or an absolute filesystem path.'
                     },
                     timeout: {
                         type: 'number',

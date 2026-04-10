@@ -452,7 +452,7 @@ export class FileContentFunction implements ToolProvider {
             id: FileContentFunction.ID,
             name: FileContentFunction.ID,
             description: 'Returns the content of a specified file within the workspace as a raw string. ' +
-                'The file path must be provided in the format "<rootName>/<relativePath>" where rootName is the workspace root folder name ' +
+                'File paths use the same format returned by other workspace tools ' +
                 '(e.g., "my-project/src/index.ts"). ' +
                 'Only files within workspace boundaries are accessible; attempting to access files outside the workspace will return an error. ' +
                 'If the file is currently open in an editor with unsaved changes, returns the editor\'s current content (not the saved file on disk). ' +
@@ -469,8 +469,9 @@ export class FileContentFunction implements ToolProvider {
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'The relative path to the target file within the workspace (e.g., "my-project/src/index.ts", "backend/package.json"). ' +
-                            'Must be prefixed with the workspace root name. Absolute paths and paths outside the workspace will result in an error.',
+                        description: 'The path to the target file within the workspace, as returned by other workspace tools ' +
+                            '(e.g., "my-project/src/index.ts", "backend/package.json"). ' +
+                            'Absolute paths and paths outside the workspace will result in an error.',
                     },
                     offset: {
                         type: 'number',
@@ -732,9 +733,9 @@ export class GetWorkspaceFileList implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Path to a directory within the workspace in the format "<rootName>/<relativePath>" ' +
+                        description: 'Path to a directory within the workspace ' +
                             '(e.g., "my-project/src", "backend/src/components"). ' +
-                            'Use "" or "." to list all workspace root names as top-level entries. ' +
+                            'Use "" or "." to list the top-level workspace roots. ' +
                             'Paths outside the workspace will result in an error.'
                     }
                 },
@@ -857,9 +858,8 @@ export class FileDiagnosticProvider implements ToolProvider {
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'The path to the target file in the format "<rootName>/<relativePath>" ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts"). ' +
-                            'Must be prefixed with the workspace root name.'
+                        description: 'The path to the target file within the workspace ' +
+                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
                     }
                 },
                 required: ['file']
@@ -999,7 +999,7 @@ export class FindFilesByPattern implements ToolProvider {
                 'Searches across all workspace roots. ' +
                 'Allows efficient discovery of files using patterns like \'**/*.ts\' for all TypeScript files or ' +
                 '\'src/**/*.js\' for JavaScript files in the src directory. The function respects gitignore patterns and user exclusions, ' +
-                'returns paths in the format "<rootName>/<relativePath>", and limits results to 200 files maximum. ' +
+                'returns workspace-relative paths (e.g., "my-project/src/index.ts"), and limits results to 200 files maximum. ' +
                 'Performance note: This traverses directories recursively which may be slow in large workspaces. ' +
                 'For better performance, use specific subdirectory patterns (e.g., \'src/**/*.ts\' instead of \'**/*.ts\'). ' +
                 'Use this to find files by name/extension. Do NOT use this for searching file contents - use searchInWorkspace instead.',

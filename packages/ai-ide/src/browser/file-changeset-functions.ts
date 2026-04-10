@@ -82,9 +82,8 @@ export class SuggestFileContent implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Path to the file in the format "<rootName>/<relativePath>" ' +
-                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json"). ' +
-                            'Must be prefixed with the workspace root name.'
+                        description: 'The path to the file within the workspace ' +
+                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json").'
                     },
                     content: {
                         type: 'string',
@@ -159,9 +158,8 @@ export class WriteFileContent implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Path to the file in the format "<rootName>/<relativePath>" ' +
-                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json"). ' +
-                            'Must be prefixed with the workspace root name.'
+                        description: 'The path to the file within the workspace ' +
+                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json").'
                     },
                     content: {
                         type: 'string',
@@ -258,9 +256,9 @@ export class ReplaceContentInFileFunctionHelper {
             properties: {
                 path: {
                     type: 'string',
-                    description: 'Path to the file in the format "<rootName>/<relativePath>" ' +
+                    description: 'The path to the file within the workspace ' +
                         '(e.g., "my-project/src/index.ts", "backend/src/main.ts"). ' +
-                        'Must be prefixed with the workspace root name. Must read the file with getFileContent first.'
+                        'Must read the file with getFileContent first.'
                 },
                 replacements: {
                     type: 'array',
@@ -586,9 +584,8 @@ export class ClearFileChanges implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Path to the file in the format "<rootName>/<relativePath>" ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts"). ' +
-                            'Must be prefixed with the workspace root name.'
+                        description: 'The path to the file within the workspace ' +
+                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
                     }
                 },
                 required: ['path']
@@ -625,9 +622,8 @@ export class GetProposedFileState implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Path to the file in the format "<rootName>/<relativePath>" ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts"). ' +
-                            'Must be prefixed with the workspace root name.'
+                        description: 'The path to the file within the workspace ' +
+                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
                     }
                 },
                 required: ['path']

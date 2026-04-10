@@ -75,9 +75,9 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     },
                     subDirectoryPath: {
                         type: 'string',
-                        description: 'Optional subdirectory path to limit search scope. Use the format "<rootName>/<relativePath>" ' +
-                            '(e.g., "frontend/src", "backend/packages/core/src/browser"). To search within a specific root, ' +
-                            'use just the root name (e.g., "backend"). If not specified, searches all workspace roots.'
+                        description: 'Optional subdirectory path to limit search scope ' +
+                            '(e.g., "frontend/src", "backend/packages/core/src/browser"). ' +
+                            'If not specified, searches the entire workspace.'
                     }
                 },
                 required: ['query', 'useRegExp']
