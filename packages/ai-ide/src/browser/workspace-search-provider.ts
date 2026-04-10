@@ -46,15 +46,15 @@ export class WorkspaceSearchProvider implements ToolProvider {
             id: SEARCH_IN_WORKSPACE_FUNCTION_ID,
             name: SEARCH_IN_WORKSPACE_FUNCTION_ID,
             description: 'Searches file contents within the workspace for lines matching the given search term. ' +
-                'Returns up to 30 matching results by default (configurable via preferences). If results are truncated, ' +
-                'refine your search with fileExtensions or subDirectoryPath filters. ' +
-                'The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). ' +
-                'Returns a list of matches including: file path, line number, and the matching line content. ' +
-                'Multi-word patterns must match exactly (including spaces, case-insensitively). ' +
-                'For best results, use specific search terms and filter by file extensions or subdirectories. ' +
-                'For complex searches, prefer multiple simpler queries over one complex regex. ' +
-                'Use this for finding code patterns, function usages, or text across the codebase. ' +
-                'Do NOT use this for finding files by name - use findFilesByPattern instead.',
+            'Returns up to 30 matching results by default (configurable via preferences). If results are truncated, ' +
+            'refine your search with fileExtensions or subDirectoryPath filters. ' +
+            'The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). ' +
+            'Returns a list of matches including: file path, line number, and the matching line content. ' +
+            'Multi-word patterns must match exactly (including spaces, case-insensitively). ' +
+            'For best results, use specific search terms and filter by file extensions or subdirectories. ' +
+            'For complex searches, prefer multiple simpler queries over one complex regex. ' +
+            'Use this for finding code patterns, function usages, or text across the codebase. ' +
+            'Do NOT use this for finding files by name - use findFilesByPattern instead.',
             parameters: {
                 type: 'object',
                 properties: {
