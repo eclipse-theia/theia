@@ -23,7 +23,6 @@ import {
     LanguageModelResponse,
     LanguageModelStatus,
     LanguageModelTextResponse,
-    TokenUsageService,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -54,7 +53,6 @@ export class CopilotLanguageModel implements LanguageModel {
         public maxRetries: number,
         protected readonly accessTokenProvider: () => Promise<string | undefined>,
         protected readonly enterpriseUrlProvider: () => string | undefined,
-        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
@@ -107,7 +105,7 @@ export class CopilotLanguageModel implements LanguageModel {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return { stream: new StreamingAsyncIterator(runner as any, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
+        return { stream: new StreamingAsyncIterator(runner as any, cancellationToken) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -120,19 +118,12 @@ export class CopilotLanguageModel implements LanguageModel {
 
         const message = response.choices[0].message;
 
-        if (this.tokenUsageService && response.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: response.usage.prompt_tokens,
-                    outputTokens: response.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
-            text: message.content ?? ''
+            text: message.content ?? '',
+            usage: response.usage ? {
+                input_tokens: response.usage.prompt_tokens,
+                output_tokens: response.usage.completion_tokens,
+            } : undefined
         };
     }
 
@@ -150,20 +141,13 @@ export class CopilotLanguageModel implements LanguageModel {
             console.error('Error in Copilot chat completion:', JSON.stringify(message));
         }
 
-        if (this.tokenUsageService && result.usage) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.prompt_tokens,
-                    outputTokens: result.usage.completion_tokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
         return {
             content: message.content ?? '',
-            parsed: message.parsed
+            parsed: message.parsed,
+            usage: result.usage ? {
+                input_tokens: result.usage.prompt_tokens,
+                output_tokens: result.usage.completion_tokens,
+            } : undefined
         };
     }
 

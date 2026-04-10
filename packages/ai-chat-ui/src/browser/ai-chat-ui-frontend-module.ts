@@ -52,6 +52,7 @@ import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tre
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
+import { bindChatViewPreferences } from './chat-view-preferences';
 import { ChatViewWidget } from './chat-view-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
@@ -70,6 +71,8 @@ import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-con
 import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    bindChatViewPreferences(bind);
+
     bind(AIChatNavigationService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, AIChatContribution);

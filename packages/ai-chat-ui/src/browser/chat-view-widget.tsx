@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
+import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia/ai-core';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
@@ -45,9 +45,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(MessageService)
     protected messageService: MessageService;
-
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
 
     @inject(CommandService)
     protected readonly commandService: CommandService;

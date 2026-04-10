@@ -57,8 +57,10 @@ import {
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { formatTokenCount } from '../chat-token-usage-indicator-util';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
@@ -599,9 +601,26 @@ export class ChatViewTreeWidget extends TreeWidget {
                 <h3 ref={agentLabel}
                     className='theia-AgentLabel'
                     onMouseEnter={() => {
-                        if (agentDescription) {
+                        const tokenUsage = isResponseNode(node) ? node.response.tokenUsage : undefined;
+                        const hasTokenInfo = tokenUsage && (tokenUsage.inputTokens > 0 || tokenUsage.outputTokens > 0);
+                        const tokenInfo = hasTokenInfo
+                            ? `${nls.localize('theia/ai/chat-ui/tokenUsageLabel', 'Token Usage')}: ${nls.localizeByDefault(
+                                'Input: {0}', formatTokenCount(tokenUsage.inputTokens))} | ${nls.localizeByDefault(
+                                'Output: {0}', formatTokenCount(tokenUsage.outputTokens))}`
+                            : undefined;
+                        if (agentDescription || tokenInfo) {
+                            const md = new MarkdownStringImpl();
+                            if (agentDescription) {
+                                md.appendMarkdown(agentDescription);
+                            }
+                            if (agentDescription && tokenInfo) {
+                                md.appendMarkdown('\n\n---\n\n');
+                            }
+                            if (tokenInfo) {
+                                md.appendMarkdown(tokenInfo);
+                            }
                             this.hoverService.requestHover({
-                                content: agentDescription,
+                                content: md,
                                 target: agentLabel.current!,
                                 position: 'right'
                             });

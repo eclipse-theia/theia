@@ -2015,3 +2015,49 @@ div:last-child>.theia-ChatNode {
 .theia-capabilities-collapsed-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: var(--theia-scrollbarSlider-hoverBackground);
 }
+
+/* Token usage: border tinting on warning/error (repeated with :has for focus specificity) */
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-yellow,
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-yellow:has(.monaco-editor.focused) {
+  border-color: var(--theia-warningBackground);
+}
+
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-red,
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-red:has(.monaco-editor.focused) {
+  border-color: var(--theia-errorBackground);
+}
+
+/* Token usage badge next to send button */
+.token-usage-badge {
+  cursor: default;
+  display: flex;
+  align-items: center;
+  margin-right: calc(var(--theia-ui-padding) / 2);
+  --token-usage-fill: var(--theia-descriptionForeground);
+  --token-usage-track: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+}
+
+.token-usage-badge.token-usage-yellow {
+  --token-usage-fill: var(--theia-warningBackground);
+}
+
+.token-usage-badge.token-usage-red {
+  --token-usage-fill: var(--theia-errorBackground);
+}
+
+/* Circular progress ring */
+.token-usage-ring {
+  width: var(--theia-icon-size);
+  height: var(--theia-icon-size);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token-usage-ring-inner {
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  background: var(--theia-editor-background);
+}
