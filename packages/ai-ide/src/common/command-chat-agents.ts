@@ -54,6 +54,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         purpose: 'command',
         identifier: 'default/universal',
     }];
+    override iconClass: string = 'codicon codicon-server-process';
     protected defaultLanguageModelPurpose: string = 'command';
 
     override description = nls.localize('theia/ai/ide/commandAgent/description',
