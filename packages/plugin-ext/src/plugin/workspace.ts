@@ -39,7 +39,6 @@ import { Disposable, URI } from './types-impl';
 import { normalize } from '@theia/core/lib/common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes, UriComponents } from '../common/uri-components';
-import { toWorkspaceFolder } from './type-converters';
 import { MessageRegistryExt } from './message-registry';
 import * as Converter from './type-converters';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -347,7 +346,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             const folderPath = folder.uri.toString();
 
             if (resourcePath === folderPath) {
-                return toWorkspaceFolder(folder);
+                return folder;
             }
 
             if (resourcePath.startsWith(folderPath)

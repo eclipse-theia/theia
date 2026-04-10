@@ -410,7 +410,7 @@ class TestControllerImpl implements TestController {
     private _runs = new SimpleObservableCollection<TestRunImpl>();
     readonly deltaBuilder = new AccumulatingTreeDeltaEmitter<string, TestItemImpl>(300);
     canRefresh: boolean;
-    private canResolveChildren: boolean = false;
+    canResolveChildren: boolean = false;
     readonly items = new TestItemCollection(this, item => item.path, () => this.deltaBuilder);
 
     constructor(private readonly proxy: TestingExt, readonly id: string, public label: string) {
@@ -510,6 +510,10 @@ class TestControllerImpl implements TestController {
         }
         if ('canResolve' in change) {
             this.canResolveChildren = change.canResolve!;
+            if (change.canResolve) {
+                // Trigger root-level test discovery, matching VS Code behavior
+                this.resolveChildren();
+            }
         }
         if ('label' in change) {
             this.label = change.label!;
@@ -543,9 +547,14 @@ class TestControllerImpl implements TestController {
     }
     onItemsChanged: Event<TreeDelta<string, TestItemImpl>[]> = this.deltaBuilder.onDidFlush;
 
-    resolveChildren(item: TestItem): void {
+    resolveChildren(item?: TestItem): void {
         if (this.canResolveChildren) {
-            this.proxy.$onResolveChildren(this.id, itemToPath(item));
+            if (item) {
+                this.proxy.$onResolveChildren(this.id, itemToPath(item));
+            } else {
+                // Root-level resolve: trigger discovery of top-level test items
+                this.proxy.$onResolveChildren(this.id, []);
+            }
         }
     }
 

@@ -299,6 +299,7 @@ export class TestRun implements theia.TestRun {
     }
 
     end(): void {
+        this.changeBatcher.flush();
         this.ended = true;
         this.proxy.$notifyTestRunEnded(this.controller.id, this.id);
     }
@@ -428,9 +429,14 @@ export class TestingExtImpl implements TestingExt {
     $onResolveChildren(controllerId: string, path: string[]): void {
         const controller = this.withController(controllerId);
         if (controller.resolveHandler) {
-            const item = controller.items.find(path);
-            if (item?.canResolveChildren) { // the item and resolve handler might have been been changed, but not sent to the front end
-                controller.resolveHandler?.(item);
+            if (path.length === 0) {
+                // Root-level resolve: discover top-level test items
+                controller.resolveHandler(undefined);
+            } else {
+                const item = controller.items.find(path);
+                if (item?.canResolveChildren) { // the item and resolve handler might have been been changed, but not sent to the front end
+                    controller.resolveHandler(item);
+                }
             }
         }
     }

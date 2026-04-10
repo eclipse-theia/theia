@@ -95,6 +95,7 @@ export class TestTree extends TreeImpl {
             parent.testItem.resolveChildren();
             return Promise.resolve(parent.testItem.tests.map(test => this.createTestNode(parent.controller, parent, test)));
         } else if (TestControllerNode.is(parent)) {
+            parent.controller.resolveChildren();
             return Promise.resolve(parent.controller.tests.map(test => this.createTestNode(parent.controller, parent, test)));
         } else if (TestRoot.is(parent)) {
             return Promise.resolve(this.testService.getControllers().map(controller => this.createControllerNode(parent, controller)));
