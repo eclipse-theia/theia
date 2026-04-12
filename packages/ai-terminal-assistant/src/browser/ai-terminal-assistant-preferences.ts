@@ -32,7 +32,7 @@ export const AiTerminalAssistantPreferenceSchema: PreferenceSchema = {
             description: nls.localize('theia/terminal/aiTerminalAssistant/changeMode', 'Controls the AI Terminal Assistant display mode')
         }
     }
-}
+};
 
 export const AiTerminalAssistantPreferenceContribution = {
     schema: AiTerminalAssistantPreferenceSchema

@@ -96,8 +96,7 @@ export class AiTerminalAssistantViewWidget extends BaseWidget {
                     this.update();
                 }
             })
-        )
-
+        );
 
         // Set initial border state
         this.updateBorderClass(this.summaryService.currentSummary);
@@ -130,6 +129,5 @@ export class AiTerminalAssistantViewWidget extends BaseWidget {
             this.addClass('neutral-border');
         }
     }
-
 
 }

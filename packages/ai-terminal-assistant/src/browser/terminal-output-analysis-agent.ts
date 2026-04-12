@@ -38,7 +38,7 @@ export type ErrorLines = z.infer<typeof ErrorLines>;
 const ExplanationStep = z.object({
     label: z.string(),
     text: z.string()
-})
+});
 export type ExplanationStep = z.infer<typeof ExplanationStep>;
 const ErrorDetail = z.object({
     category: z.string(),

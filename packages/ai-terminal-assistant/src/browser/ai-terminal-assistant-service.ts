@@ -154,7 +154,6 @@ export class SummaryServiceImpl implements SummaryService {
         //     });
         // });
 
-
         this._isStandAlone = this.aiTerminalAssistantPreferences['terminal.aiAssistant.mode'] === 'standalone';
 
         this.aiTerminalAssistantPreferences.onPreferenceChanged(async event => {

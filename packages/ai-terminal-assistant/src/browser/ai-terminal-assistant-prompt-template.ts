@@ -314,7 +314,8 @@ cwd: "/home/user/project/bar"
       ],
       "explanationSteps": [
         {"label": "What", "text": "You tried to assign a text value (String \"42\") to a variable that expects a number (int)."},
-        {"label": "Why", "text": "Java is 'strongly typed' - each variable can only hold its declared type (text or numbers, not both). This commonly occurs when reading user input (always text/String) without converting it to a number first."}
+        {"label": "Why", "text": "Java is 'strongly typed' - each variable can only hold its declared type (text or numbers, not both).
+            This commonly occurs when reading user input (always text/String) without converting it to a number first."}
       ],
       "fixSteps": [
         "Look at line 15 - you're trying to store text \"42\" in an int variable.",
