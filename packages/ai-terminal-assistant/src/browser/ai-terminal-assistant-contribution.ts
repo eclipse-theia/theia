@@ -22,8 +22,9 @@ import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-h
 import { AgentService } from '@theia/ai-core';
 import { AbstractViewContribution, codicon, FrontendApplicationContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
-import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { TerminalCommands, TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { SummaryService } from './ai-terminal-assistant-service';
+import { AiTerminalAssistantPreferences } from './ai-terminal-assistant-preferences';
 import { AiTerminalAssistantViewWidget } from './ai-terminal-assistant-view-widget';
 
 export const AI_TERMINAL_SUMMARY_TOGGLE_COMMAND_ID = 'aiTerminalSummary:toggle';
@@ -57,6 +58,9 @@ export class AiTerminalAssistantContribution extends AbstractViewContribution<Ai
 
     @inject(SummaryService)
     protected readonly summaryService: SummaryService;
+
+    @inject(AiTerminalAssistantPreferences)
+    protected readonly preferences: AiTerminalAssistantPreferences;
 
     constructor() {
         super({
@@ -99,6 +103,10 @@ export class AiTerminalAssistantContribution extends AbstractViewContribution<Ai
         });
     }
 
+    protected get isStandaloneMode(): boolean {
+        return this.preferences['terminal.aiAssistant.mode'] === 'standalone';
+    }
+
     override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(AI_TERMINAL_SUMMARY_COMMAND, this.commandHandlerFactory({
@@ -109,6 +117,21 @@ export class AiTerminalAssistantContribution extends AbstractViewContribution<Ai
             },
             isEnabled: () => this.agentService.isEnabled(this.terminalAgent.id)
         }));
+
+        // In standalone mode, intercept terminal creation commands and redirect to the AI terminal panel.
+        // registerHandler uses unshift, so these handlers have higher priority than the terminal package's handlers.
+        // isEnabled returning true only in standalone mode means: in normal mode our handler is skipped,
+        // and the terminal package's default handler runs as usual.
+        const redirectToAiPanel = async () => {
+            const widget = await this.openView({ activate: true });
+            widget.title.closable = true;
+            widget.title.label = nls.localize('theia/ai/terminal/summaryTitle', 'AI Terminal Assistant');
+        };
+        const standaloneOnly = { isEnabled: () => this.isStandaloneMode, execute: redirectToAiPanel };
+        commands.registerHandler(TerminalCommands.NEW.id, standaloneOnly);
+        commands.registerHandler(TerminalCommands.PROFILE_NEW.id, standaloneOnly);
+        commands.registerHandler(TerminalCommands.NEW_ACTIVE_WORKSPACE.id, standaloneOnly);
+        commands.registerHandler(TerminalCommands.SPLIT.id, standaloneOnly);
     }
 
     override registerKeybindings(keybindings: KeybindingRegistry): void {

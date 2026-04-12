@@ -482,6 +482,8 @@ export class SummaryServiceImpl implements SummaryService {
             title: 'Hidden TaskTerminal',
             destroyTermOnClose: true,
             kind: 'task',
+            hideFromUser: true,
+            isTransient: true,
         });
 
         // Set up output listener BEFORE starting to catch early output
