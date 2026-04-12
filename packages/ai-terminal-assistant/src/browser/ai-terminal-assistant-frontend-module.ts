@@ -22,6 +22,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { AiTerminalSummaryAgent } from './terminal-output-analysis-agent';
 import { AiTerminalAssistantContribution } from './ai-terminal-assistant-contribution';
 import { SummaryServiceImpl, SummaryService } from './ai-terminal-assistant-service';
+import { ErrorSourceResolutionService } from './error-source-resolution-service';
 import { AiTerminalAssistantCommandService, AiTerminalAssistantCommandServiceImpl } from './ai-terminal-assistant-command-service';
 import { AiTerminalAssistantViewWidget } from './ai-terminal-assistant-view-widget';
 import { SummaryViewWidget } from './ai-terminal-assistant-summary-widget';
@@ -30,6 +31,7 @@ import {  bindAiTerminalAssistantPreferences } from './ai-terminal-assistant-pre
 
 export default new ContainerModule(bind => {
     // Services
+    bind(ErrorSourceResolutionService).toSelf().inSingletonScope();
     bind(SummaryServiceImpl).toSelf().inSingletonScope();
     bind(SummaryService).toService(SummaryServiceImpl);
 
