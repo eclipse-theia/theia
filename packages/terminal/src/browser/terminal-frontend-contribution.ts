@@ -834,12 +834,10 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_SCROLL_ACTIONS, {
             commandId: TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_TOP.id,
-            label: nls.localize('theia/terminal/terminal-block-scroll-to-top', 'Scroll to Top of Block'),
             order: '1'
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_SCROLL_ACTIONS, {
             commandId: TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_BOTTOM.id,
-            label: nls.localize('theia/terminal/terminal-block-scroll-to-bottom', 'Scroll to Bottom of Block'),
             order: '2'
         });
     }
