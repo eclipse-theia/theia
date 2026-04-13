@@ -40,7 +40,7 @@ import {
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
 import { TerminalService } from './base/terminal-service';
-import { TerminalWidgetOptions, TerminalWidget, TerminalLocation } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalLocation, TerminalBlock, TerminalBlockBoundary } from './base/terminal-widget';
 import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore } from './terminal-profile-service';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
@@ -705,6 +705,46 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             isEnabled: () => !!this.currentTerminal,
             execute: () => this.currentTerminal?.selectAll()
         });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_ALL, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    navigator.clipboard.writeText(`${block.command}\n${block.output}`);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_COMMAND, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    navigator.clipboard.writeText(block.command);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && !!block.command
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_OUTPUT, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    navigator.clipboard.writeText(block.output);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_TOP, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    (this.shell.activeWidget as TerminalWidget).scrollToBlockBoundary(block, TerminalBlockBoundary.Top);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_BOTTOM, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    (this.shell.activeWidget as TerminalWidget).scrollToBlockBoundary(block, TerminalBlockBoundary.Bottom);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
+        });
         commands.registerHandler(CommonCommands.COPY.id, {
             execute: () => {
                 const terminal = this.shell.activeWidget;
@@ -814,6 +854,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_4'], {
             commandId: TerminalCommands.KILL_TERMINAL.id
         });
+
+        menus.registerSubmenu(TerminalMenus.TERMINAL_CONTRIBUTIONS, '');
 
         menus.registerSubmenu(TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS, '', { when: 'isTerminalTab' });
 
