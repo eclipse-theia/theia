@@ -29,9 +29,9 @@ export type TerminalBlockHoverOverlayControllerFactory =
     (options: TerminalBlockHoverOverlayControllerOptions) => TerminalBlockHoverOverlayController;
 
 export interface TerminalBlockHoverOverlay {
-        element: HTMLElement;
-        startMarker: IMarker;
-        endMarker: IMarker;
+    element: HTMLElement;
+    startMarker: IMarker;
+    endMarker: IMarker;
 }
 
 /**
