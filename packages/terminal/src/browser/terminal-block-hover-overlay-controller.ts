@@ -28,6 +28,12 @@ export const TerminalBlockHoverOverlayControllerFactory = Symbol('TerminalBlockH
 export type TerminalBlockHoverOverlayControllerFactory =
     (options: TerminalBlockHoverOverlayControllerOptions) => TerminalBlockHoverOverlayController;
 
+export interface TerminalBlockHoverOverlay {
+        element: HTMLElement;
+        startMarker: IMarker;
+        endMarker: IMarker;
+}
+
 /**
  * Owns the terminal block hover overlay DOM, marker tracking, and refresh lifecycle.
  */
@@ -36,11 +42,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     protected readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
 
     protected container: HTMLElement | undefined;
-    protected readonly blockOverlays: Array<{
-        element: HTMLElement;
-        startMarker: IMarker;
-        endMarker: IMarker;
-    }> = [];
+    protected readonly blockOverlays: TerminalBlockHoverOverlay[] = [];
     protected readonly markerMap = new WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>>();
     protected readonly toDispose = new DisposableCollection();
     protected pendingOverlayUpdate = false;
@@ -63,7 +65,6 @@ export class TerminalBlockHoverOverlayController implements Disposable {
         this.term.element.appendChild(container);
         this.container = container;
 
-        this.toDispose.push(this.term.onScroll(() => this.update()));
         this.toDispose.push(this.term.onResize(() => this.update()));
 
         const viewport = this.term.element.querySelector('.xterm-viewport');
@@ -96,12 +97,24 @@ export class TerminalBlockHoverOverlayController implements Disposable {
             return;
         }
 
-        this.markerMap.set(block, { [TerminalBlockBoundary.Top]: trackStart, [TerminalBlockBoundary.Bottom]: trackEnd });
+        this.markerMap.set(block,
+            {
+                [TerminalBlockBoundary.Top]: trackStart,
+                [TerminalBlockBoundary.Bottom]: trackEnd
+            }
+        );
 
         const hoverOverlay = document.createElement('div');
         hoverOverlay.classList.add('terminal-command-hover');
         hoverOverlay.style.display = 'none';
+        hoverOverlay.appendChild(this.createButton(block, hoverOverlay));
+        this.container.appendChild(hoverOverlay);
 
+        this.blockOverlays.push({ element: hoverOverlay, startMarker: trackStart, endMarker: trackEnd });
+        this.update();
+    }
+
+    protected createButton(block: TerminalBlock, hoverOverlay: HTMLElement): HTMLElement {
         const button = document.createElement('button');
         button.classList.add('terminal-block-actions-button', 'codicon', 'codicon-ellipsis');
         const blockActionsLabel = nls.localize('theia/terminal/blockActions', 'Terminal Block Actions');
@@ -114,11 +127,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
             event.preventDefault();
             this.renderBlockMenu(event, block);
         });
-        hoverOverlay.appendChild(button);
-
-        this.container.appendChild(hoverOverlay);
-        this.blockOverlays.push({ element: hoverOverlay, startMarker: trackStart, endMarker: trackEnd });
-        this.update();
+        return button;
     }
 
     /**
@@ -142,11 +151,25 @@ export class TerminalBlockHoverOverlayController implements Disposable {
      * Scrolls the terminal viewport to the requested boundary of a previously registered block.
      */
     scrollToBoundary(block: TerminalBlock, boundary: TerminalBlockBoundary): void {
-        const marker = this.markerMap.get(block)?.[boundary];
-        if (!marker) {
+        const markers = this.markerMap.get(block);
+        if (!markers) {
             return;
         }
-        this.term.scrollToLine(marker.line);
+        if (boundary === TerminalBlockBoundary.Top) {
+            const marker = markers[TerminalBlockBoundary.Top];
+            if (marker) {
+                this.term.scrollToLine(marker.line);
+            }
+            return;
+        }
+        const startMarker = markers[TerminalBlockBoundary.Top];
+        const endMarker = markers[TerminalBlockBoundary.Bottom];
+        if (!startMarker || !endMarker) {
+            return;
+        }
+        const lastBlockLine = Math.max(startMarker.line, endMarker.line - 1);
+        const topLineForBottomAlignment = Math.max(0, lastBlockLine - (this.term.rows - 1));
+        this.term.scrollToLine(topLineForBottomAlignment);
     }
 
     protected doUpdate(): void {
