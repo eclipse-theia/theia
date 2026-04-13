@@ -78,7 +78,8 @@ export type ChatChangeEvent =
     | ChatEditCancelEvent
     | ChatEditSubmitEvent
     | ChatResponseChangedEvent
-    | ChatChangeHierarchyBranchEvent;
+    | ChatChangeHierarchyBranchEvent
+    | ChatInteractionNeededEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
@@ -135,9 +136,17 @@ export interface ChatResponseChangedEvent {
     kind: 'responseChanged';
 }
 
+export interface ChatInteractionNeededEvent {
+    kind: 'interactionNeeded';
+    contentPart: InteractiveContent & ChatResponseContent;
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatUpdateChangeSetEvent {
         return event.kind === 'updateChangeSet';
+    }
+    export function isInteractionNeededEvent(event: ChatChangeEvent): event is ChatInteractionNeededEvent {
+        return event.kind === 'interactionNeeded';
     }
 }
 
@@ -382,6 +391,29 @@ export interface ChatProgressMessage {
     content: string;
 }
 
+/**
+ * Interface for ChatResponseContent parts that require user interaction.
+ * Content parts that implement this interface can be tracked by the delegation
+ * renderer without content-type-specific checks.
+ */
+export interface InteractiveContent {
+    /** Stable identifier for deduplication in pending interaction tracking. */
+    readonly interactionId: string | undefined;
+    /** Whether the interaction has been resolved (e.g., confirmed/denied, option selected). */
+    readonly isResolved: boolean;
+    /** Resolves when the interaction is resolved. Used for cleanup in delegation chains. */
+    readonly whenResolved: Promise<void>;
+}
+
+export namespace InteractiveContent {
+    export function is(content: unknown): content is InteractiveContent {
+        return typeof content === 'object' && !!content
+            && 'interactionId' in content
+            && 'isResolved' in content
+            && 'whenResolved' in content;
+    }
+}
+
 export interface ChatResponseContent {
     kind: string;
     /**
@@ -526,7 +558,7 @@ export interface HorizontalLayoutChatResponseContent extends ChatResponseContent
     content: ChatResponseContent[];
 }
 
-export interface ToolCallChatResponseContent extends Required<ChatResponseContent> {
+export interface ToolCallChatResponseContent extends Required<ChatResponseContent>, InteractiveContent {
     kind: 'toolCall';
     id?: string;
     name?: string;
@@ -803,7 +835,7 @@ export type MultiSelectQuestionResponseHandler = (
     selectedOptions: { text: string, value?: string }[],
 ) => void;
 
-export interface QuestionResponseContent extends ChatResponseContent {
+export interface QuestionResponseContent extends ChatResponseContent, InteractiveContent {
     kind: 'question';
     question: string;
     header?: string;
@@ -865,6 +897,11 @@ export interface ChatResponseModel {
      * Use this to be notified for any change in the response model
      */
     readonly onDidChange: Event<void>;
+    /**
+     * Fires when this response requires user interaction (e.g., tool confirmation, question response).
+     * The content part that needs interaction is provided as the event payload.
+     */
+    readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent>;
     /**
      * The unique identifier of the response model
      */
@@ -1058,6 +1095,17 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
+    }
+
+    addChildModel(child: MutableChatModel): Disposable {
+        const disposable = new DisposableCollection();
+        disposable.push(child.onDidChange(event => {
+            if (ChatChangeEvent.isInteractionNeededEvent(event)) {
+                this._onDidChangeEmitter.fire(event);
+            }
+        }));
+        this.toDispose.push(disposable);
+        return disposable;
     }
 
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
@@ -1688,8 +1736,12 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
 
         // Wire response changes to propagate through request to session
         this._response.onDidChange(() => {
-            // Fire a generic addVariable event to propagate response changes
             this._onDidChangeEmitter.fire({ kind: 'responseChanged' });
+        }, this, this.toDispose);
+
+        // Wire interaction needed events to propagate through request to session
+        this._response.onInteractionNeeded(contentPart => {
+            this._onDidChangeEmitter.fire({ kind: 'interactionNeeded', contentPart });
         }, this, this.toDispose);
 
         this.toDispose.push(this._onDidChangeEmitter);
@@ -2244,7 +2296,7 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
     }
 }
 
-export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent {
+export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent, InteractiveContent {
     readonly kind = 'toolCall';
     protected _id?: string;
     protected _name?: string;
@@ -2306,6 +2358,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._confirmationTimeout = value;
     }
 
+    get interactionId(): string | undefined {
+        return this._id;
+    }
+
+    get isResolved(): boolean {
+        return this.finished;
+    }
+
     get confirmed(): Promise<boolean> {
         return this._confirmed;
     }
@@ -2315,6 +2375,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     get whenFinished(): Promise<void> {
+        return this._whenFinished;
+    }
+
+    get whenResolved(): Promise<void> {
         return this._whenFinished;
     }
 
@@ -2571,12 +2635,14 @@ export interface QuestionResponseContentOptions {
  * Default implementation for the QuestionResponseContent.
  * Can be created with or without handler/request for read-only (restored) mode.
  */
-export class QuestionResponseContentImpl implements QuestionResponseContent {
+export class QuestionResponseContentImpl implements QuestionResponseContent, InteractiveContent {
     readonly kind = 'question';
     public multiSelect?: boolean;
     public header?: string;
     public onSkip?: () => void;
     protected _selectedOptions: { text: string; value?: string }[] | undefined;
+    protected _resolvedResolver?: () => void;
+    readonly whenResolved: Promise<void>;
 
     constructor(
         question: string,
@@ -2604,14 +2670,33 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
         this.onSkip = questionOptions?.onSkip;
         this._selectedOptions = questionOptions?.selectedOptions ??
             (questionOptions?.selectedOption ? [questionOptions.selectedOption] : undefined);
+        if (this._selectedOptions) {
+            this.whenResolved = Promise.resolve();
+        } else {
+            this.whenResolved = new Promise<void>(resolve => {
+                this._resolvedResolver = resolve;
+            });
+        }
+        if (!this.isReadOnly && this.request) {
+            this.request.response.fireInteractionNeeded(this);
+        }
     }
 
     get isReadOnly(): boolean {
         return !this.handler || !this.request;
     }
 
+    get interactionId(): string | undefined {
+        return `question-${this.question}`;
+    }
+
+    get isResolved(): boolean {
+        return this.selectedOption !== undefined;
+    }
+
     set selectedOption(option: { text: string; value?: string } | undefined) {
         this._selectedOptions = option ? [option] : undefined;
+        this._resolvedResolver?.();
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
@@ -2622,6 +2707,7 @@ export class QuestionResponseContentImpl implements QuestionResponseContent {
 
     set selectedOptions(options: { text: string; value?: string }[] | undefined) {
         this._selectedOptions = options;
+        this._resolvedResolver?.();
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
@@ -2773,6 +2859,9 @@ class ChatResponseImpl implements ChatResponse {
 export class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
+
+    protected readonly _onInteractionNeededEmitter = new Emitter<InteractiveContent & ChatResponseContent>();
+    readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent> = this._onInteractionNeededEmitter.event;
 
     data = {};
 
@@ -2978,6 +3067,14 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
     stopWaitingForInput(): void {
         this._isWaitingForInput = false;
+        this._onDidChangeEmitter.fire();
+    }
+
+    fireInteractionNeeded(contentPart: InteractiveContent & ChatResponseContent): void {
+        this._onInteractionNeededEmitter.fire(contentPart);
+    }
+
+    notifyChanged(): void {
         this._onDidChangeEmitter.fire();
     }
 
