@@ -93,7 +93,7 @@ export class DockerFileContribution implements ContainerCreationContribution {
                 }, progress => outputprovider.onRemoteOutput(OutputHelper.parseProgress(progress))));
                 createOptions.Image = imageId;
             } catch (error) {
-                outputprovider.onRemoteOutput(`could not build dockerfile "${dockerfile}" reason: ${error.message}`);
+                outputprovider.onRemoteOutput(`Could not build dockerfile "${dockerfile}": ${error.message}`);
                 throw error;
             }
         }
@@ -141,6 +141,7 @@ export class MountsContribution implements ContainerCreationContribution {
                 parseWorkspaceMount(mount) :
                 { Source: mount.source, Target: mount.target, Type: mount.type ?? 'bind' }) ?? []);
     }
+
 }
 
 @injectable()
@@ -170,7 +171,7 @@ export class PostCreateCommandContribution implements ContainerCreationContribut
                     const stream = await exec.start({ Tty: true });
                     stream.on('data', chunk => outputprovider.onRemoteOutput(chunk.toString()));
                 } catch (error) {
-                    outputprovider.onRemoteOutput('could not execute postCreateCommand ' + JSON.stringify(command) + ' reason:' + error.message);
+                    outputprovider.onRemoteOutput(`Could not execute postCreateCommand ${JSON.stringify(command)}: ${error.message}`);
                 }
             }
         }
