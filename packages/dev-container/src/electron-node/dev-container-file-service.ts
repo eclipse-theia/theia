@@ -23,7 +23,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { ContributionProvider, Path, URI } from '@theia/core';
 import { VariableResolverContribution } from './devcontainer-contributions/variable-resolver-contribution';
 
-const VARIABLE_REGEX = /^\$\{(.+?)(?::(.+))?\}$/;
+const VARIABLE_REGEX = /\$\{(.+?)(?::(.+?))?\}/g;
 
 @injectable()
 export class DevContainerFileService {
@@ -35,16 +35,14 @@ export class DevContainerFileService {
     protected readonly variableResolverContributions: ContributionProvider<VariableResolverContribution>;
 
     protected resolveVariable(value: string): string {
-        const match = value.match(VARIABLE_REGEX);
-        if (match) {
-            const [, type, variable] = match;
+        return value.replace(VARIABLE_REGEX, (match, type, variable) => {
             for (const contribution of this.variableResolverContributions.getContributions()) {
                 if (contribution.canResolve(type)) {
                     return contribution.resolve(variable ?? type);
                 }
             }
-        }
-        return value;
+            return match;
+        });
     }
 
     protected resolveVariablesRecursively<T>(obj: T): T {
