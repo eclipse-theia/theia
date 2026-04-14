@@ -255,7 +255,7 @@ export interface DevContainerCommon {
      * Remote environment variables to set for processes spawned in the container including lifecycle scripts and any remote editor/IDE server process.
      */
     remoteEnv?: {
-        [k: string]: string | null
+        [k: string]: string | undefined
     }
     /**
      * The username to use for spawning processes in the container including lifecycle scripts and any remote editor/IDE server process.
