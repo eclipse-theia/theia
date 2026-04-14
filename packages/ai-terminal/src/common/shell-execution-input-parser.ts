@@ -16,6 +16,7 @@
 
 export interface ShellExecutionInput {
     command: string;
+    description?: string;
     cwd?: string;
     timeout?: number;
 }

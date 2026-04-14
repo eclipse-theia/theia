@@ -387,6 +387,12 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                 </span>
             </div>
 
+            {input.description && (
+                <div className="shell-execution-tool command-description">
+                    {input.description}
+                </div>
+            )}
+
             <div className="shell-execution-tool command-display confirmation">
                 <code>{input.command}</code>
             </div>

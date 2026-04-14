@@ -104,6 +104,11 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                         type: 'string',
                         description: 'The shell command to execute. Can include pipes, redirects, and shell features.'
                     },
+                    description: {
+                        type: 'string',
+                        description: 'Brief explanation of what this command does, shown to the user in the approval dialog. ' +
+                            'Keep it concise (5-10 words for simple commands, more for complex ones).'
+                    },
                     cwd: {
                         type: 'string',
                         description: 'Working directory for command execution. Can be absolute or relative to workspace root. Defaults to the workspace root.'
