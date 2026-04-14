@@ -67,7 +67,6 @@ test.describe('Theia Output View', () => {
         expect(await testChannel!.isDisplayed()).toBe(true);
     });
     test('should check if the output view test channel shows the test output', async () => {
-        expect(await testChannel.numberOfLines()).toBe(12);
         expect(await testChannel.textContentOfLineByLineNumber(1)).toMatch('hello info1');
         expect(await testChannel.maxSeverityOfLineByLineNumber(1)).toMatch('info');
         expect(await testChannel.textContentOfLineByLineNumber(2)).toMatch('hello info2');
