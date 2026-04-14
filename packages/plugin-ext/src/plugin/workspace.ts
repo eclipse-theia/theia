@@ -119,7 +119,22 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void {
         const newRoots = event.roots || [];
-        const newFolders = newRoots.map((root, index) => this.toWorkspaceFolder(root, index));
+        const oldFoldersByUri = new Map<string, theia.WorkspaceFolder>();
+        if (this.folders) {
+            for (const folder of this.folders) {
+                oldFoldersByUri.set(folder.uri.toString(), folder);
+            }
+        }
+        const newFolders = newRoots.map((root, index) => {
+            const existing = oldFoldersByUri.get(root);
+            if (existing) {
+                // Preserve object identity even if the index changed,
+                // since extensions may use folder objects as Map keys.
+                Object.assign(existing, { index });
+                return existing;
+            }
+            return this.toWorkspaceFolder(root, index);
+        });
         const delta = this.deltaFolders(this.folders, newFolders);
 
         this.folders = newFolders;

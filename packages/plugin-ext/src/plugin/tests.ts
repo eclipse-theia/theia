@@ -434,7 +434,9 @@ export class TestingExtImpl implements TestingExt {
                 controller.resolveHandler(undefined);
             } else {
                 const item = controller.items.find(path);
-                if (item?.canResolveChildren) { // the item and resolve handler might have been been changed, but not sent to the front end
+                // The `main` side should only request resolution for items with `canResolveChildren`, but with event batching,
+                // the flag can be out of sync with the state on the `plugin` side. The state on the `plugin` side is authoritative.
+                if (item?.canResolveChildren) {
                     controller.resolveHandler(item);
                 }
             }

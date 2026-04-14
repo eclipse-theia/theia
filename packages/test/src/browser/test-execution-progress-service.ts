@@ -47,9 +47,9 @@ export class DefaultTestExecutionProgressService implements TestExecutionProgres
             const openTesting = this.testPreferences['testing.openTesting'];
             if (openTesting === 'openOnTestStart') {
                 this.openTestResultView();
+                this.testOutputView.openView({ activate: false });
             }
         }
-        this.testOutputView.openView({ activate: !preserveFocus });
     }
 
     async openTestResultView(): Promise<Widget> {

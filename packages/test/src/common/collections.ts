@@ -130,7 +130,7 @@ abstract class AbstractIndexedCollection<K, T> {
         const previous = this.keys.get(key);
         this.keys.set(key, value);
         this._values = undefined;
-        return previous !== undefined ? previous : undefined;
+        return previous;
     }
 
     remove(key: K): T | undefined {
