@@ -23,7 +23,7 @@ export class NodeStopwatch extends Stopwatch {
 
     constructor() {
         super({
-            owner: 'backend',
+            owner: 'backend process',
             now: () => performance.now(),
         });
     }
