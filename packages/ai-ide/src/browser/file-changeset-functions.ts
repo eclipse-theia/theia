@@ -38,16 +38,9 @@ import {
 } from '../common/file-changeset-function-ids';
 
 function createPathShortLabel(args: string, hasMore: boolean): { label: string; hasMore: boolean } | undefined {
-    try {
-        const parsed = JSON.parse(args);
-        if (parsed && typeof parsed === 'object' && 'path' in parsed) {
-            return { label: String(parsed.path), hasMore };
-        }
-    } catch {
-        const path = extractJsonStringField(args, 'path');
-        if (path) {
-            return { label: path, hasMore };
-        }
+    const path = extractJsonStringField(args, 'path');
+    if (path) {
+        return { label: path, hasMore };
     }
     return undefined;
 }
