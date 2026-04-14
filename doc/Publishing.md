@@ -403,6 +403,7 @@ _NOTE:_ Performing the release locally will publish unsigned packages to NPM.
   - Reference the `changelog` and breaking changes.
   - Attach _Native Dependencies_ artifacts (the extracted zips).
     - native-dependencies-darwin-arm64.zip
+    - native-dependencies-darwin-x64.zip
     - native-dependencies-linux-x64.zip
     - native-dependencies-win32-x64.zip
   - Mark the release as `latest`
@@ -425,6 +426,7 @@ Eclipse Theia v{{version}}
   - Use `Generate release notes` for the changelog link.
   - Attach _Native Dependencies_ artifacts (the extracted zips).
     - native-dependencies-darwin-arm64.zip
+    - native-dependencies-darwin-x64.zip
     - native-dependencies-linux-x64.zip
     - native-dependencies-win32-x64.zip
   - Optional: Mark the release as `latest` (_Uncheck for a patch on an OLDER version!!_).

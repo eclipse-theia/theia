@@ -1,5 +1,8 @@
 name: Package Native Dependencies
 
+permissions:
+  contents: read
+
 on: workflow_dispatch
 
 jobs:
@@ -7,7 +10,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["ubuntu-22.04", "windows-latest", "macos-latest"]
+        # macos-15 = arm64, macos-15-intel = x64 (aligned with eclipse-theia/theia-ide).
+        os: [ubuntu-22.04, windows-2022, macos-15, macos-15-intel]
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -24,7 +28,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install and Build
+      - name: Install
         shell: bash
         run: |
           npm ci
@@ -48,3 +52,4 @@ jobs:
         with:
           name: native-dependencies-${{ matrix.os }}
           path: ./scripts/native-dependencies-*.zip
+          retention-days: 7
