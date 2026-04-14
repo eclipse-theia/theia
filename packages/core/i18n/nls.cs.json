@@ -624,7 +624,7 @@
           "description": "Vrátí seznam agentů dostupných v systému."
         },
         "aiConfiguration": {
-          "label": "Konfigurace AI [Beta]"
+          "label": "Konfigurace AI"
         },
         "blinkTitle": {
           "agentCompleted": "Theia – Agent dokončeno",
@@ -927,7 +927,7 @@
           "tooltip": "Interpretovat nové řádky"
         },
         "view": {
-          "label": "Historie AI agenta [Beta]",
+          "label": "Historie AI agenta",
           "noAgent": "Žádný agent není k dispozici.",
           "noAgentSelected": "Není vybrán žádný agent.",
           "noHistoryForAgent": "Pro vybraného agenta „{0}“ není k dispozici žádná historie."
@@ -1054,7 +1054,7 @@
         },
         "deleteChat": "Smazat chat",
         "enableAI": {
-          "mdDescription": "Toto nastavení vám umožňuje přístup k nejnovějším funkcím AI (beta verze).            \n            Upozorňujeme, že tyto funkce jsou ve fázi beta, což znamená, že mohou             podléhat změnám a budou dále vylepšovány. Je důležité si uvědomit, že tyto funkce mohou generovat            kontinuální požadavky na jazykové modely (LLM), ke kterým poskytujete přístup. To může znamenat náklady, které            musíte pečlivě sledovat. Povolením této možnosti potvrzujete, že jste si těchto rizik vědomi.            \n            **Upozornění! Níže uvedená nastavení v této sekci se projeví až\n            po povolení hlavního nastavení funkce. Po povolení funkce je třeba nakonfigurovat alespoň jednoho            poskytovatele LLM níže. Viz také [dokumentace](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "Toto nastavení vám umožňuje přístup k nejnovějším funkcím AI.            \n            Je důležité si uvědomit, že tyto funkce mohou generovat            kontinuální požadavky na jazykové modely (LLM), ke kterým poskytujete přístup. To může znamenat náklady, které            musíte pečlivě sledovat. Povolením této možnosti potvrzujete, že jste si těchto rizik vědomi.            \n            **Upozornění! Níže uvedená nastavení v této sekci se projeví až\n            po povolení hlavního nastavení funkce. Po povolení funkce je třeba nakonfigurovat alespoň jednoho            poskytovatele LLM níže. Viz také [dokumentace](https://theia-ide.org/docs/user_ai/)**."
         },
         "exploreAgent": {
           "description": "Asistent pro prozkoumávání kódové základny, který extrahuje a zpracovává informace z kódové základny.         Podává zprávy o tom, co existuje, poskytuje úryvky kódu a popisuje pozorované vzorce."
@@ -1893,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Podpora AI v IDE Theia je k dispozici (beta verze)!",
+        "header": "Podpora AI v IDE Theia je k dispozici!",
         "openAIChatView": "Otevřete nyní AI Chat View a zjistěte, jak začít!"
       },
       "apiComparator": "{0} Kompatibilita API",

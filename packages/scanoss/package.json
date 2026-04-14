@@ -4,7 +4,7 @@
   "description": "Theia - SCANOSS Integration",
   "dependencies": {
     "@theia/core": "1.70.0",
-    "scanoss": "^0.15.2"
+    "scanoss": "^0.15.7"
   },
   "publishConfig": {
     "access": "public"

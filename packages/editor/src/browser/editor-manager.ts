@@ -51,8 +51,6 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     readonly label = nls.localizeByDefault('Text Editor');
 
-    protected readonly editorCounters = new Map<string, number>();
-
     protected readonly onActiveEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
     /**
      * Emit when the active editor is changed.
@@ -96,9 +94,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 }
                 this.updateCurrentEditor();
             });
-            this.checkCounterForWidget(widget);
+
             widget.disposed.connect(() => {
-                this.removeFromCounter(widget);
                 this.removeRecentlyVisible(widget);
                 this.updateCurrentEditor();
             });
@@ -141,11 +138,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     createByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const counter = this.createCounterForUri(uri);
-        if (!options?.counter || options.counter < counter) {
-            options = { ...options, counter };
-        }
-        return this.getOrCreateByUri(uri, options);
+        return this.getOrCreateByUri(uri, { ...options, counter: this.nextCounter() });
     }
 
     protected readonly recentlyVisibleIds: string[] = [];
@@ -229,7 +222,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions);
                 // Definitely creating a new tabbar - no widget can match.
                 if (insertionOptions.addOptions.mode?.startsWith('split')) {
-                    return await super.open(uri, { counter: this.createCounterForUri(uri), ...options });
+                    return await super.open(uri, { counter: this.nextCounter(), ...options });
                 }
                 // Check the target tabbar for an existing widget.
                 const tabbar = insertionOptions.addOptions.ref && this.shell.getTabBarFor(insertionOptions.addOptions.ref);
@@ -252,7 +245,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                     }
                 }
                 // Open a new widget.
-                return await super.open(uri, { counter: this.createCounterForUri(uri), ...options });
+                return await super.open(uri, { counter: this.nextCounter(), ...options });
             }
 
             return await super.open(uri, options);
@@ -267,7 +260,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
      * To modify direction, pass options with `{widgetOptions: {mode: ...}}`
      */
     openToSide(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const counter = this.createCounterForUri(uri);
+        const counter = this.nextCounter();
         const splitOptions: EditorOpenerOptions = { widgetOptions: { mode: 'split-right' }, ...options, counter };
         return this.open(uri, splitOptions);
     }
@@ -351,46 +344,14 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         };
     }
 
-    protected removeFromCounter(widget: EditorWidget): void {
-        const { id, uri } = this.extractIdFromWidget(widget);
-        if (uri && !Number.isNaN(id)) {
-            let max = -Infinity;
-            this.all.forEach(editor => {
-                const candidateID = this.extractIdFromWidget(editor);
-                if ((candidateID.uri === uri) && (candidateID.id > max)) {
-                    max = candidateID.id!;
-                }
-            });
-
-            if (max > -Infinity) {
-                this.editorCounters.set(uri, max);
-            } else {
-                this.editorCounters.delete(uri);
-            }
-        }
-    }
-
     protected extractIdFromWidget(widget: EditorWidget): WidgetId {
         const uri = widget.editor.uri.toString();
         const id = Number(widget.id.slice(widget.id.lastIndexOf(':') + 1));
         return { id, uri };
     }
 
-    protected checkCounterForWidget(widget: EditorWidget): void {
-        const { id, uri } = this.extractIdFromWidget(widget);
-        const numericalId = Number(id);
-        if (uri && !Number.isNaN(numericalId)) {
-            const highestKnownId = this.editorCounters.get(uri) ?? -Infinity;
-            if (numericalId > highestKnownId) {
-                this.editorCounters.set(uri, numericalId);
-            }
-        }
-    }
-
-    protected createCounterForUri(uri: URI): number {
-        const identifier = uri.toString();
-        const next = (this.editorCounters.get(identifier) ?? 0) + 1;
-        return next;
+    protected nextCounter(): number {
+        return Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 100) + 100);
     }
 
     protected getCounterForUri(uri: URI): number | undefined {
@@ -399,13 +360,9 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return counterOfMostRecentlyVisibleEditor === undefined ? undefined : parseInt(counterOfMostRecentlyVisibleEditor);
     }
 
-    protected getOrCreateCounterForUri(uri: URI): number {
-        return this.getCounterForUri(uri) ?? this.createCounterForUri(uri);
-    }
-
     protected override createWidgetOptions(uri: URI, options?: EditorOpenerOptions): NavigatableWidgetOptions {
         const navigatableOptions = super.createWidgetOptions(uri, options);
-        navigatableOptions.counter = options?.counter ?? this.getOrCreateCounterForUri(uri);
+        navigatableOptions.counter = options?.counter ?? this.getCounterForUri(uri) ?? this.nextCounter();
         return navigatableOptions;
     }
 }

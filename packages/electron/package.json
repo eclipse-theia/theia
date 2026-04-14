@@ -3,16 +3,16 @@
   "version": "1.70.0",
   "description": "Theia - Electron utility package",
   "dependencies": {
-    "electron-store": "^8.0.0",
+    "electron-store": "^8.2.0",
     "fix-path": "^4.0.0",
-    "native-keymap": "^2.2.1"
+    "native-keymap": "^2.5.0"
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.70.0",
     "@theia/re-exports": "1.70.0"
   },
   "peerDependencies": {
-    "electron": "39.7.0"
+    "electron": "39.8.7"
   },
   "theiaReExports": {
     "shared": {

@@ -624,7 +624,7 @@
           "description": "返回系統中可用的代理程式清單"
         },
         "aiConfiguration": {
-          "label": "AI 設定 [測試版]"
+          "label": "AI 設定"
         },
         "blinkTitle": {
           "agentCompleted": "Theia - 代理程式已完成",
@@ -927,7 +927,7 @@
           "tooltip": "解讀換行符"
         },
         "view": {
-          "label": "AI 代理歷史紀錄 [測試版]",
+          "label": "AI 代理歷史紀錄",
           "noAgent": "無可用代理程式。",
           "noAgentSelected": "未選取任何代理程式。",
           "noHistoryForAgent": "無法取得所選代理程式「{0}」的歷史記錄"
@@ -1054,7 +1054,7 @@
         },
         "deleteChat": "刪除對話",
         "enableAI": {
-          "mdDescription": "此設定可讓您存取最新的人工智慧功能(測試版)。            \n            請注意,這些功能處於測試階段,可能隨時調整並持續改進。請務必知悉,這些功能可能對您授權存取的語言模型(LLMs)產生持續性請求,可能產生相關費用,需密切監控。 啟用此選項即表示您已知悉相關風險。            \n            **請注意！本節下方設定僅在主功能啟用後生效。啟用功能後,您需於下方至少設定一組            LLM供應商。詳見[官方文件](https://theia-ide.org/docs/user_ai/)**。"
+          "mdDescription": "此設定可讓您存取最新的人工智慧功能。            \n            請務必知悉,這些功能可能對您授權存取的語言模型(LLMs)產生持續性請求,可能產生相關費用,需密切監控。 啟用此選項即表示您已知悉相關風險。            \n            **請注意！本節下方設定僅在主功能啟用後生效。啟用功能後,您需於下方至少設定一組            LLM供應商。詳見[官方文件](https://theia-ide.org/docs/user_ai/)**。"
         },
         "exploreAgent": {
           "description": "一款從程式碼庫中提取並提煉資訊的程式碼庫探索助手。         報告現有內容的相關事實、提供程式碼片段,並描述觀察到的模式。"
@@ -1893,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE 的 AI 支援功能現已開放使用(測試版)！",
+        "header": "Theia IDE 的 AI 支援功能現已開放使用！",
         "openAIChatView": "立即開啟 AI 聊天視窗,學習如何開始！"
       },
       "apiComparator": "{0} API 相容性",

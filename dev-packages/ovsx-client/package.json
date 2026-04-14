@@ -31,7 +31,7 @@
   "dependencies": {
     "@theia/request": "1.70.0",
     "limiter": "^2.1.0",
-    "semver": "^7.5.4",
+    "semver": "^7.7.4",
     "tslib": "^2.6.2"
   },
   "gitHead": "21358137e41342742707f660b8e222f940a27652"

@@ -82,8 +82,9 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
         registry.registerItem({
             id: ChatCommands.EDIT_SESSION_SETTINGS.id,
             command: ChatCommands.EDIT_SESSION_SETTINGS.id,
-            tooltip: nls.localize('theia/ai/session-settings-dialog/tooltip', 'Set Session Settings'),
+            tooltip: nls.localize('theia/ai/session-settings-dialog/tooltip', 'Set Session Settings...'),
             priority: 3,
+            group: 'chat-settings',
             when: ENABLE_AI_CONTEXT_KEY
         });
     }

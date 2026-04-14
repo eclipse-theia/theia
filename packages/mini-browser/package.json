@@ -5,9 +5,9 @@
   "dependencies": {
     "@theia/core": "1.70.0",
     "@theia/filesystem": "1.70.0",
-    "@types/mime-types": "^2.1.0",
-    "mime-types": "^2.1.18",
-    "pdfobject": "^2.0.201604172",
+    "@types/mime-types": "^2.1.4",
+    "mime-types": "^2.1.35",
+    "pdfobject": "^2.3.1",
     "tslib": "^2.6.2",
     "vhost": "^3.0.2"
   },

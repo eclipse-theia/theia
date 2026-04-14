@@ -7,7 +7,7 @@
     "@theia/editor": "1.70.0",
     "@theia/monaco": "1.70.0",
     "@theia/monaco-editor-core": "1.108.201",
-    "anser": "^2.0.1",
+    "anser": "^2.3.5",
     "tslib": "^2.6.2"
   },
   "publishConfig": {

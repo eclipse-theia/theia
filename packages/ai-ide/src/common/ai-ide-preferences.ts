@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common';
-import { nls, PreferenceSchema } from '@theia/core';
+import { nls, PreferenceSchema, PreferenceScope } from '@theia/core';
 
 // We reuse the context key for the preference name
 export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST = 'ai-features.orchestrator.excludedAgents';
-export const PREFERENCE_NAME_AGENT_MODE_CONFIRMED = 'ai-features.agentMode.confirmed';
+export const PREFERENCE_NAME_AGENT_MODE_ENABLED = 'ai-features.agentMode.enabled';
 export const aiIdePreferenceSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_NAME_ENABLE_AI]: {
@@ -49,14 +49,14 @@ export const aiIdePreferenceSchema: PreferenceSchema = {
             },
             default: ['ClaudeCode', 'Codex'],
         },
-        [PREFERENCE_NAME_AGENT_MODE_CONFIRMED]: {
+        [PREFERENCE_NAME_AGENT_MODE_ENABLED]: {
             title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: nls.localize('theia/ai/ide/agentMode/confirmed/mdDescription',
-                'Whether the user has confirmed the agent mode warning. '
-                + 'Agent mode allows autonomous file modifications without further confirmation. '
-                + 'Set to `false` to see the confirmation again on the next agent mode request.'),
+            description: nls.localize('theia/ai/ide/agentMode/enabled/mdDescription',
+                'Enable agent mode for the Coder agent. Agent mode allows autonomous file modifications without further confirmation.\
+                 A first-use confirmation dialog is shown when using agent mode until this is set to `true`.'),
             type: 'boolean',
             default: false,
+            scope: PreferenceScope.User
         }
     }
 };

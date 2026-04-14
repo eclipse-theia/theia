@@ -56,7 +56,7 @@ function makeContextManager(): { addVariables: sinon.SinonStub; getVariables: si
 }
 
 function makeChangeSet(): { onDidChange: sinon.SinonStub } {
-    return { onDidChange: sinon.stub() };
+    return { onDidChange: sinon.stub().returns({ dispose: sinon.stub() }) };
 }
 
 function makeNewSession(contextManager = makeContextManager()): {
@@ -64,13 +64,15 @@ function makeNewSession(contextManager = makeContextManager()): {
     model: {
         context: ReturnType<typeof makeContextManager>;
         changeSet: ReturnType<typeof makeChangeSet>;
+        onDidChange: sinon.SinonStub;
     };
 } {
     return {
         id: 'new-session-id',
         model: {
             context: contextManager,
-            changeSet: makeChangeSet()
+            changeSet: makeChangeSet(),
+            onDidChange: sinon.stub().returns({ dispose: sinon.stub() })
         }
     };
 }

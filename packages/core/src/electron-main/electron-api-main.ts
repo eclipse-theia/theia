@@ -136,6 +136,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             }
             popup.popup({
                 window: electronWindow,
+                x,
+                y,
                 callback: () => {
                     this.openPopups.delete(menuId);
                     event.sender.send(CHANNEL_ON_CLOSE_POPUP, menuId);
@@ -343,13 +345,13 @@ export namespace TheiaRendererAPI {
         const disposables = new DisposableCollection();
 
         return new Promise<boolean>(resolve => {
-            wc.send(CHANNEL_REQUEST_CLOSE, stopReason, confirmChannel, cancelChannel);
             createDisposableListener(ipcMain, confirmChannel, e => {
                 resolve(true);
             }, disposables);
             createDisposableListener(ipcMain, cancelChannel, e => {
                 resolve(false);
             }, disposables);
+            wc.send(CHANNEL_REQUEST_CLOSE, stopReason, confirmChannel, cancelChannel);
         }).finally(() => disposables.dispose());
     }
 
@@ -360,13 +362,13 @@ export namespace TheiaRendererAPI {
         const disposables = new DisposableCollection();
 
         return new Promise<boolean>(resolve => {
-            mainWindow.send(CHANNEL_REQUEST_SECONDARY_CLOSE, secondaryWindow.mainFrame.name, confirmChannel, cancelChannel);
             createDisposableListener(ipcMain, confirmChannel, e => {
                 resolve(true);
             }, disposables);
             createDisposableListener(ipcMain, cancelChannel, e => {
                 resolve(false);
             }, disposables);
+            mainWindow.send(CHANNEL_REQUEST_SECONDARY_CLOSE, secondaryWindow.mainFrame.name, confirmChannel, cancelChannel);
         }).finally(() => disposables.dispose());
     }
 

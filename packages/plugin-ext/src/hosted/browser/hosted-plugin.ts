@@ -267,10 +267,12 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected override async beforeLoadContributions(toDisconnect: DisposableCollection): Promise<void> {
-        // make sure that the previous state, including plugin widgets, is restored
-        // and core layout is initialized, i.e. explorer, scm, debug views are already added to the shell
-        // but shell is not yet revealed
-        await this.appState.reachedState('initialized_layout');
+        // Make sure the shell is attached so that registries (commands, menus, views, etc.)
+        // are ready to accept contributions. We intentionally do NOT wait for initialized_layout
+        // here, because layout restoration may depend on plugin-provided file system providers
+        // (e.g. git: scheme for merge editors), and those providers are registered during
+        // startPlugins which runs after this point. Waiting for initialized_layout would deadlock.
+        await this.appState.reachedState('attached_shell');
         this.workspaceTrusted = await this.workspaceTrustService.getWorkspaceTrust();
     }
 
@@ -464,12 +466,17 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected ensureFileSystemActivation(event: FileSystemProviderActivationEvent): void {
-        event.waitUntil(this.activateByFileSystem(event).then(() => {
+        event.waitUntil((async () => {
+            // Wait until plugins are synced so that activation events are recorded
+            // and will be replayed when managers start. This does not depend on
+            // layout initialization, so it cannot deadlock.
+            await this.willStart;
+            await this.activateByFileSystem(event);
             if (!this.fileService.hasProvider(event.scheme)) {
                 return waitForEvent(Event.filter(this.fileService.onDidChangeFileSystemProviderRegistrations,
                     ({ added, scheme }) => added && scheme === event.scheme), 3000);
             }
-        }));
+        })());
     }
 
     protected ensureCommandHandlerRegistration(event: WillExecuteCommandEvent): void {

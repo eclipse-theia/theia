@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { injectable } from 'inversify';
 import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
@@ -71,6 +72,7 @@ export type MessageProvider = () => ReadBuffer;
  *  Reusable abstract {@link Channel} implementation that sets up
  *  the basic channel event listeners and offers a generic close method.
  */
+@injectable()
 export abstract class AbstractChannel implements Channel {
 
     onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();

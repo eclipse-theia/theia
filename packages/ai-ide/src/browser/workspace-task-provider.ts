@@ -113,7 +113,10 @@ export class TaskRunnerProvider implements ToolProvider {
                 return `Did not find a task for the label: '${args.taskName}'`;
             }
             cancellationToken?.onCancellationRequested(() => {
-                this.taskService.terminateTask(taskInfo);
+                // Only terminate if the task is still running
+                if (this.taskService.isTaskRunning(taskInfo.taskId)) {
+                    this.taskService.terminateTask(taskInfo);
+                }
             });
             if (cancellationToken?.isCancellationRequested) {
                 return JSON.stringify({ error: 'Operation cancelled by user' });

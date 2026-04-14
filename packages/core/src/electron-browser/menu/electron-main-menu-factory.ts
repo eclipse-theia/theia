@@ -233,7 +233,11 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 }
             };
 
-            const role = this.roleFor(menu.id);
+            // Only assign Electron roles when no custom args are present.
+            // Custom args indicate that command handlers have context-dependent
+            // behavior (e.g. chat view copying the whole message when there is
+            // no DOM selection) that would be bypassed by the native role.
+            const role = args.length === 0 ? this.roleFor(menu.id) : undefined;
             if (role) {
                 menuItem.role = role;
                 delete menuItem.execute;

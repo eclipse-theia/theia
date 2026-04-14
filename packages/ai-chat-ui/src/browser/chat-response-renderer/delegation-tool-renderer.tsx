@@ -14,16 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatRequestInvocation, ChatResponseContent, ChatResponseModel, ToolCallChatResponseContent } from '@theia/ai-chat';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ChatRequestInvocation, ChatResponseContent, ChatResponseModel, InteractiveContent, ToolCallChatResponseContent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
+import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core/lib/common/tool-constants';
+import { ToolInvocationRegistry } from '@theia/ai-core';
 import { AgentDelegationTool } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ResponseNode } from '../chat-tree-view';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
-import { CompositeTreeNode } from '@theia/core/lib/browser';
-import { DisposableCollection, nls } from '@theia/core';
+import { withToolCallConfirmation } from './tool-confirmation';
+import { CompositeTreeNode, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { ContributionProvider, DisposableCollection, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 
 @injectable()
@@ -37,6 +40,18 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
     @inject(SubChatWidgetFactory)
     protected subChatWidgetFactory: SubChatWidgetFactory;
+
+    @inject(ToolConfirmationManager)
+    protected toolConfirmationManager: ToolConfirmationManager;
+
+    @inject(ToolInvocationRegistry)
+    protected toolInvocationRegistry: ToolInvocationRegistry;
+
+    @inject(ContextMenuRenderer)
+    protected contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(ContributionProvider) @named(ChatResponsePartRenderer)
+    protected chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response) && response.name === AGENT_DELEGATION_FUNCTION_ID) {
@@ -64,15 +79,32 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
             }
         }
 
-        return <DelegatedChat
+        const chatId = parentNode.sessionId;
+        const toolRequest = this.toolInvocationRegistry.getFunction(AGENT_DELEGATION_FUNCTION_ID);
+        const confirmationMode = this.toolConfirmationManager.getConfirmationMode(AGENT_DELEGATION_FUNCTION_ID, chatId, toolRequest);
+
+        return <DelegatedChatWithConfirmation
             invocation={delegation?.invocation}
             agentName={agentName}
             prompt={delegation?.prompt ?? prompt}
             finished={response.finished}
             parentNode={parentNode}
             subChatWidgetFactory={this.subChatWidgetFactory}
+            contextMenuRenderer={this.contextMenuRenderer}
+            chatResponsePartRenderers={this.chatResponsePartRenderers}
+            response={response}
+            confirmationMode={confirmationMode}
+            toolConfirmationManager={this.toolConfirmationManager}
+            toolRequest={toolRequest}
+            chatId={chatId}
+            requestCanceled={parentNode.response.isCanceled}
         />;
     }
+}
+
+interface PendingInteraction {
+    contentPart: InteractiveContent & ChatResponseContent;
+    id: string;
 }
 
 interface DelegatedChatProps {
@@ -82,19 +114,28 @@ interface DelegatedChatProps {
     finished?: boolean;
     parentNode: ResponseNode;
     subChatWidgetFactory: SubChatWidgetFactory;
+    contextMenuRenderer: ContextMenuRenderer;
+    chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
 }
 
 interface DelegatedChatState {
     node?: ResponseNode;
+    isOpen: boolean;
+    pendingInteractions: PendingInteraction[];
 }
 
 class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatState> {
     private widget: ReturnType<SubChatWidgetFactory>;
     private toDispose = new DisposableCollection();
+    private trackedInteractionIds = new Set<string>();
 
     constructor(props: DelegatedChatProps) {
         super(props);
-        this.state = { node: undefined };
+        this.state = {
+            node: undefined,
+            isOpen: false,
+            pendingInteractions: []
+        };
         this.widget = props.subChatWidgetFactory();
     }
 
@@ -111,6 +152,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
     private subscribeToInvocation(invocation?: ChatRequestInvocation): void {
         this.toDispose.dispose();
         this.toDispose = new DisposableCollection();
+        this.trackedInteractionIds.clear();
         if (!invocation) {
             return;
         }
@@ -120,9 +162,25 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
             this.setState({ node });
 
             const changeListener = () => {
+                this.removeResolvedInteractions();
                 this.forceUpdate();
             };
             this.toDispose.push(chatModel.onDidChange(changeListener));
+
+            // Subscribe to interactionNeeded for push-based interaction tracking
+            this.toDispose.push(chatModel.onInteractionNeeded(contentPart => {
+                const id = contentPart.interactionId;
+                if (id && !this.trackedInteractionIds.has(id)
+                    && this.findConfirmationRenderer(contentPart)) {
+                    this.trackedInteractionIds.add(id);
+                    this.setState(prevState => ({
+                        pendingInteractions: [
+                            ...prevState.pendingInteractions,
+                            { contentPart, id }
+                        ]
+                    }));
+                }
+            }));
         }).catch(error => {
             console.error('Failed to create delegated chat response:', error);
         });
@@ -137,6 +195,42 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
 
     override componentWillUnmount(): void {
         this.toDispose.dispose();
+        this.trackedInteractionIds.clear();
+    }
+
+    private removeResolvedInteractions(): void {
+        this.setState(prevState => ({
+            pendingInteractions: prevState.pendingInteractions.filter(p => !p.contentPart.isResolved)
+        }));
+    }
+
+    private findConfirmationRenderer(contentPart: ChatResponseContent): ChatResponsePartRenderer<ChatResponseContent> | undefined {
+        const renderer = this.props.chatResponsePartRenderers.getContributions().reduce<[number, ChatResponsePartRenderer<ChatResponseContent> | undefined]>(
+            (prev, current) => {
+                const prio = current.canHandle(contentPart);
+                if (prio > prev[0]) {
+                    return [prio, current];
+                }
+                return prev;
+            },
+            [-1, undefined])[1];
+        if (renderer && renderer.renderConfirmation) {
+            return renderer;
+        }
+        return undefined;
+    }
+
+    private handleToggle = (event: React.SyntheticEvent<HTMLDetailsElement>): void => {
+        const details = event.currentTarget;
+        this.setState({ isOpen: details.open });
+    };
+
+    private renderInteractionConfirmation(contentPart: ChatResponseContent, id: string): React.ReactNode {
+        const renderer = this.findConfirmationRenderer(contentPart);
+        if (renderer && this.state.node) {
+            return <React.Fragment key={id}>{renderer.renderConfirmation!(contentPart, this.state.node)}</React.Fragment>;
+        }
+        return undefined;
     }
 
     override render(): React.ReactNode {
@@ -170,19 +264,38 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
             statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/starting', 'starting...');
         }
 
+        const { isOpen, pendingInteractions } = this.state;
+        const showInteractionsInSummary = !isOpen && pendingInteractions.length > 0;
+
         return (
             <div className='theia-delegation-container'>
-                <details className='delegation-response-details'>
+                <details className='delegation-response-details' onToggle={this.handleToggle}>
                     <summary className='delegation-summary'>
                         <div className='delegation-header'>
                             <span className='delegation-agent'>
                                 <span className='codicon codicon-copilot-large' /> {agentName}
                             </span>
                             <span className='delegation-status'>
+                                {showInteractionsInSummary && (
+                                    <span className='delegation-interaction-badge' title={nls.localize(
+                                        'theia/ai/chat-ui/delegation-response-renderer/interactionNeeded',
+                                        'User interaction needed'
+                                    )}>
+                                        <span className='codicon codicon-warning'></span>
+                                    </span>
+                                )}
                                 <span className={`codicon ${statusIcon} delegation-status-icon`}></span>
                                 <span className='delegation-status-text'>{statusText}</span>
                             </span>
+                            <span className={`delegation-toggle-arrow${isOpen ? ' open' : ''}`} />
                         </div>
+                        {showInteractionsInSummary && (
+                            <div className='delegation-pending-confirmations'>
+                                {pendingInteractions.map(({ contentPart, id }) =>
+                                    this.renderInteractionConfirmation(contentPart, id)
+                                )}
+                            </div>
+                        )}
                     </summary>
                     <div className='delegation-content'>
                         <div className='delegation-prompt-section'>
@@ -210,6 +323,8 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         );
     }
 }
+
+const DelegatedChatWithConfirmation = withToolCallConfirmation(DelegatedChat);
 
 function mapResponseToNode(response: ChatResponseModel, parentNode: ResponseNode): ResponseNode {
     return {

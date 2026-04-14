@@ -70,6 +70,54 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
         return -1;
     }
 
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const toolRequest = this.toolInvocationRegistry.getFunction(SHELL_EXECUTION_FUNCTION_ID);
+        const input = parseShellExecutionInput(response.arguments);
+
+        const handleAllow = (patterns?: string[]) => {
+            if (patterns && patterns.length > 0) {
+                try {
+                    this.shellCommandPermissionService.addAllowlistPatterns(...patterns);
+                } catch (err) {
+                    console.warn('Failed to add allowlist patterns:', err);
+                }
+            }
+            response.confirm();
+        };
+        const handleDeny = (options?: { patterns?: string[]; reason?: string }) => {
+            if (options?.patterns && options.patterns.length > 0) {
+                try {
+                    this.shellCommandPermissionService.addDenylistPatterns(...options.patterns);
+                } catch (err) {
+                    console.warn('Failed to add denylist patterns:', err);
+                }
+            }
+            response.deny(options?.reason);
+        };
+        const handleAllowAllForever = () => {
+            this.toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
+            response.confirm();
+        };
+        const handleAllowAllSession = () => {
+            this.toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
+            response.confirm();
+        };
+
+        return (
+            <ConfirmationUI
+                input={input}
+                shellCommandPermissionService={this.shellCommandPermissionService}
+                onAllow={handleAllow}
+                onAllowAllForever={handleAllowAllForever}
+                onAllowAllSession={handleAllowAllSession}
+                onDeny={handleDeny}
+                contextMenuRenderer={this.contextMenuRenderer}
+                response={response}
+            />
+        );
+    }
+
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
         const chatId = parentNode.sessionId;
         const toolRequest = this.toolInvocationRegistry.getFunction(SHELL_EXECUTION_FUNCTION_ID);
