@@ -17,7 +17,7 @@
 import * as net from 'net';
 import {
     ContainerConnectionOptions, ContainerConnectionResult,
-    DevContainerFile, RemoteContainerConnectionProvider
+    DevContainerFile, RemoteContainerConnectionProvider, RunningContainerInfo
 } from '../electron-common/remote-container-connection-provider';
 import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types';
 import { RemoteSetupResult, RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
@@ -180,6 +180,79 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             return undefined;
         }
         return connection.container.inspect();
+    }
+
+    async listRunningContainers(): Promise<RunningContainerInfo[]> {
+        try {
+            const docker = new Docker();
+            const containers = await docker.listContainers({ all: false });
+            return containers.map(container => ({
+                id: container.Id,
+                name: (container.Names[0] ?? '').replace(/^\//, ''),
+                image: container.Image,
+                status: container.Status
+            }));
+        } catch (e) {
+            console.error('Failed to list running containers:', e);
+            return [];
+        }
+    }
+
+    async attachToContainer(containerId: string): Promise<ContainerConnectionResult> {
+        const docker = new Docker();
+        const container = docker.getContainer(containerId);
+        const containerInfo = await container.inspect();
+
+        const progress = await this.messageService.showProgress({
+            text: 'Attaching to container',
+        });
+        try {
+            const report: RemoteStatusReport = message => progress.report({ message });
+            report('Connecting to remote system...');
+
+            const remote = new RemoteDockerContainerConnection({
+                id: generateUuid(),
+                name: containerInfo.Name.replace(/^\//, ''),
+                type: 'Dev Container',
+                docker,
+                container,
+                config: DevContainerConfiguration.empty(),
+                logger: this.logger
+            });
+
+            const result = await this.remoteSetup.setup({
+                connection: remote,
+                report,
+            });
+            remote.remoteSetupResult = result;
+
+            const registration = this.remoteConnectionService.register(remote);
+            const server = await this.serverProvider.getProxyServer(socket => {
+                remote.forwardOut(socket);
+            });
+            remote.onDidDisconnect(() => {
+                server.close();
+                registration.dispose();
+            });
+            const localPort = (server.address() as net.AddressInfo).port;
+            remote.localPort = localPort;
+
+            const workspacePath = containerInfo.Mounts.length > 0
+                ? containerInfo.Mounts[0].Destination
+                : containerInfo.Config.WorkingDir || '/';
+
+            return {
+                containerId: container.id,
+                workspacePath,
+                port: localPort.toString(),
+            };
+        } catch (e) {
+            this.messageService.error(e.message);
+            console.error(e);
+            throw e;
+        } finally {
+            progress.cancel();
+        }
     }
 
     dispose(): void {
@@ -386,11 +459,15 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     protected async shutdownContainer(sync: boolean): Promise<unknown> {
         const remoteHost = this.getDockerHost();
 
-        const shutdownAction = this.config.shutdownAction ?? this.config.dockerComposeFile ? 'stopCompose' : 'stopContainer';
+        const shutdownAction = this.config.shutdownAction ?? (this.config.dockerComposeFile ? 'stopCompose' : 'stopContainer');
 
         if (shutdownAction === 'stopContainer') {
             return sync ? execSync(`docker ${remoteHost}stop ${this.container.id}`) : this.container.stop();
         } else if (shutdownAction === 'stopCompose') {
+            if (!this.config.dockerComposeFile) {
+                console.warn('shutdownAction is stopCompose but dockerComposeFile is not defined, falling back to stopContainer');
+                return sync ? execSync(`docker ${remoteHost}stop ${this.container.id}`) : this.container.stop();
+            }
             const composeFilePath = resolveComposeFilePath(this.config);
             return sync ? execSync(`docker ${remoteHost}compose -f ${composeFilePath} stop`) :
                 new Promise<void>((res, rej) => exec(`docker ${remoteHost}compose -f ${composeFilePath} stop`, err => {
