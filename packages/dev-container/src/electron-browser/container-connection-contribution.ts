@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { DevContainerFile, LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
@@ -38,9 +38,23 @@ export namespace RemoteContainerCommands {
         label: 'Attach to Running Container',
         category: 'Dev Container'
     }, 'theia/remote/dev-container/attach');
+
+    export const REBUILD_CONTAINER = Command.toLocalizedCommand({
+        id: 'dev-container:rebuild-container',
+        label: 'Rebuild Container',
+        category: 'Dev Container'
+    }, 'theia/remote/dev-container/rebuild');
 }
 
 const LAST_USED_CONTAINER = 'lastUsedContainer';
+const ACTIVE_DEV_CONTAINER_CONTEXT = 'activeDevContainerContext';
+
+interface DevContainerContext {
+    devcontainerFilePath: string;
+    devcontainerFileName: string;
+    hostWorkspacePath: string;
+    containerId: string;
+}
 @injectable()
 export class ContainerConnectionContribution extends AbstractRemoteRegistryContribution implements WorkspaceOpenHandlerContribution {
 
@@ -71,17 +85,71 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(ContainerOutputProvider)
     protected readonly containerOutputProvider: ContainerOutputProvider;
 
+    protected hasDevContainerFiles = false;
+
+    @postConstruct()
+    protected init(): void {
+        // Mark that we're in a remote session. sessionStorage survives page
+        // reloads (disconnect) but is cleared on window close (restart).
+        // This lets canHandle() distinguish disconnect from restart.
+        if (this.isRemoteSession()) {
+            sessionStorage.setItem('devcontainer:wasRemote', 'true');
+        }
+        this.workspaceService.ready.then(() => this.checkForDevContainerFiles());
+        this.workspaceService.onWorkspaceChanged(() => this.checkForDevContainerFiles());
+    }
+
+    protected async checkForDevContainerFiles(): Promise<void> {
+        if (this.isRemoteSession()) {
+            this.hasDevContainerFiles = true;
+            return;
+        }
+        const workspace = this.workspaceService.workspace;
+        if (!workspace) {
+            this.hasDevContainerFiles = false;
+            return;
+        }
+        try {
+            const files = await this.connectionProvider.getDevContainerFiles(workspace.resource.path.toString());
+            this.hasDevContainerFiles = files.length > 0;
+        } catch (error) {
+            // Failed to check for devcontainer files, assume none exist
+            this.hasDevContainerFiles = false;
+        }
+    }
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteContainerCommands.REOPEN_IN_CONTAINER, {
-            execute: () => this.openInContainer()
+            execute: () => this.openInContainer(),
+            isVisible: () => !this.isRemoteSession() && this.hasDevContainerFiles
         });
         registry.registerCommand(RemoteContainerCommands.ATTACH_TO_CONTAINER, {
             execute: () => this.attachToContainer()
         });
+        registry.registerCommand(RemoteContainerCommands.REBUILD_CONTAINER, {
+            execute: () => this.rebuildContainer(),
+            isVisible: () => this.isRemoteSession()
+        });
+    }
+
+    protected isRemoteSession(): boolean {
+        return new URLSearchParams(window.location.search).has('localPort');
     }
 
     canHandle(uri: URI): MaybePromise<boolean> {
-        return uri.scheme === DEV_CONTAINER_WORKSPACE_SCHEME;
+        if (uri.scheme !== DEV_CONTAINER_WORKSPACE_SCHEME) {
+            return false;
+        }
+        // After disconnect (reload), sessionStorage still has the flag from
+        // the remote session's init. Skip auto-reopen so the user gets their
+        // local workspace. After restart (close+open), sessionStorage is
+        // cleared, so auto-reopen works.
+        const wasRemote = sessionStorage.getItem('devcontainer:wasRemote');
+        if (wasRemote) {
+            sessionStorage.removeItem('devcontainer:wasRemote');
+            return false;
+        }
+        return true;
     }
 
     async openWorkspace(uri: URI, options?: WorkspaceInput | undefined): Promise<void> {
@@ -146,17 +214,71 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }
 
+    async rebuildContainer(): Promise<void> {
+        this.containerOutputProvider.openChannel();
+        const progress = await this.messageService.showProgress({
+            text: nls.localize('theia/remote/dev-container/rebuilding', 'Rebuilding dev container...')
+        });
+
+        try {
+            // When inside a remote container, read the stored context instead of
+            // scanning the filesystem (the RPC goes to the local backend which
+            // doesn't have the container's workspace path).
+            const ctx = await this.storageService.getData<DevContainerContext | undefined>(ACTIVE_DEV_CONTAINER_CONTEXT);
+            if (ctx) {
+                progress.report({ message: 'Removing old container...' });
+                try {
+                    await this.connectionProvider.removeContainer(ctx.containerId);
+                } catch (error) {
+                    // Container may already be gone, ignore error
+                }
+                const lastContainerKey = `${LAST_USED_CONTAINER}:${ctx.devcontainerFilePath}`;
+                await this.storageService.setData(lastContainerKey, undefined);
+                progress.cancel();
+                this.doOpenInContainer(
+                    { path: ctx.devcontainerFilePath, name: ctx.devcontainerFileName },
+                    ctx.hostWorkspacePath
+                );
+                return;
+            }
+
+            // Fallback: local workspace — scan for devcontainer files
+            const devcontainerFile = await this.getOrSelectDevcontainerFile();
+            if (!devcontainerFile) {
+                return;
+            }
+            const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
+            const lastContainerInfo = await this.storageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
+            if (lastContainerInfo) {
+                progress.report({ message: 'Removing old container...' });
+                try {
+                    await this.connectionProvider.removeContainer(lastContainerInfo.id);
+                } catch (error) {
+                    // Container may already be gone, ignore error
+                }
+                await this.storageService.setData(lastContainerInfoKey, undefined);
+            }
+            progress.cancel();
+            this.doOpenInContainer(devcontainerFile);
+        } catch (e) {
+            progress.cancel();
+            this.messageService.error('Failed to rebuild container: ' + (e as Error).message);
+        }
+    }
+
     async doOpenInContainer(devcontainerFile: DevContainerFile, workspacePath?: string): Promise<void> {
         const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
         const lastContainerInfo = await this.storageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
         this.containerOutputProvider.openChannel();
 
+        const hostWorkspacePath = workspacePath ?? this.workspaceService.workspace?.resource.path.toString();
+
         const connectionResult = await this.connectionProvider.connectToContainer({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             lastContainerInfo,
             devcontainerFile: devcontainerFile.path,
-            workspacePath: workspacePath
+            workspacePath: hostWorkspacePath
         });
 
         this.storageService.setData<LastContainerInfo>(lastContainerInfoKey, {
@@ -164,8 +286,16 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             lastUsed: Date.now()
         });
 
+        // Store full context so rebuild works from inside the container
+        this.storageService.setData<DevContainerContext>(ACTIVE_DEV_CONTAINER_CONTEXT, {
+            devcontainerFilePath: devcontainerFile.path,
+            devcontainerFileName: devcontainerFile.name,
+            hostWorkspacePath: hostWorkspacePath ?? '',
+            containerId: connectionResult.containerId,
+        });
+
         this.workspaceServer.setMostRecentlyUsedWorkspace(
-            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${workspacePath ?? this.workspaceService.workspace?.resource.path}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
+            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${hostWorkspacePath}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
 
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }
