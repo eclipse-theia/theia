@@ -32,6 +32,12 @@ export namespace RemoteContainerCommands {
         label: 'Reopen in Container',
         category: 'Dev Container'
     }, 'theia/remote/dev-container/connect');
+
+    export const ATTACH_TO_CONTAINER = Command.toLocalizedCommand({
+        id: 'dev-container:attach-to-container',
+        label: 'Attach to Running Container',
+        category: 'Dev Container'
+    }, 'theia/remote/dev-container/attach');
 }
 
 const LAST_USED_CONTAINER = 'lastUsedContainer';
@@ -68,6 +74,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteContainerCommands.REOPEN_IN_CONTAINER, {
             execute: () => this.openInContainer()
+        });
+        registry.registerCommand(RemoteContainerCommands.ATTACH_TO_CONTAINER, {
+            execute: () => this.attachToContainer()
         });
     }
 
@@ -108,6 +117,33 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             return;
         }
         this.doOpenInContainer(devcontainerFile);
+    }
+
+    async attachToContainer(): Promise<void> {
+        const containers = await this.connectionProvider.listRunningContainers();
+        if (containers.length === 0) {
+            this.messageService.info(nls.localize('theia/remote/dev-container/noRunningContainers', 'No running containers found.'));
+            return;
+        }
+
+        const selected = await this.quickInputService.pick(containers.map(container => ({
+            type: 'item' as const,
+            label: container.name || container.id.substring(0, 12),
+            description: container.image,
+            detail: container.status,
+            container
+        })), {
+            title: nls.localize('theia/remote/dev-container/selectContainer', 'Select a running container to attach to')
+        });
+
+        if (!selected) {
+            return;
+        }
+
+        this.containerOutputProvider.openChannel();
+
+        const connectionResult = await this.connectionProvider.attachToContainer(selected.container.id);
+        this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }
 
     async doOpenInContainer(devcontainerFile: DevContainerFile, workspacePath?: string): Promise<void> {
