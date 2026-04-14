@@ -146,7 +146,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
 
             return {
                 containerId: container.id,
-                workspacePath: devContainerConfig.workspaceFolder ?? (await container.inspect()).Mounts[0].Destination,
+                workspacePath: devContainerConfig.workspaceFolder ?? this.inferWorkspacePath(await container.inspect()),
                 port: localPort.toString(),
             };
         } catch (e) {
@@ -237,9 +237,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             const localPort = (server.address() as net.AddressInfo).port;
             remote.localPort = localPort;
 
-            const workspacePath = containerInfo.Mounts.length > 0
-                ? containerInfo.Mounts[0].Destination
-                : containerInfo.Config.WorkingDir || '/';
+            const workspacePath = this.inferWorkspacePath(containerInfo);
 
             return {
                 containerId: container.id,
@@ -252,6 +250,32 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             throw e;
         } finally {
             progress.cancel();
+        }
+    }
+
+    protected inferWorkspacePath(containerInfo: Docker.ContainerInspectInfo): string {
+        // Skip mounts that are injected by HostConfigSharingContribution
+        // (SSH dir, gitconfig) — these are not workspace mounts.
+        const workspaceMount = containerInfo.Mounts.find(m =>
+            !m.Destination.endsWith('/.ssh') &&
+            !m.Destination.endsWith('/.gitconfig') &&
+            m.Destination !== '/tmp/host_gitconfig'
+        );
+        return (workspaceMount?.Destination ?? containerInfo.Config.WorkingDir) || '/';
+    }
+
+    async removeContainer(containerId: string): Promise<void> {
+        try {
+            const docker = new Docker();
+            const container = docker.getContainer(containerId);
+            const info = await container.inspect();
+            if (info.State.Running) {
+                await container.stop();
+            }
+            await container.remove();
+        } catch (e) {
+            console.error('Failed to remove container:', e);
+            throw e;
         }
     }
 
