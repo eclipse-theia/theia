@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
+import { LINUX_ENV_HINT, PreferenceSchema } from '@theia/core';
 
 export const SCAN_OSS_API_KEY_PREF = 'ai-features.SCANOSS.apiKey';
 
@@ -23,7 +23,7 @@ export const ScanOSSPreferencesSchema: PreferenceSchema = {
         [SCAN_OSS_API_KEY_PREF]: {
             type: 'string',
             markdownDescription: 'Enter an API Key of your SCANOSS  Account. **Please note:** By using this preference the key will be stored in clear text\
-            on the machine running Theia. Use the environment variable `SCANOSS_API_KEY` to set the key securely.',
+            on the machine running Theia. Use the environment variable `SCANOSS_API_KEY` to set the key securely.' + LINUX_ENV_HINT,
             title: 'SCANOSS API Key'
         }
     }

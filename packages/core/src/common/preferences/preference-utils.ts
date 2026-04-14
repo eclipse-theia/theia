@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 STMicroelectronics and others.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './defaults-preference-provider';
-export * from './preference-language-override-service';
-export * from './preference-provider-impl';
-export * from './preference-provider';
-export * from './preference-schema-service';
-export * from './preference-schema';
-export * from './preference-scope';
-export * from './preference-service';
-export * from './injectable-preference-proxy';
-export * from './preference-proxy';
-export * from './preference-configurations';
-export * from './preference-utils';
+import { nls } from '../nls';
+import { isOSX, isWindows } from '../os';
+
+/**
+ * Hint appended to API key preference descriptions on Linux, where environment variables
+ * set in `~/.bashrc` are not available to desktop-launched applications.
+ */
+export const LINUX_ENV_HINT = !isWindows && !isOSX
+    ? ' ' + nls.localize('theia/ai-core/preferences/linuxEnvHint',
+        'On Linux, make sure the variable is defined in `~/.profile` (not just `~/.bashrc`) if you launch the application from a desktop shortcut.' +
+        ' See the [documentation](https://theia-ide.org/docs/user_ai/#setting-api-keys) for details.')
+    : '';
