@@ -121,8 +121,48 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected async doInit(): Promise<void> {
-        const wsUriString = await this.getDefaultWorkspaceUri();
-        const wsStat = await this.toFileStat(wsUriString);
+        let wsUriString = await this.getDefaultWorkspaceUri();
+        if (wsUriString) {
+            const wsUri = new URI(wsUriString);
+            if (wsUri.scheme !== 'file') {
+                let handled = false;
+                for (const handler of this.openHandlerContribution.getContributions()) {
+                    if (await handler.canHandle(wsUri)) {
+                        try {
+                            // openWorkspace reloads the window on success, so if we
+                            // reach the timeout the connection attempt is hanging.
+                            await Promise.race([
+                                handler.openWorkspace(wsUri),
+                                new Promise<void>((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
+                            ]);
+                            handled = true;
+                        } catch {
+                            // Failed or timed out — fall through to local workspace
+                        }
+                        break;
+                    }
+                }
+                if (handled) {
+                    this._ready.resolve();
+                    return;
+                }
+                // No handler could open this non-file URI, or it failed/timed out.
+                // Fall back to the most recent local workspace.
+                const recents = await this.server.getRecentWorkspaces();
+                wsUriString = recents.find(r => new URI(r).scheme === 'file');
+            }
+        }
+        let wsStat = await this.toFileStat(wsUriString);
+        if (!wsStat && wsUriString) {
+            // The URI (e.g. from the URL hash after a remote disconnect) points
+            // to a path that doesn't exist locally. Fall back to the most recent
+            // local workspace.
+            const recents = await this.server.getRecentWorkspaces();
+            const fallback = recents.find(r => new URI(r).scheme === 'file');
+            if (fallback) {
+                wsStat = await this.toFileStat(fallback);
+            }
+        }
         await this.setWorkspace(wsStat);
 
         this.fileService.onDidFilesChange(event => {
@@ -246,7 +286,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this.setURLFragment('');
         }
         this.updateTitle();
-        await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        if (!this.isRemoteSession()) {
+            await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        }
         await this.updateWorkspace();
     }
 
@@ -373,7 +415,22 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected setMostRecentlyUsedWorkspace(): void {
-        this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        if (!this.isRemoteSession()) {
+            this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
+        }
+    }
+
+    /**
+     * Returns true if the current window is connected to a remote backend.
+     * In remote sessions, we must not overwrite the local MRU with the remote
+     * workspace's file URI, as the local MRU should retain the remote connection
+     * URI (e.g. `devcontainer://...`) so the session can be restored on restart.
+     *
+     * Detection: the backend port is always in `?port=`. When connected to a
+     * remote, the URL also has `?localPort=` (the original backend port).
+     */
+    protected isRemoteSession(): boolean {
+        return new URLSearchParams(window.location.search).has('localPort');
     }
 
     async recentWorkspaces(): Promise<string[]> {
