@@ -20,7 +20,7 @@ import { DevContainerConfiguration, DockerfileContainer, ImageContainer, NonComp
 import { Path } from '@theia/core';
 import { ContainerOutputProvider } from '../../electron-common/container-output-provider';
 import * as fs from '@theia/core/shared/fs-extra';
-import { RemotePortForwardingProvider } from '@theia/remote/lib/electron-common/remote-port-forwarding-provider';
+import { ForwardedPort, RemotePortForwardingProvider } from '@theia/remote/lib/electron-common/remote-port-forwarding-provider';
 import { RemoteDockerContainerConnection } from '../remote-container-connection-provider';
 import { WorkspaceCreationContribution } from './workspace-creation-contribution';
 import { parseWorkspaceMount } from '../dockerode-utils';
@@ -122,9 +122,38 @@ export class ForwardPortsContribution implements ContainerCreationContribution {
                 port = forward;
             }
 
-            this.portForwardingProvider.forwardPort(connection.localPort, { port, address });
+            const forwardedPort: ForwardedPort = { port, address };
+            const attributes = this.getPortAttributes(containerConfig, port);
+            if (attributes) {
+                forwardedPort.label = attributes.label;
+                forwardedPort.protocol = attributes.protocol;
+                forwardedPort.onAutoForward = attributes.onAutoForward;
+            }
+            this.portForwardingProvider.forwardPort(connection.localPort, forwardedPort);
         }
 
+    }
+
+    protected getPortAttributes(containerConfig: DevContainerConfiguration,
+        port: number): { label?: string; protocol?: 'http' | 'https'; onAutoForward?: ForwardedPort['onAutoForward'] } | undefined {
+        if (!containerConfig.portsAttributes) {
+            return undefined;
+        }
+        const portStr = String(port);
+        for (const [pattern, attributes] of Object.entries(containerConfig.portsAttributes)) {
+            if (pattern === portStr) {
+                return attributes;
+            }
+            const rangeMatch = pattern.match(/^(\d+)-(\d+)$/);
+            if (rangeMatch) {
+                const start = parseInt(rangeMatch[1]);
+                const end = parseInt(rangeMatch[2]);
+                if (port >= start && port <= end) {
+                    return attributes;
+                }
+            }
+        }
+        return undefined;
     }
 
 }
