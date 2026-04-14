@@ -41,6 +41,11 @@ describe('AppNativeDependencyContribution', () => {
         expect(x64).to.equal(`${base}/v1.70.2/native-dependencies-darwin-x64.zip`);
     });
 
+    it('routes -next. versions to the rolling `next` tag', () => {
+        const url = contribution.publicGetDefaultURLForFile({ os: OS.Type.Linux, arch: 'x64' }, '1.71.0-next.28+df29ab0fb');
+        expect(url).to.equal(`${base}/next/native-dependencies-linux-x64.zip`);
+    });
+
     it('throws a clear error for unsupported (os, arch) combinations', () => {
         expect(() => contribution.publicGetDefaultURLForFile({ os: OS.Type.Linux, arch: 'arm64' }, '1.70.2'))
             .to.throw(/No prebuilt native dependencies are published/);

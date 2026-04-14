@@ -19,6 +19,13 @@ import { RemoteNativeDependencyContribution, DownloadOptions, DependencyDownload
 import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { OS } from '@theia/core';
 
+/**
+ * GitHub release tag used for rolling pre-release publications of native
+ * dependencies for next-channel Theia versions (e.g. `1.71.0-next.28+sha`).
+ * Stable versions resolve to a `v<version>` tag instead.
+ */
+export const NEXT_RELEASE_TAG = 'next';
+
 @injectable()
 export class AppNativeDependencyContribution implements RemoteNativeDependencyContribution {
 
@@ -29,8 +36,13 @@ export class AppNativeDependencyContribution implements RemoteNativeDependencyCo
         return `${this.appDownloadUrlBase}/${this.getReleaseTag(theiaVersion)}/${this.getAssetName(remotePlatform)}`;
     }
 
+    /**
+     * Returns the GitHub release tag from which to download the native dependencies.
+     * Next-channel versions (containing `-next.`) resolve to the rolling `next`
+     * pre-release; stable versions resolve to `v<theiaVersion>`.
+     */
     protected getReleaseTag(theiaVersion: string): string {
-        return `v${theiaVersion}`;
+        return /-next\./.test(theiaVersion) ? NEXT_RELEASE_TAG : `v${theiaVersion}`;
     }
 
     protected getAssetName(remotePlatform: RemotePlatform): string {
