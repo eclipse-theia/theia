@@ -58,4 +58,5 @@ export interface RemoteContainerConnectionProvider extends RpcServer<ContainerOu
     getCurrentContainerInfo(port: number): Promise<ContainerInspectInfo | undefined>;
     listRunningContainers(): Promise<RunningContainerInfo[]>;
     attachToContainer(containerId: string): Promise<ContainerConnectionResult>;
+    removeContainer(containerId: string): Promise<void>;
 }
