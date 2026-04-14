@@ -78,7 +78,11 @@ export class TestOutputWidget extends BaseWidget {
         this.disposeOnSetInput = new DisposableCollection();
         this.term.clear();
         if (selectedOutputSource) {
-            selectedOutputSource.output.forEach(item => this.term.writeln(item.output));
+            if (selectedOutputSource.output.length === 0 && selectedOutputSource.noOutputMessage) {
+                this.term.writeln(selectedOutputSource.noOutputMessage);
+            } else {
+                selectedOutputSource.output.forEach(item => this.term.writeln(item.output));
+            }
             this.disposeOnSetInput.push(selectedOutputSource.onDidAddTestOutput(items => {
                 items.forEach(item => this.term.writeln(item.output));
             }));
