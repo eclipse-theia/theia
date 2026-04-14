@@ -74,7 +74,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     }
 
     get terminals(): theia.Terminal[] {
-        return [...this._terminals.keys()].map(id => this.getApiObject(id)!).filter(t => t !== undefined);
+        return [...this._terminals.keys()].map(id => this.getApiObject(id)).filter((t): t is theia.Terminal => t !== undefined);
     }
 
     get defaultShell(): string {
@@ -119,7 +119,15 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         let parentId;
         if (options.location && typeof options.location === 'object' && 'parentTerminal' in options.location) {
             const parentTerminal = options.location.parentTerminal;
-            if (parentTerminal instanceof TerminalExtImpl) {
+            // Check both the API proxy objects and the raw terminals, since
+            // plugins receive the proxy but _terminals stores the raw object.
+            for (const [k, v] of this._terminalApiObjects) {
+                if (v === parentTerminal) {
+                    parentId = k;
+                    break;
+                }
+            }
+            if (!parentId) {
                 for (const [k, v] of this._terminals) {
                     if (v === parentTerminal) {
                         parentId = k;

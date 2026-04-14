@@ -54,14 +54,6 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     }
 
     /**
-     * Check if a terminal is a debug terminal.
-     * Debug terminals have a 'kind' property set to 'debug'.
-     */
-    protected isDebugTerminal(terminal: TerminalWidget): boolean {
-        return terminal.kind === 'debug';
-    }
-
-    /**
      * Register a listener to route externally created terminals (e.g. from plugins)
      * into the terminal manager when tree mode is active.
      * Terminals created internally via {@link TerminalManagerWidget.createTerminalWidget}

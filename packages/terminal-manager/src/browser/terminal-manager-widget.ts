@@ -162,13 +162,18 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     /**
-     * Set to `true` while {@link createTerminalWidget} is executing, so that external
+     * Incremented while {@link createTerminalWidget} is executing, so that external
      * listeners can distinguish internally created terminals from external ones (e.g. from plugins).
+     * Uses a counter instead of a boolean to handle concurrent calls correctly.
      */
-    creatingTerminalInternally = false;
+    private _creatingTerminalInternallyCount = 0;
+
+    get creatingTerminalInternally(): boolean {
+        return this._creatingTerminalInternallyCount > 0;
+    }
 
     async createTerminalWidget(options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
-        this.creatingTerminalInternally = true;
+        this._creatingTerminalInternallyCount++;
         try {
             const terminalWidget = await this.terminalFrontendContribution.newTerminal({
                 // passing 'created' here as a millisecond value rather than the default `new Date().toString()` that Theia uses in
@@ -181,7 +186,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             terminalWidget.start();
             return terminalWidget;
         } finally {
-            this.creatingTerminalInternally = false;
+            this._creatingTerminalInternallyCount--;
         }
     }
 
