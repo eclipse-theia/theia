@@ -413,3 +413,15 @@ export interface MountConfig {
     target: string,
     type: 'volume' | 'bind',
 }
+
+export namespace DevContainerConfiguration {
+    /**
+     * Creates an empty DevContainerConfiguration with minimal valid properties.
+     * Used when attaching to existing containers where no devcontainer.json is available.
+     */
+    export function empty(): DevContainerConfiguration {
+        return {
+            image: 'unknown'
+        } as DevContainerConfiguration;
+    }
+}

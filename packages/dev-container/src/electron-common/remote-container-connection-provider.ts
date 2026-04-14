@@ -45,8 +45,17 @@ export interface DevContainerFile {
     path: string;
 }
 
+export interface RunningContainerInfo {
+    id: string;
+    name: string;
+    image: string;
+    status: string;
+}
+
 export interface RemoteContainerConnectionProvider extends RpcServer<ContainerOutputProvider> {
     connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult>;
     getDevContainerFiles(workspacePath: string): Promise<DevContainerFile[]>;
     getCurrentContainerInfo(port: number): Promise<ContainerInspectInfo | undefined>;
+    listRunningContainers(): Promise<RunningContainerInfo[]>;
+    attachToContainer(containerId: string): Promise<ContainerConnectionResult>;
 }
