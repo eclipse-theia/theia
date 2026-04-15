@@ -101,8 +101,8 @@
     "watch:electron": "cd examples/electron && npm run -s watch",
     "watch": "concurrently --kill-others \"npm run -s watch:browser\" \"npm run -s watch:electron\"",
     "performance:startup": "npm run -s performance:startup:browser && npm run -s performance:startup:electron",
-    "performance:startup:browser": "concurrently --success first -k -r \"cd scripts/performance && node browser-performance.js --name 'Browser Frontend Startup' --folder browser --runs 10\" \"npm run -s --cwd examples/browser start\"",
-    "performance:startup:electron": "npm run -s electron rebuild && cd scripts/performance && node electron-performance.js --name 'Electron Frontend Startup' --folder electron --runs 10",
+    "performance:startup:browser": "concurrently --success first -k -r \"cd scripts/performance && node browser-performance.js --name 'Browser Frontend Startup' --folder browser --runs 10\" \"npm --prefix examples/browser run -s start\"",
+    "performance:startup:electron": "npm run -s rebuild:electron && cd scripts/performance && node electron-performance.js --name 'Electron Frontend Startup' --folder electron --runs 10",
     "zip:native:dependencies": "node ./scripts/zip-native-dependencies.js"
   },
   "workspaces": [

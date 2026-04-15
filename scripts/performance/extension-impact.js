@@ -31,6 +31,7 @@ let yarn = false;
 let url;
 let workspace;
 let file = path.resolve('./script.csv');
+let detailFile;
 let hostApp = 'browser';
 
 async function sigintHandler() {
@@ -85,6 +86,10 @@ async function exitHandler() {
             desc: 'Specify the relative path to a CSV file which stores the result',
             type: 'string',
             default: file
+        }).option('detail-file', {
+            alias: 'd',
+            desc: 'Relative path to a CSV file for per-contribution breakdowns (default: <file>-details.csv, derived from --file)',
+            type: 'string'
         }).option('app', {
             alias: 'a',
             desc: 'Specify in which application to run the tests',
@@ -121,6 +126,15 @@ async function exitHandler() {
             return;
         }
     }
+    if (args.detailFile) {
+        detailFile = path.resolve(args.detailFile.toString());
+        if (!detailFile.endsWith('.csv')) {
+            console.error('--detail-file must end with .csv');
+            return;
+        }
+    } else {
+        detailFile = file.replace(/\.csv$/, '-details.csv');
+    }
     if (args.app) {
         hostApp = args.app;
     }
@@ -135,6 +149,7 @@ async function exitHandler() {
 
 async function extensionImpact(extensions) {
     logToFile(`Extension Name, Mean (${runs} runs) (in s), Std Dev (in s), CV (%), Delta (in s)`);
+    logToDetailFile(`Extension Name, Metric, Mean (${runs} runs) (in s), Std Dev (in s), CV (%)`);
     if (baseTime === undefined) {
         await calculateExtension(undefined);
     } else {
@@ -177,6 +192,8 @@ function prepareWorkspace() {
     });
     ensureFileSync(file);
     writeFileSync(file, '');
+    ensureFileSync(detailFile);
+    writeFileSync(detailFile, '');
 }
 
 function cleanWorkspace() {
@@ -261,6 +278,15 @@ async function calculateExtension(extensionQualifier) {
         }
         log(`${extensionQualifier}, ${mean.toFixed(3)}, ${stdev.toFixed(3)}, ${cv}, ${diff}`);
     }
+
+    // Emit per-metric breakdowns (everything except the LCP that's already in the main CSV).
+    for (const metric of parseAllMetrics(output)) {
+        if (metric.scenario === 'Largest Contentful Paint (LCP)') {
+            continue;
+        }
+        const metricCv = metric.mean > 0 ? ((metric.stdev / metric.mean) * 100).toFixed(3) : '-';
+        logToDetailFile(`${extensionQualifier}, ${metric.scenario}, ${metric.mean.toFixed(3)}, ${metric.stdev.toFixed(3)}, ${metricCv}`);
+    }
 }
 
 async function execCommand(command, args) {
@@ -292,10 +318,53 @@ function getMeasurement(output, identifier) {
     return output.toString().substring(firstIndex, lastIndex);
 }
 
+// Matches: "[Performance][<name>][MEAN] <scenario>: X.XXX seconds"
+const METRIC_MEAN_RE = /\[Performance\]\[[^\]]+\]\[MEAN\]\s+(.+?):\s+([\d.]+)\s+seconds/g;
+const METRIC_STDEV_RE = /\[Performance\]\[[^\]]+\]\[STDEV\]\s+(.+?):\s+([\d.]+)\s+seconds/g;
+
+/**
+ * Parse all metric summary lines out of a performance-script run's stdout, pairing each MEAN
+ * with its matching STDEV (by scenario name).
+ *
+ * @param {string} output the captured stdout of the performance script
+ * @returns {Array<{scenario: string, mean: number, stdev: number}>} one entry per metric
+ */
+function parseAllMetrics(output) {
+    const stdevs = new Map();
+    for (const match of output.toString().matchAll(METRIC_STDEV_RE)) {
+        stdevs.set(match[1].trim(), parseFloat(match[2]));
+    }
+    const results = [];
+    const seen = new Set();
+    for (const match of output.toString().matchAll(METRIC_MEAN_RE)) {
+        const scenario = match[1].trim();
+        if (seen.has(scenario)) {
+            continue;
+        }
+        seen.add(scenario);
+        const mean = parseFloat(match[2]);
+        const stdev = stdevs.get(scenario);
+        if (!isNaN(mean) && stdev !== undefined && !isNaN(stdev)) {
+            results.push({ scenario, mean, stdev });
+        }
+    }
+    return results;
+}
+
 function printFile() {
     console.log();
     const content = readFileSync(file).toString();
     console.log(content);
+    try {
+        const detailContent = readFileSync(detailFile).toString();
+        if (detailContent.trim().length > 0) {
+            console.log();
+            console.log(`Per-contribution breakdown (see ${detailFile}):`);
+            console.log(detailContent);
+        }
+    } catch (e) {
+        // Detail file may not exist if the script exited before preparing the workspace
+    }
 }
 
 function log(text) {
@@ -309,4 +378,8 @@ function logToConsole(text) {
 
 function logToFile(text) {
     appendFileSync(file, text + EOL);
+}
+
+function logToDetailFile(text) {
+    appendFileSync(detailFile, text + EOL);
 }

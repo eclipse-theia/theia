@@ -17,7 +17,10 @@
 const puppeteer = require('puppeteer');
 const fsx = require('fs-extra');
 const { resolve } = require('path');
-const { delay, githubReporting, isLCP, lcp, measure } = require('./common-performance');
+const {
+    analyzeTrace, ContributionCollector, delay, frontendSettled, githubReporting,
+    isLCP, lcp, measureMulti, parseStopwatchLog
+} = require('./common-performance');
 
 const workspacePath = resolve('./workspace');
 const profilesPath = './profiles/';
@@ -99,27 +102,57 @@ let runs = 10;
 
 async function measurePerformance(name, url, folder, headless, runs) {
 
-    /** @type import('./common-performance').TestFunction */
+    // Collects per-contribution timings from Stopwatch log lines observed in the browser console
+    // across all runs, so that consumers like extension-impact.js can break down startup cost
+    // by contribution.
+    const contributions = new ContributionCollector();
+
     const testScenario = async (runNr) => {
         const browser = await puppeteer.launch({ headless: headless });
         const page = await browser.newPage();
 
         const file = folder + '/' + runNr + '.json';
+
+        // Listen for Stopwatch log lines in the browser console and scrape their metrics
+        let settledSeconds;
+        page.on('console', msg => {
+            const parsed = parseStopwatchLog(msg.text());
+            if (!parsed) {
+                return;
+            }
+            if (parsed.activity === frontendSettled) {
+                settledSeconds = parsed.secondsSinceStart;
+            } else if (parsed.activity.startsWith('Frontend ')) {
+                contributions.record(parsed.activity, parsed.ms / 1000);
+            }
+        });
+
         await page.tracing.start({ path: file, screenshots: true });
         await page.goto(url);
         // This selector is for the theia application, which is exposed when the loading indicator vanishes
         await page.waitForSelector('.theia-ApplicationShell', { visible: true });
-        // Prevent tracing from stopping too soon and skipping a LCP candidate
-        await delay(1000);
+        // Prevent tracing from stopping too soon and skipping a LCP candidate, and give the
+        // frontend contributions a chance to settle (their log fires after state === 'ready').
+        await delay(2000);
 
         await page.tracing.stop();
 
         await browser.close();
 
-        return file;
+        return { traceFile: file, settledSeconds };
     };
 
-    measure(name, lcp, runs, testScenario, isStart, isLCP);
+    await measureMulti(name, runs, testScenario, [
+        {
+            scenario: lcp,
+            analyze: ctx => analyzeTrace(ctx.traceFile, isStart, isLCP)
+        },
+        {
+            scenario: frontendSettled,
+            analyze: ctx => ctx.settledSeconds
+        }
+    ]);
+    contributions.logSummary(name);
 }
 
 function isStart(x) {
