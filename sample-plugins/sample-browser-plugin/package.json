@@ -1,0 +1,22 @@
+{
+    "name": "sample-browser-plugin",
+    "version": "0.0.1",
+    "private": true,
+    "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+    "publisher": "test",
+    "engines": {
+        "vscode": "^1.84.0"
+    },
+    "browser": "./extension.js",
+    "activationEvents": [
+        "*"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "sample-browser-plugin.hello",
+                "title": "Sample Browser Plugin: Hello"
+            }
+        ]
+    }
+}
