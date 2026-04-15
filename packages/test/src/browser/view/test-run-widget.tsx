@@ -182,6 +182,8 @@ export class TestRunTreeWidget extends TreeWidget {
     @inject(TestExecutionStateManager) protected readonly stateManager: TestExecutionStateManager;
     @inject(TestOutputUIModel) protected readonly uiModel: TestOutputUIModel;
 
+    protected readonly selectedItemStateListener = new DisposableCollection();
+
     constructor(
         @inject(TreeProps) props: TreeProps,
         @inject(TreeModel) model: TreeModel,
@@ -199,7 +201,9 @@ export class TestRunTreeWidget extends TreeWidget {
     protected override init(): void {
         super.init();
         this.addClass('theia-test-run-view');
-        this.model.onSelectionChanged(() => {
+        this.toDispose.push(this.selectedItemStateListener);
+        this.toDispose.push(this.model.onSelectionChanged(() => {
+            this.selectedItemStateListener.dispose();
             const node = this.model.selectedNodes[0];
             if (node instanceof TestRunNode) {
                 this.uiModel.selectedOutputSource = {
@@ -209,28 +213,37 @@ export class TestRunTreeWidget extends TreeWidget {
                     onDidAddTestOutput: Event.map(node.run.onDidChangeTestOutput, evt => evt.map(item => item[1]))
                 };
             } else if (node instanceof TestItemNode) {
-                const testState = node.parent.run.getTestState(node.item);
+                const run = node.parent.run;
+                const item = node.item;
                 this.uiModel.selectedOutputSource = {
                     get output(): readonly TestOutputItem[] {
-                        const itemOutput = node.parent.run.getOutput(node.item);
+                        const itemOutput = run.getOutput(item);
                         if (itemOutput.length > 0) {
                             return itemOutput;
                         }
-                        if (TestFailure.is(testState)) {
-                            return testState.messages.map(msg => ({
+                        const currentState = run.getTestState(item);
+                        if (TestFailure.is(currentState)) {
+                            return currentState.messages.map(msg => ({
                                 output: typeof msg.message === 'string' ? msg.message : msg.message.value
                             }));
                         }
                         return [];
                     },
-                    onDidAddTestOutput: Event.map(node.parent.run.onDidChangeTestOutput, evt =>
-                        evt.filter(item => item[0] === node.item).map(item => item[1])
+                    onDidAddTestOutput: Event.map(run.onDidChangeTestOutput, evt =>
+                        evt.filter(output => output[0] === item).map(output => output[1])
                     ),
                     noOutputMessage: nls.localizeByDefault('The test case did not report any output.')
                 };
-                this.uiModel.selectedTestState = testState;
+                this.uiModel.selectedTestState = run.getTestState(item);
+                // Keep selectedTestState (and its derived context key) in sync while this item stays selected.
+                this.selectedItemStateListener.push(run.onDidChangeTestState(deltas => {
+                    const update = deltas.find(delta => delta.test === item);
+                    if (update) {
+                        this.uiModel.selectedTestState = update.newState;
+                    }
+                }));
             }
-        });
+        }));
     }
 
     protected override renderTree(model: TreeModel): React.ReactNode {

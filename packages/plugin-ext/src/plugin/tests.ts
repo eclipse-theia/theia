@@ -299,6 +299,9 @@ export class TestRun implements theia.TestRun {
     }
 
     end(): void {
+        if (this.ended) {
+            return;
+        }
         this.changeBatcher.flush();
         this.ended = true;
         this.proxy.$notifyTestRunEnded(this.controller.id, this.id);
