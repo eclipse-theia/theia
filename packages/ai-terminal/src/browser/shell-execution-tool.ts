@@ -106,8 +106,16 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                     },
                     description: {
                         type: 'string',
-                        description: 'Brief explanation of what this command does, to help the user decide if the command shall be executed. ' +
-                            'Keep it concise (5-10 words for simple commands, more for complex ones).'
+                        description: 'Describe what this command does in active voice. ' +
+                            'Never use words like "complex" or "risk".\n\n' +
+                            'For simple commands (git, npm, standard CLI tools), keep it brief (5-10 words):\n' +
+                            '- cat README.md -> "Print README file contents"\n' +
+                            '- git diff HEAD~1 -> "Show changes from last commit"\n' +
+                            '- npm test -> "Run project test suite"\n\n' +
+                            'For longer or piped commands, add enough context to clarify intent:\n' +
+                            '- grep -rn "TODO" src/ --include="*.ts" -> "Search TypeScript files in src for TODO comments"\n' +
+                            '- git log --oneline --since="1 week" | wc -l -> "Count commits from the past week"\n' +
+                            '- du -sh node_modules/* | sort -rh | head -5 -> "Show 5 largest packages in node_modules by size"'
                     },
                     cwd: {
                         type: 'string',
@@ -118,7 +126,7 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                         description: 'Timeout in milliseconds. Default: 120000 (2 minutes). Max: 600000 (10 minutes).'
                     }
                 },
-                required: ['command']
+                required: ['command', 'description']
             },
             handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
             checkAutoAction: (argString: string): AutoActionResult | undefined => {
