@@ -25,6 +25,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
 
 import { nls } from '@theia/core';
+import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import {
     CLEAR_FILE_CHANGES_ID,
     GET_PROPOSED_CHANGES_ID,
@@ -37,13 +38,9 @@ import {
 } from '../common/file-changeset-function-ids';
 
 function createPathShortLabel(args: string, hasMore: boolean): { label: string; hasMore: boolean } | undefined {
-    try {
-        const parsed = JSON.parse(args);
-        if (parsed && typeof parsed === 'object' && 'path' in parsed) {
-            return { label: String(parsed.path), hasMore };
-        }
-    } catch {
-        // ignore parse errors
+    const path = extractJsonStringField(args, 'path');
+    if (path) {
+        return { label: path, hasMore };
     }
     return undefined;
 }

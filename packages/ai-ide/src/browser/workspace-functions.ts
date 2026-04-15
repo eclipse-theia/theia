@@ -24,6 +24,7 @@ import {
     GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from '../common/workspace-functions';
+import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
 import { CONSIDER_GITIGNORE_PREF, FILE_CONTENT_MAX_SIZE_KB_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
@@ -319,7 +320,10 @@ export class FileContentFunction implements ToolProvider {
                         return { label: String(parsed.file), hasMore };
                     }
                 } catch {
-                    // ignore parse errors
+                    const file = extractJsonStringField(args, 'file');
+                    if (file) {
+                        return { label: file, hasMore: false };
+                    }
                 }
                 return undefined;
             },
@@ -451,7 +455,7 @@ export class FileContentFunction implements ToolProvider {
         } catch (e) {
             if (e instanceof FileOperationError &&
                 (e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE ||
-                 e.fileOperationResult === FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT)) {
+                    e.fileOperationResult === FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT)) {
                 return JSON.stringify({
                     error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit. ' +
                         'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, ' +
@@ -837,7 +841,10 @@ export class FindFilesByPattern implements ToolProvider {
                         return { label: String(parsed.pattern), hasMore: keys.length > 1 };
                     }
                 } catch {
-                    // ignore parse errors
+                    const pattern = extractJsonStringField(args, 'pattern');
+                    if (pattern) {
+                        return { label: pattern, hasMore: false };
+                    }
                 }
                 return undefined;
             },

@@ -25,6 +25,7 @@ import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ResponseNode } from '../chat-tree-view';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
 import { withToolCallConfirmation } from './tool-confirmation';
+import { extractJsonStringField } from './toolcall-utils';
 import { CompositeTreeNode, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ContributionProvider, DisposableCollection, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
@@ -75,7 +76,14 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
                     prompt = args.prompt;
                 }
             } catch {
-                // ignore parse errors
+                const partialAgentId = extractJsonStringField(response.arguments, 'agentId');
+                if (partialAgentId) {
+                    agentName = this.chatAgentService.getAgent(partialAgentId)?.name ?? partialAgentId;
+                }
+                const partialPrompt = extractJsonStringField(response.arguments, 'prompt');
+                if (partialPrompt) {
+                    prompt = partialPrompt;
+                }
             }
         }
 
