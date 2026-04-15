@@ -106,7 +106,7 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                     },
                     description: {
                         type: 'string',
-                        description: 'Brief explanation of what this command does, shown to the user in the approval dialog. ' +
+                        description: 'Brief explanation of what this command does, to help the user decide if the command shall be executed. ' +
                             'Keep it concise (5-10 words for simple commands, more for complex ones).'
                     },
                     cwd: {
