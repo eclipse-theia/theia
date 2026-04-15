@@ -99,6 +99,27 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: "true"
 
+      - name: Create and push git tag (Next)
+        # Tag the published commit so the canary version published to npm has a
+        # 1:1 mapping to a git commit. Consumed by native-dependencies.yml via
+        # workflow_run to build native dependencies at exactly this commit.
+        if: ${{ env.RELEASE_TYPE == 'next' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --local user.email "eclipse-theia-bot@eclipse.org"
+          git config --local user.name "eclipse-theia-bot"
+          VERSION=$(npm view @theia/core@next version)
+          if [ -z "$VERSION" ]; then
+            echo "Failed to resolve the just-published next version from npm." >&2
+            exit 1
+          fi
+          TAG="v${VERSION}"
+          echo "Tagging $TAG at $(git rev-parse HEAD)"
+          git tag "$TAG"
+          git push origin "$TAG"
+
       - name: Submit PR for package updates
         if: ${{ env.RELEASE_TYPE != 'next' }}
         shell: bash
