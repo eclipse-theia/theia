@@ -163,6 +163,21 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
         };
     }
 
+    /**
+     * Workaround for a Lumino bug: {@link MenuBar.clearMenus clearMenus} does not reset the
+     * private `_overflowMenu` and `_overflowIndex` fields. On the next `onUpdateRequest`, the
+     * stale `_overflowMenu !== null` causes the visible-menu count to go negative, which in
+     * turn triggers `new Array(-1)` → `RangeError: Invalid array length`.
+     *
+     * See https://github.com/eclipse-theia/theia/issues/17352
+     */
+    override clearMenus(): void {
+        super.clearMenus();
+        this['_overflowMenu'] = null;
+        this['_overflowIndex'] = -1;
+        this['_menuItemSizes'] = [];
+    }
+
     async activateMenu(label: string, ...labels: string[]): Promise<MenuWidget> {
         const menu = this.menus.find(m => m.title.label === label);
         if (!menu) {
