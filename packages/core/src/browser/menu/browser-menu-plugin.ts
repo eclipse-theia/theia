@@ -173,6 +173,7 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
      */
     override clearMenus(): void {
         super.clearMenus();
+        // eslint-disable-next-line no-null/no-null
         this['_overflowMenu'] = null;
         this['_overflowIndex'] = -1;
         this['_menuItemSizes'] = [];
