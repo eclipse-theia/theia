@@ -180,7 +180,7 @@ export class SaveableService implements FrontendApplicationContribution {
     protected addBlurListener(widget: Widget, saveable: Saveable): Disposable {
         const document = widget.node.ownerDocument;
         const listener = (() => {
-            if (this.saveMode === 'onWindowChange' && !this.windowHasFocus(document) && this.shouldAutoSave(widget, saveable)) {
+            if ((this.saveMode === 'onWindowChange' || this.saveMode === 'onFocusChange') && !this.windowHasFocus(document) && this.shouldAutoSave(widget, saveable)) {
                 saveable.save({
                     saveReason: SaveReason.FocusChange
                 });
