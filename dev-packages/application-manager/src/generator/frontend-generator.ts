@@ -19,11 +19,12 @@
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
+import { BundlerGenerator } from './bundler-generator';
 
 export class FrontendGenerator extends AbstractGenerator {
 
     async generate(options?: GeneratorOptions): Promise<void> {
-        await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(this.pck.targetFrontendModules));
+        await this.write(this.pck.frontend('index.html'), await this.compileIndexHtml(this.pck.targetFrontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(this.pck.targetFrontendModules, this.pck.targetFrontendPreloadModules));
         await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
         await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(this.pck.secondaryWindowModules));
@@ -46,11 +47,11 @@ export class FrontendGenerator extends AbstractGenerator {
         return template;
     }
 
-    protected compileIndexHtml(frontendModules: Map<string, string>): string {
+    protected async compileIndexHtml(frontendModules: Map<string, string>): Promise<string> {
         return `<!DOCTYPE html>
 <html lang="en">
 
-<head>${this.compileIndexHead(frontendModules)}
+<head>${await this.compileIndexHead(frontendModules)}
 </head>
 
 <body>
@@ -61,12 +62,13 @@ export class FrontendGenerator extends AbstractGenerator {
 </html>`;
     }
 
-    protected compileIndexHead(frontendModules: Map<string, string>): string {
+    protected async compileIndexHead(frontendModules: Map<string, string>): Promise<string> {
+        const preferEsbuild = await new BundlerGenerator(this.pck, this.options).preferESBuild();
         return `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="./bundle.css">
+  ${preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : ''}
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 

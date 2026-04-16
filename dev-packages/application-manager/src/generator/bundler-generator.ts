@@ -170,6 +170,7 @@ module.exports = [{
     devtool: 'source-map',
     entry: {
         bundle: path.resolve(__dirname, 'src-gen/frontend/index.js'),
+        ${this.ifPackage('@theia/plugin-ext', "'plugin-worker': '@theia/plugin-ext/lib/hosted/browser/worker/worker-main.js',")}
     },
     output: {
         filename: '[name].js',
@@ -183,24 +184,7 @@ module.exports = [{
         rules: [
             {
                 test: /\\.css$/,
-                exclude: /materialcolors\\.css$|\\.useable\\.css$/,
                 use: ['style-loader', 'css-loader']
-            },
-            {
-                test: /materialcolors\\.css$|\\.useable\\.css$/,
-                use: [
-                    {
-                        loader: 'style-loader',
-                        options: {
-                            esModule: false,
-                            injectType: 'lazySingletonStyleTag',
-                            attributes: {
-                                id: 'theia-theme'
-                            }
-                        }
-                    },
-                    'css-loader'
-                ]
             },
             {
                 test: /\\.(ttf|eot|svg)(\\?v=\\d+\\.\\d+\\.\\d+)?$/,
@@ -696,6 +680,7 @@ export const browserOptions = {
         'bundle': './src-gen/frontend/index.js',
         'secondary-window': './src-gen/frontend/secondary-index.js',
         ${this.ifMonaco(() => "'editor.worker': '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWebWorkerMain.js',")}
+        ${this.ifPackage('@theia/plugin-ext', "'plugin-worker': '@theia/plugin-ext/lib/hosted/browser/worker/worker-main.js',")}
     },
     assetNames: '[name]',
     bundle: true,
