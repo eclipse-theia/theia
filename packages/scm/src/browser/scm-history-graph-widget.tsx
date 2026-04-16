@@ -249,6 +249,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
             content: buildHtmlTooltip(entry, this.markdownRenderer),
             target: e.currentTarget,
             position: 'right',
+            interactive: true,
         });
     };
 
