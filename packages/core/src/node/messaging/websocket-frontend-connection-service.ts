@@ -92,6 +92,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
         this.closeTimeouts.delete(frontEndId);
 
         connection.onCloseEmitter.fire({ reason });
+        connection.drainBuffer();
         connection.close();
     }
 
@@ -177,6 +178,10 @@ export class ReconnectableSocketChannel extends AbstractChannel {
     disconnect(): void {
         this.disposables.dispose();
         this.socket = undefined;
+    }
+
+    drainBuffer(): void {
+        this.socketBuffer.drain();
     }
 
     override getWriteBuffer(): WriteBuffer {
