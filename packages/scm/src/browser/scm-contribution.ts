@@ -455,10 +455,10 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             {
                 id: 'scmGraph.historyItemRefForeground',
                 defaults: {
-                    dark: 'badge.foreground',
-                    light: 'badge.foreground',
-                    hcDark: 'badge.foreground',
-                    hcLight: 'badge.foreground'
+                    dark: '#ffffff',
+                    light: '#ffffff',
+                    hcDark: '#ffffff',
+                    hcLight: '#ffffff'
                 },
                 description: 'Foreground color for ref badge labels in the SCM history graph.'
             },

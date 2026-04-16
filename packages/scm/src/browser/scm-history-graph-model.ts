@@ -155,11 +155,17 @@ export class ScmHistoryGraphModel {
                 return;
             }
 
-            const newItems: ScmHistoryItem[] = items ?? [];
-            this._hasMore = newItems.length >= PAGE_SIZE;
-            if (newItems.length > 0) {
-                this._cursor = newItems[newItems.length - 1].id;
+            const fetchedItems: ScmHistoryItem[] = items ?? [];
+            this._hasMore = fetchedItems.length >= PAGE_SIZE;
+            if (fetchedItems.length > 0) {
+                this._cursor = fetchedItems[fetchedItems.length - 1].id;
             }
+
+            // Deduplicate: the cursor-based pagination may re-return the
+            // last item of the previous page. Filter out any items that
+            // were already loaded to prevent graph duplication on scroll.
+            const existingIds = new Set(this._entries.map(e => e.item.id));
+            const newItems = fetchedItems.filter(i => !existingIds.has(i.id));
 
             const allItems = [...this._entries.map(e => e.item), ...newItems];
             const graphRows = computeGraphRows(allItems.map(i => ({
