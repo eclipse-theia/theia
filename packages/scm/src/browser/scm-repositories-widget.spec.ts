@@ -89,7 +89,7 @@ function createWidget(opts: CreateWidgetOptions): ScmRepositoriesWidget {
     };
 
     const mockContextMenuRenderer = { render: () => ({ dispose: () => { } }) };
-    const mockScmContextKeys = { scmProvider: { set: () => { } } };
+    const mockScmContextKeys = { scmProvider: { set: () => { } }, scmProviderContext: { set: () => { } } };
 
     (widget as unknown as Record<string, unknown>).scmService = mockScmService;
     (widget as unknown as Record<string, unknown>).labelProvider = mockLabelProvider;
