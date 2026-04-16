@@ -2120,6 +2120,11 @@ export interface ExtHostFileSystemEventServiceShape {
     $onDidRunFileOperation(operation: files.FileOperation, target: UriComponents, source: UriComponents | undefined): void;
 }
 
+export interface MainFileSystemEventServiceShape {
+    $watch(session: number, resource: UriComponents, opts: files.WatchOptions): void;
+    $unwatch(session: number): void;
+}
+
 export interface ClipboardMain {
     $readText(): Promise<string>;
     $writeText(value: string): Promise<void>;
@@ -2384,6 +2389,7 @@ export const PLUGIN_RPC_CONTEXT = {
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
     FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain'),
+    FILE_SYSTEM_EVENT_SERVICE_MAIN: createProxyIdentifier<MainFileSystemEventServiceShape>('FileSystemEventServiceMain'),
     SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
     SECRETS_MAIN: createProxyIdentifier<SecretsMain>('SecretsMain'),
     DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),
