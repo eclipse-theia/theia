@@ -81,6 +81,7 @@ export class ApplicationPackageManager {
             this.remove(bundlerGenerator.genNodeConfigPath),
             this.remove(bundlerGenerator.genESBuildBrowserPath),
             this.remove(bundlerGenerator.genESBuildNodePath),
+            this.remove(bundlerGenerator.genESBuildElectronPath),
         ]);
     }
 
