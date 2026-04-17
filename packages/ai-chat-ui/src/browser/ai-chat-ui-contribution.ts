@@ -73,7 +73,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
-        tooltip: nls.localize('theia/ai/chat-ui/renameChat', 'Rename Chat'),
+        tooltip: nls.localizeByDefault('Rename Chat'),
     };
     protected static readonly REMOVE_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-remove-close',
