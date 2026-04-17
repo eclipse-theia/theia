@@ -257,7 +257,7 @@ import { DocumentsExtImpl } from './documents';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { OutputChannelRegistryExtImpl } from './output-channel-registry';
-import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext';
+import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl } from './languages';
 import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
@@ -462,7 +462,7 @@ export function createAPIFactory(
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
 
-            get activeTerminal(): TerminalExtImpl | undefined {
+            get activeTerminal(): theia.Terminal | undefined {
                 return terminalExt.activeTerminal;
             },
             get activeTextEditor(): TextEditorExt | undefined {
@@ -471,7 +471,7 @@ export function createAPIFactory(
             get visibleTextEditors(): theia.TextEditor[] {
                 return editors.getVisibleTextEditors();
             },
-            get terminals(): TerminalExtImpl[] {
+            get terminals(): theia.Terminal[] {
                 return terminalExt.terminals;
             },
             onDidChangeActiveTerminal,
@@ -633,7 +633,7 @@ export function createAPIFactory(
             createTerminal(nameOrOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
                 shellPath?: string,
                 shellArgs?: string[] | string): theia.Terminal {
-                return createAPIObject(terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs));
+                return terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs, createAPIObject);
             },
             onDidChangeTerminalState,
             onDidCloseTerminal,

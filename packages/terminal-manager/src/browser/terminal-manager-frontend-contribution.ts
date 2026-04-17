@@ -54,24 +54,30 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     }
 
     /**
-     * Check if a terminal is a debug terminal.
-     * Debug terminals have a 'kind' property set to 'debug'.
-     */
-    protected isDebugTerminal(terminal: TerminalWidget): boolean {
-        return terminal.kind === 'debug';
-    }
-
-    /**
-     * Register a listener to route debug terminals to numbered pages in the terminal manager.
+     * Register a listener to route externally created terminals (e.g. from plugins)
+     * into the terminal manager when tree mode is active.
+     * Terminals created internally via {@link TerminalManagerWidget.createTerminalWidget}
+     * are skipped because the command handlers handle their placement.
      */
     protected registerTerminalListener(): void {
         this.commandHandlerDisposables.push(
             this.terminalFrontendContribution.onDidCreateTerminal(async terminal => {
-                if (this.isDebugTerminal(terminal)) {
-                    const managerWidget = await this.widgetManager.getOrCreateWidget<TerminalManagerWidget>(TerminalManagerWidget.ID);
-                    if (managerWidget instanceof TerminalManagerWidget) {
-                        managerWidget.addTerminalPage(terminal);
-                    }
+                if (this.isTaskTerminal(terminal) || terminal.hiddenFromUser) {
+                    return;
+                }
+                // Check the flag synchronously (before any await) to correctly
+                // identify terminals created by the manager's command handlers.
+                const managerWidget = this.terminalManagerViewContribution.tryGetWidget();
+                if (managerWidget instanceof TerminalManagerWidget && managerWidget.creatingTerminalInternally) {
+                    return;
+                }
+                const resolvedWidget = managerWidget ?? await this.widgetManager.getOrCreateWidget<TerminalManagerWidget>(TerminalManagerWidget.ID);
+                if (!(resolvedWidget instanceof TerminalManagerWidget)) {
+                    return;
+                }
+                if (!resolvedWidget.terminalWidgetIdsToNodeIds.has(terminal.id)) {
+                    resolvedWidget.addTerminalPage(terminal);
+                    await this.terminalManagerViewContribution.openView({ reveal: true });
                 }
             })
         );
@@ -90,7 +96,6 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
             }
             console.debug('Terminal tab style is tree. Override command handlers accordingly.');
             this.registerHandlers();
-            this.registerTerminalListener();
         });
     }
 
@@ -171,6 +176,7 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     protected registerHandlers(): void {
         this.unregisterHandlers();
         this.registerCommands();
+        this.registerTerminalListener();
     }
 
     protected registerCommands(): void {
