@@ -13,6 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import { ReasoningSupport } from '@theia/ai-core';
+
 export const OPENAI_LANGUAGE_MODELS_MANAGER_PATH = '/services/open-ai/language-model-manager';
 export const OpenAiLanguageModelsManager = Symbol('OpenAiLanguageModelsManager');
 
@@ -68,6 +70,8 @@ export interface OpenAiModelDescription {
      * Default is `false` for custom models.
      */
     useResponseApi?: boolean;
+    /** When set, the UI exposes a reasoning selector and the level is translated to the OpenAI reasoning parameter. */
+    reasoningSupport?: ReasoningSupport;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;

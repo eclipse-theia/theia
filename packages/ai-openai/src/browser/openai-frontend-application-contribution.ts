@@ -16,6 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ReasoningSupport } from '@theia/ai-core';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
 import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
@@ -132,7 +133,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
             maxRetries: maxRetries,
-            useResponseApi: useResponseApi
+            useResponseApi: useResponseApi,
+            reasoningSupport: reasoningSupportFor(modelId)
         };
     }
 
@@ -168,3 +170,28 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 const openAIModelsWithDisabledStreaming: string[] = [];
 const openAIModelsNotSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
 const openAIModelsWithoutStructuredOutput = ['o1-preview', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-mini', 'gpt-4o-2024-05-13'];
+
+/** GPT-5 family: supports `minimal` in addition to `low | medium | high`. */
+const GPT5_REASONING = /^gpt-5(?:\.|-|$)/i;
+/** o-series reasoning models (o1, o3, o4): `low | medium | high`. */
+const O_SERIES_REASONING = /^o[134](?:-|$)/i;
+
+const GPT5_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'off'
+};
+
+const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'off'
+};
+
+function reasoningSupportFor(modelId: string): ReasoningSupport | undefined {
+    if (GPT5_REASONING.test(modelId)) {
+        return GPT5_REASONING_SUPPORT;
+    }
+    if (O_SERIES_REASONING.test(modelId)) {
+        return O_SERIES_REASONING_SUPPORT;
+    }
+    return undefined;
+}

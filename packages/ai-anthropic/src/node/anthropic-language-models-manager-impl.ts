@@ -64,7 +64,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     status,
                     maxTokens: modelDescription.maxTokens !== undefined ? modelDescription.maxTokens : DEFAULT_MAX_TOKENS,
                     maxRetries: modelDescription.maxRetries,
-                    proxy: proxyUrl
+                    proxy: proxyUrl,
+                    reasoningSupport: modelDescription.reasoningSupport,
+                    reasoningApi: modelDescription.reasoningApi,
+                    supportsXHighEffort: modelDescription.supportsXHighEffort
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -78,7 +81,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.url,
                         modelDescription.maxTokens,
                         modelDescription.maxRetries,
-                        proxyUrl
+                        proxyUrl,
+                        modelDescription.reasoningSupport,
+                        modelDescription.reasoningApi,
+                        modelDescription.supportsXHighEffort
                     )
                 ]);
             }
