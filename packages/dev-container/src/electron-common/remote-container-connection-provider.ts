@@ -50,6 +50,25 @@ export interface RunningContainerInfo {
     name: string;
     image: string;
     status: string;
+    created: number;
+}
+
+export interface WorkspaceCandidate {
+    path: string;
+    /** Describes where this candidate came from */
+    source: 'working-dir' | 'bind-mount' | 'devcontainer-label' | 'fallback';
+}
+
+export interface AttachContainerOptions {
+    containerId: string;
+    workspacePath: string;
+    nodeDownloadTemplate?: string;
+    devcontainerFile?: string;
+}
+
+export interface AttachContainerArgs {
+    containerId: string;
+    scanForDevJson: boolean;
 }
 
 export interface RemoteContainerConnectionProvider extends RpcServer<ContainerOutputProvider> {
@@ -57,6 +76,9 @@ export interface RemoteContainerConnectionProvider extends RpcServer<ContainerOu
     getDevContainerFiles(workspacePath: string): Promise<DevContainerFile[]>;
     getCurrentContainerInfo(port: number): Promise<ContainerInspectInfo | undefined>;
     listRunningContainers(): Promise<RunningContainerInfo[]>;
-    attachToContainer(containerId: string): Promise<ContainerConnectionResult>;
+    getWorkspaceCandidates(containerId: string): Promise<WorkspaceCandidate[]>;
+    scanForDevContainerConfig(containerId: string, workspacePath: string): Promise<string | undefined>;
+    getAttachContainerArgs(): Promise<AttachContainerArgs | undefined>;
+    attachToContainer(options: AttachContainerOptions): Promise<ContainerConnectionResult>;
     removeContainer(containerId: string): Promise<void>;
 }
