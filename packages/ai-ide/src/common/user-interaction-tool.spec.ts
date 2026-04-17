@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseUserInteractionArgs, parseUserInteractionInput, resolveContentRef } from './user-interaction-tool';
+import { isEmptyContentRef, parseUserInteractionArgs, parseUserInteractionInput, resolveContentRef } from './user-interaction-tool';
 
 describe('parseUserInteractionArgs', () => {
     it('should return undefined for undefined input', () => {
@@ -171,6 +171,38 @@ describe('resolveContentRef', () => {
     it('should return an object ref without optional fields', () => {
         expect(resolveContentRef({ path: 'src/index.ts' })).to.deep.equal({ path: 'src/index.ts' });
     });
+
+    it('should return an EmptyContentRef as-is', () => {
+        const ref = { empty: true as const, label: 'New file' };
+        expect(resolveContentRef(ref)).to.deep.equal({ empty: true, label: 'New file' });
+    });
+
+    it('should return an EmptyContentRef without label as-is', () => {
+        expect(resolveContentRef({ empty: true as const })).to.deep.equal({ empty: true });
+    });
+});
+
+describe('isEmptyContentRef', () => {
+    it('should return true for an EmptyContentRef', () => {
+        expect(isEmptyContentRef({ empty: true as const })).to.be.true;
+    });
+
+    it('should return true for an EmptyContentRef with label', () => {
+        expect(isEmptyContentRef({ empty: true as const, label: 'Empty' })).to.be.true;
+    });
+
+    it('should return false for a string ref', () => {
+        expect(isEmptyContentRef('src/index.ts')).to.be.false;
+    });
+
+    it('should return false for a PathContentRef', () => {
+        expect(isEmptyContentRef({ path: 'src/index.ts' })).to.be.false;
+    });
+
+    it('should return false for an object with empty set to false', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect(isEmptyContentRef({ empty: false } as any)).to.be.false;
+    });
 });
 
 describe('parseUserInteractionArgs - ContentRef validation', () => {
@@ -194,6 +226,38 @@ describe('parseUserInteractionArgs - ContentRef validation', () => {
         const result = parseUserInteractionArgs(input);
         expect(result!.links).to.have.length(1);
         expect(result!.links![0].ref).to.deep.equal({ path: 'src/file.ts', gitRef: 'HEAD~1', line: 5 });
+    });
+
+    it('should accept links with EmptyContentRef', () => {
+        const input = JSON.stringify({
+            title: 'T', message: 'M',
+            options: [{ text: 'A', value: 'a' }],
+            links: [{ ref: { empty: true, label: 'New file' } }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.links).to.have.length(1);
+        expect(result!.links![0].ref).to.deep.equal({ empty: true, label: 'New file' });
+    });
+
+    it('should accept links with EmptyContentRef as rightRef', () => {
+        const input = JSON.stringify({
+            title: 'T', message: 'M',
+            options: [{ text: 'A', value: 'a' }],
+            links: [{ ref: 'src/old.ts', rightRef: { empty: true } }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.links).to.have.length(1);
+        expect(result!.links![0].rightRef).to.deep.equal({ empty: true });
+    });
+
+    it('should reject links with empty set to false', () => {
+        const input = JSON.stringify({
+            title: 'T', message: 'M',
+            options: [{ text: 'A', value: 'a' }],
+            links: [{ ref: { empty: false } }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.links).to.be.undefined;
     });
 
     it('should reject links with empty string ref', () => {

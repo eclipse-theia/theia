@@ -23,7 +23,7 @@ import { OpenerService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { URI } from '@theia/core/lib/common/uri';
-import { MEMORY_TEXT, ResourceProvider } from '@theia/core/lib/common/resource';
+import { MEMORY_TEXT, MEMORY_TEXT_READONLY, ResourceProvider } from '@theia/core/lib/common/resource';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 
 describe('UserInteractionTool', () => {
@@ -56,7 +56,7 @@ describe('UserInteractionTool', () => {
         };
 
         mockScmService = {
-            selectedRepository: undefined
+            findRepository: sinon.stub().returns(undefined)
         };
 
         mockResourceProvider = sinon.stub().callsFake(async (uri: URI) => ({
@@ -316,9 +316,8 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        mockScmService.selectedRepository = {
-            provider: { id: 'git' }
-        } as ScmService['selectedRepository'];
+        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
+        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
 
         await tool.openLink({
             ref: { path: 'src/new-file.ts', gitRef: 'abc123' },
@@ -330,7 +329,7 @@ describe('UserInteractionTool', () => {
         const diffUri = openCall.args[0] as URI;
         expect(DiffUris.isDiffUri(diffUri)).to.be.true;
         const [leftUri] = DiffUris.decode(diffUri);
-        expect(leftUri.scheme).to.equal(MEMORY_TEXT);
+        expect(leftUri.scheme).to.equal(MEMORY_TEXT_READONLY);
     });
 
     it('should open diff with empty right side when right-side cannot be resolved', async () => {
@@ -349,9 +348,8 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        mockScmService.selectedRepository = {
-            provider: { id: 'git' }
-        } as ScmService['selectedRepository'];
+        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
+        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
 
         await tool.openLink({
             ref: { path: 'src/deleted-file.ts', gitRef: 'abc123' },
@@ -373,9 +371,8 @@ describe('UserInteractionTool', () => {
             dispose: sinon.stub()
         }));
 
-        mockScmService.selectedRepository = {
-            provider: { id: 'git' }
-        } as ScmService['selectedRepository'];
+        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
+        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
 
         await tool.openLink({
             ref: { path: 'src/modified.ts', gitRef: 'abc123' },
@@ -399,7 +396,125 @@ describe('UserInteractionTool', () => {
         const diffUri = openCall.args[0] as URI;
         expect(DiffUris.isDiffUri(diffUri)).to.be.true;
         const [leftUri, rightUri] = DiffUris.decode(diffUri);
-        expect(leftUri.scheme).to.equal(MEMORY_TEXT);
+        expect(leftUri.scheme).to.equal(MEMORY_TEXT_READONLY);
         expect(rightUri.scheme).to.equal(MEMORY_TEXT);
+    });
+
+    it('should open diff with empty left side when ref is EmptyContentRef', async () => {
+        await tool.openLink({
+            ref: { empty: true, label: 'new file' },
+            rightRef: 'src/new-file.ts'
+        });
+
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
+        const openCall = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0);
+        const diffUri = openCall.args[0] as URI;
+        expect(DiffUris.isDiffUri(diffUri)).to.be.true;
+        const [leftUri, rightUri] = DiffUris.decode(diffUri);
+        expect(leftUri.scheme).to.equal(MEMORY_TEXT);
+        expect(rightUri.scheme).to.equal('file');
+    });
+
+    it('should open diff with empty right side when rightRef is EmptyContentRef', async () => {
+        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
+        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        mockResourceProvider.callsFake(async (uri: URI) => ({
+            uri,
+            readContents: sinon.stub().resolves('content'),
+            dispose: sinon.stub()
+        }));
+
+        await tool.openLink({
+            ref: { path: 'src/deleted.ts', gitRef: 'abc123' },
+            rightRef: { empty: true, label: 'deleted' }
+        });
+
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
+        const openCall = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0);
+        const diffUri = openCall.args[0] as URI;
+        expect(DiffUris.isDiffUri(diffUri)).to.be.true;
+        const [leftUri, rightUri] = DiffUris.decode(diffUri);
+        expect(leftUri.scheme).to.equal('git');
+        expect(rightUri.scheme).to.equal(MEMORY_TEXT);
+    });
+
+    it('should show error content when gitRef cannot be resolved due to missing SCM repo', async () => {
+        (mockScmService.findRepository as sinon.SinonStub).returns(undefined);
+
+        await tool.openLink({
+            ref: { path: 'src/file.ts', gitRef: 'abc123' },
+            rightRef: 'src/file.ts'
+        });
+
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
+        const openCall = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0);
+        const diffUri = openCall.args[0] as URI;
+        expect(DiffUris.isDiffUri(diffUri)).to.be.true;
+        const [leftUri] = DiffUris.decode(diffUri);
+        expect(leftUri.scheme).to.equal(MEMORY_TEXT_READONLY);
+        expect(leftUri.query).to.contain('Unable to resolve revision');
+        expect(leftUri.query).to.contain('abc123');
+    });
+
+    it('should resolve git ref using findRepository', async () => {
+        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
+        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        mockResourceProvider.callsFake(async (uri: URI) => ({
+            uri,
+            readContents: sinon.stub().resolves('content'),
+            dispose: sinon.stub()
+        }));
+
+        await tool.openLink({
+            ref: { path: 'src/file.ts', gitRef: 'abc123' },
+            rightRef: 'src/file.ts'
+        });
+
+        expect((mockScmService.findRepository as sinon.SinonStub).called).to.be.true;
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
+        const openCall = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0);
+        const diffUri = openCall.args[0] as URI;
+        expect(DiffUris.isDiffUri(diffUri)).to.be.true;
+        const [leftUri] = DiffUris.decode(diffUri);
+        expect(leftUri.scheme).to.equal('git');
+    });
+
+    it('should show error content when gitRef URI exists but content cannot be read', async () => {
+        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
+        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        mockResourceProvider.callsFake(async (uri: URI) => {
+            if (uri.scheme === 'git') {
+                return {
+                    uri,
+                    readContents: sinon.stub().rejects(new Error('not found')),
+                    dispose: sinon.stub()
+                };
+            }
+            return {
+                uri,
+                readContents: sinon.stub().resolves('content'),
+                dispose: sinon.stub()
+            };
+        });
+
+        await tool.openLink({
+            ref: { path: 'src/file.ts', gitRef: 'abc123' },
+            rightRef: 'src/file.ts'
+        });
+
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
+        const openCall = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0);
+        const diffUri = openCall.args[0] as URI;
+        expect(DiffUris.isDiffUri(diffUri)).to.be.true;
+        const [leftUri] = DiffUris.decode(diffUri);
+        expect(leftUri.scheme).to.equal(MEMORY_TEXT_READONLY);
+        expect(leftUri.query).to.contain('Unable to resolve revision');
+    });
+
+    it('should not open anything when single link ref is EmptyContentRef', async () => {
+        await tool.openLink({ ref: { empty: true } });
+
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.false;
+        expect((mockEditorManager.open as sinon.SinonStub).called).to.be.false;
     });
 });

@@ -16,11 +16,22 @@
 
 export const USER_INTERACTION_FUNCTION_ID = 'userInteraction';
 
-export type ContentRef = string | {
+export interface EmptyContentRef {
+    empty: true;
+    label?: string;
+}
+
+export interface PathContentRef {
     path: string;
     gitRef?: string;
     line?: number;
-};
+}
+
+export type ContentRef = string | PathContentRef | EmptyContentRef;
+
+export function isEmptyContentRef(ref: ContentRef): ref is EmptyContentRef {
+    return typeof ref === 'object' && 'empty' in ref && ref.empty === true;
+}
 
 export interface UserInteractionLink {
     ref: ContentRef;
@@ -29,7 +40,7 @@ export interface UserInteractionLink {
     autoOpen?: boolean;
 }
 
-export function resolveContentRef(ref: ContentRef): { path: string; gitRef?: string; line?: number } {
+export function resolveContentRef(ref: ContentRef): PathContentRef | EmptyContentRef {
     if (typeof ref === 'string') {
         return { path: ref };
     }
@@ -110,6 +121,9 @@ function isValidContentRef(ref: unknown): ref is ContentRef {
     }
     if (ref && typeof ref === 'object') {
         const obj = ref as Record<string, unknown>;
+        if (obj.empty === true) {
+            return true;
+        }
         return typeof obj.path === 'string' && obj.path.length > 0;
     }
     return false;

@@ -30,8 +30,10 @@ import { ToolInvocationRegistry } from '@theia/ai-core';
 import { UserInteractionTool } from './user-interaction-tool';
 import {
     USER_INTERACTION_FUNCTION_ID,
+    PathContentRef,
     UserInteractionArgs,
     UserInteractionLink,
+    isEmptyContentRef,
     parseUserInteractionArgs,
     parseUserInteractionInput,
     resolveContentRef,
@@ -155,15 +157,32 @@ const LinkButton: React.FC<{ link: UserInteractionLink; onClick: () => void }> =
         label = link.label;
     } else if (isDiff) {
         const right = resolveContentRef(link.rightRef!);
-        if (left.path === right.path) {
-            const leftTag = left.gitRef ? left.gitRef.substring(0, 8) + '…' : 'Working Copy';
-            const rightTag = right.gitRef ? right.gitRef.substring(0, 8) + '…' : 'Working Copy';
-            label = `${left.path} (${leftTag} ⟷ ${rightTag})`;
+        const leftIsEmpty = isEmptyContentRef(left);
+        const rightIsEmpty = isEmptyContentRef(right);
+
+        if (leftIsEmpty && rightIsEmpty) {
+            label = `${left.label || 'Empty'} ⟷ ${right.label || 'Empty'}`;
+        } else if (leftIsEmpty) {
+            const r = right as PathContentRef;
+            const rightTag = r.gitRef ? r.gitRef.substring(0, 8) + '…' : 'Working Copy';
+            label = `${r.path} (${left.label || 'Empty'} ⟷ ${rightTag})`;
+        } else if (rightIsEmpty) {
+            const l = left as PathContentRef;
+            const leftTag = l.gitRef ? l.gitRef.substring(0, 8) + '…' : 'Working Copy';
+            label = `${l.path} (${leftTag} ⟷ ${right.label || 'Empty'})`;
         } else {
-            label = `${left.path} ⟷ ${right.path}`;
+            const l = left as PathContentRef;
+            const r = right as PathContentRef;
+            if (l.path === r.path) {
+                const leftTag = l.gitRef ? l.gitRef.substring(0, 8) + '…' : 'Working Copy';
+                const rightTag = r.gitRef ? r.gitRef.substring(0, 8) + '…' : 'Working Copy';
+                label = `${l.path} (${leftTag} ⟷ ${rightTag})`;
+            } else {
+                label = `${l.path} ⟷ ${r.path}`;
+            }
         }
     } else {
-        label = left.path;
+        label = isEmptyContentRef(left) ? (left.label || 'Empty') : left.path;
     }
 
     return (

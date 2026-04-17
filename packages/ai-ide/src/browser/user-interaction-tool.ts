@@ -18,21 +18,28 @@ import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { MEMORY_TEXT, ResourceProvider } from '@theia/core/lib/common/resource';
+import { MEMORY_TEXT, MEMORY_TEXT_READONLY, ResourceProvider } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import {
+    ContentRef,
     USER_INTERACTION_FUNCTION_ID,
+    EmptyContentRef,
+    PathContentRef,
     UserInteractionLink,
+    isEmptyContentRef,
     resolveContentRef
 } from '../common/user-interaction-tool';
 
 export {
     USER_INTERACTION_FUNCTION_ID,
     ContentRef,
+    EmptyContentRef,
+    PathContentRef,
+    isEmptyContentRef,
     UserInteractionLink,
     UserInteractionOption,
     UserInteractionArgs,
@@ -124,9 +131,18 @@ export class UserInteractionTool implements ToolProvider {
                                                 line: { type: 'number', description: 'Optional 1-based line number to scroll to.' }
                                             },
                                             required: ['path']
+                                        },
+                                        {
+                                            type: 'object',
+                                            properties: {
+                                                empty: { type: 'boolean', const: true },
+                                                label: { type: 'string', description: 'Optional label for the empty side (e.g., "new file", "deleted").' }
+                                            },
+                                            required: ['empty'],
+                                            description: 'Marks this side as intentionally empty (e.g., for newly added or deleted files).'
                                         }
                                     ],
-                                    description: 'Content reference for the file (or left side of a diff).'
+                                    description: 'Content reference for the file (or left side of a diff). Use { "empty": true } for files that did not exist.'
                                 },
                                 rightRef: {
                                     oneOf: [
@@ -139,9 +155,18 @@ export class UserInteractionTool implements ToolProvider {
                                                 line: { type: 'number', description: 'Optional 1-based line number to scroll to.' }
                                             },
                                             required: ['path']
+                                        },
+                                        {
+                                            type: 'object',
+                                            properties: {
+                                                empty: { type: 'boolean', const: true },
+                                                label: { type: 'string', description: 'Optional label for the empty side (e.g., "new file", "deleted").' }
+                                            },
+                                            required: ['empty'],
+                                            description: 'Marks this side as intentionally empty (e.g., for newly added or deleted files).'
                                         }
                                     ],
-                                    description: 'Optional right-side content reference for diff views.'
+                                    description: 'Optional right-side content reference for diff views. Use { "empty": true } for files that no longer exist.'
                                 },
                                 label: {
                                     type: 'string',
@@ -173,26 +198,25 @@ export class UserInteractionTool implements ToolProvider {
 
     async openLink(link: UserInteractionLink): Promise<void> {
         const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-        const left = resolveContentRef(link.ref);
 
         if (link.rightRef !== undefined) {
+            const resolvedLeftUri = await this.resolveDiffSideUri(link.ref, workspaceRoot);
+            const resolvedRightUri = await this.resolveDiffSideUri(link.rightRef, workspaceRoot);
+            const left = resolveContentRef(link.ref);
             const right = resolveContentRef(link.rightRef);
-            const leftUri = this.resolveUri(left, workspaceRoot);
-            const rightUri = this.resolveUri(right, workspaceRoot);
-
-            const resolvedLeftUri = await this.canResolveUri(leftUri)
-                ? leftUri
-                : this.emptyContentUri(left.path);
-            const resolvedRightUri = await this.canResolveUri(rightUri)
-                ? rightUri
-                : this.emptyContentUri(right.path);
             const diffLabel = link.label || this.buildDiffLabel(left, right);
             const diffUri = DiffUris.encode(resolvedLeftUri, resolvedRightUri, diffLabel);
             await open(this.openerService, diffUri);
         } else {
+            if (isEmptyContentRef(link.ref)) {
+                return;
+            }
+            const left = resolveContentRef(link.ref) as PathContentRef;
             if (left.gitRef) {
                 const uri = this.resolveUri(left, workspaceRoot);
-                await open(this.openerService, uri);
+                if (uri) {
+                    await open(this.openerService, uri);
+                }
             } else {
                 const fileUri = workspaceRoot.resolve(left.path);
                 this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
@@ -205,32 +229,50 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     protected resolveUri(
-        ref: { path: string; gitRef?: string; line?: number },
+        ref: PathContentRef,
         workspaceRoot: URI
-    ): URI {
+    ): URI | undefined {
         const fileUri = workspaceRoot.resolve(ref.path);
         this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
-
         if (ref.gitRef) {
-            const repo = this.scmService.selectedRepository;
+            const repo = this.scmService.findRepository(fileUri);
             if (repo) {
                 const query = { path: fileUri['codeUri'].fsPath, ref: ref.gitRef };
                 return fileUri.withScheme(repo.provider.id).withQuery(JSON.stringify(query));
             }
+            console.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
+            return undefined;
         }
         return fileUri;
     }
 
     protected buildDiffLabel(
-        left: { path: string; gitRef?: string },
-        right: { path: string; gitRef?: string }
+        left: PathContentRef | EmptyContentRef,
+        right: PathContentRef | EmptyContentRef
     ): string {
-        if (left.path === right.path) {
-            const leftLabel = left.gitRef ? left.gitRef.substring(0, 8) : 'Working Copy';
-            const rightLabel = right.gitRef ? right.gitRef.substring(0, 8) : 'Working Copy';
-            return `${left.path} (${leftLabel} ⟷ ${rightLabel})`;
+        const leftIsEmpty = isEmptyContentRef(left);
+        const rightIsEmpty = isEmptyContentRef(right);
+        if (leftIsEmpty && rightIsEmpty) {
+            return `${left.label || 'Empty'} ⟷ ${right.label || 'Empty'}`;
         }
-        return `${left.path} ⟷ ${right.path}`;
+        if (leftIsEmpty) {
+            const rightRef = right as PathContentRef;
+            const rightTag = rightRef.gitRef ? rightRef.gitRef.substring(0, 8) : 'Working Copy';
+            return `${rightRef.path} (${left.label || 'Empty'} ⟷ ${rightTag})`;
+        }
+        if (rightIsEmpty) {
+            const leftRef = left as PathContentRef;
+            const leftTag = leftRef.gitRef ? leftRef.gitRef.substring(0, 8) : 'Working Copy';
+            return `${leftRef.path} (${leftTag} ⟷ ${right.label || 'Empty'})`;
+        }
+        const l = left as PathContentRef;
+        const r = right as PathContentRef;
+        if (l.path === r.path) {
+            const leftTag = l.gitRef ? l.gitRef.substring(0, 8) : 'Working Copy';
+            const rightTag = r.gitRef ? r.gitRef.substring(0, 8) : 'Working Copy';
+            return `${l.path} (${leftTag} ⟷ ${rightTag})`;
+        }
+        return `${l.path} ⟷ ${r.path}`;
     }
 
     protected async handleInteraction(argString: string, ctx: unknown): Promise<string> {
@@ -265,6 +307,31 @@ export class UserInteractionTool implements ToolProvider {
         } finally {
             this.pendingInteractions.delete(toolCallId);
         }
+    }
+
+    protected async resolveDiffSideUri(ref: ContentRef, workspaceRoot: URI): Promise<URI> {
+        if (isEmptyContentRef(ref)) {
+            return this.emptyContentUri(ref.label || '');
+        }
+        const resolved = resolveContentRef(ref) as PathContentRef;
+        const uri = this.resolveUri(resolved, workspaceRoot);
+        if (uri === undefined) {
+            return this.errorContentUri(resolved.path, resolved.gitRef!);
+        }
+        if (await this.canResolveUri(uri)) {
+            return uri;
+        }
+        if (resolved.gitRef) {
+            return this.errorContentUri(resolved.path, resolved.gitRef);
+        }
+        return this.emptyContentUri(resolved.path);
+    }
+
+    protected errorContentUri(path: string, gitRef: string): URI {
+        const message = `Unable to resolve revision '${gitRef}' for '${path}'.\n\n`
+            + 'The SCM provider could not retrieve this revision. '
+            + 'Ensure the Git extension is active and the repository is recognized.';
+        return new URI().withScheme(MEMORY_TEXT_READONLY).withPath(path).withQuery(message);
     }
 
     protected emptyContentUri(path: string): URI {

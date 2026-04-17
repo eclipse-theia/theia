@@ -143,8 +143,8 @@ As soon as you have the PR information, use ~{${CREATE_TASK_CONTEXT_FUNCTION_ID}
 - **CI Status:** <pass/fail/pending>
 
 ## Changed Files
-- <file1> (modified/added/deleted)
-- <file2> (modified/added/deleted)
+- <file1> (modified/added/deleted/renamed from <old-path>)
+- <file2> (modified/added/deleted/renamed from <old-path>)
 ...
 
 ## Build Status
@@ -286,6 +286,22 @@ For unmodified reference files (no diff), use a simple string ref:
 \`\`\`json
 {"ref": "src/bar.ts"}
 \`\`\`
+
+For newly added files (no previous version exists), use an empty left ref:
+\`\`\`json
+{"ref": {"empty": true, "label": "new file"}, "rightRef": "src/new-file.ts"}
+\`\`\`
+
+For deleted files (no current version exists), use an empty right ref:
+\`\`\`json
+{"ref": {"path": "src/deleted-file.ts", "gitRef": "<merge-base-sha>"}, "rightRef": {"empty": true, "label": "deleted"}}
+\`\`\`
+
+For renamed or moved files, use the old path on the left and the new path on the right:
+\`\`\`json
+{"ref": {"path": "src/old-path/foo.ts", "gitRef": "<merge-base-sha>"}, "rightRef": "src/new-path/foo.ts"}
+\`\`\`
+This also works for files that were both renamed and modified — the diff will show content changes alongside the path change.
 
 This phase uses the ~{${USER_INTERACTION_FUNCTION_ID}} tool to present interactive choices to the user. Each tool call blocks until the user selects an option. The selected value is returned as the tool result, so you can read it and decide the next step.
 
