@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { RemoteDockerContainerConnection } from './remote-container-connection-provider';
+import { RemoteDockerContainerConnection } from './remote-docker-container-connection';
 import { DevContainerConfiguration } from './devcontainer-file';
 import { ILogger } from '@theia/core';
 import * as Docker from 'dockerode';
@@ -28,7 +28,7 @@ class TestableDockerContainerConnection extends RemoteDockerContainerConnection 
 
 function createConnection(config: DevContainerConfiguration): TestableDockerContainerConnection {
     const mockDocker = {
-        getEvents: () => Promise.resolve({ on: () => { } })
+        getEvents: () => Promise.resolve({ on: () => { }, destroy: () => { } })
     } as unknown as Docker;
     const mockContainer = {} as unknown as Docker.Container;
     const mockLogger = {} as ILogger;
@@ -102,8 +102,7 @@ describe('RemoteDockerContainerConnection', () => {
                 }
             } as DevContainerConfiguration);
 
-            const env = connection.testGetRemoteEnv();
-            expect(env).to.have.lengthOf(0);
+            expect(connection.testGetRemoteEnv()).to.be.undefined;
         });
 
         it('should handle values containing equals signs', () => {
@@ -147,6 +146,58 @@ describe('RemoteDockerContainerConnection', () => {
             expect(env).to.include('PATH_EXTRA=/usr/local/bin:/custom/path');
             expect(env).to.include('QUOTED=hello "world"');
             expect(env).to.include('SPACED=hello world');
+        });
+    });
+
+    describe('shutdownContainer', () => {
+
+        function createConnectionWithConfig(config: Partial<DevContainerConfiguration>): { connection: RemoteDockerContainerConnection; stopCalled: () => boolean } {
+            const state = { stopCalled: false };
+            const mockDocker = {
+                getEvents: () => Promise.resolve({ on: () => { }, destroy: () => { } })
+            } as unknown as Docker;
+            const mockContainer = {
+                id: 'test-container-id',
+                stop: () => { state.stopCalled = true; return Promise.resolve(); }
+            } as unknown as Docker.Container;
+            const mockLogger = {} as ILogger;
+            const connection = new RemoteDockerContainerConnection({
+                id: 'test-id',
+                name: 'test',
+                type: 'Dev Container',
+                docker: mockDocker,
+                container: mockContainer,
+                config: config as DevContainerConfiguration,
+                logger: mockLogger
+            });
+            return { connection, stopCalled: () => state.stopCalled };
+        }
+
+        it('should not stop container when shutdownAction is none', async () => {
+            const { connection, stopCalled } = createConnectionWithConfig({ shutdownAction: 'none' });
+            await connection.dispose();
+            expect(stopCalled()).to.equal(false);
+        });
+
+        it('should stop container when shutdownAction is stopContainer', async () => {
+            const { connection, stopCalled } = createConnectionWithConfig({ shutdownAction: 'stopContainer' });
+            await connection.dispose();
+            expect(stopCalled()).to.equal(true);
+        });
+
+        it('should default to stopContainer when shutdownAction is not set and no dockerComposeFile', async () => {
+            const { connection, stopCalled } = createConnectionWithConfig({});
+            await connection.dispose();
+            expect(stopCalled()).to.equal(true);
+        });
+
+        it('should not stop container when shutdownAction is none even with dockerComposeFile', async () => {
+            const { connection, stopCalled } = createConnectionWithConfig({
+                shutdownAction: 'none',
+                dockerComposeFile: 'docker-compose.yml'
+            });
+            await connection.dispose();
+            expect(stopCalled()).to.equal(false);
         });
     });
 });
