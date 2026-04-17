@@ -24,10 +24,11 @@ import * as React from '@theia/core/shared/react';
 import { createConfirmationHandlers, ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
-import { useMarkdownRendering } from './markdown-part-renderer';
+import { useBlockExternalImages, useMarkdownRendering } from './markdown-part-renderer';
 import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -46,6 +47,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(WorkspaceTrustService)
+    protected workspaceTrustService: WorkspaceTrustService;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
@@ -107,7 +111,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
                         }
                         case 'text': {
                             return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-text-result'>
-                                <MarkdownRender text={content.text} openerService={this.openerService} />
+                                <MarkdownRender text={content.text} openerService={this.openerService} workspaceTrustService={this.workspaceTrustService} />
                             </div>;
                         }
                         case 'audio':
@@ -297,7 +301,8 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     );
 };
 
-const MarkdownRender = ({ text, openerService }: { text: string; openerService: OpenerService }) => {
-    const ref = useMarkdownRendering(text, openerService);
+const MarkdownRender = ({ text, openerService, workspaceTrustService }: { text: string; openerService: OpenerService; workspaceTrustService: WorkspaceTrustService }) => {
+    const blockExternalImages = useBlockExternalImages(workspaceTrustService);
+    const ref = useMarkdownRendering(text, openerService, false, undefined, blockExternalImages);
     return <div ref={ref}></div>;
 };
