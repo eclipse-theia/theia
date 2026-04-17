@@ -25,6 +25,8 @@ import { PreferenceService } from '@theia/core/lib/common';
 import { DEFAULT_CHAT_AGENT_PREF, BYPASS_MODEL_REQUIREMENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { ChatAgentRecommendationService, ChatAgentService } from '@theia/ai-chat/lib/common';
 import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
+import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
 const TheiaIdeAiLogo = ({ width = 120, height = 120, className = '' }) =>
     <svg
@@ -80,6 +82,9 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     @inject(AgentService)
     protected agentService: AgentService;
 
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
+
     protected readonly toDispose = new DisposableCollection();
     protected _hasReadyModels = false;
     protected _modelRequirementBypassed = false;
@@ -133,6 +138,17 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
             this._modelRequirementBypassed = bypassValue;
             this.notifyStateChanged();
         });
+        // Listen to both canRun and activeStatus changes. They may change independent from each other.
+        this.toDispose.push(
+            this.activationService.onDidChangeCanRun(() => {
+                this.notifyStateChanged();
+            })
+        );
+        this.toDispose.push(
+            this.activationService.onDidChangeActiveStatus(() => {
+                this.notifyStateChanged();
+            })
+        );
     }
 
     protected async checkLanguageModelStatus(): Promise<void> {
@@ -358,6 +374,43 @@ Choose the agent to use by default. You can always override this by mentioning *
     }
 
     renderDisabledMessage(): React.ReactNode {
+        if (this.activationService.isActive && !this.activationService.canRun) {
+            return this.renderTrustRestrictedMessage();
+        }
+        return this.renderPreferenceDisabledMessage();
+    }
+
+    protected renderTrustRestrictedMessage(): React.ReactNode {
+        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main theia-WelcomeMessage-Disabled'} key="trust-restricted-message">
+            <TheiaIdeAiLogo className="theia-WelcomeMessage-Logo" />
+            <div className="theia-WelcomeMessage-Content">
+                <h2>{nls.localize('theia/ai/ide/chatRestrictedMessage/title', 'AI Features are Restricted')}</h2>
+            </div>
+            <div className="theia-alert theia-warning-alert theia-WelcomeMessage-Alert">
+                <div className="theia-message-header">
+                    <span className={codicon('shield')}></span>
+                    <span>{nls.localizeByDefault('Restricted Mode')}</span>
+                </div>
+                <div className="theia-message-content">
+                    <LocalizedMarkdown
+                        localizationKey="theia/ai/ide/chatRestrictedMessage/explanation"
+                        defaultMarkdown={'AI features are disabled because this workspace is not trusted. '
+                            + 'Grant trust to enable AI chat, inline suggestions, code actions, and prompt templates.'}
+                        markdownRenderer={this.markdownRenderer}
+                    />
+                </div>
+            </div>
+            <div className="theia-WelcomeMessage-Actions">
+                <button
+                    className="theia-button main"
+                    onClick={() => this.commandRegistry.executeCommand(WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id)}>
+                    {nls.localizeByDefault('Manage Workspace Trust')}
+                </button>
+            </div>
+        </div>;
+    }
+
+    protected renderPreferenceDisabledMessage(): React.ReactNode {
         const openAiHistory = 'aiHistory:open';
 
         return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main theia-WelcomeMessage-Disabled'} key="disabled-message">
