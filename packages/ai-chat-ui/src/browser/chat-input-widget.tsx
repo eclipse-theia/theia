@@ -635,8 +635,8 @@ export class AIChatInputWidget extends ReactWidget {
         this.id = AIChatInputWidget.ID;
         this.title.closable = false;
         this.toDispose.push(this.resources.add(this.getResourceUri(), ''));
-        this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
-            this.setEnabled(this.aiActivationService.isActive);
+        this.toDispose.push(this.aiActivationService.onDidChangeCanRun(() => {
+            this.setEnabled(this.aiActivationService.canRun);
         }));
         this.toDispose.push(this.chatAgentService.onDefaultAgentChanged(() => {
             this.scheduleUpdateReceivingAgent();
@@ -648,7 +648,7 @@ export class AIChatInputWidget extends ReactWidget {
                 this.updateReceivingAgentTimeout = undefined;
             }
         }));
-        this.setEnabled(this.aiActivationService.isActive);
+        this.setEnabled(this.aiActivationService.canRun);
         this.historyService.init().then(() => {
             this.navigationState = new ChatInputNavigationState(this.historyService);
         });
