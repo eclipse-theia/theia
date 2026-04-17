@@ -23,7 +23,8 @@ import { MCPFrontendService, MCPServerDescription } from '@theia/ai-mcp/lib/comm
 import { nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
+import { PreferenceScope } from '@theia/core/lib/common';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { appTesterPlaywrightTemplate, appTesterDefaultTemplate, appTesterNextTemplate, REQUIRED_MCP_SERVERS, REQUIRED_MCP_SERVERS_NEXT } from './app-tester-prompt-template';
 
 export const AppTesterChatAgentId = 'AppTester';
@@ -33,8 +34,8 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
     @inject(MCPFrontendService)
     protected readonly mcpService: MCPFrontendService;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferenceService: AIPreferenceService;
 
     id: string = AppTesterChatAgentId;
     name = AppTesterChatAgentId;

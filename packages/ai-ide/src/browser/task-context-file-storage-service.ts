@@ -17,7 +17,8 @@
 import { Summary, SummaryMetadata, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection, EOL, Emitter, ILogger, Path, PreferenceService, URI, unreachable } from '@theia/core';
+import { DisposableCollection, EOL, Emitter, ILogger, Path, URI, unreachable } from '@theia/core';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { OpenerService, open } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -29,7 +30,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 @injectable()
 export class TaskContextFileStorageService implements TaskContextStorageService {
     @inject(InMemoryTaskContextStorage) protected readonly inMemoryStorage: InMemoryTaskContextStorage;
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService) protected readonly preferenceService: AIPreferenceService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(OpenerService) protected readonly openerService: OpenerService;

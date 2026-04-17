@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PreferenceService } from '@theia/core/lib/common';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS } from '../common/ai-code-completion-preference';
 
 export interface CodeCompletionPostProcessor {
@@ -26,8 +26,8 @@ export const CodeCompletionPostProcessor = Symbol('CodeCompletionPostProcessor')
 @injectable()
 export class DefaultCodeCompletionPostProcessor {
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferenceService: AIPreferenceService;
 
     public postProcess(text: string): string {
         if (this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS, true)) {

@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CancellationTokenSource, PreferenceService } from '@theia/core';
+import { CancellationTokenSource } from '@theia/core';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
@@ -76,7 +77,7 @@ describe('Workspace Search Provider Cancellation Tests', () => {
         // Register mocks in the container
         container.bind(SearchInWorkspaceService).toConstantValue(searchService);
         container.bind(WorkspaceFunctionScope).toConstantValue(mockWorkspaceScope);
-        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(AIPreferenceService).toConstantValue(mockPreferenceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(WorkspaceSearchProvider).toSelf();
     });

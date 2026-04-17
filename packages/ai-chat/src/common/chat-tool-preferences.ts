@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { createAIPreferenceProxy, DEFAULT_AI_PREFERENCE_SERVICE } from '@theia/ai-core/lib/common/ai-preference-binding';
 import { nls } from '@theia/core';
 import {
     createPreferenceProxy,
@@ -34,12 +35,20 @@ export function createChatToolPreferences(preferences: PreferenceService, schema
     return createPreferenceProxy(preferences, schema);
 }
 
-export function bindChatToolPreferences(bind: interfaces.Bind): void {
-    bind(ChatToolPreferences).toDynamicValue((ctx: interfaces.Context) => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(ChatToolPreferenceContribution);
-        return createChatToolPreferences(preferences, contribution.schema);
-    }).inSingletonScope();
+/**
+ * Bind the `ChatToolPreferences` proxy and its schema contribution.
+ *
+ * @param preferenceServiceId service identifier of the `PreferenceService` the proxy
+ *   should read through. Defaults to the core `PreferenceService`. Pass
+ *   `AIPreferenceService` when workspace trust should get enforced.
+ */
+export function bindChatToolPreferences(
+    bind: interfaces.Bind,
+    preferenceServiceId: interfaces.ServiceIdentifier<PreferenceService> = DEFAULT_AI_PREFERENCE_SERVICE,
+): void {
+    bind(ChatToolPreferences).toDynamicValue(ctx =>
+        createAIPreferenceProxy(ctx, preferenceServiceId, createChatToolPreferences, chatToolPreferences)
+    ).inSingletonScope();
     bind(ChatToolPreferenceContribution).toConstantValue({ schema: chatToolPreferences });
     bind(PreferenceContribution).toService(ChatToolPreferenceContribution);
 }

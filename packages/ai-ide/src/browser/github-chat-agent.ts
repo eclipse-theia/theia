@@ -21,7 +21,8 @@ import { MCPFrontendService, MCPServerDescription } from '@theia/ai-mcp/lib/comm
 import { nls, CommandService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
+import { PreferenceScope } from '@theia/core/lib/common';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { PreferencesCommands } from '@theia/preferences/lib/browser/util/preference-types';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -35,8 +36,8 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
     @inject(MCPFrontendService)
     protected readonly mcpService: MCPFrontendService;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferenceService: AIPreferenceService;
 
     @inject(CommandService)
     protected readonly commandService: CommandService;

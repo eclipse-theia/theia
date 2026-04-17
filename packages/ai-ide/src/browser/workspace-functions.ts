@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken, Disposable, PreferenceService, URI, Path } from '@theia/core';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { CancellationToken, Disposable, URI, Path } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
@@ -43,8 +44,8 @@ export class WorkspaceFunctionScope {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(PreferenceService)
-    protected readonly preferences: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferences: AIPreferenceService;
 
     private gitignoreMatcher: ReturnType<typeof ignore> | undefined;
     private gitignoreWatcherInitialized = false;
@@ -339,8 +340,8 @@ export class FileContentFunction implements ToolProvider {
     @inject(MonacoWorkspace)
     protected readonly monacoWorkspace: MonacoWorkspace;
 
-    @inject(PreferenceService)
-    protected readonly preferences: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferences: AIPreferenceService;
 
     private parseArg(arg_string: string): { file: string; offset?: number; limit?: number } {
         const result = JSON.parse(arg_string);
@@ -791,8 +792,8 @@ export class FindFilesByPattern implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceScope: WorkspaceFunctionScope;
 
-    @inject(PreferenceService)
-    protected readonly preferences: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferences: AIPreferenceService;
 
     @inject(FileService)
     protected readonly fileService: FileService;

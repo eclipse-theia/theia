@@ -85,6 +85,7 @@ import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider';
 import { AgentCompletionNotificationService } from './agent-completion-notification-service';
 import { OSNotificationService } from './os-notification-service';
 import { WindowBlinkService } from './window-blink-service';
+import { AIPreferenceService, AIPreferenceServiceImpl } from './ai-preference-service';
 
 export default new ContainerModule(bind => {
     bindRootContributionProvider(bind, Agent);
@@ -114,7 +115,7 @@ export default new ContainerModule(bind => {
         })
         .inSingletonScope();
 
-    bindAICorePreferences(bind);
+    bindAICorePreferences(bind, AIPreferenceService);
 
     bind(DefaultPromptFragmentCustomizationService).toSelf().inSingletonScope();
     bind(PromptFragmentCustomizationService).toService(DefaultPromptFragmentCustomizationService);
@@ -202,6 +203,9 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toService(AIVariableResourceResolver);
     bind(AIVariableUriLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(AIVariableUriLabelProvider);
+
+    bind(AIPreferenceServiceImpl).toSelf().inSingletonScope();
+    bind(AIPreferenceService).toService(AIPreferenceServiceImpl);
 
     bind(AgentCompletionNotificationService).toSelf().inSingletonScope();
     bind(OSNotificationService).toSelf().inSingletonScope();

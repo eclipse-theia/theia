@@ -18,7 +18,8 @@ import { ConfirmDialog } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { nls, PreferenceService } from '@theia/core';
+import { nls } from '@theia/core';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
@@ -43,8 +44,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     @inject(ToolConfirmationManager)
     protected readonly confirmationManager: ToolConfirmationManager;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferenceService: AIPreferenceService;
 
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;

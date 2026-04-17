@@ -17,9 +17,10 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, nls } from '@theia/core';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
+import { PreferenceScope } from '@theia/core/lib/common';
 import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from '../common/ai-core-preferences';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { AIPreferenceService } from './ai-preference-service';
 
 @injectable()
 export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegistry {
@@ -65,8 +66,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferenceService: AIPreferenceService;
 
     protected readonly _ready = new Deferred<void>();
     get ready(): Promise<void> {

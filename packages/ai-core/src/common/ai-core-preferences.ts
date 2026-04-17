@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls, PreferenceProxyFactory } from '@theia/core';
+import { nls } from '@theia/core';
 import { PreferenceProxy } from '@theia/core/lib/common';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { interfaces } from '@theia/core/shared/inversify';
+import { createAIInjectablePreferenceProxy, DEFAULT_AI_PREFERENCE_SERVICE } from './ai-preference-binding';
 import {
     NOTIFICATION_TYPES,
     NOTIFICATION_TYPE_OFF,
@@ -262,11 +264,20 @@ export interface ThinkingModeSetting {
 export const AICorePreferences = Symbol('AICorePreferences');
 export type AICorePreferences = PreferenceProxy<AICoreConfiguration>;
 
-export function bindAICorePreferences(bind: interfaces.Bind): void {
-    bind(AICorePreferences).toDynamicValue(ctx => {
-        const factory = ctx.container.get<PreferenceProxyFactory>(PreferenceProxyFactory);
-        return factory(aiCorePreferenceSchema);
-    }).inSingletonScope();
+/**
+ * Bind the `AICorePreferences` proxy.
+ *
+ * @param preferenceServiceId service identifier of the `PreferenceService` the proxy
+ *   should read through. Defaults to the core `PreferenceService`. Pass
+ *   `AIPreferenceService` when workspace trust should get enforced.
+ */
+export function bindAICorePreferences(
+    bind: interfaces.Bind,
+    preferenceServiceId: interfaces.ServiceIdentifier<PreferenceService> = DEFAULT_AI_PREFERENCE_SERVICE,
+): void {
+    bind(AICorePreferences).toDynamicValue(ctx =>
+        createAIInjectablePreferenceProxy(ctx, preferenceServiceId, aiCorePreferenceSchema)
+    ).inSingletonScope();
 }
 
 /**

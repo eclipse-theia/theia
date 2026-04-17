@@ -21,7 +21,6 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     ChatAgent,
     ChatAgentService,
-    ChatAgentServiceImpl,
     ChatRequestParser,
     ChatRequestParserImpl,
     ChatService,
@@ -37,6 +36,7 @@ import { aiChatPreferences } from '../common/ai-chat-preferences';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from './change-set-file-element';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
+import { FrontendChatAgentServiceImpl } from './frontend-chat-agent-service';
 import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
 import { FrontendChatToolRequestService } from './chat-tool-request-service';
@@ -60,6 +60,7 @@ import { DefaultPendingImageRegistry, PendingImageRegistry } from './pending-ima
 import { AgentDelegationTool } from './agent-delegation-tool';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 import { bindChatToolPreferences } from '../common/chat-tool-preferences';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { ChatSessionStore } from '../common/chat-session-store';
 import { ChatSessionStoreImpl } from './chat-session-store-impl';
 import {
@@ -94,8 +95,8 @@ export default new ContainerModule(bind => {
     bind(FrontendChatToolRequestService).toSelf().inSingletonScope();
     bind(ChatToolRequestService).toService(FrontendChatToolRequestService);
 
-    bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
-    bind(ChatAgentService).toService(ChatAgentServiceImpl);
+    bind(FrontendChatAgentServiceImpl).toSelf().inSingletonScope();
+    bind(ChatAgentService).toService(FrontendChatAgentServiceImpl);
     bind(PinChatAgent).toConstantValue(true);
 
     bind(ChatSessionNamingService).toSelf().inSingletonScope();
@@ -125,7 +126,7 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 
     // Tool confirmation preferences
-    bindChatToolPreferences(bind);
+    bindChatToolPreferences(bind, AIPreferenceService);
     bind(ToolConfirmationManager).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();

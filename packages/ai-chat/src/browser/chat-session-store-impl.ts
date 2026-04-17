@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService, WorkspaceMetadataStorageService, WorkspaceMetadataStore } from '@theia/workspace/lib/browser';
-import { PreferenceService } from '@theia/core/lib/common';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { StorageService } from '@theia/core/lib/browser';
 import { DisposableCollection, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -54,8 +54,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @inject(ILogger) @named('ChatSessionStore')
     protected readonly logger: ILogger;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferenceService: AIPreferenceService;
 
     protected storageRoot?: URI;
     protected storageInitialized = false;

@@ -15,11 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import {
-    PreferenceService,
-} from '@theia/core/lib/common/preferences';
 import { ToolConfirmationMode, TOOL_CONFIRMATION_PREFERENCE, ChatToolPreferences } from '../common/chat-tool-preferences';
 import { ToolRequest } from '@theia/ai-core';
+import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 
 /**
  * Utility class to manage tool confirmation settings
@@ -29,8 +27,8 @@ export class ToolConfirmationManager {
     @inject(ChatToolPreferences)
     protected readonly preferences: ChatToolPreferences;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    @inject(AIPreferenceService)
+    protected readonly preferenceService: AIPreferenceService;
 
     // In-memory session overrides (not persisted), per chat
     protected sessionOverrides: Map<string, Map<string, ToolConfirmationMode>> = new Map();
