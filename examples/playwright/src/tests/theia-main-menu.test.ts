@@ -64,7 +64,7 @@ test.describe('Theia Main Menu', () => {
         expect(label).toBe('New Text File');
 
         const shortCut = await menuItem?.shortCut();
-        expect(shortCut).toBe(OSUtil.isMacOS ? '⌥ N' : app.isElectron ? 'Ctrl+N' : 'Alt+N');
+        expect(shortCut).toBe(OSUtil.isMacOS ? '⌥+N' : app.isElectron ? 'Ctrl+N' : 'Alt+N');
 
         const hasSubmenu = await menuItem?.hasSubmenu();
         expect(hasSubmenu).toBe(false);
