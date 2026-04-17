@@ -18,13 +18,13 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { LanguageModel, LanguageModelResponse, ThinkingModeSettings, UserRequest } from '../common';
+import { LanguageModel, LanguageModelResponse, ReasoningSettings, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
 import {
     PREFERENCE_NAME_REQUEST_SETTINGS,
-    PREFERENCE_NAME_THINKING_MODE,
+    PREFERENCE_NAME_REASONING,
     RequestSetting,
-    ThinkingModeSetting,
+    ReasoningPreferenceEntry,
     getRequestSettingSpecificity
 } from '../common/ai-core-preferences';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
@@ -42,13 +42,12 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
         languageModel: LanguageModel,
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
+        const requestSettings = this.trustAwareReader.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []) ?? [];
+        const reasoningEntries = this.trustAwareReader.get<ReasoningPreferenceEntry[]>(PREFERENCE_NAME_REASONING, []) ?? [];
         const trusted = await this.workspaceTrustService.getWorkspaceTrust();
         if (!trusted) {
             throw new Error(nls.localize('theia/ai-core/aiDisabledInRestrictedMode', 'AI features are not available in untrusted workspaces.'));
         }
-
-        const requestSettings = this.trustAwareReader.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []) ?? [];
-        const thinkingModeSettings = this.trustAwareReader.get<ThinkingModeSetting[]>(PREFERENCE_NAME_THINKING_MODE, []) ?? [];
 
         const ids = languageModel.id.split('/');
         const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], languageModelRequest.agentId);
@@ -67,9 +66,16 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
             };
         }
 
-        const matchingThinkingMode = mergeThinkingModeSettings(thinkingModeSettings, ids[1], ids[0], languageModelRequest.agentId);
-        if (matchingThinkingMode?.thinkingMode && !languageModelRequest.thinkingMode) {
-            languageModelRequest.thinkingMode = matchingThinkingMode.thinkingMode;
+        // Reasoning resolution order (highest first): already-set session override → preference entry
+        // matching this scope → model's declared `defaultLevel`. The selector displays the same
+        // fallback chain, so what the user sees is what gets sent.
+        if (!languageModelRequest.reasoning) {
+            const matchingReasoning = mergeReasoningSettings(reasoningEntries, ids[1], ids[0], languageModelRequest.agentId);
+            if (matchingReasoning?.reasoning) {
+                languageModelRequest.reasoning = matchingReasoning.reasoning;
+            } else if (languageModel.reasoningSupport?.defaultLevel) {
+                languageModelRequest.reasoning = { level: languageModel.reasoningSupport.defaultLevel };
+            }
         }
 
         return super.sendRequest(languageModel, languageModelRequest);
@@ -88,29 +94,29 @@ export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId:
     return matchingSetting;
 };
 
-export const mergeThinkingModeSettings = (
-    thinkingModeSettings: ThinkingModeSetting[],
+export const mergeReasoningSettings = (
+    reasoningEntries: ReasoningPreferenceEntry[],
     modelId: string,
     providerId: string,
     agentId?: string
-): ThinkingModeSetting | undefined => {
-    const prioritizedSettings = Prioritizeable.prioritizeAllSync(thinkingModeSettings,
+): ReasoningPreferenceEntry | undefined => {
+    const prioritizedSettings = Prioritizeable.prioritizeAllSync(reasoningEntries,
         setting => getRequestSettingSpecificity(setting, {
             modelId,
             providerId,
             agentId
         }));
-    const matchingSetting = prioritizedSettings.reduceRight<ThinkingModeSetting | undefined>(
+    const matchingSetting = prioritizedSettings.reduceRight<ReasoningPreferenceEntry | undefined>(
         (acc, cur) => {
             if (!acc) {
                 return cur.value;
             }
             return {
                 ...acc,
-                thinkingMode: {
-                    ...acc.thinkingMode,
-                    ...cur.value.thinkingMode
-                } as ThinkingModeSettings
+                reasoning: {
+                    ...acc.reasoning,
+                    ...cur.value.reasoning
+                } as ReasoningSettings
             };
         },
         undefined

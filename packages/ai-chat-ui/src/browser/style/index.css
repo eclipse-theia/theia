@@ -713,8 +713,9 @@ div:last-child>.theia-ChatNode {
   flex-direction: row-reverse;
 }
 
-/* Mode selector - compact SelectComponent inside toolbar */
-.theia-ChatInput-ModeSelector.theia-select-component {
+/* Mode and reasoning selectors - compact SelectComponents inside toolbar */
+.theia-ChatInput-ModeSelector.theia-select-component,
+.theia-ChatInput-ReasoningSelector.theia-select-component {
   min-width: unset;
   min-height: unset;
   height: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
@@ -729,21 +730,25 @@ div:last-child>.theia-ChatNode {
   outline: none;
 }
 
-.theia-ChatInput-ModeSelector .theia-select-component-chevron {
+.theia-ChatInput-ModeSelector .theia-select-component-chevron,
+.theia-ChatInput-ReasoningSelector .theia-select-component-chevron {
   font-size: var(--theia-ui-font-size1);
   margin-left: calc(var(--theia-ui-padding) / 3);
 }
 
-.theia-ChatInput-ModeSelector.theia-select-component:hover {
+.theia-ChatInput-ModeSelector.theia-select-component:hover,
+.theia-ChatInput-ReasoningSelector.theia-select-component:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.theia-ChatInput-ModeSelector.theia-select-component:focus-visible {
+.theia-ChatInput-ModeSelector.theia-select-component:focus-visible,
+.theia-ChatInput-ReasoningSelector.theia-select-component:focus-visible {
   outline: 1px solid var(--theia-focusBorder);
   outline-offset: -1px;
 }
 
-.theia-ChatInput-ModeSelector.disabled {
+.theia-ChatInput-ModeSelector.disabled,
+.theia-ChatInput-ReasoningSelector.disabled {
   opacity: var(--theia-mod-disabled-opacity);
   cursor: default;
   pointer-events: none;
@@ -1208,12 +1213,6 @@ div:last-child>.theia-ChatNode {
   outline-color: var(--theia-editor-background);
 }
 
-.session-settings-thinking-mode {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
-  margin-bottom: 8px;
-}
-
 .session-settings-section-header {
   font-weight: 600;
   font-size: 13px;
@@ -1241,35 +1240,6 @@ div:last-child>.theia-ChatNode {
 .session-settings-checkbox-container label {
   cursor: pointer;
   user-select: none;
-}
-
-.session-settings-budget-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 22px;
-}
-
-.session-settings-budget-container label {
-  white-space: nowrap;
-}
-
-.session-settings-budget-container label.disabled {
-  color: var(--theia-disabledForeground);
-}
-
-.session-settings-budget-container input[type="number"] {
-  width: 100px;
-  padding: 4px 8px;
-  border: 1px solid var(--theia-input-border);
-  border-radius: 4px;
-  background-color: var(--theia-input-background);
-  color: var(--theia-input-foreground);
-}
-
-.session-settings-budget-container input[type="number"]:disabled {
-  opacity: var(--theia-mod-disabled-opacity);
-  cursor: not-allowed;
 }
 
 .session-settings-confirmation-timeout {

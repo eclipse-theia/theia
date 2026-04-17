@@ -16,6 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from '../common/anthropic-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
@@ -38,6 +39,28 @@ const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
     'claude-opus-4-6': 128000,
     'claude-opus-4-1': 32000
 };
+
+/** Claude 4.6+ (Opus/Sonnet/Haiku) use the adaptive thinking API. */
+const EFFORT_REASONING = /^claude-(?:opus|sonnet|haiku)-4-[6-9]/i;
+/** Claude 4.0–4.5 (including dated snapshots) use legacy extended thinking. */
+const BUDGET_REASONING = /^claude-(?:opus|sonnet|haiku)-4-(?:[0-5](?:-|$)|\d{4})/i;
+/** Models that accept the `xhigh` effort value. */
+const XHIGH_EFFORT = /^claude-opus-4-7(?:-|$)/i;
+
+const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'off'
+};
+
+function reasoningApiFor(modelId: string): ReasoningApi | undefined {
+    if (EFFORT_REASONING.test(modelId)) {
+        return 'effort';
+    }
+    if (BUDGET_REASONING.test(modelId)) {
+        return 'budget';
+    }
+    return undefined;
+}
 
 @injectable()
 export class AnthropicFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -136,6 +159,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
         const maxTokens = DEFAULT_MODEL_MAX_TOKENS[modelId];
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const reasoningApi = reasoningApiFor(modelId);
 
         const description: AnthropicModelDescription = {
             id: id,
@@ -143,7 +167,10 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             apiKey: true,
             enableStreaming: true,
             useCaching: true,
-            maxRetries: maxRetries
+            maxRetries: maxRetries,
+            reasoningSupport: reasoningApi ? ANTHROPIC_REASONING_SUPPORT : undefined,
+            reasoningApi,
+            supportsXHighEffort: XHIGH_EFFORT.test(modelId)
         };
 
         if (maxTokens !== undefined) {
