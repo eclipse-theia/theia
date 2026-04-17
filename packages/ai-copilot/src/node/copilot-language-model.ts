@@ -30,7 +30,7 @@ import OpenAI from 'openai';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
-import { COPILOT_PROVIDER_ID, COPILOT_USER_AGENT, getCopilotApiBaseUrl } from '../common';
+import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 
@@ -53,6 +53,7 @@ export class CopilotLanguageModel implements LanguageModel {
         public maxRetries: number,
         protected readonly accessTokenProvider: () => Promise<string | undefined>,
         protected readonly enterpriseUrlProvider: () => string | undefined,
+        protected readonly userAgentProvider: () => string,
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
@@ -175,7 +176,7 @@ export class CopilotLanguageModel implements LanguageModel {
             apiKey: accessToken,
             baseURL,
             defaultHeaders: {
-                'User-Agent': COPILOT_USER_AGENT,
+                'User-Agent': this.userAgentProvider(),
                 'Openai-Intent': 'conversation-edits',
                 'X-Initiator': 'user'
             }
