@@ -19,7 +19,8 @@
 import * as React from '@theia/core/shared/react';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider, CommandService } from '@theia/core/lib/common';
+import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider, CommandService, OS } from '@theia/core/lib/common';
+import { ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
@@ -130,6 +131,7 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly workspaceService: WorkspaceService,
         protected readonly debugPreferences: DebugPreferences,
         protected readonly commandService: CommandService,
+        protected readonly shellCommandBuilder: ShellCommandBuilder,
         /**
          * Number of millis after a `stop` request times out. It's 5 seconds by default.
          */
@@ -505,19 +507,25 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async runInTerminal(request: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
-        // Move the destructuring down here to keep the line length under 180 characters
         const { title, cwd, args, env, argsCanBeInterpretedByShell } = request.arguments;
         const terminal = await this.doCreateTerminal({ title, cwd, env, useServerTitle: false });
         const { processId } = terminal;
 
-        // If the debug adapter requests shell interpretation (e.g., expanding $USER or > output.txt),
-        // we join the arguments into a single raw command string and send it directly.
-        // This prevents Theia from automatically wrapping the variables in single quotes.
         if (argsCanBeInterpretedByShell) {
-            const rawCommand = args.join(' ') + '\r';
-            await terminal.sendText(rawCommand);
+            const builder = new ShellCommandBuilder();
+            
+            const prefixArgs = args.length > 0 ? [args[0] || ''] : [];
+            const prefix = builder.buildCommand(await terminal.processInfo, { 
+                cwd, 
+                args: prefixArgs, 
+                env 
+            });
+            
+            const rawArgs = args.length > 1 ? ' ' + args.slice(1).join(' ') : '';
+            
+            await terminal.sendText(prefix + rawArgs + OS.backend.EOL);
+            
         } else {
-            // Fallback to standard execution where Theia safely escapes the arguments array
             await terminal.executeCommand({ cwd, args, env });
         }
 

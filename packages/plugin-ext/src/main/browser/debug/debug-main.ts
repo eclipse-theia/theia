@@ -59,6 +59,7 @@ import { DebugSessionOptions as TheiaDebugSessionOptions } from '@theia/debug/li
 import { DebugStackFrame } from '@theia/debug/lib/browser/model/debug-stack-frame';
 import { DebugThread } from '@theia/debug/lib/browser/model/debug-thread';
 import { TestService } from '@theia/test/lib/browser/test-service';
+import { ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -81,6 +82,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly testService: TestService;
     private readonly workspaceService: WorkspaceService;
     private readonly commandService: CommandService;
+    private readonly shellCommandBuilder: ShellCommandBuilder;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
     private readonly configurationProviders = new Map<number, DisposableCollection>();
@@ -106,6 +108,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.testService = container.get(TestService);
         this.workspaceService = container.get(WorkspaceService);
         this.commandService = container.get(CommandService);
+        this.shellCommandBuilder = container.get(ShellCommandBuilder);
 
         const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
             this.debugExt.$breakpointsDidChange(
@@ -173,6 +176,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
             this.testService,
             this.workspaceService,
             this.commandService,
+            this.shellCommandBuilder,
         );
 
         const toDispose = new DisposableCollection(
@@ -180,6 +184,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         );
         this.debuggerContributions.set(debugType, toDispose);
         toDispose.pushAll([
+            this.pluginDebugService.registerDebugger({ type: description.type, label: description.label || description.type, variables: description.variables }),
             this.pluginDebugService.registerDebugAdapterContribution(
                 new PluginDebugAdapterContribution(description, this.debugExt, this.pluginService)
             ),
