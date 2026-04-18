@@ -15,21 +15,20 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common';
-import { nls, PreferenceSchema } from '@theia/core';
+import { nls, PreferenceSchema, PreferenceScope } from '@theia/core';
 
 // We reuse the context key for the preference name
 export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST = 'ai-features.orchestrator.excludedAgents';
-
+export const PREFERENCE_NAME_AGENT_MODE_ENABLED = 'ai-features.agentMode.enabled';
 export const aiIdePreferenceSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_NAME_ENABLE_AI]: {
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: '❗ ' + nls.localize('theia/ai/ide/enableAI/mdDescription',
-                'This setting allows you to access the latest AI capabilities (Beta version).\
+                'This setting allows you to access the AI capabilities of Theia IDE.\
             \n\
-            Please note that these features are in a beta phase, which means they may \
-            undergo changes and will be further improved. It is important to be aware that these features may generate\
+            Please be aware that AI features may generate\
             continuous requests to the language models (LLMs) you provide access to. This might incur costs that you\
             need to monitor closely. By enabling this option, you acknowledge these risks.\
             \n\
@@ -49,6 +48,15 @@ export const aiIdePreferenceSchema: PreferenceSchema = {
                 type: 'string'
             },
             default: ['ClaudeCode', 'Codex'],
+        },
+        [PREFERENCE_NAME_AGENT_MODE_ENABLED]: {
+            title: AI_CORE_PREFERENCES_TITLE,
+            description: nls.localize('theia/ai/ide/agentMode/enabled/mdDescription',
+                'Enable agent mode for the Coder agent. Agent mode allows autonomous file modifications without further confirmation.\
+                 A first-use confirmation dialog is shown when using agent mode until this is set to `true`.'),
+            type: 'boolean',
+            default: false,
+            scope: PreferenceScope.User
         }
     }
 };

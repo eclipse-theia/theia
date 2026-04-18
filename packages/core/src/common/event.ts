@@ -123,6 +123,8 @@ class CallbackList implements Iterable<Callback> {
     private _callbacks: Function[] | undefined;
     private _contexts: any[] | undefined;
 
+    constructor(private readonly errorHandling: ErrorHandlingStrategy = 'log') {}
+
     get length(): number {
         return this._callbacks && this._callbacks.length || 0;
     }
@@ -179,12 +181,24 @@ class CallbackList implements Iterable<Callback> {
 
     public invoke(...args: any[]): any[] {
         const ret: any[] = [];
+        const errors: unknown[] = [];
         for (const callback of this) {
             try {
                 ret.push(callback(...args));
             } catch (e) {
-                console.error(e);
+                if (this.errorHandling === 'propagate') {
+                    errors.push(e);
+                } else if (typeof this.errorHandling === 'function') {
+                    this.errorHandling(e);
+                } else {
+                    console.error(e);
+                }
             }
+        }
+        if (errors.length === 1) {
+            throw errors[0];
+        } else if (errors.length > 1) {
+            throw new AggregateError(errors, 'Multiple event listeners failed');
         }
         return ret;
     }
@@ -199,9 +213,24 @@ class CallbackList implements Iterable<Callback> {
     }
 }
 
+/**
+ * A strategy for handling errors in firing an emitter's event, one of
+ *
+ * - `'log'` (default): errors are caught and logged via `console.error`
+ * - `'propagate'`: all listeners are called; if any throw, the errors are collected
+ *   and re-thrown after all listeners complete (single error re-thrown directly,
+ *   multiple errors wrapped in an `AggregateError`)
+ * - `(error: unknown) => void`: a custom callback invoked for each error
+ */
+export type ErrorHandlingStrategy = 'log' | 'propagate' | ((error: unknown) => void);
+
 export interface EmitterOptions {
     onFirstListenerAdd?: Function;
     onLastListenerRemove?: Function;
+    /**
+     * How errors thrown by event listeners are handled during {@link Emitter.fire}.
+     */
+    errorHandling?: ErrorHandlingStrategy;
 }
 
 export class Emitter<T = any> {
@@ -229,7 +258,7 @@ export class Emitter<T = any> {
         if (!this._event) {
             this._event = Object.assign((listener: (e: T) => any, thisArgs?: any, disposables?: DisposableGroup) => {
                 if (!this._callbacks) {
-                    this._callbacks = new CallbackList();
+                    this._callbacks = new CallbackList(this._options?.errorHandling);
                 }
                 if (this._options && this._options.onFirstListenerAdd && this._callbacks.isEmpty()) {
                     this._options.onFirstListenerAdd(this);

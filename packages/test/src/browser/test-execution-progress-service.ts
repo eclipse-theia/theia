@@ -17,6 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Widget } from '@theia/core/lib/browser';
 import { TestResultViewContribution } from './view/test-result-view-contribution';
+import { TestOutputViewContribution } from './view/test-output-view-contribution';
 import { TestViewContribution } from './view/test-view-contribution';
 import { TestPreferences } from '../common/test-preferences';
 
@@ -32,6 +33,9 @@ export class DefaultTestExecutionProgressService implements TestExecutionProgres
     @inject(TestResultViewContribution)
     protected readonly testResultView: TestResultViewContribution;
 
+    @inject(TestOutputViewContribution)
+    protected readonly testOutputView: TestOutputViewContribution;
+
     @inject(TestViewContribution)
     protected readonly testView: TestViewContribution;
 
@@ -43,6 +47,7 @@ export class DefaultTestExecutionProgressService implements TestExecutionProgres
             const openTesting = this.testPreferences['testing.openTesting'];
             if (openTesting === 'openOnTestStart') {
                 this.openTestResultView();
+                this.testOutputView.openView({ activate: false });
             }
         }
     }

@@ -22,6 +22,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "capabilityOverrides": {
+          "mdDescription": "针对基于模板的功能的用户自定义设置。键为功能片段 ID,值为启用(true)或禁用(false)。",
+          "title": "功能覆盖"
+        },
         "completionNotification": {
           "mdDescription": "此代理完成任务时的通知行为。若未设置,将采用全局默认通知设置。\n                - `os-notification`:显示操作系统/系统通知\n                - `message`:在状态栏/消息区域显示通知\n                - `blink`:闪烁或突出显示界面\n                - `off`:禁用此代理的通知",
           "title": "完成通知"
@@ -29,6 +33,16 @@
         "enable": {
           "mdDescription": "指定代理程序应启用(true)还是禁用(false)。",
           "title": "启用代理"
+        },
+        "genericCapabilitySelections": {
+          "agentDelegation": "用于委托的选定代理 ID",
+          "functions": "选定的函数 ID",
+          "mcpFunctions": "选定的 MCP 功能 ID",
+          "mdDescription": "用户对通用功能(如技能、功能和 MCP 工具)的选择。",
+          "promptFragments": "选定的提示片段 ID",
+          "skills": "选定的技能 ID",
+          "title": "通用功能选项",
+          "variables": "选定的变量名称"
         },
         "languageModelRequirements": {
           "identifier": {
@@ -187,6 +201,10 @@
             "description": "自动执行工具无需确认"
           }
         },
+        "toolConfirmationTimeout": {
+          "denialReason": "确认超时,超时时间为{0}秒",
+          "description": "工具确认对话框的超时时间(单位:秒)。当设置为正数时,工具确认将在指定时间后自动被拒绝。设置为 0 则禁用此功能(默认)。"
+        },
         "universal": {
           "description": "该智能助手旨在通过提供简明准确的解答,协助软件开发者处理通用编程及软件开发问题。同时它也是用户提出任何通用性问题的备用解答方案。当前通用型助手默认不具备任何上下文信息,即无法访问当前用户上下文或工作区环境。"
         },
@@ -199,7 +217,6 @@
       },
       "chat-ui": {
         "addContextVariable": "添加上下文变量",
-        "agent": "代理",
         "agentDelegationDescription": "可委派的其他AI代理",
         "aiDisabled": "AI功能已禁用",
         "applyAll": "应用全部",
@@ -219,6 +236,7 @@
           "clearHistory": "清除输入提示历史记录",
           "cycleMode": "循环聊天模式",
           "nextPrompt": "下一提示",
+          "pasteWithImageSupport": "粘贴(支持图片)",
           "previousPrompt": "上一个提示",
           "toggleCapabilities": "切换功能配置"
         },
@@ -244,6 +262,7 @@
           "response": {
             "label": "响应:"
           },
+          "restoredNotAvailable": "已恢复的会话不提供响应。",
           "starting": "开始委托...",
           "status": {
             "canceled": "已取消",
@@ -269,7 +288,6 @@
         "functions": "功能",
         "functionsDescription": "Theia 扩展提供的内置函数",
         "genericCapabilities": "通用功能",
-        "mcpFunctions": "MCP",
         "mcpFunctionsDescription": "来自连接服务器的模型上下文协议(MCP)功能",
         "noChatAgentsAvailable": "没有可用的聊天机器人。",
         "noMatchingCapabilities": "无匹配功能",
@@ -278,12 +296,12 @@
         "openOriginalFile": "打开原始文件",
         "performThisTask": "执行此任务。",
         "persistedSession": "持久化会话(点击恢复)",
-        "promptFragments": "提示",
         "promptFragmentsDescription": "用于对话的自定义提示片段",
         "removeChat": "移除聊天功能",
         "renameChat": "重命名聊天",
         "requestNotFoundForRetry": "请求未找到,请重试",
         "responseFrom": "来自 {0} 的响应",
+        "saveCurrentSelectionsToSettings": "保存功能设置",
         "searchCapabilities": "搜索功能",
         "selectAgentQuickPickPlaceholder": "为新会话选择代理",
         "selectAllInCategory": "选择此类别中的所有项目",
@@ -314,6 +332,7 @@
           "alwaysAllowConfirm": "我明白了,启用自动批准",
           "alwaysAllowGenericWarning": "此工具需在启用自动批准功能前进行确认。启用后,所有后续调用将无需确认直接执行。仅当您信任该工具且理解潜在风险时才启用此功能。",
           "alwaysAllowTitle": "是否为“{0}”启用自动批准?",
+          "autoCancel": "{0} 中的自动取消功能",
           "canceled": "工具执行已取消",
           "denied": "工具执行被拒绝",
           "deny-forever": "始终拒绝",
@@ -560,11 +579,14 @@
           "signIn": "登录 GitHub Copilot",
           "signOut": "退出 GitHub Copilot"
         },
+        "enabled": {
+          "mdDescription": "启用 GitHub Copilot 提供程序。启用后,状态栏中将显示一个条目用于身份验证,并从您的 Copilot 订阅中检索可用模型。"
+        },
         "enterpriseUrl": {
           "mdDescription": "Copilot API 的 GitHub Enterprise 域名(例如 `github.mycompany.com`)。若使用 GitHub.com 则留空。"
         },
-        "models": {
-          "description": "GitHub Copilot可选模型。可用模型取决于您的Copilot订阅类型。"
+        "modelOverrides": {
+          "mdDescription": "覆盖自动发现的 GitHub Copilot 模型。当为空(默认)时,系统将从您的 Copilot 订阅中发现可用模型。设置明确的模型 ID 以覆盖自动发现功能。"
         },
         "signOut": {
           "confirmMessage": "您确定要退出 GitHub Copilot 吗?"
@@ -572,7 +594,8 @@
         "statusBar": {
           "signedIn": "已使用{0}账号登录GitHub Copilot。点击退出登录。",
           "signedOut": "尚未登录 GitHub Copilot。点击登录。"
-        }
+        },
+        "tokenMigration": "您的 GitHub Copilot 会话使用了过时的身份验证方法,现已清除。请重新登录以访问所有可用模型。"
       },
       "core": {
         "agentConfiguration": {
@@ -601,7 +624,7 @@
           "description": "返回系统中可用的代理列表"
         },
         "aiConfiguration": {
-          "label": "AI配置[测试版]"
+          "label": "AI配置"
         },
         "blinkTitle": {
           "agentCompleted": "Theia - 代理完成",
@@ -743,8 +766,7 @@
           "variantsOfSystemPrompt": "此提示变体集的变体:"
         },
         "promptTemplates": {
-          "description": "用于存储自定义提示模板的文件夹。若未自定义,则使用用户配置目录。建议使用处于版本控制下的文件夹来管理不同版本的提示模板。",
-          "openLabel": "选择文件夹"
+          "description": "用于存储自定义提示模板的文件夹。若未自定义,则使用用户配置目录。建议使用处于版本控制下的文件夹来管理不同版本的提示模板。"
         },
         "promptVariable": {
           "argDescription": "需解析的提示模板ID",
@@ -877,16 +899,12 @@
         },
         "edited": "编辑",
         "exchange-card": {
-          "agentId": "代理",
           "timestamp": "已启动"
         },
         "open-history-tooltip": "打开AI历史记录...",
         "request-card": {
-          "agent": "代理",
-          "model": "模型",
           "promptVariant": "提示变体",
           "request": "请求",
-          "response": "响应",
           "timestamp": "时间戳",
           "title": "请求"
         },
@@ -909,7 +927,7 @@
           "tooltip": "解释换行符"
         },
         "view": {
-          "label": "AI 代理历史记录 [测试版]",
+          "label": "AI 代理历史记录",
           "noAgent": "没有可用代理。",
           "noAgentSelected": "未选择代理。",
           "noHistoryForAgent": "所选代理“{0}”无历史记录可用"
@@ -926,15 +944,34 @@
       "ide": {
         "agent-description": "在[AI配置视图]({0})中配置AI代理设置,包括启用状态、LLM选择、提示模板自定义及自定义代理创建。",
         "agentConfiguration": {
-          "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "创建新文件",
             "openExistingFile": "打开现有文件",
             "placeholder": "选择创建或打开自定义代理文件的位置",
             "title": "选择自定义代理程序文件的位置"
           },
-          "enabledByDefault": "默认启用",
-          "noDescription": "无可用描述"
+          "genericCapabilitiesSettings": "通用功能",
+          "genericCapabilityType": {
+            "agentDelegation": "代理委托",
+            "functions": "功能",
+            "mcpFunctions": "MCP 功能",
+            "promptFragments": "提示片段"
+          },
+          "noDescription": "无可用描述",
+          "resetAllCapabilities": "将所有功能重置为默认值",
+          "resetAllDefaults": "将所有设置重置为默认值",
+          "selections": "选项"
+        },
+        "agentMode": {
+          "confirmed": {
+            "mdDescription": "用户是否已确认代理模式警告。代理模式允许在无需进一步确认的情况下自主修改文件。若设置为 `false`,则在下一次代理模式请求时将再次显示确认提示。"
+          }
+        },
+        "agentModeConfirmation": {
+          "confirm": "确认",
+          "msg": "该代理采用**代理模式**。为实现自主流程,它能够直接写入您的工作区文件,无需进一步确认。\n\n建议使用版本控制(例如 Git),以便您审查和回滚更改。\n\n您可以通过下方聊天输入区域中的模式选择器切换至**编辑模式**,或使用**Architect**代理进行只读规划。\n\n此确认设置将保存至当前工作区,且不会再次显示。若需重置或进行全局配置,请在“设置”中查找 `ai-features.agentMode.confirmed`。",
+          "question": "您要继续使用代理模式吗?",
+          "waiting": "正在等待确认..."
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "错误检查开发工具 MCP 服务器状态:{0}",
@@ -956,13 +993,10 @@
             "question": "Playwright MCP 服务器未运行。是否现在启动?此操作可能安装 Playwright MCP 服务器。"
           }
         },
-        "appTester": {
-          "description": "允许代理对浏览器应用程序进行端到端测试。为此,代理可委托AppTester代理执行任务,该代理通过自动化浏览器交互来验证实现效果。",
-          "name": "应用程序测试员"
-        },
         "architectAgent": {
           "mode": {
             "plan": "平面模式",
+            "planNext": "规划模式(下一步)",
             "simple": "简易模式"
           },
           "suggestion": {
@@ -973,6 +1007,9 @@
         "bypassHint": "某些智能体(如Claude Code)无需Theia语言模型支持",
         "chatDisabledMessage": {
           "title": "AI功能已禁用"
+        },
+        "codeReviewerAgent": {
+          "description": "一款代码审查助手,用于分析代码变更并返回结构化的审查结果。         检查完成标准、构建/代码检查/测试证据以及代码质量。"
         },
         "coderAgent": {
           "mode": {
@@ -1017,7 +1054,10 @@
         },
         "deleteChat": "删除聊天记录",
         "enableAI": {
-          "mdDescription": "此设置允许您访问最新的人工智能功能(测试版)。            \n            请注意,这些功能处于测试阶段,可能随时变更并持续优化。需特别注意:这些功能可能持续向您授权访问的语言模型(LLMs)发起请求,由此产生的费用需密切监控。 启用此选项即表示您已知晓上述风险。            \n            **请注意！本节下方设置仅在主功能启用后生效。启用功能后,您需在下方至少配置一个LLM提供商。详情参见[文档](https://theia-ide.org/docs/user_ai/)**。"
+          "mdDescription": "此设置允许您访问最新的人工智能功能。            \n            需特别注意:这些功能可能持续向您授权访问的语言模型(LLMs)发起请求,由此产生的费用需密切监控。 启用此选项即表示您已知晓上述风险。            \n            **请注意！本节下方设置仅在主功能启用后生效。启用功能后,您需在下方至少配置一个LLM提供商。详情参见[文档](https://theia-ide.org/docs/user_ai/)**。"
+        },
+        "exploreAgent": {
+          "description": "一款代码库探索助手,能够从代码库中提取并提炼信息。它会报告现有内容的相关事实,提供代码片段,并描述观察到的模式。"
         },
         "github": {
           "configureGitHubServer": {
@@ -1078,9 +1118,6 @@
           "name": "Shell 执行"
         },
         "skillsConfiguration": {
-          "location": {
-            "label": "位置"
-          },
           "noSkills": "无可用技能",
           "noSlashCommands": "无斜杠命令可用",
           "slashCommand": {
@@ -1123,7 +1160,6 @@
           }
         },
         "tooltip": {
-          "agent": "代理",
           "lastActivity": "最近活动",
           "lastMessage": "最后一条消息",
           "messages": "消息",
@@ -1133,8 +1169,7 @@
         },
         "variableConfiguration": {
           "selectVariable": "请选择一个变量。",
-          "usedByAgents": "供代理使用",
-          "variableArgs": "参数"
+          "usedByAgents": "供代理使用"
         }
       },
       "llamaFile": {
@@ -1220,7 +1255,6 @@
         }
       },
       "mcpConfiguration": {
-        "arguments": "参数",
         "autostart": "自动启动",
         "connectServer": "连接",
         "connectingServer": "正在连接...",
@@ -1259,7 +1293,6 @@
           "serverUrlRequired": "远程服务器需提供服务器URL"
         },
         "headers": "标题",
-        "noServers": "未配置任何MCP服务器",
         "saveServerError": "保存 MCP 服务器配置失败:{0}",
         "serverAuthToken": "授权令牌",
         "serverAuthTokenHeader": "身份验证标头名称",
@@ -1352,16 +1385,19 @@
           "in-progress": "SCANOSS - 正在执行扫描...",
           "match-count": "找到 {0} 条匹配项",
           "matched": "SCANOSS - 发现{0}匹配项",
-          "no-match": "SCANOSS - 无匹配项",
-          "summary": "摘要"
+          "no-match": "SCANOSS - 无匹配项"
         }
       },
       "session-settings-dialog": {
         "advancedSettings": "高级设置(JSON)",
         "budgetTokens": "预算代币:",
+        "confirmationTimeout": "确认超时",
+        "confirmationTimeoutNote": "在指定时间后自动拒绝工具确认。此设置将覆盖当前会话的全局首选项。",
+        "enableConfirmationTimeout": "启用确认超时",
         "enableThinking": "启用扩展思维",
         "thinkingMode": "思考模式",
         "thinkingModeNote": "某些型号可能忽略此设置。",
+        "timeoutSeconds": "超时(秒):",
         "title": "设置会话设置",
         "tooltip": "设置会话设置"
       },
@@ -1387,7 +1423,6 @@
         "askTerminalCommand": "询问有关终端命令的问题...",
         "hitEnterConfirm": "按下回车键确认",
         "howCanIHelp": "我能为您做些什么?",
-        "loading": "正在加载",
         "tryAgain": "请重试...",
         "useArrowsAlternatives": " 或使用 ⇅ 显示替代方案..."
       },
@@ -1398,14 +1433,12 @@
         "inputTokens": "输入令牌",
         "label": "令牌使用",
         "lastUsed": "上次使用",
-        "model": "模型",
         "noData": "目前尚无令牌使用数据。",
         "note": "令牌使用情况自应用程序启动时起进行追踪,且不进行持久化存储。",
         "outputTokens": "输出令牌",
         "readCachedInputTokens": "从缓存中读取输入令牌",
         "readCachedInputTokensTooltip": "除\"输入令牌\"外额外追踪。通常比未缓存状态成本低得多。通常不计入速率限制。",
         "total": "总计",
-        "totalTokens": "总令牌数",
         "totalTokensTooltip": "'输入令牌' + '输出令牌'"
       },
       "vercelai": {
@@ -1461,6 +1494,10 @@
           "description": "用于排除文件/文件夹的模式列表(通配符或正则表达式)。",
           "title": "排除文件模式"
         },
+        "fileContentMaxSizeKB": {
+          "description": "getFileContent 工具返回的内容最大大小(以千字节为单位)。当读取整个文件(不指定偏移量/限制)时,超过此限制的文件将返回错误。当使用偏移量和限制时,仅对请求的范围进行检查以验证是否超过此限制。",
+          "title": "文件内容最大大小(KB)"
+        },
         "projectInfoAgent": {
           "description": "一款用于管理项目信息模板的人工智能助手。该智能体可协助创建、更新和审查.prompts/project-info.prompttemplate文件,该文件为其他AI智能体提供项目背景信息。它能分析您的工作区,根据需求建议项目信息或更新现有模板。"
         },
@@ -1477,6 +1514,7 @@
       "fileChangeSetTitle": "建议修改内容"
     },
     "ai-chat-ui": {
+      "confirm": "确认",
       "deleteChat": "删除聊天记录",
       "initiate-session-task-context": "任务背景:启动会话",
       "navigate-back": "返回导航",
@@ -1511,6 +1549,13 @@
       "addressGhReviewCommand": {
         "argumentHint": "<pr-number>",
         "description": "处理GitHub拉取请求的代码审查意见"
+      },
+      "appTester": {
+        "description": "在实现后,将任务委托给 AppTester 代理以进行基于浏览器的 UI 验证。",
+        "name": "端到端测试"
+      },
+      "codeReview": {
+        "description": "每次实现后将任务委托给代码审查代理。在审查通过前阻止后续步骤。"
       },
       "fixGhTicketCommand": {
         "argumentHint": "<工单编号>",
@@ -1620,7 +1665,8 @@
       "about": {
         "compatibility": "{0} 兼容性",
         "defaultApi": "默认{0}API",
-        "listOfExtensions": "扩展列表"
+        "listOfExtensions": "扩展列表",
+        "monacoEditor": "Monaco Editor 版本"
       },
       "common": {
         "closeAll": "关闭所有标签页",
@@ -1717,7 +1763,6 @@
       "conditionalBreakpointsNotSupported": "此调试类型不支持条件断点",
       "confirmRunToShiftedPosition_msg": "目标位置将移至行{0},列{1}。是否继续执行?",
       "confirmRunToShiftedPosition_title": "无法将当前线程精确运行至指定位置",
-      "consoleFilter": "过滤器(例如文本、!排除)",
       "consoleFilterAriaLabel": "过滤调试控制台输出",
       "consoleFilterTooltip": "按文本过滤控制台输出。多个术语用逗号分隔。以`!`开头表示排除该术语。\n\n示例:\n\n- `text` - 显示包含\"text\"的行\n- `text, other` - 显示包含\"text\"或\"other\"的行\n- `!text` - 隐藏包含\"text\"的行\n- `text, !other` - 显示\"text\"但隐藏\"other\"",
       "consoleSessionSelectorTooltip": "在调试会话之间切换。每个调试会话都有独立的控制台输出。",
@@ -1758,6 +1803,7 @@
       "unverifiedBreakpoint": "未经核实的{0}"
     },
     "editor": {
+      "autoSaveWhenNoErrors": "启用后,将仅对在触发自动保存时未报告任何错误的文件进行编辑器的自动保存。仅在启用“{0}”时生效。",
       "clearFormatterSetting": "清除格式化设置",
       "configuredIn": "配置于{0}",
       "configuredNotInstalled": "在{1}中配置但未安装的\"{0}\"",
@@ -1768,7 +1814,6 @@
       "editor.bracketPairColorization.enabled": "控制括号配对着色功能的启用状态。使用 `#workbench.colorCustomizations#` 可覆盖括号高亮颜色。",
       "editor.codeActions.triggerOnFocusChange": "当`#files.autoSave#`设置为`afterDelay`时,启用触发`#editor.codeActionsOnSave#`。代码操作必须设置为`always`才能在窗口和焦点变化时触发。",
       "editor.detectIndentation": "控制在打开文件时是否根据文件内容自动检测`#editor.tabSize#`和`#editor.insertSpaces#`设置。",
-      "editor.experimental.preferTreeSitter": "控制是否为特定语言启用树解析器(tree sitter)解析功能。对于指定语言,此设置将优先于 `editor.experimental.treeSitterTelemetry` 的配置。",
       "editor.inlayHints.enabled1": "嵌入式提示默认显示,按住Ctrl+Alt键时隐藏。",
       "editor.inlayHints.enabled2": "嵌入式提示默认隐藏,按住Ctrl+Alt键时显示",
       "editor.inlayHints.fontFamily": "控制编辑器内嵌提示的字体家族。若设置为空值,则使用`#editor.fontFamily#`。",
@@ -1808,7 +1853,7 @@
       "cwd": "为新建外部终端选择当前工作目录"
     },
     "file-search": {
-      "toggleIgnoredFiles": " (按{0}显示/隐藏被忽略的文件)"
+      "toggleExcludedFiles": " (按{0}可显示/隐藏被排除的文件)"
     },
     "fileDialog": {
       "showHidden": "显示隐藏文件"
@@ -1848,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Theia IDE 的 AI 支持功能现已推出(测试版)！",
+        "header": "Theia IDE 的 AI 支持功能现已推出！",
         "openAIChatView": "立即打开AI聊天视图,了解如何开始！"
       },
       "apiComparator": "{0} API兼容性",
@@ -1858,46 +1903,6 @@
         "welcomePage": "打开欢迎页面,其中包含帮助用户开始使用{0}及扩展程序的内容。"
       },
       "telemetry": "数据使用与遥测"
-    },
-    "git": {
-      "aFewSecondsAgo": "几秒钟前",
-      "addSignedOff": "添加 Signed-off-by",
-      "added": "已添加",
-      "amendReuseMessage": "要重复使用上次提交信息,请按'Enter'键;若要取消,请按'Escape'键。",
-      "amendRewrite": "重写上一次提交信息。按'Enter'键确认或按'Escape'键取消。",
-      "checkoutCreateLocalBranchWithName": "创建名为{0}的新本地分支。按'Enter'键确认或按'Escape'键取消。",
-      "checkoutProvideBranchName": "请提供分支名称。 ",
-      "checkoutSelectRef": "选择要检出的引用或创建新本地分支:",
-      "cloneQuickInputLabel": "请提供 Git 仓库位置。按 'Enter' 键确认或按 'Escape' 键取消。",
-      "cloneRepository": "克隆 Git 仓库:{0}。按 'Enter' 键确认或按 'Escape' 键取消。",
-      "compareWith": "与...比较",
-      "compareWithBranchOrTag": "选择一个分支或标签与当前活动的{0}分支进行比较:",
-      "conflicted": "冲突",
-      "copied": "已复制",
-      "diff": "Diff",
-      "dirtyDiffLinesLimit": "当编辑器行数超过此限制时,不显示脏差分标记。",
-      "dropStashMessage": "Stash已成功移除。",
-      "editorDecorationsEnabled": "在编辑器中显示 Git 装饰符。",
-      "fetchPickRemote": "选择要获取的远程源:",
-      "gitDecorationsColors": "在导航器中使用颜色装饰。",
-      "mergeEditor": {
-        "currentSideTitle": "当前",
-        "incomingSideTitle": "传入"
-      },
-      "mergeQuickPickPlaceholder": "选择要合并到当前活动{0}分支的分支:",
-      "missingUserInfo": "请确保在 Git 中配置您的 'user.name' 和 'user.email'。",
-      "noHistoryForError": "{0} 暂无历史记录",
-      "noPreviousCommit": "无先前提交可修改",
-      "noRepositoriesSelected": "未选择任何存储库。",
-      "prepositionIn": "in",
-      "renamed": "已重命名",
-      "repositoryNotInitialized": "仓库 {0} 尚未初始化。",
-      "stashChanges": "暂存更改。按'Enter'键确认或按'Escape'键取消。",
-      "stashChangesWithMessage": "提交更改并附带消息:{0}。按'Enter'键确认或按'Escape'键取消。",
-      "tabTitleIndex": "{0} (索引)",
-      "tabTitleWorkingTree": "{0} (工作目录)",
-      "toggleBlameAnnotations": "切换归责注释",
-      "unstaged": "未暂存"
     },
     "keybinding-schema-updater": {
       "deprecation": "请改用`when`子句。"
@@ -2073,7 +2078,8 @@
         "loginTitle": "登录",
         "signedOut": "已成功注销。"
       },
-      "plugins": "插件",
+      "extensionsRestrictedMode": "在受限模式下,某些扩展已被禁用",
+      "supportNodeGlobalNavigator": "如果启用此选项,扩展程序宿主中的全局 navigator 对象将被定义为 Node.js 提供的版本。扩展程序可将 navigator 对象的存在作为代码正在浏览器中运行的提示。禁用此选项(默认设置)将取消扩展程序宿主中 navigator 的定义,以保持这一假设。",
       "webviewTrace": "控制WebView的通信追踪功能。",
       "webviewWarnIfUnsecure": "警告用户当前部署的WebView存在安全隐患。"
     },
@@ -2086,10 +2092,8 @@
       "openByDefault": "默认情况下打开预览窗口而非编辑器。"
     },
     "property-view": {
-      "created": "创建",
       "directory": "目录",
       "lastModified": "最后修改时间",
-      "location": "位置",
       "noProperties": "无可用属性。",
       "properties": "属性",
       "symbolicLink": "符号链接"
@@ -2125,10 +2129,6 @@
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最后一次提交",
       "changeRepository": "更改存储库...",
-      "config.untrackedChanges": "控制未跟踪更改的行为方式。",
-      "config.untrackedChanges.hidden": "隐藏",
-      "config.untrackedChanges.mixed": "混合",
-      "config.untrackedChanges.separate": "分离",
       "dirtyDiff": {
         "close": "关闭 更改 预览视图"
       },
@@ -2136,7 +2136,8 @@
       "mergeEditor": {
         "resetConfirmationTitle": "您确定要重置此编辑器中的合并结果吗?"
       },
-      "noRepositoryFound": "未找到存储库",
+      "noHistoryForError": "{0} 没有历史记录",
+      "prepositionIn": "以及",
       "unamend": "不修改",
       "unamendCommit": "不修改提交"
     },
@@ -2144,6 +2145,7 @@
       "includeIgnoredFiles": "包含忽略文件",
       "noFolderSpecified": "您尚未打开或指定文件夹。当前仅搜索已打开的文件。",
       "resultSubset": "此仅为全部结果的子集。请使用更具体的搜索词来缩小结果范围。",
+      "searchExclude": "配置 [通配符模式](https://aka.ms/vscode-glob-patterns) 以在全文搜索和快速打开中的文件搜索中排除文件和文件夹。继承 `#files.exclude#` 设置中的所有通配符模式。",
       "searchOnEditorModification": "在编辑器内容修改时自动搜索当前编辑器。"
     },
     "secondary-window": {
@@ -2188,6 +2190,8 @@
     },
     "terminal": {
       "defaultProfile": "{0} 使用的默认配置文件",
+      "enableCommandHistory": "通过 shell 注入功能,分别跟踪终端命令及其输出。这支持多种使用场景,例如在 UI 中直观区分命令,以及为 AI 代理提供更结构化的终端访问权限。切换此设置不会影响已打开的终端。\n\n&nbsp;\n\n目前,此功能仅支持运行 bash 或 zsh 的任务终端和用户终端。",
+      "enableCommandSeparator": "在终端中,在已执行的命令与其输出结果之间启用视觉分隔线。更改仅适用于修改此设置后执行的命令。仅在启用{0}时生效。",
       "enableCopy": "启用 Ctrl+C(macOS 上为 Cmd+C)以复制选定文本",
       "enablePaste": "启用 Ctrl+V(macOS 上为 Cmd+V)以从剪贴板粘贴内容",
       "profileArgs": "此配置文件使用的 shell 参数。",
@@ -2269,6 +2273,7 @@
       "confirmDialogMessage": "扩展程序\"{0}\"未经验证,可能存在安全风险。",
       "confirmDialogTitle": "您确定要继续安装吗?",
       "downloadCount": "下载次数:{0}",
+      "duplicateVSIX": "无法从 VSIX 安装“{0}”。该扩展已安装。请先卸载现有扩展,然后再从 VSIX 安装新版本。",
       "errorFetching": "获取扩展时出错。",
       "errorFetchingConfigurationHint": "这可能是由于网络配置问题导致的。",
       "failedInstallingVSIX": "无法从VSIX安装{0}。",
@@ -2277,6 +2282,7 @@
       "onlyShowVerifiedExtensionsDescription": "此设置使{0}仅显示经过验证的扩展程序。",
       "onlyShowVerifiedExtensionsTitle": "仅显示已验证的扩展",
       "recommendedExtensions": "此工作区推荐使用的扩展名称列表。",
+      "restrictedModeInstallWarning": "如果“{0}”扩展不支持在受限模式下运行,则可能会被禁用。请信任此工作区以确保扩展能按预期运行。",
       "searchPlaceholder": "在{0}中搜索扩展",
       "showInstalled": "显示已安装的扩展",
       "showRecommendedExtensions": "控制是否显示扩展推荐通知。",

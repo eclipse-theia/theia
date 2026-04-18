@@ -51,6 +51,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { nls } from '@theia/core/lib/common/nls';
 import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/terminal-preferences';
@@ -226,6 +227,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     protected readonly onDidChangeCurrentTerminalEmitter = new Emitter<TerminalWidget | undefined>();
     readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidChangeCurrentTerminalEmitter.event;
 
+    @inject(TerminalCopyOnSelectionHandler)
+    protected readonly copyHandler: TerminalCopyOnSelectionHandler;
+
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
@@ -300,6 +304,26 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 this.profileService.setDefaultProfile(defaultProfileId);
             }
         });
+    }
+
+    async initializeLayout(): Promise<void> {
+        await this.preferenceService.ready;
+        // `terminal.grouping.mode` is defined in @theia/terminal-manager, which this package
+        // cannot depend on. Reading via generic PreferenceService; undefined safely
+        // falls through to standard terminal behavior.
+        const groupingMode = this.preferenceService.get('terminal.grouping.mode');
+        if (groupingMode === 'tree') {
+            return;
+        }
+        try {
+            const termWidget = await this.newTerminal({});
+            await termWidget.start();
+            // Use shell.addWidget directly (not this.open()) to add the terminal
+            // to the bottom panel without expanding it on startup.
+            this.shell.addWidget(termWidget, { area: 'bottom' });
+        } catch (error) {
+            console.error('Failed to initialize terminal in default layout', error);
+        }
     }
 
     async contributeDefaultProfiles(): Promise<void> {
@@ -645,6 +669,18 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         commands.registerCommand(TerminalCommands.SELECT_ALL, {
             isEnabled: () => !!this.currentTerminal,
             execute: () => this.currentTerminal?.selectAll()
+        });
+        commands.registerHandler(CommonCommands.COPY.id, {
+            execute: () => {
+                const terminal = this.shell.activeWidget;
+                if (terminal instanceof TerminalWidget && terminal.hasSelection()) {
+                    this.copyHandler.syncCopy(terminal.getSelection());
+                }
+            },
+            isEnabled: () => {
+                const terminal = this.shell.activeWidget;
+                return terminal instanceof TerminalWidget && terminal.hasSelection();
+            }
         });
     }
 

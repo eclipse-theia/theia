@@ -22,13 +22,27 @@
   "theia": {
     "ai": {
       "agents": {
+        "capabilityOverrides": {
+          "mdDescription": "User overrides for template-based capabilities. Keys are capability fragment IDs, values are enabled (true) or disabled (false).",
+          "title": "Capability Overrides"
+        },
         "completionNotification": {
-          "mdDescription": "Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable notifications for this agent",
+          "mdDescription": "Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n                    - `os-notification`: Show OS/system notifications\n                    - `message`: Show notifications in the status bar/message area\n                    - `blink`: Blink or highlight the UI\n                    - `off`: Disable notifications for this agent",
           "title": "Completion Notification"
         },
         "enable": {
           "mdDescription": "Specifies whether the agent should be enabled (true) or disabled (false).",
           "title": "Enable Agent"
+        },
+        "genericCapabilitySelections": {
+          "agentDelegation": "Selected agent IDs for delegation",
+          "functions": "Selected function IDs",
+          "mcpFunctions": "Selected MCP function IDs",
+          "mdDescription": "User selections for generic capabilities such as skills, functions, and MCP tools.",
+          "promptFragments": "Selected prompt fragment IDs",
+          "skills": "Selected skill IDs",
+          "title": "Generic Capability Selections",
+          "variables": "Selected variable names"
         },
         "languageModelRequirements": {
           "identifier": {
@@ -187,6 +201,10 @@
             "description": "Execute tools automatically without confirmation"
           }
         },
+        "toolConfirmationTimeout": {
+          "denialReason": "Confirmation timed out after {0} seconds",
+          "description": "Timeout in seconds for tool confirmation dialogs. When set to a positive value, tool confirmations will automatically be denied after the specified duration. Set to 0 to disable (default)."
+        },
         "universal": {
           "description": "This agent is designed to help software developers by providing concise and accurate answers to general programming and software development questions. It is also the fall-back for any generic questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot access the current user context or the workspace."
         },
@@ -199,7 +217,6 @@
       },
       "chat-ui": {
         "addContextVariable": "Add context variable",
-        "agent": "Agent",
         "agentDelegationDescription": "Other AI agents that can be delegated to",
         "aiDisabled": "AI features are disabled",
         "applyAll": "Apply All",
@@ -219,12 +236,13 @@
           "clearHistory": "Clear Input Prompt History",
           "cycleMode": "Cycle Chat Mode",
           "nextPrompt": "Next Prompt",
+          "pasteWithImageSupport": "Paste (with image support)",
           "previousPrompt": "Previous Prompt",
           "toggleCapabilities": "Toggle Capabilities Configuration"
         },
         "chatInputAriaLabel": "Type your message here",
         "chatResponses": "Chat responses",
-        "clearAllSelections": "Clear search string and capability selections",
+        "clearAllSelections": "Clear search string and capability selections to saved defaults",
         "code-part-renderer": {
           "copied": "Copied",
           "generatedCode": "Generated Code"
@@ -244,6 +262,7 @@
           "response": {
             "label": "Response:"
           },
+          "restoredNotAvailable": "Response not available for restored sessions.",
           "starting": "Starting delegation...",
           "status": {
             "canceled": "canceled",
@@ -269,7 +288,6 @@
         "functions": "Functions",
         "functionsDescription": "Built-in functions provided by Theia extensions",
         "genericCapabilities": "Generic Capabilities",
-        "mcpFunctions": "MCP",
         "mcpFunctionsDescription": "Model Context Protocol (MCP) functions from connected servers",
         "noChatAgentsAvailable": "No chat agents available.",
         "noMatchingCapabilities": "No matching capabilities",
@@ -278,12 +296,12 @@
         "openOriginalFile": "Open Original File",
         "performThisTask": "Perform this task.",
         "persistedSession": "Persisted session (click to restore)",
-        "promptFragments": "Prompts",
         "promptFragmentsDescription": "Custom prompt fragments to include in the conversation",
         "removeChat": "Remove Chat",
         "renameChat": "Rename Chat",
         "requestNotFoundForRetry": "Request not found for retry",
         "responseFrom": "Response from {0}",
+        "saveCurrentSelectionsToSettings": "Save capability settings",
         "searchCapabilities": "Search capabilities",
         "selectAgentQuickPickPlaceholder": "Select an agent for the new session",
         "selectAllInCategory": "Select all in this category",
@@ -314,6 +332,7 @@
           "alwaysAllowConfirm": "I understand, enable auto-approval",
           "alwaysAllowGenericWarning": "This tool requires confirmation before auto-approval can be enabled. Once enabled, all future invocations will execute without confirmation. Only enable this if you trust this tool and understand the potential risks.",
           "alwaysAllowTitle": "Enable Auto-Approval for \"{0}\"?",
+          "autoCancel": "Auto-cancels in {0}",
           "canceled": "Tool execution canceled",
           "denied": "Tool execution denied",
           "deny-forever": "Always Deny",
@@ -560,11 +579,14 @@
           "signIn": "Sign in to GitHub Copilot",
           "signOut": "Sign out of GitHub Copilot"
         },
+        "enabled": {
+          "mdDescription": "Enable the GitHub Copilot provider. When enabled, a status bar entry appears for authentication and available models are discovered from your Copilot subscription."
+        },
         "enterpriseUrl": {
           "mdDescription": "GitHub Enterprise domain for Copilot API (e.g., `github.mycompany.com`). Leave empty for GitHub.com."
         },
-        "models": {
-          "description": "GitHub Copilot models to use. Available models depend on your Copilot subscription."
+        "modelOverrides": {
+          "mdDescription": "Override the automatically discovered GitHub Copilot models. When empty (default), available models are discovered from your Copilot subscription. Set explicit model IDs to override auto-discovery."
         },
         "signOut": {
           "confirmMessage": "Are you sure you want to sign out of GitHub Copilot?"
@@ -572,7 +594,8 @@
         "statusBar": {
           "signedIn": "Signed in to GitHub Copilot as {0}. Click to sign out.",
           "signedOut": "Not signed in to GitHub Copilot. Click to sign in."
-        }
+        },
+        "tokenMigration": "Your GitHub Copilot session used an outdated authentication method and has been cleared. Please sign in again to access all available models."
       },
       "core": {
         "agentConfiguration": {
@@ -601,7 +624,7 @@
           "description": "Returns the list of agents available in the system"
         },
         "aiConfiguration": {
-          "label": "AI Configuration [Beta]"
+          "label": "AI Configuration"
         },
         "blinkTitle": {
           "agentCompleted": "Theia - Agent Completed",
@@ -743,8 +766,7 @@
           "variantsOfSystemPrompt": "Variants of this prompt variant set:"
         },
         "promptTemplates": {
-          "description": "Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is            under version control to manage your variants of prompt templates.",
-          "openLabel": "Select Folder"
+          "description": "Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is            under version control to manage your variants of prompt templates."
         },
         "promptVariable": {
           "argDescription": "The prompt template id to resolve",
@@ -877,16 +899,12 @@
         },
         "edited": "edited",
         "exchange-card": {
-          "agentId": "Agent",
           "timestamp": "Started"
         },
         "open-history-tooltip": "Open AI history...",
         "request-card": {
-          "agent": "Agent",
-          "model": "Model",
           "promptVariant": "Prompt Variant",
           "request": "Request",
-          "response": "Response",
           "timestamp": "Timestamp",
           "title": "Request"
         },
@@ -909,7 +927,7 @@
           "tooltip": "Interpret newlines"
         },
         "view": {
-          "label": "AI Agent History [Beta]",
+          "label": "AI Agent History",
           "noAgent": "No agent available.",
           "noAgentSelected": "No agent selected.",
           "noHistoryForAgent": "No history available for the selected agent '{0}'"
@@ -926,15 +944,34 @@
       "ide": {
         "agent-description": "Configure AI agent settings including enablement, LLM selection, prompt template customization, and custom agent creation in the [AI Configuration View]({0}).",
         "agentConfiguration": {
-          "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "Create new file",
             "openExistingFile": "Open existing file",
             "placeholder": "Choose where to create or open a custom agents file",
             "title": "Select Location for Custom Agents File"
           },
-          "enabledByDefault": "Indicates if the feature is enabled by default",
-          "noDescription": "No description available"
+          "genericCapabilitiesSettings": "Generic Capabilities",
+          "genericCapabilityType": {
+            "agentDelegation": "Agent Delegation",
+            "functions": "Functions",
+            "mcpFunctions": "MCP Functions",
+            "promptFragments": "Prompt Fragments"
+          },
+          "noDescription": "No description available",
+          "resetAllCapabilities": "Reset all capabilities to their default values",
+          "resetAllDefaults": "Reset All to Defaults",
+          "selections": "Selections"
+        },
+        "agentMode": {
+          "confirmed": {
+            "mdDescription": "Whether the user has confirmed the agent mode warning. Agent mode allows autonomous file modifications without further confirmation. Set to `false` to see the confirmation again on the next agent mode request."
+          }
+        },
+        "agentModeConfirmation": {
+          "confirm": "Confirm",
+          "msg": "This agent uses an **agentic mode**. To enable autonomous flow, it is capable of directly writing to your workspace files without further confirmation.\n\nIt is recommended to use version control (e.g. Git) so you can review and revert changes.\n\nYou can switch to **Edit Mode** using the mode selector in the chat input area below, or use the **Architect** agent for read-only planning.\n\nThis confirmation is saved for this workspace and won't be shown again. To reset or configure it globally, look for `ai-features.agentMode.confirmed` in the Settings.",
+          "question": "Do you want to proceed with Agent Mode?",
+          "waiting": "Waiting for confirmation..."
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Error checking DevTools MCP server status: {0}",
@@ -956,13 +993,10 @@
             "question": "The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers."
           }
         },
-        "appTester": {
-          "description": "Allows the agent to test browser applications end to end. For this, the agent can delegate to the AppTester agent,             which automates browser interactions to verify the implementation.",
-          "name": "App Tester"
-        },
         "architectAgent": {
           "mode": {
             "plan": "Plan Mode",
+            "planNext": "Plan Mode (Next)",
             "simple": "Simple Mode"
           },
           "suggestion": {
@@ -973,6 +1007,9 @@
         "bypassHint": "Some agents like Claude Code don't require Theia Language Models",
         "chatDisabledMessage": {
           "title": "AI Features are Disabled"
+        },
+        "codeReviewerAgent": {
+          "description": "A code review assistant that analyzes code changes and returns structured verdicts.         Checks completion criteria, build/lint/test evidence, and code quality."
         },
         "coderAgent": {
           "mode": {
@@ -1017,7 +1054,10 @@
         },
         "deleteChat": "Delete Chat",
         "enableAI": {
-          "mdDescription": "This setting allows you to access the latest AI capabilities (Beta version).            \n            Please note that these features are in a beta phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "This setting allows you to access the AI capabilities of Theia IDE.            \n            Please be aware that AI features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
+        },
+        "exploreAgent": {
+          "description": "A codebase exploration assistant that extracts and distills information from the codebase.         Reports facts about what exists, provides code excerpts, and describes observed patterns."
         },
         "github": {
           "configureGitHubServer": {
@@ -1078,9 +1118,6 @@
           "name": "Shell Execution"
         },
         "skillsConfiguration": {
-          "location": {
-            "label": "Location"
-          },
           "noSkills": "No skills available",
           "noSlashCommands": "No slash commands available",
           "slashCommand": {
@@ -1123,7 +1160,6 @@
           }
         },
         "tooltip": {
-          "agent": "Agent",
           "lastActivity": "Last activity",
           "lastMessage": "Last message",
           "messages": "Messages",
@@ -1133,8 +1169,7 @@
         },
         "variableConfiguration": {
           "selectVariable": "Please select a Variable.",
-          "usedByAgents": "Used by Agents",
-          "variableArgs": "Arguments"
+          "usedByAgents": "Used by Agents"
         }
       },
       "llamaFile": {
@@ -1220,7 +1255,6 @@
         }
       },
       "mcpConfiguration": {
-        "arguments": "Arguments",
         "autostart": "Autostart",
         "connectServer": "Connect",
         "connectingServer": "Connecting...",
@@ -1259,7 +1293,6 @@
           "serverUrlRequired": "Server URL is required for remote servers"
         },
         "headers": "Headers",
-        "noServers": "No MCP servers configured",
         "saveServerError": "Failed to save MCP server configuration: {0}",
         "serverAuthToken": "Auth Token",
         "serverAuthTokenHeader": "Auth Header Name",
@@ -1352,16 +1385,19 @@
           "in-progress": "SCANOSS - Performing scan...",
           "match-count": "Found {0} match(es)",
           "matched": "SCANOSS - Found {0} match",
-          "no-match": "SCANOSS - No match",
-          "summary": "Summary"
+          "no-match": "SCANOSS - No match"
         }
       },
       "session-settings-dialog": {
         "advancedSettings": "Advanced Settings (JSON)",
         "budgetTokens": "Budget tokens:",
+        "confirmationTimeout": "Confirmation Timeout",
+        "confirmationTimeoutNote": "Automatically deny tool confirmations after the specified time. Overrides the global preference for this session.",
+        "enableConfirmationTimeout": "Enable confirmation timeout",
         "enableThinking": "Enable extended thinking",
         "thinkingMode": "Thinking Mode",
         "thinkingModeNote": "Some models may ignore this setting.",
+        "timeoutSeconds": "Timeout (seconds):",
         "title": "Set Session Settings",
         "tooltip": "Set Session Settings"
       },
@@ -1387,7 +1423,6 @@
         "askTerminalCommand": "Ask about a terminal command...",
         "hitEnterConfirm": "Hit enter to confirm",
         "howCanIHelp": "How can I help you?",
-        "loading": "Loading",
         "tryAgain": "Try again...",
         "useArrowsAlternatives": " or use ⇅ to show alternatives..."
       },
@@ -1398,14 +1433,12 @@
         "inputTokens": "Input Tokens",
         "label": "Token Usage",
         "lastUsed": "Last Used",
-        "model": "Model",
         "noData": "No token usage data available yet.",
         "note": "Token usage is tracked since the start of the application and is not persisted.",
         "outputTokens": "Output Tokens",
         "readCachedInputTokens": "Input Tokens Read From Cache",
         "readCachedInputTokensTooltip": "Tracked additionally to 'Input Token'. Usually much less expensive than not cached. Usually does not count to rate limits.",
         "total": "Total",
-        "totalTokens": "Total Tokens",
         "totalTokensTooltip": "'Input Tokens' + 'Output Tokens'"
       },
       "vercelai": {
@@ -1455,11 +1488,15 @@
           "title": "Consider .gitignore"
         },
         "createSkillAgent": {
-          "description": "An AI assistant for creating new skills. Skills provide reusable instructions and domain knowledge for AI agents. This agent helps you create well-structured skills in the .prompts/skills directory with proper YAML frontmatter and markdown content."
+          "description": "An AI assistant for creating new skills. Skills provide reusable instructions and domain knowledge for AI agents. This agent helps you create well-structured skills in the .prompts/skills directory with proper YAML frontmatter and markdown content. This feature is still in an early stage and may undergo changes."
         },
         "excludedPattern": {
           "description": "List of patterns (glob or regex) for files/folders to exclude.",
           "title": "Excluded File Patterns"
+        },
+        "fileContentMaxSizeKB": {
+          "description": "Maximum size in kilobytes of the content returned by the getFileContent tool. When reading a full file (no offset/limit), files exceeding this limit return an error. When using offset and limit, only the requested range is checked against this limit.",
+          "title": "File Content Max Size (KB)"
         },
         "projectInfoAgent": {
           "description": "An AI assistant for managing project information templates. This agent helps create, update, and review the .prompts/project-info.prompttemplate file which provides context about your project to other AI agents. It can analyze your workspace to suggest project information or update existing templates based on your requirements."
@@ -1477,6 +1514,7 @@
       "fileChangeSetTitle": "Changes proposed"
     },
     "ai-chat-ui": {
+      "confirm": "Confirm",
       "deleteChat": "Delete Chat",
       "initiate-session-task-context": "Task Context: Initiate Session",
       "navigate-back": "Navigate Back",
@@ -1511,6 +1549,13 @@
       "addressGhReviewCommand": {
         "argumentHint": "<pr-number>",
         "description": "Address review comments on a GitHub pull request"
+      },
+      "appTester": {
+        "description": "Delegates to AppTester agent for browser-based UI verification after implementation.",
+        "name": "E2E Test"
+      },
+      "codeReview": {
+        "description": "Delegates to code-reviewer agent after each implementation. Blocks next steps until review passes."
       },
       "fixGhTicketCommand": {
         "argumentHint": "<ticket-number>",
@@ -1620,7 +1665,8 @@
       "about": {
         "compatibility": "{0} Compatibility",
         "defaultApi": "Default {0} API",
-        "listOfExtensions": "List of extensions"
+        "listOfExtensions": "List of extensions",
+        "monacoEditor": "Monaco Editor Version"
       },
       "common": {
         "closeAll": "Close All Tabs",
@@ -1717,7 +1763,6 @@
       "conditionalBreakpointsNotSupported": "Conditional breakpoints not supported by this debug type",
       "confirmRunToShiftedPosition_msg": "The target position will be shifted to Ln {0}, Col {1}. Run anyway?",
       "confirmRunToShiftedPosition_title": "Cannot run the current thread to exactly the specified location",
-      "consoleFilter": "Filter (e.g. text, !exclude)",
       "consoleFilterAriaLabel": "Filter debug console output",
       "consoleFilterTooltip": "Filter console output by text. Separate multiple terms with commas. Prefix with `!` to exclude a term.\n\nExamples:\n\n- `text` - show lines containing \"text\"\n- `text, other` - show lines containing \"text\" or \"other\"\n- `!text` - hide lines containing \"text\"\n- `text, !other` - show \"text\" but hide \"other\"",
       "consoleSessionSelectorTooltip": "Switch between debug sessions. Each debug session has its own console output.",
@@ -1758,6 +1803,7 @@
       "unverifiedBreakpoint": "Unverified {0}"
     },
     "editor": {
+      "autoSaveWhenNoErrors": "When enabled, will limit auto save of editors to files that have no errors reported in them at the time the auto save is triggered. Only applies when {0} is enabled.",
       "clearFormatterSetting": "Clear formatter setting",
       "configuredIn": "Configured in {0}",
       "configuredNotInstalled": "'{0}' configured in {1} but not installed",
@@ -1768,7 +1814,6 @@
       "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use `#workbench.colorCustomizations#` to override the bracket highlight colors.",
       "editor.codeActions.triggerOnFocusChange": "Enable triggering `#editor.codeActionsOnSave#` when `#files.autoSave#` is set to `afterDelay`. Code Actions must be set to `always` to be triggered for window and focus changes.",
       "editor.detectIndentation": "Controls whether `#editor.tabSize#` and `#editor.insertSpaces#` will be automatically detected when a file is opened based on the file contents.",
-      "editor.experimental.preferTreeSitter": "Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages.",
       "editor.inlayHints.enabled1": "Inlay hints are showing by default and hide when holding Ctrl+Alt",
       "editor.inlayHints.enabled2": "Inlay hints are hidden by default and show when holding Ctrl+Alt",
       "editor.inlayHints.fontFamily": "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used.",
@@ -1808,7 +1853,7 @@
       "cwd": "Select current working directory for new external terminal"
     },
     "file-search": {
-      "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"
+      "toggleExcludedFiles": " (Press {0} to show/hide excluded files)"
     },
     "fileDialog": {
       "showHidden": "Show hidden files"
@@ -1834,7 +1879,7 @@
         "largeFileTitle": "The file is too large ({0}).",
         "overwriteTitle": "The file '{0}' has been changed on the file system."
       },
-      "filesExclude": "Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.",
+      "filesExclude": "Configure [glob patterns](https://aka.ms/vscode-glob-patterns) for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.",
       "format": "Format:",
       "maxConcurrentUploads": "Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.",
       "maxFileSizeMB": "Controls the max file size in MB which is possible to open.",
@@ -1848,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "AI Support in the Theia IDE is available (Beta Version)!",
+        "header": "AI Support in the Theia IDE is available!",
         "openAIChatView": "Open the AI Chat View now to learn how to start!"
       },
       "apiComparator": "{0} API Compatibility",
@@ -1858,46 +1903,6 @@
         "welcomePage": "Open the Welcome page, with content to aid in getting started with {0} and extensions."
       },
       "telemetry": "Data Usage & Telemetry"
-    },
-    "git": {
-      "aFewSecondsAgo": "a few seconds ago",
-      "addSignedOff": "Add Signed-off-by",
-      "added": "Added",
-      "amendReuseMessage": "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.",
-      "amendRewrite": "Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.",
-      "checkoutCreateLocalBranchWithName": "Create a new local branch with name: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
-      "checkoutProvideBranchName": "Please provide a branch name. ",
-      "checkoutSelectRef": "Select a ref to checkout or create a new local branch:",
-      "cloneQuickInputLabel": "Please provide a Git repository location. Press 'Enter' to confirm or 'Escape' to cancel.",
-      "cloneRepository": "Clone the Git repository: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
-      "compareWith": "Compare With...",
-      "compareWithBranchOrTag": "Pick a branch or tag to compare with the currently active {0} branch:",
-      "conflicted": "Conflicted",
-      "copied": "Copied",
-      "diff": "Diff",
-      "dirtyDiffLinesLimit": "Do not show dirty diff decorations, if editor's line count exceeds this limit.",
-      "dropStashMessage": "Stash successfully removed.",
-      "editorDecorationsEnabled": "Show git decorations in the editor.",
-      "fetchPickRemote": "Pick a remote to fetch from:",
-      "gitDecorationsColors": "Use color decoration in the navigator.",
-      "mergeEditor": {
-        "currentSideTitle": "Current",
-        "incomingSideTitle": "Incoming"
-      },
-      "mergeQuickPickPlaceholder": "Pick a branch to merge into the currently active {0} branch:",
-      "missingUserInfo": "Make sure you configure your 'user.name' and 'user.email' in git.",
-      "noHistoryForError": "There is no history available for {0}",
-      "noPreviousCommit": "No previous commit to amend",
-      "noRepositoriesSelected": "No repositories were selected.",
-      "prepositionIn": "in",
-      "renamed": "Renamed",
-      "repositoryNotInitialized": "Repository {0} is not yet initialized.",
-      "stashChanges": "Stash changes. Press 'Enter' to confirm or 'Escape' to cancel.",
-      "stashChangesWithMessage": "Stash changes with message: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
-      "tabTitleIndex": "{0} (Index)",
-      "tabTitleWorkingTree": "{0} (Working tree)",
-      "toggleBlameAnnotations": "Toggle Blame Annotations",
-      "unstaged": "Unstaged"
     },
     "keybinding-schema-updater": {
       "deprecation": "Use `when` clause instead."
@@ -2073,7 +2078,8 @@
         "loginTitle": "Login",
         "signedOut": "Successfully signed out."
       },
-      "plugins": "Plugins",
+      "extensionsRestrictedMode": "Some extensions are disabled in Restricted Mode",
+      "supportNodeGlobalNavigator": "If enabled, the global navigator object in the extension host will be defined as provided by Node.js. Extensions may use the presence of the navigator object as a hint that code is running in a browser. Disabling this (the default) undefines the navigator in the extension host to preserve this assumption.",
       "webviewTrace": "Controls communication tracing with webviews.",
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed insecurely."
     },
@@ -2086,10 +2092,8 @@
       "openByDefault": "Open the preview instead of the editor by default."
     },
     "property-view": {
-      "created": "Created",
       "directory": "Directory",
       "lastModified": "Last modified",
-      "location": "Location",
       "noProperties": "No properties available.",
       "properties": "Properties",
       "symbolicLink": "Symbolic link"
@@ -2125,10 +2129,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Amend last commit",
       "changeRepository": "Change Repository...",
-      "config.untrackedChanges": "Controls how untracked changes behave.",
-      "config.untrackedChanges.hidden": "hidden",
-      "config.untrackedChanges.mixed": "mixed",
-      "config.untrackedChanges.separate": "separate",
       "dirtyDiff": {
         "close": "Close Change Peek View"
       },
@@ -2136,7 +2136,8 @@
       "mergeEditor": {
         "resetConfirmationTitle": "Do you really want to reset the merge result in this editor?"
       },
-      "noRepositoryFound": "No repository found",
+      "noHistoryForError": "There is no history available for {0}",
+      "prepositionIn": "in",
       "unamend": "Unamend",
       "unamendCommit": "Unamend commit"
     },
@@ -2144,6 +2145,7 @@
       "includeIgnoredFiles": "Include Ignored Files",
       "noFolderSpecified": "You have not opened or specified a folder. Only open files are currently searched.",
       "resultSubset": "This is only a subset of all results. Use a more specific search term to narrow down the result list.",
+      "searchExclude": "Configure [glob patterns](https://aka.ms/vscode-glob-patterns) for excluding files and folders in full-text searches and file search in quick open. Inherits all glob patterns from the `#files.exclude#` setting.",
       "searchOnEditorModification": "Search the active editor when modified."
     },
     "secondary-window": {
@@ -2188,6 +2190,8 @@
     },
     "terminal": {
       "defaultProfile": "The default profile used on {0}",
+      "enableCommandHistory": "Track terminal commands and their output separately using shell injection. This enables use cases such as visually distinguishing commands in the UI and giving AI agents more structured access to terminals. Toggling this setting will not affect terminals that are already open.\n\n&nbsp;\n\nThis feature is currently only supported by task terminals and user terminals running bash or zsh.",
+      "enableCommandSeparator": "Enable a visual separator between executed commands and their output in the terminal. Changes only apply to commands executed after this setting is modified. Only works when {0} is enabled.",
       "enableCopy": "Enable ctrl-c (cmd-c on macOS) to copy selected text",
       "enablePaste": "Enable ctrl-v (cmd-v on macOS) to paste from clipboard",
       "profileArgs": "The shell arguments that this profile uses.",
@@ -2269,6 +2273,7 @@
       "confirmDialogMessage": "The extension \"{0}\" is unverified and might pose a security risk.",
       "confirmDialogTitle": "Are you sure you want to proceed with the installation?",
       "downloadCount": "Download count: {0}",
+      "duplicateVSIX": "Failed to install {0} from VSIX. The extension is already installed. Uninstall the existing extension before installing a new version from VSIX.",
       "errorFetching": "Error fetching extensions.",
       "errorFetchingConfigurationHint": "This could be caused by network configuration issues.",
       "failedInstallingVSIX": "Failed to install {0} from VSIX.",
@@ -2277,6 +2282,7 @@
       "onlyShowVerifiedExtensionsDescription": "This allows the {0} to only show verified extensions.",
       "onlyShowVerifiedExtensionsTitle": "Only Show Verified Extensions",
       "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
+      "restrictedModeInstallWarning": "The extension '{0}' may be disabled if it does not support running in Restricted Mode. Trust this workspace to ensure the extension works as expected.",
       "searchPlaceholder": "Search Extensions in {0}",
       "showInstalled": "Show Installed Extensions",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",

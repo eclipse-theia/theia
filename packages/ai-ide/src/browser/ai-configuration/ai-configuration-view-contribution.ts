@@ -66,7 +66,7 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
         registry.registerItem({
             id: 'chat-view.' + OPEN_AI_CONFIG_VIEW.id,
             command: OPEN_AI_CONFIG_VIEW.id,
-            tooltip: nls.localize('theia/ai-ide/open-agent-settings-tooltip', 'Open Agent settings...'),
+            tooltip: nls.localize('theia/ai-ide/open-ai-configuration-tooltip', 'Open AI Configuration'),
             group: 'ai-settings',
             priority: 2,
             isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget

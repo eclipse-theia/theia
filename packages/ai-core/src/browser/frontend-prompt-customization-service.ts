@@ -18,6 +18,7 @@ import { DisposableCollection, URI, Event, Emitter, nls } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
+import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
@@ -45,7 +46,7 @@ You are an example agent. Be nice and helpful to the user.
 ## Current Context
 Some files and other pieces of data may have been added by the user to the context of the chat. If any have, the details can be found below.
 {{contextDetails}}`,
-    defaultLLM: 'openai/gpt-4o',
+    defaultLLM: 'default/universal',
     showInChat: true
 };
 
@@ -131,6 +132,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(ConfigurableInMemoryResources)
+    protected readonly inMemoryResources: ConfigurableInMemoryResources;
 
     /** Stores URI strings of template files from directories currently being monitored for changes. */
     protected trackedTemplateURIs = new Set<string>();
@@ -852,11 +856,38 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      */
     protected async editTemplate(id: string, defaultContent?: string): Promise<void> {
         const editorUri = await this.getTemplateURI(id);
-        if (!(await this.fileService.exists(editorUri))) {
-            await this.fileService.createFile(editorUri, BinaryBuffer.fromString(defaultContent ?? ''));
+        if (await this.fileService.exists(editorUri)) {
+            const openHandler = await this.openerService.getOpener(editorUri);
+            openHandler.open(editorUri);
+        } else {
+            await this.openInMemoryTemplate(editorUri, defaultContent ?? '');
         }
-        const openHandler = await this.openerService.getOpener(editorUri);
-        openHandler.open(editorUri);
+    }
+
+    /**
+     * Opens an in-memory resource with the given content, without creating a file on disk.
+     * The file is only created when the user saves in the editor.
+     */
+    protected async openInMemoryTemplate(templateUri: URI, defaultContent: string): Promise<void> {
+        try {
+            this.inMemoryResources.resolve(templateUri);
+        } catch {
+            const resource = this.inMemoryResources.add(templateUri, {
+                contents: defaultContent,
+                initiallyDirty: false,
+                onSave: async (contents: string) => {
+                    const dirUri = templateUri.parent;
+                    if (!(await this.fileService.exists(dirUri))) {
+                        await this.fileService.createFolder(dirUri);
+                    }
+                    await this.fileService.createFile(templateUri, BinaryBuffer.fromString(contents), { overwrite: true });
+                    resource.dispose();
+                }
+            });
+        }
+
+        const openHandler = await this.openerService.getOpener(templateUri);
+        openHandler.open(templateUri);
     }
 
     async removePromptFragmentCustomization(id: string, customizationId: string): Promise<void> {
@@ -978,18 +1009,10 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             const openHandler = await this.openerService.getOpener(uri);
             openHandler.open(uri);
         } else {
-            // Create a new built-in customization
-            // Get the template URI in the main templates directory (priority 1)
+            // Open the built-in content without creating a file on disk.
+            // The file will only be created when the user saves.
             const templateUri = await this.getTemplateURI(id);
-
-            // If template doesn't exist, create it with default content
-            if (!(await this.fileService.exists(templateUri))) {
-                await this.fileService.createFile(templateUri, BinaryBuffer.fromString(defaultContent));
-            }
-
-            // Open the template in the editor
-            const openHandler = await this.openerService.getOpener(templateUri);
-            openHandler.open(templateUri);
+            await this.openInMemoryTemplate(templateUri, defaultContent);
         }
     }
 

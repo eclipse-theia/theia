@@ -543,6 +543,8 @@ class SourceControlImpl implements theia.SourceControl {
     private static handlePool: number = 0;
     private groups: Map<GroupHandle, ScmResourceGroupImpl> = new Map<GroupHandle, ScmResourceGroupImpl>();
 
+    readonly apiObject: theia.SourceControl;
+
     get id(): string {
         return this._id;
     }
@@ -676,12 +678,23 @@ class SourceControlImpl implements theia.SourceControl {
     private readonly onDidChangeSelectionEmitter = new Emitter<boolean>();
     readonly onDidChangeSelection = this.onDidChangeSelectionEmitter.event;
 
+    private _contextValue: string | undefined = undefined;
+
+    get contextValue(): string | undefined {
+        return this._contextValue;
+    }
+
+    set contextValue(contextValue: string | undefined) {
+        this._contextValue = contextValue;
+        this.proxy.$updateSourceControl(this.handle, { contextValue });
+    }
+
     private readonly onDidDisposeEmitter = new Emitter<void>();
     readonly onDidDispose = this.onDidDisposeEmitter.event;
 
     readonly onDidDisposeParent: Event<void>;
 
-    private handle: number = SourceControlImpl.handlePool++;
+    readonly handle: number = SourceControlImpl.handlePool++;
 
     constructor(
         private plugin: Plugin,
@@ -691,11 +704,13 @@ class SourceControlImpl implements theia.SourceControl {
         private _label: string,
         private _rootUri?: theia.Uri,
         _iconPath?: theia.IconPath,
+        _isHidden?: boolean,
         _parent?: SourceControlImpl
     ) {
         this.inputBox = new ScmInputBoxImpl(plugin, this.proxy, this.handle);
-        this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri);
+        this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri, _parent?.handle);
         this.onDidDisposeParent = _parent ? _parent.onDidDispose : Event.None;
+        this.apiObject = createAPIObject(this);
     }
 
     private createdResourceGroups = new Map<ScmResourceGroupImpl, Disposable>();
@@ -813,7 +828,7 @@ export class ScmExtImpl implements ScmExt {
                     return undefined;
                 }
                 if (typeof arg.resourceGroupHandle !== 'number') {
-                    return sourceControl;
+                    return sourceControl.apiObject;
                 }
                 const resourceGroup = sourceControl.getResourceGroup(arg.resourceGroupHandle);
                 if (typeof arg.resourceStateHandle !== 'number') {
@@ -824,16 +839,27 @@ export class ScmExtImpl implements ScmExt {
         });
     }
 
-    createSourceControl(extension: Plugin, id: string, label: string, rootUri: theia.Uri | undefined): theia.SourceControl {
+    createSourceControl(extension: Plugin, id: string, label: string, rootUri: theia.Uri | undefined,
+        iconPath?: theia.IconPath, isHidden?: boolean, parent?: theia.SourceControl): theia.SourceControl {
         const handle = ScmExtImpl.handlePool++;
-        const sourceControl = new SourceControlImpl(extension, this.proxy, this.commands, id, label, rootUri);
+        const parentImpl = parent ? this.findSourceControlImpl(parent) : undefined;
+        const sourceControl = new SourceControlImpl(extension, this.proxy, this.commands, id, label, rootUri, iconPath, isHidden, parentImpl);
         this.sourceControls.set(handle, sourceControl);
 
         const sourceControls = this.sourceControlsByExtension.get(extension.model.id) || [];
         sourceControls.push(sourceControl);
         this.sourceControlsByExtension.set(extension.model.id, sourceControls);
 
-        return sourceControl;
+        return sourceControl.apiObject;
+    }
+
+    private findSourceControlImpl(apiObject: theia.SourceControl): SourceControlImpl | undefined {
+        for (const impl of this.sourceControls.values()) {
+            if (impl.id === apiObject.id && impl.rootUri?.toString() === apiObject.rootUri?.toString()) {
+                return impl;
+            }
+        }
+        return undefined;
     }
 
     getLastInputBox(extension: Plugin): ScmInputBoxImpl | undefined {

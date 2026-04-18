@@ -70,10 +70,10 @@ Additionally, each extensions entry will contain the difference to the base appl
 
 Example Table:
 
-| Extension Name    | Mean (10 runs) (in s) | Std Dev (in s) | CV (%) | Delta (in s) |
-| ----------------- | --------------------- | -------------- | ------ | ------------ |
-| Base Theia        | 2.027                 | 0.084          | 4.144  | -            |
-| @theia/git:1.19.0 | 2.103                 | 0.041          | 1.950  | 0.076        |
+| Extension Name     | Mean (10 runs) (in s) | Std Dev (in s) | CV (%) | Delta (in s) |
+| ------------------ | --------------------- | -------------- | ------ | ------------ |
+| Base Theia         | 2.027                 | 0.084          | 4.144  | -            |
+| @theia/core:1.19.0 | 2.103                 | 0.041          | 1.950  | 0.076        |
 
 ### Script usage
 
@@ -92,7 +92,7 @@ The following parameters are available:
   - _not contain whitespaces_
   - _and be separated by whitespaces_
 
-    _For example: `--extensions @theia/git:1.19.0 @theia/keymaps:1.19.0`_
+    _For example: `--extensions @theia/core:1.19.0 @theia/keymaps:1.19.0`_
 
 - `--yarn`: Flag to trigger a full build at script startup (e.g. to build changes to extensions)
 - `--url`: Specify a URL that Theia should be launched with (can be used to specify the workspace to be opened). _Applies only to the `browser` app_ (default: `http://localhost:3000/#/<GIT_ROOT>/scripts/performance/workspace`)

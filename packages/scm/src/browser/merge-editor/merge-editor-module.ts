@@ -17,7 +17,7 @@
 import '../../../src/browser/style/merge-editor.css';
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { CommandContribution, DisposableCollection, MenuContribution, URI } from '@theia/core';
+import { CommandContribution, DisposableCollection, MEMORY_TEXT_READONLY, MenuContribution, generateUuid, URI } from '@theia/core';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FrontendApplicationContribution, KeybindingContribution, NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
@@ -56,16 +56,22 @@ export class MergeEditorFactory {
 
     constructor(
         protected readonly container: interfaces.Container,
-        protected readonly editorManager = container.get(EditorManager)
+        protected readonly editorManager = container.get(EditorManager),
     ) { }
 
     async createMergeEditor({ baseUri, side1Uri, side2Uri, resultUri }: MergeUris): Promise<MergeEditor> {
         const toDisposeOnError = new DisposableCollection();
         const createEditorWidget = (uri: URI) => this.createEditorWidget(uri, toDisposeOnError);
         try {
-            const [baseEditorWidget, side1EditorWidget, side2EditorWidget, resultEditorWidget] = await Promise.all(
-                [createEditorWidget(baseUri), createEditorWidget(side1Uri), createEditorWidget(side2Uri), createEditorWidget(resultUri)]
-            );
+            const [baseEditorWidget, side1EditorWidget, side2EditorWidget, resultEditorWidget] = await Promise.all([
+                createEditorWidget(baseUri).catch(e => {
+                    console.warn('Base URI resolution failed, using empty fallback:', e);
+                    return this.createEmptyFallbackEditorWidget(baseUri, toDisposeOnError);
+                }),
+                createEditorWidget(side1Uri),
+                createEditorWidget(side2Uri),
+                createEditorWidget(resultUri)
+            ]);
             const resultDocument = MonacoEditor.get(resultEditorWidget)!.document;
             const hasConflictMarkers = resultDocument.textEditorModel.getLinesContent().some(lineContent => lineContent.startsWith('<<<<<<<'));
             return this.createMergeEditorContainer({
@@ -83,6 +89,16 @@ export class MergeEditorFactory {
         }
     }
 
+    /**
+     * Creates an editor widget backed by an empty in-memory resource.
+     * Used as a fallback when the base URI cannot be resolved, e.g. in BOTH_ADDED
+     * merge conflicts where there is no common ancestor (git index stage 1).
+     */
+    protected async createEmptyFallbackEditorWidget(originalUri: URI, disposables: DisposableCollection): Promise<EditorWidget> {
+        const fallbackUri = new URI().withScheme(MEMORY_TEXT_READONLY).withPath(`${generateUuid()}/${originalUri.path.base}`);
+        return this.createEditorWidget(fallbackUri, disposables);
+    }
+
     protected async createEditorWidget(uri: URI, disposables: DisposableCollection): Promise<EditorWidget> {
         const editorWidget = await this.editorManager.createByUri(uri);
         disposables.push(editorWidget);
@@ -90,7 +106,9 @@ export class MergeEditorFactory {
         if (!editor) {
             throw new Error('The merge editor only supports Monaco editors as its parts');
         }
-        editor.getControl().updateOptions({ folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false } });
+        const options: MonacoEditor.IOptions = { glyphMargin: false, folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false } };
+        editor.getControl().updateOptions(options);
+        editor.getControl().onDidChangeConfiguration(() => editor.getControl().updateOptions(options));
         editor.setShouldDisplayDirtyDiff(false);
         return editorWidget;
     }

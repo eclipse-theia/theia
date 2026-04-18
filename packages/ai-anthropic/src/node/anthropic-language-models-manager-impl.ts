@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
@@ -27,9 +28,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
-
-    @inject(TokenUsageService)
-    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -47,15 +45,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 }
                 return undefined;
             };
-            const proxyUrlProvider = () => {
-                // first check if the proxy url is provided via Theia settings
-                if (this._proxyUrl) {
-                    return this._proxyUrl;
-                }
-
-                // if not fall back to the environment variables
-                return process.env['https_proxy'];
-            };
+            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl);
 
             // Determine status based on API key and custom url presence
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
@@ -73,7 +63,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     apiKey: apiKeyProvider,
                     status,
                     maxTokens: modelDescription.maxTokens !== undefined ? modelDescription.maxTokens : DEFAULT_MAX_TOKENS,
-                    maxRetries: modelDescription.maxRetries
+                    maxRetries: modelDescription.maxRetries,
+                    proxy: proxyUrl
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -87,8 +78,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.url,
                         modelDescription.maxTokens,
                         modelDescription.maxRetries,
-                        this.tokenUsageService,
-                        proxyUrlProvider()
+                        proxyUrl
                     )
                 ]);
             }
@@ -128,4 +118,3 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             : { status: 'unavailable', message: 'No Anthropic API key set' };
     }
 }
-

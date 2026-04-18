@@ -17,16 +17,17 @@ import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core
 import { CancellationToken, Disposable, PreferenceService, URI, Path } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileStat } from '@theia/filesystem/lib/common/files';
+import { FileStat, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     FILE_CONTENT_FUNCTION_ID, GET_FILE_DIAGNOSTICS_ID,
     GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from '../common/workspace-functions';
+import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
-import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
+import { CONSIDER_GITIGNORE_PREF, FILE_CONTENT_MAX_SIZE_KB_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -280,7 +281,12 @@ export class FileContentFunction implements ToolProvider {
                 'If the file is currently open in an editor with unsaved changes, returns the editor\'s current content (not the saved file on disk). ' +
                 'Binary files may not be readable and will return an error. ' +
                 'Use this tool to read file contents before making any edits with replacement functions. ' +
-                'Do NOT use this for files you haven\'t located yet - use findFilesByPattern or searchInWorkspace first.',
+                'Do NOT use this for files you haven\'t located yet - use findFilesByPattern or searchInWorkspace first. ' +
+                'Files exceeding the configured size limit will return an error. ' +
+                'It is recommended to read the whole file by not providing offset or limit parameters, ' +
+                'unless you expect it to be very large. ' +
+                'If the size limit is hit, do NOT attempt to read the full file in chunks using offset and limit — ' +
+                'this wastes context window. Use searchInWorkspace to find the specific content you need instead.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -288,23 +294,36 @@ export class FileContentFunction implements ToolProvider {
                         type: 'string',
                         description: 'The relative path to the target file within the workspace (e.g., "src/index.ts", "package.json"). ' +
                             'Must be relative to the workspace root. Absolute paths and paths outside the workspace will result in an error.',
+                    },
+                    offset: {
+                        type: 'number',
+                        description: 'Zero-based line offset to start reading from (default: 0). ' +
+                            'Use together with limit to page through large files.'
+                    },
+                    limit: {
+                        type: 'number',
+                        description: 'Maximum number of lines to return. Defaults to the rest of the file.'
                     }
                 },
                 required: ['file']
             },
             handler: (arg_string: string, ctx?: ToolInvocationContext) => {
-                const file = this.parseArg(arg_string);
-                return this.getFileContent(file, ctx?.cancellationToken);
+                const { file, offset, limit } = this.parseArg(arg_string);
+                return this.getFileContent(file, ctx?.cancellationToken, offset, limit);
             },
             providerName: undefined,
             getArgumentsShortLabel: (args: string): { label: string; hasMore: boolean } | undefined => {
                 try {
                     const parsed = JSON.parse(args);
                     if (parsed && typeof parsed === 'object' && 'file' in parsed) {
-                        return { label: String(parsed.file), hasMore: false };
+                        const hasMore = 'offset' in parsed || 'limit' in parsed;
+                        return { label: String(parsed.file), hasMore };
                     }
                 } catch {
-                    // ignore parse errors
+                    const file = extractJsonStringField(args, 'file');
+                    if (file) {
+                        return { label: file, hasMore: false };
+                    }
                 }
                 return undefined;
             },
@@ -320,14 +339,24 @@ export class FileContentFunction implements ToolProvider {
     @inject(MonacoWorkspace)
     protected readonly monacoWorkspace: MonacoWorkspace;
 
-    private parseArg(arg_string: string): string {
+    @inject(PreferenceService)
+    protected readonly preferences: PreferenceService;
+
+    private parseArg(arg_string: string): { file: string; offset?: number; limit?: number } {
         const result = JSON.parse(arg_string);
-        return result.file;
+        return { file: result.file, offset: result.offset, limit: result.limit };
     }
 
-    private async getFileContent(file: string, cancellationToken?: CancellationToken): Promise<string> {
+    private async getFileContent(file: string, cancellationToken?: CancellationToken, offset?: number, limit?: number): Promise<string> {
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
+        }
+
+        if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
+            return JSON.stringify({ error: 'offset must be a non-negative integer.' });
+        }
+        if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
+            return JSON.stringify({ error: 'limit must be a positive integer.' });
         }
 
         let targetUri: URI | undefined;
@@ -339,21 +368,174 @@ export class FileContentFunction implements ToolProvider {
             return JSON.stringify({ error: error.message });
         }
 
+        if (cancellationToken?.isCancellationRequested) {
+            return JSON.stringify({ error: 'Operation cancelled by user' });
+        }
+
+        const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
+        const maxSizeKB = this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
+        const isEditorOpen = openEditorValue !== undefined;
+        const isPaginated = offset !== undefined || limit !== undefined;
+
+        if (isEditorOpen) {
+            return this.handleEditorContent(openEditorValue!, maxSizeKB, offset, limit);
+        } else if (isPaginated) {
+            return this.readStreamedSlice(targetUri, maxSizeKB, offset, limit);
+        } else {
+            return this.handleFullDiskRead(targetUri, maxSizeKB);
+        }
+    }
+
+    private handleEditorContent(content: string, maxSizeKB: number, offset?: number, limit?: number): string {
+        if (offset === undefined && limit === undefined) {
+            const sizeKB = this.sizeInKB(content);
+            if (sizeKB > maxSizeKB) {
+                return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
+            }
+            return content;
+        }
+
+        const lines = content.split('\n');
+        const startOffset = offset ?? 0;
+        const sliced = limit !== undefined ? lines.slice(startOffset, startOffset + limit) : lines.slice(startOffset);
+        const result = sliced.join('\n');
+        const resultSizeKB = this.sizeInKB(result);
+        if (resultSizeKB > maxSizeKB) {
+            return this.buildSliceSizeLimitError(resultSizeKB, maxSizeKB);
+        }
+        const startLine = startOffset + 1;
+        const endLine = startOffset + sliced.length;
+        const header = `[Lines ${startLine}\u2013${endLine} of ${lines.length} total. Use offset and limit to read other ranges.]`;
+        return `${header}\n${result}`;
+    }
+
+    private async handleFullDiskRead(targetUri: URI, maxSizeKB: number): Promise<string> {
         try {
-            if (cancellationToken?.isCancellationRequested) {
-                return JSON.stringify({ error: 'Operation cancelled by user' });
+            const stat = await this.fileService.resolve(targetUri);
+            if (stat.size !== undefined) {
+                const statSizeKB = Math.round(stat.size / 1024);
+                if (statSizeKB > maxSizeKB) {
+                    return this.buildFileSizeLimitError(statSizeKB, maxSizeKB);
+                }
+            } else {
+                // Size is unknown from stat; use the streaming path to avoid loading
+                // an arbitrarily large file into memory, with a post-read size check.
+                return this.readStreamedSlice(targetUri, maxSizeKB);
             }
 
-            const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
-            if (openEditorValue !== undefined) {
-                return openEditorValue;
+            const rawContent = (await this.fileService.read(targetUri)).value;
+            const sizeKB = this.sizeInKB(rawContent);
+            if (sizeKB > maxSizeKB) {
+                return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
             }
-
-            const fileContent = await this.fileService.read(targetUri);
-            return fileContent.value;
+            return rawContent;
         } catch (error) {
+            if (error instanceof FileOperationError) {
+                if (error.fileOperationResult === FileOperationResult.FILE_TOO_LARGE ||
+                    error.fileOperationResult === FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT) {
+                    return this.buildFileSizeLimitError(undefined, maxSizeKB);
+                }
+            }
             return JSON.stringify({ error: 'File not found' });
         }
+    }
+
+    private async readStreamedSlice(
+        targetUri: URI, maxSizeKB: number, startLine?: number, limit?: number
+    ): Promise<string> {
+        const isPaginated = startLine !== undefined || limit !== undefined;
+        const effectiveStartLine = startLine ?? 0;
+
+        let streamValue: Awaited<ReturnType<typeof this.fileService.readStream>>['value'];
+        try {
+            // Bypass the files.maxFileSizeMB preference: the streaming path never loads the
+            // full file into memory, so the OS-level size cap is not appropriate here.
+            // Our own per-result maxSizeKB check still applies to the collected slice.
+            streamValue = (await this.fileService.readStream(targetUri, { limits: { size: Number.MAX_SAFE_INTEGER } })).value;
+        } catch (e) {
+            if (e instanceof FileOperationError &&
+                (e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE ||
+                    e.fileOperationResult === FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT)) {
+                return JSON.stringify({
+                    error: 'File exceeds the configured ' + maxSizeKB + 'KB size limit. ' +
+                        'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, ' +
+                        'or use searchInWorkspace to find specific content.',
+                    maxSizeKB
+                });
+            }
+            return JSON.stringify({ error: 'File not found' });
+        }
+
+        return new Promise<string>(resolve => {
+            let pending = '';
+            let lineIndex = 0;
+            const sliceLines: string[] = [];
+
+            streamValue.on('data', (chunk: string) => {
+                const parts = (pending + chunk).split('\n');
+                pending = parts.pop()!;
+                for (const line of parts) {
+                    if (lineIndex >= effectiveStartLine && (limit === undefined || lineIndex < effectiveStartLine + limit)) {
+                        sliceLines.push(line);
+                    }
+                    lineIndex++;
+                }
+            });
+
+            streamValue.on('end', () => {
+                if (pending.length > 0) {
+                    if (lineIndex >= effectiveStartLine && (limit === undefined || lineIndex < effectiveStartLine + limit)) {
+                        sliceLines.push(pending);
+                    }
+                    lineIndex++;
+                }
+                const result = sliceLines.join('\n');
+                const resultSizeKB = this.sizeInKB(result);
+                if (resultSizeKB > maxSizeKB) {
+                    const sizeError = isPaginated
+                        ? this.buildSliceSizeLimitError(resultSizeKB, maxSizeKB)
+                        : this.buildFileSizeLimitError(resultSizeKB, maxSizeKB);
+                    resolve(sizeError);
+                    return;
+                }
+                if (isPaginated) {
+                    const header =
+                        `[Lines ${effectiveStartLine + 1}\u2013${effectiveStartLine + sliceLines.length} of ${lineIndex} total. ` +
+                        'Use offset and limit to read other ranges.]';
+                    resolve(`${header}\n${result}`);
+                } else {
+                    resolve(result);
+                }
+            });
+
+            streamValue.on('error', () => resolve(JSON.stringify({ error: 'File not found' })));
+        });
+    }
+
+    private sizeInKB(content: string): number {
+        return Math.round(Buffer.byteLength(content, 'utf8') / 1024);
+    }
+
+    private buildFileSizeLimitError(sizeKB: number | undefined, maxSizeKB: number): string {
+        const sizeInfo = sizeKB !== undefined ? ` (${sizeKB}KB)` : '';
+        const result: Record<string, unknown> = {
+            error: `File exceeds the configured ${maxSizeKB}KB size limit${sizeInfo}. ` +
+                'Use the \'offset\' (0-based) and \'limit\' parameters to read specific line ranges, or use searchInWorkspace to find specific content.',
+            maxSizeKB
+        };
+        if (sizeKB !== undefined) {
+            result.sizeKB = sizeKB;
+        }
+        return JSON.stringify(result);
+    }
+
+    private buildSliceSizeLimitError(resultSizeKB: number, maxSizeKB: number): string {
+        return JSON.stringify({
+            error: 'Requested range exceeds the configured ' + maxSizeKB + 'KB size limit (' + resultSizeKB + 'KB). ' +
+                'Use a smaller limit to read fewer lines at a time.',
+            resultSizeKB,
+            maxSizeKB
+        });
     }
 }
 
@@ -659,7 +841,10 @@ export class FindFilesByPattern implements ToolProvider {
                         return { label: String(parsed.pattern), hasMore: keys.length > 1 };
                     }
                 } catch {
-                    // ignore parse errors
+                    const pattern = extractJsonStringField(args, 'pattern');
+                    if (pattern) {
+                        return { label: pattern, hasMore: false };
+                    }
                 }
                 return undefined;
             },

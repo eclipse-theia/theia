@@ -60,6 +60,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     protected mountedListeners: Map<string, EventListenerOrEventListenerObject> = new Map();
     protected optimalWidth = 0;
     protected optimalHeight = 0;
+    protected resizeObserver: ResizeObserver | undefined;
 
     constructor(props: SelectComponentProps) {
         super(props);
@@ -148,14 +149,16 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         return optimal + 20; // Just to be safe, add another 20 pixels here
     }
 
-    protected attachListeners(): void {
-        const hide = (event: MouseEvent) => {
+   protected attachListeners(): void {
+        const hide = (event: Event) => {
             if (!this.dropdownRef.current?.contains(event.target as Node)) {
                 this.hide();
             }
         };
+        const hideOnResize = () => this.hide();
         this.mountedListeners.set('scroll', hide);
         this.mountedListeners.set('wheel', hide);
+        this.mountedListeners.set('resize', hideOnResize);
 
         let parent = this.fieldRef.current?.parentElement;
         while (parent) {
@@ -170,9 +173,43 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         for (const [key, listener] of this.mountedListeners.entries()) {
             window.addEventListener(key, listener);
         }
+
+        // Catch Lumino sash drags globally - observe the closest lm-Widget panel
+        const fieldEl = this.fieldRef.current;
+        const resizablePanel = fieldEl?.closest('.lm-Widget') ?? fieldEl?.parentElement;
+
+        if (resizablePanel && typeof ResizeObserver !== 'undefined') {
+            let lastWidth = 0;
+            let lastHeight = 0;
+            let isFirstFire = true;
+
+            this.resizeObserver = new ResizeObserver(entries => {
+                for (const entry of entries) {
+                    const { width, height } = entry.contentRect;
+
+                    // Ignore the initial automatic fire when the observer attaches
+                    if (isFirstFire) {
+                        lastWidth = width;
+                        lastHeight = height;
+                        isFirstFire = false;
+                        continue;
+                    }
+
+                    // Only hide if the panel dimensions actually changed by more than 2 pixels
+                    if (this.state.dimensions && (Math.abs(width - lastWidth) > 2 || Math.abs(height - lastHeight) > 2)) {
+                        this.hide();
+                    }
+
+                    lastWidth = width;
+                    lastHeight = height;
+                }
+            });
+            this.resizeObserver.observe(resizablePanel);
+        }
     }
 
     override componentWillUnmount(): void {
+        this.resizeObserver?.disconnect();
         if (this.mountedListeners.size > 0) {
             const eventListener = this.mountedListeners.get('scroll')!;
             let parent = this.fieldRef.current?.parentElement;

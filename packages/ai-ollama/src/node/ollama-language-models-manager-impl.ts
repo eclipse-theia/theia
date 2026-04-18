@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OllamaModel } from './ollama-language-model';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
@@ -23,12 +24,10 @@ import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
 export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsManager {
 
     protected _host: string | undefined;
+    protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
-
-    @inject(TokenUsageService)
-    protected readonly tokenUsageService: TokenUsageService;
 
     get host(): string | undefined {
         return this._host ?? process.env.OLLAMA_HOST;
@@ -45,20 +44,29 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
             const existingModel = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
             const hostProvider = () => this.host;
 
+            const host = hostProvider();
+            const normalizedHost = host && !host.includes('://') ? `http://${host}` : host;
+            const proxyUrl = getProxyUrl(normalizedHost ?? 'http://localhost:11434', this._proxyUrl);
+
             if (existingModel) {
                 if (!(existingModel instanceof OllamaModel)) {
                     console.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
                     continue;
                 }
+                const status = this.calculateStatus(host);
+                await this.languageModelRegistry.patchLanguageModel<OllamaModel>(modelDescription.id, {
+                    proxy: proxyUrl,
+                    status
+                });
             } else {
-                const status = this.calculateStatus(hostProvider());
+                const status = this.calculateStatus(host);
                 this.languageModelRegistry.addLanguageModels([
                     new OllamaModel(
                         modelDescription.id,
                         modelDescription.model,
                         status,
                         hostProvider,
-                        this.tokenUsageService
+                        proxyUrl
                     )
                 ]);
             }
@@ -67,6 +75,14 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
     removeLanguageModels(...modelIds: string[]): void {
         this.languageModelRegistry.removeLanguageModels(modelIds.map(id => `ollama/${id}`));
+    }
+
+    setProxyUrl(proxyUrl: string | undefined): void {
+        if (proxyUrl) {
+            this._proxyUrl = proxyUrl;
+        } else {
+            this._proxyUrl = undefined;
+        }
     }
 
     async setHost(host: string | undefined): Promise<void> {

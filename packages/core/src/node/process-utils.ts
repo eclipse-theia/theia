@@ -32,7 +32,15 @@ export class ProcessUtils {
     }
 
     protected winTerminateProcessTree(ppid: number): void {
-        this.spawnSync('taskkill.exe', ['/f', '/t', '/pid', ppid.toString(10)]);
+        const result = cp.spawnSync('taskkill.exe', ['/f', '/t', '/pid', ppid.toString(10)], { encoding: 'utf8' });
+        if (result.error) {
+            throw result.error;
+        }
+        // taskkill may exit with a non-zero code when some child processes have already exited.
+        // This is expected during shutdown — log but don't throw.
+        if (result.status !== 0) {
+            console.warn(`taskkill.exe exited with ${result.status} for PID ${ppid}. Output:\n${JSON.stringify(result.output)}`);
+        }
     }
 
     protected unixTerminateProcessTree(ppid: number): void {

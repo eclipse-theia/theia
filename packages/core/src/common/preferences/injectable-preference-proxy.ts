@@ -15,13 +15,16 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { PreferenceSchema } from '../../common/preferences/preference-schema';
-import { Disposable, DisposableCollection, Emitter, Event, isObject, MaybePromise, PreferenceScope } from '../../common';
+import { PreferenceSchema } from './preference-schema';
 import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
 import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceService } from './preference-service';
 import { JSONValue } from '@lumino/coreutils';
 import { PreferenceProviderDataChange } from './preference-provider';
-import { OverridePreferenceName } from '../../common/preferences/preference-language-override-service';
+import { OverridePreferenceName } from './preference-language-override-service';
+import { isObject, MaybePromise } from '../types';
+import { DisposableCollection } from '../disposable';
+import { Emitter, Event } from '../event';
+import { PreferenceScope } from './preference-scope';
 
 export const PreferenceProxySchema = Symbol('PreferenceProxySchema');
 export interface PreferenceProxyFactory {

@@ -25,3 +25,4 @@ export * from './preference-service';
 export * from './injectable-preference-proxy';
 export * from './preference-proxy';
 export * from './preference-configurations';
+export * from './preference-utils';

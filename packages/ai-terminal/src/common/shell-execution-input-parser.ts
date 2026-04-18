@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { extractJsonStringField } from '@theia/ai-chat-ui/lib/common/toolcall-utils';
+
 export interface ShellExecutionInput {
     command: string;
     cwd?: string;
@@ -32,8 +34,6 @@ export function parseShellExecutionInput(args: string | undefined): ShellExecuti
     try {
         return JSON.parse(args);
     } catch {
-        // Extract command from incomplete JSON: "command": "value or "command":"value
-        const match = /"command"\s*:\s*"([^"]*)"?/.exec(args);
-        return { command: match?.[1] ?? '' };
+        return { command: extractJsonStringField(args, 'command') ?? '' };
     }
 }

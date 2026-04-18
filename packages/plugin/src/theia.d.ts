@@ -2844,7 +2844,7 @@ export module '@theia/plugin' {
          * @param id id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
          * @param color optional `ThemeColor` for the icon. The color is currently only used in {@link TreeItem}.
          */
-        private constructor(id: string, color?: ThemeColor);
+        constructor(id: string, color?: ThemeColor);
     }
 
     /**
@@ -8182,10 +8182,8 @@ export module '@theia/plugin' {
          * A glob pattern that filters the file events on their absolute path must be provided. Optionally,
          * flags to ignore certain kinds of events can be provided. To stop listening to events the watcher must be disposed.
          *
-         * *Note* that only files within the current {@link workspace.workspaceFolders workspace folders} can be watched.
-         *
          * @param globPattern A {@link GlobPattern glob pattern} that is applied to the absolute paths of created, changed,
-         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain {@link WorkspaceFolder workspace folder}.
+         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain folder.
          * @param ignoreCreateEvents Ignore when files have been created.
          * @param ignoreChangeEvents Ignore when files have been changed.
          * @param ignoreDeleteEvents Ignore when files have been deleted.
@@ -8567,6 +8565,16 @@ export module '@theia/plugin' {
         export const isNewAppInstall: boolean;
 
         /**
+         * Indicates whether the application is running in portable mode.
+         *
+         * Portable mode is enabled when the application is run from a folder that contains
+         * a `data` directory, allowing for self-contained installations.
+         *
+         * Learn more about [Portable Mode](https://code.visualstudio.com/docs/editor/portable).
+         */
+        export const isAppPortable: boolean;
+
+        /**
          * Indicates whether the users has telemetry enabled.
          * Can be observed to determine if the extension should send telemetry.
          */
@@ -8797,6 +8805,21 @@ export module '@theia/plugin' {
     export type CharacterPair = [string, string];
 
     /**
+     * Configuration for line comments.
+     */
+    export interface LineCommentRule {
+        /**
+         * The line comment token, like `//`
+         */
+        comment: string;
+        /**
+         * Whether the comment token should not be indented and placed at the first column.
+         * Defaults to false.
+         */
+        noIndent?: boolean;
+    }
+
+    /**
      * Describes how comments for a language work.
      */
     export interface CommentRule {
@@ -8804,7 +8827,7 @@ export module '@theia/plugin' {
         /**
          * The line comment token, like `// this is a comment`
          */
-        lineComment?: string;
+        lineComment?: string | LineCommentRule;
 
         /**
          * The block comment character pair, like `/* block comment *&#47;`

@@ -22,6 +22,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "capabilityOverrides": {
+          "mdDescription": "Felhasználói felülírások sablonalapú funkciókhoz. A kulcsok a funkciófragmentumok azonosítói, az értékek pedig engedélyezett (true) vagy letiltott (false).",
+          "title": "Képesség-felülírások"
+        },
         "completionNotification": {
           "mdDescription": "Értesítési viselkedés, amikor ez az ügynök befejezi a feladatot. Ha nincs beállítva, akkor a globális alapértelmezett értesítési beállítás lesz használva.\n- `os-notification`: OS/rendszer értesítések megjelenítése\n- `message`: Értesítések megjelenítése az állapotsorban/üzenet területen\n- `blink`: Az UI villogása vagy kiemelése\n- `off`: Értesítések letiltása ehhez az ügynökhöz",
           "title": "Befejezési értesítés"
@@ -29,6 +33,16 @@
         "enable": {
           "mdDescription": "Meghatározza, hogy az ügynököt engedélyezni kell-e (true) vagy letiltani kell-e (false).",
           "title": "Ügynök engedélyezése"
+        },
+        "genericCapabilitySelections": {
+          "agentDelegation": "Kiválasztott ügynökazonosítók a felhatalmazáshoz",
+          "functions": "Kiválasztott funkcióazonosítók",
+          "mcpFunctions": "Kiválasztott MCP funkcióazonosítók",
+          "mdDescription": "Felhasználói kiválasztások általános képességekhez, például készségekhez, funkciókhoz és MCP-eszközökhöz.",
+          "promptFragments": "Kiválasztott parancssori fragmensek azonosítói",
+          "skills": "Kiválasztott készségazonosítók",
+          "title": "Általános képességek kiválasztása",
+          "variables": "Kiválasztott változónevek"
         },
         "languageModelRequirements": {
           "identifier": {
@@ -187,6 +201,10 @@
             "description": "Eszközök automatikus végrehajtása megerősítés nélkül"
           }
         },
+        "toolConfirmationTimeout": {
+          "denialReason": "A megerősítés időtúllépése {0} másodperc után",
+          "description": "Az eszköz megerősítő párbeszédablakok időtúllépése másodpercben. Ha pozitív értékre van beállítva, az eszköz megerősítéseit a megadott időtartam letelte után automatikusan elutasítja a rendszer. A letiltáshoz állítsa 0-ra (alapértelmezett)."
+        },
         "universal": {
           "description": "Ez az ügynök úgy lett kialakítva, hogy segítséget nyújtson a szoftverfejlesztőknek azáltal, hogy tömör és pontos válaszokat ad általános programozási és szoftverfejlesztési kérdésekre. Emellett tartalék megoldásként szolgál minden olyan általános kérdés esetén, amelyet a felhasználó feltehet. Az univerzális ügynök jelenleg alapértelmezés szerint nem rendelkezik kontextussal, azaz nem fér hozzá a jelenlegi felhasználói kontextushoz vagy a munkaterülethez."
         },
@@ -199,7 +217,6 @@
       },
       "chat-ui": {
         "addContextVariable": "Kontextusváltozó hozzáadása",
-        "agent": "Ügynök",
         "agentDelegationDescription": "Más AI-ügynökök, akikre feladatok ruházhatók",
         "aiDisabled": "Az AI funkciók le vannak tiltva.",
         "applyAll": "Összes alkalmazása",
@@ -219,6 +236,7 @@
           "clearHistory": "Bejegyzések törlése",
           "cycleMode": "Csevegési mód ciklusa",
           "nextPrompt": "Következő prompt",
+          "pasteWithImageSupport": "Beillesztés (képek támogatásával)",
           "previousPrompt": "Előző parancssor",
           "toggleCapabilities": "Kapacitások konfigurációjának váltása"
         },
@@ -244,6 +262,7 @@
           "response": {
             "label": "Válasz:"
           },
+          "restoredNotAvailable": "A válasz nem érhető el visszaállított munkamenetek esetén.",
           "starting": "A delegálás megkezdése...",
           "status": {
             "canceled": "törölve",
@@ -269,7 +288,6 @@
         "functions": "Funkciók",
         "functionsDescription": "A Theia kiterjesztések által biztosított beépített funkciók",
         "genericCapabilities": "Általános képességek",
-        "mcpFunctions": "MCP",
         "mcpFunctionsDescription": "Csatlakoztatott szerverek MCP (Model Context Protocol) funkciói",
         "noChatAgentsAvailable": "Nincs elérhető csevegő ügynök.",
         "noMatchingCapabilities": "Nincs megfelelő képesség",
@@ -278,12 +296,12 @@
         "openOriginalFile": "Eredeti fájl megnyitása",
         "performThisTask": "Végezze el ezt a feladatot.",
         "persistedSession": "Tartós munkamenet (kattintson a visszaállításhoz)",
-        "promptFragments": "Utasítások",
         "promptFragmentsDescription": "A beszélgetésbe beillesztendő egyéni prompt-fragmentumok",
         "removeChat": "Csevegés eltávolítása",
         "renameChat": "Csevegés átnevezése",
         "requestNotFoundForRetry": "A kérés nem található, próbálkozzon újra",
         "responseFrom": "Válasz az {0} webhelyről",
+        "saveCurrentSelectionsToSettings": "Beállítások mentése",
         "searchCapabilities": "Keresési lehetőségek",
         "selectAgentQuickPickPlaceholder": "Válasszon ügynököt az új munkamenethez",
         "selectAllInCategory": "Válassza ki az összeset ebben a kategóriában",
@@ -314,6 +332,7 @@
           "alwaysAllowConfirm": "Értem, engedélyezem az automatikus jóváhagyást",
           "alwaysAllowGenericWarning": "Ennek az eszköznek az automatikus jóváhagyás engedélyezése előtt megerősítést kell adni. Az engedélyezés után minden jövőbeli hívás megerősítés nélkül fog végrehajtódni. Csak akkor engedélyezze ezt, ha megbízik ebben az eszközben és tisztában van a lehetséges kockázatokkal.",
           "alwaysAllowTitle": "Engedélyezze az automatikus jóváhagyást a „{0}” számára?",
+          "autoCancel": "Automatikus törlés az „{0}” alkalmazásban",
           "canceled": "Eszköz végrehajtása törölve",
           "denied": "Eszköz végrehajtása megtagadva",
           "deny-forever": "Mindig elutasítás",
@@ -560,11 +579,14 @@
           "signIn": "Jelentkezzen be a GitHub Copilotba",
           "signOut": "Kijelentkezés a GitHub Copilotból"
         },
+        "enabled": {
+          "mdDescription": "Engedélyezze a GitHub Copilot szolgáltatót. Engedélyezés után megjelenik egy állapotsor a hitelesítéshez, és a Copilot előfizetéséből felismeri a rendelkezésre álló modelleket."
+        },
         "enterpriseUrl": {
           "mdDescription": "Copilot API GitHub Enterprise domainje (pl. `github.mycompany.com`). GitHub.com esetén hagyja üresen."
         },
-        "models": {
-          "description": "Használni kívánt GitHub Copilot modellek. A rendelkezésre álló modellek a Copilot előfizetésedtől függenek."
+        "modelOverrides": {
+          "mdDescription": "A rendszer felülírja az automatikusan felismert GitHub Copilot modelleket. Ha üres (alapértelmezett), a rendelkezésre álló modelleket a Copilot előfizetéséből ismeri fel. Állítson be kifejezett modellazonosítókat az automatikus felismerés felülírásához."
         },
         "signOut": {
           "confirmMessage": "Biztosan ki szeretne jelentkezni a GitHub Copilotból?"
@@ -572,7 +594,8 @@
         "statusBar": {
           "signedIn": "Bejelentkezett a GitHub Copilotba {0} néven. Kattintson a kijelentkezéshez.",
           "signedOut": "Nincs bejelentkezve a GitHub Copilotba. Kattintson a bejelentkezéshez."
-        }
+        },
+        "tokenMigration": "A GitHub Copilot munkamenete elavult hitelesítési módszert használt, ezért törlésre került. Kérjük, jelentkezzen be újra, hogy hozzáférjen az összes elérhető modellhez."
       },
       "core": {
         "agentConfiguration": {
@@ -601,7 +624,7 @@
           "description": "Visszaadja a rendszerben elérhető ügynökök listáját."
         },
         "aiConfiguration": {
-          "label": "AI konfiguráció [Béta]"
+          "label": "AI konfiguráció"
         },
         "blinkTitle": {
           "agentCompleted": "Theia – Ügynök befejezte",
@@ -743,8 +766,7 @@
           "variantsOfSystemPrompt": "Ennek a promptváltozat-készletnek a változatai:"
         },
         "promptTemplates": {
-          "description": "Mappa a testreszabott prompt sablonok tárolásához. Ha nincs testreszabva, akkor a felhasználói konfigurációs könyvtár kerül felhasználásra. Kérjük, fontolja meg egy verziókezelés alatt álló mappa használatát a prompt sablonok változatainak kezeléséhez.",
-          "openLabel": "Mappa kiválasztása"
+          "description": "Mappa a testreszabott prompt sablonok tárolásához. Ha nincs testreszabva, akkor a felhasználói konfigurációs könyvtár kerül felhasználásra. Kérjük, fontolja meg egy verziókezelés alatt álló mappa használatát a prompt sablonok változatainak kezeléséhez."
         },
         "promptVariable": {
           "argDescription": "A prompt sablon azonosítója a megoldáshoz",
@@ -877,16 +899,12 @@
         },
         "edited": "szerkesztve",
         "exchange-card": {
-          "agentId": "Ügynök",
           "timestamp": "Elindítva"
         },
         "open-history-tooltip": "Nyisd meg az AI történetét...",
         "request-card": {
-          "agent": "Ügynök",
-          "model": "Modell",
           "promptVariant": "Prompt változat",
           "request": "Kérés",
-          "response": "Válasz",
           "timestamp": "Időbélyeg",
           "title": "Kérés"
         },
@@ -909,7 +927,7 @@
           "tooltip": "Új sorok értelmezése"
         },
         "view": {
-          "label": "AI ügynök története [Béta]",
+          "label": "AI ügynök története",
           "noAgent": "Nincs elérhető ügynök.",
           "noAgentSelected": "Nincs kiválasztott ügynök.",
           "noHistoryForAgent": "A kiválasztott ügynök „{0}” esetében nincs elérhető előzmény."
@@ -926,15 +944,34 @@
       "ide": {
         "agent-description": "Az AI-ügynök beállításainak konfigurálása, beleértve az engedélyezést, az LLM kiválasztását, a prompt sablon testreszabását és az egyéni ügynök létrehozását az [AI konfigurációs nézetben]({0}).",
         "agentConfiguration": {
-          "capabilityOn": "On",
           "customAgentLocationQuickPick": {
             "createNewFile": "Új fájl létrehozása",
             "openExistingFile": "Meglévő fájl megnyitása",
             "placeholder": "Válassza ki, hol szeretne létrehozni vagy megnyitni egy egyéni ügynökfájlt",
             "title": "Válassza ki a helyet az egyéni ügynökök fájljához"
           },
-          "enabledByDefault": "Alapértelmezés szerint engedélyezve",
-          "noDescription": "Nincs leírás"
+          "genericCapabilitiesSettings": "Általános képességek",
+          "genericCapabilityType": {
+            "agentDelegation": "Ügynökdelegálás",
+            "functions": "Funkciók",
+            "mcpFunctions": "MCP funkciók",
+            "promptFragments": "Parancssori fragmentumok"
+          },
+          "noDescription": "Nincs leírás",
+          "resetAllCapabilities": "Az összes képesség visszaállítása az alapértelmezett értékekre",
+          "resetAllDefaults": "Minden alapértelmezett értékre visszaállítás",
+          "selections": "Kiválasztások"
+        },
+        "agentMode": {
+          "confirmed": {
+            "mdDescription": "Hogy a felhasználó megerősítette-e az ügynökmódra vonatkozó figyelmeztetést. Az ügynökmód lehetővé teszi a fájlok önálló módosítását további megerősítés nélkül. Állítsa `false` értékre, hogy a következő ügynökmód-kéréskor újra megjelenjen a megerősítés."
+          }
+        },
+        "agentModeConfirmation": {
+          "confirm": "Megerősítés",
+          "msg": "Ez az ügynök **ügynöki módot** használ. Az autonóm folyamat engedélyezéséhez képes további megerősítés nélkül közvetlenül írni a munkaterületi fájlokba.\n\nJavasolt a verziókezelés (pl. Git) használata, hogy áttekintse és visszavonhassa a változtatásokat.\n\nAz alábbi csevegőmezőben található módválasztóval átválthat **szerkesztési módra**, vagy használhatja az **Architect** ügynököt olvasási joggal rendelkező tervezéshez.\n\nEz a megerősítés el lesz mentve ehhez a munkaterülethez, és többé nem jelenik meg. Ha globálisan szeretné visszaállítani vagy konfigurálni, keresse meg a `ai-features.agentMode.confirmed` beállítást a Beállítások között.",
+          "question": "Szeretne folytatni az ügynökmóddal?",
+          "waiting": "Várakozás a megerősítésre..."
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Hibaellenőrzés DevTools MCP szerver állapota: {0}",
@@ -956,13 +993,10 @@
             "question": "A Playwright MCP szerverek nem futnak. Most el szeretné indítani őket? Ezzel a Playwright MCP szerverek telepítésre kerülhetnek."
           }
         },
-        "appTester": {
-          "description": "Lehetővé teszi az ügynök számára, hogy a böngészőalkalmazásokat végpontok között tesztelje. Ehhez az ügynök felhatalmazhatja az AppTester ügynököt, amely automatizálja a böngésző interakcióit a megvalósítás ellenőrzése érdekében.",
-          "name": "App Tester"
-        },
         "architectAgent": {
           "mode": {
             "plan": "Térkép mód",
+            "planNext": "Tervezési mód (Következő)",
             "simple": "Egyszerű mód"
           },
           "suggestion": {
@@ -973,6 +1007,9 @@
         "bypassHint": "Egyes ügynökök, például a Claude Code, nem igénylik a Theia nyelvi modelleket.",
         "chatDisabledMessage": {
           "title": "Az AI funkciók le vannak tiltva"
+        },
+        "codeReviewerAgent": {
+          "description": "Kódfelülvizsgálati asszisztens, amely elemzi a kódváltozásokat és strukturált értékeléseket ad vissza. Ellenőrzi a befejezési kritériumokat, a build/lint/teszt bizonyítékokat és a kódminőséget."
         },
         "coderAgent": {
           "mode": {
@@ -1017,7 +1054,10 @@
         },
         "deleteChat": "Csevegés törlése",
         "enableAI": {
-          "mdDescription": "Ez a beállítás lehetővé teszi a legújabb AI-funkciók (béta verzió) elérését.            \n            Felhívjuk figyelmét, hogy ezek a funkciók béta fázisban vannak, ami azt jelenti, hogy változásokon mehetnek keresztül és tovább fogják fejleszteni őket. Fontos tudni, hogy ezek a funkciók folyamatos kéréseket generálhatnak az Ön által hozzáférhetővé tett nyelvi modellekhez (LLM-ek). Ez olyan költségeket eredményezhet, amelyeket szorosan figyelnie kell. Ennek az opciónak az engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az alábbi beállítások csak akkor lépnek hatályba,\n            ha a fő funkció beállítása engedélyezve van. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell konfigurálnia az alábbiak közül. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "Ez a beállítás lehetővé teszi a legújabb AI-funkciók elérését.            \n            Fontos tudni, hogy ezek a funkciók folyamatos kéréseket generálhatnak az Ön által hozzáférhetővé tett nyelvi modellekhez (LLM-ek). Ez olyan költségeket eredményezhet, amelyeket szorosan figyelnie kell. Ennek az opciónak az engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az alábbi beállítások csak akkor lépnek hatályba,\n            ha a fő funkció beállítása engedélyezve van. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell konfigurálnia az alábbiak közül. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
+        },
+        "exploreAgent": {
+          "description": "Kódbázis-felfedező asszisztens, amely kivonja és összefoglalja a kódbázisból származó információkat.         Jelentéseket készít a meglévő elemekről, kódrészleteket nyújt, és leírja a megfigyelt mintákat."
         },
         "github": {
           "configureGitHubServer": {
@@ -1078,9 +1118,6 @@
           "name": "Shell végrehajtás"
         },
         "skillsConfiguration": {
-          "location": {
-            "label": "Hely"
-          },
           "noSkills": "Nincs elérhető készség",
           "noSlashCommands": "Nincs elérhető perjelparancs",
           "slashCommand": {
@@ -1123,7 +1160,6 @@
           }
         },
         "tooltip": {
-          "agent": "Ügynök",
           "lastActivity": "Utolsó tevékenység",
           "lastMessage": "Utolsó üzenet",
           "messages": "Üzenetek",
@@ -1133,8 +1169,7 @@
         },
         "variableConfiguration": {
           "selectVariable": "Kérjük, válasszon egy változót.",
-          "usedByAgents": "Ügynökök által használt",
-          "variableArgs": "Érvek"
+          "usedByAgents": "Ügynökök által használt"
         }
       },
       "llamaFile": {
@@ -1220,7 +1255,6 @@
         }
       },
       "mcpConfiguration": {
-        "arguments": "Érvek",
         "autostart": "Automatikus indítás",
         "connectServer": "Csatlakozás",
         "connectingServer": "Csatlakozás...",
@@ -1259,7 +1293,6 @@
           "serverUrlRequired": "A távoli szerverekhez szerver URL szükséges."
         },
         "headers": "Fejlécek",
-        "noServers": "Nincs konfigurált MCP-kiszolgáló",
         "saveServerError": "Az MCP szerver konfigurációjának mentése sikertelen: {0}",
         "serverAuthToken": "Hitelesítési token",
         "serverAuthTokenHeader": "Auth fejléc neve",
@@ -1352,16 +1385,19 @@
           "in-progress": "SCANOSS – Szkennelés végrehajtása...",
           "match-count": "{0} találat(ok)",
           "matched": "SCANOSS – Talált egyezést a {0} oldalon",
-          "no-match": "SCANOSS – Nincs találat",
-          "summary": "Összefoglalás"
+          "no-match": "SCANOSS – Nincs találat"
         }
       },
       "session-settings-dialog": {
         "advancedSettings": "Speciális beállítások (JSON)",
         "budgetTokens": "Költségvetési tokenek:",
+        "confirmationTimeout": "Megerősítési időtúllépés",
+        "confirmationTimeoutNote": "A megadott idő elteltével automatikusan elutasítja az eszköz megerősítéseit. Felülírja a globális beállítást ebben a munkamenetben.",
+        "enableConfirmationTimeout": "A megerősítés időtúllépésének engedélyezése",
         "enableThinking": "Engedélyezze a kiterjesztett gondolkodást",
         "thinkingMode": "Gondolkodási mód",
         "thinkingModeNote": "Egyes modellek figyelmen kívül hagyhatják ezt a beállítást.",
+        "timeoutSeconds": "Időkorlát (másodperc):",
         "title": "Munkamenet beállításainak megadása",
         "tooltip": "Munkamenet beállításainak megadása"
       },
@@ -1387,7 +1423,6 @@
         "askTerminalCommand": "Kérdezzen egy terminálparancsról...",
         "hitEnterConfirm": "A megerősítéshez nyomja meg az Enter billentyűt.",
         "howCanIHelp": "Miben segíthetek?",
-        "loading": "Betöltés",
         "tryAgain": "Próbáld újra...",
         "useArrowsAlternatives": " vagy használja a ⇅ gombot az alternatívák megjelenítéséhez..."
       },
@@ -1398,14 +1433,12 @@
         "inputTokens": "Bemeneti tokenek",
         "label": "Token használata",
         "lastUsed": "Utoljára használt",
-        "model": "Modell",
         "noData": "Még nem állnak rendelkezésre tokenhasználati adatok.",
         "note": "A tokenek használatát az alkalmazás indításától kezdve nyomon követik, és nem tárolják.",
         "outputTokens": "Kimeneti tokenek",
         "readCachedInputTokens": "A gyorsítótárból olvasott bemeneti tokenek",
         "readCachedInputTokensTooltip": "Az „Input Token” mellett nyomon követett. Általában sokkal olcsóbb, mint a nem gyorsítótárazott. Általában nem számít bele a sebességkorlátozásokba.",
         "total": "Összesen",
-        "totalTokens": "Összes token",
         "totalTokensTooltip": "„Bemeneti tokenek” + „Kimeneti tokenek”"
       },
       "vercelai": {
@@ -1461,6 +1494,10 @@
           "description": "Kizárandó fájlok/mappák mintáinak (glob vagy regex) listája.",
           "title": "Kizárt fájlminták"
         },
+        "fileContentMaxSizeKB": {
+          "description": "A getFileContent eszköz által visszaadott tartalom maximális mérete kilobájtban. Teljes fájl olvasásakor (offset/limit nélkül) az ezt a határt meghaladó fájlok hibaüzenetet adnak vissza. Offset és limit használata esetén csak a kért tartományt ellenőrzik a határértékkel szemben.",
+          "title": "Fájl tartalmának maximális mérete (KB)"
+        },
         "projectInfoAgent": {
           "description": "Mesterséges intelligencia asszisztens projektinformációs sablonok kezeléséhez. Ez az ügynök segít létrehozni, frissíteni és felülvizsgálni a .prompts/project-info.prompttemplate fájlt, amely kontextust nyújt a projektről más mesterséges intelligencia ügynökök számára. Elemezheti a munkaterületet, hogy projektinformációkat javasoljon, vagy a követelmények alapján frissítse a meglévő sablonokat."
         },
@@ -1477,6 +1514,7 @@
       "fileChangeSetTitle": "Javasolt változtatások"
     },
     "ai-chat-ui": {
+      "confirm": "Megerősítés",
       "deleteChat": "Csevegés törlése",
       "initiate-session-task-context": "Feladat kontextusa: Munkamenet indítása",
       "navigate-back": "Vissza",
@@ -1511,6 +1549,13 @@
       "addressGhReviewCommand": {
         "argumentHint": "<pr-szám>",
         "description": "Címfelülvizsgálati megjegyzések egy GitHub pull requestben"
+      },
+      "appTester": {
+        "description": "A megvalósítás után a böngészőalapú felhasználói felület ellenőrzését az AppTester ügynökre ruházza át.",
+        "name": "E2E teszt"
+      },
+      "codeReview": {
+        "description": "Minden implementáció után átadja a kód-ellenőrző ügynöknek. A következő lépéseket blokkolja, amíg az ellenőrzés nem teljesül."
       },
       "fixGhTicketCommand": {
         "argumentHint": "<jegy-szám>",
@@ -1620,7 +1665,8 @@
       "about": {
         "compatibility": "{0} Kompatibilitás",
         "defaultApi": "AlapértelmezettAPI {0}",
-        "listOfExtensions": "Bővítmények listája"
+        "listOfExtensions": "Bővítmények listája",
+        "monacoEditor": "Monaco Editor verzió"
       },
       "common": {
         "closeAll": "Összes lap bezárása",
@@ -1717,7 +1763,6 @@
       "conditionalBreakpointsNotSupported": "A feltételes töréspontok nem támogatottak ebben a hibakeresési típusban.",
       "confirmRunToShiftedPosition_msg": "A célpozíció az Ln {0}, Col {1} értékre változik. Akár így is futtatni szeretné?",
       "confirmRunToShiftedPosition_title": "A jelenlegi szál nem futtatható pontosan a megadott helyre.",
-      "consoleFilter": "Szűrő (pl. szöveg, !kizárás)",
       "consoleFilterAriaLabel": "A hibakereső konzol kimenetének szűrése",
       "consoleFilterTooltip": "Szűrje a konzol kimenetét szöveg szerint. Több kifejezést vesszővel válasszon el. A kifejezés kizárásához tegyen előtte egy `!` előtagot.\n\nPéldák:\n\n- `text` – a „text” szót tartalmazó sorok megjelenítése\n- `text, other` – a „text” vagy „other” szót tartalmazó sorok megjelenítése\n- `!text` – a „text” szót tartalmazó sorok elrejtése\n- `text, !other` – a „text” szó megjelenítése, de az „other” szó elrejtése",
       "consoleSessionSelectorTooltip": "Váltás a hibakeresési munkamenetek között. Minden hibakeresési munkamenetnek megvan a saját konzol kimenete.",
@@ -1758,6 +1803,7 @@
       "unverifiedBreakpoint": "Nem ellenőrzött {0}"
     },
     "editor": {
+      "autoSaveWhenNoErrors": "Ha engedélyezve van, az automatikus mentést azokra a fájlokra korlátozza, amelyekben az automatikus mentés kiváltásakor nincs jelentett hiba. Csak akkor érvényes, ha a „{0}” (Automatikus mentés hibák nélkül) beállítás engedélyezve van.",
       "clearFormatterSetting": "Formázó beállítások törlése",
       "configuredIn": "{0}-ben konfigurálva",
       "configuredNotInstalled": "A „{0}” ({1}) beállítva, de nincs telepítve",
@@ -1768,7 +1814,6 @@
       "editor.bracketPairColorization.enabled": "Ellenőrzi, hogy a zárójelek színezése engedélyezve van-e vagy sem. A `#workbench.colorCustomizations#` használatával felülírhatja a zárójelek kiemelésének színeit.",
       "editor.codeActions.triggerOnFocusChange": "Engedélyezze a `#editor.codeActionsOnSave#` kiváltását, ha a `#files.autoSave#` beállítása `afterDelay`. A Code Actions beállítást `always`-ra kell állítani, hogy az ablak és a fókusz változásai esetén is kiváltsa.",
       "editor.detectIndentation": "Ellenőrzi, hogy a `#editor.tabSize#` és a `#editor.insertSpaces#` automatikusan felismerésre kerül-e egy fájl megnyitásakor a fájl tartalma alapján.",
-      "editor.experimental.preferTreeSitter": "Ellenőrzi, hogy a tree sitter elemzés be legyen-e kapcsolva bizonyos nyelvek esetében. Ez elsőbbséget élvez az `editor.experimental.treeSitterTelemetry` beállítással szemben a megadott nyelvek esetében.",
       "editor.inlayHints.enabled1": "Az inlay tippek alapértelmezés szerint megjelennek, és a Ctrl+Alt billentyűk lenyomva tartásával elrejthetők.",
       "editor.inlayHints.enabled2": "Az inlay tippek alapértelmezés szerint rejtve vannak, és a Ctrl+Alt billentyűk lenyomva tartásával jelennek meg.",
       "editor.inlayHints.fontFamily": "Az editorban az inlay tippek betűtípusát szabályozza. Ha üresre van állítva, akkor a `#editor.fontFamily#` kerül használatra.",
@@ -1808,7 +1853,7 @@
       "cwd": "Válassza ki az új külső terminál aktuális munkakönyvtárát"
     },
     "file-search": {
-      "toggleIgnoredFiles": " (Az ignorált fájlok megjelenítéséhez/elrejtéséhez nyomja meg az {0} gombot)"
+      "toggleExcludedFiles": " (A kizárt fájlok megjelenítéséhez/elrejtéséhez nyomja meg az {0} gombot)"
     },
     "fileDialog": {
       "showHidden": "Rejtett fájlok megjelenítése"
@@ -1848,7 +1893,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "Az AI támogatás elérhető a Theia IDE-ben (béta verzió)!",
+        "header": "Az AI támogatás elérhető a Theia IDE-ben!",
         "openAIChatView": "Nyissa meg most az AI Chat View-t, hogy megtudja, hogyan kezdje el!"
       },
       "apiComparator": "{0} API-kompatibilitás",
@@ -1858,46 +1903,6 @@
         "welcomePage": "Nyissa meg az Üdvözlő oldalt, amelynek tartalma segít az {0} és a kiterjesztések használatának megkezdésében."
       },
       "telemetry": "Adatfelhasználás és telemetria"
-    },
-    "git": {
-      "aFewSecondsAgo": "néhány másodperccel ezelőtt",
-      "addSignedOff": "Aláírás hozzáadása",
-      "added": "Hozzáadva",
-      "amendReuseMessage": "Az utolsó commit üzenet újrafelhasználásához nyomja meg az „Enter” vagy az „Escape” gombot a törléshez.",
-      "amendRewrite": "Írja át az előző commit üzenetet. A megerősítéshez nyomja meg az „Enter” gombot, a lemondáshoz az „Escape” gombot.",
-      "checkoutCreateLocalBranchWithName": "Hozzon létre egy új helyi ágot a következő névvel: {0}. A megerősítéshez nyomja meg az „Enter” gombot, a lemondáshoz pedig az „Escape” gombot.",
-      "checkoutProvideBranchName": "Kérjük, adjon meg egy ágnevet. ",
-      "checkoutSelectRef": "Válasszon ki egy ref-et a kijelentkezéshez, vagy hozzon létre egy új helyi ágat:",
-      "cloneQuickInputLabel": "Kérjük, adja meg a Git-tárhely helyét. A megerősítéshez nyomja meg az „Enter” gombot, a lemondáshoz pedig az „Escape” gombot.",
-      "cloneRepository": "Másolja a Git-tárat: {0}. A megerősítéshez nyomja meg az „Enter” gombot, a lemondáshoz pedig az „Escape” gombot.",
-      "compareWith": "Hasonlítsd össze...",
-      "compareWithBranchOrTag": "Válasszon egy ágat vagy címkét, amelyet összehasonlítani szeretne a jelenleg aktív {0}ággal:",
-      "conflicted": "Ütközés",
-      "copied": "Másolva",
-      "diff": "Diff",
-      "dirtyDiffLinesLimit": "Ne mutassa a piszkos diff díszítéseket, ha a szerkesztő sorainak száma meghaladja ezt a határt.",
-      "dropStashMessage": "A Stash sikeresen eltávolítva.",
-      "editorDecorationsEnabled": "Git-díszítések megjelenítése a szerkesztőben.",
-      "fetchPickRemote": "Válasszon egy távoli eszközt, ahonnan letölteni szeretne:",
-      "gitDecorationsColors": "Használjon színes díszítést a navigátorban.",
-      "mergeEditor": {
-        "currentSideTitle": "Jelenlegi",
-        "incomingSideTitle": "Bejövő"
-      },
-      "mergeQuickPickPlaceholder": "Válasszon egy ágat, amelyet be szeretne egyesíteni a jelenleg aktív „{0}” ágba:",
-      "missingUserInfo": "Győződjön meg arról, hogy beállította a „user.name” és „user.email” beállításokat a gitben.",
-      "noHistoryForError": "{0} esetében nincs elérhető előzmény.",
-      "noPreviousCommit": "Nincs korábbi módosító commit",
-      "noRepositoriesSelected": "Nem lett kiválasztva tároló.",
-      "prepositionIn": "in",
-      "renamed": "Átnevezve",
-      "repositoryNotInitialized": "A {0} tároló még nem inicializálva.",
-      "stashChanges": "Változtatások elmentése. A megerősítéshez nyomja meg az „Enter” gombot, a lemondáshoz pedig az „Escape” gombot.",
-      "stashChangesWithMessage": "Változások elmentése üzenettel: {0}. A megerősítéshez nyomja meg az „Enter” gombot, a lemondáshoz az „Escape” gombot.",
-      "tabTitleIndex": "{0} (Index)",
-      "tabTitleWorkingTree": "{0} (Munkakönyvtár)",
-      "toggleBlameAnnotations": "Blame megjegyzések váltása",
-      "unstaged": "Nem előkészített"
     },
     "keybinding-schema-updater": {
       "deprecation": "Helyette használja a `when` záradékot."
@@ -2073,7 +2078,8 @@
         "loginTitle": "Bejelentkezés",
         "signedOut": "Sikeresen kijelentkezett."
       },
-      "plugins": "Pluginek",
+      "extensionsRestrictedMode": "Egyes kiterjesztések letiltva vannak a korlátozott módban",
+      "supportNodeGlobalNavigator": "Ha engedélyezve van, a kiterjesztés gazdagépén a globális navigátor objektumot a Node.js által biztosítottként határozzák meg. A kiterjesztések a navigátor objektum jelenlétét arra utaló jelként használhatják, hogy a kód böngészőben fut. Ennek letiltása (ez az alapértelmezett beállítás) megszünteti a navigátor definiálását a kiterjesztés gazdagépén, hogy megőrizze ezt a feltételezést.",
       "webviewTrace": "A webnézetekkel történő kommunikáció nyomon követésének vezérlése.",
       "webviewWarnIfUnsecure": "Figyelmezteti a felhasználókat, hogy a webnézetek jelenleg nem biztonságosan vannak telepítve."
     },
@@ -2086,10 +2092,8 @@
       "openByDefault": "Alapértelmezés szerint az előnézetet nyissa meg a szerkesztő helyett."
     },
     "property-view": {
-      "created": "Létrehozva",
       "directory": "Könyvtár",
       "lastModified": "Utolsó módosítás",
-      "location": "Hely",
       "noProperties": "Nincs elérhető tulajdonság.",
       "properties": "Tulajdonságok",
       "symbolicLink": "Szimbolikus link"
@@ -2125,10 +2129,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Utolsó commit módosítása",
       "changeRepository": "Repozitórium módosítása...",
-      "config.untrackedChanges": "Szabályozza a nyomon nem követett változások viselkedését.",
-      "config.untrackedChanges.hidden": "rejtett",
-      "config.untrackedChanges.mixed": "vegyes",
-      "config.untrackedChanges.separate": "külön",
       "dirtyDiff": {
         "close": "Bezárás Változtatás Peek View"
       },
@@ -2136,7 +2136,8 @@
       "mergeEditor": {
         "resetConfirmationTitle": "Tényleg vissza szeretné állítani az egyesítés eredményét ebben a szerkesztőben?"
       },
-      "noRepositoryFound": "Nincs megtalált adattár",
+      "noHistoryForError": "{0} esetében nincs elérhető előzmény.",
+      "prepositionIn": "és",
       "unamend": "Unamend",
       "unamendCommit": "Módosítás nélküli elküldés"
     },
@@ -2144,6 +2145,7 @@
       "includeIgnoredFiles": "Figyelmen kívül hagyott fájlok bevonása",
       "noFolderSpecified": "Nem nyitott meg vagy nem adott meg mappát. Jelenleg csak a megnyitott fájlokat keresi.",
       "resultSubset": "Ez csak az összes eredmény egy része. Használjon pontosabb keresési kifejezést az eredmények szűkítéséhez.",
+      "searchExclude": "Konfigurálja a [glob mintákat](https://aka.ms/vscode-glob-patterns) a teljes szövegű keresések és a gyors megnyitás fájlkeresése során a fájlok és mappák kizárásához. Az összes glob mintát a `#files.exclude#` beállításból örökli.",
       "searchOnEditorModification": "Módosítás esetén keresse meg az aktív szerkesztőt."
     },
     "secondary-window": {
@@ -2188,6 +2190,8 @@
     },
     "terminal": {
       "defaultProfile": "{0}-en használt alapértelmezett profil",
+      "enableCommandHistory": "A shell-beillesztés segítségével külön kövesse nyomon a terminálparancsokat és azok kimenetét. Ez olyan felhasználási eseteket tesz lehetővé, mint a parancsok vizuális megkülönböztetése a felhasználói felületen, valamint az AI-ügynökök számára strukturáltabb hozzáférés biztosítása a terminálokhoz. A beállítás megváltoztatása nem érinti a már megnyitott terminálokat.\n\n&nbsp;\n\nEzt a funkciót jelenleg csak a bash vagy zsh futtató feladat- és felhasználói terminálok támogatják.",
+      "enableCommandSeparator": "Vizuális elválasztó megjelenítése a végrehajtott parancsok és azok kimenete között a terminálban. A változások csak azokra a parancsokra vonatkoznak, amelyeket a beállítás módosítása után hajtanak végre. Csak akkor működik, ha a „{0}” (Vizuális elválasztó a terminálban) beállítás engedélyezve van.",
       "enableCopy": "Engedélyezze a Ctrl-C (macOS esetén Cmd-C) billentyűkombinációt a kijelölt szöveg másolásához.",
       "enablePaste": "Engedélyezze a Ctrl-V (macOS esetén Cmd-V) billentyűkombinációt a vágólapról való beillesztéshez.",
       "profileArgs": "A profil által használt shell argumentumok.",
@@ -2269,6 +2273,7 @@
       "confirmDialogMessage": "A „{0}” kiterjesztés nem ellenőrzött, és biztonsági kockázatot jelenthet.",
       "confirmDialogTitle": "Biztosan folytatni szeretné a telepítést?",
       "downloadCount": "Letöltések száma: {0}",
+      "duplicateVSIX": "{0} telepítése a VSIX-ből nem sikerült. A kiterjesztés már telepítve van. A VSIX-ből származó új verzió telepítése előtt távolítsa el a meglévő kiterjesztést.",
       "errorFetching": "Hiba a kiterjesztések letöltésekor.",
       "errorFetchingConfigurationHint": "Ez hálózati konfigurációs problémák miatt lehet.",
       "failedInstallingVSIX": "{0} telepítése VSIX-ből sikertelen.",
@@ -2277,6 +2282,7 @@
       "onlyShowVerifiedExtensionsDescription": "Ez lehetővé teszi, hogy az {0} csak ellenőrzött kiterjesztéseket jelenítsen meg.",
       "onlyShowVerifiedExtensionsTitle": "Csak ellenőrzött kiterjesztések megjelenítése",
       "recommendedExtensions": "A munkaterületen való használatra ajánlott kiterjesztések neveinek listája.",
+      "restrictedModeInstallWarning": "A „{0}” kiterjesztés letiltható, ha nem támogatja a korlátozott módban való futtatást. Bízzon meg ebben a munkaterületben, hogy a kiterjesztés a várt módon működjön.",
       "searchPlaceholder": "Kiterjesztések keresése az {0} webhelyen",
       "showInstalled": "Telepített kiterjesztések megjelenítése",
       "showRecommendedExtensions": "Ellenőrzi, hogy megjelennek-e az értesítések a bővítmények ajánlásairól.",

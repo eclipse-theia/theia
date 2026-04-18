@@ -152,7 +152,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     id = CLAUDE_CHAT_AGENT_ID;
     name = CLAUDE_CHAT_AGENT_ID;
     description = nls.localize('theia/ai/claude-code/agentDescription', 'Anthropic\'s coding agent');
-    iconClass: string = 'codicon codicon-copilot';
+    iconClass: string = 'codicon codicon-claude';
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
     tags = [nls.localizeByDefault('Chat')];
 
@@ -669,6 +669,12 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 cachedInputTokens,
                 readCachedInputTokens,
                 requestId
+            });
+            request.response.setTokenUsage({
+                inputTokens,
+                outputTokens,
+                cacheCreationInputTokens: cachedInputTokens,
+                cacheReadInputTokens: readCachedInputTokens
             });
         } catch (error) {
             this.logger.error('Failed to report token usage:', error);

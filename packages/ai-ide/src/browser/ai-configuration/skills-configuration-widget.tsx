@@ -22,6 +22,7 @@ import { Skill } from '@theia/ai-core/lib/common/skill';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
 import { PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 import { Agent, AgentService } from '@theia/ai-core';
+import { isChatAgent } from '@theia/ai-chat';
 
 @injectable()
 export class AISkillsConfigurationWidget extends ReactWidget {
@@ -125,7 +126,7 @@ export class AISkillsConfigurationWidget extends ReactWidget {
                                     <th className="skill-name-column">{nls.localizeByDefault('Name')}</th>
                                     <th className="skill-description-column">{nls.localizeByDefault('Description')}</th>
                                     <th className="skill-location-column">
-                                        {nls.localize('theia/ai/ide/skillsConfiguration/location/label', 'Location')}
+                                        {nls.localizeByDefault('Location')}
                                     </th>
                                     <th className="skill-open-column"></th>
                                 </tr>
@@ -215,7 +216,7 @@ export class AISkillsConfigurationWidget extends ReactWidget {
                         <div className="slash-command-agent-chips">
                             {agents.map(agent => (
                                 <span key={agent.id} className="agent-chip" title={agent.description}>
-                                    <span className={codicon('copilot')}></span>
+                                    <span className={(isChatAgent(agent) && agent.iconClass) ? agent.iconClass : codicon('copilot')}></span>
                                     {agent.name}
                                 </span>
                             ))}

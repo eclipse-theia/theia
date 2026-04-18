@@ -21,7 +21,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
+import { createConfirmationHandlers, ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
@@ -54,6 +54,22 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         return -1;
     }
 
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const toolRequest = response.name ? this.toolInvocationRegistry.getFunction(response.name) : undefined;
+        const { handleAllow, handleDeny } = createConfirmationHandlers(
+            response.name, response, this.toolConfirmationManager, chatId, toolRequest
+        );
+
+        return <ToolConfirmation
+            response={response}
+            toolRequest={toolRequest}
+            onAllow={handleAllow}
+            onDeny={handleDeny}
+            contextMenuRenderer={this.contextMenuRenderer}
+        />;
+    }
+
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
         const chatId = parentNode.sessionId;
         const toolRequest = response.name ? this.toolInvocationRegistry.getFunction(response.name) : undefined;
@@ -76,8 +92,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (!result) {
             return undefined;
         }
-        if (typeof result === 'string') {
-            return <pre>{JSON.stringify(result, undefined, 2)}</pre>;
+        // eslint-disable-next-line no-null/no-null
+        if (typeof result !== 'object' || result === null) {
+            return <pre>{String(result)}</pre>;
         }
         if ('content' in result) {
             return <div className='theia-toolCall-response-content'>
@@ -187,6 +204,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
 }) => {
     const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
     const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
+    const pendingRef = React.useRef<HTMLElement | undefined>(undefined);
+    const allowedRef = React.useRef<HTMLElement | undefined>(undefined);
+
+    const argsLabel = getArgumentsLabel(response.name, response.arguments);
 
     const formatReason = (reason: unknown): string => {
         if (!reason) {
@@ -205,23 +226,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
         }
     };
 
-    const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
-        if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, toolRequest);
-        } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, chatId);
-        }
-        response.confirm();
-    }, [response, toolConfirmationManager, chatId, toolRequest]);
-
-    const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once', reason?: string) => {
-        if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.DISABLED);
-        } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.DISABLED, chatId);
-        }
-        response.deny(reason);
-    }, [response, toolConfirmationManager, chatId]);
+    const { handleAllow, handleDeny } = React.useMemo(
+        () => createConfirmationHandlers(response.name, response, toolConfirmationManager, chatId, toolRequest),
+        [response, toolConfirmationManager, chatId, toolRequest]
+    );
 
     const reasonText = formatReason(rejectionReason);
 
@@ -248,20 +256,28 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         onMouseEnter={() => showArgsTooltip(response, summaryRef.current)}
                     >
                         {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                        (<span className='theia-toolCall-args-label'>{getArgumentsLabel(response.name, response.arguments)}</span>)
+                        (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                     </summary>
                     <div className='theia-toolCall-response-result'>
                         {responseRenderer(response)}
                     </div>
                 </details>
             ) : confirmationState === 'pending' ? (
-                <span className='theia-toolCall-pending'>
+                <span className='theia-toolCall-pending'
+                    ref={(el: HTMLElement | null) => { pendingRef.current = el ?? undefined; }}
+                    onMouseEnter={() => showArgsTooltip(response, pendingRef.current)}
+                >
                     <Spinner /> {response.name}
+                    (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                 </span>
             ) : (
                 confirmationState === 'allowed' && !requestCanceled && (
-                    <span className='theia-toolCall-allowed'>
+                    <span className='theia-toolCall-allowed'
+                        ref={(el: HTMLElement | null) => { allowedRef.current = el ?? undefined; }}
+                        onMouseEnter={() => showArgsTooltip(response, allowedRef.current)}
+                    >
                         <Spinner /> {nls.localizeByDefault('Running')} {response.name}
+                        (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                     </span>
                 )
             )}

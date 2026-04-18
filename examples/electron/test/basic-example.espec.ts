@@ -16,27 +16,71 @@
 
 import * as chai from 'chai';
 import * as path from 'path';
+import * as http from 'http';
+import { AddressInfo } from 'net';
 import { app, BrowserWindow } from 'electron';
 
 const expect = chai.expect;
 
-describe.skip('basic-example-spec', () => {
+const electronExampleDir = path.resolve(__dirname, '..', '..', '..');
 
-    const mainWindow: Electron.BrowserWindow = new BrowserWindow({ show: false });
-    mainWindow.on('ready-to-show', () => mainWindow.show());
+describe('basic-example-spec', function (): void {
+    this.timeout(60_000);
 
-    describe('01 #start example app', () => {
-        it('should start the electron example app', async () => {
-            if (!app.isReady()) {
-                await new Promise(resolve => app.on('ready', resolve));
-            }
+    let server: http.Server | undefined;
+    let mainWindow: BrowserWindow | undefined;
 
-            require('../src-gen/backend/main'); // start the express server
+    after(async () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.destroy();
+        }
+        if (server) {
+            await new Promise<void>(resolve => server!.close(() => resolve()));
+        }
+        // Remove all 'exit' listeners to prevent BackendApplication.onStop from
+        // calling terminateProcessTree, which crashes Chromium's GPU process on shutdown.
+        process.removeAllListeners('exit');
+        process.exit(0);
+    });
 
-            mainWindow.webContents.openDevTools();
-            mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
+    it('should start the backend server', async () => {
+        if (!app.isReady()) {
+            await app.whenReady();
+        }
 
-            expect(mainWindow.isVisible()).to.be.true;
+        // Set the backend config before loading the server module, matching what main.js does
+        const { BackendApplicationConfigProvider } = require('@theia/core/lib/node/backend-application-config-provider');
+        BackendApplicationConfigProvider.set({
+            singleInstance: false,
+            configurationFolder: '.theia'
         });
+
+        // eslint-disable-next-line import/no-dynamic-require
+        const serverModule = require(path.join(electronExampleDir, 'src-gen', 'backend', 'server'));
+        server = await serverModule(0, 'localhost');
+        expect(server).to.not.be.undefined;
+
+        const address = server!.address() as AddressInfo;
+        expect(address).to.not.be.null;
+        expect(address.port).to.be.a('number').and.to.be.greaterThan(0);
+    });
+
+    it('should load the frontend in an Electron window', async () => {
+        expect(server).to.not.be.undefined;
+        const address = server!.address() as AddressInfo;
+
+        mainWindow = new BrowserWindow({
+            show: false,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+            }
+        });
+
+        const url = `http://localhost:${address.port}`;
+        await mainWindow.loadURL(url);
+
+        const title = mainWindow.webContents.getTitle();
+        expect(title).to.include('Theia Electron Example');
     });
 });

@@ -1,10 +1,10 @@
 {
   "name": "@theia/scanoss",
-  "version": "1.69.0",
+  "version": "1.70.0",
   "description": "Theia - SCANOSS Integration",
   "dependencies": {
-    "@theia/core": "1.69.0",
-    "scanoss": "^0.15.2"
+    "@theia/core": "1.70.0",
+    "scanoss": "^0.15.7"
   },
   "publishConfig": {
     "access": "public"
@@ -41,7 +41,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.69.0"
+    "@theia/ext-scripts": "1.70.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

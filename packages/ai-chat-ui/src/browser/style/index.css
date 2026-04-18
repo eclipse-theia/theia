@@ -995,6 +995,11 @@ div:last-child>.theia-ChatNode {
   gap: var(--theia-ui-padding);
 }
 
+.theia-tool-confirmation-countdown {
+  font-size: var(--theia-ui-font-size0);
+  opacity: 0.8;
+}
+
 .theia-tool-confirmation-status {
   margin: 10px 0;
   padding: 12px;
@@ -1267,6 +1272,41 @@ div:last-child>.theia-ChatNode {
   cursor: not-allowed;
 }
 
+.session-settings-confirmation-timeout {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  margin-bottom: 8px;
+}
+
+.session-settings-timeout-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 22px;
+}
+
+.session-settings-timeout-container label {
+  white-space: nowrap;
+}
+
+.session-settings-timeout-container label.disabled {
+  color: var(--theia-disabledForeground);
+}
+
+.session-settings-timeout-container input[type="number"] {
+  width: 100px;
+  padding: 4px 8px;
+  border: 1px solid var(--theia-input-border);
+  border-radius: 4px;
+  background-color: var(--theia-input-background);
+  color: var(--theia-input-foreground);
+}
+
+.session-settings-timeout-container input[type="number"]:disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: not-allowed;
+}
+
 .session-settings-advanced {
   flex: 1;
   display: flex;
@@ -1314,21 +1354,23 @@ div:last-child>.theia-ChatNode {
   background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.delegation-summary::before {
+.delegation-toggle-arrow::before {
   content: "\25BC";
-  /* Down arrow */
-  position: absolute;
-  right: var(--theia-ui-padding);
-  top: 50%;
-  transform: translateY(-50%);
   transition: transform 0.2s ease;
-  color: var(--theia-descriptionForeground);
-  font-size: var(--theia-ui-font-size1);
+  display: inline-block;
+  transform: rotate(-90deg);
 }
 
-.delegation-response-details:not([open]) .delegation-summary::before {
-  transform: translateY(-50%) rotate(-90deg);
-  /* Right arrow when closed */
+.delegation-toggle-arrow.open::before {
+  transform: rotate(0deg);
+}
+
+.delegation-toggle-arrow {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .delegation-response-details:not([open]) .delegation-summary {
@@ -1367,8 +1409,6 @@ div:last-child>.theia-ChatNode {
   align-items: center;
   gap: var(--theia-ui-padding);
   font-size: var(--theia-ui-font-size1);
-  /* Leave space for the arrow */
-  margin-right: calc(var(--theia-ui-padding) * 3);
 }
 
 .delegation-status-icon {
@@ -1425,6 +1465,27 @@ div:last-child>.theia-ChatNode {
   display: block;
   margin-bottom: var(--theia-ui-padding);
   color: var(--theia-foreground);
+}
+
+.delegation-interaction-badge {
+  color: var(--theia-editorWarning-foreground);
+  display: flex;
+  align-items: center;
+}
+
+.delegation-pending-confirmations {
+  margin-top: var(--theia-ui-padding);
+  padding-top: var(--theia-ui-padding);
+  border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.delegation-pending-confirmations .theia-tool-confirmation {
+  margin: 0;
+  margin-bottom: var(--theia-ui-padding);
+}
+
+.delegation-pending-confirmations .theia-tool-confirmation:last-child {
+  margin-bottom: 0;
 }
 
 .delegation-response-placeholder {
@@ -1618,6 +1679,18 @@ div:last-child>.theia-ChatNode {
   pointer-events: none;
 }
 
+/* Unsaved changes indicator - small dot on tools icon when panel is collapsed */
+.theia-capabilities-unsaved-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--theia-activityBarBadge-background);
+  pointer-events: none;
+}
+
 /* Generic Capabilities Section */
 .theia-ChatInput-GenericCapabilitiesSection {
   border-top: var(--theia-border-width) solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
@@ -1787,10 +1860,6 @@ div:last-child>.theia-ChatNode {
   font-size: var(--theia-ui-font-size1);
 }
 
-.theia-GenericCapabilities-TreeNodeChildren {
-  /* Children container */
-}
-
 /* Tree item (leaf) */
 .theia-GenericCapabilities-TreeItem {
   display: flex;
@@ -1848,6 +1917,30 @@ div:last-child>.theia-ChatNode {
   gap: var(--theia-ui-padding);
   border-bottom: 1px solid color-mix(in srgb, var(--theia-panel-border) 50%, transparent);
   padding: var(--theia-ui-padding);
+  position: relative;
+}
+
+/* Save button container in capabilities panel - always rendered inline with Generic Capabilities heading */
+.theia-ChatInput-CapabilitiesPanel-SaveButton {
+  position: absolute;
+  top: var(--theia-ui-padding);
+  right: var(--theia-ui-padding);
+  display: flex;
+  align-items: center;
+}
+
+.theia-ChatInput-CapabilitiesPanel-SaveButton .theia-button {
+  height: 100%;
+  box-sizing: border-box;
+  font-size: var(--theia-ui-font-size1);
+  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) * 2 / 3);
+  min-width: 40px;
+  margin: 0;
+}
+
+.theia-ChatInput-CapabilitiesPanel-SaveButton .theia-button:disabled:hover {
+  background-color: var(--theia-button-disabledBackground);
+  cursor: default;
 }
 
 .theia-ChatInput-CapabilitiesPanel-Left {
@@ -1942,4 +2035,50 @@ div:last-child>.theia-ChatNode {
 
 .theia-capabilities-collapsed-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: var(--theia-scrollbarSlider-hoverBackground);
+}
+
+/* Token usage: border tinting on warning/error (repeated with :has for focus specificity) */
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-yellow,
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-yellow:has(.monaco-editor.focused) {
+  border-color: var(--theia-warningBackground);
+}
+
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-red,
+.theia-ChatInput-Editor-Box.token-usage-border-token-usage-red:has(.monaco-editor.focused) {
+  border-color: var(--theia-errorBackground);
+}
+
+/* Token usage badge next to send button */
+.token-usage-badge {
+  cursor: default;
+  display: flex;
+  align-items: center;
+  margin-right: calc(var(--theia-ui-padding) / 2);
+  --token-usage-fill: var(--theia-descriptionForeground);
+  --token-usage-track: color-mix(in srgb, var(--theia-foreground) 12%, transparent);
+}
+
+.token-usage-badge.token-usage-yellow {
+  --token-usage-fill: var(--theia-warningBackground);
+}
+
+.token-usage-badge.token-usage-red {
+  --token-usage-fill: var(--theia-errorBackground);
+}
+
+/* Circular progress ring */
+.token-usage-ring {
+  width: var(--theia-icon-size);
+  height: var(--theia-icon-size);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token-usage-ring-inner {
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  background: var(--theia-editor-background);
 }

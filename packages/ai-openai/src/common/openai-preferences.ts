@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { nls, PreferenceSchema } from '@theia/core';
+import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
 export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
@@ -28,7 +28,7 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/openai/apiKey/mdDescription',
                 'Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text \
-on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.'),
+on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [MODELS_PREF]: {
@@ -36,9 +36,9 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             description: nls.localize('theia/ai/openai/models/description', 'Official OpenAI models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: [
-                'gpt-5.2',
-                'gpt-5.2-pro',
-                'gpt-5-mini',
+                'gpt-5.4',
+                'gpt-5.4-pro',
+                'gpt-5.4-mini',
                 'gpt-4.1',
                 'gpt-4o'
             ],

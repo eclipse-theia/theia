@@ -136,6 +136,8 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             }
             popup.popup({
                 window: electronWindow,
+                x,
+                y,
                 callback: () => {
                     this.openPopups.delete(menuId);
                     event.sender.send(CHANNEL_ON_CLOSE_POPUP, menuId);
@@ -217,8 +219,18 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             }
         });
 
-        ipcMain.on(CHANNEL_SET_ZOOM_LEVEL, (event, zoomLevel: number) => {
-            event.sender.setZoomLevel(zoomLevel);
+        ipcMain.on(CHANNEL_SET_ZOOM_LEVEL, (event, zoomLevel: number, windowName: string | undefined) => {
+            let electronWindow;
+            if (windowName) {
+                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            } else {
+                electronWindow = BrowserWindow.fromWebContents(event.sender);
+            }
+            if (electronWindow) {
+                electronWindow.webContents.setZoomLevel(zoomLevel);
+            } else {
+                console.warn(`There is no known window '${windowName}'. Thus, the zoom level could not be set.`);
+            }
         });
 
         ipcMain.handle(CHANNEL_GET_ZOOM_LEVEL, event => event.sender.getZoomLevel());
@@ -333,13 +345,13 @@ export namespace TheiaRendererAPI {
         const disposables = new DisposableCollection();
 
         return new Promise<boolean>(resolve => {
-            wc.send(CHANNEL_REQUEST_CLOSE, stopReason, confirmChannel, cancelChannel);
             createDisposableListener(ipcMain, confirmChannel, e => {
                 resolve(true);
             }, disposables);
             createDisposableListener(ipcMain, cancelChannel, e => {
                 resolve(false);
             }, disposables);
+            wc.send(CHANNEL_REQUEST_CLOSE, stopReason, confirmChannel, cancelChannel);
         }).finally(() => disposables.dispose());
     }
 
@@ -350,13 +362,13 @@ export namespace TheiaRendererAPI {
         const disposables = new DisposableCollection();
 
         return new Promise<boolean>(resolve => {
-            mainWindow.send(CHANNEL_REQUEST_SECONDARY_CLOSE, secondaryWindow.mainFrame.name, confirmChannel, cancelChannel);
             createDisposableListener(ipcMain, confirmChannel, e => {
                 resolve(true);
             }, disposables);
             createDisposableListener(ipcMain, cancelChannel, e => {
                 resolve(false);
             }, disposables);
+            mainWindow.send(CHANNEL_REQUEST_SECONDARY_CLOSE, secondaryWindow.mainFrame.name, confirmChannel, cancelChannel);
         }).finally(() => disposables.dispose());
     }
 

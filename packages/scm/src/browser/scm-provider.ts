@@ -39,6 +39,8 @@ export interface ScmProvider extends Disposable {
 
     readonly actionButton?: ScmActionButton;
     readonly onDidChangeActionButton?: Event<ScmActionButton | undefined>;
+
+    readonly providerContextValue?: string;
 }
 
 export const ScmResourceGroup = Symbol('ScmResourceGroup');

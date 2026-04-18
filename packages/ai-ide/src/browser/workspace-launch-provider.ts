@@ -45,7 +45,9 @@ export class LaunchListProvider implements ToolProvider {
         return {
             id: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
             name: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
-            description: 'Lists available launch configurations in the workspace. Launch configurations can be filtered by name. Each configuration includes its running status.',
+            description: 'Lists available launch configurations in the workspace. Each result includes the configuration name and whether it is currently running. ' +
+                'Optionally provide a filter substring to narrow results by name. If omitted, all configurations are returned. ' +
+                'Always call this before runLaunchConfiguration to discover exact configuration names.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -54,10 +56,10 @@ export class LaunchListProvider implements ToolProvider {
                         description: 'Filter to apply on launch configuration names (empty string to retrieve all configurations).'
                     }
                 },
-                required: ['filter']
+                required: []
             },
             handler: async (argString: string) => {
-                const filterArgs: { filter: string } = JSON.parse(argString);
+                const filterArgs: { filter?: string } = JSON.parse(argString);
                 const configurations = await this.getAvailableLaunchConfigurations(filterArgs.filter);
                 return JSON.stringify(configurations);
             }
@@ -70,7 +72,6 @@ export class LaunchListProvider implements ToolProvider {
         const runningSessions = new Set(
             this.debugSessionManager.sessions.map(session => session.configuration.name)
         );
-
         for (const options of this.debugConfigurationManager.all) {
             const name = this.getDisplayName(options);
             if (name.toLowerCase().includes(filter.toLowerCase())) {
@@ -107,7 +108,9 @@ export class LaunchRunnerProvider implements ToolProvider {
         return {
             id: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
-            description: 'Executes a specified launch configuration to start debugging.',
+            description: 'Starts a launch configuration and returns immediately — the application continues running in the background. ' +
+                'Use listLaunchConfigurations first to discover available configuration names and check whether one is already running. ' +
+                'The response includes the debug session ID on success. If the configuration name doesn\'t match any available configuration, returns an error.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -189,7 +192,8 @@ export class LaunchStopProvider implements ToolProvider {
         return {
             id: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
-            description: 'Stops an active launch configuration or debug session.',
+            description: 'Stops an active launch configuration or debug session. If a configuration name is provided, stops the session matching that name. ' +
+                'If no name is provided, stops the currently active session. Returns an error if no matching active session is found.',
             parameters: {
                 type: 'object',
                 properties: {

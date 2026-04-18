@@ -47,6 +47,8 @@ import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-co
 import { PluginRemoteCopyContribution } from './plugin-remote-copy-contribution';
 import { RemoteCopyContribution } from '@theia/core/lib/node/remote/remote-copy-contribution';
 import { bindWebviewPreferences } from '../common/webview-preferences';
+import { bindPluginHostEnvironmentPreferences } from '../common/plugin-host-environment-preferences';
+import { PluginHostNavigatorStateInitializer } from './plugin-host-navigator-state-initializer';
 
 export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -104,5 +106,7 @@ export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind
 
     rebind(LocalizationServerImpl).to(PluginLocalizationServer).inSingletonScope();
     bindWebviewPreferences(bind);
-
+    bindPluginHostEnvironmentPreferences(bind);
+    bind(PluginHostNavigatorStateInitializer).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(PluginHostNavigatorStateInitializer);
 }

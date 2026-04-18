@@ -29,6 +29,7 @@ import * as React from '@theia/core/shared/react';
 import { AgentService } from '@theia/ai-core/lib/common/agent-service';
 import { Agent } from '@theia/ai-core/lib/common/agent';
 import { CustomizationSource } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
+import { isChatAgent } from '@theia/ai-chat/';
 
 /**
  * Widget for configuring AI prompt fragments and prompt variant sets.
@@ -464,7 +465,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                                 <span key={agent.id} className="agent-chip"
                                     title={nls.localize('theia/ai/core/promptFragmentsConfiguration/usedByAgentTitle', 'Used by agent: {0}', agent.name)}
                                     onClick={e => e.stopPropagation()}>
-                                    <span className={codicon('copilot')}></span>
+                                    <span className={(isChatAgent(agent) && agent.iconClass) ? agent.iconClass : codicon('copilot')}></span>
                                     {agent.name}
                                 </span>
                             ))}

@@ -24,7 +24,8 @@
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { illegalArgument } from '../common/errors';
 import type * as theia from '@theia/plugin';
-import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
+import { UriComponents } from '../common/uri-components';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -736,7 +737,7 @@ export class ThemeIcon {
 
     static readonly Folder: ThemeIcon = new ThemeIcon('folder');
 
-    private constructor(public id: string, public color?: ThemeColor) {
+    constructor(public id: string, public color?: ThemeColor) {
     }
 
 }
@@ -815,7 +816,7 @@ export class RelativePattern {
     }
     set baseUri(baseUri: URI) {
         this._baseUri = baseUri;
-        this.base = baseUri.fsPath;
+        this._base = baseUri.fsPath;
     }
 
     constructor(base: theia.WorkspaceFolder | URI | string, public pattern: string) {

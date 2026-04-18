@@ -30,7 +30,6 @@ import { ScmTreeWidget } from './scm-tree-widget';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmActionButtonWidget } from './scm-action-button-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
-import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmTreeModelProps } from './scm-tree-model';
 import { ScmGroupsTreeModel } from './scm-groups-tree-model';
 import { ScmQuickOpenService } from './scm-quick-open-service';
@@ -45,6 +44,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { bindScmPreferences } from '../common/scm-preferences';
 import { bindMergeEditor } from './merge-editor/merge-editor-module';
+import { ScmRepositoriesWidget } from './scm-repositories-widget';
 
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
@@ -82,10 +82,10 @@ export default new ContainerModule(bind => {
         createWidget: () => container.get(ScmAmendWidget)
     })).inSingletonScope();
 
-    bind(ScmNoRepositoryWidget).toSelf();
+    bind(ScmRepositoriesWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: ScmNoRepositoryWidget.ID,
-        createWidget: () => container.get(ScmNoRepositoryWidget)
+        id: ScmRepositoriesWidget.ID,
+        createWidget: () => container.get(ScmRepositoriesWidget)
     })).inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
@@ -96,8 +96,17 @@ export default new ContainerModule(bind => {
                 progressLocationId: 'scm'
             });
             viewContainer.setTitleOptions(SCM_VIEW_CONTAINER_TITLE_OPTIONS);
-            const widget = await container.get(WidgetManager).getOrCreateWidget(SCM_WIDGET_FACTORY_ID);
-            viewContainer.addWidget(widget, {
+            const widgetManager = container.get(WidgetManager);
+            const repositoriesWidget = await widgetManager.getOrCreateWidget(ScmRepositoriesWidget.ID);
+            viewContainer.addWidget(repositoriesWidget, {
+                order: 0,
+                canHide: true,
+                initiallyCollapsed: false,
+                initiallyHidden: true
+            });
+            const scmWidget = await widgetManager.getOrCreateWidget(SCM_WIDGET_FACTORY_ID);
+            viewContainer.addWidget(scmWidget, {
+                order: 1,
                 canHide: false,
                 initiallyCollapsed: false
             });

@@ -117,17 +117,20 @@ import { AppTesterCapabilityContribution } from './apptester-capability-contribu
 import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
 import { JuniorAgent } from './junior-agent';
+import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
 
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
 import { ContextReviewerAgent } from './context-reviewer-agent';
-import { DebugCapabilityContribution } from './debug-capability-contribution';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { JuniorPlanCapabilityContribution } from './junior-plan-capability-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
+
+    bind(AgentModeConfirmationServiceImpl).toSelf().inSingletonScope();
+    bind(AgentModeConfirmationService).toService(AgentModeConfirmationServiceImpl);
 
     bind(AIIdeActivationServiceImpl).toSelf().inSingletonScope();
     // rebinds the default implementation of '@theia/ai-core'
@@ -348,7 +351,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
     bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
-    bind(FrontendApplicationContribution).to(DebugCapabilityContribution);
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(JuniorPlanCapabilityContribution);
 });

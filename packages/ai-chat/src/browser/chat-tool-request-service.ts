@@ -18,8 +18,9 @@ import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
+import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
-import { ToolConfirmationMode, ChatToolPreferences } from '../common/chat-tool-preferences';
+import { ToolConfirmationMode, ChatToolPreferences, TOOL_CONFIRMATION_TIMEOUT_PREFERENCE } from '../common/chat-tool-preferences';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 
 /**
@@ -38,12 +39,12 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected readonly preferences: ChatToolPreferences;
 
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {
-        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
-
         return {
             ...toolRequest,
             handler: async (arg_string: string, ctx?: ToolInvocationContext) => {
                 const toolCallId = ctx?.toolCallId;
+                const sessionId = request.session.rootSessionId ?? request.session.id;
+                const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, sessionId, toolRequest);
 
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
@@ -67,17 +68,25 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                         // Check for auto-action hook
                         const autoAction = toolRequest.checkAutoAction?.(arg_string);
 
+                        let confirmed: boolean;
                         if (autoAction?.action === 'allow') {
                             toolCallContent.confirm();
+                            confirmed = await toolCallContent.confirmed;
                         } else if (autoAction?.action === 'deny') {
                             toolCallContent.deny(autoAction.reason);
                             return toolCallContent.result;
                         } else {
                             // No auto-action — needs user confirmation
+                            // Session setting overrides global preference
+                            const sessionTimeout = request.session.settings?.commonSettings?.confirmationTimeout;
+                            const timeoutSeconds = sessionTimeout !== undefined && sessionTimeout > 0
+                                ? sessionTimeout
+                                : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
+                            toolCallContent.confirmationTimeout = timeoutSeconds;
                             toolCallContent.requestUserConfirmation();
+                            request.response.fireInteractionNeeded(toolCallContent);
+                            confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
                         }
-
-                        const confirmed = await toolCallContent.confirmed;
 
                         if (confirmed) {
                             const result = await toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContent.id)));

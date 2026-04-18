@@ -16,7 +16,7 @@
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
-import { InlineActionMenuNode, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import { CountdownTimer, InlineActionMenuNode, useToolConfirmationState } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
@@ -67,6 +67,54 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
             return 20;
         }
         return -1;
+    }
+
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const toolRequest = this.toolInvocationRegistry.getFunction(SHELL_EXECUTION_FUNCTION_ID);
+        const input = parseShellExecutionInput(response.arguments);
+
+        const handleAllow = (patterns?: string[]) => {
+            if (patterns && patterns.length > 0) {
+                try {
+                    this.shellCommandPermissionService.addAllowlistPatterns(...patterns);
+                } catch (err) {
+                    console.warn('Failed to add allowlist patterns:', err);
+                }
+            }
+            response.confirm();
+        };
+        const handleDeny = (options?: { patterns?: string[]; reason?: string }) => {
+            if (options?.patterns && options.patterns.length > 0) {
+                try {
+                    this.shellCommandPermissionService.addDenylistPatterns(...options.patterns);
+                } catch (err) {
+                    console.warn('Failed to add denylist patterns:', err);
+                }
+            }
+            response.deny(options?.reason);
+        };
+        const handleAllowAllForever = () => {
+            this.toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
+            response.confirm();
+        };
+        const handleAllowAllSession = () => {
+            this.toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
+            response.confirm();
+        };
+
+        return (
+            <ConfirmationUI
+                input={input}
+                shellCommandPermissionService={this.shellCommandPermissionService}
+                onAllow={handleAllow}
+                onAllowAllForever={handleAllowAllForever}
+                onAllowAllSession={handleAllowAllSession}
+                onDeny={handleDeny}
+                contextMenuRenderer={this.contextMenuRenderer}
+                response={response}
+            />
+        );
     }
 
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
@@ -195,7 +243,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     // The package may not be present, so guard via commandRegistry.getCommand().
     const hasPermissionsConfiguration = React.useMemo(() =>
         commandRegistry.getCommand('aiConfiguration:open') !== undefined,
-    [commandRegistry]);
+        [commandRegistry]);
 
     const openPermissionsConfiguration = React.useCallback(() => {
         commandRegistry.executeCommand('aiConfiguration:open', 'ai-tools-configuration-widget');
@@ -254,6 +302,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
                 onDeny={handleDeny}
                 contextMenuRenderer={contextMenuRenderer}
                 openPermissionsConfiguration={hasPermissionsConfiguration ? openPermissionsConfiguration : undefined}
+                response={response}
             />
         );
     }
@@ -315,6 +364,7 @@ interface ConfirmationUIProps {
     onDeny: (options?: { patterns?: string[]; reason?: string }) => void;
     contextMenuRenderer: ContextMenuRenderer;
     openPermissionsConfiguration?: () => void;
+    response: ToolCallChatResponseContent;
 }
 
 const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
@@ -325,7 +375,8 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
     onAllowAllSession,
     onDeny,
     contextMenuRenderer,
-    openPermissionsConfiguration
+    openPermissionsConfiguration,
+    response
 }) => (
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool confirmation">
@@ -371,6 +422,7 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                 contextMenuRenderer={contextMenuRenderer}
                 openPermissionsConfiguration={openPermissionsConfiguration}
             />
+            <CountdownTimer response={response} />
         </div>
     </div>
 );

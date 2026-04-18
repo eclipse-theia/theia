@@ -37,4 +37,5 @@ export class JuniorAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [{ id: JUNIOR_SYSTEM_PROMPT_ID, defaultVariant: juniorSystemPrompt, variants: [] }];
     protected override systemPromptId: string = JUNIOR_SYSTEM_PROMPT_ID;
+    override iconClass: string = 'codicon codicon-organization';
 }

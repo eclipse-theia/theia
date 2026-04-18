@@ -22,4 +22,10 @@ export const ChatResponsePartRenderer = Symbol('ChatResponsePartRenderer');
 export interface ChatResponsePartRenderer<T extends ChatResponseContent> {
     canHandle(response: ChatResponseContent): number;
     render(response: T, parentNode: ResponseNode): ReactNode;
+    /**
+     * Optional method to render a compact confirmation/interaction view for this content type.
+     * Used by the delegation summary to show tool-specific confirmation UI in collapsed state.
+     * If not implemented, a generic fallback confirmation UI is used.
+     */
+    renderConfirmation?(response: T, parentNode: ResponseNode): ReactNode;
 }
