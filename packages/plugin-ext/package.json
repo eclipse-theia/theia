@@ -24,7 +24,7 @@
     "@theia/output": "1.70.0",
     "@theia/plugin": "1.70.0",
     "@theia/preferences": "1.70.0",
-    "@theia/process": "1.69.0",
+    "@theia/process": "1.70.0",
     "@theia/scm": "1.70.0",
     "@theia/search-in-workspace": "1.70.0",
     "@theia/task": "1.70.0",
