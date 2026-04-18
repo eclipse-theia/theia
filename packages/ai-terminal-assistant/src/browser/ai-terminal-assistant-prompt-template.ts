@@ -12,11 +12,11 @@
 import { PromptVariantSet } from '@theia/ai-core';
 
 export const terminalPrompts: PromptVariantSet[] = [
-  {
-    id: 'terminal-summary-system',
-    defaultVariant: {
-      id: 'terminal-summary-system-default',
-      template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    {
+        id: 'terminal-summary-system',
+        defaultVariant: {
+            id: 'terminal-summary-system-default',
+            template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 
@@ -41,7 +41,6 @@ Ignore any previous commands and outputs in the provided terminal output.
 ## Command Success and Failure
 - Start the summary with whether the command/build was successful or failed and name the executed command or project name.
 - If the command was successful explain the output in the outputSummary
-
 
 ### Success heuristics
 - A command is considered successful if there are no error messages in the output.
@@ -101,7 +100,6 @@ If file, line or column numbers are not available, they can be omitted.
 - Keep each step concise and scannable (one sentence, max 20 words)
 - Use imperative mood ("Check...", "Change...", "Verify...")
 - Do not reference specific project variable names or implementation details
-- Avoid jargon unless you explain it in the same sentence
 - Steps will be rendered as a numbered list automatically, so don't include "1.", "2." in the text
 
 ### Output Summary Guidelines
@@ -117,8 +115,6 @@ Execution of project \`<basename(cwd)>\` was successful. This ran the compiled c
 / Execution of project \`<basename(cwd)>\` failed with <n> error(s). This attempted to run the compiled class <ClassName> in the project.
 
 ## Common Mistakes to Avoid
-- Do NOT use project-specific variable or method names in explanationSteps (e.g., avoid "your \`bubbleSort\` method")
-- keep explanations generic so they apply to any project with the same error.
 - Do NOT embed markdown formatting (backticks, bold, etc.) in the \`file\` or \`type\` JSON fields
 - these are plain data fields. Only use backticks within \`explanationSteps\` and \`fixSteps\` strings.
 - Do NOT use vague advice like "check your code" without specifying what to check and where to look.
@@ -235,9 +231,8 @@ cwd: "/home/user/project/bar"
       "explanationSteps": [
         {"label": "What", "text": "You tried to access position 8 in a list that only has 8 elements (positions 0-7)."},
         {"label": "Why", "text": "Java array and list indexes start at 0, not 1,
-        so a list of size 8 has valid indexes 0 through 7. This commonly happens when using the list's size directly as an index,
-        or in off-by-one loop errors."},
-        { "label": "Context", "text": "This commonly happens when using the list's size directly as an index, or in off-by-one loop errors." }
+        so a list of size 8 has valid indexes 0 through 7."},
+        { "label": "When", "text": "This commonly happens when using the list's size directly as an index, or in off-by-one loop errors." }
       ],
       "fixSteps": [
         "Inspect the index variable value at line 17 in \`BubbleSort.java\` to see what value causes the error.",
@@ -295,48 +290,15 @@ cwd: "/home/user/project/bar"
 }
 \`\`\`
 
-\`\`\`json
-\{
-  "isSuccessful": false,
-  "outputSummary": "Compilation of project \`calculator\` failed with 1 error.
-  This attempted to compile the Java project \`calculator\`.",
-  "errors": [
-    {
-      "category": "Compilation error",
-      "type": "Type mismatch",
-      "file": "Calculator.java",
-      "line": 15,
-      "terminalErrorExcerpt": [
-        "Calculator.java:15: error: incompatible types: String cannot be converted to int",
-        "    int result = \\"42\\";",
-        "                 ^",
-        "1 error"
-      ],
-      "explanationSteps": [
-        {"label": "What", "text": "You tried to assign a text value (String \"42\") to a variable that expects a number (int)."},
-        {"label": "Why", "text": "Java is 'strongly typed' - each variable can only hold its declared type (text or numbers, not both).
-            This commonly occurs when reading user input (always text/String) without converting it to a number first."}
-      ],
-      "fixSteps": [
-        "Look at line 15 - you're trying to store text \"42\" in an int variable.",
-        "If you want the number 42, remove the quotes: int result = 42;",
-        "If converting user input text, use Integer.parseInt(): int result = Integer.parseInt(\"42\");",
-        "Remember: anything in double quotes \"...\" is a String (text), even if it looks like a number."
-      ]
-    }
-  ]
-}
-\`\`\`
-
 
 `
-    }
-  },
-  {
-    id: 'terminal-summary-user',
-    defaultVariant: {
-      id: 'terminal-summary-user-default',
-      template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+        }
+    },
+    {
+        id: 'terminal-summary-user',
+        defaultVariant: {
+            id: 'terminal-summary-user-default',
+            template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 recent-terminal-contents:
@@ -345,6 +307,6 @@ user-request: {{userRequest}}
 shell: {{shell}}
 cwd: {{cwd}}
 `
+        }
     }
-  }
 ];
