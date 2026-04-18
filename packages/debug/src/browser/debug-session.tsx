@@ -512,18 +512,18 @@ export class DebugSession implements CompositeTreeElement {
 
         if (argsCanBeInterpretedByShell) {
             const builder = new ShellCommandBuilder();
-            
+
             const prefixArgs = args.length > 0 ? [args[0] || ''] : [];
-            const prefix = builder.buildCommand(await terminal.processInfo, { 
-                cwd, 
-                args: prefixArgs, 
-                env 
+            const prefix = builder.buildCommand(await terminal.processInfo, {
+                cwd,
+                args: prefixArgs,
+                env
             });
-            
+
             const rawArgs = args.length > 1 ? ' ' + args.slice(1).join(' ') : '';
-            
+
             await terminal.sendText(prefix + rawArgs + OS.backend.EOL);
-            
+
         } else {
             await terminal.executeCommand({ cwd, args, env });
         }
