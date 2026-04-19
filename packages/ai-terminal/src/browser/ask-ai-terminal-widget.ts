@@ -14,132 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatAgentLocation, ChatRequest, MutableChatModel } from '@theia/ai-chat';
-import { AIChatInputConfiguration, AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
-import { CHAT_VIEW_LANGUAGE_EXTENSION } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
-import { Disposable, DisposableCollection, generateUuid, ILogger, URI } from '@theia/core';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { ChatAgentLocation, ChatRequest } from '@theia/ai-chat';
+import { AskAIInputBaseArgs, AskAIInputBaseConfiguration, AskAIInputWidgetBase } from '@theia/ai-chat-ui/lib/browser/ask-ai-input-widget-base';
+import { Disposable, DisposableCollection } from '@theia/core';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 
 export const AskAITerminalInputConfiguration = Symbol('AskAITerminalInputConfiguration');
-export interface AskAITerminalInputConfiguration extends AIChatInputConfiguration { }
+export interface AskAITerminalInputConfiguration extends AskAIInputBaseConfiguration { }
 
 export const AskAITerminalInputArgs = Symbol('AskAITerminalInputArgs');
-export interface AskAITerminalInputArgs {
-    onSubmit: (request: ChatRequest) => void | Promise<void>;
-    onCancel: () => void;
-}
+export interface AskAITerminalInputArgs extends AskAIInputBaseArgs { }
 
 export const AskAITerminalInputFactory = Symbol('AskAITerminalInputFactory');
 export type AskAITerminalInputFactory = (args: AskAITerminalInputArgs) => AskAITerminalInputWidget;
 
-/**
- * React input widget for Ask AI functionality, extending the AIChatInputWidget.
- */
 @injectable()
-export class AskAITerminalInputWidget extends AIChatInputWidget {
+export class AskAITerminalInputWidget extends AskAIInputWidgetBase {
     public static override ID = 'ask-ai-terminal-input-widget';
 
     @inject(AskAITerminalInputArgs) @optional()
-    protected readonly args: AskAITerminalInputArgs | undefined;
+    protected override readonly args: AskAITerminalInputArgs | undefined;
 
     @inject(AskAITerminalInputConfiguration) @optional()
     protected override readonly configuration: AskAITerminalInputConfiguration | undefined;
 
-    @inject(ILogger)
-    protected readonly logger: ILogger;
-
-    protected readonly resourceId = generateUuid();
-    protected override heightInLines = 3;
-
-    @postConstruct()
-    protected override init(): void {
-        super.init();
-
-        this.id = AskAITerminalInputWidget.ID;
-
-        const noOp = () => { };
-        // We need to set those values here, otherwise the widget will throw an error
-        this.onUnpin = noOp;
-        this.onCancel = noOp;
-        this.onDeleteChangeSet = noOp;
-        this.onDeleteChangeSetElement = noOp;
-
-        // Create a standalone chat model for the widget (no session needed)
-        this.chatModel = new MutableChatModel(ChatAgentLocation.Panel);
-
-        this.setEnabled(true);
-        this.onQuery = this.handleSubmit;
-        this.onCancel = this.handleCancel;
-    }
-
-    protected override getResourceUri(): URI {
-        return new URI(`ask-ai:/input-${this.resourceId}.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
-    }
-
-    protected readonly handleSubmit = async (query: string, mode?: string): Promise<void> => {
-        const userInput = query.trim();
-        if (!userInput) {
-            return;
-        }
-
-        const request: ChatRequest = {
-            text: userInput,
-            variables: this._chatModel.context.getVariables(),
-            modeId: mode
-        };
-
-        try {
-            await this.args?.onSubmit(request);
-        } catch (error) {
-            this.logger.error('Failed to submit Ask AI terminal request.', error);
-        }
-    };
-
-    protected readonly handleCancel = (): void => {
-        this.args?.onCancel();
-    };
-
-    protected override onEscape(): void {
-        this.handleCancel();
-    }
-
-    /**
-     * Override to detect receiving agent without requiring a chat session.
-     * This implementation bypasses the session-based pinned agent logic since
-     * Ask AI dialogs are ephemeral and don't support agent pinning.
-     */
-    protected override async updateReceivingAgent(): Promise<void> {
-        if (!this.editorRef || !this._chatModel) {
-            if (this.receivingAgent !== undefined) {
-                this.chatInputReceivingAgentKey.set('');
-                this.chatInputHasModesKey.set(false);
-                this.receivingAgent = undefined;
-                this.update();
-            }
-            return;
-        }
-
-        try {
-            const inputText = this.editorRef.getControl().getValue();
-            const request = { text: inputText };
-            const resolvedContext = { variables: [] };
-            const parsedRequest = await this.chatRequestParser.parseChatRequest(request, this._chatModel.location, resolvedContext);
-
-            // Get the agent directly without requiring a session
-            // Uses the parent's helper method with session=undefined
-            const agent = this.resolveAgentFromParsedRequest(parsedRequest);
-            this.updateAgentState(agent);
-        } catch (error) {
-            this.logger.warn('Failed to determine Ask AI terminal receiving agent.', error);
-            if (this.receivingAgent !== undefined) {
-                this.chatInputReceivingAgentKey.set('');
-                this.chatInputHasModesKey.set(false);
-                this.receivingAgent = undefined;
-                this.update();
-            }
-        }
-    }
+    protected override readonly chatAgentLocation = ChatAgentLocation.Panel;
+    protected override get widgetId(): string { return AskAITerminalInputWidget.ID; }
 }
 
 export class AskAITerminalOverlay implements Disposable {
