@@ -26,19 +26,19 @@ import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
-import { TerminalBlock } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalBlock, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { AskAITerminalInputFactory, AskAITerminalOverlay } from './ask-ai-terminal-widget';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
-    label: 'Ask AI',
+    label: 'Generate Command via AI',
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/askAi');
 
 const AI_TERMINAL_ASK_AI_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:askAi',
-    label: 'Ask AI about Command',
+    label: 'Ask AI about this Command',
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/askAiTerminal');
 
@@ -107,21 +107,33 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 && (this.shell.currentWidget as TerminalWidgetImpl).kind === 'user'
         }));
         commands.registerCommand(AI_TERMINAL_ASK_AI_COMMAND, this.commandHandlerFactory({
-            execute: (terminalBlock: TerminalBlock) => {
+            execute: async (terminalBlock: TerminalBlock) => {
                 const currentTerminal = this.terminalService.currentTerminal;
                 if (currentTerminal instanceof TerminalWidgetImpl) {
                     if (currentTerminal.node.querySelector('.ai-terminal-ask-overlay')) {
                         return;
                     }
+                    const cwd = (await (currentTerminal as TerminalWidgetImpl).cwd).toString();
+                    const shell = await this.getTerminalShell(currentTerminal);
                     const overlay = new AskAITerminalOverlay(
                         currentTerminal,
                         this.askAITerminalInputFactory,
                         chatRequest => {
-                            const text = `Terminal Output:\nCommand: ${terminalBlock.command}\nOutput: ${terminalBlock.output}\n\n${chatRequest.text}`;
+                            const text = [
+                                '### Terminal Content:',
+                                `Command: ${terminalBlock.command}\n`,
+                                `Output: ${terminalBlock.output}`,
+                                '### Terminal Context:',
+                                `Cwd: ${cwd}\n`,
+                                `ShellType: ${shell}`,
+                                '',
+                                '### User Questions',
+                                chatRequest.text
+                            ].join('\n');
                             const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
                             this.chatService.sendRequest(session.id, { ...chatRequest, text });
                         },
-                        () => {/* No Op */}
+                        () => {/* No Op */ }
                     );
                     overlay.addDisposable(currentTerminal.onDidDispose(() => overlay.dispose()));
                 }
@@ -129,6 +141,16 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
         }));
     }
+
+    protected async getTerminalShell(terminal: TerminalWidget): Promise<string | undefined> {
+        try {
+            const processInfo = await terminal.processInfo;
+            return processInfo ? processInfo.executable : undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
 }
 
 class AiTerminalChatWidget {
