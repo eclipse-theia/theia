@@ -18,21 +18,23 @@ import { Disposable, DisposableCollection } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import { IMarker, Terminal } from 'xterm';
 import { TerminalBlock, TerminalBlockBoundary } from './base/terminal-widget';
+import { inject } from '@theia/core/shared/inversify';
 
-export interface TerminalBlockHoverOverlayControllerOptions {
+export const TerminalBlockHoverOverlayOptions = Symbol('TerminalBlockHoverOverlayOptions');
+export interface TerminalBlockHoverOverlayOptions {
     readonly term: Terminal;
     readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
 }
-
-export const TerminalBlockHoverOverlayControllerFactory = Symbol('TerminalBlockHoverOverlayControllerFactory');
-export type TerminalBlockHoverOverlayControllerFactory =
-    (options: TerminalBlockHoverOverlayControllerOptions) => TerminalBlockHoverOverlayController;
 
 export interface TerminalBlockHoverOverlay {
     element: HTMLElement;
     startMarker: IMarker;
     endMarker: IMarker;
 }
+
+export const TerminalBlockHoverOverlayControllerFactory = Symbol('TerminalBlockHoverOverlayControllerFactory');
+export type TerminalBlockHoverOverlayControllerFactory =
+    (options: TerminalBlockHoverOverlayOptions) => TerminalBlockHoverOverlayController;
 
 /**
  * Owns the terminal block hover overlay DOM, marker tracking, and refresh lifecycle.
@@ -48,7 +50,9 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     protected pendingOverlayUpdate = false;
     protected disposed = false;
 
-    constructor(options: TerminalBlockHoverOverlayControllerOptions) {
+    constructor(
+        @inject(TerminalBlockHoverOverlayOptions) protected readonly options: TerminalBlockHoverOverlayOptions
+    ) {
         this.term = options.term;
         this.renderBlockMenu = options.renderBlockMenu;
     }
