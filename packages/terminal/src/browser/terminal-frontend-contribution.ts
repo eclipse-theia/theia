@@ -214,13 +214,13 @@ export namespace TerminalCommands {
         id: 'terminal:block:scrollToTop',
         category: TERMINAL_CATEGORY,
         label: 'Scroll to Top of Block'
-    });
+    }, 'theia/terminal/scrollBlockTop');
 
     export const TERMINAL_BLOCK_SCROLL_TO_BOTTOM = Command.toLocalizedCommand({
         id: 'terminal:block:scrollToBottom',
         category: TERMINAL_CATEGORY,
         label: 'Scroll to Bottom of Block'
-    });
+    }, 'theia/terminal/scrollBlockBottom');
 }
 
 const ENVIRONMENT_VARIABLE_COLLECTIONS_KEY = 'terminal.integrated.environmentVariableCollections';
@@ -740,7 +740,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_ALL, {
             execute: (block: TerminalBlock) => {
                 if (block) {
-                    navigator.clipboard.writeText(`${block.command}\n${block.output}`);
+                    this.clipboardService.writeText(`${block.command}\n${block.output}`);
                 }
             },
             isVisible: (block: TerminalBlock) => !!block
@@ -748,7 +748,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_COMMAND, {
             execute: (block: TerminalBlock) => {
                 if (block) {
-                    navigator.clipboard.writeText(block.command);
+                    this.clipboardService.writeText(block.command);
                 }
             },
             isVisible: (block: TerminalBlock) => !!block && !!block.command
@@ -756,7 +756,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_OUTPUT, {
             execute: (block: TerminalBlock) => {
                 if (block) {
-                    navigator.clipboard.writeText(block.output);
+                    this.clipboardService.writeText(block.output);
                 }
             },
             isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
