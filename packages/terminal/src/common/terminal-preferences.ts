@@ -384,9 +384,9 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: false,
             tags: ['experimental']
         },
-        'terminal.integrated.enableHoverActions': {
+        'terminal.integrated.enableCommandBlockActions': {
             type: 'boolean',
-            markdownDescription: nls.localize('theia/terminal/enableHoverActions', 'Enable hover actions in the terminal. Hover actions are shown when hovering over an executed command and their output. This enables the user to copy the command and its output. Changes only apply to commands executed after this setting is modified. Only works when {0} is enabled.', '`#terminal.integrated.enableCommandHistory#`'),
+            markdownDescription: nls.localize('theia/terminal/enableCommandBlockActions', 'Enable command block actions in the terminal. An action button is added to each command block. This button enables the user to copy the command and its output. Changes only apply to commands executed after this setting is modified. Only works when {0} is enabled.', '`#terminal.integrated.enableCommandHistory#`'),
             default: false,
             tags: ['experimental']
         },
