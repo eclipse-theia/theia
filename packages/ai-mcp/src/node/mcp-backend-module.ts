@@ -15,13 +15,24 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
+import {
+    bindContributionProvider, ConnectionHandler, PreferenceContribution, RpcConnectionHandler,
+} from '@theia/core';
 import { MCPServerManagerImpl } from './mcp-server-manager-impl';
 import {
     MCPFrontendNotificationService,
     MCPServerManager,
     MCPServerManagerPath
 } from '../common/mcp-server-manager';
+import { MCPTransportProvider } from '../common/mcp-transport-provider';
+import { MCPCredentialResolver } from '../common/mcp-credential-resolver';
+import { MCPToolFilter } from '../common/mcp-tool-filter';
+import { MCPClientFactory } from '../common/mcp-client-factory';
+import { StdioTransportProvider } from './stdio-transport-provider';
+import { HttpTransportProvider } from './http-transport-provider';
+import { PassthroughToolFilter } from './passthrough-tool-filter';
+import { DefaultMCPClientFactory } from './default-mcp-client-factory';
+import { PreferenceCredentialResolver } from './preference-credential-resolver';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { McpServersPreferenceSchema } from '../common/mcp-preferences';
 import { MCPServerManagerServerImpl } from './mcp-server-manager-server';
@@ -46,6 +57,29 @@ const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBacken
             return server;
         }
     )).inSingletonScope();
+
+    // Extension-point contribution providers and their default implementations.
+    // bindContributionProvider (rather than bindRootContributionProvider) is the
+    // correct call here because this is a connection-scoped container; see
+    // https://github.com/eclipse-theia/theia/issues/10877#issuecomment-1107000223
+    bindContributionProvider(bind, MCPTransportProvider);
+    bindContributionProvider(bind, MCPCredentialResolver);
+    bindContributionProvider(bind, MCPToolFilter);
+    bindContributionProvider(bind, MCPClientFactory);
+
+    bind(StdioTransportProvider).toSelf().inSingletonScope();
+    bind(MCPTransportProvider).toService(StdioTransportProvider);
+    bind(HttpTransportProvider).toSelf().inSingletonScope();
+    bind(MCPTransportProvider).toService(HttpTransportProvider);
+
+    bind(PreferenceCredentialResolver).toSelf().inSingletonScope();
+    bind(MCPCredentialResolver).toService(PreferenceCredentialResolver);
+
+    bind(PassthroughToolFilter).toSelf().inSingletonScope();
+    bind(MCPToolFilter).toService(PassthroughToolFilter);
+
+    bind(DefaultMCPClientFactory).toSelf().inSingletonScope();
+    bind(MCPClientFactory).toService(DefaultMCPClientFactory);
 });
 
 export default new ContainerModule(bind => {
