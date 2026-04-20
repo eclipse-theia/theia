@@ -19,6 +19,7 @@ import { MCPServerDescription, MCPServerManager, MCPFrontendNotificationService 
 import { MCPTransportProvider } from '../common/mcp-transport-provider';
 import { MCPToolFilter } from '../common/mcp-tool-filter';
 import { MCPClientFactory } from '../common/mcp-client-factory';
+import { MCPCredentialResolver } from '../common/mcp-credential-resolver';
 import { MCPServer } from './mcp-server';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
@@ -39,6 +40,9 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     @inject(ContributionProvider) @named(MCPClientFactory) @optional()
     protected readonly clientFactoryContributions?: ContributionProvider<MCPClientFactory>;
+
+    @inject(ContributionProvider) @named(MCPCredentialResolver) @optional()
+    protected readonly credentialResolverContributions?: ContributionProvider<MCPCredentialResolver>;
 
     async stopServer(serverName: string): Promise<void> {
         const server = this.servers.get(serverName);
@@ -113,6 +117,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
                 this.transportProviderContributions?.getContributions() ?? [],
                 this.toolFilterContributions?.getContributions() ?? [],
                 this.clientFactoryContributions?.getContributions() ?? [],
+                this.credentialResolverContributions?.getContributions() ?? [],
             );
             newServer.setWorkspaceRoots(this.roots);
             this.servers.set(description.name, newServer);
