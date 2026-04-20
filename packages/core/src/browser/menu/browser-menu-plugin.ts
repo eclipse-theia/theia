@@ -143,7 +143,14 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
     protected previousFocusedElement: HTMLElement | undefined;
 
     constructor() {
-        super();
+        // Disable Lumino's overflow menu feature. The feature has a bug where
+        // `onUpdateRequest` consumes a stale `_overflowIndex` (only recomputed at the
+        // end of the method), which causes a RangeError when the menu bar is rendered
+        // at zero width. Additionally, Theia's CSS does not constrain the menu bar's
+        // offsetWidth to the available space, so the overflow detection never triggers.
+        // See https://github.com/eclipse-theia/theia/issues/17352
+        // See https://github.com/jupyterlab/lumino/issues/811
+        super({ overflowMenuOptions: { isVisible: false } });
         // HACK we need to hook in on private method _openChildMenu. Don't do this at home!
         DynamicMenuBarWidget.prototype['_openChildMenu'] = () => {
             if (this.activeMenu instanceof DynamicMenuWidget) {
@@ -161,22 +168,6 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
             }
             super['_openChildMenu']();
         };
-    }
-
-    /**
-     * Workaround for a Lumino bug: {@link MenuBar.clearMenus clearMenus} does not reset the
-     * private `_overflowMenu` and `_overflowIndex` fields. On the next `onUpdateRequest`, the
-     * stale `_overflowMenu !== null` causes the visible-menu count to go negative, which in
-     * turn triggers `new Array(-1)` → `RangeError: Invalid array length`.
-     *
-     * See https://github.com/eclipse-theia/theia/issues/17352
-     */
-    override clearMenus(): void {
-        super.clearMenus();
-        // eslint-disable-next-line no-null/no-null
-        this['_overflowMenu'] = null;
-        this['_overflowIndex'] = -1;
-        this['_menuItemSizes'] = [];
     }
 
     async activateMenu(label: string, ...labels: string[]): Promise<MenuWidget> {
