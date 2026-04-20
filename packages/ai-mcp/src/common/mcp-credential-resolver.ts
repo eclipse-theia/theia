@@ -38,6 +38,15 @@ export interface MCPCredentialRequest {
 
     /** Hint for how to render / mask the credential. */
     kind?: 'bearer-token' | 'api-key' | 'username-password' | 'oauth';
+
+    /**
+     * The literal value read from the server description for this field,
+     * if any. Resolvers that interpret a sentinel placeholder (e.g.
+     * `${env:GITHUB_TOKEN}` or `${mcp:credential}`) use this to decide
+     * whether to resolve or defer. Plugins that ignore the literal and
+     * resolve purely from external sources can leave this unread.
+     */
+    literal?: string;
 }
 
 export const MCPCredentialResolver = Symbol('MCPCredentialResolver');
