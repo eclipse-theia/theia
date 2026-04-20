@@ -44,6 +44,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { bindScmPreferences } from '../common/scm-preferences';
 import { bindMergeEditor } from './merge-editor/merge-editor-module';
+import { bindMultiDiffEditor } from './multi-diff-editor/multi-diff-editor-module';
 import { ScmRepositoriesWidget } from './scm-repositories-widget';
 
 export default new ContainerModule(bind => {
@@ -135,6 +136,8 @@ export default new ContainerModule(bind => {
     bindScmPreferences(bind);
 
     bindMergeEditor(bind);
+
+    bindMultiDiffEditor(bind);
 });
 
 export function createScmTreeContainer(parent: interfaces.Container): Container {
