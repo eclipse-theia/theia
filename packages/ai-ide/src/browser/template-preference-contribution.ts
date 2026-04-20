@@ -23,15 +23,14 @@ import {
     PROMPT_TEMPLATE_WORKSPACE_FILES_PREF
 } from '../common/workspace-preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { Path } from '@theia/core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { Path, PreferenceService } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 @injectable()
 export class TemplatePreferenceContribution implements FrontendApplicationContribution {
 
-    @inject(AIPreferenceService)
-    protected readonly preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(DefaultPromptFragmentCustomizationService)
     protected readonly customizationService: DefaultPromptFragmentCustomizationService;

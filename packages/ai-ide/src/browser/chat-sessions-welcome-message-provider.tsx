@@ -21,8 +21,7 @@ import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_ST
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { ChatSessionCardActionContribution } from './chat-session-card-action-contribution';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
-import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event } from '@theia/core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
 import { Card, CardActionButton, codicon, HoverService, buttonKeyboardProps, isActivationKey } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
@@ -333,8 +332,8 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    @inject(AIPreferenceService)
-    protected readonly preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;

@@ -19,7 +19,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 FrontendApplicationConfigProvider.set({});
 
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common';
 import { Container } from '@theia/core/shared/inversify';
 import { editor, languages, Uri } from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
 import { expect } from 'chai';
@@ -37,7 +37,7 @@ describe('CodeCompletionVariableContribution', () => {
     before(() => {
         disableJSDOM = enableJSDOM();
         const container = new Container();
-        container.bind(AIPreferenceService).toConstantValue({
+        container.bind(PreferenceService).toConstantValue({
             get: () => 1000,
         });
         container.bind(CodeCompletionVariableContribution).toSelf().inSingletonScope();

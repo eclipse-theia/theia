@@ -27,7 +27,6 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService, WorkspaceMetadataStorageService, WorkspaceMetadataStore } from '@theia/workspace/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PreferenceService } from '@theia/core/lib/common';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { StorageService } from '@theia/core/lib/browser';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { URI, Emitter } from '@theia/core';
@@ -150,7 +149,6 @@ describe('ChatSessionStoreImpl', () => {
 
         container.bind(FileService).toConstantValue(mockFileService as unknown as FileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService as unknown as PreferenceService);
-        container.bind(AIPreferenceService).toConstantValue(mockPreferenceService as unknown as PreferenceService);
         container.bind(EnvVariablesServer).toConstantValue(mockEnvServer as unknown as EnvVariablesServer);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService as unknown as WorkspaceService);
         container.bind(WorkspaceMetadataStorageService).toConstantValue(mockMetadataStorageService as unknown as WorkspaceMetadataStorageService);

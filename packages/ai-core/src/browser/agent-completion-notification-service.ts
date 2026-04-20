@@ -31,7 +31,7 @@ import {
     NOTIFICATION_TYPE_MESSAGE,
     NOTIFICATION_TYPE_BLINK,
 } from '../common/notification-types';
-import { AIPreferenceService } from './ai-preference-service';
+import { PreferenceService } from '@theia/core';
 
 /**
  * Options for showing a completion notification.
@@ -56,8 +56,8 @@ export interface CompletionNotificationOptions {
 
 @injectable()
 export class AgentCompletionNotificationService {
-    @inject(AIPreferenceService)
-    protected readonly preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(AgentService)
     protected readonly agentService: AgentService;

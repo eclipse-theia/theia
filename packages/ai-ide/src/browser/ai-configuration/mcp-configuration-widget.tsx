@@ -28,8 +28,7 @@ import {
     MCPServerStatus,
     RemoteMCPServerDescription
 } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { MessageService, nls, PreferenceScope } from '@theia/core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { MessageService, nls, PreferenceScope, PreferenceService } from '@theia/core';
 import { PROMPT_VARIABLE } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
@@ -280,8 +279,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(AIPreferenceService)
-    protected readonly preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @postConstruct()
     protected init(): void {

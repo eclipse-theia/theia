@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { CancellationToken } from '@theia/core';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
@@ -35,8 +35,8 @@ export class WorkspaceSearchProvider implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceScope: WorkspaceFunctionScope;
 
-    @inject(AIPreferenceService)
-    protected readonly preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(FileService)
     protected readonly fileService: FileService;

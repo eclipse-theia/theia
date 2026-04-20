@@ -20,8 +20,7 @@ import { MCPServerDescription, MCPServerManager } from '../common';
 import { MCP_SERVERS_PREF, MCP_USE_WORKSPACE_AS_ROOT_PREF } from '../common/mcp-preferences';
 import { MCPFrontendService } from '../common/mcp-server-manager';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceUtils } from '@theia/core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { PreferenceService, PreferenceUtils } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     WorkspaceTrustService,
@@ -84,8 +83,8 @@ function filterValidValues(servers: unknown): MCPServersPreference {
 @injectable()
 export class McpFrontendApplicationContribution implements FrontendApplicationContribution, WorkspaceRestrictionContribution {
 
-    @inject(AIPreferenceService)
-    protected preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected preferenceService: PreferenceService;
 
     @inject(MCPServerManager)
     protected manager: MCPServerManager;

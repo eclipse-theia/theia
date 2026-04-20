@@ -16,8 +16,8 @@
 
 import * as monaco from '@theia/monaco-editor-core';
 
-import { AIActivationService, AIPreferenceService } from '@theia/ai-core/lib/browser';
-import { Disposable } from '@theia/core';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
+import { Disposable, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
@@ -36,8 +36,8 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     @inject(AICodeInlineCompletionsProvider)
     private inlineCodeCompletionProvider: AICodeInlineCompletionsProvider;
 
-    @inject(AIPreferenceService)
-    protected readonly preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;

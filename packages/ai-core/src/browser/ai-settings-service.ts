@@ -15,8 +15,8 @@
 // *****************************************************************************
 import { DisposableCollection, Emitter, Event, ILogger, RecursiveReadonly } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { PreferenceService } from '@theia/core/lib/common';
 import { AISettings, AISettingsService, AgentSettings } from '../common';
-import { AIPreferenceService } from './ai-preference-service';
 
 @injectable()
 export class AISettingsServiceImpl implements AISettingsService {
@@ -24,7 +24,7 @@ export class AISettingsServiceImpl implements AISettingsService {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(AIPreferenceService) protected preferenceService: AIPreferenceService;
+    @inject(PreferenceService) protected preferenceService: PreferenceService;
     static readonly PREFERENCE_NAME = 'ai-features.agentSettings';
 
     protected toDispose = new DisposableCollection();

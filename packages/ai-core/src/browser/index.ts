@@ -18,7 +18,6 @@ export * from './agent-completion-notification-service';
 export * from './os-notification-service';
 export * from './window-blink-service';
 export * from './ai-activation-service';
-export * from './ai-preference-service';
 export * from './ai-command-handler-factory';
 export * from './ai-core-frontend-application-contribution';
 export * from './ai-core-frontend-module';

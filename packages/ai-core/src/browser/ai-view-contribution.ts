@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandRegistry, MenuModelRegistry } from '@theia/core';
+import { CommandRegistry, MenuModelRegistry, PreferenceService } from '@theia/core';
 import { AbstractViewContribution, CommonMenus, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIActivationService, ENABLE_AI_CONTEXT_KEY } from './ai-activation-service';
@@ -21,6 +21,9 @@ import { AICommandHandlerFactory } from './ai-command-handler-factory';
 
 @injectable()
 export class AIViewContribution<T extends Widget> extends AbstractViewContribution<T> {
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;

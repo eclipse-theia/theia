@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { AIVariableContext, AIVariableResolutionRequest, AIVariableResolver, ResolvedAIVariable } from '@theia/ai-core';
-import { AIPreferenceService, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
-import { MaybePromise } from '@theia/core';
+import { FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
+import { MaybePromise, PreferenceService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from '../common/ai-code-completion-preference';
 import { CodeCompletionVariableContext } from './code-completion-variable-context';
@@ -24,8 +24,8 @@ import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
 
 @injectable()
 export class CodeCompletionVariableContribution implements FrontendVariableContribution, AIVariableResolver {
-    @inject(AIPreferenceService)
-    protected preferences: AIPreferenceService;
+    @inject(PreferenceService)
+    protected preferences: PreferenceService;
 
     registerVariables(service: FrontendVariableService): void {
         [

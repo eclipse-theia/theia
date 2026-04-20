@@ -29,7 +29,6 @@ export class AIIdeActivationServiceImpl implements AIActivationService, Frontend
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    // Intentionally injects the real `PreferenceService` (not `AIPreferenceService`)
     @inject(PreferenceService)
     protected preferenceService: PreferenceService;
 

@@ -20,8 +20,7 @@ import {
     QuestionResponseContentImpl
 } from '@theia/ai-chat/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { nls, PreferenceScope } from '@theia/core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { nls, PreferenceScope, PreferenceService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PREFERENCE_NAME_AGENT_MODE_ENABLED } from '../common/ai-ide-preferences';
 
@@ -34,7 +33,7 @@ export interface AgentModeConfirmationService {
 @injectable()
 export class AgentModeConfirmationServiceImpl implements AgentModeConfirmationService {
 
-    @inject(AIPreferenceService) protected readonly preferenceService: AIPreferenceService;
+    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     isAcknowledged(): boolean {
         return !!this.preferenceService.get<boolean>(PREFERENCE_NAME_AGENT_MODE_ENABLED, false);

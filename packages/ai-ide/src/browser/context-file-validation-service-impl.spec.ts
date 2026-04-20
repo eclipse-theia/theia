@@ -22,7 +22,6 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { URI, PreferenceService } from '@theia/core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -110,7 +109,7 @@ describe('ContextFileValidationService', () => {
 
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
-        container.bind(AIPreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(ContextFileValidationServiceImpl).toSelf();
         container.bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);

@@ -20,8 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource } from '@theia/core';
-import { AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { CancellationTokenSource, PreferenceService } from '@theia/core';
 import {
     GetWorkspaceDirectoryStructure,
     FileContentFunction,
@@ -113,7 +112,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         // Register mocks in the container
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
-        container.bind(AIPreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
         container.bind(ProblemManager).toConstantValue(mockProblemManager);
         container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
@@ -232,7 +231,7 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
-        container.bind(AIPreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -346,7 +345,7 @@ describe('FileContentFunction handler', () => {
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
-        container.bind(AIPreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -707,7 +706,7 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
 
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
-        container.bind(AIPreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FindFilesByPattern).toSelf();
 

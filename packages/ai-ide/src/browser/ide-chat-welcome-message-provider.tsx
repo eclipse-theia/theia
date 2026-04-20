@@ -21,10 +21,11 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { codicon, CommonCommands, LocalizedMarkdown, MarkdownRenderer } from '@theia/core/lib/browser';
 import { CommandRegistry, DisposableCollection, Emitter, Event, PreferenceScope } from '@theia/core';
 import { AgentService, FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
+import { PreferenceService } from '@theia/core/lib/common';
 import { DEFAULT_CHAT_AGENT_PREF, BYPASS_MODEL_REQUIREMENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { ChatAgentRecommendationService, ChatAgentService } from '@theia/ai-chat/lib/common';
 import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
-import { AIActivationService, AIPreferenceService } from '@theia/ai-core/lib/browser';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
 const TheiaIdeAiLogo = ({ width = 120, height = 120, className = '' }) =>
@@ -69,8 +70,8 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     @inject(FrontendLanguageModelRegistry)
     protected languageModelRegistry: FrontendLanguageModelRegistry;
 
-    @inject(AIPreferenceService)
-    protected preferenceService: AIPreferenceService;
+    @inject(PreferenceService)
+    protected preferenceService: PreferenceService;
 
     @inject(ChatAgentRecommendationService)
     protected recommendationService: ChatAgentRecommendationService;
