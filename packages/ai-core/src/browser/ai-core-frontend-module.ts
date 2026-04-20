@@ -21,6 +21,7 @@ import {
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 import { LanguageModelAliasRegistry } from '../common/language-model-alias';
 import {
     AIVariableContribution,
@@ -192,6 +193,8 @@ export default new ContainerModule(bind => {
 
     bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
     bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
+
+    bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();
 
     bind(TokenUsageService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);

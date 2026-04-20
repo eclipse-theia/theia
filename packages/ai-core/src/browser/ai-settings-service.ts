@@ -17,6 +17,7 @@ import { DisposableCollection, Emitter, Event, ILogger, RecursiveReadonly } from
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/common';
 import { AISettings, AISettingsService, AgentSettings } from '../common';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 
 @injectable()
 export class AISettingsServiceImpl implements AISettingsService {
@@ -25,6 +26,10 @@ export class AISettingsServiceImpl implements AISettingsService {
     protected readonly logger: ILogger;
 
     @inject(PreferenceService) protected preferenceService: PreferenceService;
+
+    @inject(TrustAwarePreferenceReader)
+    protected readonly trustAwareReader: TrustAwarePreferenceReader;
+
     static readonly PREFERENCE_NAME = 'ai-features.agentSettings';
 
     protected toDispose = new DisposableCollection();
@@ -40,6 +45,9 @@ export class AISettingsServiceImpl implements AISettingsService {
                     this.onDidChangeEmitter.fire();
                 }
             })
+        );
+        this.toDispose.push(
+            this.trustAwareReader.onDidChangeTrust(() => this.onDidChangeEmitter.fire())
         );
     }
 
@@ -61,6 +69,7 @@ export class AISettingsServiceImpl implements AISettingsService {
 
     async getSettings(): Promise<RecursiveReadonly<AISettings>> {
         await this.preferenceService.ready;
-        return this.preferenceService.get<AISettings>(AISettingsServiceImpl.PREFERENCE_NAME, {});
+        await this.trustAwareReader.ready;
+        return this.trustAwareReader.get<AISettings>(AISettingsServiceImpl.PREFERENCE_NAME, {}) ?? {};
     }
 }
