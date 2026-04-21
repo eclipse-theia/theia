@@ -17,10 +17,13 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
 
 import 'reflect-metadata';
 
 import { expect } from 'chai';
+import URI from '@theia/core/lib/common/uri';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
 import { CustomizationSource, DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
 
@@ -231,6 +234,17 @@ Template`;
             // Prevent @postConstruct from running (it touches preferences)
             protected override init(): void { }
 
+            /** Configure fake workspace roots so provenanceLabel can resolve them. */
+            setRoots(rootUris: string[]): void {
+                const roots = rootUris.map(r => new URI(r));
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (this as any).workspaceService = {
+                    getWorkspaceRootUri(uri: URI): URI | undefined {
+                        return roots.find(root => uri.toString().startsWith(root.toString()));
+                    }
+                };
+            }
+
             public testAddTemplate(
                 active: Map<string, FragmentEntry>,
                 id: string,
@@ -256,6 +270,12 @@ Template`;
 
         beforeEach(() => {
             service = new TestableCustomizationService();
+            service.setRoots([
+                'file:///rootA',
+                'file:///rootB',
+                'file:///rootC',
+                'file:///home/user/my-project'
+            ]);
             activeMap = new Map();
             allMap = new Map();
         });

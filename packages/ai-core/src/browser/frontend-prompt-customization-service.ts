@@ -336,7 +336,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             if (rootUri) {
                 return rootUri.path.base;
             }
-            return parsed.path.base || uri;
+            return parsed.path.dir.base || parsed.path.base || uri;
         } catch {
             return uri;
         }
