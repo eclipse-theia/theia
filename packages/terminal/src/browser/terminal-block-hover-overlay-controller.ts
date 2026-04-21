@@ -197,6 +197,23 @@ export class TerminalBlockHoverOverlayController implements Disposable {
         this.term.scrollToLine(topLineForBottomAlignment);
     }
 
+    /**
+     * Clears all stored blocks and dispose start and end markers
+     */
+    clearBlocks(): void {
+        this.pendingOverlayUpdate = false;
+        for (const { element, startMarker, endMarker } of this.blockOverlays) {
+            element.remove();
+            if (!startMarker.isDisposed) {
+                startMarker.dispose();
+            }
+            if (!endMarker.isDisposed) {
+                endMarker.dispose();
+            }
+        }
+        this.blockOverlays.length = 0;
+    }
+
     protected doUpdate(): void {
         if (this.disposed || !this.enabled || !this.container || !this.term.element) {
             return;
@@ -237,16 +254,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
             return;
         }
         this.disposed = true;
-        for (const { element, startMarker, endMarker } of this.blockOverlays) {
-            element.remove();
-            if (!startMarker.isDisposed) {
-                startMarker.dispose();
-            }
-            if (!endMarker.isDisposed) {
-                endMarker.dispose();
-            }
-        }
-        this.blockOverlays.length = 0;
+        this.clearBlocks();
         this.container?.remove();
         this.container = undefined;
         this.toDispose.dispose();
