@@ -511,7 +511,7 @@ export class DebugSession implements CompositeTreeElement {
         const { processId } = terminal;
 
         if (argsCanBeInterpretedByShell) {
-            const builder = new ShellCommandBuilder();
+            const builder = this.shellCommandBuilder;
 
             const prefixArgs = args.length > 0 ? [args[0] || ''] : [];
             const prefix = builder.buildCommand(await terminal.processInfo, {
