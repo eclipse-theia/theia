@@ -28,7 +28,7 @@ describe('DefaultMessagingService', () => {
 
     describe('when a frontend connection closes', () => {
 
-        it('disposes the connection-scoped child container, invoking @preDestroy on bound singleton services', () => {
+        it('disposes the connection-scoped child container, invoking @preDestroy on bound singleton services', async () => {
             let canaryDisposed = false;
 
             @injectable()
@@ -75,6 +75,7 @@ describe('DefaultMessagingService', () => {
             expect(canaryDisposed, 'canary should not be disposed before the channel is closed').to.be.false;
 
             mainChannel.onCloseEmitter.fire({ reason: 'frontend connection closed' });
+            await new Promise<void>(resolve => setImmediate(resolve));
 
             expect(canaryDisposed, 'canary @preDestroy was not invoked').to.be.true;
         });
