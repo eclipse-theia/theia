@@ -784,6 +784,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     clearOutput(): void {
         this.term.clear();
+        this.blockHoverOverlayController?.clearBlocks();
+        this.resetCommandOutputMarker();
+        this.resetCommandMarker();
+        this.promptStartMarker = this.term.registerMarker(0);
     }
 
     selectAll(): void {
