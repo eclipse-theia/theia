@@ -156,14 +156,14 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         const filePath = new URLSearchParams(uri.query).get(DEV_CONTAINER_PATH_QUERY);
 
         if (!filePath) {
-            throw new Error('No devcontainer file specified for workspace');
+            throw new Error(nls.localize('theia/dev-container/noDevcontainerFileSpecified', 'No devcontainer file specified for workspace'));
         }
 
         const devcontainerFiles = await this.connectionProvider.getDevContainerFiles(uri.path.toString());
         const devcontainerFile = devcontainerFiles.find(file => file.path === filePath);
 
         if (!devcontainerFile) {
-            throw new Error(`Devcontainer file at ${filePath} not found in workspace`);
+            throw new Error(nls.localize('theia/dev-container/devcontainerFileNotFound', 'Devcontainer file at {0} not found in workspace', filePath));
         }
 
         return this.doOpenInContainer(devcontainerFile, uri.path.toString());
@@ -226,7 +226,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             // doesn't have the container's workspace path).
             const ctx = await this.storageService.getData<DevContainerContext | undefined>(ACTIVE_DEV_CONTAINER_CONTEXT);
             if (ctx) {
-                progress.report({ message: 'Removing old container...' });
+                progress.report({ message: nls.localize('theia/dev-container/removingOldContainer', 'Removing old container...') });
                 try {
                     await this.connectionProvider.removeContainer(ctx.containerId);
                 } catch (error) {
@@ -250,7 +250,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
             const lastContainerInfo = await this.storageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
             if (lastContainerInfo) {
-                progress.report({ message: 'Removing old container...' });
+                progress.report({ message: nls.localize('theia/dev-container/removingOldContainer', 'Removing old container...') });
                 try {
                     await this.connectionProvider.removeContainer(lastContainerInfo.id);
                 } catch (error) {
@@ -262,7 +262,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             this.doOpenInContainer(devcontainerFile);
         } catch (e) {
             progress.cancel();
-            this.messageService.error('Failed to rebuild container: ' + (e as Error).message);
+            this.messageService.error(nls.localize('theia/dev-container/failedToRebuild', 'Failed to rebuild container: {0}', (e as Error).message));
         }
     }
 

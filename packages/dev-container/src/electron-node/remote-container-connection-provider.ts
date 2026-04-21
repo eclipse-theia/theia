@@ -102,7 +102,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         const dockerConnection = new Docker(dockerOptions);
         const version = await dockerConnection.version()
             .catch(e => {
-                this.logger.error('Docker Error:', e);
+                console.error('Docker Error:', e);
                 this.messageService.error('Docker Error: ' + e.message);
             });
 
@@ -151,7 +151,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             };
         } catch (e) {
             this.messageService.error(e.message);
-            this.logger.error(e);
+            console.error(e);
             throw e;
         } finally {
             progress.cancel();
@@ -193,7 +193,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
                 status: container.Status
             }));
         } catch (e) {
-            this.logger.error('Failed to list running containers:', e);
+            console.error('Failed to list running containers:', e);
             return [];
         }
     }
@@ -216,7 +216,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
                 type: 'Dev Container',
                 docker,
                 container,
-                config: {} as DevContainerConfiguration,
+                config: DevContainerConfiguration.empty(),
                 logger: this.logger
             });
 
@@ -246,7 +246,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             };
         } catch (e) {
             this.messageService.error(e.message);
-            this.logger.error(e);
+            console.error(e);
             throw e;
         } finally {
             progress.cancel();
@@ -274,7 +274,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             }
             await container.remove();
         } catch (e) {
-            this.logger.error('Failed to remove container:', e);
+            console.error('Failed to remove container:', e);
             throw e;
         }
     }
@@ -445,7 +445,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
                 remoteHost = `-H ${dockerHostURL.href} `;
             }
         } catch (e) {
-            this.logger.error(e);
+            console.error(e);
         }
 
         return remoteHost;
@@ -483,16 +483,20 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     protected async shutdownContainer(sync: boolean): Promise<unknown> {
         const remoteHost = this.getDockerHost();
 
-        const shutdownAction = this.config.shutdownAction ?? this.config.dockerComposeFile ? 'stopCompose' : 'stopContainer';
+        const shutdownAction = this.config.shutdownAction ?? (this.config.dockerComposeFile ? 'stopCompose' : 'stopContainer');
 
         if (shutdownAction === 'stopContainer') {
             return sync ? execSync(`docker ${remoteHost}stop ${this.container.id}`) : this.container.stop();
         } else if (shutdownAction === 'stopCompose') {
+            if (!this.config.dockerComposeFile) {
+                console.warn('shutdownAction is stopCompose but dockerComposeFile is not defined, falling back to stopContainer');
+                return sync ? execSync(`docker ${remoteHost}stop ${this.container.id}`) : this.container.stop();
+            }
             const composeFilePath = resolveComposeFilePath(this.config);
             return sync ? execSync(`docker ${remoteHost}compose -f ${composeFilePath} stop`) :
                 new Promise<void>((res, rej) => exec(`docker ${remoteHost}compose -f ${composeFilePath} stop`, err => {
                     if (err) {
-                        this.logger.error(err);
+                        console.error(err);
                         rej(err);
                     } else {
                         res();

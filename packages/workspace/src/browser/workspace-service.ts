@@ -133,7 +133,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                             // reach the timeout the connection attempt is hanging.
                             await Promise.race([
                                 handler.openWorkspace(wsUri),
-                                new Promise<void>((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
+                                new Promise<void>((_, reject) => setTimeout(() => reject(new Error('timeout')), 120000))
                             ]);
                             handled = true;
                         } catch {
@@ -597,7 +597,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this._workspace = undefined;
             this._roots.length = 0;
 
-            await this.server.setMostRecentlyUsedWorkspace('');
+            if (!this.isRemoteSession()) {
+                await this.server.setMostRecentlyUsedWorkspace('');
+            }
             this.reloadWindow('');
         }
     }
@@ -720,7 +722,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         let stat = await this.toFileStat(resource);
         Object.assign(workspaceData, await this.getWorkspaceDataFromFile());
         stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData));
-        await this.server.setMostRecentlyUsedWorkspace(resource.toString());
+        if (!this.isRemoteSession()) {
+            await this.server.setMostRecentlyUsedWorkspace(resource.toString());
+        }
         // If saving a workspace based on an untitled workspace, delete the old file.
         const toDelete = this.isUntitledWorkspace(this.workspace?.resource) && this.workspace!.resource;
         await this.setWorkspace(stat);

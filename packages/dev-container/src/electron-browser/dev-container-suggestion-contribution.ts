@@ -16,11 +16,13 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandService, MessageService, nls } from '@theia/core';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LocalStorageService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemoteContainerCommands } from './container-connection-contribution';
 import { RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
+
+const DONT_SHOW_AGAIN_KEY = 'dev-container.suggestion.dontShowAgain';
 
 @injectable()
 export class DevContainerSuggestionContribution implements FrontendApplicationContribution {
@@ -40,6 +42,9 @@ export class DevContainerSuggestionContribution implements FrontendApplicationCo
     @inject(RemoteStatusService)
     protected readonly remoteStatusService: RemoteStatusService;
 
+    @inject(LocalStorageService)
+    protected readonly storageService: LocalStorageService;
+
     onStart(): void {
         this.checkForDevContainer();
     }
@@ -53,6 +58,11 @@ export class DevContainerSuggestionContribution implements FrontendApplicationCo
             }
         }
 
+        const dontShowAgain = await this.storageService.getData<boolean>(DONT_SHOW_AGAIN_KEY);
+        if (dontShowAgain) {
+            return;
+        }
+
         await this.workspaceService.ready;
         const workspace = this.workspaceService.workspace;
         if (!workspace) {
@@ -63,15 +73,17 @@ export class DevContainerSuggestionContribution implements FrontendApplicationCo
             const devcontainerFiles = await this.connectionProvider.getDevContainerFiles(workspace.resource.path.toString());
             if (devcontainerFiles.length > 0) {
                 const reopenAction = nls.localize('theia/remote/dev-container/reopenInContainer', 'Reopen in Container');
-                const dontShowAgain = nls.localizeByDefault("Don't Show Again");
+                const dontShowAgainAction = nls.localizeByDefault("Don't Show Again");
                 const result = await this.messageService.info(
                     nls.localize('theia/remote/dev-container/suggestion',
                         'This workspace has a dev container configuration. Would you like to reopen it in a container?'),
                     reopenAction,
-                    dontShowAgain
+                    dontShowAgainAction
                 );
                 if (result === reopenAction) {
                     this.commandService.executeCommand(RemoteContainerCommands.REOPEN_IN_CONTAINER.id);
+                } else if (result === dontShowAgainAction) {
+                    await this.storageService.setData(DONT_SHOW_AGAIN_KEY, true);
                 }
             }
         } catch (error) {

@@ -459,7 +459,7 @@ export class HostConfigSharingContribution implements ContainerCreationContribut
 
 @injectable()
 export class DefaultShellContribution implements ContainerCreationContribution {
-    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration): Promise<void> {
+    async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration, api: Docker): Promise<void> {
         // Set shell and terminal env vars at container creation time so they are
         // inherited by ALL processes (including docker exec calls).
         // The remote Theia server is launched via `sh -c` (non-login shell), so
@@ -472,13 +472,40 @@ export class DefaultShellContribution implements ContainerCreationContribution {
                 createOptions.Env!.push(`${key}=${value}`);
             }
         };
-        setIfMissing('THEIA_SHELL', '/bin/bash');
-        // Start bash as login shell so /etc/profile.d/ and ~/.bashrc are sourced,
+        // Prefer bash; fall back to /bin/sh for minimal images (e.g. Alpine) that don't ship bash.
+        const shell = createOptions.Image && (await this.isBashAvailable(api, createOptions.Image)) === false
+            ? '/bin/sh'
+            : '/bin/bash';
+        setIfMissing('THEIA_SHELL', shell);
+        // Start as login shell so /etc/profile.d/ and ~/.bashrc are sourced,
         // giving the user a proper prompt and SSH agent env vars.
         setIfMissing('THEIA_SHELL_ARGS', '-l');
-        setIfMissing('SHELL', '/bin/bash');
+        setIfMissing('SHELL', shell);
         setIfMissing('TERM', 'xterm-256color');
         setIfMissing('COLORTERM', 'truecolor');
+    }
+
+    protected async isBashAvailable(api: Docker, image: string): Promise<boolean | undefined> {
+        let probe: Docker.Container | undefined;
+        try {
+            probe = await api.createContainer({
+                Image: image,
+                Cmd: ['sh', '-c', 'command -v bash']
+            });
+            await probe.start();
+            const { StatusCode } = await probe.wait();
+            return StatusCode === 0;
+        } catch {
+            return undefined;
+        } finally {
+            if (probe) {
+                try {
+                    await probe.remove();
+                } catch {
+                    // ignore — container may already be gone
+                }
+            }
+        }
     }
 }
 
