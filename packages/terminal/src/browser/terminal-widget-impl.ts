@@ -221,7 +221,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     private _currentTerminalOutput: string[];
     protected enableCommandSeparator: boolean;
-    protected enableHoverActions: boolean;
+    protected enableCommandBlockActions: boolean;
     private _commandHistoryState?: TerminalCommandHistoryState;
     override get commandHistoryState(): TerminalCommandHistoryState | undefined {
         return this._commandHistoryState;
@@ -288,9 +288,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
-            if (['terminal.integrated.enableCommandHistory',
-                'terminal.integrated.enableCommandSeparator',
-                'terminal.integrated.enableHoverActions'].includes(change.preferenceName)) {
+            if (change.preferenceName === 'terminal.integrated.enableCommandBlockActions') {
+                this.updateBlockHoverOverlayController();
+            } else if (['terminal.integrated.enableCommandHistory',
+                'terminal.integrated.enableCommandSeparator'].includes(change.preferenceName)) {
                 this.updateCommandHistoryHandlers();
             }
             this.needsResize = true;
@@ -298,6 +299,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.updateCommandHistoryConfig();
         this.updateCommandHistoryHandlers();
+        this.updateBlockHoverOverlayController();
 
         this.toDispose.push(this.themeService.onDidChange(() => {
             this.term.options.theme = this.themeService.theme;
@@ -348,6 +350,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.toDisposeOnConnect);
         this.toDispose.push(this.commandSeparatorDecorations);
         this.toDispose.push(this.toDisposeOnCommandHistory);
+        this.toDispose.push(Disposable.create(() => {
+            this.outputStartMarker?.dispose();
+            this.promptStartMarker?.dispose();
+        }));
         this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
             const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
                 disposable.dispose();
@@ -453,8 +459,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.enableCommandSeparator = enabled
             ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
             : false;
-        this.enableHoverActions = enabled
-            ? this.preferences.get('terminal.integrated.enableHoverActions', false)
+        this.enableCommandBlockActions = enabled
+            ? this.preferences.get('terminal.integrated.enableCommandBlockActions', false)
             : false;
         if (enabled && !this._commandHistoryState) {
             this._commandHistoryState = this.commandHistoryStateFactory();
@@ -482,6 +488,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnCommandHistory.dispose();
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
+        this.updateBlockHoverOverlayController();
         if (!this._commandHistoryState) {
             return;
         }
@@ -509,15 +516,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 return true;
             })
         );
-        if (this.enableHoverActions) {
-            this.initializeBlockHoverOverlayController();
-            this.toDisposeOnCommandHistory.pushAll([
-                Disposable.create(() => {
-                    this.blockHoverOverlayController?.dispose();
-                    this.blockHoverOverlayController = undefined;
-                })
-            ]);
-        }
     }
 
     protected resetCommandOutputMarker(): void {
@@ -558,7 +556,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             output,
         };
 
-        if (this.enableHoverActions) {
+        if (this.enableCommandBlockActions) {
             this.blockHoverOverlayController?.addBlock(
                 block,
                 this.promptStartMarker,
@@ -639,6 +637,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.blockHoverOverlayController?.dispose();
             this.blockHoverOverlayController = undefined;
         }));
+    }
+
+    protected updateBlockHoverOverlayController(): void {
+        if (this.enableCommandBlockActions) {
+            this.initializeBlockHoverOverlayController();
+        }
+        this.blockHoverOverlayController?.setEnabled(this.enableCommandBlockActions);
     }
 
     scrollToBlockBoundary(terminalBlock: TerminalBlock, boundary: TerminalBlockBoundary = TerminalBlockBoundary.Top): void {
@@ -1055,9 +1060,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         this.term.open(this.node);
-        if (this.enableHoverActions) {
-            this.initializeBlockHoverOverlayController();
-        }
+        this.updateBlockHoverOverlayController();
 
         interface ViewportType {
             register(d: Disposable): void;
