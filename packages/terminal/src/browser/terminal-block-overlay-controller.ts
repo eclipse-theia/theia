@@ -101,7 +101,7 @@ export class TerminalBlockOverlayController implements Disposable {
     }
 
     /**
-     * Registers a completed terminal block so its overaly can be rendered and tracked.
+     * Registers a completed terminal block so its overlay can be rendered and tracked.
      */
     addBlock(block: TerminalBlock, commandStartMarker: IMarker | undefined, endMarker: IMarker | undefined): void {
         if (this.disposed || !this.enabled) {
