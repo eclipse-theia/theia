@@ -48,6 +48,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     protected readonly markerMap = new WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>>();
     protected readonly toDispose = new DisposableCollection();
     protected pendingOverlayUpdate = false;
+    protected enabled = true;
     protected disposed = false;
 
     constructor(
@@ -80,10 +81,30 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     }
 
     /**
+     * Sets the enablement of the hover controller. Hides all blocks when set to disabled.
+     */
+    setEnabled(enabled: boolean): void {
+        if (this.disposed || this.enabled === enabled) {
+            return;
+        }
+        this.enabled = enabled;
+        if (this.container) {
+            this.container.style.display = enabled ? '' : 'none';
+        }
+        if (!enabled) {
+            for (const { element } of this.blockOverlays) {
+                element.style.display = 'none';
+            }
+            return;
+        }
+        this.update();
+    }
+
+    /**
      * Registers a completed terminal block so its hover affordance can be rendered and tracked.
      */
     addBlock(block: TerminalBlock, commandStartMarker: IMarker | undefined, endMarker: IMarker | undefined): void {
-        if (this.disposed) {
+        if (this.disposed || !this.enabled) {
             return;
         }
         this.initialize();
@@ -138,15 +159,15 @@ export class TerminalBlockHoverOverlayController implements Disposable {
      * Schedules an overlay reposition pass for the next animation frame.
      */
     update(): void {
-        if (this.disposed || this.pendingOverlayUpdate) {
+        if (this.disposed || !this.enabled || this.pendingOverlayUpdate) {
             return;
         }
         this.pendingOverlayUpdate = true;
         requestAnimationFrame(() => {
-            if (this.disposed) {
+            this.pendingOverlayUpdate = false;
+            if (this.disposed || !this.enabled) {
                 return;
             }
-            this.pendingOverlayUpdate = false;
             this.doUpdate();
         });
     }
@@ -177,7 +198,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     }
 
     protected doUpdate(): void {
-        if (this.disposed || !this.container || !this.term.element) {
+        if (this.disposed || !this.enabled || !this.container || !this.term.element) {
             return;
         }
         const screen = this.term.element.querySelector('.xterm-screen') as HTMLElement | null;
