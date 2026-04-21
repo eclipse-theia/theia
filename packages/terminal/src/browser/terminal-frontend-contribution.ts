@@ -735,16 +735,18 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
         commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_TOP, {
             execute: (block: TerminalBlock) => {
-                if (block) {
-                    (this.shell.activeWidget as TerminalWidget).scrollToBlockBoundary(block, TerminalBlockBoundary.Top);
+                const terminal = this.shell.activeWidget;
+                if (terminal instanceof TerminalWidget && block) {
+                    terminal.scrollToBlockBoundary(block, TerminalBlockBoundary.Top);
                 }
             },
             isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
         });
         commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_BOTTOM, {
             execute: (block: TerminalBlock) => {
-                if (block) {
-                    (this.shell.activeWidget as TerminalWidget).scrollToBlockBoundary(block, TerminalBlockBoundary.Bottom);
+                const terminal = this.shell.activeWidget;
+                if (terminal instanceof TerminalWidget && block) {
+                    terminal.scrollToBlockBoundary(block, TerminalBlockBoundary.Bottom);
                 }
             },
             isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
