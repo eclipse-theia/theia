@@ -576,7 +576,7 @@ export interface TerminalConfiguration {
     'terminal.integrated.enablePersistentSessions': boolean
     'terminal.integrated.enableCommandHistory': boolean
     'terminal.integrated.enableCommandSeparator': boolean
-    'terminal.integrated.enableHoverActions': boolean
+    'terminal.integrated.enableCommandBlockActions': boolean
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
