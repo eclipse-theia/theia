@@ -465,6 +465,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
         this.updateBlockHoverOverlayController();
+
+        if (this._commandHistoryState && !this._commandHistoryState.currentCommand) {
+            this.promptStartMarker = this.term.registerMarker(0);
+        }
         if (!this._commandHistoryState) {
             return;
         }
