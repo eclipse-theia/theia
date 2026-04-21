@@ -66,13 +66,13 @@
   z-index: 5;
 }
 
-.terminal-command-hover {
+.terminal-command-overlay {
   position: absolute;
   left: 0;
   width: 100%;
   pointer-events: none;
 }
 
-.terminal-command-hover.active {
+.terminal-command-overlay.active {
   background: color-mix(in srgb, var(--theia-editorHoverWidget-background), transparent 70%);
 }

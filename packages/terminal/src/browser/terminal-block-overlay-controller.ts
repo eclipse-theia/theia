@@ -20,31 +20,31 @@ import { IMarker, Terminal } from 'xterm';
 import { TerminalBlock, TerminalBlockBoundary } from './base/terminal-widget';
 import { inject } from '@theia/core/shared/inversify';
 
-export const TerminalBlockHoverOverlayOptions = Symbol('TerminalBlockHoverOverlayOptions');
-export interface TerminalBlockHoverOverlayOptions {
+export const TerminalBlockOverlayOptions = Symbol('TerminalBlockOverlayOptions');
+export interface TerminalBlockOverlayOptions {
     readonly term: Terminal;
     readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
 }
 
-export interface TerminalBlockHoverOverlay {
+export interface TerminalBlockOverlay {
     element: HTMLElement;
     startMarker: IMarker;
     endMarker: IMarker;
 }
 
-export const TerminalBlockHoverOverlayControllerFactory = Symbol('TerminalBlockHoverOverlayControllerFactory');
-export type TerminalBlockHoverOverlayControllerFactory =
-    (options: TerminalBlockHoverOverlayOptions) => TerminalBlockHoverOverlayController;
+export const TerminalBlockOverlayControllerFactory = Symbol('TerminalBlockOverlayControllerFactory');
+export type TerminalBlockOverlayControllerFactory =
+    (options: TerminalBlockOverlayOptions) => TerminalBlockOverlayController;
 
 /**
- * Owns the terminal block hover overlay DOM, marker tracking, and refresh lifecycle.
+ * Owns the terminal block overlay DOM, marker tracking, and refresh lifecycle.
  */
-export class TerminalBlockHoverOverlayController implements Disposable {
+export class TerminalBlockOverlayController implements Disposable {
     protected readonly term: Terminal;
     protected readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
 
     protected container: HTMLElement | undefined;
-    protected readonly blockOverlays: TerminalBlockHoverOverlay[] = [];
+    protected readonly blockOverlays: TerminalBlockOverlay[] = [];
     protected readonly markerMap = new WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>>();
     protected readonly toDispose = new DisposableCollection();
     protected pendingOverlayUpdate = false;
@@ -52,7 +52,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     protected disposed = false;
 
     constructor(
-        @inject(TerminalBlockHoverOverlayOptions) protected readonly options: TerminalBlockHoverOverlayOptions
+        @inject(TerminalBlockOverlayOptions) protected readonly options: TerminalBlockOverlayOptions
     ) {
         this.term = options.term;
         this.renderBlockMenu = options.renderBlockMenu;
@@ -81,7 +81,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     }
 
     /**
-     * Sets the enablement of the hover controller. Hides all blocks when set to disabled.
+     * Sets the enablement of the overlay controller. Hides all blocks when set to disabled.
      */
     setEnabled(enabled: boolean): void {
         if (this.disposed || this.enabled === enabled) {
@@ -101,7 +101,7 @@ export class TerminalBlockHoverOverlayController implements Disposable {
     }
 
     /**
-     * Registers a completed terminal block so its hover affordance can be rendered and tracked.
+     * Registers a completed terminal block so its overaly can be rendered and tracked.
      */
     addBlock(block: TerminalBlock, commandStartMarker: IMarker | undefined, endMarker: IMarker | undefined): void {
         if (this.disposed || !this.enabled) {
@@ -129,24 +129,24 @@ export class TerminalBlockHoverOverlayController implements Disposable {
             }
         );
 
-        const hoverOverlay = document.createElement('div');
-        hoverOverlay.classList.add('terminal-command-hover');
-        hoverOverlay.style.display = 'none';
-        hoverOverlay.appendChild(this.createButton(block, hoverOverlay));
-        this.container.appendChild(hoverOverlay);
+        const overlay = document.createElement('div');
+        overlay.classList.add('terminal-command-overlay');
+        overlay.style.display = 'none';
+        overlay.appendChild(this.createButton(block, overlay));
+        this.container.appendChild(overlay);
 
-        this.blockOverlays.push({ element: hoverOverlay, startMarker: trackStart, endMarker: trackEnd });
+        this.blockOverlays.push({ element: overlay, startMarker: trackStart, endMarker: trackEnd });
         this.update();
     }
 
-    protected createButton(block: TerminalBlock, hoverOverlay: HTMLElement): HTMLElement {
+    protected createButton(block: TerminalBlock, overlay: HTMLElement): HTMLElement {
         const button = document.createElement('button');
         button.classList.add('terminal-block-actions-button', 'codicon', 'codicon-ellipsis');
         const blockActionsLabel = nls.localize('theia/terminal/blockActions', 'Terminal Block Actions');
         button.title = blockActionsLabel;
         button.setAttribute('aria-label', blockActionsLabel);
-        button.addEventListener('mouseenter', () => hoverOverlay.classList.add('active'));
-        button.addEventListener('mouseleave', () => hoverOverlay.classList.remove('active'));
+        button.addEventListener('mouseenter', () => overlay.classList.add('active'));
+        button.addEventListener('mouseleave', () => overlay.classList.remove('active'));
         button.addEventListener('click', event => {
             event.stopPropagation();
             event.preventDefault();
