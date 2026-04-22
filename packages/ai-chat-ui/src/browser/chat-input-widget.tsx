@@ -26,7 +26,7 @@ import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-va
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
+import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
@@ -54,10 +54,18 @@ import { ChatInputFocusService } from './chat-input-focus-service';
 import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service';
 import { GenericCapabilitiesSection } from './generic-capabilities-section';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
-import { CHAT_VIEW_TOKEN_USAGE_ENABLED } from './chat-view-preferences';
 import {
-    computeSessionTokenUsage, getUsageColorClass,
-    getLatestTokenUsage, buildBarTooltip, CHAT_CONTEXT_WINDOW_SIZE
+    CHAT_VIEW_TOKEN_USAGE_ENABLED,
+    CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED,
+    CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD,
+    CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT
+} from './chat-view-preferences';
+import {
+    buildBarTooltip,
+    computeSessionTokenUsage,
+    decideTokenUsageWarning,
+    getLatestTokenUsage,
+    getUsageColorClass
 } from './chat-token-usage-indicator-util';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
@@ -168,7 +176,15 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(PreferenceService) @optional()
     protected readonly preferenceService: PreferenceService | undefined;
 
+    @inject(MessageService) @optional()
+    protected readonly messageService: MessageService | undefined;
+
+    @inject(CommandService) @optional()
+    protected readonly commandService: CommandService | undefined;
+
     protected tokenUsageEnabled = false;
+    /** Sessions we have already notified for the current warning cycle (re-armed when usage drops below the threshold). */
+    protected readonly notifiedSessions = new Set<string>();
 
     protected navigationState: ChatInputNavigationState;
 
@@ -593,7 +609,11 @@ export class AIChatInputWidget extends ReactWidget {
         // Restore capability overrides and generic selections from the last request in this session (if any)
         this.userCapabilityOverrides = this.getLastCapabilityOverridesFromModel(chatModel);
         this.genericCapabilitySelections = this.getLastGenericCapabilitySelectionsFromModel(chatModel);
+
         this.onDisposeForChatModel.push(chatModel.onDidChange(event => {
+            if (event.kind === 'responseChanged') {
+                this.evaluateTokenUsageWarning(chatModel);
+            }
             if (event.kind === 'addVariable') {
                 // Validate files added via any path (including LLM tool calls)
                 // Get the current variables and validate any new file variables
@@ -617,6 +637,12 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this._chatModel = chatModel;
+        // Evaluate the warning on attach. For an existing widget switching between
+        // already-notified sessions the per-instance `notifiedSessions` Set prevents
+        // re-notifying. When the chat view is closed and reopened, a fresh widget
+        // is created with an empty Set, so a session still above the threshold will
+        // legitimately trigger the warning again — accepted as a rare corner case.
+        this.evaluateTokenUsageWarning(chatModel);
         this.scheduleUpdateReceivingAgent();
         this.update();
     }
@@ -656,7 +682,8 @@ export class AIChatInputWidget extends ReactWidget {
         this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
         if (this.preferenceService) {
             this.toDispose.push(this.preferenceService.onPreferenceChanged(change => {
-                if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
+                if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED
+                    || change.preferenceName === CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD) {
                     this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
                     this.update();
                 }
@@ -727,6 +754,83 @@ export class AIChatInputWidget extends ReactWidget {
 
         this.chatInputFirstLineKey.set(isFirstVisualOverall);
         this.chatInputLastLineKey.set(isLastVisualOverall);
+    }
+
+    /**
+     * Resolve the configured token usage warning threshold, falling back to the default
+     * for missing or malformed preference values.
+     */
+    protected getTokenUsageWarningThreshold(): number {
+        const value = this.preferenceService?.get<number>(
+            CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD,
+            CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT
+        );
+        if (typeof value !== 'number' || !Number.isFinite(value) || value < 1) {
+            return CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT;
+        }
+        return value;
+    }
+
+    protected isTokenUsageWarningEnabled(): boolean {
+        return this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED, true) ?? true;
+    }
+
+    /**
+     * Called after a response changes on the currently attached session. Shows a
+     * warning the first time the total crosses the threshold, and re-arms when
+     * usage drops back below it.
+     */
+    protected evaluateTokenUsageWarning(chatModel: ChatModel): void {
+        // No point doing any work if the feature is off.
+        if (!this.isTokenUsageWarningEnabled()) {
+            return;
+        }
+        // `responseChanged` fires on every streaming tick, but providers typically
+        // only set `tokenUsage` at completion. Skip in-progress responses so we do
+        // the walk + decision once per response rather than per chunk.
+        const lastRequest = chatModel.getRequests().at(-1);
+        if (lastRequest && !lastRequest.response.isComplete) {
+            return;
+        }
+        const decision = decideTokenUsageWarning({
+            totalTokens: computeSessionTokenUsage(chatModel),
+            threshold: this.getTokenUsageWarningThreshold(),
+            alreadyNotified: this.notifiedSessions.has(chatModel.id)
+        });
+        if (decision === 'reset') {
+            this.notifiedSessions.delete(chatModel.id);
+        } else if (decision === 'notify') {
+            this.notifiedSessions.add(chatModel.id);
+            this.showTokenUsageWarning();
+        }
+    }
+
+    protected async showTokenUsageWarning(): Promise<void> {
+        if (!this.messageService) {
+            return;
+        }
+        const threshold = this.getTokenUsageWarningThreshold();
+        const message = nls.localize(
+            'theia/ai/chat-ui/tokenUsageWarningMessage',
+            'Chat session token usage has reached {0} tokens. ' +
+            'Consider compacting this session or starting a new one to avoid hitting the context window limit.',
+            threshold
+        );
+        const compactAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningCompactAction', 'Compact Session');
+        const newSessionAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningNewSessionAction', 'Start New Chat');
+        const selected = await this.messageService.warn(message, compactAction, newSessionAction);
+        if (!this.commandService) {
+            return;
+        }
+        if (selected === compactAction) {
+            this.commandService.executeCommand('ai-chat.new-with-task-context').catch(error => {
+                console.error("Failed to execute 'ai-chat.new-with-task-context' from token usage warning", error);
+            });
+        } else if (selected === newSessionAction) {
+            this.commandService.executeCommand('ai-chat-ui.new-chat').catch(error => {
+                console.error("Failed to execute 'ai-chat-ui.new-chat' from token usage warning", error);
+            });
+        }
     }
 
     protected scheduleUpdateReceivingAgent(): void {
@@ -1051,6 +1155,7 @@ export class AIChatInputWidget extends ReactWidget {
                     hoverService: this.hoverService,
                 }}
                 tokenUsageEnabled={this.tokenUsageEnabled}
+                tokenUsageWarningThreshold={this.getTokenUsageWarningThreshold()}
             />
         );
     }
@@ -1383,6 +1488,7 @@ interface ChatInputProperties {
         hoverService: HoverService;
     };
     tokenUsageEnabled?: boolean;
+    tokenUsageWarningThreshold: number;
 }
 
 // Utility to check if we have task context in the chat model
@@ -1810,12 +1916,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Show mode selector if agent has multiple modes
     const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
 
-    // Token usage computation
+    // Token usage computation (cheap pure function walking the model's request list)
     const totalTokens = props.tokenUsageEnabled ? computeSessionTokenUsage(props.chatModel) : 0;
     const showTokenUsage = props.tokenUsageEnabled && totalTokens > 0;
-    const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens) : '';
+    const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens, props.tokenUsageWarningThreshold) : '';
     const tokenIsWarningOrError = tokenColorClass === 'token-usage-yellow' || tokenColorClass === 'token-usage-red';
-    const tokenTooltip = showTokenUsage ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens) : undefined;
+    const tokenTooltip = showTokenUsage ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens, props.tokenUsageWarningThreshold) : undefined;
 
     return (
         <div className="theia-ChatInput" data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
@@ -1853,7 +1959,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     isEnabled={props.isEnabled}
                     hoverService={props.hoverService}
                     tokenUsage={showTokenUsage ? {
-                        percent: Math.min((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100, 100),
+                        percent: Math.min((totalTokens / props.tokenUsageWarningThreshold) * 100, 100),
                         colorClass: tokenColorClass,
                         tooltip: tokenTooltip,
                     } : undefined}

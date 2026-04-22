@@ -19,6 +19,10 @@ import { nls } from '@theia/core/lib/common/nls';
 import { interfaces } from '@theia/core/shared/inversify';
 
 export const CHAT_VIEW_TOKEN_USAGE_ENABLED = 'ai-features.chat.tokenUsageIndicator.enabled';
+export const CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED = 'ai-features.chat.tokenUsageWarning.enabled';
+export const CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD = 'ai-features.chat.tokenUsageWarning.tokenThreshold';
+
+export const CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT = 160000; // 80% of 200k
 
 export const chatViewPreferenceSchema: PreferenceSchema = {
     properties: {
@@ -31,12 +35,34 @@ export const chatViewPreferenceSchema: PreferenceSchema = {
                 'This feature is experimental and token counts may be inaccurate depending on the model and provider.'
             ),
             tags: ['experimental']
+        },
+        [CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED]: {
+            type: 'boolean',
+            default: false,
+            description: nls.localize(
+                'theia/ai/chat-ui/tokenUsageWarningEnabled',
+                'Controls whether a notification is shown when a chat session\'s token usage crosses the configured threshold. ' +
+                'Requires the language model provider to report token usage.'
+            )
+        },
+        [CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD]: {
+            type: 'number',
+            minimum: 1,
+            default: CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT,
+            description: nls.localize(
+                'theia/ai/chat-ui/tokenUsageWarningTokenThreshold',
+                'Total number of tokens in the current chat session at which the token usage warning is triggered. ' +
+                'Choose a value appropriate for your model\'s context window (e.g. lower it for small-context models). ' +
+                'Only applies when the token usage warning is enabled.'
+            )
         }
     }
 };
 
 export interface ChatViewConfiguration {
     [CHAT_VIEW_TOKEN_USAGE_ENABLED]: boolean;
+    [CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED]: boolean;
+    [CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD]: number;
 }
 
 export const ChatViewPreferenceContribution = Symbol('ChatViewPreferenceContribution');

@@ -18,8 +18,41 @@ import { ChatModel, ResponseTokenUsage } from '@theia/ai-chat';
 import { nls } from '@theia/core/lib/common/nls';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
-export const CHAT_CONTEXT_WINDOW_SIZE = 200000;
-const CHAT_CONTEXT_WINDOW_WARNING_THRESHOLD = 0.9 * CHAT_CONTEXT_WINDOW_SIZE;
+/**
+ * Multiplier of the warning threshold at which the indicator turns red.
+ * Yellow band: [threshold, threshold * CRITICAL_MULTIPLIER).
+ * Red band:    [threshold * CRITICAL_MULTIPLIER, ∞).
+ */
+const CRITICAL_MULTIPLIER = 1.25;
+
+export type TokenUsageWarningDecision = 'notify' | 'reset' | 'skip';
+
+/** Returns true when the given total has crossed (>=) the configured warning threshold. */
+export function isAboveTokenUsageWarningThreshold(totalTokens: number, threshold: number): boolean {
+    return totalTokens > 0 && totalTokens >= threshold;
+}
+
+/**
+ * Pure decision function for whether to show the token usage warning for a session.
+ * Callers are expected to short-circuit before invoking this when the warning feature
+ * is disabled, so this helper is not concerned with the enabled state.
+ * - `reset`: usage is below the threshold; any prior "already notified" state for this session should be cleared.
+ * - `skip`:  we already notified for this session while still above the threshold.
+ * - `notify`: warning should be shown now and the session marked as notified.
+ */
+export function decideTokenUsageWarning(args: {
+    totalTokens: number;
+    threshold: number;
+    alreadyNotified: boolean;
+}): TokenUsageWarningDecision {
+    if (!isAboveTokenUsageWarningThreshold(args.totalTokens, args.threshold)) {
+        return 'reset';
+    }
+    if (args.alreadyNotified) {
+        return 'skip';
+    }
+    return 'notify';
+}
 
 export function formatTokenCount(count: number | undefined): string {
     if (count === undefined || count === 0) {
@@ -31,14 +64,18 @@ export function formatTokenCount(count: number | undefined): string {
     return count.toString();
 }
 
-export function getUsageColorClass(totalTokens: number): string {
+/**
+ * Returns the CSS class for the token usage indicator based on the current
+ * total and the configured warning threshold.
+ */
+export function getUsageColorClass(totalTokens: number, threshold: number): string {
     if (totalTokens === 0) {
         return 'token-usage-none';
     }
-    if (totalTokens < CHAT_CONTEXT_WINDOW_WARNING_THRESHOLD) {
+    if (totalTokens < threshold) {
         return 'token-usage-green';
     }
-    if (totalTokens < CHAT_CONTEXT_WINDOW_SIZE) {
+    if (totalTokens < threshold * CRITICAL_MULTIPLIER) {
         return 'token-usage-yellow';
     }
     return 'token-usage-red';
@@ -75,22 +112,22 @@ export function getLatestTokenUsage(chatModel?: ChatModel): ResponseTokenUsage |
     return undefined;
 }
 
-export function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalTokens: number): MarkdownString | undefined {
+export function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalTokens: number, threshold: number): MarkdownString | undefined {
     if (!usage) {
         return undefined;
     }
     const lines: string[] = [
         `**${nls.localize('theia/ai/chat-ui/tokenUsageLabel', 'Token Usage')}**`
     ];
-    const colorClass = getUsageColorClass(totalTokens);
+    const colorClass = getUsageColorClass(totalTokens, threshold);
     if (colorClass === 'token-usage-yellow') {
-        lines.push(`⚠ ${nls.localize('theia/ai/chat-ui/tokenUsageWarning', 'Approaching context window limit.')}`, '');
+        lines.push(`⚠ ${nls.localize('theia/ai/chat-ui/tokenUsageWarning', 'Token usage warning threshold reached.')}`, '');
     } else if (colorClass === 'token-usage-red') {
-        lines.push(`⚠ ${nls.localize('theia/ai/chat-ui/tokenUsageOverflow', 'Context window limit reached. Consider starting a new session.')}`, '');
+        lines.push(`⚠ ${nls.localize('theia/ai/chat-ui/tokenUsageOverflow', 'Token usage well past the warning threshold. Consider compacting or starting a new session.')}`, '');
     }
     lines.push(`${nls.localizeByDefault('Input: {0}',
         formatTokenCount(usage.inputTokens))} | ${nls.localizeByDefault('Output: {0}',
-        formatTokenCount(usage.outputTokens))}`);
+            formatTokenCount(usage.outputTokens))}`);
     const cacheParts: string[] = [];
     if (usage.cacheReadInputTokens) {
         cacheParts.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipCacheRead', 'Cache read: {0}', formatTokenCount(usage.cacheReadInputTokens)));
@@ -101,8 +138,13 @@ export function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalToke
     if (cacheParts.length > 0) {
         lines.push(cacheParts.join(' | '));
     }
-    const pct = Math.round((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100);
-    lines.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipTotal', 'Total: {0} / {1} ({2}%)', formatTokenCount(totalTokens), formatTokenCount(CHAT_CONTEXT_WINDOW_SIZE), pct));
+    const pct = threshold > 0 ? Math.round((totalTokens / threshold) * 100) : 0;
+    lines.push(nls.localize(
+        'theia/ai/chat-ui/tokenUsageTooltipTotal',
+        'Total: {0} / {1} ({2}% of warning threshold)',
+        formatTokenCount(totalTokens),
+        formatTokenCount(threshold),
+        pct
+    ));
     return { value: lines.join('  \n') };
 }
-
