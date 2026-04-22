@@ -457,9 +457,9 @@ export function createAPIFactory(
         };
 
         const { onDidChangeActiveTerminal, onDidChangeTerminalState, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
-        const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
-        const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
-        const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
+        const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, plugin, MainMessageType.Info);
+        const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, plugin, MainMessageType.Warning);
+        const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, plugin, MainMessageType.Error);
         const window: typeof theia.window = {
 
             get activeTerminal(): theia.Terminal | undefined {
