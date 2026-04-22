@@ -65,20 +65,27 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
             return undefined;
         }
         if (!terminal.commandHistoryState) {
+            const bufferContent = terminal.buffer.getLines(Math.max(terminal.buffer.length - 50, 0), 50).join('\n');
+            if (!bufferContent) {
+                return undefined;
+            }
             return {
                 variable: TERMINAL_COMMAND_BLOCK,
-                value: terminal.buffer.getLines(Math.max(terminal.buffer.length - 50, 0), 50).join('\n'),
+                value: bufferContent
             };
         }
         const commandHistory = terminal.commandHistoryState.commandHistory;
-        const commandIndex = request.arg !== undefined ? parseInt(request.arg) : commandHistory.length - 1;
+        const commandIndex = request.arg !== undefined ? Number(request.arg.trim()) : commandHistory.length - 1;
+        if (isNaN(commandIndex) || !Number.isInteger(commandIndex) || commandIndex < 0 || commandIndex >= commandHistory.length) {
+            return undefined;
+        }
         const block = commandHistory[commandIndex];
         if (!block) {
             return undefined;
         }
         return {
             variable: TERMINAL_COMMAND_BLOCK,
-            value: `${block.command}\n${block.output}`
+            value: `### Terminal Command:\n${block.command}\n\n### Terminal Output:\n${block.output}`
         };
     }
 
@@ -91,7 +98,8 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
         quickPick.items = commandHistory.map((block, i) => (
             {
                 label: block.command,
-                description: block.output.slice(0, 60),
+                // replace all whitespace with a single space for better readability
+                description: block.output.replace(/\s+/g, ' ').trim().slice(0, 60),
                 blockIndex: i
             } as CommandBlockQuickPickItem
         )).toReversed();
@@ -101,11 +109,12 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
                 const selected = quickPick.selectedItems[0];
                 if (CommandBlockQuickPickItem.is(selected)) {
                     resolve(String(selected.blockIndex));
-                    quickPick.dispose();
                 }
+                quickPick.dispose();
             });
             quickPick.onDidHide(() => {
                 resolve(undefined);
+                quickPick.dispose();
             });
         });
     }
