@@ -18,13 +18,15 @@ import { expect } from 'chai';
 import { Emitter, Event } from '@theia/core';
 import { ChatModel, ChatRequestModel, ResponseTokenUsage } from '@theia/ai-chat';
 import {
-    CHAT_CONTEXT_WINDOW_SIZE,
     computeSessionTokenUsage,
+    decideTokenUsageWarning,
     formatTokenCount,
-    getUsageColorClass
+    getUsageColorClass,
+    isAboveTokenUsageWarningThreshold
 } from './chat-token-usage-indicator-util';
 
-const CHAT_CONTEXT_WINDOW_WARNING_THRESHOLD = 0.9 * CHAT_CONTEXT_WINDOW_SIZE;
+const THRESHOLD = 100;
+const CONTEXT_WINDOW = 200;
 
 function createMockRequest(tokenUsage?: ResponseTokenUsage, isComplete = true): Partial<ChatRequestModel> {
     return {
@@ -68,23 +70,23 @@ describe('ChatTokenUsageIndicator', () => {
     });
 
     describe('getUsageColorClass', () => {
-        it('should return none for 0 tokens', () => {
-            expect(getUsageColorClass(0)).to.equal('token-usage-none');
+        it('returns none for 0 tokens regardless of threshold', () => {
+            expect(getUsageColorClass(0, THRESHOLD, CONTEXT_WINDOW)).to.equal('token-usage-none');
         });
 
-        it('should return green for tokens below threshold', () => {
-            expect(getUsageColorClass(1)).to.equal('token-usage-green');
-            expect(getUsageColorClass(CHAT_CONTEXT_WINDOW_WARNING_THRESHOLD - 1)).to.equal('token-usage-green');
+        it('returns green for tokens below the threshold', () => {
+            expect(getUsageColorClass(1, THRESHOLD, CONTEXT_WINDOW)).to.equal('token-usage-green');
+            expect(getUsageColorClass(THRESHOLD - 1, THRESHOLD, CONTEXT_WINDOW)).to.equal('token-usage-green');
         });
 
-        it('should return yellow for tokens at or above threshold but below budget', () => {
-            expect(getUsageColorClass(CHAT_CONTEXT_WINDOW_WARNING_THRESHOLD)).to.equal('token-usage-yellow');
-            expect(getUsageColorClass(CHAT_CONTEXT_WINDOW_SIZE - 1)).to.equal('token-usage-yellow');
+        it('returns yellow for tokens at or above the threshold but below the context window size', () => {
+            expect(getUsageColorClass(THRESHOLD, THRESHOLD, CONTEXT_WINDOW)).to.equal('token-usage-yellow');
+            expect(getUsageColorClass(CONTEXT_WINDOW - 1, THRESHOLD, CONTEXT_WINDOW)).to.equal('token-usage-yellow');
         });
 
-        it('should return red for tokens at or above budget', () => {
-            expect(getUsageColorClass(CHAT_CONTEXT_WINDOW_SIZE)).to.equal('token-usage-red');
-            expect(getUsageColorClass(CHAT_CONTEXT_WINDOW_SIZE + 1)).to.equal('token-usage-red');
+        it('returns red for tokens at or above the context window size', () => {
+            expect(getUsageColorClass(CONTEXT_WINDOW, THRESHOLD, CONTEXT_WINDOW)).to.equal('token-usage-red');
+            expect(getUsageColorClass(CONTEXT_WINDOW + 1, THRESHOLD, CONTEXT_WINDOW)).to.equal('token-usage-red');
         });
     });
 
@@ -198,6 +200,63 @@ describe('ChatTokenUsageIndicator', () => {
             ]);
             // Last request with usage: 3000+1000 = 4000
             expect(computeSessionTokenUsage(model)).to.equal(4000);
+        });
+    });
+
+    describe('isAboveTokenUsageWarningThreshold', () => {
+        it('is false for 0 tokens', () => {
+            expect(isAboveTokenUsageWarningThreshold(0, THRESHOLD)).to.equal(false);
+        });
+
+        it('is false for tokens below the threshold', () => {
+            expect(isAboveTokenUsageWarningThreshold(THRESHOLD - 1, THRESHOLD)).to.equal(false);
+        });
+
+        it('is true for tokens at the threshold', () => {
+            expect(isAboveTokenUsageWarningThreshold(THRESHOLD, THRESHOLD)).to.equal(true);
+        });
+
+        it('is true for tokens above the threshold', () => {
+            expect(isAboveTokenUsageWarningThreshold(THRESHOLD + 1, THRESHOLD)).to.equal(true);
+        });
+    });
+
+    describe('decideTokenUsageWarning', () => {
+        it('resets when usage is below the threshold', () => {
+            expect(decideTokenUsageWarning({
+                totalTokens: 50,
+                threshold: THRESHOLD,
+                alreadyNotified: true
+            })).to.equal('reset');
+        });
+
+        it('resets when usage is zero', () => {
+            expect(decideTokenUsageWarning({
+                totalTokens: 0,
+                threshold: THRESHOLD,
+                alreadyNotified: true
+            })).to.equal('reset');
+        });
+
+        it('skips when the session has already been notified', () => {
+            expect(decideTokenUsageWarning({
+                totalTokens: THRESHOLD + 50,
+                threshold: THRESHOLD,
+                alreadyNotified: true
+            })).to.equal('skip');
+        });
+
+        it('notifies when usage crosses the threshold and the session has not been notified yet', () => {
+            expect(decideTokenUsageWarning({
+                totalTokens: THRESHOLD,
+                threshold: THRESHOLD,
+                alreadyNotified: false
+            })).to.equal('notify');
+            expect(decideTokenUsageWarning({
+                totalTokens: THRESHOLD * 2,
+                threshold: THRESHOLD,
+                alreadyNotified: false
+            })).to.equal('notify');
         });
     });
 });
