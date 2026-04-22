@@ -35,7 +35,7 @@ export class MessageRegistryExt {
     async showMessage(plugin: Plugin, type: MainMessageType, message: string,
         optionsOrFirstItem?: MessageOptions | string | MessageItem,
         ...rest: (string | MessageItem)[]): Promise<string | MessageItem | undefined> {
-        const source = `${plugin.model.publisher}-${plugin.model.displayName || plugin.model.name}`;
+        const source = `${plugin.model.publisher}.${plugin.model.displayName || plugin.model.name}`;
         const options: MainMessageOptions = {
             source
         };
