@@ -178,9 +178,14 @@ async function extensionImpact(extensions) {
 function preparePackageTemplate() {
     const core = require('../../packages/core/package.json');
     const version = core.version;
+    // THEIA_CONFIG_DIR is passed through FileUri.create() in env-variables-server.ts,
+    // which produces `/./...` for relative paths and then fails with EROFS trying to
+    // mkdir at the filesystem root. Always pass an absolute path.
+    const configDir = path.resolve(__dirname, 'theia-config-dir');
     const content = readFileSync(path.resolve(__dirname, './base-package.json'), 'utf-8')
         .replace(/\{\{app\}\}/g, hostApp)
-        .replace(/\{\{version\}\}/g, version);
+        .replace(/\{\{version\}\}/g, version)
+        .replace(/\{\{configDir\}\}/g, configDir);
     basePackage = JSON.parse(content);
     if (hostApp === 'electron') {
         basePackage.dependencies['@theia/electron'] = version;
