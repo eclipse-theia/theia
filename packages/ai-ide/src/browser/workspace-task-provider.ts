@@ -25,11 +25,56 @@ import { WorkspaceFunctionScope } from './workspace-functions';
 
 import URI from '@theia/core/lib/common/uri';
 
+/**
+ * Sentinel value returned (and accepted) as `workspaceRoot` for tasks defined
+ * in the `.code-workspace` file rather than in a specific folder's `tasks.json`.
+ */
+export const WORKSPACE_SCOPE_TOKEN = '(workspace)';
+
+/**
+ * Sentinel value returned (and accepted) as `workspaceRoot` for user-level
+ * global tasks that are not associated with any workspace or folder.
+ */
+export const GLOBAL_SCOPE_TOKEN = '(global)';
+
 export interface TaskListEntry {
     /** The task label as defined in tasks.json or by a task provider */
     label: string;
-    /** The workspace root name this task belongs to, or undefined for global/workspace-scoped tasks */
+    /**
+     * Identifies where the task is defined:
+     * - A root folder name (e.g. `"frontend"`) for folder-scoped tasks.
+     * - `"(workspace)"` for tasks defined in the `.code-workspace` file.
+     * - `"(global)"` for user-level global tasks.
+     *
+     * Pass this value back to `runTask`'s `workspaceRoot` parameter to
+     * disambiguate when multiple tasks share the same label.
+     */
     workspaceRoot?: string;
+}
+
+/**
+ * Maps a task scope to the addressing token an agent should use.
+ *
+ * - Folder URI string → the workspace root name (e.g. `"frontend"`).
+ * - `TaskScope.Workspace` → `"(workspace)"`.
+ * - `TaskScope.Global` → `"(global)"`.
+ *
+ * If a folder URI cannot be resolved to a known root name, falls back to
+ * `"(workspace)"` so the task remains addressable.
+ */
+export function resolveScopeToken(scope: string | TaskScope.Workspace | TaskScope.Global, workspaceScope: WorkspaceFunctionScope): string {
+    if (scope === TaskScope.Workspace) {
+        return WORKSPACE_SCOPE_TOKEN;
+    }
+    if (scope === TaskScope.Global) {
+        return GLOBAL_SCOPE_TOKEN;
+    }
+    try {
+        const uri = new URI(scope);
+        return workspaceScope.getRootName(uri) ?? WORKSPACE_SCOPE_TOKEN;
+    } catch {
+        return WORKSPACE_SCOPE_TOKEN;
+    }
 }
 
 @injectable()
@@ -46,10 +91,9 @@ export class TaskListProvider implements ToolProvider {
             id: LIST_TASKS_FUNCTION_ID,
             name: LIST_TASKS_FUNCTION_ID,
             description: 'Lists available tasks in the workspace that can be executed with runTask. Returns an array ' +
-                'of objects, each with a "label" (the task name) and optionally a "workspaceRoot" (the root name the task belongs to). ' +
+                'of objects, each with a "label" (the task name) and a "workspaceRoot" (identifying where the task is defined). ' +
                 'Use the filter parameter with an empty string "" to retrieve all tasks, or provide a substring ' +
                 'to filter (e.g., "test" returns tasks containing "test" in the name). ' +
-                'Example return: [{"label": "npm: build", "workspaceRoot": "frontend"}, {"label": "npm: test", "workspaceRoot": "backend"}]. ' +
                 'Always call this before runTask to discover exact task names and their workspace roots.',
             parameters: {
                 type: 'object',
@@ -82,23 +126,8 @@ export class TaskListProvider implements ToolProvider {
 
     private toTaskListEntry(task: TaskConfiguration): TaskListEntry {
         const entry: TaskListEntry = { label: task.label };
-        const rootName = this.resolveRootName(task._scope);
-        if (rootName) {
-            entry.workspaceRoot = rootName;
-        }
+        entry.workspaceRoot = resolveScopeToken(task._scope, this.workspaceScope);
         return entry;
-    }
-
-    private resolveRootName(scope: string | TaskScope.Workspace | TaskScope.Global): string | undefined {
-        if (typeof scope !== 'string') {
-            return undefined;
-        }
-        try {
-            const uri = new URI(scope);
-            return this.workspaceScope.getRootName(uri);
-        } catch {
-            return undefined;
-        }
     }
 }
 
@@ -135,8 +164,8 @@ export class TaskRunnerProvider implements ToolProvider {
                     },
                     workspaceRoot: {
                         type: 'string',
-                        description: 'The workspace root name the task belongs to (as returned by listTasks). ' +
-                            'Required when multiple tasks share the same label across different workspace roots.'
+                        description: 'The workspaceRoot value as returned by listTasks. ' +
+                            'Required when multiple tasks share the same label.'
                     }
                 },
                 required: ['taskName']
@@ -164,34 +193,18 @@ export class TaskRunnerProvider implements ToolProvider {
             if (matchingTasks.length === 1) {
                 taskToRun = matchingTasks[0];
             } else if (args.workspaceRoot) {
-                const rootMapping = this.workspaceScope.getRootMapping();
-                const rootUri = rootMapping.get(args.workspaceRoot);
-                if (!rootUri) {
-                    const availableRoots = Array.from(rootMapping.keys()).join(', ');
-                    return `Unknown workspace root '${args.workspaceRoot}'. Available roots: ${availableRoots}`;
+                const filtered = this.filterByWorkspaceRoot(matchingTasks, args.workspaceRoot);
+                if (typeof filtered === 'string') {
+                    return filtered; // error message
                 }
-                const rootUriStr = rootUri.toString();
-                const filtered = matchingTasks.filter(
-                    task => typeof task._scope === 'string' && task._scope === rootUriStr
-                );
                 if (filtered.length === 0) {
                     return `No task '${args.taskName}' found in workspace root '${args.workspaceRoot}'. `
                         + 'The task may be defined in a different root. Use listTasks to check.';
                 }
                 taskToRun = filtered[0];
             } else {
-                const rootNames = matchingTasks.map(task => {
-                    if (typeof task._scope === 'string') {
-                        try {
-                            const name = this.workspaceScope.getRootName(new URI(task._scope));
-                            return name ?? '(unknown)';
-                        } catch {
-                            return '(unknown)';
-                        }
-                    }
-                    return '(global)';
-                });
-                return `Ambiguous task name '${args.taskName}' — found in multiple workspace roots: ${rootNames.join(', ')}. `
+                const scopeTokens = matchingTasks.map(task => resolveScopeToken(task._scope, this.workspaceScope));
+                return `Ambiguous task name '${args.taskName}' — found in multiple scopes: ${scopeTokens.join(', ')}. `
                     + 'Please specify the workspaceRoot parameter to disambiguate.';
             }
 
@@ -233,5 +246,32 @@ export class TaskRunnerProvider implements ToolProvider {
         } catch (error) {
             return JSON.stringify({ success: false, message: error.message || 'Failed to run task' });
         }
+    }
+
+    /**
+     * Filters tasks by the `workspaceRoot` addressing token the agent provided.
+     *
+     * Handles the sentinel values `(workspace)` and `(global)` as well as
+     * normal folder-root names.
+     *
+     * @returns the filtered task array, or an error string if the root is unknown.
+     */
+    private filterByWorkspaceRoot(tasks: TaskConfiguration[], workspaceRoot: string): TaskConfiguration[] | string {
+        if (workspaceRoot === WORKSPACE_SCOPE_TOKEN) {
+            return tasks.filter(task => task._scope === TaskScope.Workspace);
+        }
+        if (workspaceRoot === GLOBAL_SCOPE_TOKEN) {
+            return tasks.filter(task => task._scope === TaskScope.Global);
+        }
+        const rootMapping = this.workspaceScope.getRootMapping();
+        const rootUri = rootMapping.get(workspaceRoot);
+        if (!rootUri) {
+            const availableRoots = Array.from(rootMapping.keys()).join(', ');
+            return `Unknown workspace root '${workspaceRoot}'. Available roots: ${availableRoots}`;
+        }
+        const rootUriStr = rootUri.toString();
+        return tasks.filter(
+            task => typeof task._scope === 'string' && task._scope === rootUriStr
+        );
     }
 }
