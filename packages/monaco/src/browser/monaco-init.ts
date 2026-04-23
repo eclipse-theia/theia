@@ -36,6 +36,7 @@ import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/brow
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { SyncDescriptor } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/descriptors';
 import { IInstantiationService, createDecorator } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { InstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiationService';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
 import { MonacoEditorServiceFactory, MonacoEditorServiceFactoryType } from './monaco-editor-service';
 import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
@@ -236,43 +237,60 @@ export namespace MonacoInit {
     }
 }
 
+// @monaco-uplift: verify that the concrete InstantiationService class still exposes a
+// private `_services: ServiceCollection` property.  See monaco-init.spec.ts for a CI
+// guard that will flag a mismatch after a Monaco version bump.
 function patchServices(overrides: Record<string, SyncDescriptor<unknown>>): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const instantiationService = StandaloneServices.get(IInstantiationService) as any;
-    const serviceCollection: ServiceCollection | undefined = instantiationService?._services;
-    if (serviceCollection) {
-        const patchedServices: string[] = [];
-        const alreadyInstantiatedServices: string[] = [];
-        for (const serviceId of Object.keys(overrides)) {
-            const serviceIdentifier = createDecorator(serviceId);
-            const existing = serviceCollection.get(serviceIdentifier);
-            if (existing instanceof SyncDescriptor && existing !== overrides[serviceId]) {
-                // The override was not applied by initialize() – patch it in manually.
-                serviceCollection.set(serviceIdentifier, overrides[serviceId]);
-                patchedServices.push(serviceId);
-            } else if (existing !== undefined && !(existing instanceof SyncDescriptor)) {
-                // The service was already instantiated from the default Monaco
-                // implementation – we cannot override it anymore.
-                alreadyInstantiatedServices.push(serviceId);
-            }
+    const instantiationService = StandaloneServices.get(IInstantiationService);
+    if (!(instantiationService instanceof InstantiationService)) {
+        console.error(
+            'StandaloneServices returned an IInstantiationService that is not an instance of InstantiationService. '
+            + 'Theia service overrides cannot be patched in after premature initialization. '
+            + 'Investigate whether Monaco\'s internal InstantiationService class has been refactored.'
+        );
+        return;
+    }
+    const serviceCollection = instantiationService['_services'];
+    if (!(serviceCollection instanceof ServiceCollection)) {
+        console.error(
+            'InstantiationService._services is not a ServiceCollection (got '
+            + (serviceCollection === undefined ? 'undefined' : typeof serviceCollection)
+            + '). Theia service overrides cannot be patched in after premature initialization. '
+            + 'Investigate whether Monaco\'s InstantiationService internals have changed.'
+        );
+        return;
+    }
+    const patchedServices: string[] = [];
+    const alreadyInstantiatedServices: string[] = [];
+    for (const serviceId of Object.keys(overrides)) {
+        const serviceIdentifier = createDecorator(serviceId);
+        const existing = serviceCollection.get(serviceIdentifier);
+        if (existing instanceof SyncDescriptor && existing !== overrides[serviceId]) {
+            // The override was not applied by initialize() – patch it in manually.
+            serviceCollection.set(serviceIdentifier, overrides[serviceId]);
+            patchedServices.push(serviceId);
+        } else if (existing !== undefined && !(existing instanceof SyncDescriptor)) {
+            // The service was already instantiated from the default Monaco
+            // implementation – we cannot override it anymore.
+            alreadyInstantiatedServices.push(serviceId);
         }
-        if (patchedServices.length > 0) {
-            console.warn(
-                'StandaloneServices was already initialized before MonacoInit.init() was called. '
-                + 'This typically happens when a StandaloneServices.get() call is triggered as a side-effect during module loading. '
-                + 'The following Theia service overrides had to be patched in after the fact: '
-                + patchedServices.join(', ')
-                + '. Investigate the module loading order to prevent premature initialization.'
-            );
-        }
-        if (alreadyInstantiatedServices.length > 0) {
-            console.error(
-                'StandaloneServices was already initialized and the following services were already instantiated '
-                + 'before MonacoInit.init() could apply Theia overrides: '
-                + alreadyInstantiatedServices.join(', ')
-                + '. These services are using the default Monaco implementations instead of Theia\'s. '
-                + 'This may cause unexpected behavior. Investigate which code triggers premature service resolution.'
-            );
-        }
+    }
+    if (patchedServices.length > 0) {
+        console.warn(
+            'StandaloneServices was already initialized before MonacoInit.init() was called. '
+            + 'This typically happens when a StandaloneServices.get() call is triggered as a side-effect during module loading. '
+            + 'The following Theia service overrides had to be patched in after the fact: '
+            + patchedServices.join(', ')
+            + '. Investigate the module loading order to prevent premature initialization.'
+        );
+    }
+    if (alreadyInstantiatedServices.length > 0) {
+        console.error(
+            'StandaloneServices was already initialized and the following services were already instantiated '
+            + 'before MonacoInit.init() could apply Theia overrides: '
+            + alreadyInstantiatedServices.join(', ')
+            + '. These services are using the default Monaco implementations instead of Theia\'s. '
+            + 'This may cause unexpected behavior. Investigate which code triggers premature service resolution.'
+        );
     }
 }
