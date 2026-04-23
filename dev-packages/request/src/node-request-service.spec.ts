@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2025 EclipseSource GmbH.
+ * Copyright (C) 2026 EclipseSource GmbH.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -59,6 +59,12 @@ describe('NodeRequestService', () => {
                 }, 5000);
             } else if (req.url === '/empty') {
                 res.writeHead(204);
+                res.end();
+            } else if (req.url === '/redirect') {
+                res.writeHead(302, { 'Location': '/text' });
+                res.end();
+            } else if (req.url === '/redirect-chain') {
+                res.writeHead(302, { 'Location': '/redirect' });
                 res.end();
             } else {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -205,6 +211,26 @@ describe('NodeRequestService', () => {
             const result = await configuredService.request({ url: url('/echo-headers') });
             const headers = RequestContext.asJson<Record<string, string>>(result);
             expect(headers['proxy-authorization']).to.equal('Basic dGVzdDp0ZXN0');
+        });
+    });
+
+    describe('redirect handling', () => {
+        it('should follow redirects by default', async () => {
+            const result = await service.request({ url: url('/redirect') });
+            expect(result.res.statusCode).to.equal(200);
+            expect(RequestContext.asText(result)).to.equal('hello world');
+        });
+
+        it('should not follow redirects when followRedirects is 0', async () => {
+            const result = await service.request({ url: url('/redirect'), followRedirects: 0 });
+            expect(result.res.statusCode).to.equal(302);
+            expect(result.res.headers['location']).to.equal('/text');
+        });
+
+        it('should follow redirect chains by default', async () => {
+            const result = await service.request({ url: url('/redirect-chain') });
+            expect(result.res.statusCode).to.equal(200);
+            expect(RequestContext.asText(result)).to.equal('hello world');
         });
     });
 

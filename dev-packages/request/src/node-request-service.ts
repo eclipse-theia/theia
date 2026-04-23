@@ -80,10 +80,11 @@ export class NodeRequestService implements RequestService {
         }
 
         let tokenAbortController: AbortController | undefined;
+        let cancellationListener: void | { dispose(): void } | undefined;
         if (token) {
             tokenAbortController = new AbortController();
             signals.push(tokenAbortController.signal);
-            token.onCancellationRequested(() => {
+            cancellationListener = token.onCancellationRequested(() => {
                 tokenAbortController!.abort();
             });
         }
@@ -95,7 +96,7 @@ export class NodeRequestService implements RequestService {
         const fetchOptions: RequestInit & { dispatcher?: Dispatcher } = {
             method: options.type || 'GET',
             headers,
-            redirect: 'follow',
+            redirect: options.followRedirects === 0 ? 'manual' : 'follow',
             signal,
         };
 
@@ -107,23 +108,29 @@ export class NodeRequestService implements RequestService {
             fetchOptions.body = options.data;
         }
 
-        const response = await fetch(options.url, fetchOptions);
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        try {
+            const response = await fetch(options.url, fetchOptions);
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
 
-        const responseHeaders: Headers = {};
-        response.headers.forEach((value, key) => {
-            responseHeaders[key] = value;
-        });
+            const responseHeaders: Headers = {};
+            response.headers.forEach((value, key) => {
+                responseHeaders[key] = value;
+            });
 
-        return {
-            url: options.url,
-            res: {
-                headers: responseHeaders,
-                statusCode: response.status
-            },
-            buffer
-        };
+            return {
+                url: options.url,
+                res: {
+                    headers: responseHeaders,
+                    statusCode: response.status
+                },
+                buffer
+            };
+        } finally {
+            if (cancellationListener) {
+                cancellationListener.dispose();
+            }
+        }
     }
 
     async resolveProxy(url: string): Promise<string | undefined> {
