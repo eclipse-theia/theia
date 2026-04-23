@@ -850,6 +850,24 @@ export class ScmExtImpl implements ScmExt {
         sourceControls.push(sourceControl);
         this.sourceControlsByExtension.set(extension.model.id, sourceControls);
 
+        // Clean up registries when the source control is disposed. Without this,
+        // disposed entries leak and findSourceControlImpl() may return a stale
+        // (disposed) instance as a parent for a later-created source control
+        // with the same id + rootUri (e.g. a worktree recreated after removal).
+        sourceControl.onDidDispose(() => {
+            this.sourceControls.delete(handle);
+            const list = this.sourceControlsByExtension.get(extension.model.id);
+            if (list) {
+                const index = list.indexOf(sourceControl);
+                if (index >= 0) {
+                    list.splice(index, 1);
+                }
+                if (list.length === 0) {
+                    this.sourceControlsByExtension.delete(extension.model.id);
+                }
+            }
+        });
+
         return sourceControl.apiObject;
     }
 
