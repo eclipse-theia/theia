@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from '@theia/ai-core';
-import { MaybePromise, nls, QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from '@theia/core';
+import { ILogger, MaybePromise, nls, QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
@@ -50,6 +50,9 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     registerVariables(service: AIVariableService): void {
         service.registerResolver(TERMINAL_COMMAND_BLOCK, this);
         service.registerArgumentPicker(TERMINAL_COMMAND_BLOCK, () => this.pickCommandBlock());
@@ -75,8 +78,12 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
             };
         }
         const commandHistory = terminal.commandHistoryState.commandHistory;
+        if (commandHistory.length === 0) {
+            return undefined;
+        }
         const commandIndex = request.arg !== undefined ? Number(request.arg.trim()) : commandHistory.length - 1;
-        if (isNaN(commandIndex) || !Number.isInteger(commandIndex) || commandIndex < 0 || commandIndex >= commandHistory.length) {
+        if (Number.isNaN(commandIndex) || !Number.isInteger(commandIndex) || commandIndex < 0 || commandIndex >= commandHistory.length) {
+            this.logger.warn(`Invalid terminal command index (must be an integer and between 0 and ${commandHistory.length - 1}): ${request.arg}`);
             return undefined;
         }
         const block = commandHistory[commandIndex];
