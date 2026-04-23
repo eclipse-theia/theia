@@ -33,9 +33,16 @@ let workspace;
 let file = path.resolve('./script.csv');
 let detailFile;
 let hostApp = 'browser';
+let cancelled = false;
 
-async function sigintHandler() {
-    process.exit();
+function sigintHandler() {
+    if (cancelled) {
+        // Second Ctrl+C: the first one is still unwinding, force-quit now.
+        process.exit(130);
+    }
+    cancelled = true;
+    console.error('\nInterrupted — aborting at the next safe point. Press Ctrl+C again to force-quit.');
+    process.exit(130);
 }
 
 async function exitHandler() {
@@ -161,6 +168,9 @@ async function extensionImpact(extensions) {
     }
 
     for (const e of extensions) {
+        if (cancelled) {
+            break;
+        }
         await calculateExtension(e);
     }
 }
@@ -174,6 +184,13 @@ function preparePackageTemplate() {
     basePackage = JSON.parse(content);
     if (hostApp === 'electron') {
         basePackage.dependencies['@theia/electron'] = version;
+        // ApplicationPackageManager.prepareElectron() (in @theia/cli) requires `electron` to
+        // be declared as a devDependency with a range that satisfies @theia/electron's peer.
+        // Without it, `theia build` auto-patches package.json and aborts with
+        // `Updated dependencies, please run "install" again`, which fails every iteration.
+        const { electronRange } = require('@theia/electron');
+        basePackage.devDependencies = basePackage.devDependencies ?? {};
+        basePackage.devDependencies.electron = electronRange;
     }
     return basePackage;
 }
@@ -216,6 +233,9 @@ async function getExtensionsFromPackagesDir() {
 }
 
 async function calculateExtension(extensionQualifier) {
+    if (cancelled) {
+        return;
+    }
     const basePackageCopy = { ...basePackage };
     basePackageCopy.dependencies = { ...basePackageCopy.dependencies };
     if (extensionQualifier !== undefined) {
@@ -234,6 +254,19 @@ async function calculateExtension(extensionQualifier) {
         // Rebuild native modules if necessary
         execSync(`npm run rebuild:${hostApp}`, { cwd: '../../', stdio: 'pipe' });
     } catch (error) {
+        // execSync installs a temporary signal forwarder that consumes SIGINT/SIGTERM
+        // (routing them to the child), so our own SIGINT listener never fires during a
+        // blocking build. Detect a signal-killed child by inspecting error.signal and
+        // trigger cancellation manually.
+        if (cancelled || error.signal === 'SIGINT' || error.signal === 'SIGTERM') {
+            sigintHandler();
+            return;
+        }
+        const stdout = error.stdout?.toString() ?? '';
+        const stderr = error.stderr?.toString() ?? '';
+        if (stdout) { console.error(stdout); }
+        if (stderr) { console.error(stderr); }
+        if (!stdout && !stderr) { console.error(error.message); }
         log(`${extensionQualifier}, Error while building the package.json, -, -, -`);
         return;
     }
@@ -261,6 +294,9 @@ async function calculateExtension(extensionQualifier) {
     };
     const [command, cwd] = appCommand(hostApp);
     const output = await execCommand(command, { env: env, cwd: cwd, shell: true });
+    if (cancelled) {
+        return;
+    }
 
     const mean = parseFloat(getMeasurement(output, '[MEAN] Largest Contentful Paint (LCP):'));
     const stdev = parseFloat(getMeasurement(output, '[STDEV] Largest Contentful Paint (LCP):'));
