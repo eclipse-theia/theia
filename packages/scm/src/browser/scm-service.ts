@@ -92,10 +92,13 @@ export class ScmService {
         repository.dispose = () => {
             this._repositories.delete(key);
             dispose.bind(repository)();
-            this.onDidRemoveRepositoryEmitter.fire(repository);
+            // Update the selected repository before firing the remove event so
+            // subscribers do not observe a stale selection pointing at the just
+            // disposed repository.
             if (this._selectedRepository === repository) {
                 this.selectedRepository = this._repositories.values().next().value;
             }
+            this.onDidRemoveRepositoryEmitter.fire(repository);
         };
         this._repositories.set(key, repository);
         this.onDidAddRepositoryEmitter.fire(repository);

@@ -388,7 +388,31 @@ export class ScmMainImpl implements ScmMain {
             return;
         }
 
-        this.repositoryDisposables.get(handle)!.dispose();
+        // Defensively cascade-dispose any children (e.g. worktrees) whose parent
+        // is being unregistered. The plugin API exposes onDidDisposeParent, but if
+        // a plugin fails to propagate it (or races with an external change like a
+        // worktree being removed on disk), children would otherwise be orphaned
+        // in the Repositories view. Children are torn down inline (not recursively)
+        // to keep the iteration over `this.repositories` safe and to tolerate a
+        // plugin-side RPC for the child arriving first.
+        const childHandles: number[] = [];
+        for (const [childHandle, childRepo] of this.repositories) {
+            if (childHandle !== handle && (childRepo.provider as PluginScmProvider).parentHandle === handle) {
+                childHandles.push(childHandle);
+            }
+        }
+        for (const childHandle of childHandles) {
+            const childRepository = this.repositories.get(childHandle);
+            if (!childRepository) {
+                continue;
+            }
+            this.repositoryDisposables.get(childHandle)?.dispose();
+            this.repositoryDisposables.delete(childHandle);
+            childRepository.dispose();
+            this.repositories.delete(childHandle);
+        }
+
+        this.repositoryDisposables.get(handle)?.dispose();
         this.repositoryDisposables.delete(handle);
 
         repository.dispose();
