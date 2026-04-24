@@ -29,13 +29,10 @@ import * as DOMPurify from '@theia/core/shared/dompurify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { OpenerService, open } from '@theia/core/lib/browser';
 import { URI } from '@theia/core';
-import { nls } from '@theia/core/lib/common/nls';
-import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 @injectable()
 export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(WorkspaceTrustService) protected readonly workspaceTrustService: WorkspaceTrustService;
     protected readonly markdownIt = markdownit().use(markdownitemoji.full);
     canHandle(response: ChatResponseContent): number {
         if (MarkdownChatResponseContent.is(response)) {
@@ -54,30 +51,15 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
             return null;
         }
 
-        return <MarkdownRender response={response} openerService={this.openerService} workspaceTrustService={this.workspaceTrustService} />;
+        return <MarkdownRender response={response} openerService={this.openerService} />;
     }
 }
 
-const MarkdownRender = ({ response, openerService, workspaceTrustService }: {
-    response: MarkdownChatResponseContent | InformationalChatResponseContent;
-    openerService: OpenerService;
-    workspaceTrustService: WorkspaceTrustService;
-}) => {
-    const blockExternalImages = useBlockExternalImages(workspaceTrustService);
-    const ref = useMarkdownRendering(response.content, openerService, false, undefined, blockExternalImages);
+const MarkdownRender = ({ response, openerService }: { response: MarkdownChatResponseContent | InformationalChatResponseContent; openerService: OpenerService }) => {
+    const ref = useMarkdownRendering(response.content, openerService);
 
     return <div ref={ref}></div>;
 };
-
-export function useBlockExternalImages(workspaceTrustService: WorkspaceTrustService): boolean {
-    const [trusted, setTrusted] = React.useState(false);
-    React.useEffect(() => {
-        workspaceTrustService.getWorkspaceTrust().then(setTrusted);
-        const disposable = workspaceTrustService.onDidChangeWorkspaceTrust(setTrusted);
-        return () => disposable.dispose();
-    }, [workspaceTrustService]);
-    return !trusted;
-}
 
 export interface DeclaredEventsEventListenerObject extends EventListenerObject {
     handledEvents?: (keyof HTMLElementEventMap)[];
@@ -104,8 +86,7 @@ export const useMarkdownRendering = (
     markdown: string | MarkdownString,
     openerService: OpenerService,
     skipSurroundingParagraph: boolean = false,
-    eventHandler?: DeclaredEventsEventListenerObject,
-    blockExternalImages?: boolean
+    eventHandler?: DeclaredEventsEventListenerObject
 ) => {
     // null is valid in React
     // eslint-disable-next-line no-null/no-null
@@ -123,19 +104,6 @@ export const useMarkdownRendering = (
             // but we want to allow them (see handleClick via OpenerService below)
             ALLOW_UNKNOWN_PROTOCOLS: true
         });
-        if (blockExternalImages) {
-            host.querySelectorAll('img').forEach(img => {
-                const src = img.getAttribute('src');
-                if (src && !src.startsWith('data:')) {
-                    const alt = img.getAttribute('alt');
-                    const span = document.createElement('span');
-                    span.textContent = alt
-                        ? nls.localize('theia/ai-chat-ui/externalImageBlockedAlt', '[External image blocked: {0}]', alt)
-                        : nls.localize('theia/ai-chat-ui/externalImageBlocked', '[External image blocked]');
-                    img.replaceWith(span);
-                }
-            });
-        }
         while (ref?.current?.firstChild) {
             ref.current.removeChild(ref.current.firstChild);
         }
@@ -163,7 +131,7 @@ export const useMarkdownRendering = (
             ref.current?.removeEventListener('click', handleClick);
             eventHandler?.handledEvents?.forEach(eventType => eventType !== 'click' && ref?.current?.removeEventListener(eventType, eventHandler));
         };
-    }, [markdownString, skipSurroundingParagraph, openerService, blockExternalImages]);
+    }, [markdownString, skipSurroundingParagraph, openerService]);
 
     return ref;
 };

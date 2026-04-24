@@ -21,15 +21,13 @@ import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ResponseNode } from '../chat-tree-view';
-import { useBlockExternalImages, useMarkdownRendering } from './markdown-part-renderer';
-import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { useMarkdownRendering } from './markdown-part-renderer';
 
 @injectable()
 export class QuestionPartRenderer
     implements ChatResponsePartRenderer<QuestionResponseContent> {
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(WorkspaceTrustService) protected readonly workspaceTrustService: WorkspaceTrustService;
 
     canHandle(response: ChatResponseContent): number {
         if (QuestionResponseContent.is(response)) {
@@ -40,16 +38,16 @@ export class QuestionPartRenderer
 
     render(question: QuestionResponseContent, node: ResponseNode): ReactNode {
         if (question.multiSelect) {
-            return <MultiSelectQuestion question={question} node={node} openerService={this.openerService} workspaceTrustService={this.workspaceTrustService} />;
+            return <MultiSelectQuestion question={question} node={node} openerService={this.openerService} />;
         }
-        return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} workspaceTrustService={this.workspaceTrustService} />;
+        return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} />;
     }
 
     renderConfirmation(question: QuestionResponseContent, node: ResponseNode): ReactNode {
         if (question.multiSelect) {
-            return <MultiSelectQuestion question={question} node={node} openerService={this.openerService} workspaceTrustService={this.workspaceTrustService} />;
+            return <MultiSelectQuestion question={question} node={node} openerService={this.openerService} />;
         }
-        return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} workspaceTrustService={this.workspaceTrustService} />;
+        return <SingleSelectQuestion question={question} node={node} openerService={this.openerService} />;
     }
 
 }
@@ -89,13 +87,12 @@ function DismissButton({ question, disabled }: { question: QuestionResponseConte
     );
 }
 
-function SingleSelectQuestion({ question, node, openerService, workspaceTrustService }: {
-    question: QuestionResponseContent, node: ResponseNode, openerService: OpenerService, workspaceTrustService: WorkspaceTrustService
+function SingleSelectQuestion({ question, node, openerService }: {
+    question: QuestionResponseContent, node: ResponseNode, openerService: OpenerService
 }): React.JSX.Element {
     const isDisabled = question.isReadOnly || isResolved(question) || !node.response.isWaitingForInput;
     const hasDescriptions = question.options.some(option => option.description);
-    const blockExternalImages = useBlockExternalImages(workspaceTrustService);
-    const questionRef = useMarkdownRendering(question.question, openerService, false, undefined, blockExternalImages);
+    const questionRef = useMarkdownRendering(question.question, openerService);
 
     return (
         <div className="theia-QuestionPartRenderer-root">
@@ -128,11 +125,10 @@ function SingleSelectQuestion({ question, node, openerService, workspaceTrustSer
     );
 }
 
-function MultiSelectQuestion({ question, node, openerService, workspaceTrustService }: {
-    question: QuestionResponseContent, node: ResponseNode, openerService: OpenerService, workspaceTrustService: WorkspaceTrustService
+function MultiSelectQuestion({ question, node, openerService }: {
+    question: QuestionResponseContent, node: ResponseNode, openerService: OpenerService
 }): React.JSX.Element {
-    const blockExternalImages = useBlockExternalImages(workspaceTrustService);
-    const questionRef = useMarkdownRendering(question.question, openerService, false, undefined, blockExternalImages);
+    const questionRef = useMarkdownRendering(question.question, openerService);
     const restoredIndices = React.useMemo(() => {
         if (question.selectedOptions && question.selectedOptions.length > 0) {
             const indices = new Set<number>();
