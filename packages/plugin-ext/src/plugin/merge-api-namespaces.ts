@@ -73,7 +73,7 @@ export function deepMergeApiNamespaces<T extends object, U extends object>(
     // getters and setters. Spread invokes getters and copies the returned value,
     // which would evaluate lazy getters like `activeTerminal` at merge time
     // instead of when the plugin accesses them.
-    const result = Object.create(null);
+    const result: Record<string, unknown> = {};
 
     // Pass 1: copy all target descriptors into result
     const targetDescs = Object.getOwnPropertyDescriptors(target);
