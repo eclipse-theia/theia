@@ -113,6 +113,7 @@ export interface PluginPackageContribution {
     notebookRenderer?: PluginNotebookRendererContribution[];
     notebookPreload?: PluginPackageNotebookPreload[];
     mcpServerDefinitionProviders?: PluginPackageMcpServerDefinitionProviderContribution[];
+    languageModelTools?: PluginPackageLanguageModelToolContribution[];
 }
 
 export interface PluginPackageNotebook {
@@ -139,6 +140,14 @@ export interface PluginPackageMcpServerDefinitionProviderContribution {
     id: string;
     label: string;
     description?: string;
+}
+
+export interface PluginPackageLanguageModelToolContribution {
+    name: string;
+    displayName?: string;
+    description?: string;
+    inputSchema?: object;
+    tags?: string[];
 }
 
 export interface PluginPackageAuthenticationProvider {
