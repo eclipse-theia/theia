@@ -129,6 +129,7 @@ import { TreeDelta } from '@theia/test/lib/common/tree-delta';
 import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
 import { ArgumentProcessor } from './commands';
 import { McpServerDefinitionRegistryMain, McpServerDefinitionRegistryExt } from './lm-protocol';
+import { LanguageModelToolsMain, LanguageModelToolsExt } from './lm-tool-protocol';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -2404,7 +2405,8 @@ export const PLUGIN_RPC_CONTEXT = {
     LOCALIZATION_MAIN: createProxyIdentifier<LocalizationMain>('LocalizationMain'),
     TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain'),
     URI_MAIN: createProxyIdentifier<UriMain>('UriMain'),
-    MCP_SERVER_DEFINITION_REGISTRY_MAIN: createProxyIdentifier<McpServerDefinitionRegistryMain>('McpServerDefinitionRegistryMain')
+    MCP_SERVER_DEFINITION_REGISTRY_MAIN: createProxyIdentifier<McpServerDefinitionRegistryMain>('McpServerDefinitionRegistryMain'),
+    LM_TOOLS_MAIN: createProxyIdentifier<LanguageModelToolsMain>('LanguageModelToolsMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2449,7 +2451,8 @@ export const MAIN_RPC_CONTEXT = {
     TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)'),
     TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt'),
     URI_EXT: createProxyIdentifier<UriExt>('UriExt'),
-    MCP_SERVER_DEFINITION_REGISTRY_EXT: createProxyIdentifier<McpServerDefinitionRegistryExt>('McpServerDefinitionRegistryExt')
+    MCP_SERVER_DEFINITION_REGISTRY_EXT: createProxyIdentifier<McpServerDefinitionRegistryExt>('McpServerDefinitionRegistryExt'),
+    LM_TOOLS_EXT: createProxyIdentifier<LanguageModelToolsExt>('LanguageModelToolsExt')
 };
 
 export interface TasksExt {

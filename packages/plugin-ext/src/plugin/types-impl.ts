@@ -4126,7 +4126,11 @@ export class LanguageModelToolCallPart {
     name: string;
     input: object;
 
-    constructor(callId: string, name: string, input: object) { }
+    constructor(callId: string, name: string, input: object) {
+        this.callId = callId;
+        this.name = name;
+        this.input = input;
+    }
 }
 
 /**
@@ -4136,24 +4140,25 @@ export class LanguageModelToolResultPart {
     callId: string;
     content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(callId: string, content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
+    constructor(callId: string, content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) {
+        this.callId = callId;
+        this.content = content;
+    }
 }
 
-/**
- * @stubbed
- */
 export class LanguageModelTextPart {
     value: string;
-    constructor(value: string) { }
+    constructor(value: string) {
+        this.value = value;
+    }
 }
 
-/**
- * @stubbed
- */
 export class LanguageModelToolResult {
     content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
+    constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) {
+        this.content = content;
+    }
 }
 
 /**
@@ -4162,12 +4167,11 @@ export class LanguageModelToolResult {
 export class LanguageModelPromptTsxPart {
     value: unknown;
 
-    constructor(value: unknown) { }
+    constructor(value: unknown) {
+        this.value = value;
+    }
 }
 
-/**
- * @stubbed
- */
 export class LanguageModelDataPart {
     static image(data: Uint8Array, mime: string): LanguageModelDataPart {
         return new LanguageModelDataPart(data, mime);
@@ -4182,7 +4186,10 @@ export class LanguageModelDataPart {
     }
     mimeType: string;
     data: Uint8Array;
-    constructor(data: Uint8Array, mimeType: string) { }
+    constructor(data: Uint8Array, mimeType: string) {
+        this.data = data;
+        this.mimeType = mimeType;
+    }
 }
 
 /**
