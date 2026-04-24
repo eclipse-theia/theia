@@ -297,6 +297,7 @@ import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
 import { PluginLogger } from './logger';
 import { LmExtImpl } from './lm-ext';
+import { LanguageModelToolsExtImpl } from './lm-tool-ext';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
     return new Proxy(rawObject, {
@@ -362,6 +363,7 @@ export function createAPIFactory(
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
     const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
     const lmExt = rpc.set(MAIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_EXT, new LmExtImpl(rpc));
+    const lmToolExt = rpc.set(MAIN_RPC_CONTEXT.LM_TOOLS_EXT, new LanguageModelToolsExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     const commandLogger = new PluginLogger(rpc, 'commands-plugin');
@@ -1374,6 +1376,9 @@ export function createAPIFactory(
         const mcpContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.mcpServerDefinitionProviders || [];
         lmExt.registerMcpContributions(mcpContributions);
 
+        const toolContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.languageModelTools || [];
+        lmToolExt.registerToolContributions(toolContributions);
+
         const lm: typeof theia.lm = {
             /** @stubbed LanguageModelChat */
             selectChatModels(selector?: theia.LanguageModelChatSelector): Thenable<theia.LanguageModelChat[]> {
@@ -1381,16 +1386,16 @@ export function createAPIFactory(
             },
             /** @stubbed LanguageModelChat */
             onDidChangeChatModels: (listener, thisArgs?, disposables?) => Event.None(listener, thisArgs, disposables),
-            /** @stubbed LanguageModelTool */
             invokeTool(name: string, options: theia.LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<theia.LanguageModelToolResult> {
-                return Promise.resolve({ content: [] });
+                return lmToolExt.invokeTool(name, options, token);
             },
-            /** @stubbed LanguageModelTool */
             registerTool<T>(name: string, tool: theia.LanguageModelTool<T>): Disposable {
-                return Disposable.NULL;
+                const d = lmToolExt.registerTool(name, tool);
+                return new Disposable(() => d.dispose());
             },
-            /** @stubbed LanguageModelTool */
-            tools: [],
+            get tools(): readonly theia.LanguageModelToolInformation[] {
+                return lmToolExt.getTools();
+            },
             registerMcpServerDefinitionProvider(id: string, provider: any): theia.Disposable {
                 return lmExt.registerMcpServerDefinitionProvider(id, provider);
             },

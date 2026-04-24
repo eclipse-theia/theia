@@ -1,0 +1,65 @@
+{
+  "private": true,
+  "name": "plugin-lm-tools",
+  "version": "1.70.0",
+  "main": "extension.js",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "publisher": "sample-namespace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "devDependencies": {
+    "@types/vscode": "^1.99.0"
+  },
+  "scripts": {
+    "build": "vsce package --no-dependencies"
+  },
+  "contributes": {
+    "languageModelTools": [
+      {
+        "name": "sample-getCurrentTime",
+        "displayName": "Get Current Time",
+        "description": "Returns the current date and time in ISO format.",
+        "tags": [
+          "sample",
+          "time"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "sample-calculateSum",
+        "displayName": "Calculate Sum",
+        "description": "Calculates the sum of an array of numbers.",
+        "tags": [
+          "sample",
+          "math"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "numbers": {
+              "type": "array",
+              "description": "An array of numbers to sum.",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "numbers"
+          ]
+        }
+      }
+    ]
+  }
+}
