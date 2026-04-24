@@ -125,8 +125,8 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
         const uris = this.model.selectedFileStatNodes.map(node => node.uri.toString());
         if (uris.length > 0 && event.clipboardData) {
             event.clipboardData.setData('text/plain', uris.join('\n'));
-            event.preventDefault();
         }
+        event.preventDefault();
     }
 
     protected handlePaste(event: ClipboardEvent): void {
@@ -139,9 +139,21 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
             if (!target) {
                 return;
             }
+            event.preventDefault();
             for (const file of raw.split('\n')) {
-                event.preventDefault();
-                const source = new URI(file);
+                const trimmed = file.trim();
+                if (!trimmed) {
+                    continue;
+                }
+                try {
+                    new URL(trimmed);
+                } catch {
+                    continue;
+                }
+                const source = new URI(trimmed);
+                if (!this.workspaceService.getWorkspaceRootUri(source)) {
+                    continue;
+                }
                 this.model.copy(source, target);
             }
         }
