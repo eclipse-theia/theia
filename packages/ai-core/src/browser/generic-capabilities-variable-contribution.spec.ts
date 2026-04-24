@@ -27,9 +27,12 @@ import {
     GenericCapabilitiesVariableContribution,
     SELECTED_SKILLS_VARIABLE,
     SELECTED_FUNCTIONS_VARIABLE,
+    SELECTED_MCP_FUNCTIONS_VARIABLE,
     SELECTED_VARIABLES_VARIABLE
 } from './generic-capabilities-variable-contribution';
 import { CapabilityAwareContext } from '../common/capability-utils';
+import { ToolInvocationRegistry } from '../common/tool-invocation-registry';
+import { ToolRequest } from '../common/language-model';
 
 disableJSDOM();
 
@@ -38,6 +41,22 @@ describe('GenericCapabilitiesVariableContribution', () => {
     after(() => disableJSDOM());
     let contribution: GenericCapabilitiesVariableContribution;
     let container: Container;
+
+    function createMockToolInvocationRegistry(registeredToolIds: string[]): ToolInvocationRegistry {
+        const tools = new Map<string, ToolRequest>();
+        for (const id of registeredToolIds) {
+            tools.set(id, { id, providerName: 'test', parameters: {}, handler: async () => '' } as unknown as ToolRequest);
+        }
+        return {
+            getFunction: (toolId: string) => tools.get(toolId),
+            getFunctions: (...toolIds: string[]) => toolIds.map(id => tools.get(id)).filter((t): t is ToolRequest => t !== undefined),
+            registerTool: () => { },
+            unregisterTool: () => { },
+            unregisterAllTools: () => { },
+            getAllFunctions: () => Array.from(tools.values()),
+            onDidChange: () => ({ dispose: () => { } }),
+        } as unknown as ToolInvocationRegistry;
+    }
 
     beforeEach(() => {
         container = new Container();
@@ -80,6 +99,95 @@ describe('GenericCapabilitiesVariableContribution', () => {
     });
 
     describe('resolve', () => {
+        describe('resolveSelectedFunctions filtering', () => {
+            it('returns empty string when toolInvocationRegistry is not available', async () => {
+                const context: CapabilityAwareContext = {
+                    genericCapabilitySelections: {
+                        functions: ['tool1', 'tool2']
+                    }
+                };
+
+                const result = await contribution.resolve(
+                    { variable: SELECTED_FUNCTIONS_VARIABLE },
+                    context
+                );
+
+                expect(result?.value).to.equal('');
+            });
+
+            it('filters out stale tool IDs that are not in the registry', async () => {
+                const mockRegistry = createMockToolInvocationRegistry(['tool1', 'tool3']);
+                (contribution as unknown as { toolInvocationRegistry: ToolInvocationRegistry }).toolInvocationRegistry = mockRegistry;
+
+                const context: CapabilityAwareContext = {
+                    genericCapabilitySelections: {
+                        functions: ['tool1', 'tool2_stale', 'tool3']
+                    }
+                };
+
+                const result = await contribution.resolve(
+                    { variable: SELECTED_FUNCTIONS_VARIABLE },
+                    context
+                );
+
+                expect(result?.value).to.equal('~{tool1}\n~{tool3}');
+            });
+
+            it('returns empty string when all tool IDs are stale', async () => {
+                const mockRegistry = createMockToolInvocationRegistry([]);
+                (contribution as unknown as { toolInvocationRegistry: ToolInvocationRegistry }).toolInvocationRegistry = mockRegistry;
+
+                const context: CapabilityAwareContext = {
+                    genericCapabilitySelections: {
+                        functions: ['stale1', 'stale2']
+                    }
+                };
+
+                const result = await contribution.resolve(
+                    { variable: SELECTED_FUNCTIONS_VARIABLE },
+                    context
+                );
+
+                expect(result?.value).to.equal('');
+            });
+
+            it('returns all tool references when all IDs are valid', async () => {
+                const mockRegistry = createMockToolInvocationRegistry(['tool1', 'tool2']);
+                (contribution as unknown as { toolInvocationRegistry: ToolInvocationRegistry }).toolInvocationRegistry = mockRegistry;
+
+                const context: CapabilityAwareContext = {
+                    genericCapabilitySelections: {
+                        functions: ['tool1', 'tool2']
+                    }
+                };
+
+                const result = await contribution.resolve(
+                    { variable: SELECTED_FUNCTIONS_VARIABLE },
+                    context
+                );
+
+                expect(result?.value).to.equal('~{tool1}\n~{tool2}');
+            });
+
+            it('filters stale MCP function IDs the same way', async () => {
+                const mockRegistry = createMockToolInvocationRegistry(['mcp_fetch_fetch']);
+                (contribution as unknown as { toolInvocationRegistry: ToolInvocationRegistry }).toolInvocationRegistry = mockRegistry;
+
+                const context: CapabilityAwareContext = {
+                    genericCapabilitySelections: {
+                        mcpFunctions: ['mcp_fetch_fetch', 'mcp_removed_server_tool']
+                    }
+                };
+
+                const result = await contribution.resolve(
+                    { variable: SELECTED_MCP_FUNCTIONS_VARIABLE },
+                    context
+                );
+
+                expect(result?.value).to.equal('~{mcp_fetch_fetch}');
+            });
+        });
+
         it('returns empty string when no selections exist', async () => {
             const context: CapabilityAwareContext = {};
 
