@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type * as theia from '@theia/plugin';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { InternalPluginApiContribution } from '../common/plugin-ext-api-contribution';
-import { Plugin, PluginAPIFactory, PluginManager, LocalizationExt } from '../common/plugin-api-rpc';
+import { Plugin, PluginManager, LocalizationExt } from '../common/plugin-api-rpc';
 import { createAPIFactory } from './plugin-context';
+import type { TerminalPluginApiNamespace } from './terminal-ext-plugin-api-contribution';
 import { EnvExtImpl } from './env';
 import { DebugExtImpl } from './debug/debug-ext';
 import { PreferenceRegistryExtImpl } from './preference-registry';
@@ -28,7 +30,31 @@ import { MessageRegistryExt } from './message-registry';
 import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
 import type { LocalizationExtImpl } from './localization-ext';
+import { TerminalServiceExtImpl } from './terminal-ext';
 import { AbstractPluginManagerExtImpl } from './plugin-manager';
+
+/**
+ * The terminal-owned keys at the top level of `typeof theia`.
+ */
+type TerminalTopLevelKeys = keyof Omit<TerminalPluginApiNamespace, 'window'>;
+
+/**
+ * The terminal-owned keys within `theia.window`.
+ */
+type TerminalWindowKeys = keyof TerminalPluginApiNamespace['window'];
+
+/**
+ * The shape of the legacy contribution's return — everything in `typeof theia`
+ * except the properties owned by extracted contributions (currently just terminal).
+ *
+ * As more slices are extracted, this type narrows further: each extraction adds
+ * its keys to the `Omit` lists here. When the legacy contribution is empty,
+ * this type becomes `{}` and the contribution can be removed.
+ */
+export type LegacyPluginApiNamespace =
+    Omit<typeof theia, TerminalTopLevelKeys | 'window'> & {
+        window: Omit<typeof theia.window, TerminalWindowKeys>;
+    };
 
 /**
  * Legacy contribution that wraps the monolithic `createAPIFactory()` function from
@@ -82,7 +108,10 @@ export class LegacyExtPluginApiContribution implements InternalPluginApiContribu
     @inject(LocalizationExt)
     protected readonly localizationExt: LocalizationExtImpl;
 
-    protected apiFactory: PluginAPIFactory | undefined;
+    @inject(TerminalServiceExtImpl)
+    protected readonly terminalExt: TerminalServiceExtImpl;
+
+    protected apiFactory: ((plugin: Plugin) => LegacyPluginApiNamespace) | undefined;
 
     registerMainImplementations(_rpc: RPCProtocol, _container: interfaces.Container): void {
         // No-op on the ext side — main-side registration is handled by LegacyMainPluginApiContribution
@@ -102,17 +131,15 @@ export class LegacyExtPluginApiContribution implements InternalPluginApiContribu
             this.messageRegistryExt,
             this.clipboardExt,
             this.webviewExt,
-            this.localizationExt
+            this.localizationExt,
+            this.terminalExt
         );
     }
 
-    createApiNamespace(plugin: Plugin): Record<string, unknown> {
+    createApiNamespace(plugin: Plugin): LegacyPluginApiNamespace {
         if (!this.apiFactory) {
             throw new Error('LegacyExtPluginApiContribution: registerExtImplementations must be called before createApiNamespace');
         }
-        // The factory returns a full `typeof theia` object for the given plugin.
-        // We return it as Record<string, unknown> so the assembler can merge it
-        // with contributions from other InternalPluginApiContributions.
-        return this.apiFactory(plugin) as unknown as Record<string, unknown>;
+        return this.apiFactory(plugin);
     }
 }

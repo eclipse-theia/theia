@@ -18,6 +18,7 @@
 /* tslint:disable:typedef */
 
 import type * as theia from '@theia/plugin';
+import type { LegacyPluginApiNamespace } from './legacy-ext-plugin-api-contribution';
 import { CommandRegistryImpl } from './command-registry';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -26,7 +27,6 @@ import {
     MAIN_RPC_CONTEXT,
     Plugin as InternalPlugin,
     PluginManager,
-    PluginAPIFactory,
     MainMessageType,
     DebugConfigurationProviderTriggerKind,
     PLUGIN_RPC_CONTEXT
@@ -164,10 +164,6 @@ import {
     LanguageStatusSeverity,
     TextDocumentChangeReason,
     InputBoxValidationSeverity,
-    TerminalLink,
-    TerminalLocation,
-    TerminalExitReason,
-    TerminalProfile,
     InlayHint,
     InlayHintKind,
     InlayHintLabelPart,
@@ -199,7 +195,6 @@ import {
     CustomEditorTabInput,
     NotebookDiffEditorTabInput,
     NotebookEditorTabInput,
-    TerminalEditorTabInput,
     TextDiffTabInput,
     TextMergeTabInput,
     WebviewEditorTabInput,
@@ -209,9 +204,6 @@ import {
     DocumentDropOrPasteEditKind,
     ExternalUriOpenerPriority,
     EditSessionIdentityMatch,
-    TerminalOutputAnchor,
-    TerminalQuickFixTerminalCommand,
-    TerminalQuickFixOpener,
     TestResultState,
     BranchCoverage,
     DeclarationCoverage,
@@ -240,10 +232,6 @@ import {
     PortAutoForwardAction,
     PortAttributes,
     DebugVisualization,
-    TerminalShellExecutionCommandLineConfidence,
-    TerminalCompletionItem,
-    TerminalCompletionItemKind,
-    TerminalCompletionList,
     McpHttpServerDefinition,
     McpStdioServerDefinition,
     InteractiveWindowInput,
@@ -324,8 +312,12 @@ export function createAPIFactory(
     messageRegistryExt: MessageRegistryExt,
     clipboard: ClipboardExt,
     webviewExt: WebviewsExtImpl,
-    localizationExt: LocalizationExtImpl
-): PluginAPIFactory {
+    localizationExt: LocalizationExtImpl,
+    terminalExt: TerminalServiceExtImpl
+): (plugin: InternalPlugin) => LegacyPluginApiNamespace {
+    // The return type is checked via a type assertion (as LegacyPluginApiNamespace)
+    // on the return statement of the inner function, matching the original
+    // <typeof theia> pattern that was used before the polylith split.
 
     const authenticationExt = rpc.set(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT, new AuthenticationExtImpl(rpc));
     const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -341,7 +333,7 @@ export function createAPIFactory(
     const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry, webviewExt, workspaceExt));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
     const statusBarMessageRegistryExt = rpc.set(MAIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_EXT, new StatusBarMessageRegistryExtImpl(rpc, commandRegistry));
-    const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
+
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc, terminalExt));
@@ -366,7 +358,7 @@ export function createAPIFactory(
 
     const commandLogger = new PluginLogger(rpc, 'commands-plugin');
 
-    return function (plugin: InternalPlugin): typeof theia {
+    return function (plugin: InternalPlugin) {
         const authentication: typeof theia.authentication = {
             registerAuthenticationProvider(id: string, label: string, provider: theia.AuthenticationProvider, options?: theia.AuthenticationProviderOptions): theia.Disposable {
                 return authenticationExt.registerAuthenticationProvider(id, label, provider, options);
@@ -456,44 +448,36 @@ export function createAPIFactory(
             }
         };
 
-        const { onDidChangeActiveTerminal, onDidChangeTerminalState, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
         const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
         const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
-        const window: typeof theia.window = {
+        const window = {
 
-            get activeTerminal(): theia.Terminal | undefined {
-                return terminalExt.activeTerminal;
-            },
             get activeTextEditor(): TextEditorExt | undefined {
                 return editors.getActiveEditor();
             },
             get visibleTextEditors(): theia.TextEditor[] {
                 return editors.getVisibleTextEditors();
             },
-            get terminals(): theia.Terminal[] {
-                return terminalExt.terminals;
-            },
-            onDidChangeActiveTerminal,
-            onDidChangeActiveTextEditor(listener, thisArg?, disposables?) {
+            onDidChangeActiveTextEditor(listener: (e: theia.TextEditor | undefined) => any, thisArg?: any, disposables?: Disposable[]) {
                 return editors.onDidChangeActiveTextEditor(listener, thisArg, disposables);
             },
-            onDidChangeVisibleTextEditors(listener, thisArg?, disposables?) {
+            onDidChangeVisibleTextEditors(listener: (e: theia.TextEditor[]) => any, thisArg?: any, disposables?: Disposable[]) {
                 return editors.onDidChangeVisibleTextEditors(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
+            onDidChangeTextEditorSelection(listener: (e: theia.TextEditorSelectionChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
                 return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorDiffInformation(listener, thisArg?, disposables?) {
+            onDidChangeTextEditorDiffInformation(listener: (e: theia.TextEditorDiffInformationChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
                 return editors.onDidChangeTextEditorDiffInformation(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
+            onDidChangeTextEditorOptions(listener: (e: theia.TextEditorOptionsChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
                 return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorViewColumn(listener, thisArg?, disposables?) {
+            onDidChangeTextEditorViewColumn(listener: (e: theia.TextEditorViewColumnChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
                 return editors.onDidChangeTextEditorViewColumn(listener, thisArg, disposables);
             },
-            onDidChangeTextEditorVisibleRanges(listener, thisArg?, disposables?) {
+            onDidChangeTextEditorVisibleRanges(listener: (e: theia.TextEditorVisibleRangesChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
             async showTextDocument(documentArg: theia.TextDocument | URI,
@@ -529,18 +513,18 @@ export function createAPIFactory(
             get visibleNotebookEditors(): theia.NotebookEditor[] {
                 return notebooksExt.visibleApiNotebookEditors;
             },
-            onDidChangeVisibleNotebookEditors(listener, thisArg?, disposables?) {
+            onDidChangeVisibleNotebookEditors(listener: (e: readonly theia.NotebookEditor[]) => any, thisArg?: any, disposables?: Disposable[]) {
                 return notebooksExt.onDidChangeVisibleNotebookEditors(listener, thisArg, disposables);
             },
             get activeNotebookEditor(): theia.NotebookEditor | undefined {
                 return notebooksExt.activeApiNotebookEditor;
-            }, onDidChangeActiveNotebookEditor(listener, thisArg?, disposables?) {
+            }, onDidChangeActiveNotebookEditor(listener: (e: theia.NotebookEditor | undefined) => any, thisArg?: any, disposables?: Disposable[]) {
                 return notebooksExt.onDidChangeActiveNotebookEditor(listener, thisArg, disposables);
             },
-            onDidChangeNotebookEditorSelection(listener, thisArg?, disposables?) {
+            onDidChangeNotebookEditorSelection(listener: (e: theia.NotebookEditorSelectionChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
                 return notebookEditors.onDidChangeNotebookEditorSelection(listener, thisArg, disposables);
             },
-            onDidChangeNotebookEditorVisibleRanges(listener, thisArg?, disposables?) {
+            onDidChangeNotebookEditorVisibleRanges(listener: (e: theia.NotebookEditorVisibleRangesChangeEvent) => any, thisArg?: any, disposables?: Disposable[]) {
                 return notebookEditors.onDidChangeNotebookEditorVisibleRanges(listener, thisArg, disposables);
             },
             showNotebookDocument(document: theia.NotebookDocument, options?: theia.NotebookDocumentShowOptions) {
@@ -627,17 +611,9 @@ export function createAPIFactory(
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();
             },
-            onDidChangeWindowState(listener, thisArg?, disposables?): theia.Disposable {
+            onDidChangeWindowState(listener: (e: theia.WindowState) => any, thisArg?: any, disposables?: Disposable[]): theia.Disposable {
                 return windowStateExt.onDidChangeWindowState(listener, thisArg, disposables);
             },
-            createTerminal(nameOrOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
-                shellPath?: string,
-                shellArgs?: string[] | string): theia.Terminal {
-                return terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs, createAPIObject);
-            },
-            onDidChangeTerminalState,
-            onDidCloseTerminal,
-            onDidOpenTerminal,
             createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
                 return createAPIObject(editors.createTextEditorDecorationType(options));
             },
@@ -666,16 +642,10 @@ export function createAPIFactory(
             createInputBox(): theia.InputBox {
                 return createAPIObject(quickOpenExt.createInputBox(plugin));
             },
-            registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): theia.Disposable {
-                return terminalExt.registerTerminalLinkProvider(provider);
-            },
-            registerTerminalProfileProvider(id: string, provider: theia.TerminalProfileProvider): theia.Disposable {
-                return terminalExt.registerTerminalProfileProvider(id, provider);
-            },
             get activeColorTheme(): theia.ColorTheme {
                 return themingExt.activeColorTheme;
             },
-            onDidChangeActiveColorTheme(listener, thisArg?, disposables?) {
+            onDidChangeActiveColorTheme(listener: (e: theia.ColorTheme) => any, thisArg?: any, disposables?: Disposable[]) {
                 return themingExt.onDidChangeActiveColorTheme(listener, thisArg, disposables);
             },
             get tabGroups(): theia.TabGroups {
@@ -689,29 +659,8 @@ export function createAPIFactory(
             registerProfileContentHandler(id: string, profileContentHandler: theia.ProfileContentHandler): theia.Disposable {
                 return Disposable.NULL;
             },
-            /** @stubbed TerminalCompletionProvider */
-            registerTerminalCompletionProvider<T extends theia.TerminalCompletionItem>(
-                provider: theia.TerminalCompletionProvider<T>, ...triggerCharacters: string[]): Disposable {
-                return Disposable.NULL;
-            },
-            /** @stubbed TerminalQuickFixProvider */
-            registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
-                return terminalExt.registerTerminalQuickFixProvider(id, provider);
-            },
-
-            /** Theia-specific TerminalObserver */
-            registerTerminalObserver(observer: theia.TerminalObserver): theia.Disposable {
-                return terminalExt.registerTerminalObserver(observer);
-            },
-
             /** @stubbed ShareProvider */
-            registerShareProvider: () => Disposable.NULL,
-            /** @stubbed Terminal Shell Ingration */
-            onDidChangeTerminalShellIntegration: Event.None,
-            /** @stubbed Terminal Shell Ingration */
-            onDidEndTerminalShellExecution: Event.None,
-            /** @stubbed Terminal Shell Ingration */
-            onDidStartTerminalShellExecution: Event.None
+            registerShareProvider: () => Disposable.NULL
         };
 
         function createFileSystemWatcher(pattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?:
@@ -1400,7 +1349,7 @@ export function createAPIFactory(
             }
         };
 
-        return <typeof theia>{
+        return <LegacyPluginApiNamespace>{
             version: require('../../package.json').version,
             authentication,
             chat,
@@ -1550,8 +1499,6 @@ export function createAPIFactory(
             ColorThemeKind,
             SourceControlInputBoxValidationType,
             FileDecoration,
-            TerminalLink,
-            TerminalProfile,
             CancellationError,
             ExtensionMode,
             LinkedEditingRanges,
@@ -1591,16 +1538,10 @@ export function createAPIFactory(
             TabInputNotebook: NotebookEditorTabInput,
             TabInputNotebookDiff: NotebookDiffEditorTabInput,
             TabInputWebview: WebviewEditorTabInput,
-            TabInputTerminal: TerminalEditorTabInput,
-            TerminalLocation,
-            TerminalOutputAnchor,
-            TerminalExitReason,
             DocumentPasteEdit,
             DocumentPasteEditKind,
             DocumentPasteTriggerKind,
             ExternalUriOpenerPriority,
-            TerminalQuickFixTerminalCommand,
-            TerminalQuickFixOpener,
             EditSessionIdentityMatch,
             TestResultState,
             BranchCoverage,
@@ -1630,10 +1571,6 @@ export function createAPIFactory(
             PortAutoForwardAction,
             PortAttributes,
             DebugVisualization,
-            TerminalShellExecutionCommandLineConfidence,
-            TerminalCompletionItem,
-            TerminalCompletionItemKind,
-            TerminalCompletionList,
             McpHttpServerDefinition,
             McpStdioServerDefinition,
             TabInputInteractiveWindow: InteractiveWindowInput,

@@ -19,6 +19,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Plugin, PluginAPIFactory } from '../common/plugin-api-rpc';
 import { LegacyExtPluginApiContribution } from './legacy-ext-plugin-api-contribution';
+import { TerminalExtPluginApiContribution } from './terminal-ext-plugin-api-contribution';
+import { deepMergeApiNamespaces } from './merge-api-namespaces';
 
 /**
  * Assembles the ext-side (plugin-host) plugin API by composing explicitly injected providers.
@@ -45,8 +47,8 @@ export class ExtPluginApiAssembler {
     @inject(LegacyExtPluginApiContribution)
     protected readonly legacy: LegacyExtPluginApiContribution;
 
-    // Future providers will be added here as explicit @inject fields, e.g.:
-    // @inject(TerminalExtPluginApiProvider) protected readonly terminal: TerminalExtPluginApiProvider;
+    @inject(TerminalExtPluginApiContribution)
+    protected readonly terminal: TerminalExtPluginApiContribution;
 
     /**
      * Register all ext-side RPC implementations and return a factory that produces
@@ -60,15 +62,12 @@ export class ExtPluginApiAssembler {
      *    the results into a single `typeof theia` object.
      */
     createApiFactory(rpc: RPCProtocol): PluginAPIFactory {
+        this.terminal.registerExtImplementations(rpc);
         this.legacy.registerExtImplementations(rpc);
-        // Future: this.terminal.registerExtImplementations(rpc);
 
-        return (plugin: Plugin): typeof theia => {
-            const api = {
-                ...this.legacy.createApiNamespace(plugin),
-                // Future: ...this.terminal.createApiNamespace(plugin),
-            };
-            return api as typeof theia;
-        };
+        return (plugin: Plugin): typeof theia => deepMergeApiNamespaces(
+            this.legacy.createApiNamespace(plugin),
+            this.terminal.createApiNamespace(plugin),
+        );
     }
 }
