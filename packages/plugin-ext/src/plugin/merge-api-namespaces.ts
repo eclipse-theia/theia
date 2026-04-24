@@ -65,7 +65,22 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Class instances, arrays, functions, and other values are treated as leaves and
  * overwritten by the second argument.
  */
-export function deepMergeApiNamespaces<T extends object, U extends object>(
+export function deepMergeApiNamespaces<T extends object, U extends object>(target: T, source: U): DeepMerge<T, U>;
+export function deepMergeApiNamespaces<T extends object, U extends object, V extends object>(target: T, source1: U, source2: V): DeepMerge<DeepMerge<T, U>, V>;
+export function deepMergeApiNamespaces<T extends object, U extends object, V extends object, W extends object>(
+    target: T, source1: U, source2: V, source3: W): DeepMerge<DeepMerge<DeepMerge<T, U>, V>, W>;
+export function deepMergeApiNamespaces(...sources: object[]): object {
+    if (sources.length === 0) {
+        return {};
+    }
+    let result = sources[0];
+    for (let i = 1; i < sources.length; i++) {
+        result = mergeTwo(result, sources[i]);
+    }
+    return result;
+}
+
+function mergeTwo<T extends object, U extends object>(
     target: T,
     source: U
 ): DeepMerge<T, U> {
@@ -95,7 +110,7 @@ export function deepMergeApiNamespaces<T extends object, U extends object>(
 
         if (isPlainObject(existingVal) && isPlainObject(sourceVal)) {
             Object.defineProperty(result, key, {
-                value: deepMergeApiNamespaces(existingVal, sourceVal),
+                value: mergeTwo(existingVal, sourceVal),
                 enumerable: true,
                 configurable: true,
                 writable: true,

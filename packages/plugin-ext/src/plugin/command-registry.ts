@@ -24,6 +24,7 @@ import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } fr
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable, URI } from './types-impl';
 import { DisposableCollection } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { KnownCommands } from './known-commands';
 import { ArgumentProcessor } from '../common/commands';
 import { isUriComponents } from './type-converters';
@@ -31,6 +32,7 @@ import { isUriComponents } from './type-converters';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
 
+@injectable()
 export class CommandRegistryImpl implements CommandRegistryExt {
 
     private proxy: CommandRegistryMain;
@@ -39,7 +41,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private readonly argumentProcessors: ArgumentProcessor[];
     private readonly commandsConverter: CommandsConverter;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(@inject(RPCProtocol) rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
         this.argumentProcessors = [];
         this.commandsConverter = new CommandsConverter(this);

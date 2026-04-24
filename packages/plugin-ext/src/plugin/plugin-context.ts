@@ -156,7 +156,6 @@ import {
     SemanticTokensEdits,
     SemanticTokensEdit,
     ColorThemeKind,
-    SourceControlInputBoxValidationType,
     URI,
     FileDecoration,
     ExtensionMode,
@@ -313,14 +312,16 @@ export function createAPIFactory(
     clipboard: ClipboardExt,
     webviewExt: WebviewsExtImpl,
     localizationExt: LocalizationExtImpl,
-    terminalExt: TerminalServiceExtImpl
+    terminalExt: TerminalServiceExtImpl,
+    commandRegistry: CommandRegistryImpl,
+    scmExt: ScmExtImpl
 ): (plugin: InternalPlugin) => LegacyPluginApiNamespace {
     // The return type is checked via a type assertion (as LegacyPluginApiNamespace)
     // on the return statement of the inner function, matching the original
     // <typeof theia> pattern that was used before the polylith split.
 
     const authenticationExt = rpc.set(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT, new AuthenticationExtImpl(rpc));
-    const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
+    rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, commandRegistry);
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const dialogsExt = new DialogsExtImpl(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl(rpc));
@@ -341,7 +342,7 @@ export function createAPIFactory(
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry, fileSystemExt));
     const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt, workspaceExt));
-    const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
+    rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, scmExt);
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
     const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
@@ -1226,20 +1227,6 @@ export function createAPIFactory(
             }
         };
 
-        const scm: typeof theia.scm = {
-            get inputBox(): theia.SourceControlInputBox {
-                const inputBox = scmExt.getLastInputBox(plugin);
-                if (inputBox) {
-                    return inputBox.apiObject;
-                } else {
-                    throw new Error('Input box not found!');
-                }
-            },
-            createSourceControl(id: string, label: string, rootUri?: URI, iconPath?: theia.IconPath, isHidden?: boolean, parent?: theia.SourceControl): theia.SourceControl {
-                return scmExt.createSourceControl(plugin, id, label, rootUri, iconPath, isHidden, parent);
-            }
-        };
-
         const comments: typeof theia.comments = {
             createCommentController(id: string, label: string): theia.CommentController {
                 return createAPIObject(commentsExt.createCommentController(plugin, id, label));
@@ -1363,7 +1350,6 @@ export function createAPIFactory(
             plugins,
             debug,
             tasks,
-            scm,
             notebooks,
             l10n,
             tests,
@@ -1497,7 +1483,6 @@ export function createAPIFactory(
             SemanticTokensEdit,
             TextDocumentChangeReason,
             ColorThemeKind,
-            SourceControlInputBoxValidationType,
             FileDecoration,
             CancellationError,
             ExtensionMode,

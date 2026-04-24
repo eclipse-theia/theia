@@ -20,6 +20,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Plugin, PluginAPIFactory } from '../common/plugin-api-rpc';
 import { LegacyExtPluginApiContribution } from './legacy-ext-plugin-api-contribution';
 import { TerminalExtPluginApiContribution } from './terminal-ext-plugin-api-contribution';
+import { ScmExtPluginApiContribution } from './scm-ext-plugin-api-contribution';
 import { deepMergeApiNamespaces } from './merge-api-namespaces';
 
 /**
@@ -50,6 +51,9 @@ export class ExtPluginApiAssembler {
     @inject(TerminalExtPluginApiContribution)
     protected readonly terminal: TerminalExtPluginApiContribution;
 
+    @inject(ScmExtPluginApiContribution)
+    protected readonly scm: ScmExtPluginApiContribution;
+
     /**
      * Register all ext-side RPC implementations and return a factory that produces
      * a per-plugin `typeof theia` API object.
@@ -63,11 +67,13 @@ export class ExtPluginApiAssembler {
      */
     createApiFactory(rpc: RPCProtocol): PluginAPIFactory {
         this.terminal.registerExtImplementations(rpc);
+        this.scm.registerExtImplementations(rpc);
         this.legacy.registerExtImplementations(rpc);
 
         return (plugin: Plugin): typeof theia => deepMergeApiNamespaces(
             this.legacy.createApiNamespace(plugin),
             this.terminal.createApiNamespace(plugin),
+            this.scm.createApiNamespace(plugin),
         );
     }
 }

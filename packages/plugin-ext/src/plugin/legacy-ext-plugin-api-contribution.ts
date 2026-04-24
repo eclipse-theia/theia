@@ -21,6 +21,7 @@ import { InternalPluginApiContribution } from '../common/plugin-ext-api-contribu
 import { Plugin, PluginManager, LocalizationExt } from '../common/plugin-api-rpc';
 import { createAPIFactory } from './plugin-context';
 import type { TerminalPluginApiNamespace } from './terminal-ext-plugin-api-contribution';
+import type { ScmPluginApiNamespace } from './scm-ext-plugin-api-contribution';
 import { EnvExtImpl } from './env';
 import { DebugExtImpl } from './debug/debug-ext';
 import { PreferenceRegistryExtImpl } from './preference-registry';
@@ -31,6 +32,8 @@ import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
 import type { LocalizationExtImpl } from './localization-ext';
 import { TerminalServiceExtImpl } from './terminal-ext';
+import { CommandRegistryImpl } from './command-registry';
+import { ScmExtImpl } from './scm';
 import { AbstractPluginManagerExtImpl } from './plugin-manager';
 
 /**
@@ -44,15 +47,20 @@ type TerminalTopLevelKeys = keyof Omit<TerminalPluginApiNamespace, 'window'>;
 type TerminalWindowKeys = keyof TerminalPluginApiNamespace['window'];
 
 /**
+ * The SCM-owned keys at the top level of `typeof theia`.
+ */
+type ScmTopLevelKeys = keyof ScmPluginApiNamespace;
+
+/**
  * The shape of the legacy contribution's return — everything in `typeof theia`
- * except the properties owned by extracted contributions (currently just terminal).
+ * except the properties owned by extracted contributions (terminal, SCM, etc.).
  *
  * As more slices are extracted, this type narrows further: each extraction adds
  * its keys to the `Omit` lists here. When the legacy contribution is empty,
  * this type becomes `{}` and the contribution can be removed.
  */
 export type LegacyPluginApiNamespace =
-    Omit<typeof theia, TerminalTopLevelKeys | 'window'> & {
+    Omit<typeof theia, TerminalTopLevelKeys | ScmTopLevelKeys | 'window'> & {
         window: Omit<typeof theia.window, TerminalWindowKeys>;
     };
 
@@ -111,6 +119,12 @@ export class LegacyExtPluginApiContribution implements InternalPluginApiContribu
     @inject(TerminalServiceExtImpl)
     protected readonly terminalExt: TerminalServiceExtImpl;
 
+    @inject(CommandRegistryImpl)
+    protected readonly commandRegistry: CommandRegistryImpl;
+
+    @inject(ScmExtImpl)
+    protected readonly scmExt: ScmExtImpl;
+
     protected apiFactory: ((plugin: Plugin) => LegacyPluginApiNamespace) | undefined;
 
     registerMainImplementations(_rpc: RPCProtocol, _container: interfaces.Container): void {
@@ -132,7 +146,9 @@ export class LegacyExtPluginApiContribution implements InternalPluginApiContribu
             this.clipboardExt,
             this.webviewExt,
             this.localizationExt,
-            this.terminalExt
+            this.terminalExt,
+            this.commandRegistry,
+            this.scmExt
         );
     }
 

@@ -22,6 +22,7 @@
 
 import * as theia from '@theia/plugin';
 import { Emitter, Event } from '@theia/core/lib/common/event';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     Plugin, PLUGIN_RPC_CONTEXT,
     ScmExt,
@@ -801,6 +802,7 @@ class SourceControlImpl implements theia.SourceControl {
     }
 }
 
+@injectable()
 export class ScmExtImpl implements ScmExt {
 
     private static handlePool: number = 0;
@@ -814,7 +816,7 @@ export class ScmExtImpl implements ScmExt {
 
     private selectedSourceControlHandle: number | undefined;
 
-    constructor(rpc: RPCProtocol, private commands: CommandRegistryImpl) {
+    constructor(@inject(RPCProtocol) rpc: RPCProtocol, @inject(CommandRegistryImpl) private commands: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.SCM_MAIN);
 
         commands.registerArgumentProcessor({
