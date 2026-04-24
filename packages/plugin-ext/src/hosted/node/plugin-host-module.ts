@@ -24,6 +24,7 @@ import { IPCChannel } from '@theia/core/lib/node';
 import { InternalPluginContainerModule } from '../../plugin/node/plugin-container-module.js';
 
 import { LegacyExtPluginApiContribution } from '../../plugin/legacy-ext-plugin-api-contribution.js';
+import { TerminalExtPluginApiContribution } from '../../plugin/terminal-ext-plugin-api-contribution.js';
 import { ExtPluginApiAssembler } from '../../plugin/ext-plugin-api-assembler.js';
 import { LocalizationExt } from '../../common/plugin-api-rpc.js';
 import { EnvExtImpl } from '../../plugin/env.js';
@@ -84,5 +85,6 @@ export default new ContainerModule(bind => {
     bind(TelemetryExtImpl).toSelf().inSingletonScope();
 
     bind(LegacyExtPluginApiContribution).toSelf().inSingletonScope();
+    bind(TerminalExtPluginApiContribution).toSelf().inSingletonScope();
     bind(ExtPluginApiAssembler).toSelf().inSingletonScope();
 });

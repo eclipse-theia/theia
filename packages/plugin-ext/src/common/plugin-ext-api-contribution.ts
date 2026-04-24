@@ -155,11 +155,17 @@ export interface InternalPluginApiContribution {
      * Ext-side: return the API namespace properties and type exports that will be
      * merged into the `typeof theia` object given to each plugin.
      *
-     * Called once per plugin. The returned object's properties are spread into the
+     * Called once per plugin. The returned object's properties are deep-merged into the
      * final API object, so contributions can provide both namespace objects
-     * (e.g., `{ debug: { ... } }`) and type constructors (e.g., `{ TerminalLocation }`).
+     * (e.g., `{ window: { createTerminal: ... } }`) and type constructors
+     * (e.g., `{ TerminalLocation }`).
+     *
+     * Implementations should define a concrete return type (e.g., `TerminalPluginApiNamespace`)
+     * rather than using `Record<string, unknown>`, so that the assembler can verify the
+     * combined result satisfies `typeof theia` at compile time.
      *
      * @param plugin - the plugin for which the API is being created
      */
-    createApiNamespace(plugin: Plugin): Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createApiNamespace(plugin: Plugin): any;
 }

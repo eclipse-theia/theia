@@ -18,6 +18,7 @@ import 'reflect-metadata';
 import { ContainerModule } from '@theia/core/shared/inversify';
 
 import { LegacyExtPluginApiContribution } from '../../../plugin/legacy-ext-plugin-api-contribution.js';
+import { TerminalExtPluginApiContribution } from '../../../plugin/terminal-ext-plugin-api-contribution.js';
 import { ExtPluginApiAssembler } from '../../../plugin/ext-plugin-api-assembler.js';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
@@ -87,5 +88,6 @@ export default new ContainerModule(bind => {
     bind(TelemetryExtImpl).toSelf().inSingletonScope();
 
     bind(LegacyExtPluginApiContribution).toSelf().inSingletonScope();
+    bind(TerminalExtPluginApiContribution).toSelf().inSingletonScope();
     bind(ExtPluginApiAssembler).toSelf().inSingletonScope();
 });
