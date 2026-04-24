@@ -75,8 +75,9 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     },
                     subDirectoryPath: {
                         type: 'string',
-                        description: 'Optional subdirectory path to limit search scope. Use relative paths from workspace root ' +
-                            '(e.g., "packages/ai-ide/src", "packages/core/src/browser"). If not specified, searches entire workspace.'
+                        description: 'Optional subdirectory path to limit search scope ' +
+                            '(e.g., "frontend/src", "backend/packages/core/src/browser"). ' +
+                            'If not specified, searches the entire workspace.'
                     }
                 },
                 required: ['query', 'useRegExp']
@@ -86,14 +87,21 @@ export class WorkspaceSearchProvider implements ToolProvider {
     }
 
     private async determineSearchRoots(subDirectoryPath?: string): Promise<string[]> {
-        const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-
-        if (!subDirectoryPath) {
-            return [workspaceRoot.toString()];
+        const rootMapping = this.workspaceScope.getRootMapping();
+        if (rootMapping.size === 0) {
+            throw new Error('No workspace has been opened yet');
         }
 
-        const subDirUri = workspaceRoot.resolve(subDirectoryPath);
-        this.workspaceScope.ensureWithinWorkspace(subDirUri, workspaceRoot);
+        if (!subDirectoryPath) {
+            return Array.from(rootMapping.values()).map(uri => uri.toString());
+        }
+
+        const subDirUri = await this.workspaceScope.resolveRelativePath(subDirectoryPath);
+        const containingRoot = this.workspaceScope.getContainingRoot(subDirUri);
+        if (!containingRoot) {
+            throw new Error(`Subdirectory '${subDirectoryPath}' is not within any workspace root`);
+        }
+        this.workspaceScope.ensureWithinWorkspace(subDirUri, containingRoot);
 
         try {
             const stat = await this.fileService.resolve(subDirUri);
@@ -195,8 +203,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
             const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
 
-            const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-            const formattedResults = optimizeSearchResults(finalResults, workspaceRoot);
+            const formattedResults = optimizeSearchResults(finalResults, this.workspaceScope);
 
             let numberOfMatchesInFinalResults = 0;
             for (const result of finalResults) {
@@ -218,4 +225,3 @@ export class WorkspaceSearchProvider implements ToolProvider {
         }
     }
 }
-

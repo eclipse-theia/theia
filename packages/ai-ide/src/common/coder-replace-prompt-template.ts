@@ -732,4 +732,3 @@ export function getCoderPromptTemplateEditNext(): BasePromptFragment {
         ...({ variantOf: CODER_EDIT_TEMPLATE_ID })
     };
 }
-

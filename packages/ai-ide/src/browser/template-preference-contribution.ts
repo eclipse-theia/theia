@@ -64,21 +64,22 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
      * @param changedPreference Optional name of the preference that changed
      */
     protected async updateConfiguration(changedPreference?: string): Promise<void> {
-        const workspaceRoot = this.workspaceService.tryGetRoots()[0];
-        if (!workspaceRoot) {
+        const workspaceRoots = this.workspaceService.tryGetRoots();
+        if (workspaceRoots.length === 0) {
             return;
         }
 
-        const workspaceRootUri = workspaceRoot.resource;
         const configProperties: PromptFragmentCustomizationProperties = {};
 
         if (!changedPreference || changedPreference === PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF) {
             const relativeDirectories = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF, []);
-            configProperties.directoryPaths = relativeDirectories.map(dir => {
-                const path = new Path(dir);
-                const uri = workspaceRootUri.resolve(path.toString());
-                return uri.path.toString();
-            });
+            configProperties.directoryPaths = workspaceRoots.flatMap(root =>
+                relativeDirectories.map(dir => {
+                    const path = new Path(dir);
+                    const uri = root.resource.resolve(path.toString());
+                    return uri.path.toString();
+                })
+            );
         }
 
         if (!changedPreference || changedPreference === PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF) {
@@ -87,11 +88,13 @@ export class TemplatePreferenceContribution implements FrontendApplicationContri
 
         if (!changedPreference || changedPreference === PROMPT_TEMPLATE_WORKSPACE_FILES_PREF) {
             const relativeFilePaths = this.preferenceService.get<string[]>(PROMPT_TEMPLATE_WORKSPACE_FILES_PREF, []);
-            configProperties.filePaths = relativeFilePaths.map(filePath => {
-                const path = new Path(filePath);
-                const uri = workspaceRootUri.resolve(path.toString());
-                return uri.path.toString();
-            });
+            configProperties.filePaths = workspaceRoots.flatMap(root =>
+                relativeFilePaths.map(filePath => {
+                    const path = new Path(filePath);
+                    const uri = root.resource.resolve(path.toString());
+                    return uri.path.toString();
+                })
+            );
         }
 
         await this.customizationService.updateConfiguration(configProperties);

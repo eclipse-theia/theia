@@ -65,6 +65,8 @@ export class ClaudeCodeCommandContribution implements CommandContribution {
         });
     }
 
+    // TODO: multi-root workspace support - currently only uses the first (primary) workspace root.
+    // In a multi-root workspace, the user should be prompted to select which workspace root to create/open the file in.
     protected async openFileInWorkspace(file: string, initialContent: string): Promise<void> {
         const roots = this.workspaceService.tryGetRoots();
         if (roots.length < 1) {

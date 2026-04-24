@@ -141,6 +141,7 @@ This skill provides instructions for performing comprehensive code reviews.
 \`\`\`
 
 ## Additional Context
+
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 ## Non-Negotiable Requirements

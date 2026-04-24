@@ -27,6 +27,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { dump, load } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**
  * Default template entry for creating custom agents
@@ -89,8 +90,11 @@ interface PromptFragmentCustomization extends CommandPromptFragmentMetadata {
     /** The template content */
     template: string;
 
-    /** Source URI where this template is stored */
+    /** Source URI where this template is stored (first/primary source when merged) */
     sourceUri: string;
+
+    /** All source URIs when multiple equal-priority sources were merged */
+    sourceUris: string[];
 
     /** Source type of the customization */
     origin: CustomizationSource;
@@ -135,6 +139,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     @inject(ConfigurableInMemoryResources)
     protected readonly inMemoryResources: ConfigurableInMemoryResources;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     /** Stores URI strings of template files from directories currently being monitored for changes. */
     protected trackedTemplateURIs = new Set<string>();
@@ -240,6 +247,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             id,
             template,
             sourceUri,
+            sourceUris: [sourceUri],
             priority,
             customizationId,
             origin,
@@ -262,6 +270,16 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         const existingEntry = activeCustomizationsCopy.get(id);
 
         if (existingEntry) {
+            // If the existing entry was merged from multiple sources and we're
+            // operating on the live maps (incremental watcher update), a single
+            // file change can't reconstruct the merge correctly. Schedule a
+            // full rebuild instead. During update() the maps are fresh locals,
+            // so this check won't fire.
+            if (existingEntry.sourceUris.length > 1 && activeCustomizationsCopy === this.activeCustomizations) {
+                this.update();
+                return;
+            }
+
             // If this is an update to the same file (same source URI)
             if (sourceUri && existingEntry.sourceUri === sourceUri) {
                 // Update the content while keeping the same priority and source
@@ -274,9 +292,17 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 activeCustomizationsCopy.set(id, customization);
                 return;
             } else if (priority === existingEntry.priority) {
-                // There is a conflict with the same priority, we ignore the new customization
-                const conflictSourceUri = existingEntry.sourceUri ? ` (Existing source: ${existingEntry.sourceUri}, New source: ${sourceUri})` : '';
-                console.warn(`Fragment conflict detected for ID '${id}' with equal priority.${conflictSourceUri}`);
+                // Same priority from different sources: concatenate with provenance labels.
+                // Build a new object so we don't mutate the entry shared with allCustomizationsCopy.
+                const existingLabel = this.provenanceLabel(existingEntry.sourceUri);
+                const newLabel = this.provenanceLabel(sourceUri);
+                const mergedTemplate = `### ${existingLabel}\n\n${existingEntry.template}\n\n### ${newLabel}\n\n${template}`;
+                const mergedEntry: PromptFragmentCustomization = {
+                    ...existingEntry,
+                    template: mergedTemplate,
+                    sourceUris: [...existingEntry.sourceUris, sourceUri],
+                };
+                activeCustomizationsCopy.set(id, mergedEntry);
             }
             return;
         }
@@ -296,6 +322,24 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         // This ensures uniqueness across different customization sources
         const sourceHash = this.hashString(sourceUri);
         return `${id}_${sourceHash}`;
+    }
+
+    /**
+     * Extracts a human-readable provenance label from a source URI.
+     * Returns the name of the workspace root that contains the file,
+     * falling back to the file's own base name if it is not inside any root.
+     */
+    protected provenanceLabel(uri: string): string {
+        try {
+            const parsed = new URI(uri);
+            const rootUri = this.workspaceService.getWorkspaceRootUri(parsed);
+            if (rootUri) {
+                return rootUri.path.base;
+            }
+            return parsed.path.dir.base || parsed.path.base || uri;
+        } catch {
+            return uri;
+        }
     }
 
     /**
