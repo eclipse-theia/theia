@@ -21,20 +21,14 @@ import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-ap
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution.js';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol.js';
 import { RPCProtocol } from '../../../common/rpc-protocol.js';
-import { ClipboardExt } from '../../../plugin/clipboard-ext.js';
+import { ExtPluginApiAssembler } from '../../../plugin/ext-plugin-api-assembler.js';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents.js';
-import { MessageRegistryExt } from '../../../plugin/message-registry.js';
-import { createAPIFactory } from '../../../plugin/plugin-context.js';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager.js';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage.js';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry.js';
 import { WebviewsExtImpl } from '../../../plugin/webviews.js';
 import { WorkspaceExtImpl } from '../../../plugin/workspace.js';
 import { loadManifest } from './plugin-manifest-loader.js';
-import { EnvExtImpl } from '../../../plugin/env.js';
-import { DebugExtImpl } from '../../../plugin/debug/debug-ext.js';
-import { LocalizationExtImpl } from '../../../plugin/localization-ext.js';
-import { TelemetryExtImpl } from '../../../plugin/telemetry-ext.js';
 import pluginHostModule from './worker-plugin-module.js';
 import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
@@ -162,32 +156,14 @@ pluginManager.setPluginHost({
         }
     });
 
-const envExt = container.get(EnvExtImpl);
-const debugExt = container.get(DebugExtImpl);
 const preferenceRegistryExt = container.get(PreferenceRegistryExtImpl);
 const editorsAndDocuments = container.get(EditorsAndDocumentsExtImpl);
 const workspaceExt = container.get(WorkspaceExtImpl);
-const messageRegistryExt = container.get(MessageRegistryExt);
-const clipboardExt = container.get(ClipboardExt);
 const webviewExt = container.get(WebviewsExtImpl);
-const localizationExt = container.get(LocalizationExtImpl);
-const telemetryExt = container.get(TelemetryExtImpl);
 const storageProxy = container.get(KeyValueStorageProxy);
 
-const apiFactory = createAPIFactory(
-    rpc,
-    pluginManager,
-    envExt,
-    debugExt,
-    preferenceRegistryExt,
-    editorsAndDocuments,
-    workspaceExt,
-    messageRegistryExt,
-    clipboardExt,
-    webviewExt,
-    localizationExt,
-    telemetryExt
-);
+const pluginApiAssembler = container.get(ExtPluginApiAssembler);
+const apiFactory = pluginApiAssembler.createApiFactory(rpc);
 let defaultApi: typeof theia;
 
 const handler = {

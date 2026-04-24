@@ -22,6 +22,7 @@ import {
 } from '@theia/core';
 import { MainPluginApiProvider, PluginDeployerDirectoryHandler } from '@theia/plugin-ext';
 import { PluginTheiaHeadlessDirectoryHandler } from './handlers/plugin-theia-headless-directory-handler.js';
+import { LegacyHeadlessPluginApiContribution } from './legacy-headless-plugin-api-contribution.js';
 import { HeadlessProgressClient } from './headless-progress-client.js';
 
 export function bindHeadlessMain(bind: interfaces.Bind): void {
@@ -30,6 +31,7 @@ export function bindHeadlessMain(bind: interfaces.Bind): void {
 
 export function bindBackendMain(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind): void {
     bindRootContributionProvider(bind, MainPluginApiProvider);
+    bind(LegacyHeadlessPluginApiContribution).toSelf().inSingletonScope();
 
     //
     // Main API dependencies

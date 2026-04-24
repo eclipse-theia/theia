@@ -16,11 +16,15 @@
 
 import '@theia/core/shared/reflect-metadata';
 import { ContainerModule } from '@theia/core/shared/inversify';
+
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol.js';
 import { AbstractPluginHostRPC, PluginHostRPC, PluginContainerModuleLoader } from './plugin-host-rpc.js';
 import { AbstractPluginManagerExtImpl, MinimalTerminalServiceExt, PluginManagerExtImpl } from '../../plugin/plugin-manager.js';
 import { IPCChannel } from '@theia/core/lib/node';
 import { InternalPluginContainerModule } from '../../plugin/node/plugin-container-module.js';
+
+import { LegacyExtPluginApiContribution } from '../../plugin/legacy-ext-plugin-api-contribution.js';
+import { ExtPluginApiAssembler } from '../../plugin/ext-plugin-api-assembler.js';
 import { LocalizationExt } from '../../common/plugin-api-rpc.js';
 import { EnvExtImpl } from '../../plugin/env.js';
 import { EnvNodeExtImpl } from '../../plugin/node/env-node-ext.js';
@@ -78,4 +82,7 @@ export default new ContainerModule(bind => {
     bind(MinimalTerminalServiceExt).toService(TerminalServiceExtImpl);
     bind(TerminalServiceExtImpl).toSelf().inSingletonScope();
     bind(TelemetryExtImpl).toSelf().inSingletonScope();
+
+    bind(LegacyExtPluginApiContribution).toSelf().inSingletonScope();
+    bind(ExtPluginApiAssembler).toSelf().inSingletonScope();
 });
