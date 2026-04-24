@@ -21,8 +21,8 @@
 
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { LegacyHeadlessPluginApiContribution } from '../../main/node/legacy-headless-plugin-api-contribution';
 import { getPluginId, DeployedPlugin, HostedPluginServer, PluginDeployer } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { setUpPluginApi } from '../../main/node/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { ContributionProvider, Disposable, DisposableCollection, nls } from '@theia/core';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
@@ -48,6 +48,9 @@ export function isHeadlessPlugin(plugin: DeployedPlugin): boolean {
 
 @injectable()
 export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<HeadlessPluginManagerExt, HostedPluginServer> {
+
+    @inject(LegacyHeadlessPluginApiContribution)
+    protected readonly legacyPluginApi: LegacyHeadlessPluginApiContribution;
 
     @inject(HostedPluginProcess)
     protected readonly pluginProcess: HostedPluginProcess;
@@ -151,7 +154,7 @@ export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<Hea
     protected initRpc(host: HeadlessPluginHost, pluginId: string): RPCProtocol {
         const rpc = this.createServerRpc(host);
         this.container.bind(RPCProtocol).toConstantValue(rpc);
-        setUpPluginApi(rpc, this.container);
+        this.legacyPluginApi.registerMainImplementations(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
