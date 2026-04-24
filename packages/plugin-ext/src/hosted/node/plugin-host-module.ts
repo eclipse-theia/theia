@@ -25,6 +25,9 @@ import { InternalPluginContainerModule } from '../../plugin/node/plugin-containe
 
 import { LegacyExtPluginApiContribution } from '../../plugin/legacy-ext-plugin-api-contribution.js';
 import { TerminalExtPluginApiContribution } from '../../plugin/terminal-ext-plugin-api-contribution.js';
+import { ScmExtPluginApiContribution } from '../../plugin/scm-ext-plugin-api-contribution.js';
+import { CommandRegistryImpl } from '../../plugin/command-registry.js';
+import { ScmExtImpl } from '../../plugin/scm.js';
 import { ExtPluginApiAssembler } from '../../plugin/ext-plugin-api-assembler.js';
 import { LocalizationExt } from '../../common/plugin-api-rpc.js';
 import { EnvExtImpl } from '../../plugin/env.js';
@@ -83,8 +86,11 @@ export default new ContainerModule(bind => {
     bind(MinimalTerminalServiceExt).toService(TerminalServiceExtImpl);
     bind(TerminalServiceExtImpl).toSelf().inSingletonScope();
     bind(TelemetryExtImpl).toSelf().inSingletonScope();
+    bind(CommandRegistryImpl).toSelf().inSingletonScope();
+    bind(ScmExtImpl).toSelf().inSingletonScope();
 
     bind(LegacyExtPluginApiContribution).toSelf().inSingletonScope();
     bind(TerminalExtPluginApiContribution).toSelf().inSingletonScope();
+    bind(ScmExtPluginApiContribution).toSelf().inSingletonScope();
     bind(ExtPluginApiAssembler).toSelf().inSingletonScope();
 });
