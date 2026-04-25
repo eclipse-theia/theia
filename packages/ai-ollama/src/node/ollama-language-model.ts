@@ -22,6 +22,7 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     ReasoningSettings,
+    ReasoningSupport,
     ToolCall,
     ToolRequest,
     ToolRequestParametersProperties,
@@ -59,7 +60,8 @@ export class OllamaModel implements LanguageModel {
         protected readonly model: string,
         public status: LanguageModelStatus,
         protected host: () => string | undefined,
-        public proxy?: string
+        public proxy?: string,
+        public reasoningSupport?: ReasoningSupport
     ) { }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

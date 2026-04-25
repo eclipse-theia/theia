@@ -30,7 +30,7 @@ const BUDGET_REASONING = /^gemini-2\.5(?:-|$)/i;
 
 const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
-    defaultLevel: 'off'
+    defaultLevel: 'auto'
 };
 
 function reasoningApiFor(modelId: string): ReasoningApi | undefined {

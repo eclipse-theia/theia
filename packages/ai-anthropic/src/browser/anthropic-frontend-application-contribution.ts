@@ -49,7 +49,7 @@ const XHIGH_EFFORT = /^claude-opus-4-7(?:-|$)/i;
 
 const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
-    defaultLevel: 'off'
+    defaultLevel: 'auto'
 };
 
 function reasoningApiFor(modelId: string): ReasoningApi | undefined {
@@ -140,7 +140,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                 model.apiKey === newModel.apiKey &&
                 model.maxRetries === newModel.maxRetries &&
                 model.useCaching === newModel.useCaching &&
-                model.enableStreaming === newModel.enableStreaming));
+                model.enableStreaming === newModel.enableStreaming &&
+                model.reasoningApi === newModel.reasoningApi &&
+                model.supportsXHighEffort === newModel.supportsXHighEffort));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -188,6 +190,13 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
             }
+            // Default to the model-name heuristic so reasoning-capable Claude models exposed via a
+            // custom endpoint still get the selector. Users can override via the `reasoningApi` field
+            // (set to `null` to disable, or to `'effort'` / `'budget'` to force a specific shape).
+            const reasoningApi: typeof pref.reasoningApi = 'reasoningApi' in pref
+                ? (pref.reasoningApi === 'effort' || pref.reasoningApi === 'budget' ? pref.reasoningApi : undefined)
+                : reasoningApiFor(pref.model);
+            const supportsXHighEffort = typeof pref.supportsXHighEffort === 'boolean' ? pref.supportsXHighEffort : XHIGH_EFFORT.test(pref.model);
             return [
                 ...acc,
                 {
@@ -197,7 +206,10 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     enableStreaming: pref.enableStreaming ?? true,
                     useCaching: pref.useCaching ?? true,
-                    maxRetries: pref.maxRetries ?? maxRetries
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    reasoningSupport: reasoningApi ? ANTHROPIC_REASONING_SUPPORT : undefined,
+                    reasoningApi,
+                    supportsXHighEffort
                 }
             ];
         }, []);
