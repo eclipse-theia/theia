@@ -282,7 +282,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
             <div className="shell-execution-tool container">
                 <div className="shell-execution-tool header running">
                     <span className={codicon('terminal')} />
-                    <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                    <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                     <span className="shell-execution-tool meta-badges">
                         <span className={`${codicon('loading')} shell-execution-tool status-icon theia-animation-spin`} />
                     </span>
@@ -754,7 +754,7 @@ const RunningUI: React.FC<RunningUIProps> = ({
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool header running">
             <span className={codicon('terminal')} />
-            <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+            <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
             <span className="shell-execution-tool meta-badges">
                 <button
                     className="shell-execution-tool cancel-button"
@@ -777,7 +777,7 @@ const CancelingUI: React.FC<CancelingUIProps> = ({ input }) => (
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool header canceling">
             <span className={codicon('terminal')} />
-            <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+            <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
             <span className="shell-execution-tool meta-badges">
                 <span className="shell-execution-tool status-label canceling">
                     <span className={`${codicon('loading')} theia-animation-spin`} />
@@ -819,7 +819,7 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className={codicon('terminal')} />
-                <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                 <span className="shell-execution-tool meta-badges">
                     <span className="shell-execution-tool status-label error">
                         {getStatusLabel()}
@@ -828,6 +828,11 @@ const DeniedUI: React.FC<DeniedUIProps> = ({
             </div>
             {isExpanded && (
                 <div className="shell-execution-tool expanded-content">
+                    {input.description && (
+                        <div className="shell-execution-tool command-description">
+                            {input.description}
+                        </div>
+                    )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {input.cwd && (
                         <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
@@ -871,7 +876,7 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className={codicon('terminal')} />
-                <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                 <span className="shell-execution-tool meta-badges">
                     {canceledResult?.duration !== undefined && (
                         <span className="shell-execution-tool duration">{formatDuration(canceledResult.duration)}</span>
@@ -883,6 +888,11 @@ const CanceledUI: React.FC<CanceledUIProps> = ({
             </div>
             {isExpanded && (
                 <div className="shell-execution-tool expanded-content">
+                    {input.description && (
+                        <div className="shell-execution-tool command-description">
+                            {input.description}
+                        </div>
+                    )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {input.cwd && (
                         <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
@@ -923,7 +933,7 @@ const FinishedUI: React.FC<FinishedUIProps> = ({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className={codicon('terminal')} />
-                <code className="shell-execution-tool command-preview">{truncateCommand(input.command)}</code>
+                <code className="shell-execution-tool command-preview" title={input.description}>{truncateCommand(input.command)}</code>
                 <span className="shell-execution-tool meta-badges">
                     {result?.duration !== undefined && (
                         <span className="shell-execution-tool duration">{formatDuration(result.duration)}</span>
@@ -936,6 +946,11 @@ const FinishedUI: React.FC<FinishedUIProps> = ({
             </div>
             {isExpanded && (
                 <div className="shell-execution-tool expanded-content">
+                    {input.description && (
+                        <div className="shell-execution-tool command-description">
+                            {input.description}
+                        </div>
+                    )}
                     <CommandDisplay command={input.command} clipboardService={clipboardService} />
                     {(result?.cwd || input.cwd) && (
                         <MetaRow icon="folder" label={nls.localize('theia/ai-terminal/workingDirectory', 'Working directory')}>
