@@ -19,6 +19,13 @@ import { nls } from '@theia/core/lib/common/nls';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 /**
+ * Provisional context window size used as the denominator for the indicator bar
+ * fill and the tooltip's "Total: X / Y" display until per-model context sizes
+ * are available. See issue #17323 comments for context.
+ */
+export const CHAT_CONTEXT_WINDOW_SIZE = 200000;
+
+/**
  * Multiplier of the warning threshold at which the indicator turns red.
  * Yellow band: [threshold, threshold * CRITICAL_MULTIPLIER).
  * Red band:    [threshold * CRITICAL_MULTIPLIER, ∞).
@@ -138,12 +145,12 @@ export function buildBarTooltip(usage: ResponseTokenUsage | undefined, totalToke
     if (cacheParts.length > 0) {
         lines.push(cacheParts.join(' | '));
     }
-    const pct = threshold > 0 ? Math.round((totalTokens / threshold) * 100) : 0;
+    const pct = Math.round((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100);
     lines.push(nls.localize(
         'theia/ai/chat-ui/tokenUsageTooltipTotal',
-        'Total: {0} / {1} ({2}% of warning threshold)',
+        'Total: {0} / {1} ({2}%)',
         formatTokenCount(totalTokens),
-        formatTokenCount(threshold),
+        formatTokenCount(CHAT_CONTEXT_WINDOW_SIZE),
         pct
     ));
     return { value: lines.join('  \n') };

@@ -20,9 +20,9 @@ import { interfaces } from '@theia/core/shared/inversify';
 
 export const CHAT_VIEW_TOKEN_USAGE_ENABLED = 'ai-features.chat.tokenUsageIndicator.enabled';
 export const CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED = 'ai-features.chat.tokenUsageWarning.enabled';
-export const CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD = 'ai-features.chat.tokenUsageWarning.tokenThreshold';
+export const CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE = 'ai-features.chat.tokenUsageWarning.defaultThresholdPercentage';
 
-export const CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT = 160000; // 80% of 200k
+export const CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT = 80;
 
 export const chatViewPreferenceSchema: PreferenceSchema = {
     properties: {
@@ -45,15 +45,16 @@ export const chatViewPreferenceSchema: PreferenceSchema = {
                 'Requires the language model provider to report token usage.'
             )
         },
-        [CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD]: {
+        [CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE]: {
             type: 'number',
             minimum: 1,
-            default: CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT,
+            maximum: 100,
+            default: CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT,
             description: nls.localize(
-                'theia/ai/chat-ui/tokenUsageWarningTokenThreshold',
-                'Total number of tokens in the current chat session at which the token usage warning is triggered. ' +
-                'Choose a value appropriate for your model\'s context window (e.g. lower it for small-context models). ' +
-                'Only applies when the token usage warning is enabled.'
+                'theia/ai/chat-ui/tokenUsageWarningThresholdPercentage',
+                'Percentage of the model\'s context window at which the token usage warning is triggered. ' +
+                'This value also drives the yellow/red color bands of the token usage indicator. ' +
+                'Currently resolves against an assumed 200k context window; will use the real per-model context size when available.'
             )
         }
     }
@@ -62,7 +63,7 @@ export const chatViewPreferenceSchema: PreferenceSchema = {
 export interface ChatViewConfiguration {
     [CHAT_VIEW_TOKEN_USAGE_ENABLED]: boolean;
     [CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED]: boolean;
-    [CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD]: number;
+    [CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE]: number;
 }
 
 export const ChatViewPreferenceContribution = Symbol('ChatViewPreferenceContribution');

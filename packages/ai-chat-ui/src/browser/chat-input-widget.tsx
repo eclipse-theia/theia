@@ -57,16 +57,18 @@ import { PreferenceService } from '@theia/core/lib/common/preferences';
 import {
     CHAT_VIEW_TOKEN_USAGE_ENABLED,
     CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED,
-    CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD,
-    CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT
+    CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE,
+    CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT
 } from './chat-view-preferences';
 import {
     buildBarTooltip,
+    CHAT_CONTEXT_WINDOW_SIZE,
     computeSessionTokenUsage,
     decideTokenUsageWarning,
     getLatestTokenUsage,
     getUsageColorClass
 } from './chat-token-usage-indicator-util';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from './chat-view-commands';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
 type Unpin = () => void;
@@ -176,11 +178,11 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(PreferenceService) @optional()
     protected readonly preferenceService: PreferenceService | undefined;
 
-    @inject(MessageService) @optional()
-    protected readonly messageService: MessageService | undefined;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
-    @inject(CommandService) @optional()
-    protected readonly commandService: CommandService | undefined;
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
 
     protected tokenUsageEnabled = false;
     /** Sessions we have already notified for the current warning cycle (re-armed when usage drops below the threshold). */
@@ -637,11 +639,15 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this._chatModel = chatModel;
-        // Evaluate the warning on attach. For an existing widget switching between
-        // already-notified sessions the per-instance `notifiedSessions` Set prevents
-        // re-notifying. When the chat view is closed and reopened, a fresh widget
-        // is created with an empty Set, so a session still above the threshold will
-        // legitimately trigger the warning again — accepted as a rare corner case.
+        // Evaluate the warning on attach. `notifiedSessions` lives on this widget
+        // instance, so the warning fires at most once per (widget lifetime × session):
+        // - Within the same widget, switching between sessions that have already been
+        //   notified does not re-notify.
+        // - Closing and reopening the chat view creates a fresh widget with an empty
+        //   Set, so sessions still above the threshold will be warned about again the
+        //   first time they are shown after reopen — once per session. Accepted as a
+        //   rare corner case; promoting the state to the ChatSession would avoid it
+        //   but isn't worth the coupling today.
         this.evaluateTokenUsageWarning(chatModel);
         this.scheduleUpdateReceivingAgent();
         this.update();
@@ -682,10 +688,17 @@ export class AIChatInputWidget extends ReactWidget {
         this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
         if (this.preferenceService) {
             this.toDispose.push(this.preferenceService.onPreferenceChanged(change => {
-                if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED
-                    || change.preferenceName === CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD) {
+                if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
                     this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
                     this.update();
+                } else if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE) {
+                    // Re-render so the indicator's color bands reflect the new threshold.
+                    this.update();
+                } else if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED && this._chatModel) {
+                    // If the user just enabled warnings for a session already above threshold,
+                    // evaluate now so they get an immediate notification instead of waiting for
+                    // the next response.
+                    this.evaluateTokenUsageWarning(this._chatModel);
                 }
             }));
         }
@@ -757,22 +770,28 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
-     * Resolve the configured token usage warning threshold, falling back to the default
-     * for missing or malformed preference values.
+     * Resolve the configured token usage warning threshold as an absolute token count.
+     * The preference is stored as a percentage of the context window; this method
+     * converts it using the current assumed context window size.
      */
     protected getTokenUsageWarningThreshold(): number {
+        const pct = this.getTokenUsageWarningThresholdPercentage();
+        return Math.round((pct / 100) * CHAT_CONTEXT_WINDOW_SIZE);
+    }
+
+    protected getTokenUsageWarningThresholdPercentage(): number {
         const value = this.preferenceService?.get<number>(
-            CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD,
-            CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT
+            CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE,
+            CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT
         );
-        if (typeof value !== 'number' || !Number.isFinite(value) || value < 1) {
-            return CHAT_VIEW_TOKEN_USAGE_WARNING_TOKEN_THRESHOLD_DEFAULT;
+        if (typeof value !== 'number' || !Number.isFinite(value) || value < 1 || value > 100) {
+            return CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT;
         }
         return value;
     }
 
     protected isTokenUsageWarningEnabled(): boolean {
-        return this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED, true) ?? true;
+        return this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED, false) ?? false;
     }
 
     /**
@@ -806,29 +825,23 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected async showTokenUsageWarning(): Promise<void> {
-        if (!this.messageService) {
-            return;
-        }
-        const threshold = this.getTokenUsageWarningThreshold();
+        const pct = this.getTokenUsageWarningThresholdPercentage();
         const message = nls.localize(
             'theia/ai/chat-ui/tokenUsageWarningMessage',
-            'Chat session token usage has reached {0} tokens. ' +
-            'Consider compacting this session or starting a new one to avoid hitting the context window limit.',
-            threshold
+            'Chat session token usage has reached {0}% of the context window. ' +
+            'Consider compacting this session or starting a new one to avoid hitting the limit.',
+            pct
         );
         const compactAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningCompactAction', 'Compact Session');
         const newSessionAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningNewSessionAction', 'Start New Chat');
         const selected = await this.messageService.warn(message, compactAction, newSessionAction);
-        if (!this.commandService) {
-            return;
-        }
         if (selected === compactAction) {
-            this.commandService.executeCommand('ai-chat.new-with-task-context').catch(error => {
-                console.error("Failed to execute 'ai-chat.new-with-task-context' from token usage warning", error);
+            this.commandService.executeCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id).catch(error => {
+                console.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
             });
         } else if (selected === newSessionAction) {
-            this.commandService.executeCommand('ai-chat-ui.new-chat').catch(error => {
-                console.error("Failed to execute 'ai-chat-ui.new-chat' from token usage warning", error);
+            this.commandService.executeCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id).catch(error => {
+                console.error(`Failed to execute '${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}' from token usage warning`, error);
             });
         }
     }
@@ -1959,7 +1972,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     isEnabled={props.isEnabled}
                     hoverService={props.hoverService}
                     tokenUsage={showTokenUsage ? {
-                        percent: Math.min((totalTokens / props.tokenUsageWarningThreshold) * 100, 100),
+                        percent: Math.min((totalTokens / CHAT_CONTEXT_WINDOW_SIZE) * 100, 100),
                         colorClass: tokenColorClass,
                         tooltip: tokenTooltip,
                     } : undefined}
