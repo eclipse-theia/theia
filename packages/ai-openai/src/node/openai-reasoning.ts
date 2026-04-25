@@ -30,7 +30,7 @@ export function openAiReasoningFor(
     forResponseApi: boolean,
     supportsReasoning: boolean
 ): Record<string, unknown> {
-    if (!level || !supportsReasoning) {
+    if (!level || !supportsReasoning || level === 'off') {
         return {};
     }
     if (forResponseApi) {

@@ -105,7 +105,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
                 model.enableStreaming === newModel.enableStreaming &&
-                model.useResponseApi === newModel.useResponseApi));
+                model.useResponseApi === newModel.useResponseApi &&
+                reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport)));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -146,6 +147,12 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
             }
+            // Default to the model-name heuristic so reasoning-capable GPT-5 / o-series models exposed via
+            // a custom endpoint still get the selector. Users can override via `reasoningSupport`
+            // (set to `null` to disable, or to a full `ReasoningSupport` object to customize).
+            const reasoningSupport: ReasoningSupport | undefined = 'reasoningSupport' in pref
+                ? (isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined)
+                : reasoningSupportFor(pref.model);
 
             return [
                 ...acc,
@@ -160,11 +167,34 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
                     maxRetries: pref.maxRetries ?? maxRetries,
-                    useResponseApi: pref.useResponseApi ?? false
+                    useResponseApi: pref.useResponseApi ?? false,
+                    reasoningSupport
                 }
             ];
         }, []);
     }
+}
+
+function isReasoningSupport(value: unknown): value is ReasoningSupport {
+    return !!value && typeof value === 'object' && Array.isArray((value as ReasoningSupport).supportedLevels);
+}
+
+/**
+ * Structural equality for {@link ReasoningSupport}. Used by {@link handleCustomModelChanges} to avoid
+ * needless model re-creation when the user supplies an explicit `reasoningSupport` object via
+ * preferences — each JSON deserialization yields a fresh object reference, so a `===` check would
+ * always report a change even when the contents are identical.
+ */
+function reasoningSupportEquals(a: ReasoningSupport | undefined, b: ReasoningSupport | undefined): boolean {
+    if (a === b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    return a.defaultLevel === b.defaultLevel
+        && a.supportedLevels.length === b.supportedLevels.length
+        && a.supportedLevels.every((level, index) => level === b.supportedLevels[index]);
 }
 
 const openAIModelsWithDisabledStreaming: string[] = [];
@@ -178,12 +208,12 @@ const O_SERIES_REASONING = /^o[134](?:-|$)/i;
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
-    defaultLevel: 'off'
+    defaultLevel: 'auto'
 };
 
 const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'low', 'medium', 'high', 'auto'],
-    defaultLevel: 'off'
+    defaultLevel: 'auto'
 };
 
 function reasoningSupportFor(modelId: string): ReasoningSupport | undefined {

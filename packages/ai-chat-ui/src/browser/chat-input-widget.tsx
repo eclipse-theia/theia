@@ -22,7 +22,7 @@ import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ParsedChatRequest } from '@theia/ai-chat/lib/common/parsed-chat-request';
 import {
     GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapability,
-    FrontendLanguageModelRegistry, ReasoningLevel, ReasoningSupport,
+    FrontendLanguageModelRegistry, ReasoningLevel, ReasoningSettings, ReasoningSupport,
     PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry
 } from '@theia/ai-core';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
@@ -248,6 +248,8 @@ export class AIChatInputWidget extends ReactWidget {
     protected currentReasoningSupport?: ReasoningSupport;
     /** Id (`provider/model`) of the model that backs {@link currentReasoningSupport}; used to resolve preference defaults. */
     protected currentLanguageModelId?: string;
+    /** Saved reasoning selection for the receiving agent (loaded from {@link AISettingsService}); used to detect unsaved changes. */
+    protected savedReasoning?: ReasoningSettings;
 
     protected handleReasoningChange = (level: ReasoningLevel): void => {
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
@@ -268,6 +270,7 @@ export class AIChatInputWidget extends ReactWidget {
 
     /**
      * Resolves the reasoning level to display in the selector. Priority: session override →
+     * persisted per-agent selection (from {@link AISettingsService}) →
      * `ai-features.reasoning.defaults` preference entry matching the current model/agent →
      * model's declared default → `'off'`.
      */
@@ -279,6 +282,9 @@ export class AIChatInputWidget extends ReactWidget {
         const sessionLevel = session?.model.settings?.commonSettings?.reasoning?.level;
         if (sessionLevel) {
             return sessionLevel;
+        }
+        if (this.savedReasoning?.level) {
+            return this.savedReasoning.level;
         }
         return this.resolvePreferenceReasoningLevel() ?? this.currentReasoningSupport.defaultLevel ?? 'off';
     }
@@ -357,22 +363,47 @@ export class AIChatInputWidget extends ReactWidget {
             const agentSettings = await this.aiSettingsService.getAgentSettings(agentId);
             const savedOverrides = agentSettings?.capabilityOverrides;
             const savedGenericSelections = agentSettings?.genericCapabilitySelections;
+            const savedReasoning = agentSettings?.reasoning;
 
             // Store saved state for comparison
             this.savedCapabilityOverrides = savedOverrides ? { ...savedOverrides } : undefined;
             this.savedGenericCapabilitySelections = savedGenericSelections ? { ...savedGenericSelections } : undefined;
+            this.savedReasoning = savedReasoning ? { ...savedReasoning } : undefined;
 
             // Initialize from saved settings, or empty if none
             this.userCapabilityOverrides = savedOverrides
                 ? new Map(Object.entries(savedOverrides))
                 : new Map<string, boolean>();
             this.genericCapabilitySelections = savedGenericSelections ?? {};
+            // Mirror the saved per-agent reasoning into the chat session so the selector reflects it
+            // immediately and `hasReasoningChangesFromSaved` can compare like-with-like.
+            this.applyReasoningToSession(savedReasoning);
         }
 
         // Update disabled generic capabilities (already used in agent prompt)
         this.disabledGenericCapabilities = await this.capabilitiesService.getUsedGenericCapabilitiesForAgent(agentId, modeId);
 
         this.update();
+    }
+
+    /** Updates the active chat session's `commonSettings.reasoning`; pass `undefined` to clear. */
+    protected applyReasoningToSession(reasoning: ReasoningSettings | undefined): void {
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        if (!session) {
+            return;
+        }
+        const currentSettings = session.model.settings ?? {};
+        const currentCommon = currentSettings.commonSettings ?? {};
+        if ((currentCommon.reasoning?.level ?? undefined) === (reasoning?.level ?? undefined)) {
+            return; // no-op when already in sync
+        }
+        const newCommon: typeof currentCommon = { ...currentCommon };
+        if (reasoning) {
+            newCommon.reasoning = { ...reasoning };
+        } else {
+            delete newCommon.reasoning;
+        }
+        (session.model as MutableChatModel).setSettings({ ...currentSettings, commonSettings: newCommon });
     }
 
     protected async updateAvailableGenericCapabilities(): Promise<void> {
@@ -503,14 +534,32 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
-     * Checks if there are any unsaved changes (capability overrides or generic selections).
+     * Checks if the current session reasoning differs from the saved per-agent value.
      */
-    public hasAnyChangesFromSaved(): boolean {
-        return (this.hasCapabilityChangesFromSaved() || this.hasGenericCapabilityChangesFromSaved()) && this.receivingAgent !== undefined;
+    protected hasReasoningChangesFromSaved(): boolean {
+        if (!this.currentReasoningSupport) {
+            return false;
+        }
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        const sessionLevel = session?.model.settings?.commonSettings?.reasoning?.level;
+        const savedLevel = this.savedReasoning?.level;
+        return sessionLevel !== savedLevel;
     }
 
     /**
-     * Saves current capability selections to settings.
+     * Checks if there are any unsaved changes (capability overrides, generic selections, or reasoning).
+     */
+    public hasAnyChangesFromSaved(): boolean {
+        if (this.receivingAgent === undefined) {
+            return false;
+        }
+        return this.hasCapabilityChangesFromSaved()
+            || this.hasGenericCapabilityChangesFromSaved()
+            || this.hasReasoningChangesFromSaved();
+    }
+
+    /**
+     * Saves current capability selections and reasoning to settings.
      */
     public async saveCurrentSelectionsToSettings(): Promise<void> {
         if (!this.receivingAgent) {
@@ -525,12 +574,16 @@ export class AIChatInputWidget extends ReactWidget {
             capabilityOverrides[key] = value;
         }
 
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        const sessionReasoning = session?.model.settings?.commonSettings?.reasoning;
+
         try {
             await this.aiSettingsService.updateAgentSettings(agentId, {
                 capabilityOverrides: Object.keys(capabilityOverrides).length > 0 ? capabilityOverrides : undefined,
                 genericCapabilitySelections: GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
                     ? this.genericCapabilitySelections
-                    : undefined
+                    : undefined,
+                reasoning: sessionReasoning ? { ...sessionReasoning } : undefined
             });
 
             // Update saved state to match current
@@ -538,6 +591,7 @@ export class AIChatInputWidget extends ReactWidget {
             this.savedGenericCapabilitySelections = GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
                 ? { ...this.genericCapabilitySelections }
                 : undefined;
+            this.savedReasoning = sessionReasoning ? { ...sessionReasoning } : undefined;
 
             this.update();
         } catch (error) {

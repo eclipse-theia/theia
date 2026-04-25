@@ -153,18 +153,27 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_REASONING]: {
             title: nls.localize('theia/ai/core/reasoning/title', 'Reasoning Defaults'),
             markdownDescription: nls.localize('theia/ai/core/reasoning/mdDescription',
-                'Default value for the chat input\'s reasoning selector, applied to models that support reasoning.\n\
-            This is a UI-level setting: the chosen level is translated to the provider\'s native API parameters at request time\
-            (e.g. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) and\
-            takes precedence over any raw values supplied via `#ai-features.modelSettings.requestSettings#` for the same fields.\n\n\
-            Each entry consists of:\n\
-            - `scope`: Defines when the setting applies (`modelId`, `providerId`, `agentId`).\n\
-            - `reasoning.level`: One of `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\n\
-            Precedence at runtime (highest first): session override via the selector → this preference →\
-            the model\'s declared default. Whichever the selector displays is what gets sent. To override\
-            a provider\'s reasoning field manually via `#ai-features.modelSettings.requestSettings#`, set\
-            `reasoning.level` to `off` here so the level-based translation is disabled.\n\n\
-            Entries are matched based on scope specificity (agent: 100, model: 10, provider: 1 points).'),
+                'Default value for the chat input\'s reasoning selector, applied to models that support reasoning.\n\n'
+                + 'This is a UI-level setting: the chosen level is translated to the provider\'s native API parameters'
+                + ' at request time (e.g. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`,'
+                + ' Gemini `thinkingConfig`) and takes precedence over any raw values supplied via'
+                + ' `#ai-features.modelSettings.requestSettings#` for the same fields.\n\n'
+                + 'Each entry consists of:\n'
+                + '- `scope`: Defines when the setting applies (`modelId`, `providerId`, `agentId`).\n'
+                + '- `reasoning.level`: One of `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\n'
+                + 'Precedence at runtime (highest first): session override via the selector → this preference →'
+                + ' the model\'s declared default. Whichever the selector displays is what gets sent. To override'
+                + ' a provider\'s reasoning field manually via `#ai-features.modelSettings.requestSettings#`, set'
+                + ' `reasoning.level` to `off` here so the level-based translation is disabled.\n\n'
+                + 'Entries are matched based on scope specificity (agent: 100, model: 10, provider: 1 points).\n\n'
+                + 'Example:\n'
+                + '```json\n'
+                + '[\n'
+                + '  { "scope": { "providerId": "anthropic" }, "reasoning": { "level": "medium" } },\n'
+                + '  { "scope": { "modelId": "openai/gpt-5" }, "reasoning": { "level": "high" } },\n'
+                + '  { "scope": { "agentId": "Coder" }, "reasoning": { "level": "off" } }\n'
+                + ']\n'
+                + '```'),
             type: 'array',
             items: {
                 type: 'object',
