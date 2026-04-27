@@ -27,6 +27,7 @@ import { OutputPreferences } from '../common/output-preferences';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import * as monaco from '@theia/monaco-editor-core';
 import PQueue from 'p-queue';
+import { parseAnsi, AnsiState, AnsiSegment } from './output-ansi-parser';
 
 @injectable()
 export class OutputChannelManager implements Disposable, ResourceResolver {
@@ -213,6 +214,7 @@ export class OutputChannel implements Disposable {
     protected visible = true;
     protected _maxLineNumber: number;
     protected decorationIds = new Set<string>();
+    protected ansiState: AnsiState = {};
 
     readonly onVisibilityChange: Event<{ isVisible: boolean, preserveFocus?: boolean }> = this.visibilityChangeEmitter.event;
     readonly onContentChange: Event<void> = this.contentChangeEmitter.event;
@@ -267,6 +269,7 @@ export class OutputChannel implements Disposable {
             const textModel = (await this.resource.editorModelRef.promise).object.textEditorModel;
             textModel.deltaDecorations(Array.from(this.decorationIds), []);
             this.decorationIds.clear();
+            this.ansiState = {};
             textModel.setValue('');
             this.contentChangeEmitter.fire();
         });
@@ -295,14 +298,22 @@ export class OutputChannel implements Disposable {
         const lastLineMaxColumn = textModel.getLineMaxColumn(lastLine);
         const position = new monaco.Position(lastLine, lastLineMaxColumn);
         const range = new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
+
+        // Parse and strip ANSI escape codes, preserving state across calls
+        const { strippedText, segments, state } = parseAnsi(content, this.ansiState);
+        this.ansiState = state;
+
+        const textToInsert = appendEol ? `${strippedText}${textModel.getEOL()}` : strippedText;
         const edits = [{
             range,
-            text: !!appendEol ? `${content}${textModel.getEOL()}` : content,
+            text: textToInsert,
             forceMoveMarkers: true
         }];
         // We do not use `pushEditOperations` as we do not need undo/redo support. VS Code uses `applyEdits` too.
         // https://github.com/microsoft/vscode/blob/dc348340fd1a6c583cb63a1e7e6b4fd657e01e01/src/vs/workbench/services/output/common/outputChannelModel.ts#L108-L115
         textModel.applyEdits(edits);
+
+        // Apply severity decorations (error/warning) for the entire appended range
         if (severity !== OutputChannelSeverity.Info) {
             const inlineClassName = severity === OutputChannelSeverity.Error ? 'theia-output-error' : 'theia-output-warning';
             let endLineNumber = textModel.getLineCount();
@@ -321,8 +332,54 @@ export class OutputChannel implements Disposable {
                 this.decorationIds.add(decorationId);
             }
         }
+
+        // Apply ANSI color decorations for individual segments
+        if (segments.length > 0) {
+            const ansiDecorations = segments.map(segment => ({
+                range: this.computeSegmentRange(strippedText, segment, position),
+                options: { inlineClassName: segment.cssClasses }
+            }));
+            for (const decorationId of textModel.deltaDecorations([], ansiDecorations)) {
+                this.decorationIds.add(decorationId);
+            }
+        }
+
         this.ensureMaxChannelHistory(textModel);
         this.contentChangeEmitter.fire();
+    }
+
+    /**
+     * Compute the Monaco Range for an ANSI segment within the stripped text,
+     * given the insertion position in the editor model.
+     */
+    protected computeSegmentRange(strippedText: string, segment: AnsiSegment, insertPosition: monaco.Position): monaco.Range {
+        let startLine = insertPosition.lineNumber;
+        let startColumn = insertPosition.column;
+        // Walk through stripped text to find start position
+        for (let i = 0; i < segment.start; i++) {
+            if (strippedText[i] === '\n') {
+                startLine++;
+                startColumn = 1;
+            } else if (strippedText[i] === '\r') {
+                // Skip \r, handled with \n
+            } else {
+                startColumn++;
+            }
+        }
+        let endLine = startLine;
+        let endColumn = startColumn;
+        // Walk from start to end of segment
+        for (let i = segment.start; i < segment.end; i++) {
+            if (strippedText[i] === '\n') {
+                endLine++;
+                endColumn = 1;
+            } else if (strippedText[i] === '\r') {
+                // Skip \r
+            } else {
+                endColumn++;
+            }
+        }
+        return new monaco.Range(startLine, startColumn, endLine, endColumn);
     }
 
     protected ensureMaxChannelHistory(textModel: monaco.editor.ITextModel): void {
