@@ -28,16 +28,22 @@ import {
     ScmMain, ScmRawResource, ScmRawResourceGroup,
     ScmRawResourceSplice, ScmRawResourceSplices,
     SourceControlGroupFeatures,
-    ScmActionButton
+    ScmActionButton,
+    ScmHistoryItemRefDto,
+    ScmHistoryItemDto,
+    ScmHistoryItemChangeDto,
+    ScmHistoryOptionsDto,
+    ScmHistoryItemRefsChangeEventDto
 } from '../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { CommandRegistryImpl } from '../plugin/command-registry';
 import { Splice } from '../common/arrays';
 import { UriComponents } from '../common/uri-components';
 import { Command } from '../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { URI, ThemeIcon } from './types-impl';
-import { ScmCommandArg } from '../common/plugin-api-rpc';
+import { ScmCommandArg, ScmHistoryItemCommandArg } from '../common/plugin-api-rpc';
 import { sep } from '@theia/core/lib/common/paths';
 import { PluginIconPath } from './plugin-icon-path';
 import { createAPIObject } from './plugin-context';
@@ -538,6 +544,47 @@ class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
     }
 }
 
+function historyItemRefToDto(ref: theia.SourceControlHistoryItemRef): ScmHistoryItemRefDto {
+    return {
+        id: ref.id,
+        name: ref.name,
+        description: ref.description,
+        revision: ref.revision,
+        icon: ref.icon,
+        category: ref.category,
+    };
+}
+
+function historyItemToDto(item: theia.SourceControlHistoryItem): ScmHistoryItemDto {
+    return {
+        id: item.id,
+        parentIds: item.parentIds ? [...item.parentIds] : undefined,
+        subject: item.subject,
+        message: item.message,
+        author: item.author,
+        authorEmail: item.authorEmail,
+        authorIcon: item.authorIcon,
+        displayId: item.displayId,
+        timestamp: item.timestamp,
+        tooltip: item.tooltip,
+        statistics: item.statistics ? {
+            files: item.statistics.files,
+            insertions: item.statistics.insertions,
+            deletions: item.statistics.deletions,
+        } : undefined,
+        references: item.references ? item.references.map(historyItemRefToDto) : undefined,
+    };
+}
+
+function historyItemChangeToDto(change: theia.SourceControlHistoryItemChange): ScmHistoryItemChangeDto {
+    return {
+        uri: change.uri,
+        originalUri: change.originalUri,
+        modifiedUri: change.modifiedUri,
+        renameUri: change.renameUri,
+    };
+}
+
 class SourceControlImpl implements theia.SourceControl {
 
     private static handlePool: number = 0;
@@ -689,6 +736,53 @@ class SourceControlImpl implements theia.SourceControl {
         this.proxy.$updateSourceControl(this.handle, { contextValue });
     }
 
+    private _historyProvider: theia.SourceControlHistoryProvider | undefined = undefined;
+    private _historyProviderDisposables = new DisposableCollection();
+
+    readonly historyItems = new Map<string, theia.SourceControlHistoryItem>();
+    readonly historyItemRefs = new Map<string, theia.SourceControlHistoryItemRef>();
+
+    get historyProvider(): theia.SourceControlHistoryProvider | undefined {
+        return this._historyProvider;
+    }
+
+    set historyProvider(provider: theia.SourceControlHistoryProvider | undefined) {
+        this._historyProviderDisposables.dispose();
+        this._historyProviderDisposables = new DisposableCollection();
+        this._historyProvider = provider;
+
+        if (provider) {
+            this._historyProviderDisposables.push(
+                provider.onDidChangeCurrentHistoryItemRefs(() => {
+                    this.proxy.$updateSourceControl(this.handle, {
+                        hasHistoryProvider: true,
+                        currentHistoryItemRef: provider.currentHistoryItemRef ? historyItemRefToDto(provider.currentHistoryItemRef) : undefined,
+                        currentHistoryItemRemoteRef: provider.currentHistoryItemRemoteRef ? historyItemRefToDto(provider.currentHistoryItemRemoteRef) : undefined,
+                        currentHistoryItemBaseRef: provider.currentHistoryItemBaseRef ? historyItemRefToDto(provider.currentHistoryItemBaseRef) : undefined,
+                    });
+                    this.proxy.$onDidChangeCurrentHistoryItemRefs(this.handle);
+                })
+            );
+            this._historyProviderDisposables.push(
+                provider.onDidChangeHistoryItemRefs(event => {
+                    const dto: ScmHistoryItemRefsChangeEventDto = {
+                        added: event.added.map(historyItemRefToDto),
+                        removed: event.removed.map(historyItemRefToDto),
+                        modified: event.modified.map(historyItemRefToDto),
+                    };
+                    this.proxy.$onDidChangeHistoryItemRefs(this.handle, dto);
+                })
+            );
+        }
+
+        this.proxy.$updateSourceControl(this.handle, {
+            hasHistoryProvider: !!provider,
+            currentHistoryItemRef: provider?.currentHistoryItemRef ? historyItemRefToDto(provider.currentHistoryItemRef) : undefined,
+            currentHistoryItemRemoteRef: provider?.currentHistoryItemRemoteRef ? historyItemRefToDto(provider.currentHistoryItemRemoteRef) : undefined,
+            currentHistoryItemBaseRef: provider?.currentHistoryItemBaseRef ? historyItemRefToDto(provider.currentHistoryItemBaseRef) : undefined,
+        });
+    }
+
     private readonly onDidDisposeEmitter = new Emitter<void>();
     readonly onDidDispose = this.onDidDisposeEmitter.event;
 
@@ -783,6 +877,14 @@ class SourceControlImpl implements theia.SourceControl {
         return this.groups.get(handle);
     }
 
+    getHistoryItem(id: string): theia.SourceControlHistoryItem | undefined {
+        return this.historyItems.get(id);
+    }
+
+    getHistoryItemRef(id: string): theia.SourceControlHistoryItemRef | undefined {
+        return this.historyItemRefs.get(id);
+    }
+
     setSelectionState(selected: boolean): void {
         this._selected = selected;
         this.onDidChangeSelectionEmitter.fire(selected);
@@ -792,6 +894,7 @@ class SourceControlImpl implements theia.SourceControl {
         this.acceptInputDisposables.dispose();
         this._statusBarDisposables.dispose();
         this._actionButtonDisposables.dispose();
+        this._historyProviderDisposables.dispose();
 
         this.groups.forEach(group => group.dispose());
         this.proxy.$unregisterSourceControl(this.handle);
@@ -816,6 +919,32 @@ export class ScmExtImpl implements ScmExt {
 
     constructor(rpc: RPCProtocol, private commands: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.SCM_MAIN);
+
+        // Register history item arg processor before the generic ScmCommandArg processor
+        // so the more-specific guard matches first.
+        commands.registerArgumentProcessor({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            processArgument: (arg: any) => {
+                if (!ScmHistoryItemCommandArg.is(arg) || arg.type !== 'historyItem') {
+                    return arg;
+                }
+                const sourceControl = this.sourceControls.get(arg.sourceControlHandle);
+                const item = sourceControl?.getHistoryItem(arg.id);
+                return item ?? { id: arg.id };
+            }
+        });
+
+        commands.registerArgumentProcessor({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            processArgument: (arg: any) => {
+                if (!ScmHistoryItemCommandArg.is(arg) || arg.type !== 'historyItemRef') {
+                    return arg;
+                }
+                const sourceControl = this.sourceControls.get(arg.sourceControlHandle);
+                const ref = sourceControl?.getHistoryItemRef(arg.id);
+                return ref ?? { id: arg.id };
+            }
+        });
 
         commands.registerArgumentProcessor({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -940,6 +1069,73 @@ export class ScmExtImpl implements ScmExt {
             return Promise.resolve(undefined);
         }
         return [result.message, result.type];
+    }
+
+    async $provideHistoryItemRefs(sourceControlHandle: number, historyItemRefs: string[] | undefined, token: CancellationToken): Promise<ScmHistoryItemRefDto[] | undefined> {
+        const sourceControl = this.sourceControls.get(sourceControlHandle);
+        if (!sourceControl || !sourceControl.historyProvider) {
+            return undefined;
+        }
+        const result = await sourceControl.historyProvider.provideHistoryItemRefs(historyItemRefs, token);
+        if (!result) {
+            return undefined;
+        }
+        sourceControl.historyItemRefs.clear();
+        for (const ref of result) {
+            sourceControl.historyItemRefs.set(ref.id, ref);
+        }
+        return result.map(historyItemRefToDto);
+    }
+
+    async $provideHistoryItems(sourceControlHandle: number, options: ScmHistoryOptionsDto, token: CancellationToken): Promise<ScmHistoryItemDto[] | undefined> {
+        const sourceControl = this.sourceControls.get(sourceControlHandle);
+        if (!sourceControl || !sourceControl.historyProvider) {
+            return undefined;
+        }
+        const result = await sourceControl.historyProvider.provideHistoryItems(options, token);
+        if (!result) {
+            return undefined;
+        }
+        for (const item of result) {
+            sourceControl.historyItems.set(item.id, item);
+        }
+        return result.map(historyItemToDto);
+    }
+
+    async $provideHistoryItemChanges(
+        sourceControlHandle: number, historyItemId: string,
+        historyItemParentId: string | undefined, token: CancellationToken
+    ): Promise<ScmHistoryItemChangeDto[] | undefined> {
+        const sourceControl = this.sourceControls.get(sourceControlHandle);
+        if (!sourceControl || !sourceControl.historyProvider) {
+            return undefined;
+        }
+        const result = await sourceControl.historyProvider.provideHistoryItemChanges(historyItemId, historyItemParentId, token);
+        if (!result) {
+            return undefined;
+        }
+        return result.map(historyItemChangeToDto);
+    }
+
+    async $resolveHistoryItem(sourceControlHandle: number, historyItemId: string, token: CancellationToken): Promise<ScmHistoryItemDto | undefined> {
+        const sourceControl = this.sourceControls.get(sourceControlHandle);
+        if (!sourceControl || !sourceControl.historyProvider) {
+            return undefined;
+        }
+        const result = await sourceControl.historyProvider.resolveHistoryItem(historyItemId, token);
+        if (!result) {
+            return undefined;
+        }
+        return historyItemToDto(result);
+    }
+
+    async $resolveHistoryItemRefsCommonAncestor(sourceControlHandle: number, historyItemRefs: string[], token: CancellationToken): Promise<string | undefined> {
+        const sourceControl = this.sourceControls.get(sourceControlHandle);
+        if (!sourceControl || !sourceControl.historyProvider) {
+            return undefined;
+        }
+        const result = await sourceControl.historyProvider.resolveHistoryItemRefsCommonAncestor(historyItemRefs, token);
+        return result ?? undefined;
     }
 
     $setSelectedSourceControl(selectedSourceControlHandle: number | undefined): Promise<void> {
