@@ -18,6 +18,7 @@ import { extractJsonStringField } from '@theia/ai-chat-ui/lib/common/toolcall-ut
 
 export interface ShellExecutionInput {
     command: string;
+    description?: string;
     cwd?: string;
     timeout?: number;
 }

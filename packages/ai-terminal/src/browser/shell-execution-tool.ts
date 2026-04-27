@@ -104,6 +104,29 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                         type: 'string',
                         description: 'The shell command to execute. Can include pipes, redirects, and shell features.'
                     },
+                    description: {
+                        type: 'string',
+                        description: 'Describe what this command actually does in active voice, ' +
+                            'so the user can verify the command matches their intent without ' +
+                            'parsing flags or shell syntax themselves. ' +
+                            'Never use words like "complex" or "risk".\n\n' +
+                            'Reflect the actual mechanics of the command: significant flags, ' +
+                            'filters, pipes, and output limits. When a less obvious tool or ' +
+                            'flag is chosen (e.g. `find` instead of `ls`, `-type f`, `head`, ' +
+                            '`sort`), state its effect rather than only the high-level goal.\n\n' +
+                            'For simple commands (git, npm, standard CLI tools), keep it brief (5-10 words):\n' +
+                            '- cat README.md -> "Print README file contents"\n' +
+                            '- git diff HEAD~1 -> "Show changes from last commit"\n' +
+                            '- npm test -> "Run project test suite"\n\n' +
+                            'For longer or piped commands, add enough context to clarify intent and behavior:\n' +
+                            '- grep -rn "TODO" src/ --include="*.ts" -> "Search TypeScript files in src for TODO comments"\n' +
+                            '- git log --oneline --since="1 week" | wc -l -> "Count commits from the past week"\n' +
+                            '- du -sh node_modules/* | sort -rh | head -5 -> "Show 5 largest packages in node_modules by size"\n' +
+                            '- find . -type f | head -100 -> "Recursively list up to the first 100 files (excluding directories) under the current directory"\n\n' +
+                            'Avoid descriptions that state only the intent and hide the mechanics ' +
+                            '(e.g. "List all files in the workspace" for `find . -type f | head -100` ' +
+                            'is too vague — it omits the recursion, file-only filter, and 100-entry limit).'
+                    },
                     cwd: {
                         type: 'string',
                         description: 'Working directory for command execution. Can be absolute or relative to workspace root. Defaults to the workspace root.'
@@ -113,7 +136,7 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                         description: 'Timeout in milliseconds. Default: 120000 (2 minutes). Max: 600000 (10 minutes).'
                     }
                 },
-                required: ['command']
+                required: ['command', 'description']
             },
             handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
             checkAutoAction: (argString: string): AutoActionResult | undefined => {
