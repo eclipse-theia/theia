@@ -14,10 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
+import { Command, nls } from '@theia/core';
 import { AbstractViewContribution } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { PortForwardingWidget, PORT_FORWARDING_WIDGET_ID } from './port-forwarding-widget';
+
+export namespace PortForwardingCommands {
+    export const TOGGLE = Command.toLocalizedCommand({
+        id: 'port-forwarding:toggle',
+        label: 'Ports: Focus on Ports View',
+        category: 'View'
+    }, 'theia/remote/port-forwarding/focusPorts');
+}
 
 @injectable()
 export class PortForwardingContribution extends AbstractViewContribution<PortForwardingWidget> {
@@ -27,7 +35,8 @@ export class PortForwardingContribution extends AbstractViewContribution<PortFor
             widgetName: nls.localizeByDefault('Ports'),
             defaultWidgetOptions: {
                 area: 'bottom'
-            }
+            },
+            toggleCommandId: PortForwardingCommands.TOGGLE.id
         });
     }
 }

@@ -22,6 +22,7 @@ import { getCurrentPort } from '@theia/core/lib/electron-browser/messaging/elect
 export interface ForwardedPort {
     localPort?: number;
     address?: string;
+    label?: string;
     origin?: string;
     editing: boolean;
 }
@@ -40,7 +41,7 @@ export class PortForwardingService {
     @postConstruct()
     init(): void {
         this.provider.getForwardedPorts().then(ports => {
-            this.forwardedPorts.push(...ports.map(p => ({ address: p.address, localPort: p.port, editing: false })));
+            this.forwardedPorts.push(...ports.map(p => ({ address: p.address, localPort: p.port, label: p.label, editing: false })));
             this.onDidChangePortsEmitter.fire();
         });
     }

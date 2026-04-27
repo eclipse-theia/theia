@@ -21,6 +21,9 @@ export const RemotePortForwardingProvider = Symbol('RemoteSSHConnectionProvider'
 export interface ForwardedPort {
     port: number;
     address?: string;
+    label?: string;
+    protocol?: 'http' | 'https';
+    onAutoForward?: 'notify' | 'openBrowser' | 'openBrowserOnce' | 'openPreview' | 'silent' | 'ignore';
 }
 
 export interface RemotePortForwardingProvider {

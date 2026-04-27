@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, MaybePromise, URI } from '@theia/core';
+import { ContributionProvider, ILogger, MaybePromise, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
@@ -64,6 +64,9 @@ export class DockerContainerService {
     @inject(DockerComposeService)
     protected readonly dockerComposeService: DockerComposeService;
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     container: Docker.Container | undefined;
 
     async getOrCreateContainer(docker: Docker, options: ContainerConnectionOptions, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
@@ -81,7 +84,7 @@ export class DockerContainerService {
                 }
             } catch (e) {
                 container = undefined;
-                console.warn('DevContainer: could not find last used container');
+                this.logger.warn('DevContainer: could not find last used container');
             }
         }
         if (!container) {

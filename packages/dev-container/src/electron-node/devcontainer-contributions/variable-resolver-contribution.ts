@@ -31,7 +31,6 @@ export function registerVariableResolverContributions(bind: interfaces.Bind): vo
 @injectable()
 export class LocalEnvVariableResolver implements VariableResolverContribution {
     canResolve(type: string): boolean {
-        console.log(`Resolving localEnv variable: ${type}`);
         return type === 'localEnv';
     }
 

@@ -255,7 +255,7 @@ export interface DevContainerCommon {
      * Remote environment variables to set for processes spawned in the container including lifecycle scripts and any remote editor/IDE server process.
      */
     remoteEnv?: {
-        [k: string]: string | null
+        [k: string]: string | undefined
     }
     /**
      * The username to use for spawning processes in the container including lifecycle scripts and any remote editor/IDE server process.
@@ -412,4 +412,16 @@ export interface MountConfig {
     source: string,
     target: string,
     type: 'volume' | 'bind',
+}
+
+export namespace DevContainerConfiguration {
+    /**
+     * Creates an empty DevContainerConfiguration with minimal valid properties.
+     * Used when attaching to existing containers where no devcontainer.json is available.
+     */
+    export function empty(): DevContainerConfiguration {
+        return {
+            image: 'unknown'
+        } as DevContainerConfiguration;
+    }
 }
