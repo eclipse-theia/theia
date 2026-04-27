@@ -21,6 +21,7 @@ import {
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 import { LanguageModelAliasRegistry } from '../common/language-model-alias';
 import {
     AIVariableContribution,
@@ -176,7 +177,7 @@ export default new ContainerModule(bind => {
         const activationService = context.container.get<AIActivationService>(AIActivationService);
         return {
             execute: (...args: unknown[]) => handler.execute(...args),
-            isEnabled: (...args: unknown[]) => activationService.isActive && (handler.isEnabled?.(...args) ?? true),
+            isEnabled: (...args: unknown[]) => activationService.canRun && (handler.isEnabled?.(...args) ?? true),
             isVisible: (...args: unknown[]) => activationService.isActive && (handler.isVisible?.(...args) ?? true),
             isToggled: handler.isToggled
         };
@@ -192,6 +193,8 @@ export default new ContainerModule(bind => {
 
     bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
     bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
+
+    bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();
 
     bind(TokenUsageService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);

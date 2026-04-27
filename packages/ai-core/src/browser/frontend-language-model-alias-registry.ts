@@ -20,6 +20,7 @@ import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/langua
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from '../common/ai-core-preferences';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 
 @injectable()
 export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegistry {
@@ -68,6 +69,9 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(TrustAwarePreferenceReader)
+    protected readonly trustAwareReader: TrustAwarePreferenceReader;
+
     protected readonly _ready = new Deferred<void>();
     get ready(): Promise<void> {
         return this._ready.promise;
@@ -75,12 +79,16 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
 
     @postConstruct()
     protected init(): void {
-        this.preferenceService.ready.then(() => {
+        Promise.all([this.preferenceService.ready, this.trustAwareReader.ready]).then(() => {
             this.loadFromPreference();
             this.preferenceService.onPreferenceChanged(ev => {
                 if (ev.preferenceName === LANGUAGE_MODEL_ALIASES_PREFERENCE) {
                     this.loadFromPreference();
                 }
+            });
+            this.trustAwareReader.onDidChangeTrust(() => {
+                this.loadFromPreference();
+                this.onDidChangeEmitter.fire();
             });
             this._ready.resolve();
         }, err => {
@@ -140,7 +148,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
      * Load aliases from the persisted setting
      */
     protected loadFromPreference(): void {
-        const stored = this.preferenceService.get<{ [name: string]: { selectedModel: string } }>(LANGUAGE_MODEL_ALIASES_PREFERENCE) || {};
+        const stored = this.trustAwareReader.get<{ [name: string]: { selectedModel: string } }>(LANGUAGE_MODEL_ALIASES_PREFERENCE) || {};
         this.aliases.forEach(alias => {
             if (stored[alias.id] && stored[alias.id].selectedModel) {
                 alias.selectedModelId = stored[alias.id].selectedModel;
