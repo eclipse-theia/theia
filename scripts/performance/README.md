@@ -3,6 +3,7 @@
 This directory contains scripts that measure the start-up performance of the Theia frontend in both the browser and the Electron examples.
 
 The frontend's start-up time is measured using the timestamp of the last recorded `Largest contentful paint (LCP)` candidate metric.
+In addition, the scripts scrape Theia's Stopwatch log output to capture complementary metrics; see [Log-based metrics](#log-based-metrics) below.
 
 ## Running the browser start-up script
 
@@ -97,6 +98,50 @@ The following parameters are available:
 - `--yarn`: Flag to trigger a full build at script startup (e.g. to build changes to extensions)
 - `--url`: Specify a URL that Theia should be launched with (can be used to specify the workspace to be opened). _Applies only to the `browser` app_ (default: `http://localhost:3000/#/<GIT_ROOT>/scripts/performance/workspace`)
 - `--workspace`: Specify a workspace on which to launch Theia. _Applies only to the `electron` app_ (default: `/<GIT_ROOT>/scripts/performance/workspace`)
-- `--file`: Relative path to the output file (default: `./script.csv`)
+- `--file`: Relative path to the main output file (default: `./script.csv`)
+- `--detail-file`: Relative path to a second CSV that records per-contribution breakdowns (default: derived from `--file` by inserting `-details` before the `.csv` suffix)
 
 _**Note**: If no extensions are provided all extensions from the `packages` folder will be measured._
+
+### Per-contribution detail output
+
+Alongside the main LCP comparison CSV, `extension-impact.js` emits a detail CSV with one row per (extension, metric) pair.
+Metrics include the `All frontend/backend contributions settled` aggregate and every per-contribution timing that the Theia Stopwatch emitted during the runs.
+This lets you attribute an extension's startup cost to the specific contribution(s) responsible.
+
+Example detail table:
+
+| Extension Name     | Metric                                        | Mean (10 runs) (in s) | Std Dev (in s) | CV (%) |
+| ------------------ | --------------------------------------------- | --------------------- | -------------- | ------ |
+| @theia/foo:1.19.0  | All frontend contributions settled            | 2.015                 | 0.032          | 1.588  |
+| @theia/foo:1.19.0  | Frontend FooFrontendContribution.onStart      | 0.087                 | 0.006          | 6.897  |
+| @theia/foo:1.19.0  | Frontend FooFrontendContribution.initialize   | 0.004                 | 0.001          | 25.000 |
+
+## Log-based metrics
+
+The Theia Stopwatch emits startup timing logs in a well-defined format that the performance scripts scrape:
+
+```
+<activity>: <ms> ms [<seconds> s since {backend process|frontend page} start]
+```
+
+Log lines the scripts currently capture:
+
+- `All frontend contributions settled`: logged by the frontend once all contributions whose lifecycle methods returned promises have resolved (i.e. steady state, as opposed to first paint).
+- `All backend contributions settled`: the backend equivalent.
+- `Frontend <ContributionName>.<phase>`: per-contribution timing for `initialize`, `configure`, `onStart`, `initializeLayout`, and `onDidInitializeLayout`.
+- `Backend <ContributionName>.<phase>`: per-contribution timing for `initialize`, `configure`, and `onStart`.
+- `Frontend <ContributionName> settled` / `Backend <ContributionName> settled`: per-contribution settlement, logged only when a contribution returned promises from more than one lifecycle method.
+
+Where these logs are visible:
+
+| Metric                                     | Browser                  | Electron                   |
+| ------------------------------------------ | ------------------------ | -------------------------- |
+| LCP                                        | Chrome trace             | Chromium trace             |
+| `All frontend contributions settled`       | Puppeteer page console   | Electron child stdout/stderr |
+| `All backend contributions settled`        | _(parent process, n/a)_  | Electron child stdout/stderr |
+| `Frontend <Contribution>.<phase>`          | Puppeteer page console   | Electron child stdout/stderr |
+| `Backend <Contribution>.<phase>`           | _(parent process, n/a)_  | Electron child stdout/stderr |
+
+Theia's frontend logger forwards all console output to the backend over RPC, so the Electron child process's stdout/stderr contains both frontend and backend Stopwatch lines.
+The browser script cannot observe backend logs because the backend runs as a separate process whose stdout is not captured.

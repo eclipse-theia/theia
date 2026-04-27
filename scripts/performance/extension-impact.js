@@ -31,10 +31,18 @@ let yarn = false;
 let url;
 let workspace;
 let file = path.resolve('./script.csv');
+let detailFile;
 let hostApp = 'browser';
+let cancelled = false;
 
-async function sigintHandler() {
-    process.exit();
+function sigintHandler() {
+    if (cancelled) {
+        // Second Ctrl+C: the first one is still unwinding, force-quit now.
+        process.exit(130);
+    }
+    cancelled = true;
+    console.error('\nInterrupted — aborting at the next safe point. Press Ctrl+C again to force-quit.');
+    process.exit(130);
 }
 
 async function exitHandler() {
@@ -85,6 +93,10 @@ async function exitHandler() {
             desc: 'Specify the relative path to a CSV file which stores the result',
             type: 'string',
             default: file
+        }).option('detail-file', {
+            alias: 'd',
+            desc: 'Relative path to a CSV file for per-contribution breakdowns (default: <file>-details.csv, derived from --file)',
+            type: 'string'
         }).option('app', {
             alias: 'a',
             desc: 'Specify in which application to run the tests',
@@ -121,6 +133,15 @@ async function exitHandler() {
             return;
         }
     }
+    if (args.detailFile) {
+        detailFile = path.resolve(args.detailFile.toString());
+        if (!detailFile.endsWith('.csv')) {
+            console.error('--detail-file must end with .csv');
+            return;
+        }
+    } else {
+        detailFile = file.replace(/\.csv$/, '-details.csv');
+    }
     if (args.app) {
         hostApp = args.app;
     }
@@ -135,6 +156,7 @@ async function exitHandler() {
 
 async function extensionImpact(extensions) {
     logToFile(`Extension Name, Mean (${runs} runs) (in s), Std Dev (in s), CV (%), Delta (in s)`);
+    logToDetailFile(`Extension Name, Metric, Mean (${runs} runs) (in s), Std Dev (in s), CV (%)`);
     if (baseTime === undefined) {
         await calculateExtension(undefined);
     } else {
@@ -146,6 +168,9 @@ async function extensionImpact(extensions) {
     }
 
     for (const e of extensions) {
+        if (cancelled) {
+            break;
+        }
         await calculateExtension(e);
     }
 }
@@ -153,12 +178,24 @@ async function extensionImpact(extensions) {
 function preparePackageTemplate() {
     const core = require('../../packages/core/package.json');
     const version = core.version;
+    // THEIA_CONFIG_DIR is passed through FileUri.create() in env-variables-server.ts,
+    // which produces `/./...` for relative paths and then fails with EROFS trying to
+    // mkdir at the filesystem root. Always pass an absolute path.
+    const configDir = path.resolve(__dirname, 'theia-config-dir');
     const content = readFileSync(path.resolve(__dirname, './base-package.json'), 'utf-8')
         .replace(/\{\{app\}\}/g, hostApp)
-        .replace(/\{\{version\}\}/g, version);
+        .replace(/\{\{version\}\}/g, version)
+        .replace(/\{\{configDir\}\}/g, configDir);
     basePackage = JSON.parse(content);
     if (hostApp === 'electron') {
         basePackage.dependencies['@theia/electron'] = version;
+        // ApplicationPackageManager.prepareElectron() (in @theia/cli) requires `electron` to
+        // be declared as a devDependency with a range that satisfies @theia/electron's peer.
+        // Without it, `theia build` auto-patches package.json and aborts with
+        // `Updated dependencies, please run "install" again`, which fails every iteration.
+        const { electronRange } = require('@theia/electron');
+        basePackage.devDependencies = basePackage.devDependencies ?? {};
+        basePackage.devDependencies.electron = electronRange;
     }
     return basePackage;
 }
@@ -177,6 +214,8 @@ function prepareWorkspace() {
     });
     ensureFileSync(file);
     writeFileSync(file, '');
+    ensureFileSync(detailFile);
+    writeFileSync(detailFile, '');
 }
 
 function cleanWorkspace() {
@@ -199,6 +238,9 @@ async function getExtensionsFromPackagesDir() {
 }
 
 async function calculateExtension(extensionQualifier) {
+    if (cancelled) {
+        return;
+    }
     const basePackageCopy = { ...basePackage };
     basePackageCopy.dependencies = { ...basePackageCopy.dependencies };
     if (extensionQualifier !== undefined) {
@@ -217,6 +259,19 @@ async function calculateExtension(extensionQualifier) {
         // Rebuild native modules if necessary
         execSync(`npm run rebuild:${hostApp}`, { cwd: '../../', stdio: 'pipe' });
     } catch (error) {
+        // execSync installs a temporary signal forwarder that consumes SIGINT/SIGTERM
+        // (routing them to the child), so our own SIGINT listener never fires during a
+        // blocking build. Detect a signal-killed child by inspecting error.signal and
+        // trigger cancellation manually.
+        if (cancelled || error.signal === 'SIGINT' || error.signal === 'SIGTERM') {
+            sigintHandler();
+            return;
+        }
+        const stdout = error.stdout?.toString() ?? '';
+        const stderr = error.stderr?.toString() ?? '';
+        if (stdout) { console.error(stdout); }
+        if (stderr) { console.error(stderr); }
+        if (!stdout && !stderr) { console.error(error.message); }
         log(`${extensionQualifier}, Error while building the package.json, -, -, -`);
         return;
     }
@@ -244,6 +299,9 @@ async function calculateExtension(extensionQualifier) {
     };
     const [command, cwd] = appCommand(hostApp);
     const output = await execCommand(command, { env: env, cwd: cwd, shell: true });
+    if (cancelled) {
+        return;
+    }
 
     const mean = parseFloat(getMeasurement(output, '[MEAN] Largest Contentful Paint (LCP):'));
     const stdev = parseFloat(getMeasurement(output, '[STDEV] Largest Contentful Paint (LCP):'));
@@ -260,6 +318,15 @@ async function calculateExtension(extensionQualifier) {
             diff = (mean - baseTime).toFixed(3);
         }
         log(`${extensionQualifier}, ${mean.toFixed(3)}, ${stdev.toFixed(3)}, ${cv}, ${diff}`);
+    }
+
+    // Emit per-metric breakdowns (everything except the LCP that's already in the main CSV).
+    for (const metric of parseAllMetrics(output)) {
+        if (metric.scenario === 'Largest Contentful Paint (LCP)') {
+            continue;
+        }
+        const metricCv = metric.mean > 0 ? ((metric.stdev / metric.mean) * 100).toFixed(3) : '-';
+        logToDetailFile(`${extensionQualifier}, ${metric.scenario}, ${metric.mean.toFixed(3)}, ${metric.stdev.toFixed(3)}, ${metricCv}`);
     }
 }
 
@@ -292,10 +359,53 @@ function getMeasurement(output, identifier) {
     return output.toString().substring(firstIndex, lastIndex);
 }
 
+// Matches: "[Performance][<name>][MEAN] <scenario>: X.XXX seconds"
+const METRIC_MEAN_RE = /\[Performance\]\[[^\]]+\]\[MEAN\]\s+(.+?):\s+([\d.]+)\s+seconds/g;
+const METRIC_STDEV_RE = /\[Performance\]\[[^\]]+\]\[STDEV\]\s+(.+?):\s+([\d.]+)\s+seconds/g;
+
+/**
+ * Parse all metric summary lines out of a performance-script run's stdout, pairing each MEAN
+ * with its matching STDEV (by scenario name).
+ *
+ * @param {string} output the captured stdout of the performance script
+ * @returns {Array<{scenario: string, mean: number, stdev: number}>} one entry per metric
+ */
+function parseAllMetrics(output) {
+    const stdevs = new Map();
+    for (const match of output.toString().matchAll(METRIC_STDEV_RE)) {
+        stdevs.set(match[1].trim(), parseFloat(match[2]));
+    }
+    const results = [];
+    const seen = new Set();
+    for (const match of output.toString().matchAll(METRIC_MEAN_RE)) {
+        const scenario = match[1].trim();
+        if (seen.has(scenario)) {
+            continue;
+        }
+        seen.add(scenario);
+        const mean = parseFloat(match[2]);
+        const stdev = stdevs.get(scenario);
+        if (!isNaN(mean) && stdev !== undefined && !isNaN(stdev)) {
+            results.push({ scenario, mean, stdev });
+        }
+    }
+    return results;
+}
+
 function printFile() {
     console.log();
     const content = readFileSync(file).toString();
     console.log(content);
+    try {
+        const detailContent = readFileSync(detailFile).toString();
+        if (detailContent.trim().length > 0) {
+            console.log();
+            console.log(`Per-contribution breakdown (see ${detailFile}):`);
+            console.log(detailContent);
+        }
+    } catch (e) {
+        // Detail file may not exist if the script exited before preparing the workspace
+    }
 }
 
 function log(text) {
@@ -309,4 +419,8 @@ function logToConsole(text) {
 
 function logToFile(text) {
     appendFileSync(file, text + EOL);
+}
+
+function logToDetailFile(text) {
+    appendFileSync(detailFile, text + EOL);
 }
