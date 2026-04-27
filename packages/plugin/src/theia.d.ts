@@ -19492,14 +19492,12 @@ export module '@theia/plugin' {
          * point. A registered tool is available in the {@link lm.tools} list for any extension to see. But in order for it to
          * be seen by a language model, it must be passed in the list of available tools in {@link LanguageModelChatRequestOptions.tools}.
          * @returns A {@link Disposable} that unregisters the tool when disposed.
-         * @stubbed
          */
         export function registerTool<T>(name: string, tool: LanguageModelTool<T>): Disposable;
 
         /**
          * A list of all available tools that were registered by all extensions using {@link lm.registerTool}. They can be called
          * with {@link lm.invokeTool} with input that match their declared `inputSchema`.
-         * @stubbed
          */
         export const tools: readonly LanguageModelToolInformation[];
 
@@ -19528,7 +19526,6 @@ export module '@theia/plugin' {
          * @param options The options to use when invoking the tool.
          * @param token A cancellation token. See {@link CancellationTokenSource} for how to create one.
          * @returns The result of the tool invocation.
-         * @stubbed
          */
         export function invokeTool(name: string, options: LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<LanguageModelToolResult>;
 
@@ -19742,21 +19739,18 @@ export module '@theia/plugin' {
 
     /**
      * A result returned from a tool invocation. If using `@vscode/prompt-tsx`, this result may be rendered using a `ToolResult`.
-     * @stubbed
      */
     export class LanguageModelToolResult {
         /**
          * A list of tool result content parts. Includes `unknown` becauses this list may be extended with new content types in
          * the future.
          * @see {@link lm.invokeTool}.
-         * @stubbed
          */
         content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
         /**
          * Create a LanguageModelToolResult
          * @param content A list of tool result content parts
-         * @stubbed
          */
         constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>);
     }
@@ -19825,7 +19819,6 @@ export module '@theia/plugin' {
 
     /**
      * Options provided for tool invocation.
-     * @stubbed
      */
     export interface LanguageModelToolInvocationOptions<T> {
         /**
@@ -19839,33 +19832,28 @@ export module '@theia/plugin' {
          * confirmations will be shown.
          *
          * *Note* that a tool that invokes another tool during its invocation, can pass along the `toolInvocationToken` that it received.
-         * @stubbed
          */
         toolInvocationToken: ChatParticipantToolToken | undefined;
 
         /**
          * The input with which to invoke the tool. The input must match the schema defined in
          * {@link LanguageModelToolInformation.inputSchema}
-         * @stubbed
          */
         input: T;
 
         /**
          * Options to hint at how many tokens the tool should return in its response, and enable the tool to count tokens
          * accurately.
-         * @stubbed
          */
         tokenizationOptions?: LanguageModelToolTokenizationOptions;
     }
 
     /**
      * Options related to tokenization for a tool invocation.
-     * @stubbed
      */
     export interface LanguageModelToolTokenizationOptions {
         /**
          * If known, the maximum number of tokens the tool should emit in its result.
-         * @stubbed
          */
         tokenBudget: number;
 
@@ -19874,64 +19862,54 @@ export module '@theia/plugin' {
          * @param text A string.
          * @param token Optional cancellation token.  See {@link CancellationTokenSource} for how to create one.
          * @returns A thenable that resolves to the number of tokens.
-         * @stubbed
          */
         countTokens(text: string, token?: CancellationToken): Thenable<number>;
     }
 
     /**
      * Information about a registered tool available in {@link lm.tools}.
-     * @stubbed
      */
     export interface LanguageModelToolInformation {
         /**
          * A unique name for the tool.
-         * @stubbed
          */
         readonly name: string;
 
         /**
          * A description of this tool that may be passed to a language model.
-         * @stubbed
          */
         readonly description: string;
 
         /**
          * A JSON schema for the input this tool accepts.
-         * @stubbed
          */
         readonly inputSchema: object | undefined;
 
         /**
          * A set of tags, declared by the tool, that roughly describe the tool's capabilities. A tool user may use these to filter
          * the set of tools to just ones that are relevant for the task at hand.
-         * @stubbed
          */
         readonly tags: readonly string[];
     }
 
     /**
      * Options for {@link LanguageModelTool.prepareInvocation}.
-     * @stubbed
      */
     export interface LanguageModelToolInvocationPrepareOptions<T> {
         /**
          * The input that the tool is being invoked with.
-         * @stubbed
          */
         input: T;
     }
 
     /**
      * A tool that can be invoked by a call to a {@link LanguageModelChat}.
-     * @stubbed
      */
     export interface LanguageModelTool<T> {
         /**
          * Invoke the tool with the given input and return a result.
          *
          * The provided {@link LanguageModelToolInvocationOptions.input} has been validated against the declared schema.
-         * @stubbed
          */
         invoke(options: LanguageModelToolInvocationOptions<T>, token: CancellationToken): ProviderResult<LanguageModelToolResult>;
 
@@ -19942,7 +19920,6 @@ export module '@theia/plugin' {
          *
          * * *Note 1:* Must be free of side-effects.
          * * *Note 2:* A call to `prepareInvocation` is not necessarily followed by a call to `invoke`.
-         * @stubbed
          */
         prepareInvocation?(options: LanguageModelToolInvocationPrepareOptions<T>, token: CancellationToken): ProviderResult<PreparedToolInvocation>;
     }
@@ -19950,37 +19927,31 @@ export module '@theia/plugin' {
     /**
      * When this is returned in {@link PreparedToolInvocation}, the user will be asked to confirm before running the tool. These
      * messages will be shown with buttons that say "Continue" and "Cancel".
-     * @stubbed
      */
     export interface LanguageModelToolConfirmationMessages {
         /**
          * The title of the confirmation message.
-         * @stubbed
          */
         title: string;
 
         /**
          * The body of the confirmation message.
-         * @stubbed
          */
         message: string | MarkdownString;
     }
 
     /**
      * The result of a call to {@link LanguageModelTool.prepareInvocation}.
-     * @stubbed
      */
     export interface PreparedToolInvocation {
         /**
          * A customized progress message to show while the tool runs.
-         * @stubbed
          */
         invocationMessage?: string | MarkdownString;
 
         /**
          * The presence of this property indicates that the user should be asked to confirm before running the tool. The user
          * should be asked for confirmation for any tool that has a side-effect or may potentially be dangerous.
-         * @stubbed
          */
         confirmationMessages?: LanguageModelToolConfirmationMessages;
     }

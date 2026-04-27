@@ -137,6 +137,7 @@ describe('Chat Auto-Save Mechanism', () => {
 
     const mockToolInvocationRegistry: ToolInvocationRegistry = {
         registerTool: () => { },
+        unregisterTool: () => { },
         getFunction: () => undefined,
         getFunctions: () => [],
         getAllFunctions: () => [],
