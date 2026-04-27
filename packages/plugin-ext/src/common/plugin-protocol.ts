@@ -112,6 +112,26 @@ export interface PluginPackageContribution {
     notebookRenderer?: PluginNotebookRendererContribution[];
     notebookPreload?: PluginPackageNotebookPreload[];
     mcpServerDefinitionProviders?: PluginPackageMcpServerDefinitionProviderContribution[];
+    walkthroughs?: PluginPackageWalkthrough[];
+}
+
+export interface PluginPackageWalkthroughStep {
+    id: string;
+    title: string;
+    description: string;
+    media?: { markdown: string } | { image: string | { dark: string; light: string; hc: string; hcLight: string }; altText?: string } | { svg: string };
+    completionEvents?: string[];
+    when?: string;
+}
+
+export interface PluginPackageWalkthrough {
+    id: string;
+    title: string;
+    description: string;
+    steps: PluginPackageWalkthroughStep[];
+    featuredFor?: string[];
+    when?: string;
+    icon?: string;
 }
 
 export interface PluginPackageNotebook {
@@ -634,6 +654,7 @@ export interface PluginContribution {
     notebooks?: NotebookContribution[];
     notebookRenderer?: NotebookRendererContribution[];
     notebookPreload?: notebookPreloadContribution[];
+    walkthroughs?: WalkthroughContribution[];
 }
 export interface NotebookContribution {
     type: string;
@@ -653,6 +674,27 @@ export interface NotebookRendererContribution {
 export interface notebookPreloadContribution {
     type: string;
     entrypoint: string;
+}
+
+export interface WalkthroughStepContribution {
+    id: string;
+    title: string;
+    description: string;
+    media?: { markdown: string } | { image: string | { dark: string; light: string; hc: string; hcLight: string }; altText?: string } | { svg: string };
+    completionEvents?: string[];
+    when?: string;
+}
+
+export interface WalkthroughContribution {
+    id: string;
+    title: string;
+    description: string;
+    steps: WalkthroughStepContribution[];
+    featuredFor?: string[];
+    when?: string;
+    icon?: string;
+    pluginId: string;
+    extensionUri: string;
 }
 
 export interface AuthenticationProviderInformation {
