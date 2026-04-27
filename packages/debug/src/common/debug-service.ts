@@ -23,6 +23,7 @@ import { DebugConfiguration } from './debug-configuration';
 export interface DebuggerDescription {
     type: string
     label: string
+    variables?: Record<string, string>
 }
 
 /**

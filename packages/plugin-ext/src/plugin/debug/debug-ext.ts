@@ -130,7 +130,8 @@ export class DebugExtImpl implements DebugExt {
             this.debuggersContributions.set(contribution.type, contribution);
             this.proxy.$registerDebuggerContribution({
                 type: contribution.type,
-                label: contribution.label || contribution.type
+                label: contribution.label || contribution.type,
+                variables: contribution.variables
             });
             this.logger.debug(`Debugger contribution has been registered: ${contribution.type}`);
         });

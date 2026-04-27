@@ -29,8 +29,10 @@ import {
     Mutable,
     ContributionProvider,
     CommandService,
-    CancellationError
+    CancellationError,
+    OS
 } from '@theia/core/lib/common';
+import { ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
@@ -135,6 +137,7 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly workspaceService: WorkspaceService,
         protected readonly debugPreferences: DebugPreferences,
         protected readonly commandService: CommandService,
+        protected readonly shellCommandBuilder: ShellCommandBuilder,
         /**
          * Number of millis after a `stop` request times out. It's 5 seconds by default.
          */
@@ -367,7 +370,8 @@ export class DebugSession implements CompositeTreeElement {
                 pathFormat: 'path',
                 supportsVariableType: false,
                 supportsVariablePaging: false,
-                supportsRunInTerminalRequest: true
+                supportsRunInTerminalRequest: true,
+                supportsArgsCanBeInterpretedByShell: true
             });
             this.updateCapabilities(response?.body || {});
             this.didReceiveCapabilities.resolve();
@@ -501,10 +505,29 @@ export class DebugSession implements CompositeTreeElement {
         return this.connection.onDidCustomEvent;
     }
 
-    protected async runInTerminal({ arguments: { title, cwd, args, env } }: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
+    protected async runInTerminal(request: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
+        const { title, cwd, args, env, argsCanBeInterpretedByShell } = request.arguments;
         const terminal = await this.doCreateTerminal({ title, cwd, env, useServerTitle: false });
         const { processId } = terminal;
-        await terminal.executeCommand({ cwd, args, env });
+
+        if (argsCanBeInterpretedByShell) {
+            const builder = this.shellCommandBuilder;
+
+            const prefixArgs = args.length > 0 ? [args[0] || ''] : [];
+            const prefix = builder.buildCommand(await terminal.processInfo, {
+                cwd,
+                args: prefixArgs,
+                env
+            });
+
+            const rawArgs = args.length > 1 ? ' ' + args.slice(1).join(' ') : '';
+
+            await terminal.sendText(prefix + rawArgs + OS.backend.EOL);
+
+        } else {
+            await terminal.executeCommand({ cwd, args, env });
+        }
+
         return { processId: await processId };
     }
 

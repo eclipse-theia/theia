@@ -35,6 +35,7 @@ import { PluginChannel } from '../../../common/connection';
 import { TestService } from '@theia/test/lib/browser/test-service';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { CommandService } from '@theia/core';
+import { ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
@@ -55,10 +56,11 @@ export class PluginDebugSession extends DebugSession {
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
         protected override readonly workspaceService: WorkspaceService,
         debugPreferences: DebugPreferences,
-        protected override readonly commandService: CommandService) {
+        protected override readonly commandService: CommandService,
+        protected override readonly shellCommandBuilder: ShellCommandBuilder) {
         super(id, options, parentSession, testService, testRun, sessionManager, connection, terminalServer, editorManager, breakpoints,
             labelProvider, messages, fileService, debugContributionProvider,
-            workspaceService, debugPreferences, commandService);
+            workspaceService, debugPreferences, commandService, shellCommandBuilder);
     }
 
     protected override async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
@@ -87,7 +89,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected override readonly testService: TestService,
         protected override readonly workspaceService: WorkspaceService,
         protected override readonly commandService: CommandService,
-    ) {
+        protected override readonly shellCommandBuilder: ShellCommandBuilder) {
         super();
     }
 
@@ -115,7 +117,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             this.debugContributionProvider,
             this.workspaceService,
             this.debugPreferences,
-            this.commandService
+            this.commandService,
+            this.shellCommandBuilder
         );
     }
 }

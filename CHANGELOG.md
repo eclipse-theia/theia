@@ -6,12 +6,14 @@
 
 ## 1.71.0 - TBD
 
+- [debug] fixed shell expansion support for debug adapter launch arguments when `argsCanBeInterpretedByShell` is set [#17224](https://github.com/eclipse-theia/theia/pull/17224)
 - [core] added `errorHandling` option to `Emitter` to control how listener exceptions are handled: `'log'` (default), `'propagate'` (collect and re-throw), or a custom callback [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275)
 - [core] the Inversify containers created in the backend for each frontend connection (connection-scoped child containers) now unbind all services via `Container::unbindAllAsync()` upon closure of the RPC channel. This allows clean-up methods annotated with `@preDestroy()` to run, releasing resources. Downstream applications should be aware that service instances deliberately shared between connection-scoped containers, and service instances obtained from the root container that are explicitly bound again in the connection-scoped module, will cause such shared services to be destroyed while still in use in other containers. Both of these scenarios are already Inversify anti-patterns, so are not expected to arise in practice. [#17384](https://github.com/eclipse-theia/theia/pull/17384)
 
 <a name="breaking_changes_1.71.0">[Breaking Changes:](#breaking_changes_1.71.0)</a>
 
+- [debug] `DebugSession` constructor now requires an additional `shellCommandBuilder: ShellCommandBuilder` parameter. Subclasses must update their constructors accordingly [#17224](https://github.com/eclipse-theia/theia/pull/17224)
 - [core] changed the visibility of `ChannelMultiplexer.pendingOpen` from `protected` to `private` [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [core] `Uint8ArrayWriteBuffer`'s `onCommit` emitter now propagates exceptions from listeners instead of silently catching them. Code that relied on exceptions being swallowed should add its own error handling [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275):
