@@ -384,6 +384,12 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: false,
             tags: ['experimental']
         },
+        'terminal.integrated.enableCommandBlockActions': {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/terminal/enableCommandBlockActions', 'Enable command block actions in the terminal. An action button is added to each command block. This button enables the user to copy the command and its output. Changes only apply to commands executed after this setting is modified. Only works when {0} is enabled.', '`#terminal.integrated.enableCommandHistory#`'),
+            default: false,
+            tags: ['experimental']
+        },
         'terminal.integrated.defaultProfile.windows': {
             type: 'string',
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Windows.toString())
@@ -570,6 +576,7 @@ export interface TerminalConfiguration {
     'terminal.integrated.enablePersistentSessions': boolean
     'terminal.integrated.enableCommandHistory': boolean
     'terminal.integrated.enableCommandSeparator': boolean
+    'terminal.integrated.enableCommandBlockActions': boolean
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';

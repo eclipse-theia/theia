@@ -46,6 +46,7 @@ import {
     TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
 } from './terminal-profile-service';
 import { TerminalCommandHistoryStateFactory, TerminalCommandHistoryStateImpl } from './terminal-command-history';
+import { TerminalBlockOverlayController, TerminalBlockOverlayControllerFactory, TerminalBlockOverlayOptions } from './terminal-block-overlay-controller';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -138,4 +139,11 @@ export default new ContainerModule(bind => {
     bind(TerminalCommandHistoryStateFactory).toFactory(ctx =>
         () => ctx.container.get(TerminalCommandHistoryStateImpl)
     );
+    bind(TerminalBlockOverlayControllerFactory).toFactory(({ container }) => options => {
+        const child = container.createChild();
+        child.bind(TerminalBlockOverlayOptions).toConstantValue(options);
+        child.bind(TerminalBlockOverlayController).toSelf();
+        return child.get(TerminalBlockOverlayController);
+    });
+
 });
