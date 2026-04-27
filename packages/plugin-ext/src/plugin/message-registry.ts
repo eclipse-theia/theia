@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
-    PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain, MainMessageOptions, MainMessageType
+    Plugin, PLUGIN_RPC_CONTEXT as Ext, MessageRegistryMain, MainMessageOptions, MainMessageType
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { MessageItem, MessageOptions } from '@theia/plugin';
@@ -32,10 +32,13 @@ export class MessageRegistryExt {
         this.proxy = this.rpc.getProxy(Ext.MESSAGE_REGISTRY_MAIN);
     }
 
-    async showMessage(type: MainMessageType, message: string,
+    async showMessage(plugin: Plugin, type: MainMessageType, message: string,
         optionsOrFirstItem?: MessageOptions | string | MessageItem,
         ...rest: (string | MessageItem)[]): Promise<string | MessageItem | undefined> {
-        const options: MainMessageOptions = {};
+        const source = `${plugin.model.publisher}.${plugin.model.displayName || plugin.model.name}`;
+        const options: MainMessageOptions = {
+            source
+        };
         const actions: MessageItem[] = [];
         const items: (string | MessageItem)[] = [];
         const pushItem = (item: string | MessageItem) => {

@@ -41,11 +41,11 @@ export class BasicMessageRegistryMainImpl implements MessageRegistryMain {
         // Modal notifications are not supported in this context
         switch (type) {
             case MainMessageType.Info:
-                return this.messageService.info(message, ...actions.map(a => a.title));
+                return this.messageService.info(message, options, ...actions.map(a => a.title));
             case MainMessageType.Warning:
-                return this.messageService.warn(message, ...actions.map(a => a.title));
+                return this.messageService.warn(message, options, ...actions.map(a => a.title));
             case MainMessageType.Error:
-                return this.messageService.error(message, ...actions.map(a => a.title));
+                return this.messageService.error(message, options, ...actions.map(a => a.title));
         }
         throw new Error(`Message type '${type}' is not supported yet!`);
     }
