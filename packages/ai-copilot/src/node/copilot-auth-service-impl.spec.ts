@@ -18,6 +18,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
+import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 describe('CopilotAuthServiceImpl', () => {
@@ -40,6 +41,7 @@ describe('CopilotAuthServiceImpl', () => {
         };
 
         container.bind(KeyStoreService).toConstantValue(keyStoreService);
+        container.bind(CopilotOAuthConfig).toConstantValue(DEFAULT_COPILOT_OAUTH_CONFIG);
         container.bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
 
         authService = container.get(CopilotAuthServiceImpl);

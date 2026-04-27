@@ -19,7 +19,6 @@ export const CopilotLanguageModelsManager = Symbol('CopilotLanguageModelsManager
 
 export const COPILOT_PROVIDER_ID = 'copilot';
 export const COPILOT_API_BASE_URL = 'https://api.githubcopilot.com';
-export const COPILOT_USER_AGENT = 'Theia-Copilot/1.0.0';
 
 /**
  * Returns the Copilot API base URL, taking an optional GitHub Enterprise domain into account.
