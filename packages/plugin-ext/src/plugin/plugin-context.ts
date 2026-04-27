@@ -257,7 +257,7 @@ import { DocumentsExtImpl } from './documents';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { OutputChannelRegistryExtImpl } from './output-channel-registry';
-import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext';
+import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl } from './languages';
 import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
@@ -348,7 +348,7 @@ export function createAPIFactory(
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionImpl(rpc.getProxy(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN)));
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry, fileSystemExt));
-    const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt));
+    const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt, workspaceExt));
     const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
@@ -462,7 +462,7 @@ export function createAPIFactory(
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
 
-            get activeTerminal(): TerminalExtImpl | undefined {
+            get activeTerminal(): theia.Terminal | undefined {
                 return terminalExt.activeTerminal;
             },
             get activeTextEditor(): TextEditorExt | undefined {
@@ -471,7 +471,7 @@ export function createAPIFactory(
             get visibleTextEditors(): theia.TextEditor[] {
                 return editors.getVisibleTextEditors();
             },
-            get terminals(): TerminalExtImpl[] {
+            get terminals(): theia.Terminal[] {
                 return terminalExt.terminals;
             },
             onDidChangeActiveTerminal,
@@ -633,7 +633,7 @@ export function createAPIFactory(
             createTerminal(nameOrOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
                 shellPath?: string,
                 shellArgs?: string[] | string): theia.Terminal {
-                return createAPIObject(terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs));
+                return terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs, createAPIObject);
             },
             onDidChangeTerminalState,
             onDidCloseTerminal,
@@ -1286,8 +1286,8 @@ export function createAPIFactory(
                     throw new Error('Input box not found!');
                 }
             },
-            createSourceControl(id: string, label: string, rootUri?: URI, iconPath?: theia.IconPath, parent?: theia.SourceControl): theia.SourceControl {
-                return createAPIObject(scmExt.createSourceControl(plugin, id, label, rootUri, iconPath, parent));
+            createSourceControl(id: string, label: string, rootUri?: URI, iconPath?: theia.IconPath, isHidden?: boolean, parent?: theia.SourceControl): theia.SourceControl {
+                return scmExt.createSourceControl(plugin, id, label, rootUri, iconPath, isHidden, parent);
             }
         };
 

@@ -136,8 +136,8 @@ export class WebSocketConnectionSource implements ConnectionSource {
 
     connectNewChannel(): void {
         if (this.currentChannel) {
-            this.currentChannel.close();
             this.currentChannel.onCloseEmitter.fire({ reason: 'reconnecting channel' });
+            this.currentChannel.close();
         }
         this.writeBuffer.drain();
         this.currentChannel = this.createChannel();

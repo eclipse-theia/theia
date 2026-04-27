@@ -27,6 +27,7 @@ export interface ActiveRunEvent {
 export interface TestOutputSource {
     readonly output: readonly TestOutputItem[];
     onDidAddTestOutput: Event<TestOutputItem[]>;
+    readonly noOutputMessage?: string;
 }
 
 export interface ActiveTestStateChangedEvent {

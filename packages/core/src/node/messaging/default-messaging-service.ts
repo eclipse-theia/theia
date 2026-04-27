@@ -71,6 +71,7 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
     protected createMainChannelContainer(socket: Channel): Container {
         const connectionContainer: Container = this.container.createChild() as Container;
         connectionContainer.bind(MainChannel).toConstantValue(socket);
+        socket.onClose(() => connectionContainer.unbindAllAsync().catch(e => console.error(e)));
         return connectionContainer;
     }
 

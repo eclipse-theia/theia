@@ -543,6 +543,8 @@ class SourceControlImpl implements theia.SourceControl {
     private static handlePool: number = 0;
     private groups: Map<GroupHandle, ScmResourceGroupImpl> = new Map<GroupHandle, ScmResourceGroupImpl>();
 
+    readonly apiObject: theia.SourceControl;
+
     get id(): string {
         return this._id;
     }
@@ -702,11 +704,13 @@ class SourceControlImpl implements theia.SourceControl {
         private _label: string,
         private _rootUri?: theia.Uri,
         _iconPath?: theia.IconPath,
+        _isHidden?: boolean,
         _parent?: SourceControlImpl
     ) {
         this.inputBox = new ScmInputBoxImpl(plugin, this.proxy, this.handle);
         this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri, _parent?.handle);
         this.onDidDisposeParent = _parent ? _parent.onDidDispose : Event.None;
+        this.apiObject = createAPIObject(this);
     }
 
     private createdResourceGroups = new Map<ScmResourceGroupImpl, Disposable>();
@@ -824,7 +828,7 @@ export class ScmExtImpl implements ScmExt {
                     return undefined;
                 }
                 if (typeof arg.resourceGroupHandle !== 'number') {
-                    return sourceControl;
+                    return sourceControl.apiObject;
                 }
                 const resourceGroup = sourceControl.getResourceGroup(arg.resourceGroupHandle);
                 if (typeof arg.resourceStateHandle !== 'number') {
@@ -836,17 +840,35 @@ export class ScmExtImpl implements ScmExt {
     }
 
     createSourceControl(extension: Plugin, id: string, label: string, rootUri: theia.Uri | undefined,
-        iconPath?: theia.IconPath, parent?: theia.SourceControl): theia.SourceControl {
+        iconPath?: theia.IconPath, isHidden?: boolean, parent?: theia.SourceControl): theia.SourceControl {
         const handle = ScmExtImpl.handlePool++;
         const parentImpl = parent ? this.findSourceControlImpl(parent) : undefined;
-        const sourceControl = new SourceControlImpl(extension, this.proxy, this.commands, id, label, rootUri, iconPath, parentImpl);
+        const sourceControl = new SourceControlImpl(extension, this.proxy, this.commands, id, label, rootUri, iconPath, isHidden, parentImpl);
         this.sourceControls.set(handle, sourceControl);
 
         const sourceControls = this.sourceControlsByExtension.get(extension.model.id) || [];
         sourceControls.push(sourceControl);
         this.sourceControlsByExtension.set(extension.model.id, sourceControls);
 
-        return sourceControl;
+        // Clean up registries when the source control is disposed. Without this,
+        // disposed entries leak and findSourceControlImpl() may return a stale
+        // (disposed) instance as a parent for a later-created source control
+        // with the same id + rootUri (e.g. a worktree recreated after removal).
+        sourceControl.onDidDispose(() => {
+            this.sourceControls.delete(handle);
+            const list = this.sourceControlsByExtension.get(extension.model.id);
+            if (list) {
+                const index = list.indexOf(sourceControl);
+                if (index >= 0) {
+                    list.splice(index, 1);
+                }
+                if (list.length === 0) {
+                    this.sourceControlsByExtension.delete(extension.model.id);
+                }
+            }
+        });
+
+        return sourceControl.apiObject;
     }
 
     private findSourceControlImpl(apiObject: theia.SourceControl): SourceControlImpl | undefined {

@@ -222,7 +222,6 @@
 
 #toolbar-icon-selector-dialog .toolbar-icon-controls .toolbar-default-icon {
   margin-left: var(--theia-ui-padding);
-  font-size: var(--theia-icon-dialog-icon-size);
 }
 
 #toolbar-icon-selector-dialog .icon-selector-options {

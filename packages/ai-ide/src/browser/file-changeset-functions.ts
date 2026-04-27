@@ -25,6 +25,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
 
 import { nls } from '@theia/core';
+import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import {
     CLEAR_FILE_CHANGES_ID,
     GET_PROPOSED_CHANGES_ID,
@@ -37,13 +38,9 @@ import {
 } from '../common/file-changeset-function-ids';
 
 function createPathShortLabel(args: string, hasMore: boolean): { label: string; hasMore: boolean } | undefined {
-    try {
-        const parsed = JSON.parse(args);
-        if (parsed && typeof parsed === 'object' && 'path' in parsed) {
-            return { label: String(parsed.path), hasMore };
-        }
-    } catch {
-        // ignore parse errors
+    const path = extractJsonStringField(args, 'path');
+    if (path) {
+        return { label: path, hasMore };
     }
     return undefined;
 }
@@ -696,7 +693,19 @@ export class WriteFileReplacements implements ToolProvider {
         return {
             id: WriteFileReplacements.ID,
             name: WriteFileReplacements.ID,
-            description: metadata.description,
+            description: `Immediately replaces sections of content in an existing file — changes are applied to disk without user confirmation.
+            Each replacement consists of oldContent to be matched and newContent to insert in its place.
+            By default, a single occurrence of each oldContent is expected. If the 'multiple' flag is set to true, all occurrences will be replaced.
+            For deletions, use an empty newContent.
+            Make sure you use the same line endings and whitespace as in the original file content.
+            Multiple calls for the same file will merge replacements unless the reset parameter is set to true.
+
+            IMPORTANT: Each oldContent must appear exactly once in the file (unless 'multiple' is true).
+            If you see "Expected 1 occurrence but found X" errors:
+            - If found 0: The content doesn't exist, has different whitespace/indentation, or the file changed. Re-read the file first.
+            - If found 2+: Add more surrounding lines to oldContent to make it unique.
+            Common mistakes: Missing/extra trailing newlines, wrong indentation, outdated content.
+            Always read the file with getFileContent before attempting replacements.`,
             parameters: metadata.parameters,
             handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
                 assertChatContext(ctx);

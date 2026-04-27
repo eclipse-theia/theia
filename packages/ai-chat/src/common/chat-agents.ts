@@ -72,6 +72,7 @@ import {
     ErrorChatResponseContent,
     InformationalChatResponseContent,
     ResponseTokenUsage,
+    ThinkingChatResponseContent,
 } from './chat-model';
 import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
@@ -423,6 +424,12 @@ export abstract class AbstractChatAgent implements ChatAgent {
                     .filter(c => {
                         // we do not send errors or informational content
                         if (ErrorChatResponseContent.is(c) || InformationalChatResponseContent.is(c)) {
+                            return false;
+                        }
+                        // skip incomplete thinking blocks (e.g. from a cancelled stream where the
+                        // signature_delta never arrived). Some LLMs (e.g. Anthropic) reject thinking
+                        // blocks without a signature.
+                        if (ThinkingChatResponseContent.is(c) && !c.signature) {
                             return false;
                         }
                         // content even has an own converter, definitely include it

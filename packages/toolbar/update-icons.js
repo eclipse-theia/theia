@@ -76,19 +76,19 @@ fs.writeFileSync(fontAwesomeTsPath, updatedFaTsContent, 'utf-8');
 // ========
 
 // This part generates a JSON array of codicons mappings from their classnames and their content from the mapping.json file
-const codiconCSSPath = path.resolve(__dirname, '../../node_modules/@vscode/codicons/src/template/mapping.json')
-const codiconDestination = path.resolve(__dirname, './src/browser/icons/codicon.json')
+const codiconMappingPath = path.resolve(__dirname, '../../node_modules/@vscode/codicons/src/template/mapping.json');
+const codiconDestination = path.resolve(__dirname, './src/browser/icons/codicon.json');
 // Read the codicons mapping file, add 'codicon-' prefix to all keys, and write it to the destination
-const codiconMapping = JSON.parse(fs.readFileSync(codiconCSSPath, 'utf-8'));
-const prefixedCodiconMapping = {};
-
+const codiconMapping = JSON.parse(fs.readFileSync(codiconMappingPath, 'utf-8'));
 // Add 'codicon-' prefix to all keys
-for (const key in codiconMapping) {
-    prefixedCodiconMapping['codicon-' + key] = codiconMapping[key];
-}
+const prefixedCodiconMapping = Object.fromEntries(
+    Object.entries(codiconMapping).flatMap(([codepoint, iconNames]) =>
+        iconNames.map(iconName => [`codicon-${iconName}`, Number(codepoint)])
+    )
+);
 
 // Write the modified mapping to the destination
-fs.writeFileSync(codiconDestination, JSON.stringify(prefixedCodiconMapping, null, 2));
+fs.writeFileSync(codiconDestination, JSON.stringify(prefixedCodiconMapping, null, 2), 'utf-8');
 
 // Update the codicons.ts file with the new mapping
 const codiconTsPath = path.resolve(__dirname, './src/browser/icons/codicons.ts');

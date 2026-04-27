@@ -110,6 +110,12 @@ export class WorkspaceTrustService {
     protected currentTrust: boolean | undefined;
     protected pendingTrustDialog: Deferred<boolean> | undefined;
     protected pendingTrustRequest: Deferred<boolean | undefined> | undefined;
+    /**
+     * Effective value of `security.workspace.trust.enabled` at the time trust was last resolved.
+     * Used to distinguish a real user change from the initial-load preference change event
+     * that the User provider emits asynchronously after start-up.
+     */
+    protected lastKnownTrustEnabled: boolean | undefined;
 
     protected readonly onDidChangeWorkspaceTrustEmitter = new Emitter<boolean>();
     readonly onDidChangeWorkspaceTrust: Event<boolean> = this.onDidChangeWorkspaceTrustEmitter.event;
@@ -160,6 +166,7 @@ export class WorkspaceTrustService {
 
     protected async resolveWorkspaceTrust(givenTrust?: boolean): Promise<void> {
         if (!this.isWorkspaceTrustResolved()) {
+            this.lastKnownTrustEnabled = !!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED];
             const trust = givenTrust ?? await this.calculateWorkspaceTrust();
             if (trust !== undefined) {
                 await this.storeWorkspaceTrust(trust);
@@ -399,6 +406,12 @@ export class WorkspaceTrustService {
     protected async handlePreferenceChange(change: PreferenceChange): Promise<void> {
         // Handle trustedFolders changes regardless of scope
         if (change.preferenceName === WORKSPACE_TRUST_TRUSTED_FOLDERS) {
+            // When trust is disabled, trust is unconditionally granted: trustedFolders
+            // changes must not flip `currentTrust` (which would trigger a restart dialog
+            // via `setWorkspaceTrust` → `shouldReloadForTrustChange`).
+            if (!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED]) {
+                return;
+            }
             // For empty windows with emptyWindow setting enabled, trust should remain true
             if (await this.isEmptyWorkspace() && this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW]) {
                 return;
@@ -416,8 +429,16 @@ export class WorkspaceTrustService {
             }
 
             if (change.preferenceName === WORKSPACE_TRUST_ENABLED) {
-                if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
-                    this.windowService.reload();
+                const currentEnabled = !!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED];
+                // The preference framework emits a User-scope change event when the user
+                // settings file is first loaded (oldValue undefined → current value). Only
+                // prompt for restart when the effective value has actually changed since
+                // trust was last resolved.
+                if (currentEnabled !== this.lastKnownTrustEnabled) {
+                    this.lastKnownTrustEnabled = currentEnabled;
+                    if (!await this.isEmptyWorkspace() && this.isWorkspaceTrustResolved() && await this.confirmRestart()) {
+                        this.windowService.reload();
+                    }
                 }
                 this.resolveWorkspaceTrust();
             }
