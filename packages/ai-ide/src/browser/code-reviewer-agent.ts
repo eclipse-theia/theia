@@ -18,7 +18,7 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-a
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { codeReviewerSystemPrompt, CODE_REVIEWER_SYSTEM_PROMPT_ID } from './code-reviewer-prompt-template';
+import { codeReviewerSystemPrompt, codeReviewerSystemNextPrompt, CODE_REVIEWER_SYSTEM_PROMPT_ID } from './code-reviewer-prompt-template';
 
 export const CodeReviewerAgentId = 'code-reviewer';
 
@@ -35,7 +35,7 @@ export class CodeReviewerAgent extends AbstractStreamParsingChatAgent {
         'A code review assistant that analyzes code changes and returns structured verdicts. \
         Checks completion criteria, build/lint/test evidence, and code quality.');
 
-    override prompts = [{ id: CODE_REVIEWER_SYSTEM_PROMPT_ID, defaultVariant: codeReviewerSystemPrompt, variants: [] }];
+    override prompts = [{ id: CODE_REVIEWER_SYSTEM_PROMPT_ID, defaultVariant: codeReviewerSystemPrompt, variants: [codeReviewerSystemNextPrompt] }];
     protected override systemPromptId: string = CODE_REVIEWER_SYSTEM_PROMPT_ID;
     override iconClass: string = 'codicon codicon-code-review';
 }
