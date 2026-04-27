@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { OS, OSBackendProvider } from '../../common';
+import { OS, OSBackendProvider } from '../../common/os';
 import { PreloadContribution } from './preloader';
 
 @injectable()
