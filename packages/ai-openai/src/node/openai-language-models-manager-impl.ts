@@ -100,7 +100,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     status,
                     maxRetries: modelDescription.maxRetries,
                     useResponseApi: modelDescription.useResponseApi ?? false,
-                    proxy: proxyUrl
+                    proxy: proxyUrl,
+                    reasoningSupport: modelDescription.reasoningSupport
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -119,7 +120,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.developerMessageSettings,
                         modelDescription.maxRetries,
                         modelDescription.useResponseApi ?? false,
-                        proxyUrl
+                        proxyUrl,
+                        modelDescription.reasoningSupport
                     )
                 ]);
             }

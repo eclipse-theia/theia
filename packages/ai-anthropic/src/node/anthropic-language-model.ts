@@ -26,6 +26,8 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
+    ReasoningApi,
+    ReasoningSupport,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -34,6 +36,7 @@ import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
+import { anthropicReasoningFor } from './anthropic-reasoning';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -190,7 +193,8 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
 }
 
 /**
- * Implements the Anthropic language model integration for Theia
+ * Implements the Anthropic language model integration for Theia. Reasoning-level
+ * translation lives in {@link anthropicReasoningFor}.
  */
 export class AnthropicModel implements LanguageModel {
 
@@ -204,27 +208,17 @@ export class AnthropicModel implements LanguageModel {
         public url: string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
-        public proxy?: string
+        public proxy?: string,
+        public reasoningSupport?: ReasoningSupport,
+        public reasoningApi?: ReasoningApi,
+        public supportsXHighEffort?: boolean
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        const baseSettings = request.settings ?? {};
-
-        if (request.thinkingMode?.enabled) {
-            return {
-                ...baseSettings,
-                thinking: {
-                    type: 'enabled',
-                    budget_tokens: request.thinkingMode.budgetTokens ?? this.defaultThinkingBudget
-                }
-            };
-        }
-
-        return baseSettings;
-    }
-
-    protected get defaultThinkingBudget(): number {
-        return 10000;
+        return {
+            ...request.settings,
+            ...anthropicReasoningFor(request.reasoning?.level, this.reasoningApi, this.supportsXHighEffort)
+        };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

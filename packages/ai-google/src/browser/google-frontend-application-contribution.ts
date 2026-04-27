@@ -16,11 +16,32 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from '../common/google-preferences';
 import { PreferenceService } from '@theia/core';
 
 const GOOGLE_PROVIDER_ID = 'google';
+
+/** Gemini 3 uses `thinkingConfig.thinkingLevel`. */
+const EFFORT_REASONING = /^gemini-3(?:\.|-)/i;
+/** Gemini 2.5 uses `thinkingConfig.thinkingBudget` (integer; `-1` dynamic, `0` off). */
+const BUDGET_REASONING = /^gemini-2\.5(?:-|$)/i;
+
+const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
+function reasoningApiFor(modelId: string): ReasoningApi | undefined {
+    if (EFFORT_REASONING.test(modelId)) {
+        return 'effort';
+    }
+    if (BUDGET_REASONING.test(modelId)) {
+        return 'budget';
+    }
+    return undefined;
+}
 
 @injectable()
 export class GoogleFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -87,12 +108,15 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
 
     protected createGeminiModelDescription(modelId: string): GoogleModelDescription {
         const id = `${GOOGLE_PROVIDER_ID}/${modelId}`;
+        const reasoningApi = reasoningApiFor(modelId);
 
         const description: GoogleModelDescription = {
             id: id,
             model: modelId,
             apiKey: true,
-            enableStreaming: true
+            enableStreaming: true,
+            reasoningSupport: reasoningApi ? GEMINI_REASONING_SUPPORT : undefined,
+            reasoningApi
         };
 
         return description;

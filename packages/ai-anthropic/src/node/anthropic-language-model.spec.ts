@@ -16,8 +16,37 @@
 
 import { expect } from 'chai';
 import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage } from './anthropic-language-model';
-import { isUsageResponsePart, LanguageModelStreamResponsePart, UserRequest } from '@theia/ai-core';
+import { isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
+
+const REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
+/** Test helper that exposes the otherwise protected getSettings() method. */
+class TestableAnthropicModel extends AnthropicModel {
+    public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
+        return this.getSettings(request);
+    }
+}
+
+function createReasoningModel(
+    modelId: string, reasoningApi: ReasoningApi, supportsXHighEffort: boolean = false
+): TestableAnthropicModel {
+    return new TestableAnthropicModel(
+        'test-id', modelId, { status: 'ready' }, true, false,
+        () => 'test-key', undefined, DEFAULT_MAX_TOKENS,
+        3, undefined, REASONING_SUPPORT, reasoningApi, supportsXHighEffort
+    );
+}
+
+function createNonReasoningModel(modelId: string): TestableAnthropicModel {
+    return new TestableAnthropicModel(
+        'test-id', modelId, { status: 'ready' }, true, false,
+        () => 'test-key', undefined, DEFAULT_MAX_TOKENS
+    );
+}
 
 describe('AnthropicModel', () => {
 
@@ -421,6 +450,79 @@ describe('AnthropicModel', () => {
             expect(usageParts).to.have.lengthOf(1);
             expect(usageParts[0].input_tokens).to.equal(800);
             expect(usageParts[0].output_tokens).to.equal(55);
+        });
+    });
+
+    describe('getSettings effort API (adaptive thinking)', () => {
+        it('maps level=minimal to effort=low', () => {
+            const model = createReasoningModel('claude-opus-4-6', 'effort');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } });
+            expect(result.thinking).to.deep.equal({ type: 'adaptive' });
+            expect(result.output_config).to.deep.equal({ effort: 'low' });
+        });
+        it('maps level=low to effort=medium', () => {
+            const model = createReasoningModel('claude-opus-4-6', 'effort');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'low' } });
+            expect(result.output_config).to.deep.equal({ effort: 'medium' });
+        });
+        it('maps level=medium to effort=high on models without xhigh', () => {
+            const model = createReasoningModel('claude-opus-4-6', 'effort');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
+            expect(result.output_config).to.deep.equal({ effort: 'high' });
+        });
+        it('maps level=medium to effort=xhigh on models that support xhigh (Opus 4.7)', () => {
+            const model = createReasoningModel('claude-opus-4-7', 'effort', true);
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
+            expect(result.output_config).to.deep.equal({ effort: 'xhigh' });
+        });
+        it('maps level=high to effort=max', () => {
+            const model = createReasoningModel('claude-opus-4-6', 'effort');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });
+            expect(result.output_config).to.deep.equal({ effort: 'max' });
+        });
+        it('omits output_config on level=auto so the provider default applies', () => {
+            const model = createReasoningModel('claude-opus-4-6', 'effort');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' } });
+            expect(result.thinking).to.deep.equal({ type: 'adaptive' });
+            expect(result.output_config).to.equal(undefined);
+        });
+        it('omits thinking entirely when level=off', () => {
+            const model = createReasoningModel('claude-opus-4-7', 'effort', true);
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } });
+            expect(result.thinking).to.equal(undefined);
+        });
+    });
+
+    describe('getSettings budget API (legacy extended thinking)', () => {
+        it('emits thinking.type="enabled" with budget_tokens for level=medium', () => {
+            const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
+            expect(result.thinking).to.deep.equal({ type: 'enabled', budget_tokens: 16000 });
+        });
+        it('enforces Anthropic 1024 minimum budget for level=minimal', () => {
+            const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } });
+            expect(result.thinking).to.deep.equal({ type: 'enabled', budget_tokens: 1024 });
+        });
+        it('uses a positive budget for level=high', () => {
+            const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });
+            const thinking = result.thinking as { type: string, budget_tokens: number };
+            expect(thinking.type).to.equal('enabled');
+            expect(thinking.budget_tokens).to.be.greaterThan(16000);
+        });
+        it('omits thinking entirely when level=off', () => {
+            const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } });
+            expect(result.thinking).to.equal(undefined);
+        });
+    });
+
+    describe('non-reasoning models', () => {
+        it('ignores reasoning settings when the model has no reasoningSupport', () => {
+            const model = createNonReasoningModel('claude-3-5-sonnet-20241022');
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });
+            expect(result.thinking).to.equal(undefined);
         });
     });
 });

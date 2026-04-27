@@ -24,6 +24,8 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
+    ReasoningApi,
+    ReasoningSupport,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -32,6 +34,7 @@ import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig } from '@google/genai';
 import { wait } from '@theia/core/lib/common/promise-util';
 import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
+import { googleReasoningFor } from './google-reasoning';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 
 interface ToolCallback {
@@ -135,7 +138,8 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
 }
 
 /**
- * Implements the Gemini language model integration for Theia
+ * Implements the Gemini language model integration for Theia. Reasoning-level
+ * translation lives in {@link googleReasoningFor}.
  */
 export class GoogleModel implements LanguageModel {
 
@@ -146,21 +150,15 @@ export class GoogleModel implements LanguageModel {
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
         public retrySettings: () => GoogleLanguageModelRetrySettings,
+        public reasoningSupport?: ReasoningSupport,
+        public reasoningApi?: ReasoningApi
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        const baseSettings = request.settings ?? {};
-
-        if (request.thinkingMode?.enabled) {
-            return {
-                ...baseSettings,
-                thinkingConfig: {
-                    includeThoughts: true
-                }
-            };
-        }
-
-        return baseSettings;
+        return {
+            ...request.settings,
+            ...googleReasoningFor(request.reasoning?.level, this.reasoningApi)
+        };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

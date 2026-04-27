@@ -16,6 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ReasoningSupport } from '@theia/ai-core';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
 import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
@@ -104,7 +105,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
                 model.enableStreaming === newModel.enableStreaming &&
-                model.useResponseApi === newModel.useResponseApi));
+                model.useResponseApi === newModel.useResponseApi &&
+                reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport)));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -132,7 +134,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
             maxRetries: maxRetries,
-            useResponseApi: useResponseApi
+            useResponseApi: useResponseApi,
+            reasoningSupport: reasoningSupportFor(modelId)
         };
     }
 
@@ -144,6 +147,12 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
             }
+            // Default to the model-name heuristic so reasoning-capable GPT-5 / o-series models exposed via
+            // a custom endpoint still get the selector. Users can override via `reasoningSupport`
+            // (set to `null` to disable, or to a full `ReasoningSupport` object to customize).
+            const reasoningSupport: ReasoningSupport | undefined = 'reasoningSupport' in pref
+                ? (isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined)
+                : reasoningSupportFor(pref.model);
 
             return [
                 ...acc,
@@ -158,13 +167,61 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
                     maxRetries: pref.maxRetries ?? maxRetries,
-                    useResponseApi: pref.useResponseApi ?? false
+                    useResponseApi: pref.useResponseApi ?? false,
+                    reasoningSupport
                 }
             ];
         }, []);
     }
 }
 
+function isReasoningSupport(value: unknown): value is ReasoningSupport {
+    return !!value && typeof value === 'object' && Array.isArray((value as ReasoningSupport).supportedLevels);
+}
+
+/**
+ * Structural equality for {@link ReasoningSupport}. Used by {@link handleCustomModelChanges} to avoid
+ * needless model re-creation when the user supplies an explicit `reasoningSupport` object via
+ * preferences — each JSON deserialization yields a fresh object reference, so a `===` check would
+ * always report a change even when the contents are identical.
+ */
+function reasoningSupportEquals(a: ReasoningSupport | undefined, b: ReasoningSupport | undefined): boolean {
+    if (a === b) {
+        return true;
+    }
+    if (!a || !b) {
+        return false;
+    }
+    return a.defaultLevel === b.defaultLevel
+        && a.supportedLevels.length === b.supportedLevels.length
+        && a.supportedLevels.every((level, index) => level === b.supportedLevels[index]);
+}
+
 const openAIModelsWithDisabledStreaming: string[] = [];
 const openAIModelsNotSupportingDeveloperMessages = ['o1-preview', 'o1-mini'];
 const openAIModelsWithoutStructuredOutput = ['o1-preview', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-mini', 'gpt-4o-2024-05-13'];
+
+/** GPT-5 family: supports `minimal` in addition to `low | medium | high`. */
+const GPT5_REASONING = /^gpt-5(?:\.|-|$)/i;
+/** o-series reasoning models (o1, o3, o4): `low | medium | high`. */
+const O_SERIES_REASONING = /^o[134](?:-|$)/i;
+
+const GPT5_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
+const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
+function reasoningSupportFor(modelId: string): ReasoningSupport | undefined {
+    if (GPT5_REASONING.test(modelId)) {
+        return GPT5_REASONING_SUPPORT;
+    }
+    if (O_SERIES_REASONING.test(modelId)) {
+        return O_SERIES_REASONING_SUPPORT;
+    }
+    return undefined;
+}

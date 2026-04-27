@@ -19,9 +19,27 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
-export interface ThinkingModeSettings {
-    enabled: boolean;
-    budgetTokens?: number;
+/** Provider-agnostic reasoning level; each provider maps this to its native API. */
+export type ReasoningLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'auto';
+
+export interface ReasoningSettings {
+    level: ReasoningLevel;
+}
+
+/**
+ * Shape of a model's reasoning parameter in its native API.
+ * - `'effort'`: discrete effort enum.
+ * - `'budget'`: numeric token budget.
+ */
+export type ReasoningApi = 'effort' | 'budget';
+
+/**
+ * Declares a model's reasoning capabilities. When unset, the chat UI hides the
+ * reasoning selector and providers ignore the `reasoning` field on requests.
+ */
+export interface ReasoningSupport {
+    readonly supportedLevels: ReadonlyArray<ReasoningLevel>;
+    readonly defaultLevel?: ReasoningLevel;
 }
 
 export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
@@ -272,7 +290,8 @@ export interface LanguageModelRequest {
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
     clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
-    thinkingMode?: ThinkingModeSettings;
+    /** Provider-agnostic reasoning configuration; providers translate it to their native API. */
+    reasoning?: ReasoningSettings;
 }
 export interface ResponseFormatJsonSchema {
     type: 'json_schema';
@@ -441,6 +460,7 @@ export interface LanguageModelMetaData {
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
     readonly status: LanguageModelStatus;
+    readonly reasoningSupport?: ReasoningSupport;
 }
 
 export namespace LanguageModelMetaData {

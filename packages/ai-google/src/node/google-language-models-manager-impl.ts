@@ -74,7 +74,9 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                     enableStreaming: modelDescription.enableStreaming,
                     apiKey: apiKeyProvider,
                     retrySettings: retrySettingsProvider,
-                    status
+                    status,
+                    reasoningSupport: modelDescription.reasoningSupport,
+                    reasoningApi: modelDescription.reasoningApi
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -84,7 +86,9 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                         status,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
-                        retrySettingsProvider
+                        retrySettingsProvider,
+                        modelDescription.reasoningSupport,
+                        modelDescription.reasoningApi
                     )
                 ]);
             }

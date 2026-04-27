@@ -16,7 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
+import { OLLAMA_REASONING_SUPPORT, OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
 import { HOST_PREF, MODELS_PREF } from '../common/ollama-preferences';
 import { PreferenceService } from '@theia/core';
 
@@ -80,7 +80,11 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
 
         return {
             id: id,
-            model: modelId
+            model: modelId,
+            // Whether the underlying model supports thinking is checked per-request via `ollama.show`;
+            // for non-thinking models the reasoning level is silently ignored, so it's safe to always
+            // advertise reasoning support and let the runtime decide.
+            reasoningSupport: OLLAMA_REASONING_SUPPORT
         };
     }
 }
