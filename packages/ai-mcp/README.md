@@ -101,6 +101,136 @@ Search the internet for XYZ
 [User documentation on MCP in the Theia IDE](https://theia-ide.org/docs/user_ai/#mcp-integration)
 [List of available MCP servers](https://github.com/modelcontextprotocol/servers)
 
+## Extension Points
+
+Four contribution points let plugins customise MCP transport, credentials, tool registration, and client instantiation without forking this package. The contribution shape mirrors Theia's standard `ContributionProvider<T>` pattern. Default implementations ship with `priority: 0` and reproduce today's behaviour bit-for-bit, so deployments without any plugin bindings see zero change.
+
+### `MCPTransportProvider`
+
+Plug in a transport implementation keyed on `MCPServerDescription`. Built-in providers handle stdio and Streamable HTTP; plugins can register WebSocket, in-process, gRPC, or daemon-proxied transports at a higher priority.
+
+```ts
+@injectable()
+export class WebSocketTransportProvider implements MCPTransportProvider {
+    readonly id = 'websocket';
+    readonly priority = 100;
+
+    matches(description: MCPServerDescription): boolean {
+        return isRemoteMCPServerDescription(description)
+            && description.serverUrl.startsWith('ws');
+    }
+
+    async create(description: MCPServerDescription, signal: AbortSignal): Promise<MCPTransport> {
+        // ...
+    }
+}
+```
+
+Bind as a service: `bind(MCPTransportProvider).toService(WebSocketTransportProvider);`
+
+### `MCPCredentialResolver`
+
+Resolve credential-shaped values (`${env:NAME}`, `${mcp:credential}`, or any custom sentinel) by returning the real value or `undefined` to defer to the next resolver in priority order. Typical contributions:
+
+- OAuth flow launching a browser and persisting tokens in the OS keychain.
+- Reading from HashiCorp Vault, 1Password CLI, AWS Secrets Manager.
+- Environment variable interpolation (shipped as `EnvCredentialResolver`, priority 50).
+
+```ts
+@injectable()
+export class VaultCredentialResolver implements MCPCredentialResolver {
+    readonly id = 'vault';
+    readonly priority = 100;
+
+    async resolve(request: MCPCredentialRequest): Promise<string | undefined> {
+        if (!request.literal?.startsWith('${vault:')) {
+            return undefined;
+        }
+        const key = request.literal.slice(8, -1);
+        return await fetchFromVault(key);
+    }
+}
+```
+
+### `MCPToolFilter`
+
+Rewrite, suppress, or stamp tools advertised by MCP servers before they are registered into Theia's `ToolInvocationRegistry`. Return a replacement `ToolInformation`, `undefined` to suppress, or `'passthrough'` to defer to the next filter.
+
+```ts
+@injectable()
+export class HideDangerousToolsFilter implements MCPToolFilter {
+    readonly id = 'hide-dangerous';
+    readonly priority = 100;
+
+    filter(serverName: string, tool: ToolInformation): MCPToolFilterOutcome {
+        if (tool.name === 'execute_shell' && serverName === 'untrusted-server') {
+            return undefined;
+        }
+        return 'passthrough';
+    }
+}
+```
+
+### `MCPClientFactory`
+
+Swap the SDK `Client` wrapper for instrumented / patched variants. The default factory wraps `@modelcontextprotocol/sdk`'s `Client` unchanged; plugins can add metrics, distributed tracing, or replace the underlying SDK.
+
+```ts
+@injectable()
+export class InstrumentedMCPClientFactory implements MCPClientFactory {
+    readonly id = 'instrumented';
+    readonly priority = 100;
+
+    async create(description, transport, context) {
+        const tracer = opentelemetry.trace.getTracer('theia-mcp');
+        // ... return an MCPClient that records spans around every tool call
+    }
+}
+```
+
+### Migration guide
+
+If you currently ship a fork of `@theia/ai-mcp` to patch in custom transports, credential flows, or tool filtering, [doc/MIGRATION.md](./doc/MIGRATION.md) walks through the mechanical swap from fork patches to extension-point contributions.
+
+### Cookbook: contributing a custom credential resolver
+
+A complete, minimal plugin module that contributes a vault-backed credential resolver:
+
+```ts
+// my-vault-plugin/src/node/vault-credential-resolver.ts
+import { injectable } from '@theia/core/shared/inversify';
+import { MCPCredentialRequest, MCPCredentialResolver } from '@theia/ai-mcp';
+
+@injectable()
+export class VaultCredentialResolver implements MCPCredentialResolver {
+    readonly id = 'vault';
+    readonly priority = 100; // Higher than the default env (50) and preference (0) resolvers.
+
+    async resolve(request: MCPCredentialRequest): Promise<string | undefined> {
+        if (!request.literal?.startsWith('${vault:')) {
+            return undefined;
+        }
+        const key = request.literal.slice('${vault:'.length, -1);
+        // Fetch from your secret store; return undefined to defer if not found.
+        return await fetchFromVault(request.serverName, key);
+    }
+}
+```
+
+```ts
+// my-vault-plugin/src/node/my-vault-backend-module.ts
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { MCPCredentialResolver } from '@theia/ai-mcp';
+import { VaultCredentialResolver } from './vault-credential-resolver';
+
+export default new ContainerModule(bind => {
+    bind(VaultCredentialResolver).toSelf().inSingletonScope();
+    bind(MCPCredentialResolver).toService(VaultCredentialResolver);
+});
+```
+
+Operators then write `"serverAuthToken": "${vault:jira-pat}"` in their MCP preferences and the resolver materialises the real token at startup.
+
 ## Additional Information
 
 - [API documentation for `@theia/mcp`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-mcp.html)

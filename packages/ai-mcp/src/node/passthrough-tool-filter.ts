@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 Satish Shivaji Rao.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,8 +13,26 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './mcp-server-manager';
-export * from './mcp-transport-provider';
-export * from './mcp-credential-resolver';
-export * from './mcp-tool-filter';
-export * from './mcp-client-factory';
+
+import { injectable } from '@theia/core/shared/inversify';
+import {
+    MCPToolFilter,
+    MCPToolFilterOutcome,
+} from '../common/mcp-tool-filter';
+
+/**
+ * The lowest-priority {@link MCPToolFilter} contribution: always returns
+ * `'passthrough'`, meaning "no change; defer to the next filter (if any)
+ * or accept the tool as-is". Ensures the filter chain is non-empty by
+ * default so {@link MCPServer} can rely on it without null-checks.
+ */
+@injectable()
+export class PassthroughToolFilter implements MCPToolFilter {
+
+    readonly id = 'passthrough';
+    readonly priority = 0;
+
+    filter(): MCPToolFilterOutcome {
+        return 'passthrough';
+    }
+}

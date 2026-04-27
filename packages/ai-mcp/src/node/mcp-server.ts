@@ -17,10 +17,16 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
+import {
+    isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription,
+    MCPServerStatus, ToolInformation,
+    MCPTransportProvider, MCPToolFilter, MCPToolFilterOutcome,
+    MCPClientFactory, MCPCredentialResolver,
+} from '../common';
 import { Emitter } from '@theia/core/lib/common/event.js';
 import { CallToolResult, CallToolResultSchema, ListResourcesResult, ListRootsRequestSchema, ListRootsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import { SdkTransportAdapter } from './mcp-transport-adapter';
 
 export class MCPServer {
     private description: MCPServerDescription;
@@ -33,7 +39,29 @@ export class MCPServer {
     private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
     readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
 
-    constructor(description: MCPServerDescription) {
+    /**
+     * Optional provider arrays injected by {@link MCPServerManagerImpl}. When
+     * present they are consulted in priority-descending order during
+     * {@link start} and {@link getTools}/{@link getDescription}. When all are
+     * empty (e.g. in unit tests that construct `MCPServer` directly), the
+     * original inline behaviour is preserved so existing callers continue to
+     * work unchanged.
+     *
+     * Client factory contributions are accepted but not yet consumed: see the
+     * Phase C follow-up in the RFC. The type is declared here so plugins
+     * binding the contribution point today do not break once it is wired.
+     */
+    /** Placeholder for the forthcoming client-factory consumption — see `MCPServer` docstring. */
+    protected readonly clientFactories: readonly MCPClientFactory[];
+
+    constructor(
+        description: MCPServerDescription,
+        private readonly transportProviders: readonly MCPTransportProvider[] = [],
+        private readonly toolFilters: readonly MCPToolFilter[] = [],
+        clientFactories: readonly MCPClientFactory[] = [],
+        private readonly credentialResolvers: readonly MCPCredentialResolver[] = [],
+    ) {
+        this.clientFactories = clientFactories;
         this.update(description);
     }
 
@@ -68,10 +96,13 @@ export class MCPServer {
         if (this.isRunning()) {
             try {
                 const { tools } = await this.getTools();
-                toReturnTools = tools.map(tool => ({
-                    name: tool.name,
-                    description: tool.description
-                }));
+                toReturnTools = tools
+                    .map(tool => ({
+                        name: tool.name,
+                        description: tool.description
+                    }))
+                    .map(tool => this.applyToolFilters(tool))
+                    .filter((tool): tool is ToolInformation => tool !== undefined);
             } catch (error) {
                 console.error('Error fetching tools for description:', error);
             }
@@ -85,11 +116,168 @@ export class MCPServer {
         };
     }
 
+    /**
+     * Run the tool-filter chain (priority-descending) against a single tool.
+     * Returns `undefined` when any filter suppresses the tool; returns the
+     * (possibly rewritten) tool otherwise.
+     */
+    protected applyToolFilters(tool: ToolInformation): ToolInformation | undefined {
+        if (this.toolFilters.length === 0) {
+            return tool;
+        }
+        const ordered = [...this.toolFilters].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+        let current: ToolInformation = tool;
+        for (const filter of ordered) {
+            const outcome: MCPToolFilterOutcome = filter.filter(this.description.name, current);
+            if (outcome === 'passthrough') {
+                continue;
+            }
+            if (outcome === undefined) {
+                return undefined;
+            }
+            current = outcome;
+        }
+        return current;
+    }
+
+    /**
+     * Literal values in `serverAuthToken` (and similar credential-shaped
+     * fields) that look like `${...}` trigger a consult of the credential-
+     * resolver chain. Plain string values are returned as-is.
+     */
+    protected isCredentialSentinel(value: string | undefined): boolean {
+        if (!value) {
+            return false;
+        }
+        return /^\$\{[^}]+\}$/.test(value);
+    }
+
+    /**
+     * Run the credential-resolver chain (priority-descending) for `field`,
+     * short-circuiting on the first non-`undefined` return. Errors in a
+     * single resolver are swallowed so one broken plugin cannot block the
+     * chain; the chain returns `undefined` only when every resolver abstains.
+     */
+    protected async resolveCredential(
+        description: MCPServerDescription,
+        field: string,
+        literal: string | undefined,
+    ): Promise<string | undefined> {
+        if (this.credentialResolvers.length === 0) {
+            return undefined;
+        }
+        const ordered = [...this.credentialResolvers].sort(
+            (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
+        );
+        const serverUrl = isRemoteMCPServerDescription(description)
+            ? description.serverUrl
+            : undefined;
+        for (const resolver of ordered) {
+            try {
+                const resolved = await resolver.resolve({
+                    serverName: description.name,
+                    serverUrl,
+                    field,
+                    literal,
+                });
+                if (resolved !== undefined) {
+                    return resolved;
+                }
+            } catch (error) {
+                console.error(
+                    `[@theia/ai-mcp] credential resolver "${resolver.id}" threw:`,
+                    error,
+                );
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Pre-process a remote description: if `serverAuthToken` or any of the
+     * `headers` values look like a credential sentinel, consult the resolver
+     * chain and materialise the resolved value into a working-copy of the
+     * description. Non-sentinel values are left alone, preserving today's
+     * behaviour.
+     */
+    protected async materialiseCredentials(description: MCPServerDescription): Promise<MCPServerDescription> {
+        if (!isRemoteMCPServerDescription(description)) {
+            return description;
+        }
+        let changed = false;
+        const working = { ...description };
+
+        if (this.isCredentialSentinel(working.serverAuthToken)) {
+            const resolved = await this.resolveCredential(working, 'serverAuthToken', working.serverAuthToken);
+            if (resolved !== undefined) {
+                working.serverAuthToken = resolved;
+            } else {
+                console.warn(
+                    `[@theia/ai-mcp] server "${working.name}" serverAuthToken is a sentinel `
+                    + `(${working.serverAuthToken}) but no resolver returned a value; falling back to undefined.`,
+                );
+                working.serverAuthToken = undefined;
+            }
+            changed = true;
+        }
+
+        if (working.headers) {
+            const rewritten: Record<string, string> = {};
+            let anyHeaderChanged = false;
+            for (const [key, value] of Object.entries(working.headers)) {
+                if (this.isCredentialSentinel(value)) {
+                    const resolved = await this.resolveCredential(working, `headers.${key}`, value);
+                    if (resolved !== undefined) {
+                        rewritten[key] = resolved;
+                    } else {
+                        console.warn(
+                            `[@theia/ai-mcp] server "${working.name}" header "${key}" is a sentinel `
+                            + 'but no resolver returned a value; dropping the header.',
+                        );
+                        // Intentionally skip: dropped header.
+                    }
+                    anyHeaderChanged = true;
+                    continue;
+                }
+                rewritten[key] = value;
+            }
+            if (anyHeaderChanged) {
+                working.headers = rewritten;
+                changed = true;
+            }
+        }
+
+        return changed ? working : description;
+    }
+
+    /**
+     * Pick the highest-priority transport provider whose `matches()` returns
+     * true for `description`. Returns `undefined` when no provider matches,
+     * letting {@link start} fall back to the inline transport construction
+     * that predates the extension-point wiring.
+     */
+    protected pickTransportProvider(description: MCPServerDescription): MCPTransportProvider | undefined {
+        if (this.transportProviders.length === 0) {
+            return undefined;
+        }
+        return [...this.transportProviders]
+            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+            .find(provider => provider.matches(description));
+    }
+
     async start(): Promise<void> {
         if (this.isRunning()
             || (this.status === MCPServerStatus.Starting || this.status === MCPServerStatus.Connecting)) {
             return;
         }
+
+        // Materialise credential-shaped sentinels (e.g. `${env:TOKEN}` or
+        // `${mcp:credential}`) into concrete values by running the credential
+        // resolver chain. Descriptions without sentinels are returned
+        // unchanged, preserving today's behaviour. We update `this.description`
+        // so that both the transport-provider path and the inline fallback
+        // path see the resolved values.
+        this.description = await this.materialiseCredentials(this.description);
 
         let connected = false;
 
@@ -130,7 +318,34 @@ export class MCPServer {
         }
         this.error = undefined;
 
-        if (isLocalMCPServerDescription(this.description)) {
+        // Extension-point: consult transport providers first; fall back to
+        // the inline construction when no provider matches so existing
+        // deployments without any plugin bindings see zero behavioural change.
+        const customProvider = this.pickTransportProvider(this.description);
+        if (customProvider) {
+            this.setStatus(
+                isLocalMCPServerDescription(this.description)
+                    ? MCPServerStatus.Starting
+                    : MCPServerStatus.Connecting,
+            );
+            console.log(
+                `Starting server "${this.description.name}" via transport provider "${customProvider.id}"`,
+            );
+            const adapter = await customProvider.create(this.description, new AbortController().signal);
+            // Unwrap the SDK transport from the adapter (the default providers
+            // wrap via SdkTransportAdapter). Third-party providers that bring
+            // their own transport implementation need to supply an adapter
+            // that extends SdkTransportAdapter so this cast still succeeds.
+            if (adapter instanceof SdkTransportAdapter) {
+                this.transport = adapter.sdkTransport;
+            } else {
+                throw new Error(
+                    `Transport provider "${customProvider.id}" returned a non-SDK transport; `
+                    + 'custom transports must extend SdkTransportAdapter until MCPServer gains '
+                    + 'native support for the narrower MCPTransport interface.',
+                );
+            }
+        } else if (isLocalMCPServerDescription(this.description)) {
             this.setStatus(MCPServerStatus.Starting);
             console.log(
                 `Starting server "${this.description.name}" with command: ${this.description.command} ` +
