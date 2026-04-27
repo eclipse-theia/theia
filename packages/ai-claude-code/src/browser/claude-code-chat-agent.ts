@@ -74,7 +74,7 @@ export const systemPromptAppendixTemplate: BasePromptFragment = {
     template: `
 ## IDE Integration Context
 
-You are integrated into an IDE environment through a chat interface, providing contextual assistance for development tasks.
+You are integrated into {{productName}} through a chat interface, providing contextual assistance for development tasks.
 This integration gives you access to real-time IDE state and user workspace information.
 
 ### File Modification Behavior
