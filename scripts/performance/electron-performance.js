@@ -19,7 +19,7 @@ const { resolve } = require('path');
 const { spawn, ChildProcess } = require('child_process');
 const {
     analyzeTrace, backendSettled, ContributionCollector, delay, frontendSettled, githubReporting,
-    isLCP, lcp, measureMulti, parseStopwatchLog
+    isLCP, lcp, measureMulti, parseStopwatchLog, waitForFileStable
 } = require('./common-performance');
 const traceConfigTemplate = require('./electron-trace-config.json');
 const { exit } = require('process');
@@ -180,10 +180,19 @@ async function measurePerformance() {
         });
         electron.stdout.on('data', data => consumeStream('stdout', data.toString()));
 
-        // Wait long enough to be sure that tracing has finished. Kill the process group
-        // because the 'theia' child process was detached
-        await delay(traceConfigTemplate.startup_duration * 1_000 * 3 / 2)
-            .then(() => electron.exitCode !== null || process.kill(-electron.pid, 'SIGINT'));
+        // Wait for Chrome's capture window to finish, then poll for the trace file to be
+        // fully flushed to disk before tearing down the detached `theia` process tree.
+        // On slower systems (notably Linux), Chrome can take several seconds longer than
+        // the configured capture duration to write out the (large) trace JSON, so we apply
+        // a 30-second backstop instead of a fixed extra delay.
+        await delay(traceConfigTemplate.startup_duration * 1_000);
+        const traceFileReady = await waitForFileStable(traceFile, 30_000);
+        if (!traceFileReady) {
+            console.warn(`Trace file ${traceFile} did not stabilize within 30 seconds; analysis may fail.`);
+        }
+        if (electron.exitCode === null) {
+            process.kill(-electron.pid, 'SIGINT');
+        }
         electron = undefined;
         return { traceFile, backendSettledSeconds, frontendSettledSeconds };
     };

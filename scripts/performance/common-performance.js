@@ -285,7 +285,7 @@ function logException(name, run, metric, exception, multipleRuns = true) {
         runText = braceText(run);
     }
     console.log(performanceTag + braceText(name) + runText + ' ' + metric + ' failed to obtain a measurement: ' + exception.message);
-    console.error(`Failed to obtain a measurement. The most likely cause is that the performance trace file was incomplete because the script did not wait long enough for "${metric}".`);
+    console.error(`Failed to obtain a measurement. The most likely cause is that the performance trace file was incomplete because the script did not wait long enough for "${metric}" to be emitted or the trace to be written to disk.`);
     console.error(exception);
 }
 
@@ -341,6 +341,36 @@ function delay(time) {
 }
 
 /**
+ * Wait until a file exists and its size has stopped changing, indicating that whatever
+ * process is writing it has finished flushing. Polls the file periodically and returns
+ * when two consecutive observations agree on a non-zero size, or when the `timeoutMs`
+ * backstop is reached.
+ *
+ * @param {string} filePath the path to the file to wait for
+ * @param {number} timeoutMs the maximum total time to wait, in milliseconds
+ * @param {number} [pollIntervalMs=250] how often to poll the file, in milliseconds
+ * @returns {Promise<boolean>} `true` if the file was observed to be stable within the timeout, `false` otherwise
+ */
+async function waitForFileStable(filePath, timeoutMs, pollIntervalMs = 250) {
+    const start = Date.now();
+    let previousSize = -1;
+    while (Date.now() - start < timeoutMs) {
+        let currentSize = -1;
+        try {
+            currentSize = fs.statSync(filePath).size;
+        } catch {
+            // File does not exist yet; keep polling.
+        }
+        if (currentSize > 0 && currentSize === previousSize) {
+            return true;
+        }
+        previousSize = currentSize;
+        await delay(pollIntervalMs);
+    }
+    return false;
+}
+
+/**
  * Collects per-activity durations observed across runs of a performance test, and logs
  * MEAN/STDEV summaries in the same format as {@link logSummary} so that `extension-impact.js`
  * can discover them alongside the predeclared metrics.
@@ -382,7 +412,7 @@ module.exports = {
     measure, measureMulti, analyzeTrace,
     calculateMean, calculateStandardDeviation,
     duration, logDuration, logSummary,
-    braceText, delay,
+    braceText, delay, waitForFileStable,
     lcp, frontendSettled, backendSettled,
     isLCP, parseStopwatchLog,
     ContributionCollector
