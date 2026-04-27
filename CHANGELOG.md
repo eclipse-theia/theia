@@ -12,6 +12,7 @@
 
 <a name="breaking_changes_1.71.0">[Breaking Changes:](#breaking_changes_1.71.0)</a>
 
+- [native-webpack-plugin] The `@theia/native-webpack-plugin` package has been renamed to `@theia/bundle-plugin` [#14414](https://github.com/eclipse-theia/theia/pull/14414).
 - [core] changed the visibility of `ChannelMultiplexer.pendingOpen` from `protected` to `private` [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [core] `Uint8ArrayWriteBuffer`'s `onCommit` emitter now propagates exceptions from listeners instead of silently catching them. Code that relied on exceptions being swallowed should add its own error handling [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275):

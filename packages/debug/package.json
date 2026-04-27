@@ -19,7 +19,7 @@
     "@theia/workspace": "1.70.0",
     "@vscode/debugprotocol": "^1.68.0",
     "fast-deep-equal": "^3.1.3",
-    "jsonc-parser": "^2.3.1",
+    "jsonc-parser": "^3.3.1",
     "p-debounce": "^2.1.0",
     "tslib": "^2.6.2"
   },
