@@ -14,15 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { interfaces } from '@theia/core/shared/inversify';
+import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { InternalPluginApiContribution } from '../../common/plugin-ext-api-contribution';
-import { Plugin } from '../../common/plugin-api-rpc';
 import { CommandRegistryMainImpl } from './command-registry-main';
 import { PreferenceRegistryMainImpl } from './preference-registry-main';
 import { QuickOpenMainImpl } from './quick-open-main';
-import { PLUGIN_RPC_CONTEXT, LanguagesMainFactory, OutputChannelRegistryFactory, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { PLUGIN_RPC_CONTEXT, LanguagesMainFactory, OutputChannelRegistryFactory, MAIN_RPC_CONTEXT, Plugin } from '../../common/plugin-api-rpc';
 import { MessageRegistryMainImpl } from './message-registry-main';
 import { WindowStateMain } from './window-state-main';
 import { WorkspaceMainImpl } from './workspace-main';

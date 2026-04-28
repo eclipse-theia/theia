@@ -17,6 +17,8 @@
 import * as assert from 'assert';
 import { deepMergeApiNamespaces, DeepMerge } from './merge-api-namespaces';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 describe('deepMergeApiNamespaces', () => {
 
     describe('shallow merge of disjoint keys', () => {
@@ -107,7 +109,7 @@ describe('deepMergeApiNamespaces', () => {
         it('should preserve getters from target as lazy accessors', () => {
             let callCount = 0;
             const target = Object.defineProperty({}, 'activeEditor', {
-                get() {
+                get(): string {
                     callCount++;
                     return 'editor1';
                 },
@@ -130,7 +132,7 @@ describe('deepMergeApiNamespaces', () => {
             let callCount = 0;
             const target = { someOtherProp: 42 };
             const source = Object.defineProperty({}, 'activeTerminal', {
-                get() {
+                get(): string {
                     callCount++;
                     return 'terminal1';
                 },
@@ -152,13 +154,13 @@ describe('deepMergeApiNamespaces', () => {
 
             const target = {
                 window: Object.defineProperty({}, 'activeEditor', {
-                    get() { editorCalls++; return 'editor'; },
+                    get(): string { editorCalls++; return 'editor'; },
                     enumerable: true, configurable: true
                 })
             };
             const source = {
                 window: Object.defineProperty({}, 'activeTerminal', {
-                    get() { terminalCalls++; return 'terminal'; },
+                    get(): string { terminalCalls++; return 'terminal'; },
                     enumerable: true, configurable: true
                 })
             };
@@ -180,11 +182,11 @@ describe('deepMergeApiNamespaces', () => {
 
         it('should let a source getter override a target getter', () => {
             const target = Object.defineProperty({}, 'value', {
-                get() { return 'old'; },
+                get(): string { return 'old'; },
                 enumerable: true, configurable: true
             });
             const source = Object.defineProperty({}, 'value', {
-                get() { return 'new'; },
+                get(): string { return 'new'; },
                 enumerable: true, configurable: true
             });
             const result = deepMergeApiNamespaces(target, source);
@@ -273,7 +275,7 @@ describe('deepMergeApiNamespaces', () => {
                     },
                     'activeTextEditor',
                     {
-                        get() { editorGetterCalled = true; return undefined; },
+                        get(): undefined { editorGetterCalled = true; return undefined; },
                         enumerable: true, configurable: true
                     }
                 ),
@@ -288,11 +290,11 @@ describe('deepMergeApiNamespaces', () => {
                     },
                     {
                         activeTerminal: {
-                            get() { terminalGetterCalled = true; return undefined; },
+                            get(): undefined { terminalGetterCalled = true; return undefined; },
                             enumerable: true, configurable: true
                         },
                         terminals: {
-                            get() { return []; },
+                            get(): never[] { return []; },
                             enumerable: true, configurable: true
                         }
                     }
@@ -332,8 +334,8 @@ describe('DeepMerge type helper', () => {
         // This test is primarily a compile-time check.
         // If it compiles, the type helper works correctly.
 
-        type A = { x: number; nested: { a: string } };
-        type B = { y: boolean; nested: { b: number } };
+        interface A { x: number; nested: { a: string } }
+        interface B { y: boolean; nested: { b: number } }
         type Merged = DeepMerge<A, B>;
 
         // Verify the merged type has the expected shape by assigning a value
@@ -345,8 +347,8 @@ describe('DeepMerge type helper', () => {
     });
 
     it('should let source override non-object properties in the type', () => {
-        type A = { value: string; other: number };
-        type B = { value: number };
+        interface A { value: string; other: number }
+        interface B { value: number }
         type Merged = DeepMerge<A, B>;
 
         const merged: Merged = { value: 42, other: 1 };
