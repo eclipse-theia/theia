@@ -1,0 +1,30 @@
+{
+  "private": true,
+  "name": "@theia/ai-model-tests",
+  "version": "1.70.0",
+  "description": "Local test harness for evaluating AI model updates via Theia chat agents",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "scripts": {
+    "lint": "theiaext lint",
+    "model-test": "tsx src/run.ts",
+    "model-test:headed": "tsx src/run.ts -h",
+    "model-test:headed:keep-open": "tsx src/run.ts -h -k",
+    "model-test:skip-eval": "tsx src/run.ts -e",
+    "model-test:smoke": "tsx src/run.ts -s smoke-hello",
+    "model-test:coder": "tsx src/run.ts -s coder-reset-button",
+    "model-test:coder:headed": "tsx src/run.ts -s coder-reset-button -h -k"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.70.0",
+    "playwright": "^1.59.0",
+    "tsx": "^4.19.0"
+  }
+}
