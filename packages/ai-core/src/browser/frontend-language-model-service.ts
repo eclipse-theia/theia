@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceService } from '@theia/core/lib/common';
+import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { LanguageModel, LanguageModelResponse, ThinkingModeSettings, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
 import {
@@ -26,19 +27,28 @@ import {
     ThinkingModeSetting,
     getRequestSettingSpecificity
 } from '../common/ai-core-preferences';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 
 @injectable()
 export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
 
-    @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
+
+    @inject(TrustAwarePreferenceReader)
+    protected readonly trustAwareReader: TrustAwarePreferenceReader;
 
     override async sendRequest(
         languageModel: LanguageModel,
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
-        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-        const thinkingModeSettings = this.preferenceService.get<ThinkingModeSetting[]>(PREFERENCE_NAME_THINKING_MODE, []);
+        const trusted = await this.workspaceTrustService.getWorkspaceTrust();
+        if (!trusted) {
+            throw new Error(nls.localize('theia/ai-core/aiDisabledInRestrictedMode', 'AI features are not available in untrusted workspaces.'));
+        }
+
+        const requestSettings = this.trustAwareReader.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []) ?? [];
+        const thinkingModeSettings = this.trustAwareReader.get<ThinkingModeSetting[]>(PREFERENCE_NAME_THINKING_MODE, []) ?? [];
 
         const ids = languageModel.id.split('/');
         const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], languageModelRequest.agentId);

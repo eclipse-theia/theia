@@ -221,7 +221,7 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         this.toDispose.pushAll([
             this.toDisposeOnChatModelChange,
-            this.activationService.onDidChangeActiveStatus(change => {
+            this.activationService.onDidChangeCanRun(change => {
                 this.chatInputs.forEach(widget => {
                     widget.setEnabled(change);
                 });

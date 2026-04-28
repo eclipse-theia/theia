@@ -18,19 +18,20 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     PreferenceService,
 } from '@theia/core/lib/common/preferences';
-import { ToolConfirmationMode, TOOL_CONFIRMATION_PREFERENCE, ChatToolPreferences } from '../common/chat-tool-preferences';
+import { ToolConfirmationMode, TOOL_CONFIRMATION_PREFERENCE } from '../common/chat-tool-preferences';
 import { ToolRequest } from '@theia/ai-core';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
 
 /**
  * Utility class to manage tool confirmation settings
  */
 @injectable()
 export class ToolConfirmationManager {
-    @inject(ChatToolPreferences)
-    protected readonly preferences: ChatToolPreferences;
-
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(TrustAwarePreferenceReader)
+    protected readonly trustAwareReader: TrustAwarePreferenceReader;
 
     // In-memory session overrides (not persisted), per chat
     protected sessionOverrides: Map<string, Map<string, ToolConfirmationMode>> = new Map();
@@ -51,7 +52,9 @@ export class ToolConfirmationManager {
         if (chatMap && chatMap.has(toolId)) {
             return chatMap.get(toolId)!;
         }
-        const toolConfirmation = this.preferences[TOOL_CONFIRMATION_PREFERENCE];
+        const toolConfirmation = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
         if (toolConfirmation[toolId]) {
             return toolConfirmation[toolId];
         }
@@ -80,7 +83,9 @@ export class ToolConfirmationManager {
         const defaultPref = this.preferenceService.inspect(TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as {
             [toolId: string]: ToolConfirmationMode;
         } || {};
-        const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
+        const current = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
         let starMode = current['*'];
         if (starMode === undefined) {
             starMode = defaultPref['*'] ?? ToolConfirmationMode.ALWAYS_ALLOW;
@@ -127,11 +132,15 @@ export class ToolConfirmationManager {
      * Get all tool confirmation settings
      */
     getAllConfirmationSettings(): { [toolId: string]: ToolConfirmationMode } {
-        return this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
+        return this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
     }
 
     resetAllConfirmationModeSettings(): void {
-        const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
+        const current = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
         if ('*' in current) {
             this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, { '*': current['*'] });
         } else {

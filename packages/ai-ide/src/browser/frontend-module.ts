@@ -99,6 +99,8 @@ import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
+import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { AIWorkspaceRestrictionContribution } from './ai-workspace-restriction-contribution';
 
 import { ProjectInfoAgent } from './project-info-agent';
 import { CreateSkillAgent } from './create-skill-agent';
@@ -135,6 +137,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIIdeActivationServiceImpl).toSelf().inSingletonScope();
     // rebinds the default implementation of '@theia/ai-core'
     rebind(AIActivationService).toService(AIIdeActivationServiceImpl);
+
+    bind(AIWorkspaceRestrictionContribution).toSelf().inSingletonScope();
+    bind(WorkspaceRestrictionContribution).toService(AIWorkspaceRestrictionContribution);
 
     bind(ArchitectAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ArchitectAgent);

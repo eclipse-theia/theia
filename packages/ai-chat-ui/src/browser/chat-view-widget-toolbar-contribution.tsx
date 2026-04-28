@@ -57,7 +57,7 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
 
         this.commandRegistry.registerCommand(ChatCommands.EDIT_SESSION_SETTINGS, {
             execute: () => this.openJsonDataDialog(),
-            isEnabled: widget => this.activationService.isActive && widget instanceof ChatViewWidget,
+            isEnabled: widget => this.activationService.canRun && widget instanceof ChatViewWidget,
             isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
         });
     }
