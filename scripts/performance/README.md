@@ -15,6 +15,8 @@ Execute `npm run performance:startup:browser` in the root directory to startup t
 
 To run the script the Theia backend needs to be started.
 This can either be done with the `Launch Browser Backend` launch config or by running `npm run start` in the `examples/browser-app` directory.
+For the per-contribution Stopwatch breakdown to be captured, the backend must be started at debug log level (e.g. `npm run start -- --log-level=debug`); otherwise only aggregate metrics will appear in the script's summary.
+The bundled `npm run performance:startup:browser` flow already does this.
 
 ### Executing the script
 

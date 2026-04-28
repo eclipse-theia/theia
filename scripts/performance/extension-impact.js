@@ -283,7 +283,7 @@ async function calculateExtension(extensionQualifier) {
         switch (app) {
             case 'browser':
                 command = `concurrently --success first -k -r "cd scripts/performance && node browser-performance.js --name Browser --folder browser --runs ${runs}${url ? ' --url ' + url : ''}" `
-                    + `"npm run start:browser | grep -v '.*'"`
+                    + `"npm --prefix examples/browser run -s start -- --log-level=debug | grep -v '.*'"`
                 cwd = path.resolve(__dirname, '../../');
                 break;
             case 'electron':

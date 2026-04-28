@@ -396,12 +396,28 @@ class ContributionCollector {
     }
     /**
      * Log a summary line per observed activity, using the same format as {@link logSummary}
-     * so that downstream consumers (e.g. `extension-impact.js`) can scrape it.
+     * so that downstream consumers (e.g. `extension-impact.js`) can scrape it. Activities
+     * whose mean falls below the 1 ms measurement threshold are noise; we collapse them
+     * into a single header line listing their names instead of emitting per-activity
+     * MEAN/STDEV lines that all read as 0.000 seconds.
      *
      * @param {string} name the performance script name
      */
     logSummary(name) {
+        const subMillisecondThreshold = 0.001;
+        const subMillisecond = [];
+        const significant = [];
         for (const [activity, values] of this.observations) {
+            if (calculateMean(values) < subMillisecondThreshold) {
+                subMillisecond.push(activity);
+            } else {
+                significant.push([activity, values]);
+            }
+        }
+        if (subMillisecond.length > 0) {
+            console.log(`${performanceTag}${braceText(name)} Contributions under 1 ms: ${subMillisecond.sort().join(', ')}`);
+        }
+        for (const [activity, values] of significant) {
             logSummary(name, `Contribution ${activity}`, values);
         }
     }
