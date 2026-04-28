@@ -623,8 +623,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     restoreState(oldState: TerminalManagerWidgetState.LayoutData): void {
         const { items, widget, terminalAndTreeRelativeSizes } = oldState;
-        if (widget && terminalAndTreeRelativeSizes && items) {
-            this.setPanelSizes(terminalAndTreeRelativeSizes);
+        if (widget && items) {
+            if (terminalAndTreeRelativeSizes) {
+                this.setPanelSizes(terminalAndTreeRelativeSizes);
+            }
             try {
                 this.restoreLayoutData(items, widget);
             } catch (e) {
