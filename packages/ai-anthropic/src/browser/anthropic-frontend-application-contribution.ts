@@ -36,6 +36,7 @@ const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
     'claude-sonnet-4-0': 64000,
     'claude-opus-4-5': 64000,
     'claude-opus-4-6': 128000,
+    'claude-opus-4-7': 128000,
     'claude-opus-4-1': 32000
 };
 
