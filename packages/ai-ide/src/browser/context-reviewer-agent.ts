@@ -18,7 +18,7 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-a
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { contextReviewerSystemPrompt, CONTEXT_REVIEWER_SYSTEM_PROMPT_ID } from './context-reviewer-prompt-template';
+import { contextReviewerSystemPrompt, contextReviewerSystemNextPrompt, CONTEXT_REVIEWER_SYSTEM_PROMPT_ID } from './context-reviewer-prompt-template';
 
 export const ContextReviewerAgentId = 'context-reviewer';
 
@@ -35,6 +35,6 @@ export class ContextReviewerAgent extends AbstractStreamParsingChatAgent {
         'A senior solution architect that reviews Task Context documents. \
         Determines if the implementing agent has enough information to implement the planned solution correctly.');
 
-    override prompts = [{ id: CONTEXT_REVIEWER_SYSTEM_PROMPT_ID, defaultVariant: contextReviewerSystemPrompt, variants: [] }];
+    override prompts = [{ id: CONTEXT_REVIEWER_SYSTEM_PROMPT_ID, defaultVariant: contextReviewerSystemPrompt, variants: [contextReviewerSystemNextPrompt] }];
     protected override systemPromptId: string = CONTEXT_REVIEWER_SYSTEM_PROMPT_ID;
 }

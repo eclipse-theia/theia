@@ -18,7 +18,7 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-a
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { exploreSystemPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template';
+import { exploreSystemPrompt, exploreSystemNextPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template';
 
 export const ExploreAgentId = 'explore';
 
@@ -35,7 +35,7 @@ export class ExploreAgent extends AbstractStreamParsingChatAgent {
         'A codebase exploration assistant that extracts and distills information from the codebase. \
         Reports facts about what exists, provides code excerpts, and describes observed patterns.');
 
-    override prompts = [{ id: EXPLORE_SYSTEM_PROMPT_ID, defaultVariant: exploreSystemPrompt, variants: [] }];
+    override prompts = [{ id: EXPLORE_SYSTEM_PROMPT_ID, defaultVariant: exploreSystemPrompt, variants: [exploreSystemNextPrompt] }];
     protected override systemPromptId: string = EXPLORE_SYSTEM_PROMPT_ID;
     override iconClass: string = 'codicon codicon-compass';
 }

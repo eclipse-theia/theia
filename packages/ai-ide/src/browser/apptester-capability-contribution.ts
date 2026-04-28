@@ -43,6 +43,10 @@ name: ${name}
 description: ${description}
 ---
 
+### Team Extension
+
+- **${AppTesterChatAgentId}** — Verifies application behavior through browser automation after implementation.
+
 ## E2E Test
 
 **E2E Testing is ENABLED.** After implementation completes, verify application behavior through AppTester browser automation.
@@ -52,26 +56,11 @@ and user flows after implementation.
 
 **When to trigger:** After Implementation Phase completes (Coder reports done + code review passes if enabled).
 
-### Prerequisites
+**Skip when:** The change has no UI impact — determined by:
+- Architect's plan (if plan-mode is enabled) reports no UI impact
+- Coder's output (if no plan exists) reports no UI files touched
 
-**The Coding Agent must handle ALL prerequisites proactively during implementation:**
-
-1. **Install dependencies** (npm install / yarn install)
-2. **Build the project** (compile TypeScript, bundle frontend)
-3. **Run tests** (unit tests, integration tests)
-4. **Provide build/lint/test evidence** (task names + PASS/FAIL status)
-
-**Why this matters:** AppTester relies on launch configurations which require a working build.
-Missing dependencies or builds cause ERR_CONNECTION_REFUSED errors.
-
-**If AppTester reports connection issues:** Go back to Coding Agent to fix build issues,
-then retry E2E testing.
-
-### Constraints
-
-- AppTester cannot use 'runTask' (blocks delegation) — use launch configurations only
-- Never request "Frontend" or "Electron" launch configs (open windows, cause failures)
-- Prefer configs with "Backend", "Server", or "Browser" in name
+**If unsure:** Run E2E testing. It is better to test unnecessarily than to skip and miss a regression.
 
 ### Incremental Testing Strategy
 
@@ -86,37 +75,22 @@ then retry E2E testing.
 
 ### Delegation
 
-Use ~{delegateToAgent} to delegate to the following agent:
-
 **Agent:** '${AppTesterChatAgentId}'
-**When:** After Coding Agent completes implementation AND build/lint/test pass
 
 **Provide:**
 - Test scenario with specific steps
 - Expected behavior
-- Task context path (if exists) — for reference to completion criteria
+- taskContextId (if exists) — for reference to completion criteria
 
 **For sequential delegations:**
 - **First delegation:** Include full setup (start app, navigate to page, login if needed)
 - **Subsequent delegations:** Specify to reuse existing browser session
-  - Agent will search for the existing page/tab in Chrome
-  - Can continue from the current application state
-  - No need to repeat setup steps
 
 **Optional:**
-- Application URL (default: agent discovers from launch configs)
-- Launch configuration name (default: agent selects appropriate one)
-- Whether app is already running (default: assumes not running for first delegation,
-  running for subsequent delegations)
-- Whether to reuse existing browser session (default: false for first delegation,
-  true for subsequent delegations)
-
-**Request these behaviors:**
-- Report failures on first occurrence — do NOT retry or workaround
-- Capture exact error text and status codes, not summaries
-- Execute only provided test steps — do not infer requirements
-- Report issues objectively — do not suggest code fixes
-- For subsequent delegations: Connect to existing browser session and find the active page
+- Application URL
+- Launch configuration name
+- Whether app is already running
+- Whether to reuse existing browser session
 
 **Expected output:** Test result (PASS/FAIL/INCONCLUSIVE) with details and any issues found
 
@@ -140,28 +114,19 @@ Use ~{delegateToAgent} to delegate to the following agent:
 **PASS:**
 - If more test scenarios exist: Continue with next delegation
 - If all tests complete: Update Task Context and proceed to Completion
-- If Task Context exists: use ~{rewriteTaskContext} to update UI Verification Status
+- If Task Context exists: use editTaskContext to update UI Verification Status
 
 **FAIL:**
 - Stop further test delegations (don't test dependent scenarios)
-- If Task Context exists: use ~{rewriteTaskContext} to update UI Verification Status to "FAIL",
-  record issues
+- If Task Context exists: use editTaskContext to update UI Verification Status to "FAIL",
+record issues
 - Re-delegate fix to the Coding Agent
 - After fix: restart test sequence from the beginning
 
 **INCONCLUSIVE:**
 - Stop further test delegations
 - Document environment/tooling issue
-- Ask user how to proceed (retry, skip testing, or investigate)
-
-If Task Context exists, use ~{getTaskContext} to read current state and ~{rewriteTaskContext}
-to update status.
-
-### Output
-
-- **PASS (single test):** Test verified, continue with next test or proceed to completion
-- **PASS (all tests):** All application behavior verified, proceed to completion
-- **FAIL:** Issues identified, delegate fixes to the Coding Agent
-- **INCONCLUSIVE:** Environment issues, ask user for decision`;
+- **If connection issues (e.g., ERR_CONNECTION_REFUSED):** Go back to Coding Agent to fix build issues, then retry E2E testing.
+- Otherwise: Ask user how to proceed (retry, skip testing, or investigate)`;
     }
 }
