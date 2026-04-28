@@ -30,6 +30,8 @@
   padding: var(--theia-ui-padding);
   max-width: var(--theia-hover-max-width);
   user-select: text;
+  --vscode-scmGraph-historyItemHoverAdditionsForeground: var(--theia-scmGraph-historyItemHoverAdditionsForeground);
+  --vscode-scmGraph-historyItemHoverDeletionsForeground: var(--theia-scmGraph-historyItemHoverDeletionsForeground);
 }
 
 /* overwrite potentially different default user agent styles */
@@ -58,6 +60,11 @@
 
 .theia-hover .hover-row .actions {
   background-color: var(--theia-editorHoverWidget-statusBarBackground);
+}
+
+.theia-hover .codicon {
+  vertical-align: middle;
+  margin-bottom: 2px;
 }
 
 .theia-hover code {
