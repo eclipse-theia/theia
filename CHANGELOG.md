@@ -47,7 +47,7 @@
 - [ai-ide] provided multiple agents to allow for full software engineering flow [#17125](https://github.com/eclipse-theia/theia/pull/17125)
 - [ai-ide] removed beta labels from AI features [#17210](https://github.com/eclipse-theia/theia/pull/17210)
 - [ai-ide] removed junior contributions for release [#17222](https://github.com/eclipse-theia/theia/pull/17222)
-- [ai-ide] removed deprecated `WorkspaceFunctionScope.getWorkspaceRoot()` and `WorkspaceFunctionScope.isInPrimaryWorkspace()` methods in favor of multi-root equivalents [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-ide] removed `WorkspaceFunctionScope.getWorkspaceRoot()` and `WorkspaceFunctionScope.isInPrimaryWorkspace()` methods in favor of multi-root equivalents [#17262](https://github.com/eclipse-theia/theia/pull/17262)
 - [claude] updated CLAUDE.md file [#17093](https://github.com/eclipse-theia/theia/pull/17093)
 - [core] added precheck optimization to LoggerSanitizer rules [#17139](https://github.com/eclipse-theia/theia/pull/17139) - contributed on behalf of STMicroelectronics
 - [core] added window zoom status bar item and fixed secondary window zoom [#17164](https://github.com/eclipse-theia/theia/pull/17164)
