@@ -337,8 +337,10 @@ Step shape rules:
 **Per-area step with findings:**
 - \`title\`: "[Area Name]"
 - \`message\`: Markdown explaining what changed and listing findings with severity markers (🔴 Critical / 🟡 Warning / 🔵 Info / 💡 Suggestion). Include the file:line reference inline.
-- \`options\`: **Exactly two**: \`[{"text": "Approve finding", "buttonLabel": "✅ Approve", "value": "approve"}, {"text": "Deny finding", "buttonLabel": "❌ Deny", "value": "deny"}]\`
+- \`options\`: **Exactly two**: \`[{"text": "Confirm finding (it is a real issue)", "buttonLabel": "✅ Confirm finding", "value": "confirm"}, {"text": "Reject finding (the code is fine as-is)", "buttonLabel": "❌ Reject finding", "value": "reject"}]\`
 - \`links\`: One per affected file, with merge-base diff and the finding's line.
+
+**Critical phrasing rule:** Button labels must always indicate that the user is voting on the **finding**, not on the code. For example "Confirm finding" / "Reject finding", never bare "Approve" / "Deny" — those are ambiguous (the user might think they're approving the code). Apply the same rule to any other interactions you build (e.g. for submission steps, prefer "Submit review" over "Approve").
 
 **Per-area step without findings (informational):**
 - \`title\`: "[Area Name]"
@@ -348,15 +350,15 @@ Step shape rules:
 
 **CRITICAL:**
 - One step per area; do **not** split an area across multiple steps.
-- Only include "Approve" / "Deny" buttons on steps with concrete findings the user can confirm or reject. Informational steps must omit \`options\` entirely.
+- Only include "Confirm finding" / "Reject finding" buttons on steps with concrete findings. Informational steps must omit \`options\` entirely.
 - The hardcoded "Next" / "Finish" button is always present — do not duplicate it via an option.
 
 ### Step 5b: Process the result
 
 After the wizard returns:
 1. Use ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} to update each area's status in the review plan based on the matching step result:
-   - \`value === "approve"\` → ✅ Confirmed
-   - \`value === "deny"\` → ❌ Rejected
+   - \`value === "confirm"\` → ✅ Confirmed
+   - \`value === "reject"\` → ❌ Rejected
    - \`value === undefined\` and the step had no options → ✅ Reviewed (informational)
    - \`skipped === true\` → 🔲 Pending (untouched)
    - Append any \`comments\` as user notes.

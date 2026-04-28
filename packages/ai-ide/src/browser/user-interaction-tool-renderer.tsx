@@ -18,7 +18,6 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
-import { ToolCallResult } from '@theia/ai-core/lib/common/language-model';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
@@ -45,7 +44,6 @@ interface UserInteractionComponentProps {
     toolCallId: string;
     tool: UserInteractionTool;
     finished: boolean;
-    result: ToolCallResult | undefined;
     openerService: OpenerService;
 }
 
@@ -55,7 +53,7 @@ interface StepState {
 }
 
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, result, openerService
+    args, toolCallId, tool, finished, openerService
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
@@ -100,15 +98,22 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         });
     }, [persistStepState]);
 
+    const isSingleStep = stepCount === 1;
+
     const handleOptionClick = React.useCallback((value: string) => {
         if (finished) {
+            return;
+        }
+        if (isSingleStep) {
+            updateStepState(0, prev => ({ ...prev, value }));
+            tool.completeInteraction(toolCallId);
             return;
         }
         updateStepState(currentStep, prev => ({
             ...prev,
             value: prev.value === value ? undefined : value
         }));
-    }, [currentStep, finished, updateStepState]);
+    }, [currentStep, finished, isSingleStep, tool, toolCallId, updateStepState]);
 
     const handleAddComment = React.useCallback(() => {
         const trimmed = pendingComment.trim();
@@ -140,24 +145,23 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     }, [handleAddComment]);
 
     const handleAdvance = React.useCallback(() => {
-        if (finished) {
+        if (isLastStep) {
+            if (!finished) {
+                tool.completeInteraction(toolCallId);
+            }
             return;
         }
-        if (isLastStep) {
-            tool.completeInteraction(toolCallId);
-        } else {
-            setCurrentStep(idx => idx + 1);
-            setPendingComment('');
-        }
+        setCurrentStep(idx => idx + 1);
+        setPendingComment('');
     }, [finished, isLastStep, tool, toolCallId]);
 
     const handleBack = React.useCallback(() => {
-        if (finished || currentStep === 0) {
+        if (currentStep === 0) {
             return;
         }
         setCurrentStep(idx => idx - 1);
         setPendingComment('');
-    }, [finished, currentStep]);
+    }, [currentStep]);
 
     if (!activeStep) {
         return undefined;
@@ -169,13 +173,16 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         ? nls.localize('theia/ai-ide/userInteractionFinishStep', 'Finish')
         : nls.localizeByDefault('Next');
 
+    const hasOptions = !!activeStep.options && activeStep.options.length > 0;
+    const showAdvanceRow = !isSingleStep || (isSingleStep && !hasOptions);
+
     return (
         <div className='tool-call container user-interaction-wizard'>
             <div className='tool-call header'>
                 <span className={codicon('comment-discussion')} />
                 <span className='user-interaction-tool title'>{activeStep.title}</span>
             </div>
-            <StepProgress current={currentStep} total={stepCount} />
+            {!isSingleStep && <StepProgress current={currentStep} total={stepCount} />}
             {activeStep.links && activeStep.links.length > 0 && (
                 <div className='user-interaction-tool links'>
                     {activeStep.links.map((link, i) => (
@@ -184,83 +191,98 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                 </div>
             )}
             <div className='user-interaction-tool message' ref={messageRef} />
-            {activeStep.options && activeStep.options.length > 0 && (
+            {hasOptions && (
                 <div className='user-interaction-tool options'>
-                    {activeStep.options.map((option, i) => (
-                        <button
-                            key={i}
-                            className={`user-interaction-tool option-button theia-button${activeState.value === option.value ? ' selected' : ''}`}
-                            onClick={() => handleOptionClick(option.value)}
-                            disabled={finished}
-                            title={option.description}
-                        >
-                            {option.buttonLabel || option.text}
-                        </button>
-                    ))}
+                    {activeStep.options!.map((option, i) => {
+                        const isSelected = activeState.value === option.value;
+                        const className = 'user-interaction-tool option-button theia-button '
+                            + (isSelected ? 'main selected' : 'secondary');
+                        return (
+                            <button
+                                key={i}
+                                className={className}
+                                onClick={() => handleOptionClick(option.value)}
+                                disabled={finished}
+                                title={option.description}
+                                aria-pressed={isSelected}
+                            >
+                                {isSelected && <i className={`${codicon('check')} user-interaction-tool option-selected-icon`} />}
+                                {option.buttonLabel || option.text}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
-            <div className='user-interaction-tool comment-section'>
-                <div className='user-interaction-tool comment-input-row'>
-                    <input
-                        type='text'
-                        className='theia-input user-interaction-tool comment-input-field'
-                        placeholder={nls.localize('theia/ai-ide/userInteractionCommentPlaceholder', 'Add a comment...')}
-                        value={pendingComment}
-                        onChange={e => setPendingComment(e.target.value)}
-                        onKeyDown={handleCommentKeyDown}
-                        disabled={finished}
-                    />
+            {!isSingleStep && (
+                <div className='user-interaction-tool comment-section'>
+                    {!finished && (
+                        <div className='user-interaction-tool comment-input-row'>
+                            <input
+                                type='text'
+                                className='theia-input user-interaction-tool comment-input-field'
+                                placeholder={nls.localize('theia/ai-ide/userInteractionCommentPlaceholder', 'Add a comment...')}
+                                value={pendingComment}
+                                onChange={e => setPendingComment(e.target.value)}
+                                onKeyDown={handleCommentKeyDown}
+                            />
+                            <button
+                                className='theia-button secondary user-interaction-tool comment-submit'
+                                onClick={handleAddComment}
+                                disabled={!pendingComment.trim()}
+                            >
+                                {nls.localizeByDefault('Comment')}
+                            </button>
+                        </div>
+                    )}
+                    {activeState.comments.length > 0 && (
+                        <ul className='user-interaction-tool comment-list'>
+                            {activeState.comments.map((comment, i) => (
+                                <li key={i} className='user-interaction-tool comment-item'>
+                                    <span className='user-interaction-tool comment-text'>{comment}</span>
+                                    {!finished && (
+                                        <button
+                                            className='user-interaction-tool comment-remove'
+                                            onClick={() => handleRemoveComment(i)}
+                                            title={nls.localizeByDefault('Remove')}
+                                            aria-label={nls.localizeByDefault('Remove')}
+                                        >
+                                            <i className={codicon('close')} />
+                                        </button>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
+            {showAdvanceRow && (
+                <div className='user-interaction-tool advance-row'>
+                    {!isSingleStep && (
+                        <>
+                            <button
+                                className='theia-button secondary user-interaction-tool back-button'
+                                onClick={handleBack}
+                                disabled={currentStep === 0}
+                                title={nls.localizeByDefault('Back')}
+                            >
+                                <i className={codicon('arrow-left')} />
+                                {nls.localizeByDefault('Back')}
+                            </button>
+                            <span className='user-interaction-tool page-counter' aria-label={stepLabel}>
+                                {currentStep + 1} / {stepCount}
+                            </span>
+                        </>
+                    )}
                     <button
-                        className='theia-button secondary user-interaction-tool comment-submit'
-                        onClick={handleAddComment}
-                        disabled={finished || !pendingComment.trim()}
+                        className='theia-button main user-interaction-tool advance-button'
+                        onClick={handleAdvance}
+                        disabled={finished && isLastStep}
                     >
-                        {nls.localizeByDefault('Comment')}
+                        {advanceLabel}
+                        <i className={codicon(isLastStep ? 'check' : 'arrow-right')} />
                     </button>
                 </div>
-                {activeState.comments.length > 0 && (
-                    <ul className='user-interaction-tool comment-list'>
-                        {activeState.comments.map((comment, i) => (
-                            <li key={i} className='user-interaction-tool comment-item'>
-                                <span className='user-interaction-tool comment-text'>{comment}</span>
-                                {!finished && (
-                                    <button
-                                        className='user-interaction-tool comment-remove'
-                                        onClick={() => handleRemoveComment(i)}
-                                        title={nls.localizeByDefault('Remove')}
-                                        aria-label={nls.localizeByDefault('Remove')}
-                                    >
-                                        <i className={codicon('close')} />
-                                    </button>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-            <div className='user-interaction-tool advance-row'>
-                <button
-                    className='theia-button secondary user-interaction-tool back-button'
-                    onClick={handleBack}
-                    disabled={finished || currentStep === 0}
-                    title={nls.localizeByDefault('Back')}
-                >
-                    <i className={codicon('arrow-left')} />
-                    {nls.localizeByDefault('Back')}
-                </button>
-                <span className='user-interaction-tool page-counter' aria-label={stepLabel}>
-                    {currentStep + 1} / {stepCount}
-                </span>
-                <button
-                    className='theia-button main user-interaction-tool advance-button'
-                    onClick={handleAdvance}
-                    disabled={finished}
-                >
-                    {advanceLabel}
-                    <i className={codicon(isLastStep ? 'check' : 'arrow-right')} />
-                </button>
-            </div>
-            {finished && <FinishedSummary result={result} />}
+            )}
         </div>
     );
 };
@@ -277,45 +299,6 @@ const StepProgress: React.FC<{ current: number; total: number }> = ({ current, t
         ))}
     </div>
 );
-
-const FinishedSummary: React.FC<{ result: ToolCallResult | undefined }> = ({ result }) => {
-    if (typeof result !== 'string') {
-        return undefined;
-    }
-    let parsed: { completed?: boolean; steps?: { title: string; value?: string; comments?: string[]; skipped?: boolean }[] } | undefined;
-    try {
-        parsed = JSON.parse(result);
-    } catch {
-        return undefined;
-    }
-    if (!parsed || !Array.isArray(parsed.steps)) {
-        return undefined;
-    }
-    return (
-        <div className='user-interaction-tool finished-summary'>
-            <div className='user-interaction-tool finished-status'>
-                {parsed.completed
-                    ? <><i className={codicon('check')} /> {nls.localizeByDefault('Completed')}</>
-                    : <><i className={codicon('circle-slash')} /> {nls.localize('theia/ai-ide/userInteractionCanceled', 'Canceled — partial result returned')}</>
-                }
-            </div>
-            <ul className='user-interaction-tool finished-steps'>
-                {parsed.steps.map((step, i) => (
-                    <li key={i} className='user-interaction-tool finished-step'>
-                        <span className='user-interaction-tool finished-step-title'>{step.title}</span>
-                        {step.value && <span className='user-interaction-tool finished-step-value'>{step.value}</span>}
-                        {step.skipped && <span className='user-interaction-tool finished-step-skipped'>{nls.localize('theia/ai-ide/userInteractionSkipped', 'skipped')}</span>}
-                        {step.comments && step.comments.length > 0 && (
-                            <ul className='user-interaction-tool finished-step-comments'>
-                                {step.comments.map((c, j) => <li key={j}>{c}</li>)}
-                            </ul>
-                        )}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-};
 
 const LinkButton: React.FC<{ link: UserInteractionLink; onClick: () => void }> = ({ link, onClick }) => {
     const isDiff = link.rightRef !== undefined;
@@ -429,7 +412,6 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 toolCallId={response.id}
                 tool={this.userInteractionTool}
                 finished={response.finished}
-                result={response.result}
                 openerService={this.openerService}
                 response={response}
                 confirmationMode={confirmationMode}

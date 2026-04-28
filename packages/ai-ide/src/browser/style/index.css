@@ -1714,12 +1714,6 @@
   min-width: 100px;
 }
 
-.user-interaction-tool.option-button.selected {
-  background-color: var(--theia-button-background);
-  color: var(--theia-button-foreground);
-  border-color: var(--theia-button-background);
-}
-
 .user-interaction-tool.option-button:disabled {
   opacity: 0.6;
   cursor: default;
@@ -1842,57 +1836,11 @@
   visibility: hidden;
 }
 
-.user-interaction-tool.finished-summary {
-  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
-  border-top: 1px solid var(--theia-widget-border);
-  color: var(--theia-descriptionForeground);
-  font-size: var(--theia-ui-font-size0);
+.user-interaction-tool.option-selected-icon {
+  margin-right: calc(var(--theia-ui-padding) / 2);
 }
 
-.user-interaction-tool.finished-status {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--theia-ui-padding) / 2);
-  font-weight: 500;
-  margin-bottom: calc(var(--theia-ui-padding) / 2);
-}
-
-.user-interaction-tool.finished-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--theia-ui-padding) / 2);
-}
-
-.user-interaction-tool.finished-step {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--theia-ui-padding) / 4);
-}
-
-.user-interaction-tool.finished-step-title {
-  font-weight: 500;
-  color: var(--theia-foreground);
-}
-
-.user-interaction-tool.finished-step-value {
-  display: inline-block;
-  font-family: var(--theia-code-font-family);
-  font-size: var(--theia-code-font-size);
-  background-color: var(--theia-editorWidget-background);
-  padding: 0 calc(var(--theia-ui-padding) / 2);
-  border-radius: 3px;
-  width: fit-content;
-}
-
-.user-interaction-tool.finished-step-skipped {
-  color: var(--theia-descriptionForeground);
-  font-style: italic;
-}
-
-.user-interaction-tool.finished-step-comments {
-  margin: 0;
-  padding-left: calc(var(--theia-ui-padding) * 2);
+.user-interaction-tool.option-button.selected {
+  outline: 2px solid var(--theia-focusBorder);
+  outline-offset: -2px;
 }
