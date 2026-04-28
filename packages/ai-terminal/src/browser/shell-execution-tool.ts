@@ -129,16 +129,17 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                     },
                     cwd: {
                         type: 'string',
-                        description: 'Working directory for command execution. MUST always be provided. ' +
+                        description: 'Working directory for command execution. ' +
                             'Use a workspace-relative path (e.g., "backend", "frontend/src") ' +
-                            'or an absolute filesystem path.'
+                            'or an absolute filesystem path. ' +
+                            'If omitted, defaults to the workspace root (single-root workspaces only).'
                     },
                     timeout: {
                         type: 'number',
                         description: 'Timeout in milliseconds. Default: 120000 (2 minutes). Max: 600000 (10 minutes).'
                     }
                 },
-                required: ['command', 'description', 'cwd']
+                required: ['command', 'description']
             },
             handler: (argString: string, ctx?: unknown) => this.executeCommand(argString, ctx),
             checkAutoAction: (argString: string): AutoActionResult | undefined => {
@@ -166,7 +167,7 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
     protected async executeCommand(argString: string, ctx?: unknown): Promise<ShellExecutionToolResult | ShellExecutionCanceledResult> {
         const args: {
             command: string;
-            cwd: string;
+            cwd?: string;
             timeout?: number;
         } = JSON.parse(argString);
 
@@ -224,10 +225,24 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
 
     /**
      * Resolves a cwd value to an absolute filesystem path.
-     * Handles: absolute paths (pass-through), root-relative paths (<rootName>/...),
-     * and bare root names.
+     * Handles: undefined (falls back to workspace root), absolute paths (pass-through),
+     * root-relative paths (<rootName>/...), and bare root names.
      */
-    private resolveCwd(cwd: string): string {
+    private resolveCwd(cwd: string | undefined): string {
+        const roots = this.workspaceService.tryGetRoots();
+
+        if (!cwd) {
+            if (roots.length === 1) {
+                return roots[0].resource.path.fsPath();
+            }
+            const rootNames = roots.map(r => r.resource.path.base);
+            throw new Error(
+                'A working directory (cwd) is required in a multi-root workspace. ' +
+                `Available workspace roots: ${rootNames.join(', ')}. ` +
+                'Provide one as cwd (e.g., "backend") or use a sub-path (e.g., "backend/src").'
+            );
+        }
+
         const normalized = Path.normalizePathSeparator(cwd);
 
         if (new Path(normalized).isAbsolute) {
@@ -235,7 +250,6 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         }
 
         const segments = normalized.split('/');
-        const roots = this.workspaceService.tryGetRoots();
         for (const root of roots) {
             if (root.resource.path.base === segments[0]) {
                 const rest = segments.slice(1).join('/');
