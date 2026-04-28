@@ -54,27 +54,46 @@ export interface UserInteractionOption {
     buttonLabel?: string;
 }
 
-export interface UserInteractionArgs {
+export interface UserInteractionStep {
     title: string;
     message: string;
-    options: UserInteractionOption[];
+    options?: UserInteractionOption[];
     links?: UserInteractionLink[];
+}
+
+export interface UserInteractionStepResult {
+    title: string;
+    value?: string;
+    comments?: string[];
+    skipped?: boolean;
+}
+
+export interface UserInteractionResult {
+    completed: boolean;
+    steps: UserInteractionStepResult[];
+}
+
+export interface UserInteractionArgs {
+    interactions: UserInteractionStep[];
 }
 
 export interface UserInteractionInput {
     title: string;
+    stepCount: number;
 }
 
 export function parseUserInteractionInput(args: string | undefined): UserInteractionInput {
     if (!args) {
-        return { title: '' };
+        return { title: '', stepCount: 0 };
     }
     try {
         const parsed = JSON.parse(args);
-        return { title: typeof parsed.title === 'string' ? parsed.title : '' };
+        const interactions = Array.isArray(parsed.interactions) ? parsed.interactions : [];
+        const firstTitle = typeof interactions[0]?.title === 'string' ? interactions[0].title : '';
+        return { title: firstTitle, stepCount: interactions.length };
     } catch {
         const match = /"title"\s*:\s*"([^"]*)"?/.exec(args);
-        return { title: match?.[1] ?? '' };
+        return { title: match?.[1] ?? '', stepCount: 0 };
     }
 }
 
@@ -84,35 +103,51 @@ export function parseUserInteractionArgs(args: string | undefined): UserInteract
     }
     try {
         const parsed = JSON.parse(args);
-        if (typeof parsed.title !== 'string' || typeof parsed.message !== 'string' || !Array.isArray(parsed.options)) {
+        if (!Array.isArray(parsed.interactions)) {
             return undefined;
         }
-        const validOptions = parsed.options.filter(
-            (opt: unknown) => !!opt && typeof opt === 'object'
-                && typeof (opt as Record<string, unknown>).text === 'string'
-                && typeof (opt as Record<string, unknown>).value === 'string'
-        );
-        if (validOptions.length === 0) {
+        const validSteps = parsed.interactions
+            .map(parseStep)
+            .filter((step: UserInteractionStep | undefined): step is UserInteractionStep => step !== undefined);
+        if (validSteps.length === 0) {
             return undefined;
         }
-        // Normalize links: support both singular "link" and plural "links"
-        let links: UserInteractionLink[] | undefined;
-        if (Array.isArray(parsed.links)) {
-            const filtered = parsed.links.filter(isValidLink);
-            links = filtered.length > 0 ? filtered : undefined;
-        } else if (isValidLink(parsed.link)) {
-            links = [parsed.link];
-        }
-
-        return {
-            title: parsed.title,
-            message: parsed.message,
-            options: validOptions,
-            links
-        };
+        return { interactions: validSteps };
     } catch {
         return undefined;
     }
+}
+
+function parseStep(raw: unknown): UserInteractionStep | undefined {
+    if (!raw || typeof raw !== 'object') {
+        return undefined;
+    }
+    const obj = raw as Record<string, unknown>;
+    if (typeof obj.title !== 'string' || typeof obj.message !== 'string') {
+        return undefined;
+    }
+    let options: UserInteractionOption[] | undefined;
+    if (Array.isArray(obj.options)) {
+        const validOptions = obj.options.filter(
+            (opt: unknown) => !!opt && typeof opt === 'object'
+                && typeof (opt as Record<string, unknown>).text === 'string'
+                && typeof (opt as Record<string, unknown>).value === 'string'
+        ) as UserInteractionOption[];
+        options = validOptions.length > 0 ? validOptions : undefined;
+    }
+    let links: UserInteractionLink[] | undefined;
+    if (Array.isArray(obj.links)) {
+        const filtered = obj.links.filter(isValidLink) as UserInteractionLink[];
+        links = filtered.length > 0 ? filtered : undefined;
+    } else if (isValidLink(obj.link)) {
+        links = [obj.link as UserInteractionLink];
+    }
+    return {
+        title: obj.title,
+        message: obj.message,
+        options,
+        links
+    };
 }
 
 function isValidContentRef(ref: unknown): ref is ContentRef {

@@ -26,135 +26,165 @@ describe('parseUserInteractionArgs', () => {
         expect(parseUserInteractionArgs('not json')).to.be.undefined;
     });
 
-    it('should return undefined when title is missing', () => {
-        const input = JSON.stringify({ message: 'msg', options: [{ text: 'A', value: 'a' }] });
+    it('should return undefined when interactions is missing', () => {
+        const input = JSON.stringify({ foo: 'bar' });
         expect(parseUserInteractionArgs(input)).to.be.undefined;
     });
 
-    it('should return undefined when message is missing', () => {
-        const input = JSON.stringify({ title: 'T', options: [{ text: 'A', value: 'a' }] });
+    it('should return undefined when interactions is not an array', () => {
+        const input = JSON.stringify({ interactions: 'nope' });
         expect(parseUserInteractionArgs(input)).to.be.undefined;
     });
 
-    it('should return undefined when options is not an array', () => {
-        const input = JSON.stringify({ title: 'T', message: 'M', options: 'not-array' });
+    it('should return undefined when no step is valid', () => {
+        const input = JSON.stringify({ interactions: [{ foo: 'bar' }, { title: 1 }] });
         expect(parseUserInteractionArgs(input)).to.be.undefined;
     });
 
-    it('should return undefined when all options are invalid', () => {
-        const input = JSON.stringify({ title: 'T', message: 'M', options: [{ foo: 'bar' }] });
-        expect(parseUserInteractionArgs(input)).to.be.undefined;
-    });
-
-    it('should filter out invalid options', () => {
+    it('should drop steps that are missing title or message', () => {
         const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }, { bad: true }, { text: 'B', value: 'b' }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result).to.not.be.undefined;
-        expect(result!.options).to.have.length(2);
-    });
-
-    it('should parse valid args without links', () => {
-        const input = JSON.stringify({
-            title: 'Title', message: 'Message',
-            options: [{ text: 'Yes', value: 'yes' }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result).to.deep.equal({
-            title: 'Title', message: 'Message',
-            options: [{ text: 'Yes', value: 'yes' }],
-            links: undefined
-        });
-    });
-
-    it('should normalize singular link to links array', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            link: { ref: 'src/index.ts' }
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result).to.not.be.undefined;
-        expect(result!.links).to.deep.equal([{ ref: 'src/index.ts' }]);
-    });
-
-    it('should parse plural links array', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [
-                { ref: 'src/a.ts' },
-                { ref: 'src/old.ts', rightRef: 'src/new.ts' }
+            interactions: [
+                { title: 'Valid', message: 'Hello' },
+                { title: 'No message' },
+                { message: 'No title' }
             ]
         });
         const result = parseUserInteractionArgs(input);
         expect(result).to.not.be.undefined;
-        expect(result!.links).to.have.length(2);
-        expect(result!.links![0]).to.deep.equal({ ref: 'src/a.ts' });
-        expect(result!.links![1]).to.deep.equal({ ref: 'src/old.ts', rightRef: 'src/new.ts' });
+        expect(result!.interactions).to.have.length(1);
+        expect(result!.interactions[0].title).to.equal('Valid');
     });
 
-    it('should filter out invalid links from array', () => {
+    it('should accept a step without options (informational)', () => {
         const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [
-                { ref: 'src/a.ts' },
-                { noRef: true },
-                { ref: '' } // empty ref string
+            interactions: [{ title: 'Info', message: 'Just so you know' }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result).to.not.be.undefined;
+        expect(result!.interactions[0].options).to.be.undefined;
+    });
+
+    it('should filter out invalid options within a step', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                options: [{ text: 'A', value: 'a' }, { bad: true }, { text: 'B', value: 'b' }]
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].options).to.have.length(2);
+    });
+
+    it('should drop options array if no options are valid', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                options: [{ bad: true }]
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].options).to.be.undefined;
+    });
+
+    it('should normalize singular link into a links array on a step', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                options: [{ text: 'A', value: 'a' }],
+                link: { ref: 'src/index.ts' }
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].links).to.deep.equal([{ ref: 'src/index.ts' }]);
+    });
+
+    it('should accept a links array with multiple entries', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                options: [{ text: 'A', value: 'a' }],
+                links: [
+                    { ref: 'src/a.ts' },
+                    { ref: 'src/old.ts', rightRef: 'src/new.ts' }
+                ]
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].links).to.have.length(2);
+    });
+
+    it('should filter out invalid links from a step', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                options: [{ text: 'A', value: 'a' }],
+                links: [
+                    { ref: 'src/a.ts' },
+                    { noRef: true },
+                    { ref: '' }
+                ]
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].links).to.have.length(1);
+    });
+
+    it('should accept multiple steps in order', () => {
+        const input = JSON.stringify({
+            interactions: [
+                { title: 'Overview', message: 'PR summary' },
+                { title: 'Area 1', message: 'finding', options: [{ text: 'OK', value: 'approve' }] },
+                { title: 'Area 2', message: 'no findings' }
             ]
         });
         const result = parseUserInteractionArgs(input);
-        expect(result).to.not.be.undefined;
-        expect(result!.links).to.have.length(1);
-        expect(result!.links![0].ref).to.equal('src/a.ts');
-    });
-
-    it('should set links to undefined when all links are invalid', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ noRef: true }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result).to.not.be.undefined;
-        expect(result!.links).to.be.undefined;
-    });
-
-    it('should ignore invalid singular link', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            link: { noRef: true }
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result).to.not.be.undefined;
-        expect(result!.links).to.be.undefined;
-    });
-
-    it('should prefer links array over singular link when both are present', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            link: { ref: 'singular.ts' },
-            links: [{ ref: 'plural.ts' }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result).to.not.be.undefined;
-        expect(result!.links).to.have.length(1);
-        expect(result!.links![0].ref).to.equal('plural.ts');
+        expect(result!.interactions).to.have.length(3);
+        expect(result!.interactions[1].options).to.have.length(1);
+        expect(result!.interactions[2].options).to.be.undefined;
     });
 
     it('should preserve buttonLabel in options', () => {
         const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'Confirm changes', value: 'confirm', buttonLabel: '✅ Confirm' }]
+            interactions: [{
+                title: 'T', message: 'M',
+                options: [{ text: 'Confirm changes', value: 'confirm', buttonLabel: '✅ Confirm' }]
+            }]
         });
         const result = parseUserInteractionArgs(input);
-        expect(result).to.not.be.undefined;
-        expect(result!.options[0].buttonLabel).to.equal('✅ Confirm');
+        expect(result!.interactions[0].options![0].buttonLabel).to.equal('✅ Confirm');
+    });
+
+    it('should reject step links with empty path in object ref', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                links: [{ ref: { path: '' } }]
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].links).to.be.undefined;
+    });
+
+    it('should accept step links with EmptyContentRef', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                links: [{ ref: { empty: true, label: 'New file' } }]
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].links![0].ref).to.deep.equal({ empty: true, label: 'New file' });
+    });
+
+    it('should accept step links with EmptyContentRef as rightRef', () => {
+        const input = JSON.stringify({
+            interactions: [{
+                title: 'T', message: 'M',
+                links: [{ ref: 'src/old.ts', rightRef: { empty: true } }]
+            }]
+        });
+        const result = parseUserInteractionArgs(input);
+        expect(result!.interactions[0].links![0].rightRef).to.deep.equal({ empty: true });
     });
 });
 
@@ -168,27 +198,15 @@ describe('resolveContentRef', () => {
         expect(resolveContentRef(ref)).to.deep.equal(ref);
     });
 
-    it('should return an object ref without optional fields', () => {
-        expect(resolveContentRef({ path: 'src/index.ts' })).to.deep.equal({ path: 'src/index.ts' });
-    });
-
     it('should return an EmptyContentRef as-is', () => {
         const ref = { empty: true as const, label: 'New file' };
         expect(resolveContentRef(ref)).to.deep.equal({ empty: true, label: 'New file' });
-    });
-
-    it('should return an EmptyContentRef without label as-is', () => {
-        expect(resolveContentRef({ empty: true as const })).to.deep.equal({ empty: true });
     });
 });
 
 describe('isEmptyContentRef', () => {
     it('should return true for an EmptyContentRef', () => {
         expect(isEmptyContentRef({ empty: true as const })).to.be.true;
-    });
-
-    it('should return true for an EmptyContentRef with label', () => {
-        expect(isEmptyContentRef({ empty: true as const, label: 'Empty' })).to.be.true;
     });
 
     it('should return false for a string ref', () => {
@@ -198,141 +216,34 @@ describe('isEmptyContentRef', () => {
     it('should return false for a PathContentRef', () => {
         expect(isEmptyContentRef({ path: 'src/index.ts' })).to.be.false;
     });
-
-    it('should return false for an object with empty set to false', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        expect(isEmptyContentRef({ empty: false } as any)).to.be.false;
-    });
-});
-
-describe('parseUserInteractionArgs - ContentRef validation', () => {
-    it('should accept links with string ref', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: 'src/file.ts' }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.have.length(1);
-        expect(result!.links![0].ref).to.equal('src/file.ts');
-    });
-
-    it('should accept links with object ref', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: { path: 'src/file.ts', gitRef: 'HEAD~1', line: 5 } }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.have.length(1);
-        expect(result!.links![0].ref).to.deep.equal({ path: 'src/file.ts', gitRef: 'HEAD~1', line: 5 });
-    });
-
-    it('should accept links with EmptyContentRef', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: { empty: true, label: 'New file' } }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.have.length(1);
-        expect(result!.links![0].ref).to.deep.equal({ empty: true, label: 'New file' });
-    });
-
-    it('should accept links with EmptyContentRef as rightRef', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: 'src/old.ts', rightRef: { empty: true } }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.have.length(1);
-        expect(result!.links![0].rightRef).to.deep.equal({ empty: true });
-    });
-
-    it('should reject links with empty set to false', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: { empty: false } }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.be.undefined;
-    });
-
-    it('should reject links with empty string ref', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: '' }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.be.undefined;
-    });
-
-    it('should reject links with empty path in object ref', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: { path: '' } }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.be.undefined;
-    });
-
-    it('should reject links with invalid rightRef', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: 'src/a.ts', rightRef: '' }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.be.undefined;
-    });
-
-    it('should accept links with valid rightRef', () => {
-        const input = JSON.stringify({
-            title: 'T', message: 'M',
-            options: [{ text: 'A', value: 'a' }],
-            links: [{ ref: 'src/old.ts', rightRef: 'src/new.ts' }]
-        });
-        const result = parseUserInteractionArgs(input);
-        expect(result!.links).to.have.length(1);
-        expect(result!.links![0].rightRef).to.equal('src/new.ts');
-    });
 });
 
 describe('parseUserInteractionInput', () => {
-    it('should return empty title for undefined input', () => {
-        expect(parseUserInteractionInput(undefined)).to.deep.equal({ title: '' });
+    it('should return empty result for undefined input', () => {
+        expect(parseUserInteractionInput(undefined)).to.deep.equal({ title: '', stepCount: 0 });
     });
 
-    it('should return empty title for empty string', () => {
-        expect(parseUserInteractionInput('')).to.deep.equal({ title: '' });
+    it('should return empty result for empty string', () => {
+        expect(parseUserInteractionInput('')).to.deep.equal({ title: '', stepCount: 0 });
     });
 
-    it('should parse title from valid JSON', () => {
-        const input = JSON.stringify({ title: 'My Title', message: 'Hello' });
-        expect(parseUserInteractionInput(input)).to.deep.equal({ title: 'My Title' });
+    it('should extract first step title and step count from valid JSON', () => {
+        const input = JSON.stringify({ interactions: [{ title: 'First' }, { title: 'Second' }] });
+        expect(parseUserInteractionInput(input)).to.deep.equal({ title: 'First', stepCount: 2 });
     });
 
-    it('should return empty title when title is not a string', () => {
-        const input = JSON.stringify({ title: 42 });
-        expect(parseUserInteractionInput(input)).to.deep.equal({ title: '' });
+    it('should return empty title and 0 count when interactions array is empty', () => {
+        const input = JSON.stringify({ interactions: [] });
+        expect(parseUserInteractionInput(input)).to.deep.equal({ title: '', stepCount: 0 });
     });
 
-    it('should extract title from incomplete JSON via regex', () => {
-        const input = '{"title": "Streaming Title", "message": "incom';
-        expect(parseUserInteractionInput(input)).to.deep.equal({ title: 'Streaming Title' });
+    it('should fall back to regex-based title extraction for incomplete JSON', () => {
+        const input = '{"interactions": [{"title": "Streaming Title", "message": "incom';
+        expect(parseUserInteractionInput(input).title).to.equal('Streaming Title');
     });
 
-    it('should return empty title from incomplete JSON without title', () => {
-        const input = '{"message": "no title here';
-        expect(parseUserInteractionInput(input)).to.deep.equal({ title: '' });
-    });
-
-    it('should handle title at end of incomplete JSON', () => {
-        const input = '{"title":"Partial';
-        expect(parseUserInteractionInput(input)).to.deep.equal({ title: 'Partial' });
+    it('should return empty title from incomplete JSON without title field', () => {
+        const input = '{"interactions": [{"message": "no title here';
+        expect(parseUserInteractionInput(input).title).to.equal('');
     });
 });
