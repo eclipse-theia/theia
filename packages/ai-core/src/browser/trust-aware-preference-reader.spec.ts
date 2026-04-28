@@ -218,5 +218,87 @@ describe('TrustAwarePreferenceReader', () => {
             await reader.ready;
             expect(resolved).to.equal(true);
         });
+
+        it('resolves via an early change event when it arrives before the initial promise', async () => {
+            const received: boolean[] = [];
+            reader.onDidChangeTrust(value => received.push(value));
+
+            trust.fireTrustChange(true);
+            await reader.ready;
+
+            // The first signal acts as the initial resolution and must not
+            // be reported as a change event.
+            expect(received).to.deep.equal([]);
+
+            preferences.effectiveValue = 'workspace';
+            preferences.inspectResult = {
+                defaultValue: 'default',
+                globalValue: 'user',
+                workspaceValue: 'workspace'
+            };
+            expect(reader.get<string>(PREFERENCE_NAME, 'fallback')).to.equal('workspace');
+        });
+    });
+
+    describe('race between initial promise and change event', () => {
+        it('ignores a stale getWorkspaceTrust resolution after a change event has initialised the reader', async () => {
+            const received: boolean[] = [];
+            reader.onDidChangeTrust(value => received.push(value));
+
+            // Change event arrives first and initialises the reader.
+            trust.fireTrustChange(false);
+            // The (now stale) initial promise resolves to a different value.
+            trust.trustDeferred.resolve(true);
+
+            await reader.ready;
+            // Allow the stale .then callback to run.
+            await Promise.resolve();
+            await Promise.resolve();
+
+            preferences.effectiveValue = 'workspace';
+            preferences.inspectResult = {
+                defaultValue: 'default',
+                globalValue: 'user',
+                workspaceValue: 'workspace'
+            };
+
+            // Cached trust must still reflect the change event (false), not
+            // the stale promise resolution (true).
+            expect(reader.get<string>(PREFERENCE_NAME, 'fallback')).to.equal('user');
+            // No change event should have been fired for the initial value
+            // and none for the stale resolution either.
+            expect(received).to.deep.equal([]);
+        });
+
+        it('ignores a stale getWorkspaceTrust rejection after a change event has initialised the reader', async () => {
+            const received: boolean[] = [];
+            reader.onDidChangeTrust(value => received.push(value));
+
+            // Avoid an unhandled rejection warning for the (now stale) initial promise.
+            trust.getWorkspaceTrust().catch(() => { /* expected */ });
+
+            // Change event arrives first and initialises the reader.
+            trust.fireTrustChange(true);
+            // The (now stale) initial promise rejects.
+            trust.trustDeferred.reject(new Error('stale failure'));
+
+            // ready must resolve (not reject) because the event already initialised it.
+            await reader.ready;
+            // Allow the stale rejection callback to run.
+            await Promise.resolve();
+            await Promise.resolve();
+
+            preferences.effectiveValue = 'workspace';
+            preferences.inspectResult = {
+                defaultValue: 'default',
+                globalValue: 'user',
+                workspaceValue: 'workspace'
+            };
+
+            // Cached trust must reflect the change event (true).
+            expect(reader.get<string>(PREFERENCE_NAME, 'fallback')).to.equal('workspace');
+            // No change event should have been fired for the initial value.
+            expect(received).to.deep.equal([]);
+        });
     });
 });

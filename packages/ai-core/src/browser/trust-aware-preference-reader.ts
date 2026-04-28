@@ -61,18 +61,35 @@ export class TrustAwarePreferenceReader {
 
     @postConstruct()
     protected init(): void {
-        this.trust.getWorkspaceTrust().then(t => {
-            this.trusted = t;
-            this._ready.resolve();
-        }, err => {
-            this._ready.reject(err);
-        });
+        let initialized = false;
+
         this.trust.onDidChangeWorkspaceTrust(t => {
+            if (!initialized) {
+                initialized = true;
+                this.trusted = t;
+                this._ready.resolve();
+                return;
+            }
             if (this.trusted === t) {
                 return;
             }
             this.trusted = t;
             this.onDidChangeTrustEmitter.fire(t);
+        });
+
+        this.trust.getWorkspaceTrust().then(t => {
+            if (initialized) {
+                return;
+            }
+            initialized = true;
+            this.trusted = t;
+            this._ready.resolve();
+        }, err => {
+            if (initialized) {
+                return;
+            }
+            initialized = true;
+            this._ready.reject(err);
         });
     }
 
