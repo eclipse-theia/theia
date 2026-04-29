@@ -21,7 +21,7 @@ import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/st
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
-import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, isContextMenuEvent } from '@theia/core/lib/browser';
 import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugSessionManager } from '../debug-session-manager';
@@ -428,7 +428,7 @@ export class DebugEditorModel implements Disposable {
 
     protected handleMouseDown(event: monaco.editor.IEditorMouseEvent): void {
         if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
-            if (!event.event.rightButton) {
+            if (!isContextMenuEvent(event.event.browserEvent)) {
                 this.toggleBreakpoint(event.target.position!);
             }
         }
