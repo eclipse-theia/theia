@@ -29,11 +29,11 @@ import { ToolInvocationRegistry } from '@theia/ai-core';
 import { UserInteractionTool } from './user-interaction-tool';
 import {
     USER_INTERACTION_FUNCTION_ID,
-    PathContentRef,
     UserInteractionArgs,
     UserInteractionLink,
     UserInteractionResult,
     UserInteractionStep,
+    buildDiffLabel,
     isEmptyContentRef,
     parseUserInteractionArgs,
     parseUserInteractionInput,
@@ -47,6 +47,12 @@ interface UserInteractionComponentProps {
     tool: UserInteractionTool;
     finished: boolean;
     canceled: boolean;
+    /**
+     * Whether the parent response has completed (including restoration). When the
+     * response is complete but no `result` was persisted, the interaction is treated
+     * as canceled because there is no longer a live agent waiting for input.
+     */
+    responseComplete: boolean;
     result: UserInteractionResult | undefined;
     openerService: OpenerService;
 }
@@ -57,7 +63,7 @@ interface StepState {
 }
 
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, canceled, result, openerService
+    args, toolCallId, tool, finished, canceled, responseComplete, result, openerService
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
@@ -69,21 +75,28 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     const isLastStep = currentStep === stepCount - 1;
     const messageRef = useMarkdownRendering(activeStep?.message ?? '', openerService);
 
+    // A parent response that completed without delivering a tool result means the
+    // interaction was restored from a serialized "waiting for input" state. The
+    // agent that was waiting is no longer running, so it must be treated as
+    // canceled and all inputs locked.
+    const restoredWithoutResult = responseComplete && !result;
+    const isFinal = finished || !!result || canceled || restoredWithoutResult;
+
     // Auto-open the active step's links the first time the user reaches it.
     // Going Back and then Forward must not re-open them.
     const visitedStepsRef = React.useRef<Set<number>>(new Set());
     React.useEffect(() => {
-        if (finished || !activeStep || visitedStepsRef.current.has(currentStep)) {
+        if (isFinal || !activeStep || visitedStepsRef.current.has(currentStep)) {
             return;
         }
         visitedStepsRef.current.add(currentStep);
         const links = activeStep.links ?? [];
         for (const link of links) {
             if (link.autoOpen !== false) {
-                tool.openLink(link).catch(() => { /* best-effort */ });
+                tool.openLink(link).catch(err => console.warn('Failed to auto-open user-interaction link:', err));
             }
         }
-    }, [currentStep, activeStep, finished, tool]);
+    }, [currentStep, activeStep, isFinal, tool]);
 
     const persistStepState = React.useCallback((stepIndex: number, state: StepState) => {
         tool.setStepResult(toolCallId, stepIndex, {
@@ -106,23 +119,27 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     const hasOptions = !!activeStep?.options && activeStep.options.length > 0;
 
     const handleOptionClick = React.useCallback((value: string) => {
-        if (finished) {
+        if (isFinal) {
             return;
         }
         if (isSingleStep) {
-            updateStepState(0, prev => ({ ...prev, value }));
-            tool.completeInteraction(toolCallId);
+            setStepStates(prev => {
+                const next = prev.slice();
+                next[0] = { ...prev[0], value };
+                return next;
+            });
+            tool.completeInteractionWith(toolCallId, 0, { value });
             return;
         }
         updateStepState(currentStep, prev => ({
             ...prev,
             value: prev.value === value ? undefined : value
         }));
-    }, [currentStep, finished, isSingleStep, tool, toolCallId, updateStepState]);
+    }, [currentStep, isFinal, isSingleStep, tool, toolCallId, updateStepState]);
 
     const handleAddComment = React.useCallback(() => {
         const trimmed = pendingComment.trim();
-        if (finished || !trimmed) {
+        if (isFinal || !trimmed) {
             return;
         }
         updateStepState(currentStep, prev => ({
@@ -130,17 +147,17 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             comments: [...prev.comments, trimmed]
         }));
         setPendingComment('');
-    }, [currentStep, finished, pendingComment, updateStepState]);
+    }, [currentStep, isFinal, pendingComment, updateStepState]);
 
     const handleRemoveComment = React.useCallback((commentIndex: number) => {
-        if (finished) {
+        if (isFinal) {
             return;
         }
         updateStepState(currentStep, prev => ({
             ...prev,
             comments: prev.comments.filter((_, i) => i !== commentIndex)
         }));
-    }, [currentStep, finished, updateStepState]);
+    }, [currentStep, isFinal, updateStepState]);
 
     const handleCommentKeyDown = React.useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
@@ -159,14 +176,14 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
 
     const handleAdvance = React.useCallback(() => {
         if (isLastStep) {
-            if (!finished) {
+            if (!isFinal) {
                 tool.completeInteraction(toolCallId);
             }
             return;
         }
         setCurrentStep(idx => idx + 1);
         setPendingComment('');
-    }, [finished, isLastStep, tool, toolCallId]);
+    }, [isFinal, isLastStep, tool, toolCallId]);
 
     const handleBack = React.useCallback(() => {
         if (currentStep === 0) {
@@ -196,11 +213,12 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                 {(() => {
                     // The tool's own result is authoritative: a completed
                     // interaction must stay "Completed" even if the chat
-                    // session is canceled later.
+                    // session is canceled later. A response that completed
+                    // without a result indicates the interaction was restored
+                    // from a "waiting" state and is treated as canceled.
                     const status: 'completed' | 'canceled' | 'waiting' =
                         result?.completed === true ? 'completed' :
-                        result?.completed === false ? 'canceled' :
-                        canceled ? 'canceled' :
+                        result?.completed === false || canceled || restoredWithoutResult ? 'canceled' :
                         'waiting';
                     if (status === 'completed') {
                         return (
@@ -229,7 +247,11 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             {activeStep.links && activeStep.links.length > 0 && (
                 <div className='user-interaction-tool links'>
                     {activeStep.links.map((link, i) => (
-                        <LinkButton key={i} link={link} onClick={() => tool.openLink(link)} />
+                        <LinkButton
+                            key={i}
+                            link={link}
+                            onClick={() => tool.openLink(link).catch(err => console.warn('Failed to open user-interaction link:', err))}
+                        />
                     ))}
                 </div>
             )}
@@ -245,7 +267,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                                 key={i}
                                 className={className}
                                 onClick={() => handleOptionClick(option.value)}
-                                disabled={finished}
+                                disabled={isFinal}
                                 title={option.description}
                                 aria-pressed={isSelected}
                             >
@@ -258,7 +280,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             )}
             {!isSingleStep && (
                 <div className='user-interaction-tool comment-section'>
-                    {!finished && (
+                    {!isFinal && (
                         <div className='user-interaction-tool comment-input-row'>
                             <input
                                 type='text'
@@ -282,7 +304,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                             {activeState.comments.map((comment, i) => (
                                 <li key={i} className='user-interaction-tool comment-item'>
                                     <span className='user-interaction-tool comment-text'>{comment}</span>
-                                    {!finished && (
+                                    {!isFinal && (
                                         <button
                                             className='user-interaction-tool comment-remove'
                                             onClick={() => handleRemoveComment(i)}
@@ -319,7 +341,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                     <button
                         className='theia-button main user-interaction-tool advance-button'
                         onClick={handleAdvance}
-                        disabled={finished && isLastStep}
+                        disabled={isFinal && isLastStep}
                     >
                         {advanceLabel}
                         <i className={codicon(isLastStep ? 'check' : 'arrow-right')} />
@@ -369,31 +391,7 @@ const LinkButton: React.FC<{ link: UserInteractionLink; onClick: () => void }> =
     if (link.label) {
         label = link.label;
     } else if (isDiff) {
-        const right = resolveContentRef(link.rightRef!);
-        const leftIsEmpty = isEmptyContentRef(left);
-        const rightIsEmpty = isEmptyContentRef(right);
-
-        if (leftIsEmpty && rightIsEmpty) {
-            label = `${left.label || 'Empty'} ⟷ ${right.label || 'Empty'}`;
-        } else if (leftIsEmpty) {
-            const r = right as PathContentRef;
-            const rightTag = r.gitRef ? r.gitRef.substring(0, 8) + '…' : 'Working Copy';
-            label = `${r.path} (${left.label || 'Empty'} ⟷ ${rightTag})`;
-        } else if (rightIsEmpty) {
-            const l = left as PathContentRef;
-            const leftTag = l.gitRef ? l.gitRef.substring(0, 8) + '…' : 'Working Copy';
-            label = `${l.path} (${leftTag} ⟷ ${right.label || 'Empty'})`;
-        } else {
-            const l = left as PathContentRef;
-            const r = right as PathContentRef;
-            if (l.path === r.path) {
-                const leftTag = l.gitRef ? l.gitRef.substring(0, 8) + '…' : 'Working Copy';
-                const rightTag = r.gitRef ? r.gitRef.substring(0, 8) + '…' : 'Working Copy';
-                label = `${l.path} (${leftTag} ⟷ ${rightTag})`;
-            } else {
-                label = `${l.path} ⟷ ${r.path}`;
-            }
-        }
+        label = buildDiffLabel(left, resolveContentRef(link.rightRef!));
     } else {
         label = isEmptyContentRef(left) ? (left.label || 'Empty') : left.path;
     }
@@ -474,6 +472,7 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 tool={this.userInteractionTool}
                 finished={response.finished}
                 canceled={parentNode.response.isCanceled}
+                responseComplete={parentNode.response.isComplete}
                 result={parseUserInteractionResult(response.result)}
                 openerService={this.openerService}
                 response={response}

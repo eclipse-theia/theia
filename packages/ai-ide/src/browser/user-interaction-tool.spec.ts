@@ -17,7 +17,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { UserInteractionTool, UserInteractionResult } from './user-interaction-tool';
+import { UserInteractionTool } from './user-interaction-tool';
+import { UserInteractionResult } from '../common/user-interaction-tool';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { OpenerService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -120,6 +121,17 @@ describe('UserInteractionTool', () => {
         expect(result.completed).to.be.true;
         expect(result.steps).to.have.length(1);
         expect(result.steps[0]).to.deep.equal({ title: 'Choose', value: 'b' });
+    });
+
+    it('should atomically set and complete via completeInteractionWith', async () => {
+        const handler = tool.getTool().handler;
+        const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-with' });
+
+        tool.completeInteractionWith('call-with', 0, { value: 'a' });
+
+        const result = parseResult(await handlerPromise);
+        expect(result.completed).to.be.true;
+        expect(result.steps[0]).to.deep.equal({ title: 'Choose', value: 'a' });
     });
 
     it('should accumulate per-step state across multiple steps', async () => {

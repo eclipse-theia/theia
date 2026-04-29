@@ -28,33 +28,14 @@ import { WorkspaceFunctionScope } from './workspace-functions';
 import {
     ContentRef,
     USER_INTERACTION_FUNCTION_ID,
-    EmptyContentRef,
     PathContentRef,
     UserInteractionLink,
     UserInteractionResult,
     UserInteractionStep,
     UserInteractionStepResult,
+    buildDiffLabel,
     isEmptyContentRef,
     resolveContentRef
-} from '../common/user-interaction-tool';
-
-export {
-    USER_INTERACTION_FUNCTION_ID,
-    ContentRef,
-    EmptyContentRef,
-    PathContentRef,
-    isEmptyContentRef,
-    UserInteractionLink,
-    UserInteractionOption,
-    UserInteractionArgs,
-    UserInteractionInput,
-    UserInteractionStep,
-    UserInteractionStepResult,
-    UserInteractionResult,
-    resolveContentRef,
-    parseUserInteractionArgs,
-    parseUserInteractionInput,
-    parseUserInteractionResult
 } from '../common/user-interaction-tool';
 
 interface PendingInteraction {
@@ -165,6 +146,7 @@ export class UserInteractionTool implements ToolProvider {
         return {
             id: UserInteractionTool.ID,
             name: UserInteractionTool.ID,
+            providerName: 'ai-ide',
             description: 'Present an interactive interaction to the user. Each step has a title, a markdown message, optional option buttons, '
                 + 'and optional file/diff links that auto-open when the step is reached. '
                 + 'Single-step behavior: a single-step interaction with options waits for the user to pick one option, which immediately completes the interaction; '
@@ -220,6 +202,16 @@ export class UserInteractionTool implements ToolProvider {
         pending.deferred.resolve(JSON.stringify(result));
     }
 
+    /**
+     * Set the result for a step and immediately complete the interaction.
+     * Use this to atomically pass the user's input value into the result, avoiding
+     * any reliance on synchronous state updates between `setStepResult` and `completeInteraction`.
+     */
+    completeInteractionWith(toolCallId: string, stepIndex: number, partial: Partial<UserInteractionStepResult>): void {
+        this.setStepResult(toolCallId, stepIndex, partial);
+        this.completeInteraction(toolCallId);
+    }
+
     cancelInteraction(toolCallId: string): void {
         const pending = this.pendingInteractions.get(toolCallId);
         if (!pending || pending.resolved) {
@@ -251,7 +243,7 @@ export class UserInteractionTool implements ToolProvider {
             const resolvedRightUri = await this.resolveDiffSideUri(link.rightRef, workspaceRoot);
             const left = resolveContentRef(link.ref);
             const right = resolveContentRef(link.rightRef);
-            const diffLabel = link.label || this.buildDiffLabel(left, right);
+            const diffLabel = link.label || buildDiffLabel(left, right);
             const diffUri = DiffUris.encode(resolvedLeftUri, resolvedRightUri, diffLabel);
             await open(this.openerService, diffUri);
         } else {
@@ -305,36 +297,7 @@ export class UserInteractionTool implements ToolProvider {
         return fileUri;
     }
 
-    protected buildDiffLabel(
-        left: PathContentRef | EmptyContentRef,
-        right: PathContentRef | EmptyContentRef
-    ): string {
-        const leftIsEmpty = isEmptyContentRef(left);
-        const rightIsEmpty = isEmptyContentRef(right);
-        if (leftIsEmpty && rightIsEmpty) {
-            return `${left.label || 'Empty'} ⟷ ${right.label || 'Empty'}`;
-        }
-        if (leftIsEmpty) {
-            const rightRef = right as PathContentRef;
-            const rightTag = rightRef.gitRef ? rightRef.gitRef.substring(0, 8) : 'Working Copy';
-            return `${rightRef.path} (${left.label || 'Empty'} ⟷ ${rightTag})`;
-        }
-        if (rightIsEmpty) {
-            const leftRef = left as PathContentRef;
-            const leftTag = leftRef.gitRef ? leftRef.gitRef.substring(0, 8) : 'Working Copy';
-            return `${leftRef.path} (${leftTag} ⟷ ${right.label || 'Empty'})`;
-        }
-        const l = left as PathContentRef;
-        const r = right as PathContentRef;
-        if (l.path === r.path) {
-            const leftTag = l.gitRef ? l.gitRef.substring(0, 8) : 'Working Copy';
-            const rightTag = r.gitRef ? r.gitRef.substring(0, 8) : 'Working Copy';
-            return `${l.path} (${leftTag} ⟷ ${rightTag})`;
-        }
-        return `${l.path} ⟷ ${r.path}`;
-    }
-
-    protected async handleInteraction(argString: string, ctx: unknown): Promise<string> {
+    protected async handleInteraction(argString: string, ctx: ToolInvocationContext | undefined): Promise<string> {
         let parsed: { interactions?: unknown };
         try {
             parsed = JSON.parse(argString);

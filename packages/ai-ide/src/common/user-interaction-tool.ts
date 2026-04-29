@@ -47,6 +47,35 @@ export function resolveContentRef(ref: ContentRef): PathContentRef | EmptyConten
     return ref;
 }
 
+const SHA_PREFIX_LENGTH = 8;
+
+function gitRefTag(ref: PathContentRef): string {
+    return ref.gitRef ? ref.gitRef.substring(0, SHA_PREFIX_LENGTH) : 'Working Copy';
+}
+
+export function buildDiffLabel(
+    left: PathContentRef | EmptyContentRef,
+    right: PathContentRef | EmptyContentRef
+): string {
+    const leftIsEmpty = isEmptyContentRef(left);
+    const rightIsEmpty = isEmptyContentRef(right);
+    if (leftIsEmpty && rightIsEmpty) {
+        return `${left.label || 'Empty'} ⟷ ${right.label || 'Empty'}`;
+    }
+    if (leftIsEmpty) {
+        return `${(right as PathContentRef).path} (${left.label || 'Empty'} ⟷ ${gitRefTag(right as PathContentRef)})`;
+    }
+    if (rightIsEmpty) {
+        return `${(left as PathContentRef).path} (${gitRefTag(left as PathContentRef)} ⟷ ${right.label || 'Empty'})`;
+    }
+    const leftPath = left as PathContentRef;
+    const rightPath = right as PathContentRef;
+    if (leftPath.path === rightPath.path) {
+        return `${leftPath.path} (${gitRefTag(leftPath)} ⟷ ${gitRefTag(rightPath)})`;
+    }
+    return `${leftPath.path} ⟷ ${rightPath.path}`;
+}
+
 export interface UserInteractionOption {
     text: string;
     value: string;

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseUserInteractionArgs, parseUserInteractionInput } from './user-interaction-tool';
+import { buildDiffLabel, parseUserInteractionArgs, parseUserInteractionInput } from './user-interaction-tool';
 
 describe('parseUserInteractionArgs', () => {
     it('should return undefined for undefined input', () => {
@@ -215,5 +215,27 @@ describe('parseUserInteractionInput', () => {
     it('should return empty title from incomplete JSON without title field', () => {
         const input = '{"interactions": [{"message": "no title here';
         expect(parseUserInteractionInput(input).title).to.equal('');
+    });
+});
+
+describe('buildDiffLabel', () => {
+    it('formats two empty refs', () => {
+        expect(buildDiffLabel({ empty: true, label: 'New' }, { empty: true, label: 'Deleted' }))
+            .to.equal('New ⟷ Deleted');
+    });
+
+    it('formats empty left vs path with gitRef', () => {
+        expect(buildDiffLabel({ empty: true, label: 'New' }, { path: 'src/x.ts', gitRef: 'abcdef0123' }))
+            .to.equal('src/x.ts (New ⟷ abcdef01)');
+    });
+
+    it('formats path with gitRef vs working copy of same path', () => {
+        expect(buildDiffLabel({ path: 'src/x.ts', gitRef: 'abcdef0123' }, { path: 'src/x.ts' }))
+            .to.equal('src/x.ts (abcdef01 ⟷ Working Copy)');
+    });
+
+    it('formats two different paths', () => {
+        expect(buildDiffLabel({ path: 'src/old.ts' }, { path: 'src/new.ts' }))
+            .to.equal('src/old.ts ⟷ src/new.ts');
     });
 });
