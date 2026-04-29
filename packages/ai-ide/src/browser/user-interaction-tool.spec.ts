@@ -264,7 +264,7 @@ describe('UserInteractionTool', () => {
         expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
     });
 
-    it('should open diff with empty left side when left-side git ref cannot be resolved', async () => {
+    it('should treat new files (content unreadable at gitRef) as empty rather than an error', async () => {
         mockResourceProvider.callsFake(async (uri: URI) => {
             if (uri.scheme === 'git') {
                 return {
@@ -293,7 +293,7 @@ describe('UserInteractionTool', () => {
         const diffUri = openCall.args[0] as URI;
         expect(DiffUris.isDiffUri(diffUri)).to.be.true;
         const [leftUri] = DiffUris.decode(diffUri);
-        expect(leftUri.scheme).to.equal(MEMORY_TEXT_READONLY);
+        expect(leftUri.scheme).to.equal(MEMORY_TEXT);
     });
 
     it('should open diff with empty right side when right-side cannot be resolved', async () => {

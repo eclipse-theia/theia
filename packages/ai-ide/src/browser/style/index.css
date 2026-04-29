@@ -1641,6 +1641,23 @@
   flex: 1;
 }
 
+.user-interaction-tool.status {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  font-size: var(--theia-ui-font-size0);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.user-interaction-tool.status.completed {
+  color: var(--theia-gitDecoration-addedResourceForeground, var(--theia-descriptionForeground));
+}
+
+.user-interaction-tool.status.canceled {
+  color: var(--theia-errorForeground);
+}
+
 .user-interaction-tool.progress {
   display: flex;
   gap: 4px;
@@ -1650,8 +1667,20 @@
 .user-interaction-tool.progress-dot {
   flex: 1;
   height: 3px;
+  padding: 0;
+  border: none;
   border-radius: 2px;
   background-color: var(--theia-widget-border);
+  cursor: pointer;
+}
+
+.user-interaction-tool.progress-dot:hover {
+  background-color: var(--theia-button-hoverBackground);
+}
+
+.user-interaction-tool.progress-dot:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 2px;
 }
 
 .user-interaction-tool.progress-dot.done {
@@ -1709,6 +1738,7 @@
 }
 
 .user-interaction-tool.option-button {
+  position: relative;
   padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 3);
   font-size: var(--theia-ui-font-size1);
   min-width: 100px;
@@ -1837,7 +1867,10 @@
 }
 
 .user-interaction-tool.option-selected-icon {
-  margin-right: calc(var(--theia-ui-padding) / 2);
+  position: absolute;
+  left: var(--theia-ui-padding);
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .user-interaction-tool.option-button.selected {

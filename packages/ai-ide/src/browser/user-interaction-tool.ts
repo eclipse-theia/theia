@@ -85,6 +85,33 @@ export class UserInteractionTool implements ToolProvider {
     protected readonly pendingInteractions = new Map<string, PendingInteraction>();
 
     getTool(): ToolRequest {
+        const contentRefSchema = {
+            type: 'object',
+            properties: {
+                path: {
+                    type: 'string',
+                    description: 'Workspace-relative file path. Required unless "empty" is true.'
+                },
+                gitRef: {
+                    type: 'string',
+                    description: 'Optional git ref (branch, tag, or commit hash). Ignored when "empty" is true.'
+                },
+                line: {
+                    type: 'number',
+                    description: 'Optional 1-based line number to scroll to. Ignored when "empty" is true.'
+                },
+                empty: {
+                    type: 'boolean',
+                    description: 'Set to true to mark this side as intentionally empty (e.g., for newly added or deleted files in a diff).'
+                },
+                label: {
+                    type: 'string',
+                    description: 'Optional label for an empty side (e.g., "new file", "deleted"). Only used when "empty" is true.'
+                }
+            },
+            description: 'Content reference. Provide "path" for a real file (optionally with "gitRef" and/or "line"), '
+                + 'or set "empty": true to represent a missing side of a diff.'
+        };
         const stepSchema = {
             type: 'object',
             properties: {
@@ -111,52 +138,14 @@ export class UserInteractionTool implements ToolProvider {
                         type: 'object',
                         properties: {
                             ref: {
-                                oneOf: [
-                                    { type: 'string', description: 'Workspace-relative file path.' },
-                                    {
-                                        type: 'object',
-                                        properties: {
-                                            path: { type: 'string', description: 'Workspace-relative file path.' },
-                                            gitRef: { type: 'string', description: 'Optional git ref (branch, tag, or commit hash).' },
-                                            line: { type: 'number', description: 'Optional 1-based line number to scroll to.' }
-                                        },
-                                        required: ['path']
-                                    },
-                                    {
-                                        type: 'object',
-                                        properties: {
-                                            empty: { type: 'boolean', const: true },
-                                            label: { type: 'string', description: 'Optional label for the empty side (e.g., "new file", "deleted").' }
-                                        },
-                                        required: ['empty'],
-                                        description: 'Marks this side as intentionally empty (e.g., for newly added or deleted files).'
-                                    }
-                                ],
-                                description: 'Content reference for the file (or left side of a diff). Use { "empty": true } for files that did not exist.'
+                                ...contentRefSchema,
+                                description: 'Content reference for the file (or left side of a diff). '
+                                    + 'Provide "path" for a real file, or "empty": true for files that did not exist.'
                             },
                             rightRef: {
-                                oneOf: [
-                                    { type: 'string', description: 'Workspace-relative file path.' },
-                                    {
-                                        type: 'object',
-                                        properties: {
-                                            path: { type: 'string', description: 'Workspace-relative file path.' },
-                                            gitRef: { type: 'string', description: 'Optional git ref (branch, tag, or commit hash).' },
-                                            line: { type: 'number', description: 'Optional 1-based line number to scroll to.' }
-                                        },
-                                        required: ['path']
-                                    },
-                                    {
-                                        type: 'object',
-                                        properties: {
-                                            empty: { type: 'boolean', const: true },
-                                            label: { type: 'string', description: 'Optional label for the empty side (e.g., "new file", "deleted").' }
-                                        },
-                                        required: ['empty'],
-                                        description: 'Marks this side as intentionally empty (e.g., for newly added or deleted files).'
-                                    }
-                                ],
-                                description: 'Optional right-side content reference for diff views. Use { "empty": true } for files that no longer exist.'
+                                ...contentRefSchema,
+                                description: 'Optional right-side content reference for diff views. '
+                                    + 'Provide "path" for a real file, or "empty": true for files that no longer exist.'
                             },
                             label: { type: 'string', description: 'Optional label for the link or diff tab.' },
                             autoOpen: {
@@ -370,20 +359,20 @@ export class UserInteractionTool implements ToolProvider {
         const resolved = resolveContentRef(ref) as PathContentRef;
         const uri = this.resolveUri(resolved, workspaceRoot);
         if (uri === undefined) {
+            // No SCM provider could resolve the gitRef — surface as an actionable error.
             return this.errorContentUri(resolved.path, resolved.gitRef!);
         }
         if (await this.canResolveUri(uri)) {
             return uri;
         }
-        if (resolved.gitRef) {
-            return this.errorContentUri(resolved.path, resolved.gitRef);
-        }
+        // SCM resolved the URI but reading content failed — most commonly the file
+        // simply did not exist at that revision (e.g. newly added file). Show empty.
         return this.emptyContentUri(resolved.path);
     }
 
     protected errorContentUri(path: string, gitRef: string): URI {
         const message = `Unable to resolve revision '${gitRef}' for '${path}'.\n\n`
-            + 'The SCM provider could not retrieve this revision. '
+            + 'No SCM provider is available to retrieve this revision. '
             + 'Ensure the Git extension is active and the repository is recognized.';
         return new URI().withScheme(MEMORY_TEXT_READONLY).withPath(path).withQuery(message);
     }

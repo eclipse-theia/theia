@@ -44,6 +44,7 @@ interface UserInteractionComponentProps {
     toolCallId: string;
     tool: UserInteractionTool;
     finished: boolean;
+    canceled: boolean;
     openerService: OpenerService;
 }
 
@@ -53,7 +54,7 @@ interface StepState {
 }
 
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, openerService
+    args, toolCallId, tool, finished, canceled, openerService
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
@@ -99,6 +100,16 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     }, [persistStepState]);
 
     const isSingleStep = stepCount === 1;
+    const hasOptions = !!activeStep?.options && activeStep.options.length > 0;
+    const isSingleInformationalStep = isSingleStep && !hasOptions;
+
+    // Single-step interactions without any actions are purely informational and
+    // should not block the agent. Auto-complete them once rendered.
+    React.useEffect(() => {
+        if (!finished && isSingleInformationalStep) {
+            tool.completeInteraction(toolCallId);
+        }
+    }, [finished, isSingleInformationalStep, tool, toolCallId]);
 
     const handleOptionClick = React.useCallback((value: string) => {
         if (finished) {
@@ -144,6 +155,14 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         }
     }, [handleAddComment]);
 
+    const goToStep = React.useCallback((idx: number) => {
+        if (idx < 0 || idx >= stepCount) {
+            return;
+        }
+        setCurrentStep(idx);
+        setPendingComment('');
+    }, [stepCount]);
+
     const handleAdvance = React.useCallback(() => {
         if (isLastStep) {
             if (!finished) {
@@ -173,16 +192,30 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         ? nls.localize('theia/ai-ide/userInteractionFinishStep', 'Finish')
         : nls.localizeByDefault('Next');
 
-    const hasOptions = !!activeStep.options && activeStep.options.length > 0;
-    const showAdvanceRow = !isSingleStep || (isSingleStep && !hasOptions);
+    const showAdvanceRow = !isSingleStep;
 
     return (
         <div className='tool-call container user-interaction-wizard'>
             <div className='tool-call header'>
                 <span className={codicon('comment-discussion')} />
                 <span className='user-interaction-tool title'>{activeStep.title}</span>
+                {!isSingleStep && (
+                    canceled
+                        ? <span className='user-interaction-tool status canceled'>
+                            <i className={codicon('close')} />
+                            {nls.localizeByDefault('Canceled')}
+                        </span>
+                        : finished
+                            ? <span className='user-interaction-tool status completed'>
+                                <i className={codicon('check')} />
+                                {nls.localize('theia/ai-ide/userInteractionCompleted', 'Completed')}
+                            </span>
+                            : <span className='theia-ChatContentInProgress user-interaction-tool status' role='status' aria-live='polite'>
+                                {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                            </span>
+                )}
             </div>
-            {!isSingleStep && <StepProgress current={currentStep} total={stepCount} />}
+            {!isSingleStep && <StepProgress current={currentStep} total={stepCount} onSelect={goToStep} steps={steps} />}
             {activeStep.links && activeStep.links.length > 0 && (
                 <div className='user-interaction-tool links'>
                     {activeStep.links.map((link, i) => (
@@ -287,16 +320,34 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     );
 };
 
-const StepProgress: React.FC<{ current: number; total: number }> = ({ current, total }) => (
+const StepProgress: React.FC<{
+    current: number;
+    total: number;
+    onSelect: (index: number) => void;
+    steps: UserInteractionStep[];
+}> = ({ current, total, onSelect, steps }) => (
     <div className='user-interaction-tool progress'>
-        {Array.from({ length: total }).map((_, i) => (
-            <span
-                key={i}
-                className={'user-interaction-tool progress-dot'
-                    + (i < current ? ' done' : '')
-                    + (i === current ? ' active' : '')}
-            />
-        ))}
+        {Array.from({ length: total }).map((_, i) => {
+            const label = nls.localize(
+                'theia/ai-ide/userInteractionGoToStep',
+                'Go to step {0}: {1}',
+                i + 1,
+                steps[i]?.title ?? ''
+            );
+            return (
+                <button
+                    key={i}
+                    type='button'
+                    className={'user-interaction-tool progress-dot'
+                        + (i < current ? ' done' : '')
+                        + (i === current ? ' active' : '')}
+                    onClick={() => onSelect(i)}
+                    title={label}
+                    aria-label={label}
+                    aria-current={i === current ? 'step' : undefined}
+                />
+            );
+        })}
     </div>
 );
 
@@ -412,6 +463,7 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 toolCallId={response.id}
                 tool={this.userInteractionTool}
                 finished={response.finished}
+                canceled={parentNode.response.isCanceled}
                 openerService={this.openerService}
                 response={response}
                 confirmationMode={confirmationMode}
