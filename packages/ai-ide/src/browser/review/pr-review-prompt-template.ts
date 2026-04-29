@@ -264,37 +264,40 @@ Use ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} to write the complete walkthrough into t
 
 **Overview section:** Explain what the PR does and its most important changes.
 
-**Changes & Findings section:** A numbered list where each entry contains:
+**Changes & Findings section:** A numbered list of areas. Each finding inside an area has its own status; the area itself only carries a status when it has no findings.
 
 **Status marker legend:**
 - 🔲 Pending — not yet reviewed by user
-- ✅ Confirmed — user confirmed the finding
+- ✅ Confirmed — user confirmed the finding (or, on a no-finding area, reviewed it)
 - ❌ Rejected — user rejected the finding
 - 💬 Discussed — finding was discussed, see notes
-- ⏭️ Skipped — user skipped this area
+- ⏭️ Skipped — user skipped this finding/area
+
+**Writing rules** (these apply to both the plan entries and the wizard messages built from them):
+- "What changed" is **one short sentence**. The diff link shows the code; do not restate it.
+- Each finding has a **bold one-line headline**, then an optional **single sentence** of context. No paragraphs.
+- Do not invent file metadata like \`(added, +440)\` or restate the file list inline; the area's **Files** field already lists them.
 
 \`\`\`markdown
 #### 1. [Area Name] (e.g., "New authentication middleware")
 - **Files:** file1.ts, file2.ts
-- **What changed:** [Neutral description]
+- **What changed:** [One-sentence neutral description]
 - **Findings:**
-  - 🔴 Critical: [description] (line X-Y)
-  - 🟡 Warning: [description] (line X-Y)
-  - 🔵 Info: [description]
-  - 💡 Suggestion: [description]
-- **Status:** 🔲 Pending
+  1. 🔴 **[Critical headline]** — [optional one sentence of context] (file1.ts:X-Y) — Status: 🔲 Pending
+  2. 🟡 **[Warning headline]** — [optional one sentence of context] (file2.ts:X-Y) — Status: 🔲 Pending
+  3. 🔵 **[Info headline]** — [optional one sentence of context] (file1.ts:X) — Status: 🔲 Pending
+  4. 💡 **[Suggestion headline]** — [optional one sentence of context] — Status: 🔲 Pending
 \`\`\`
 
-Areas WITHOUT findings are still listed (for understanding the PR):
+Areas WITHOUT findings are still listed (so the user sees the full PR scope):
 \`\`\`markdown
 #### 2. [Area Name]
 - **Files:** file3.ts
-- **What changed:** [Neutral description]
-- **Findings:** None
-- **Status:** 🔲 Pending
+- **What changed:** [One-sentence neutral description]
+- **Findings:** None — Status: 🔲 Pending
 \`\`\`
 
-Group related files into logical areas. Interleave areas with and without findings in the order that makes sense for understanding the PR.
+Group related files into logical areas. Interleave areas with and without findings in the order that makes sense for understanding the PR. Do not bundle unrelated findings into a single area just to keep the list short — each finding will become its own walkthrough step in Phase 5, and combining them makes the user's vote ambiguous.
 
 ## Phase 5: Interactive Walkthrough
 
@@ -330,43 +333,50 @@ Build the **complete** list of walkthrough steps in advance and pass them in a *
 ### Step 5a: Build the wizard
 
 1. Read the review plan with ~{${GET_TASK_CONTEXT_FUNCTION_ID}}.
-2. Build one step per area in the plan, in plan order. Prepend an "Overview" step at the beginning. Then call ~{${USER_INTERACTION_FUNCTION_ID}} **once** with all steps in the \`interactions\` array.
+2. Build the step list in plan order:
+   - Prepend one "Overview" step.
+   - For each area: emit **one step per finding** the area contains. If the area has no findings, emit **one informational step** for the area.
+3. Call ~{${USER_INTERACTION_FUNCTION_ID}} **once** with all steps in the \`interactions\` array.
+
+**Message format rules** (apply to every step's \`message\`):
+- Keep messages **terse**. The diff link is what the user reads; the message is just enough context to vote.
+- Use markdown structure (short paragraphs separated by blank lines, or short bullets) — never a wall of prose.
+- Do not restate the file list inline; that is what the \`links\` are for. Do not invent line counts like \`(added, +440)\`.
 
 Step shape rules:
 
 **Overview step (first):**
 - \`title\`: "PR Review Walkthrough"
-- \`message\`: Markdown summary of the PR (purpose, scope, number of areas/findings, key changes)
+- \`message\`: 2-4 short bullets covering purpose, scope, and what to expect (number of areas + findings). No prose paragraph.
 - No \`options\` (informational).
 - \`links\`: Optional, e.g. a top-level overview file.
 
-**Per-area step with findings:**
-- \`title\`: "[Area Name]"
-- \`message\`: Markdown explaining what changed and listing findings with severity markers (🔴 Critical / 🟡 Warning / 🔵 Info / 💡 Suggestion). Include the file:line reference inline.
+**Per-finding step:**
+- \`title\`: "[Area Name] — [Finding headline]" (the headline from the plan, kept short).
+- \`message\`: Severity emoji + bold headline on the first line, then **at most 1-2 sentences** of context explaining why it is a finding. Include the file:line reference inline. Do **not** mix in unrelated findings or general "what changed" prose; this step is about exactly one finding.
 - \`options\`: **Exactly two**: \`[{"text": "Confirm finding (it is a real issue)", "buttonLabel": "✅ Confirm finding", "value": "confirm"}, {"text": "Reject finding (the code is fine as-is)", "buttonLabel": "❌ Reject finding", "value": "reject"}]\`
-- \`links\`: One per affected file, with merge-base diff and the finding's line.
+- \`links\`: One per file the finding touches, with merge-base diff and the finding's line.
 
 **Phrasing rule for buttons:** Labels must indicate the user is voting on the **finding**, not on the code. Use "Confirm finding" / "Reject finding", never bare "Approve" / "Deny" (those are ambiguous: the user might think they're approving the code). Apply the same rule to other interactions (e.g. submission steps prefer "Submit review" over "Approve").
 
-**Per-area step without findings (informational):**
+**Per-area informational step (only when the area has no findings):**
 - \`title\`: "[Area Name]"
-- \`message\`: Markdown explaining what changed and noting no findings.
-- No \`options\` (informational).
+- \`message\`: One short sentence on what changed, then "No findings.". No options.
 - \`links\`: One per file in the area.
 
 **Constraints:**
-- One step per area; do **not** split an area across multiple steps.
-- Only include "Confirm finding" / "Reject finding" buttons on steps with concrete findings. Informational steps must omit \`options\` entirely.
+- One step per finding. Do **not** combine multiple findings into a single Confirm/Reject step — the user's vote must apply to exactly one finding.
+- Only include "Confirm finding" / "Reject finding" buttons on per-finding steps. Informational steps (overview, no-finding areas) must omit \`options\` entirely.
 
 ### Step 5b: Process the result
 
 After the wizard returns:
-1. Use ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} to update each area's status in the review plan based on the matching step result:
-   - \`value === "confirm"\` → ✅ Confirmed
-   - \`value === "reject"\` → ❌ Rejected
-   - \`value === undefined\` and the step had no options → ✅ Reviewed (informational)
+1. Use ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} to update the review plan. Each step result maps to either a single finding (per-finding steps) or a no-finding area (informational steps). Match by step \`title\` and update its status:
+   - \`value === "confirm"\` → ✅ Confirmed (per-finding step)
+   - \`value === "reject"\` → ❌ Rejected (per-finding step)
+   - \`value === undefined\` and the step had no options → ✅ Reviewed (informational step: overview or no-finding area)
    - \`skipped === true\` → 🔲 Pending (untouched)
-   - Append any \`comments\` as user notes.
+   - Append any \`comments\` as user notes on the matching finding/area.
 2. If \`completed === false\`, the user canceled. Record the partial results in the plan, then ask the user how they want to proceed (continue with confirmed findings only, or stop).
 3. If any step has comments that read like a question or request for discussion, address them conversationally **before** moving to Phase 6. Once all discussion items are resolved, continue.
 
