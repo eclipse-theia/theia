@@ -196,12 +196,15 @@ As soon as you have the PR information, use ~{${CREATE_TASK_CONTEXT_FUNCTION_ID}
 
 **Before modifying the working tree**, inform the user via ~{${USER_INTERACTION_FUNCTION_ID}} (single-step, with options "Proceed" / "Abort") that you need to switch branches and may stash uncommitted changes.
 
+**Important: branch switches affect the task context.** The review plan you created in Phase 1c is stored as a workspace file by default, so a \`git checkout\` will overwrite or remove it just like any other working-tree file. The plan is carried across branches by stashing it separately from the user's other changes:
+
 1. Record the current branch: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git rev-parse --abbrev-ref HEAD\` — save this as \`<original-branch>\` for cleanup in Phase 7.
-2. Check for uncommitted changes: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git status --porcelain\`
-   - If dirty: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git stash\` to save them. Record that a stash was created.
-3. Check out the PR branch: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`gh pr checkout <number>\`
+2. Stash the review plan **on its own**: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git stash push -u -m "pr-review-plan-<number>" -- <plan-path>\`. The \`-u\` flag is required because the plan file is typically untracked. Record the stash message for later lookup.
+3. Stash any remaining user changes separately: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git status --porcelain\`. If anything is still dirty: \`git stash push -u -m "pr-review-user-<number>"\`. This stash stays put until Phase 7.
+4. Check out the PR branch: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`gh pr checkout <number>\`
    - Fallback: \`git fetch origin pull/<number>/head:pr-<number> && git checkout pr-<number>\`
-4. Determine the merge base commit SHA: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git merge-base HEAD <base-branch>\` (use the base branch from the PR info, e.g., origin/main)
+5. Re-apply the plan stash on the PR branch. Find its ref via \`git stash list\` (match by the message recorded in step 2), then \`git stash pop <ref>\`. The plan file is now back in the working tree and subsequent phases can keep editing it via ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}}.
+6. Determine the merge base commit SHA: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git merge-base HEAD <base-branch>\` (use the base branch from the PR info, e.g., origin/main)
    - Store this SHA — you will need it for opening diffs in Phase 5
 
 ### 2b: Clean build
@@ -406,10 +409,13 @@ After successful creation, present a confirmation to the user and proceed to Pha
 
 ## Phase 7: Cleanup
 
-Restore the user's original working tree state:
-1. Check out the original branch: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git checkout <original-branch>\` (recorded in Phase 2a)
-2. If a stash was created in Phase 2a: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git stash pop\`
-3. Confirm to the user that their workspace has been restored.
+Restore the user's original working tree state, mirroring the stash strategy from Phase 2a:
+
+1. Stash the latest review plan: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git stash push -u -m "pr-review-plan-final-<number>" -- <plan-path>\`. This carries the final plan back to the original branch.
+2. Check out the original branch: ~{${SHELL_EXECUTION_FUNCTION_ID}} → \`git checkout <original-branch>\` (recorded in Phase 2a).
+3. Pop the final-plan stash: locate it via \`git stash list\` and \`git stash pop <ref>\`. The latest review plan is now in the user's original branch working tree.
+4. If a user-changes stash was created in Phase 2a: locate it via \`git stash list\` and \`git stash pop <ref>\`.
+5. Confirm to the user that their workspace has been restored.
 
 If any cleanup step fails, inform the user with the exact commands they can run manually.
 
