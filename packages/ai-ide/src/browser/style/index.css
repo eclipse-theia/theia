@@ -1780,13 +1780,29 @@
 }
 
 .user-interaction-tool.option-button {
-  position: relative;
+  /* Stack the label and the hidden bold spacer in the same grid cell so the
+     button reserves bold width up-front and does not grow when selected. */
+  display: inline-grid;
+  place-items: center;
   margin-left: 0;
-  /* Symmetric horizontal padding reserves space for the absolutely-positioned
-     check icon on the left without shifting the centered label off-center. */
   padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 4);
   font-size: var(--theia-ui-font-size1);
   min-width: 100px;
+}
+
+.user-interaction-tool.option-button-label,
+.user-interaction-tool.option-button-bold-spacer {
+  grid-area: 1 / 1;
+}
+
+.user-interaction-tool.option-button-bold-spacer {
+  font-weight: bold;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.user-interaction-tool.option-button.selected .user-interaction-tool.option-button-label {
+  font-weight: bold;
 }
 
 .user-interaction-tool.option-button:disabled {
@@ -1909,13 +1925,6 @@
 
 .user-interaction-tool.back-button:disabled {
   visibility: hidden;
-}
-
-.user-interaction-tool.option-selected-icon {
-  position: absolute;
-  left: var(--theia-ui-padding);
-  top: 50%;
-  transform: translateY(-50%);
 }
 
 .user-interaction-tool.option-button.selected {

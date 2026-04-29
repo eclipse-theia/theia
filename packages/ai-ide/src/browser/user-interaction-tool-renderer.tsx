@@ -262,6 +262,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                         const isSelected = activeState.value === option.value;
                         const className = 'user-interaction-tool option-button theia-button '
                             + (isSelected ? 'main selected' : 'secondary');
+                        const label = option.buttonLabel || option.text;
                         return (
                             <button
                                 key={i}
@@ -271,8 +272,10 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                                 title={option.description}
                                 aria-pressed={isSelected}
                             >
-                                {isSelected && <i className={`${codicon('check')} user-interaction-tool option-selected-icon`} />}
-                                {option.buttonLabel || option.text}
+                                {/* Hidden bold copy reserves the width needed for the bold "selected" state
+                                    so the button does not grow when the label switches to bold. */}
+                                <span className='user-interaction-tool option-button-bold-spacer' aria-hidden='true'>{label}</span>
+                                <span className='user-interaction-tool option-button-label'>{label}</span>
                             </button>
                         );
                     })}
