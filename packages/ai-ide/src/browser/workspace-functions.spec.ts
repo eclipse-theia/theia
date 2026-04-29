@@ -30,7 +30,9 @@ import {
     FindFilesByPattern
 } from './workspace-functions';
 import { ToolInvocationContext } from '@theia/ai-core';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
 import { Container } from '@theia/core/shared/inversify';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { URI } from '@theia/core/lib/common/uri';
@@ -38,6 +40,20 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+
+const makeTrustAwareReader = (overrides: { [pref: string]: unknown } = {}): TrustAwarePreferenceReader => ({
+    get: <T>(name: string, fallback?: T) => (name in overrides ? overrides[name] as T : fallback),
+    ready: Promise.resolve(),
+    onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+} as unknown as TrustAwarePreferenceReader);
+
+const makeEnvVariablesServer = (homeDirUri: string = 'file:///home/test'): EnvVariablesServer => ({
+    getHomeDirUri: async () => homeDirUri,
+    getExecPath: async () => '',
+    getVariables: async () => [],
+    getValue: async () => undefined,
+    getConfigDirUri: async () => 'file:///home/test/.config'
+} as unknown as EnvVariablesServer);
 
 disableJSDOM();
 
@@ -116,6 +132,8 @@ describe('Workspace Functions Cancellation Tests', () => {
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
         container.bind(ProblemManager).toConstantValue(mockProblemManager);
         container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(GetWorkspaceDirectoryStructure).toSelf();
         container.bind(FileContentFunction).toSelf();
@@ -233,6 +251,8 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
 
@@ -347,6 +367,8 @@ describe('FileContentFunction handler', () => {
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FileContentFunction).toSelf();
 
@@ -707,6 +729,8 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(FindFilesByPattern).toSelf();
 
@@ -733,5 +757,239 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
     it('returns undefined when pattern key is missing', () => {
         const result = getArgumentsShortLabel(JSON.stringify({ glob: '**/*.ts' }));
         expect(result).to.be.undefined;
+    });
+});
+
+describe('FileContentFunction external paths', () => {
+    let container: Container;
+    let fileContentFunction: FileContentFunction;
+    let allowedPaths: string[];
+    let trustedScopeOnly: boolean;
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+        trustedScopeOnly = false;
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => ({
+                isFile: true,
+                isDirectory: false,
+                size: 1024,
+                resource: uri
+            }),
+            read: async (uri: URI) => ({ value: `content-of-${uri.path.toString()}` }),
+            readStream: async () => { throw new Error('not used'); }
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const mockMonacoWorkspace = {
+            getTextDocument: () => undefined
+        } as unknown as MonacoWorkspace;
+
+        const trustAwareReader = {
+            get: <T>(_name: string, fallback?: T) => (trustedScopeOnly ? fallback : (allowedPaths as unknown as T)),
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer('file:///home/test'));
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+
+        fileContentFunction = container.get(FileContentFunction);
+    });
+
+    const callTool = (file: string) =>
+        fileContentFunction.getTool().handler(JSON.stringify({ file }), undefined) as Promise<string>;
+
+    it('rejects absolute path outside the workspace when allow-list is empty', async () => {
+        const result = await callTool('/etc/hosts');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+        expect(parsed.error).to.include('allowedExternalPaths');
+    });
+
+    it('allows absolute path inside an allow-listed directory', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool('/external/configs/myapp.json');
+        expect(result).to.equal('content-of-/external/configs/myapp.json');
+    });
+
+    it('allows file:// URI inside an allow-listed directory', async () => {
+        allowedPaths = ['file:///external/configs'];
+        const result = await callTool('file:///external/configs/myapp.json');
+        expect(result).to.equal('content-of-/external/configs/myapp.json');
+    });
+
+    it('rejects sibling that shares the prefix but is not a child', async () => {
+        // /external/configs-other must NOT be matched by /external/configs
+        allowedPaths = ['/external/configs'];
+        const result = await callTool('/external/configs-other/myapp.json');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('rejects path with .. traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool('/external/configs/../secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('Invalid file path');
+    });
+
+    it('expands ~ in allow-list entries', async () => {
+        allowedPaths = ['~/configs'];
+        const result = await callTool('/home/test/configs/myapp.json');
+        expect(result).to.equal('content-of-/home/test/configs/myapp.json');
+    });
+
+    it('still allows workspace-relative paths', async () => {
+        allowedPaths = [];
+        const result = await callTool('src/index.ts');
+        expect(result).to.equal('content-of-/workspace/src/index.ts');
+    });
+
+    it('accepts Windows-style absolute paths in the allow-list', async () => {
+        // Mixed: backslash separators in the entry, forward-slash in the file argument
+        allowedPaths = ['C:\\external\\configs'];
+        const result = await callTool('C:/external/configs/myapp.json');
+        // The mock returns content keyed off the resolved URI's path. Both forms
+        // normalize to the same `file:///c:/external/configs/myapp.json`.
+        expect(result).to.match(/^content-of-/);
+        expect(result).to.include('external/configs/myapp.json');
+    });
+
+    it('accepts Windows drive paths as the tool argument', async () => {
+        allowedPaths = ['C:/external'];
+        const result = await callTool('C:\\external\\file.txt');
+        expect(result).to.match(/^content-of-/);
+        expect(result).to.include('external/file.txt');
+    });
+
+    it('drops workspace-scoped allow-list values when workspace is untrusted', async () => {
+        // simulate trust-aware reader behavior: when untrusted, only user/default scope is returned
+        trustedScopeOnly = true;
+        const result = await callTool('/external/configs/myapp.json');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+});
+
+describe('FindFilesByPattern with searchRoot', () => {
+    let container: Container;
+    let findFilesByPattern: FindFilesByPattern;
+    let allowedPaths: string[];
+
+    const FS_TREE: Record<string, { isDirectory: boolean; children?: string[] }> = {
+        'file:///workspace': { isDirectory: true, children: ['file:///workspace/a.ts'] },
+        'file:///workspace/a.ts': { isDirectory: false },
+        'file:///external/configs': { isDirectory: true, children: ['file:///external/configs/myapp.json', 'file:///external/configs/other.txt'] },
+        'file:///external/configs/myapp.json': { isDirectory: false },
+        'file:///external/configs/other.txt': { isDirectory: false }
+    };
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => {
+                const node = FS_TREE[uri.toString()];
+                if (!node) {
+                    throw new Error('not found');
+                }
+                return {
+                    isDirectory: node.isDirectory,
+                    isFile: !node.isDirectory,
+                    resource: uri,
+                    children: node.children?.map(child => ({
+                        isDirectory: !!FS_TREE[child]?.isDirectory,
+                        isFile: !FS_TREE[child]?.isDirectory,
+                        resource: new URI(child),
+                        path: { base: child.split('/').pop() }
+                    })) ?? []
+                };
+            },
+            read: async () => ({ value: '' })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const trustAwareReader = {
+            get: <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T,
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FindFilesByPattern).toSelf();
+
+        findFilesByPattern = container.get(FindFilesByPattern);
+    });
+
+    const callTool = (args: object) =>
+        findFilesByPattern.getTool().handler(JSON.stringify(args), undefined) as Promise<string>;
+
+    it('searches the workspace by default and returns relative paths', async () => {
+        const result = await callTool({ pattern: '**/*.ts' });
+        const parsed = JSON.parse(result);
+        expect(parsed.files).to.deep.equal(['a.ts']);
+    });
+
+    it('rejects searchRoot that is not in the allow-list', async () => {
+        const result = await callTool({ pattern: '**/*.json', searchRoot: '/external/configs' });
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('searches an allow-listed external root and returns absolute paths', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool({ pattern: '**/*.json', searchRoot: '/external/configs' });
+        const parsed = JSON.parse(result);
+        expect(parsed.files).to.deep.equal(['/external/configs/myapp.json']);
+    });
+
+    it('honors exclude patterns when using an external searchRoot', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool({
+            pattern: '**/*',
+            exclude: ['**/*.txt'],
+            searchRoot: '/external/configs'
+        });
+        const parsed = JSON.parse(result);
+        expect(parsed.files).to.deep.equal(['/external/configs/myapp.json']);
     });
 });
