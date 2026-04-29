@@ -218,7 +218,6 @@ export class ScmHistoryGraphWidget extends ReactWidget {
                     onClick={() => this.handleRowClick(idx, entry)}
                     onContextMenu={e => this.handleRowContextMenu(e, entry)}
                     onMouseEnter={e => this.handleRowMouseEnter(e, entry)}
-                    onMouseLeave={() => this.hoverService.cancelHover()}
                 >
                     {this.renderGraphSvg(graphRow, svgWidth, isHead)}
                     <div className='scm-history-graph-info'>

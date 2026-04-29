@@ -156,7 +156,6 @@ export class ScmHistoryGraphModel {
             }
 
             const fetchedItems: ScmHistoryItem[] = items ?? [];
-            this._hasMore = fetchedItems.length >= PAGE_SIZE;
             if (fetchedItems.length > 0) {
                 this._cursor = fetchedItems[fetchedItems.length - 1].id;
             }
@@ -166,6 +165,12 @@ export class ScmHistoryGraphModel {
             // were already loaded to prevent graph duplication on scroll.
             const existingIds = new Set(this._entries.map(e => e.item.id));
             const newItems = fetchedItems.filter(i => !existingIds.has(i.id));
+
+            // Only advertise more pages when the provider actually produced
+            // progress: a full page AND at least one new item. If the provider
+            // re-returns only items we already have, further requests would
+            // be stuck in a loop without ever advancing the cursor.
+            this._hasMore = fetchedItems.length >= PAGE_SIZE && newItems.length > 0;
 
             const allItems = [...this._entries.map(e => e.item), ...newItems];
             const graphRows = computeGraphRows(allItems.map(i => ({

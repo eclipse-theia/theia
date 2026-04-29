@@ -35,7 +35,7 @@ export function formatRelativeTime(ms: number): string {
     }
     if (diffDay >= 1) {
         return diffDay === 1
-            ? nls.localize('theia/scm/1DayAgo', '1 day ago')
+            ? nls.localizeByDefault('{0} day ago', diffDay)
             : nls.localizeByDefault('{0} days ago', diffDay);
     }
     if (diffHour >= 1) {
