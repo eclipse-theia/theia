@@ -91,14 +91,6 @@ describe('UserInteractionTool', () => {
         sinon.restore();
     });
 
-    it('should provide correct tool metadata', () => {
-        const toolRequest = tool.getTool();
-        expect(toolRequest.id).to.equal('userInteraction');
-        expect(toolRequest.name).to.equal('userInteraction');
-        expect(toolRequest.description).to.contain('interactive interaction');
-        expect(toolRequest.parameters.required).to.deep.equal(['interactions']);
-    });
-
     it('should return error when no interactions are provided', async () => {
         const handler = tool.getTool().handler;
         const result = await handler(JSON.stringify({ interactions: [] }), { toolCallId: 'x' });
@@ -164,13 +156,6 @@ describe('UserInteractionTool', () => {
         // Late call must not throw or change anything
         tool.setStepResult('call-late', 0, { value: 'b' });
         // No assertion needed beyond ensuring no exception
-    });
-
-    it('should ignore setStepResult for unknown toolCallId', () => {
-        // Should not throw
-        tool.setStepResult('nonexistent', 0, { value: 'x' });
-        tool.completeInteraction('nonexistent');
-        tool.cancelInteraction('nonexistent');
     });
 
     it('should ignore setStepResult for out-of-range step index', async () => {

@@ -1744,6 +1744,11 @@
   padding: 0 calc(var(--theia-ui-padding) * 2);
   color: var(--theia-foreground);
   line-height: 1.5;
+  /* Allow this flex child to shrink below the intrinsic width of its
+     contents (e.g. wide code blocks) instead of pushing the wizard wider. */
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .user-interaction-tool.message p {
@@ -1752,6 +1757,19 @@
 
 .user-interaction-tool.message p:last-child {
   margin-bottom: 0;
+}
+
+.user-interaction-tool.message pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.user-interaction-tool.message code {
+  word-break: break-word;
+}
+
+.user-interaction-tool.message pre code {
+  word-break: normal;
 }
 
 .user-interaction-tool.options {

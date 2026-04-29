@@ -38,4 +38,5 @@ export class PRReviewAgent extends AbstractStreamParsingChatAgent {
     override iconClass: string = 'codicon codicon-git-pull-request-go-to-changes';
     override prompts = [{ id: PR_REVIEW_SYSTEM_PROMPT_ID, defaultVariant: prReviewSystemPrompt, variants: [] }];
     protected override systemPromptId: string = PR_REVIEW_SYSTEM_PROMPT_ID;
+    override tags: string[] = [...this.tags, 'Alpha'];
 }

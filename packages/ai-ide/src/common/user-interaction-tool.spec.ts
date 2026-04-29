@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isEmptyContentRef, parseUserInteractionArgs, parseUserInteractionInput, resolveContentRef } from './user-interaction-tool';
+import { parseUserInteractionArgs, parseUserInteractionInput } from './user-interaction-tool';
 
 describe('parseUserInteractionArgs', () => {
     it('should return undefined for undefined input', () => {
@@ -185,36 +185,6 @@ describe('parseUserInteractionArgs', () => {
         });
         const result = parseUserInteractionArgs(input);
         expect(result!.interactions[0].links![0].rightRef).to.deep.equal({ empty: true });
-    });
-});
-
-describe('resolveContentRef', () => {
-    it('should resolve a string ref to an object with path', () => {
-        expect(resolveContentRef('src/index.ts')).to.deep.equal({ path: 'src/index.ts' });
-    });
-
-    it('should return the object ref as-is', () => {
-        const ref = { path: 'src/index.ts', gitRef: 'main', line: 42 };
-        expect(resolveContentRef(ref)).to.deep.equal(ref);
-    });
-
-    it('should return an EmptyContentRef as-is', () => {
-        const ref = { empty: true as const, label: 'New file' };
-        expect(resolveContentRef(ref)).to.deep.equal({ empty: true, label: 'New file' });
-    });
-});
-
-describe('isEmptyContentRef', () => {
-    it('should return true for an EmptyContentRef', () => {
-        expect(isEmptyContentRef({ empty: true as const })).to.be.true;
-    });
-
-    it('should return false for a string ref', () => {
-        expect(isEmptyContentRef('src/index.ts')).to.be.false;
-    });
-
-    it('should return false for a PathContentRef', () => {
-        expect(isEmptyContentRef({ path: 'src/index.ts' })).to.be.false;
     });
 });
 

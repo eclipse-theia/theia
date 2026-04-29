@@ -206,7 +206,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                         return (
                             <span className='user-interaction-tool status completed'>
                                 <i className={codicon('check')} />
-                                {nls.localize('theia/ai-ide/userInteractionCompleted', 'Completed')}
+                                {nls.localizeByDefault('Completed')}
                             </span>
                         );
                     }
