@@ -325,16 +325,35 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
         return {
             id: GetWorkspaceDirectoryStructure.ID,
             name: GetWorkspaceDirectoryStructure.ID,
-            description: 'Retrieves the complete directory tree structure of the workspace as a nested JSON object. ' +
+            description: 'Retrieves the directory tree structure as a nested JSON object. ' +
+                'By default operates on the workspace; pass `root` to inspect a directory listed in the ' +
+                '`ai-features.workspaceFunctions.allowedExternalPaths` preference instead. ' +
                 'Lists only directories (no files), excluding common non-essential directories (node_modules, hidden files, etc.). ' +
                 'Useful for getting a high-level overview of project organization. ' +
                 'For listing files within a specific directory, use getWorkspaceFileList instead. ' +
                 'For finding specific files, use findFilesByPattern.',
             parameters: {
                 type: 'object',
-                properties: {},
+                properties: {
+                    root: {
+                        type: 'string',
+                        description: 'Optional absolute path or `file://` URI to inspect instead of the workspace. ' +
+                            'Must be inside, or equal to, an entry of the `allowedExternalPaths` preference. ' +
+                            'When omitted, the workspace root is used.'
+                    }
+                },
             },
-            handler: (_: string, ctx?: ToolInvocationContext) => this.getDirectoryStructure(ctx?.cancellationToken),
+            handler: (arg_string: string, ctx?: ToolInvocationContext) => {
+                let root: string | undefined;
+                if (arg_string) {
+                    try {
+                        root = JSON.parse(arg_string).root;
+                    } catch {
+                        // tolerate empty or non-JSON input — keep prior behavior
+                    }
+                }
+                return this.getDirectoryStructure(root, ctx?.cancellationToken);
+            },
         };
     }
 
@@ -344,19 +363,28 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected workspaceScope: WorkspaceFunctionScope;
 
-    private async getDirectoryStructure(cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
+    private async getDirectoryStructure(root?: string, cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
         if (cancellationToken?.isCancellationRequested) {
             return { error: 'Operation cancelled by user' };
         }
 
-        let workspaceRoot;
+        let rootUri: URI;
         try {
-            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+            if (root) {
+                const resolved = await this.workspaceScope.resolveToUri(root);
+                if (!resolved) {
+                    return { error: `Invalid root: '${root}'` };
+                }
+                rootUri = resolved;
+                await this.workspaceScope.ensureAccessible(rootUri);
+            } else {
+                rootUri = await this.workspaceScope.getWorkspaceRoot();
+            }
         } catch (error) {
             return { error: error.message };
         }
 
-        return this.buildDirectoryStructure(workspaceRoot, cancellationToken);
+        return this.buildDirectoryStructure(rootUri, cancellationToken);
     }
 
     private async buildDirectoryStructure(uri: URI, cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
@@ -675,13 +703,17 @@ export class GetWorkspaceFileList implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Relative path to a directory within the workspace (e.g., "src", "src/components"). ' +
-                            'Use "" or "." to list the workspace root. Paths outside the workspace will result in an error.'
+                        description: 'Path to a directory. Relative paths resolve against the workspace root ' +
+                            '(e.g., "src", "src/components"); use "" or "." for the workspace root. ' +
+                            'Absolute paths and `file://` URIs are accepted only when the target is inside the workspace ' +
+                            'or covered by the `ai-features.workspaceFunctions.allowedExternalPaths` preference.'
                     }
                 },
                 required: ['path']
             },
-            description: 'Lists files and directories within a specified workspace directory. ' +
+            description: 'Lists files and directories within a specified directory. ' +
+                'By default operates within the workspace; absolute paths or `file://` URIs may be passed ' +
+                'when they target a location covered by the `allowedExternalPaths` preference. ' +
                 'Returns an array of names where directories are suffixed with "/" (e.g., ["src/", "package.json", "README.md"]). ' +
                 'Use this to explore directory structure step by step. ' +
                 'For finding specific files by pattern, use findFilesByPattern instead. ' +
@@ -704,15 +736,28 @@ export class GetWorkspaceFileList implements ToolProvider {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
 
-        let workspaceRoot;
+        let targetUri: URI;
+        let workspaceRoot: URI;
         try {
             workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
         } catch (error) {
             return JSON.stringify({ error: error.message });
         }
 
-        const targetUri = path ? workspaceRoot.resolve(path) : workspaceRoot;
-        this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
+        try {
+            if (!path || path === '.') {
+                targetUri = workspaceRoot;
+            } else {
+                const resolved = await this.workspaceScope.resolveToUri(path);
+                if (!resolved) {
+                    return JSON.stringify({ error: `Invalid path: '${path}'` });
+                }
+                targetUri = resolved;
+                await this.workspaceScope.ensureAccessible(targetUri);
+            }
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
+        }
 
         try {
             if (cancellationToken?.isCancellationRequested) {

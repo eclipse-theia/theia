@@ -892,6 +892,116 @@ describe('FileContentFunction external paths', () => {
     });
 });
 
+describe('GetWorkspaceFileList / GetWorkspaceDirectoryStructure with external paths', () => {
+    let container: Container;
+    let allowedPaths: string[];
+
+    const FS_TREE: Record<string, { isDirectory: boolean; children?: string[] }> = {
+        'file:///workspace': { isDirectory: true, children: ['file:///workspace/a.ts', 'file:///workspace/sub'] },
+        'file:///workspace/a.ts': { isDirectory: false },
+        'file:///workspace/sub': { isDirectory: true, children: [] },
+        'file:///external/configs': {
+            isDirectory: true,
+            children: ['file:///external/configs/myapp.json', 'file:///external/configs/sub']
+        },
+        'file:///external/configs/myapp.json': { isDirectory: false },
+        'file:///external/configs/sub': { isDirectory: true, children: [] }
+    };
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => {
+                const node = FS_TREE[uri.toString()];
+                if (!node) {
+                    throw new Error('not found');
+                }
+                return {
+                    isDirectory: node.isDirectory,
+                    isFile: !node.isDirectory,
+                    resource: uri,
+                    children: node.children?.map(child => ({
+                        isDirectory: !!FS_TREE[child]?.isDirectory,
+                        isFile: !FS_TREE[child]?.isDirectory,
+                        resource: new URI(child),
+                        path: { base: child.split('/').pop() }
+                    })) ?? []
+                };
+            },
+            read: async () => ({ value: '' })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const trustAwareReader = {
+            get: <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T,
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(GetWorkspaceFileList).toSelf();
+        container.bind(GetWorkspaceDirectoryStructure).toSelf();
+    });
+
+    it('GetWorkspaceFileList rejects absolute path outside the allow-list', async () => {
+        const tool = container.get(GetWorkspaceFileList).getTool();
+        const result = await tool.handler(JSON.stringify({ path: '/external/configs' }), undefined) as string;
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('GetWorkspaceFileList lists an allow-listed external directory', async () => {
+        allowedPaths = ['/external/configs'];
+        const tool = container.get(GetWorkspaceFileList).getTool();
+        const result = await tool.handler(JSON.stringify({ path: '/external/configs' }), undefined);
+        expect(result).to.deep.equal(['myapp.json', 'sub/']);
+    });
+
+    it('GetWorkspaceFileList still lists workspace-relative paths', async () => {
+        const tool = container.get(GetWorkspaceFileList).getTool();
+        const result = await tool.handler(JSON.stringify({ path: '' }), undefined);
+        expect(result).to.deep.equal(['a.ts', 'sub/']);
+    });
+
+    it('GetWorkspaceDirectoryStructure rejects external root not in the allow-list', async () => {
+        const tool = container.get(GetWorkspaceDirectoryStructure).getTool();
+        const result = await tool.handler(JSON.stringify({ root: '/external/configs' }), undefined) as Record<string, unknown>;
+        expect(result.error).to.include('not allowed');
+    });
+
+    it('GetWorkspaceDirectoryStructure walks an allow-listed external root', async () => {
+        allowedPaths = ['/external/configs'];
+        const tool = container.get(GetWorkspaceDirectoryStructure).getTool();
+        const result = await tool.handler(JSON.stringify({ root: '/external/configs' }), undefined);
+        expect(result).to.deep.equal({ sub: {} });
+    });
+
+    it('GetWorkspaceDirectoryStructure preserves prior workspace-only behavior when root omitted', async () => {
+        const tool = container.get(GetWorkspaceDirectoryStructure).getTool();
+        const result = await tool.handler('', undefined);
+        expect(result).to.deep.equal({ sub: {} });
+    });
+});
+
 describe('FindFilesByPattern with searchRoot', () => {
     let container: Container;
     let findFilesByPattern: FindFilesByPattern;

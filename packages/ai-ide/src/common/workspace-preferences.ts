@@ -110,8 +110,8 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             description: nls.localize('theia/ai/workspace/allowedExternalPaths/description',
                 'List of absolute paths or file URIs (directories or files) outside the workspace that AI tools may read. ' +
                 'Supports `~` to refer to the user home directory. Empty by default; opt-in only. ' +
-                'Currently honored by getFileContent and findFilesByPattern. Workspace-scoped values are ignored ' +
-                'when the workspace is not trusted.'),
+                'Honored by getFileContent, findFilesByPattern, getWorkspaceFileList, and getWorkspaceDirectoryStructure. ' +
+                'Workspace-scoped values are ignored when the workspace is not trusted.'),
             default: [],
             items: {
                 type: 'string'
