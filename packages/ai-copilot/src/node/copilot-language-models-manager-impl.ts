@@ -17,7 +17,8 @@
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, COPILOT_USER_AGENT, getCopilotApiBaseUrl } from '../common';
+import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
+import { CopilotOAuthConfig } from '../common/copilot-oauth-config';
 import { CopilotLanguageModel } from './copilot-language-model';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
@@ -33,6 +34,9 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
 
     @inject(CopilotAuthServiceImpl)
     protected readonly authService: CopilotAuthServiceImpl;
+
+    @inject(CopilotOAuthConfig)
+    protected readonly oauthConfig: CopilotOAuthConfig;
 
     protected enterpriseUrl: string | undefined;
     protected readonly toDispose = new DisposableCollection();
@@ -88,7 +92,8 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
                         modelDescription.supportsStructuredOutput,
                         modelDescription.maxRetries,
                         () => this.authService.getAccessToken(),
-                        () => this.enterpriseUrl
+                        () => this.enterpriseUrl,
+                        () => this.oauthConfig.userAgent
                     )
                 ]);
             }
@@ -124,7 +129,7 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
             const response = await fetch(`${baseURL}/models`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    'User-Agent': COPILOT_USER_AGENT,
+                    'User-Agent': this.oauthConfig.userAgent,
                     'Accept': 'application/json'
                 }
             });

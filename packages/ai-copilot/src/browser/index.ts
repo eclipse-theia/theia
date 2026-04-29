@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 export * from './copilot-auth-dialog';
+export * from './copilot-auth-dialog-messages';
 export * from './copilot-command-contribution';
 export * from './copilot-status-bar-contribution';
 export * from './copilot-frontend-application-contribution';
