@@ -185,3 +185,60 @@ describe('CopilotAuthServiceImpl', () => {
         });
     });
 });
+
+describe('CopilotAuthServiceImpl with custom CopilotOAuthConfig', () => {
+
+    const customConfig: CopilotOAuthConfig = {
+        clientId: 'CustomClientId',
+        userAgent: 'MyApp/1.0.0',
+        keystoreService: 'myapp-copilot',
+        keystoreAccount: 'myapp-github'
+    };
+
+    let authService: CopilotAuthServiceImpl;
+    let getPasswordStub: sinon.SinonStub;
+    let deletePasswordStub: sinon.SinonStub;
+
+    beforeEach(() => {
+        const container = new Container();
+
+        getPasswordStub = sinon.stub().resolves(undefined);
+        deletePasswordStub = sinon.stub().resolves(true);
+        const keyStoreService: KeyStoreService = {
+            setPassword: sinon.stub().resolves() as KeyStoreService['setPassword'],
+            getPassword: getPasswordStub as KeyStoreService['getPassword'],
+            deletePassword: deletePasswordStub as KeyStoreService['deletePassword'],
+            findPassword: sinon.stub().resolves(undefined) as KeyStoreService['findPassword'],
+            findCredentials: sinon.stub().resolves([]) as KeyStoreService['findCredentials'],
+            keys: sinon.stub().resolves([]) as KeyStoreService['keys']
+        };
+
+        container.bind(KeyStoreService).toConstantValue(keyStoreService);
+        container.bind(CopilotOAuthConfig).toConstantValue(customConfig);
+        container.bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
+
+        authService = container.get(CopilotAuthServiceImpl);
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    it('should read credentials from the custom keystore service and account', async () => {
+        getPasswordStub.resolves(JSON.stringify({
+            accessToken: 'gho_custom_token',
+            accountLabel: 'customuser'
+        }));
+
+        const token = await authService.getAccessToken();
+
+        expect(token).to.equal('gho_custom_token');
+        expect(getPasswordStub.calledOnceWith(customConfig.keystoreService, customConfig.keystoreAccount)).to.be.true;
+    });
+
+    it('should delete credentials from the custom keystore service and account on sign out', async () => {
+        await authService.signOut();
+
+        expect(deletePasswordStub.calledOnceWith(customConfig.keystoreService, customConfig.keystoreAccount)).to.be.true;
+    });
+});

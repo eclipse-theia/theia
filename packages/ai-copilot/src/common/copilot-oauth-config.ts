@@ -29,7 +29,7 @@ export interface CopilotOAuthConfig {
     readonly clientId: string;
     /**
      * The User-Agent header sent with GitHub API requests.
-     * Defaults to {@link COPILOT_USER_AGENT}.
+     * Defaults to `'Theia-Copilot/1.0.0'`.
      */
     readonly userAgent: string;
     /**
