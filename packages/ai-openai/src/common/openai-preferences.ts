@@ -36,11 +36,12 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             description: nls.localize('theia/ai/openai/models/description', 'Official OpenAI models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: [
+                'gpt-5.5',
+                'gpt-5.5-pro',
                 'gpt-5.4',
                 'gpt-5.4-pro',
                 'gpt-5.4-mini',
-                'gpt-4.1',
-                'gpt-4o'
+                'gpt-5.4-nano'
             ],
             items: {
                 type: 'string'

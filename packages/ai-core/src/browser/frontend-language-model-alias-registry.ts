@@ -29,8 +29,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code',
             defaultModelIds: [
-                'anthropic/claude-opus-4-6',
-                'openai/gpt-5.4',
+                'anthropic/claude-opus-4-7',
+                'openai/gpt-5.5',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code/description', 'Optimized for code understanding and generation tasks.')
@@ -38,8 +38,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/universal',
             defaultModelIds: [
-                'anthropic/claude-opus-4-6',
-                'openai/gpt-5.4',
+                'anthropic/claude-opus-4-7',
+                'openai/gpt-5.5',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/universal/description', 'Well-balanced for both code and general language use.')
@@ -48,7 +48,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
             id: 'default/code-completion',
             defaultModelIds: [
                 'anthropic/claude-sonnet-4-6',
-                'openai/gpt-5.4',
+                'openai/gpt-5.5',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code-completion/description', 'Best suited for code autocompletion scenarios.')
@@ -56,8 +56,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'anthropic/claude-opus-4-6',
-                'openai/gpt-5.4',
+                'anthropic/claude-opus-4-7',
+                'openai/gpt-5.5',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/summarize/description', 'Models prioritized for summarization and condensation of content.')
