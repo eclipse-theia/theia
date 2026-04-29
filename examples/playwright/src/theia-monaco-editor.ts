@@ -91,25 +91,67 @@ export class TheiaMonacoEditor extends TheiaPageObject {
         return (await lineLocator.elementHandle()) ?? undefined;
     }
 
+    /**
+     * Returns the locator for the given model line number.
+     *
+     * Monaco uses virtual rendering so only lines in the viewport are in the DOM.
+     * Each `.view-line` element has a `style.top` value corresponding to its model position.
+     * This method uses that to find the correct line, scrolling to reveal it if necessary.
+     */
     async line(lineNumber: number): Promise<Locator> {
         await this.waitForVisible();
-        const lines = await this.locator.locator(this.LINES_SELECTOR).all();
-        if (!lines || lines.length === 0) {
-            throw new Error('Couldn\'t retrieve lines of monaco editor');
+
+        let index = await this.findLineIndex(lineNumber);
+        if (index >= 0) {
+            return this.locator.locator(this.LINES_SELECTOR).nth(index);
         }
 
-        const linesWithXCoordinates = [];
-        for (const line of lines) {
-            await line.waitFor({ state: 'visible' });
-            const box = await line.boundingBox();
-            linesWithXCoordinates.push({ x: box ? box.x : Number.MAX_VALUE, line });
+        // Line not in viewport, scroll to reveal it
+        await this.locator.click();
+        await this.page.keyboard.press('Control+Home');
+        await this.locator.locator(this.LINES_SELECTOR).first().waitFor({ state: 'visible' });
+
+        index = await this.findLineIndex(lineNumber);
+        if (index >= 0) {
+            return this.locator.locator(this.LINES_SELECTOR).nth(index);
         }
-        linesWithXCoordinates.sort((a, b) => a.x.toString().localeCompare(b.x.toString()));
-        const lineInfo = linesWithXCoordinates[lineNumber - 1];
-        if (!lineInfo) {
-            throw new Error(`Could not find line number ${lineNumber}`);
+
+        // Line might be near the end, try scrolling there
+        await this.page.keyboard.press('Control+End');
+        await this.locator.locator(this.LINES_SELECTOR).first().waitFor({ state: 'visible' });
+
+        index = await this.findLineIndex(lineNumber);
+        if (index >= 0) {
+            return this.locator.locator(this.LINES_SELECTOR).nth(index);
         }
-        return lineInfo.line;
+
+        throw new Error(`Could not find line number ${lineNumber}`);
+    }
+
+    /**
+     * Finds the DOM index of the `.view-line` element that corresponds to the given model line number.
+     * Uses the `style.top` value of each `.view-line` to compute the model line number.
+     * Returns -1 if the line is not currently rendered in the viewport.
+     */
+    protected async findLineIndex(lineNumber: number): Promise<number> {
+        return this.locator.evaluate((editor, targetLine) => {
+            const viewLines = editor.querySelectorAll('.view-lines > .view-line') as NodeListOf<HTMLElement>;
+            if (viewLines.length === 0) {
+                return -1;
+            }
+            const lineHeight = viewLines[0].getBoundingClientRect().height;
+            if (lineHeight <= 0) {
+                return -1;
+            }
+            const targetTop = (targetLine - 1) * lineHeight;
+            for (let i = 0; i < viewLines.length; i++) {
+                const top = parseFloat(viewLines[i].style.top) || 0;
+                if (Math.abs(top - targetTop) < lineHeight * 0.5) {
+                    return i;
+                }
+            }
+            return -1;
+        }, lineNumber);
     }
 
     async textContentOfLineContainingText(text: string): Promise<string | undefined> {

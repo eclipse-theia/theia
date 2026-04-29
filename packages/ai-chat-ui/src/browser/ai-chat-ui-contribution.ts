@@ -73,7 +73,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
-        tooltip: nls.localize('theia/ai/chat-ui/renameChat', 'Rename Chat'),
+        tooltip: nls.localizeByDefault('Rename Chat'),
     };
     protected static readonly REMOVE_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-remove-close',
@@ -158,7 +158,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
             execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
             isVisible: widget => this.activationService.isActive,
-            isEnabled: widget => this.activationService.isActive,
+            isEnabled: widget => this.activationService.canRun,
         });
         registry.registerCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT, {
             execute: async () => {
@@ -181,7 +181,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     && !this.taskContextService.hasSummary(activeSession);
             },
             isEnabled: widget => {
-                if (!this.activationService.isActive) { return false; }
+                if (!this.activationService.canRun) { return false; }
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return activeSession?.model.location === ChatAgentLocation.Panel
@@ -202,7 +202,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 return !!activeSession && this.taskContextService.hasSummary(activeSession);
             },
             isEnabled: widget => {
-                if (!this.activationService.isActive) { return false; }
+                if (!this.activationService.canRun) { return false; }
                 return this.withWidget(widget, () => true);
             }
         });
@@ -216,7 +216,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 newSession.model.context.addVariables({ variable: TASK_CONTEXT_VARIABLE, arg: selectedContextId });
             },
             isVisible: () => this.activationService.isActive,
-            isEnabled: () => this.activationService.isActive
+            isEnabled: () => this.activationService.canRun
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: async () => {
@@ -224,7 +224,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 return this.selectChat();
             },
             isEnabled: () => {
-                if (!this.activationService.isActive) {
+                if (!this.activationService.canRun) {
                     return false;
                 }
                 // Enable if there are active sessions with titles OR persisted sessions
@@ -235,13 +235,13 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerCommand(ChatCommands.AI_CHAT_RENAME_SESSION, {
             execute: (session: ChatSessionMetadata | string) => this.renameSession(typeof session === 'string' ? session : session.sessionId),
             isVisible: () => this.activationService.isActive,
-            isEnabled: () => this.activationService.isActive
+            isEnabled: () => this.activationService.canRun
         });
         registry.registerCommand(ChatCommands.AI_CHAT_DELETE_SESSION, {
             execute: (session: ChatSessionMetadata | string, confirm?: boolean) =>
                 this.deleteSession(typeof session === 'string' ? session : session.sessionId, typeof session === 'string' ? confirm : true),
             isVisible: () => this.activationService.isActive,
-            isEnabled: () => this.activationService.isActive
+            isEnabled: () => this.activationService.canRun
         });
         registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_BACK, {
             execute: () => this.navigationService.back(),
@@ -343,6 +343,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.taskContextService.onDidChange(() => sessionSummarizibilityChangedEmitter.fire());
         this.chatService.onSessionEvent(event => event.type === 'activeChange' && sessionSummarizibilityChangedEmitter.fire());
         this.activationService.onDidChangeActiveStatus(() => sessionSummarizibilityChangedEmitter.fire());
+        this.activationService.onDidChangeCanRun(() => sessionSummarizibilityChangedEmitter.fire());
         registry.registerItem({
             id: 'chat-view.' + ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
             command: ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,

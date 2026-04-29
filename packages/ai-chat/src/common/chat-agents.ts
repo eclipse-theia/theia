@@ -512,7 +512,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 messages,
                 tools,
                 settings,
-                thinkingMode: commonSettings?.thinkingMode,
+                reasoning: commonSettings?.reasoning,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,

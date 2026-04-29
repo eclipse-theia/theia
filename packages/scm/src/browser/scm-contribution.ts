@@ -482,6 +482,22 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                     hcDark: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6),
                     hcLight: Color.transparent(ScmColors.editorGutterDeletedBackground, 0.6)
                 }, description: 'Overview ruler marker color for deleted content.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverAdditionsForeground', defaults: {
+                    dark: '#81B88B',
+                    light: '#587C0C',
+                    hcDark: '#A1E3AD',
+                    hcLight: '#374E06'
+                }, description: 'History item hover additions foreground color.'
+            },
+            {
+                id: 'scmGraph.historyItemHoverDeletionsForeground', defaults: {
+                    dark: '#C74E39',
+                    light: '#AD0707',
+                    hcDark: '#C74E39',
+                    hcLight: '#AD0707'
+                }, description: 'History item hover deletions foreground color.'
             }
         );
     }

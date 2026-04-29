@@ -29,7 +29,7 @@
     "bundle": "theia build --mode development",
     "compile": "tsc -b",
     "rebuild": "theia rebuild:{{app}} --cacheRoot ../..",
-    "start": "THEIA_CONFIG_DIR=./theia-config-dir theia start --plugins=local-dir:../../noPlugins --log-level=fatal"
+    "start": "THEIA_CONFIG_DIR=\"{{configDir}}\" theia start --plugins=local-dir:../../noPlugins --log-level=debug"
   },
   "devDependencies": {
     "@theia/cli": "{{version}}"

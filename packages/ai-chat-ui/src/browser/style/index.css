@@ -713,8 +713,9 @@ div:last-child>.theia-ChatNode {
   flex-direction: row-reverse;
 }
 
-/* Mode selector - compact SelectComponent inside toolbar */
-.theia-ChatInput-ModeSelector.theia-select-component {
+/* Mode and reasoning selectors - compact SelectComponents inside toolbar */
+.theia-ChatInput-ModeSelector.theia-select-component,
+.theia-ChatInput-ReasoningSelector.theia-select-component {
   min-width: unset;
   min-height: unset;
   height: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
@@ -729,24 +730,101 @@ div:last-child>.theia-ChatNode {
   outline: none;
 }
 
-.theia-ChatInput-ModeSelector .theia-select-component-chevron {
+/* Anchor for the off-level slash overlay drawn via ::after. */
+.theia-ChatInput-ReasoningSelector.theia-select-component {
+  position: relative;
+}
+
+.theia-ChatInput-ModeSelector .theia-select-component-chevron,
+.theia-ChatInput-ReasoningSelector .theia-select-component-chevron {
   font-size: var(--theia-ui-font-size1);
   margin-left: calc(var(--theia-ui-padding) / 3);
 }
 
-.theia-ChatInput-ModeSelector.theia-select-component:hover {
+.theia-ChatInput-ModeSelector.theia-select-component:hover,
+.theia-ChatInput-ReasoningSelector.theia-select-component:hover {
   background-color: var(--theia-toolbar-hoverBackground);
 }
 
-.theia-ChatInput-ModeSelector.theia-select-component:focus-visible {
+.theia-ChatInput-ModeSelector.theia-select-component:focus-visible,
+.theia-ChatInput-ReasoningSelector.theia-select-component:focus-visible {
   outline: 1px solid var(--theia-focusBorder);
   outline-offset: -1px;
 }
 
-.theia-ChatInput-ModeSelector.disabled {
+.theia-ChatInput-ModeSelector.disabled,
+.theia-ChatInput-ReasoningSelector.disabled {
   opacity: var(--theia-mod-disabled-opacity);
   cursor: default;
   pointer-events: none;
+}
+
+/* Inject a leading lightbulb icon inside the reasoning selector so it shares the dropdown's
+   click area, hover/focus styles, and visual bounds (no DOM gap, single control). Sized to match
+   the toolbar's other codicons (e.g. capabilities wrench) rather than the small chevron.
+   The base glyph is the filled lightbulb (\ea61); per-level overrides below swap glyph, opacity
+   or color to give a visual cue that scales with the chosen reasoning intensity. */
+.theia-ChatInput-ReasoningSelector.theia-select-component::before {
+  font-family: codicon;
+  content: '\ea61';
+  /* codicon-lightbulb (filled) — default for low/medium/high */
+  font-size: var(--theia-icon-size);
+  line-height: 1;
+  margin-right: calc(var(--theia-ui-padding) / 3);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Off: empty bulb glyph + CSS-drawn diagonal slash overlay (mimics MDI's lightbulb-off). */
+.theia-ChatInput-ReasoningSelector.reasoning-level-off::before {
+  content: '\ec40';
+  /* codicon-lightbulb-empty */
+  opacity: 0.85;
+}
+
+.theia-ChatInput-ReasoningSelector.reasoning-level-off::after {
+  content: '';
+  position: absolute;
+  /* Center over the ::before icon area: padding-left + half icon width. */
+  left: calc(var(--theia-ui-padding) * 2 / 3 + var(--theia-icon-size) / 2);
+  top: 50%;
+  width: calc(var(--theia-icon-size) * 0.95);
+  height: 1.5px;
+  background-color: currentColor;
+  border-radius: 1px;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Minimal: empty (outline only) bulb at low opacity — "on, but barely".
+   Lower opacity than `low` so the brightness order matches the level order:
+   the crisper outline at full opacity would otherwise read brighter than a filled bulb at 0.55. */
+.theia-ChatInput-ReasoningSelector.reasoning-level-minimal::before {
+  content: '\ec40';
+  /* codicon-lightbulb-empty */
+  opacity: 0.5;
+}
+
+/* Low: filled bulb, perceptibly more present than minimal. */
+.theia-ChatInput-ReasoningSelector.reasoning-level-low::before {
+  opacity: 0.7;
+}
+
+/* Medium: filled bulb, moderately bright. */
+.theia-ChatInput-ReasoningSelector.reasoning-level-medium::before {
+  opacity: 0.9;
+}
+
+/* High: filled bulb at full opacity, tinted with the warning foreground (warm/yellow). */
+.theia-ChatInput-ReasoningSelector.reasoning-level-high::before {
+  color: var(--theia-editorWarning-foreground);
+}
+
+/* Auto: lightbulb-sparkle — "the model decides automatically". */
+.theia-ChatInput-ReasoningSelector.reasoning-level-auto::before {
+  content: '\ec1f';
+  /* codicon-lightbulb-sparkle */
 }
 
 .theia-CodePartRenderer-root {
@@ -1208,12 +1286,6 @@ div:last-child>.theia-ChatNode {
   outline-color: var(--theia-editor-background);
 }
 
-.session-settings-thinking-mode {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
-  margin-bottom: 8px;
-}
-
 .session-settings-section-header {
   font-weight: 600;
   font-size: 13px;
@@ -1241,35 +1313,6 @@ div:last-child>.theia-ChatNode {
 .session-settings-checkbox-container label {
   cursor: pointer;
   user-select: none;
-}
-
-.session-settings-budget-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 22px;
-}
-
-.session-settings-budget-container label {
-  white-space: nowrap;
-}
-
-.session-settings-budget-container label.disabled {
-  color: var(--theia-disabledForeground);
-}
-
-.session-settings-budget-container input[type="number"] {
-  width: 100px;
-  padding: 4px 8px;
-  border: 1px solid var(--theia-input-border);
-  border-radius: 4px;
-  background-color: var(--theia-input-background);
-  color: var(--theia-input-foreground);
-}
-
-.session-settings-budget-container input[type="number"]:disabled {
-  opacity: var(--theia-mod-disabled-opacity);
-  cursor: not-allowed;
 }
 
 .session-settings-confirmation-timeout {

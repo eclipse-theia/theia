@@ -13,6 +13,7 @@ import { CommandRegistry, PreferenceService, DisposableCollection } from '@theia
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalFrontendContribution, TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { ApplicationShell, WidgetManager, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TerminalManagerWidget } from './terminal-manager-widget';
 import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution';
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
@@ -42,6 +43,9 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
+
+    @inject(FrontendApplicationStateService)
+    protected readonly stateService: FrontendApplicationStateService;
 
     protected commandHandlerDisposables = new DisposableCollection();
 
@@ -176,7 +180,19 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     protected registerHandlers(): void {
         this.unregisterHandlers();
         this.registerCommands();
-        this.registerTerminalListener();
+        this.deferTerminalListenerUntilLayoutReady();
+    }
+
+    /**
+     * Defers the terminal creation listener until layout restoration is complete,
+     * preventing restored terminals from being mistaken for externally created ones.
+     */
+    protected deferTerminalListenerUntilLayoutReady(): void {
+        this.stateService.reachedState('initialized_layout').then(() => {
+            if (!this.commandHandlerDisposables.disposed) {
+                this.registerTerminalListener();
+            }
+        });
     }
 
     protected registerCommands(): void {

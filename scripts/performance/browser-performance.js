@@ -17,10 +17,21 @@
 const puppeteer = require('puppeteer');
 const fsx = require('fs-extra');
 const { resolve } = require('path');
-const { delay, githubReporting, isLCP, lcp, measure } = require('./common-performance');
+const {
+    analyzeTrace, ContributionCollector, delay, frontendSettled, githubReporting,
+    isLCP, lcp, measureMulti, parseStopwatchLog
+} = require('./common-performance');
 
 const workspacePath = resolve('./workspace');
 const profilesPath = './profiles/';
+
+// Baseline wait after the application shell becomes visible, to give Chrome a chance
+// to emit one more LCP candidate into the trace before we stop recording.
+const LCP_GRACE_MS = 2000;
+// Maximum time (including LCP_GRACE_MS) to wait for the frontend-settled console log.
+// `armAllSettled()` is called right after state === 'ready', but the log fires only
+// once the slowest tracked contribution promise resolves — slow startups need headroom.
+const SETTLED_TIMEOUT_MS = 30000;
 
 let name = 'Browser Frontend Startup';
 let url = 'http://localhost:3000/#' + workspacePath;
@@ -99,27 +110,65 @@ let runs = 10;
 
 async function measurePerformance(name, url, folder, headless, runs) {
 
-    /** @type import('./common-performance').TestFunction */
+    // Collects per-contribution timings from Stopwatch log lines observed in the browser console
+    // across all runs, so that consumers like extension-impact.js can break down startup cost
+    // by contribution.
+    const contributions = new ContributionCollector();
+
     const testScenario = async (runNr) => {
         const browser = await puppeteer.launch({ headless: headless });
         const page = await browser.newPage();
 
         const file = folder + '/' + runNr + '.json';
+
+        // Listen for Stopwatch log lines in the browser console and scrape their metrics.
+        // A dedicated promise is resolved when the frontend-settled log arrives so that
+        // the scenario can proceed as soon as the metric is captured, rather than always
+        // waiting the full timeout.
+        let settledSeconds;
+        let resolveSettled;
+        const settledPromise = new Promise(resolve => { resolveSettled = resolve; });
+        page.on('console', msg => {
+            const parsed = parseStopwatchLog(msg.text());
+            if (!parsed) {
+                return;
+            }
+            if (parsed.activity === frontendSettled) {
+                settledSeconds = parsed.secondsSinceStart;
+                resolveSettled();
+            } else if (parsed.activity.startsWith('Frontend ')) {
+                contributions.record(parsed.activity, parsed.ms / 1000);
+            }
+        });
+
         await page.tracing.start({ path: file, screenshots: true });
         await page.goto(url);
         // This selector is for the theia application, which is exposed when the loading indicator vanishes
         await page.waitForSelector('.theia-ApplicationShell', { visible: true });
-        // Prevent tracing from stopping too soon and skipping a LCP candidate
-        await delay(1000);
+        // Give Chrome a chance to emit a final LCP candidate, then wait for the
+        // frontend-settled console log (up to SETTLED_TIMEOUT_MS total). If settled already
+        // fired during the baseline, the race resolves immediately.
+        await delay(LCP_GRACE_MS);
+        await Promise.race([settledPromise, delay(SETTLED_TIMEOUT_MS - LCP_GRACE_MS)]);
 
         await page.tracing.stop();
 
         await browser.close();
 
-        return file;
+        return { traceFile: file, settledSeconds };
     };
 
-    measure(name, lcp, runs, testScenario, isStart, isLCP);
+    await measureMulti(name, runs, testScenario, [
+        {
+            scenario: lcp,
+            analyze: ctx => analyzeTrace(ctx.traceFile, isStart, isLCP)
+        },
+        {
+            scenario: frontendSettled,
+            analyze: ctx => ctx.settledSeconds
+        }
+    ]);
+    contributions.logSummary(name);
 }
 
 function isStart(x) {

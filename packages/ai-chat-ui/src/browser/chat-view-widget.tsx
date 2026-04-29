@@ -124,7 +124,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
         this.updateInputEnabledState();
 
-        this.activationService.onDidChangeActiveStatus(change => {
+        this.activationService.onDidChangeCanRun(change => {
             this.treeWidget.setEnabled(change);
             this.updateInputEnabledState();
             this.update();
@@ -149,9 +149,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected async updateInputEnabledState(): Promise<void> {
-        const shouldEnable = this.activationService.isActive && await this.shouldEnableInput();
+        const shouldEnable = this.activationService.canRun && await this.shouldEnableInput();
         this.inputWidget.setEnabled(shouldEnable);
-        this.treeWidget.setEnabled(this.activationService.isActive);
+        this.treeWidget.setEnabled(this.activationService.canRun);
     }
 
     /**

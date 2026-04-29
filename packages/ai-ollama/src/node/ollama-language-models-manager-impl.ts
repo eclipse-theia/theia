@@ -56,7 +56,8 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                 const status = this.calculateStatus(host);
                 await this.languageModelRegistry.patchLanguageModel<OllamaModel>(modelDescription.id, {
                     proxy: proxyUrl,
-                    status
+                    status,
+                    reasoningSupport: modelDescription.reasoningSupport
                 });
             } else {
                 const status = this.calculateStatus(host);
@@ -66,7 +67,8 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                         modelDescription.model,
                         status,
                         hostProvider,
-                        proxyUrl
+                        proxyUrl,
+                        modelDescription.reasoningSupport
                     )
                 ]);
             }

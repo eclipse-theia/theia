@@ -6,12 +6,14 @@
 
 ## 1.71.0 - TBD
 
+- [ai] replaced the per-model thinking-mode toggle with a provider-agnostic reasoning selector and `ReasoningSettings` abstraction; the chosen level can be persisted per agent via the chat capabilities save action [#17363](https://github.com/eclipse-theia/theia/pull/17363)
 - [core] added `errorHandling` option to `Emitter` to control how listener exceptions are handled: `'log'` (default), `'propagate'` (collect and re-throw), or a custom callback [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275)
 - [core] the Inversify containers created in the backend for each frontend connection (connection-scoped child containers) now unbind all services via `Container::unbindAllAsync()` upon closure of the RPC channel. This allows clean-up methods annotated with `@preDestroy()` to run, releasing resources. Downstream applications should be aware that service instances deliberately shared between connection-scoped containers, and service instances obtained from the root container that are explicitly bound again in the connection-scoped module, will cause such shared services to be destroyed while still in use in other containers. Both of these scenarios are already Inversify anti-patterns, so are not expected to arise in practice. [#17384](https://github.com/eclipse-theia/theia/pull/17384)
 
 <a name="breaking_changes_1.71.0">[Breaking Changes:](#breaking_changes_1.71.0)</a>
 
+- [ai] removed `ThinkingModeSettings` and the `thinkingMode` field from `UserRequest` / `CommonChatSessionSettings` in favor of `ReasoningSettings { level }` and the `reasoning` field. Provider model descriptions now expose `reasoningSupport` / `reasoningApi`. Adopters consuming `@theia/ai-core` or `@theia/ai-chat` should migrate to the new request shape [#17363](https://github.com/eclipse-theia/theia/pull/17363)
 - [core] changed the visibility of `ChannelMultiplexer.pendingOpen` from `protected` to `private` [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [core] `Uint8ArrayWriteBuffer`'s `onCommit` emitter now propagates exceptions from listeners instead of silently catching them. Code that relied on exceptions being swallowed should add its own error handling [#17332](https://github.com/eclipse-theia/theia/pull/17332)
 - [editor] replaced the per-URI editor counter system in `EditorManager` with random counters [#17275](https://github.com/eclipse-theia/theia/pull/17275):
@@ -21,6 +23,8 @@
   - Removed protected method `createCounterForUri(uri)` (replaced by `nextCounter()`)
   - Removed protected method `getOrCreateCounterForUri(uri)`
 - [plugin-ext] changed the timing of plugin contribution loading: `beforeLoadContributions` now waits for `attached_shell` instead of `initialized_layout`. Overrides of `beforeLoadContributions` or `loadContributions` that assume the full layout is already initialized may need to adjust their logic [#17278](https://github.com/eclipse-theia/theia/pull/17278)
+- [core] disabled Lumino's overflow menu feature in the main menu bar by passing `overflowMenuOptions: { isVisible: false }` to the `MenuBarWidget` constructor. The feature was never functional in Theia and could cause a `RangeError` when toggling menu bar visibility. Adopters who need overflow menu support can override `BrowserMainMenuFactory.createMenuBar` to construct the `DynamicMenuBarWidget` with different options [#17362](https://github.com/eclipse-theia/theia/pull/17362)
+- [core] removed protected methods `addBlurListener(widget, saveable)` and `windowHasFocus(document)` from `SaveableService`. Window-level focus tracking is now handled by the new `WindowFocusService` [#17360](https://github.com/eclipse-theia/theia/pull/17360)
 
 ## 1.70.0 - 3/26/2026
 

@@ -58,7 +58,7 @@ export class DefaultChatSessionCardActionContribution implements ChatSessionCard
             {
                 commandId: ChatCommands.AI_CHAT_RENAME_SESSION.id,
                 iconClass: codicon('edit'),
-                tooltip: nls.localize('theia/ai/ide/renameChat', 'Rename Chat'),
+                tooltip: nls.localizeByDefault('Rename Chat'),
                 priority: 0,
             },
             {

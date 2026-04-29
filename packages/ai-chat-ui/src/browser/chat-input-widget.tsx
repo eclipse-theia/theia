@@ -16,18 +16,23 @@
 import {
     ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatHierarchyBranch,
     ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel,
-    ChatRequestParser, ChatMode, ChatSession
+    ChatRequestParser, ChatMode, ChatSession, MutableChatModel, ChatSessionSettings
 } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ParsedChatRequest } from '@theia/ai-chat/lib/common/parsed-chat-request';
-import { GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapability } from '@theia/ai-core';
+import {
+    GenericCapabilitySelections, AIVariableResolutionRequest, ParsedCapability,
+    FrontendLanguageModelRegistry, ReasoningLevel, ReasoningSettings, ReasoningSupport,
+    PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry
+} from '@theia/ai-core';
+import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService, CompletionNotificationOptions } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
-import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable } from '@theia/core';
+import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -54,11 +59,21 @@ import { ChatInputFocusService } from './chat-input-focus-service';
 import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service';
 import { GenericCapabilitiesSection } from './generic-capabilities-section';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
-import { CHAT_VIEW_TOKEN_USAGE_ENABLED } from './chat-view-preferences';
 import {
-    computeSessionTokenUsage, getUsageColorClass,
-    getLatestTokenUsage, buildBarTooltip, CHAT_CONTEXT_WINDOW_SIZE
+    CHAT_VIEW_TOKEN_USAGE_ENABLED,
+    CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED,
+    CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE,
+    CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT
+} from './chat-view-preferences';
+import {
+    buildBarTooltip,
+    CHAT_CONTEXT_WINDOW_SIZE,
+    computeSessionTokenUsage,
+    decideTokenUsageWarning,
+    getLatestTokenUsage,
+    getUsageColorClass
 } from './chat-token-usage-indicator-util';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from './chat-view-commands';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections) => Promise<void>;
 type Unpin = () => void;
@@ -165,10 +180,21 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(PromptService)
     protected readonly promptService: PromptService;
 
+    @inject(FrontendLanguageModelRegistry)
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
+
     @inject(PreferenceService) @optional()
     protected readonly preferenceService: PreferenceService | undefined;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
     protected tokenUsageEnabled = false;
+    /** Sessions we have already notified for the current warning cycle (re-armed when usage drops below the threshold). */
+    protected readonly notifiedSessions = new Set<string>();
 
     protected navigationState: ChatInputNavigationState;
 
@@ -236,6 +262,101 @@ export class AIChatInputWidget extends ReactWidget {
         }
     };
 
+    /** Reasoning capability of the model the receiving agent would currently use; undefined hides the selector. */
+    protected currentReasoningSupport?: ReasoningSupport;
+    /** Id (`provider/model`) of the model that backs {@link currentReasoningSupport}; used to resolve preference defaults. */
+    protected currentLanguageModelId?: string;
+    /** Saved reasoning selection for the receiving agent (loaded from {@link AISettingsService}); kept in sync with the persisted value. */
+    protected savedReasoning?: ReasoningSettings;
+
+    protected handleReasoningChange = async (level: ReasoningLevel): Promise<void> => {
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        if (!session) {
+            return;
+        }
+        const currentSettings = session.model.settings ?? {};
+        const newSettings: ChatSessionSettings = {
+            ...currentSettings,
+            commonSettings: {
+                ...currentSettings.commonSettings,
+                reasoning: { level }
+            }
+        };
+        (session.model as MutableChatModel).setSettings(newSettings);
+
+        // Auto-persist the reasoning selection per-agent so it is restored on the next session
+        // and the capabilities indicator does not light up for an unrelated configuration concern.
+        if (this.receivingAgent) {
+            try {
+                await this.aiSettingsService.updateAgentSettings(this.receivingAgent.agentId, {
+                    reasoning: { level }
+                });
+                this.savedReasoning = { level };
+            } catch (error) {
+                console.error('Failed to persist reasoning selection:', error);
+            }
+        }
+
+        this.update();
+    };
+
+    /**
+     * Resolves the reasoning level to display in the selector. Priority: session override →
+     * persisted per-agent selection (from {@link AISettingsService}) →
+     * `ai-features.reasoning.defaults` preference entry matching the current model/agent →
+     * model's declared default → `'off'`.
+     */
+    protected getCurrentReasoningLevel(): ReasoningLevel | undefined {
+        if (!this.currentReasoningSupport) {
+            return undefined;
+        }
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        const sessionLevel = session?.model.settings?.commonSettings?.reasoning?.level;
+        if (sessionLevel) {
+            return sessionLevel;
+        }
+        if (this.savedReasoning?.level) {
+            return this.savedReasoning.level;
+        }
+        return this.resolvePreferenceReasoningLevel() ?? this.currentReasoningSupport.defaultLevel ?? 'off';
+    }
+
+    protected resolvePreferenceReasoningLevel(): ReasoningLevel | undefined {
+        if (!this.preferenceService || !this.currentLanguageModelId) {
+            return undefined;
+        }
+        const entries = this.preferenceService.get<ReasoningPreferenceEntry[]>(PREFERENCE_NAME_REASONING, []);
+        const [providerId, modelId] = this.currentLanguageModelId.split('/');
+        return mergeReasoningSettings(entries, modelId, providerId, this.receivingAgent?.agentId)?.reasoning?.level;
+    }
+
+    protected async updateReasoningSupport(agentId: string | undefined): Promise<void> {
+        let support: ReasoningSupport | undefined;
+        let modelId: string | undefined;
+        if (agentId) {
+            const agent = this.chatAgentService.getAgent(agentId);
+            if (agent) {
+                for (const requirement of agent.languageModelRequirements ?? []) {
+                    try {
+                        const model = await this.languageModelRegistry.selectLanguageModel({ agent: agent.id, ...requirement });
+                        if (model?.reasoningSupport) {
+                            support = model.reasoningSupport;
+                            modelId = model.id;
+                            break;
+                        }
+                    } catch (error) {
+                        console.warn('Failed to resolve language model for reasoning support:', error);
+                    }
+                }
+            }
+        }
+        if (support !== this.currentReasoningSupport || modelId !== this.currentLanguageModelId) {
+            this.currentReasoningSupport = support;
+            this.currentLanguageModelId = modelId;
+            this.update();
+        }
+    }
+
     protected handleCapabilityChange = (fragmentId: string, enabled: boolean): void => {
         const defaultCapability = this.capabilityDefaults.find(c => c.fragmentId === fragmentId);
         const sessionOverrides = new Map(this.userCapabilityOverrides);
@@ -274,22 +395,47 @@ export class AIChatInputWidget extends ReactWidget {
             const agentSettings = await this.aiSettingsService.getAgentSettings(agentId);
             const savedOverrides = agentSettings?.capabilityOverrides;
             const savedGenericSelections = agentSettings?.genericCapabilitySelections;
+            const savedReasoning = agentSettings?.reasoning;
 
             // Store saved state for comparison
             this.savedCapabilityOverrides = savedOverrides ? { ...savedOverrides } : undefined;
             this.savedGenericCapabilitySelections = savedGenericSelections ? { ...savedGenericSelections } : undefined;
+            this.savedReasoning = savedReasoning ? { ...savedReasoning } : undefined;
 
             // Initialize from saved settings, or empty if none
             this.userCapabilityOverrides = savedOverrides
                 ? new Map(Object.entries(savedOverrides))
                 : new Map<string, boolean>();
             this.genericCapabilitySelections = savedGenericSelections ?? {};
+            // Mirror the saved per-agent reasoning into the chat session so the selector reflects it
+            // immediately on session/agent switch.
+            this.applyReasoningToSession(savedReasoning);
         }
 
         // Update disabled generic capabilities (already used in agent prompt)
         this.disabledGenericCapabilities = await this.capabilitiesService.getUsedGenericCapabilitiesForAgent(agentId, modeId);
 
         this.update();
+    }
+
+    /** Updates the active chat session's `commonSettings.reasoning`; pass `undefined` to clear. */
+    protected applyReasoningToSession(reasoning: ReasoningSettings | undefined): void {
+        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
+        if (!session) {
+            return;
+        }
+        const currentSettings = session.model.settings ?? {};
+        const currentCommon = currentSettings.commonSettings ?? {};
+        if ((currentCommon.reasoning?.level ?? undefined) === (reasoning?.level ?? undefined)) {
+            return; // no-op when already in sync
+        }
+        const newCommon: typeof currentCommon = { ...currentCommon };
+        if (reasoning) {
+            newCommon.reasoning = { ...reasoning };
+        } else {
+            delete newCommon.reasoning;
+        }
+        (session.model as MutableChatModel).setSettings({ ...currentSettings, commonSettings: newCommon });
     }
 
     protected async updateAvailableGenericCapabilities(): Promise<void> {
@@ -421,13 +567,19 @@ export class AIChatInputWidget extends ReactWidget {
 
     /**
      * Checks if there are any unsaved changes (capability overrides or generic selections).
+     * Reasoning is auto-persisted in {@link handleReasoningChange} and is intentionally excluded.
      */
     public hasAnyChangesFromSaved(): boolean {
-        return (this.hasCapabilityChangesFromSaved() || this.hasGenericCapabilityChangesFromSaved()) && this.receivingAgent !== undefined;
+        if (this.receivingAgent === undefined) {
+            return false;
+        }
+        return this.hasCapabilityChangesFromSaved()
+            || this.hasGenericCapabilityChangesFromSaved();
     }
 
     /**
      * Saves current capability selections to settings.
+     * Reasoning is auto-persisted via {@link handleReasoningChange} and is not part of this flow.
      */
     public async saveCurrentSelectionsToSettings(): Promise<void> {
         if (!this.receivingAgent) {
@@ -593,7 +745,11 @@ export class AIChatInputWidget extends ReactWidget {
         // Restore capability overrides and generic selections from the last request in this session (if any)
         this.userCapabilityOverrides = this.getLastCapabilityOverridesFromModel(chatModel);
         this.genericCapabilitySelections = this.getLastGenericCapabilitySelectionsFromModel(chatModel);
+
         this.onDisposeForChatModel.push(chatModel.onDidChange(event => {
+            if (event.kind === 'responseChanged') {
+                this.evaluateTokenUsageWarning(chatModel);
+            }
             if (event.kind === 'addVariable') {
                 // Validate files added via any path (including LLM tool calls)
                 // Get the current variables and validate any new file variables
@@ -617,6 +773,16 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this._chatModel = chatModel;
+        // Evaluate the warning on attach. `notifiedSessions` lives on this widget
+        // instance, so the warning fires at most once per (widget lifetime × session):
+        // - Within the same widget, switching between sessions that have already been
+        //   notified does not re-notify.
+        // - Closing and reopening the chat view creates a fresh widget with an empty
+        //   Set, so sessions still above the threshold will be warned about again the
+        //   first time they are shown after reopen — once per session. Accepted as a
+        //   rare corner case; promoting the state to the ChatSession would avoid it
+        //   but isn't worth the coupling today.
+        this.evaluateTokenUsageWarning(chatModel);
         this.scheduleUpdateReceivingAgent();
         this.update();
     }
@@ -635,8 +801,8 @@ export class AIChatInputWidget extends ReactWidget {
         this.id = AIChatInputWidget.ID;
         this.title.closable = false;
         this.toDispose.push(this.resources.add(this.getResourceUri(), ''));
-        this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
-            this.setEnabled(this.aiActivationService.isActive);
+        this.toDispose.push(this.aiActivationService.onDidChangeCanRun(() => {
+            this.setEnabled(this.aiActivationService.canRun);
         }));
         this.toDispose.push(this.chatAgentService.onDefaultAgentChanged(() => {
             this.scheduleUpdateReceivingAgent();
@@ -648,7 +814,7 @@ export class AIChatInputWidget extends ReactWidget {
                 this.updateReceivingAgentTimeout = undefined;
             }
         }));
-        this.setEnabled(this.aiActivationService.isActive);
+        this.setEnabled(this.aiActivationService.canRun);
         this.historyService.init().then(() => {
             this.navigationState = new ChatInputNavigationState(this.historyService);
         });
@@ -659,12 +825,38 @@ export class AIChatInputWidget extends ReactWidget {
                 if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
                     this.tokenUsageEnabled = this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_ENABLED, false) ?? false;
                     this.update();
+                } else if (change.preferenceName === PREFERENCE_NAME_REASONING) {
+                    // Refresh the reasoning selector display when the default preference changes.
+                    this.update();
+                } else if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE) {
+                    // Threshold changed: clear notified sessions so users are warned again
+                    // at the new threshold (e.g. after raising it from the warning's
+                    // "Open Settings" action), and re-evaluate the current session so the
+                    // warning appears immediately if it's still above the new threshold.
+                    this.notifiedSessions.clear();
+                    if (this._chatModel) {
+                        this.evaluateTokenUsageWarning(this._chatModel);
+                    }
+                    // Re-render so the indicator's color bands reflect the new threshold.
+                    this.update();
+                } else if (change.preferenceName === CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED && this._chatModel) {
+                    // If the user just enabled warnings for a session already above threshold,
+                    // evaluate now so they get an immediate notification instead of waiting for
+                    // the next response.
+                    this.evaluateTokenUsageWarning(this._chatModel);
                 }
             }));
         }
         // Listen for prompt fragment changes to refresh capabilities
         this.toDispose.push(this.capabilitiesService.onDidChangeCapabilities(() => {
             this.refreshCapabilities();
+        }));
+
+        // Refresh reasoning capability if the language model registry changes (model added/removed/alias re-resolved).
+        this.toDispose.push(this.languageModelRegistry.onChange(() => {
+            if (this.receivingAgent) {
+                this.updateReasoningSupport(this.receivingAgent.agentId);
+            }
         }));
 
         // When the default mode changes externally (e.g. via AI Configuration),
@@ -727,6 +919,88 @@ export class AIChatInputWidget extends ReactWidget {
 
         this.chatInputFirstLineKey.set(isFirstVisualOverall);
         this.chatInputLastLineKey.set(isLastVisualOverall);
+    }
+
+    /**
+     * Resolve the configured token usage warning threshold as an absolute token count.
+     * The preference is stored as a percentage of the context window; this method
+     * converts it using the current assumed context window size.
+     */
+    protected getTokenUsageWarningThreshold(): number {
+        const percentage = this.getTokenUsageWarningThresholdPercentage();
+        return Math.round((percentage / 100) * CHAT_CONTEXT_WINDOW_SIZE);
+    }
+
+    protected getTokenUsageWarningThresholdPercentage(): number {
+        const value = this.preferenceService?.get<number>(
+            CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE,
+            CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT
+        );
+        if (typeof value !== 'number' || !Number.isFinite(value) || value < 1 || value > 100) {
+            return CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT;
+        }
+        return value;
+    }
+
+    protected isTokenUsageWarningEnabled(): boolean {
+        return this.preferenceService?.get<boolean>(CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED, false) ?? false;
+    }
+
+    /**
+     * Called after a response changes on the currently attached session. Shows a
+     * warning the first time the total crosses the threshold, and re-arms when
+     * usage drops back below it.
+     */
+    protected evaluateTokenUsageWarning(chatModel: ChatModel): void {
+        // No point doing any work if the feature is off.
+        if (!this.isTokenUsageWarningEnabled()) {
+            return;
+        }
+        // `responseChanged` fires on every streaming tick, but providers typically
+        // only set `tokenUsage` at completion. Skip in-progress responses so we do
+        // the walk + decision once per response rather than per chunk.
+        const lastRequest = chatModel.getRequests().at(-1);
+        if (lastRequest && !lastRequest.response.isComplete) {
+            return;
+        }
+        const decision = decideTokenUsageWarning({
+            totalTokens: computeSessionTokenUsage(chatModel),
+            threshold: this.getTokenUsageWarningThreshold(),
+            alreadyNotified: this.notifiedSessions.has(chatModel.id)
+        });
+        if (decision === 'reset') {
+            this.notifiedSessions.delete(chatModel.id);
+        } else if (decision === 'notify') {
+            this.notifiedSessions.add(chatModel.id);
+            this.showTokenUsageWarning();
+        }
+    }
+
+    protected async showTokenUsageWarning(): Promise<void> {
+        const percentage = this.getTokenUsageWarningThresholdPercentage();
+        const message = nls.localize(
+            'theia/ai/chat-ui/tokenUsageWarningMessage',
+            'Chat session token usage has reached {0}% of the context window. ' +
+            'Consider summarizing this session or starting a new one to avoid hitting the limit.',
+            percentage
+        );
+        const summarizeAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningSummarizeAction', 'Summarize Current Session');
+        const newSessionAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningNewSessionAction', 'Start New Chat');
+        const openSettingsAction = nls.localizeByDefault('Open Settings');
+        const selected = await this.messageService.warn(message, summarizeAction, newSessionAction, openSettingsAction);
+        if (selected === summarizeAction) {
+            this.commandService.executeCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id).catch(error => {
+                console.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
+            });
+        } else if (selected === newSessionAction) {
+            this.commandService.executeCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id).catch(error => {
+                console.error(`Failed to execute '${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}' from token usage warning`, error);
+            });
+        } else if (selected === openSettingsAction) {
+            this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
+                console.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
+            });
+        }
     }
 
     protected scheduleUpdateReceivingAgent(): void {
@@ -832,11 +1106,13 @@ export class AIChatInputWidget extends ReactWidget {
             // Only preserve overrides on forced refresh if the session has previous requests
             const shouldPreserveOverrides = needsRefresh && hasPreviousRequests;
             await this.updateCapabilitiesForAgent(agentId, initialModeId, shouldPreserveOverrides);
+            this.updateReasoningSupport(agentId);
         } else if (!agent && this.receivingAgent !== undefined) {
             this.receivingAgent = undefined;
             this.capabilityDefaults = [];
             this.userCapabilityOverrides = new Map();
             this.chatInputHasModesKey.set(false);
+            this.currentReasoningSupport = undefined;
             this.update();
         }
     }
@@ -1032,6 +1308,11 @@ export class AIChatInputWidget extends ReactWidget {
                     onModeChange: this.handleModeChange,
                     keybindingHint: this.getModeKeybindingHint(),
                 }}
+                reasoningSelectorProps={{
+                    reasoningSupport: this.currentReasoningSupport,
+                    currentLevel: this.getCurrentReasoningLevel(),
+                    onReasoningChange: this.handleReasoningChange,
+                }}
                 capabilitiesProps={{
                     capabilities: this.capabilityDefaults,
                     overrides: this.userCapabilityOverrides,
@@ -1051,6 +1332,7 @@ export class AIChatInputWidget extends ReactWidget {
                     hoverService: this.hoverService,
                 }}
                 tokenUsageEnabled={this.tokenUsageEnabled}
+                tokenUsageWarningThreshold={this.getTokenUsageWarningThreshold()}
             />
         );
     }
@@ -1364,6 +1646,11 @@ interface ChatInputProperties {
         onModeChange: (mode: string) => void;
         keybindingHint?: string;
     };
+    reasoningSelectorProps: {
+        reasoningSupport?: ReasoningSupport;
+        currentLevel?: ReasoningLevel;
+        onReasoningChange: (level: ReasoningLevel) => void;
+    };
     capabilitiesProps: {
         capabilities: ParsedCapability[];
         overrides: Map<string, boolean>;
@@ -1383,6 +1670,7 @@ interface ChatInputProperties {
         hoverService: HoverService;
     };
     tokenUsageEnabled?: boolean;
+    tokenUsageWarningThreshold: number;
 }
 
 // Utility to check if we have task context in the chat model
@@ -1810,12 +2098,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Show mode selector if agent has multiple modes
     const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
 
-    // Token usage computation
+    // Token usage computation (cheap pure function walking the model's request list)
     const totalTokens = props.tokenUsageEnabled ? computeSessionTokenUsage(props.chatModel) : 0;
     const showTokenUsage = props.tokenUsageEnabled && totalTokens > 0;
-    const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens) : '';
+    const tokenColorClass = showTokenUsage ? getUsageColorClass(totalTokens, props.tokenUsageWarningThreshold) : '';
     const tokenIsWarningOrError = tokenColorClass === 'token-usage-yellow' || tokenColorClass === 'token-usage-red';
-    const tokenTooltip = showTokenUsage ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens) : undefined;
+    const tokenTooltip = showTokenUsage ? buildBarTooltip(getLatestTokenUsage(props.chatModel), totalTokens, props.tokenUsageWarningThreshold) : undefined;
 
     return (
         <div className="theia-ChatInput" data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
@@ -1864,6 +2152,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                         onModeChange: props.modeSelectorProps.onModeChange,
                         keybindingHint: props.modeSelectorProps.keybindingHint,
                     }}
+                    reasoningSelectorProps={{
+                        show: !!props.reasoningSelectorProps.reasoningSupport,
+                        reasoningSupport: props.reasoningSelectorProps.reasoningSupport,
+                        currentLevel: props.reasoningSelectorProps.currentLevel,
+                        onReasoningChange: props.reasoningSelectorProps.onReasoningChange,
+                    }}
                     capabilitiesToggle={{
                         show: props.showCapabilities !== false,
                         isOpen: props.capabilitiesProps.isOpen,
@@ -1909,6 +2203,12 @@ interface ChatInputOptionsProps {
         onModeChange: (mode: string) => void;
         keybindingHint?: string;
     };
+    reasoningSelectorProps: {
+        show: boolean;
+        reasoningSupport?: ReasoningSupport;
+        currentLevel?: ReasoningLevel;
+        onReasoningChange: (level: ReasoningLevel) => void;
+    };
     capabilitiesToggle: {
         show: boolean;
         isOpen: boolean;
@@ -1926,6 +2226,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     hoverService,
     tokenUsage,
     modeSelectorProps,
+    reasoningSelectorProps,
     capabilitiesToggle
 }) => {
     const capabilitiesLabel = nls.localize('theia/ai/chat-ui/toggleCapabilitiesConfig', 'Toggle Capabilities Configuration');
@@ -2027,6 +2328,15 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                             <span className="theia-capabilities-unsaved-indicator" />
                         )}
                     </span>
+                )}
+                {reasoningSelectorProps.show && reasoningSelectorProps.reasoningSupport && (
+                    <ReasoningSelector
+                        reasoningSupport={reasoningSelectorProps.reasoningSupport}
+                        currentLevel={reasoningSelectorProps.currentLevel}
+                        onReasoningChange={reasoningSelectorProps.onReasoningChange}
+                        disabled={!isEnabled}
+                        hoverService={hoverService}
+                    />
                 )}
             </div>
         </div>
@@ -2178,6 +2488,57 @@ const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.m
                 className={`theia-ChatInput-ModeSelector${disabled ? ' disabled' : ''}`}
                 options={options}
                 defaultValue={currentMode ?? modes[0]?.id ?? ''}
+                onChange={handleChange}
+            />
+        </span>
+    );
+});
+
+interface ReasoningSelectorProps {
+    reasoningSupport: ReasoningSupport;
+    currentLevel?: ReasoningLevel;
+    onReasoningChange: (level: ReasoningLevel) => void;
+    disabled?: boolean;
+    hoverService: HoverService;
+}
+
+const reasoningLevelLabel = (level: ReasoningLevel): string => {
+    switch (level) {
+        case 'off': return nls.localizeByDefault('Off');
+        case 'minimal': return nls.localize('theia/ai/chat-ui/reasoning/minimal', 'Minimal');
+        case 'low': return nls.localize('theia/ai/chat-ui/reasoning/low', 'Low');
+        case 'medium': return nls.localize('theia/ai/chat-ui/reasoning/medium', 'Medium');
+        case 'high': return nls.localize('theia/ai/chat-ui/reasoning/high', 'High');
+        case 'auto': return nls.localizeByDefault('Auto');
+    }
+};
+
+const ReasoningSelector: React.FunctionComponent<ReasoningSelectorProps> = React.memo(({
+    reasoningSupport, currentLevel, onReasoningChange, disabled, hoverService
+}) => {
+    const options: SelectOption[] = React.useMemo(
+        () => reasoningSupport.supportedLevels.map(level => ({ value: level, label: reasoningLevelLabel(level) })),
+        [reasoningSupport]
+    );
+
+    const handleChange = React.useCallback(
+        (option: SelectOption) => {
+            if (option.value) {
+                onReasoningChange(option.value as ReasoningLevel);
+            }
+        },
+        [onReasoningChange]
+    );
+
+    const title = nls.localizeByDefault('Reasoning');
+    const effectiveLevel = currentLevel ?? reasoningSupport.defaultLevel ?? reasoningSupport.supportedLevels[0] ?? 'off';
+
+    return (
+        <span onMouseEnter={hoverHandler(hoverService, title)}>
+            <SelectComponent
+                className={`theia-ChatInput-ReasoningSelector reasoning-level-${effectiveLevel}${disabled ? ' disabled' : ''}`}
+                options={options}
+                defaultValue={effectiveLevel}
                 onChange={handleChange}
             />
         </span>

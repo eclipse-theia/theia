@@ -22,6 +22,7 @@ import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID, ARCHITECT_SIMPLE_PROMPT_ID, ARCHITECT_PLANNING_NEXT_PROMPT_ID } from './architect-prompt-template';
 import { nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
@@ -43,9 +44,10 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
     override iconClass: string = 'codicon codicon-map';
 
     override description = nls.localize('theia/ai/workspace/workspaceAgent/description',
-        'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
-         and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the \
-         workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.');
+        'An AI assistant integrated into {0}, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files' +
+        ' and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the' +
+        ' workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.',
+        FrontendApplicationConfigProvider.get().applicationName);
 
     protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
         {

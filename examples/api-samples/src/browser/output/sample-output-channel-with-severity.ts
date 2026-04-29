@@ -31,7 +31,16 @@ export class SampleOutputChannelWithSeverity
         channel.append('inlineInfo1 ');
         channel.append('inlineWarning ', OutputChannelSeverity.Warning);
         channel.append('inlineError ', OutputChannelSeverity.Error);
-        channel.append('inlineInfo2', OutputChannelSeverity.Info);
+        channel.appendLine('inlineInfo2', OutputChannelSeverity.Info);
+
+        // ANSI color code samples
+        channel.appendLine('\x1b[31mANSI red text\x1b[0m');
+        channel.appendLine('\x1b[32mANSI green text\x1b[0m');
+        channel.appendLine('\x1b[33mANSI yellow\x1b[0m and \x1b[34mANSI blue\x1b[0m on the same line');
+        channel.appendLine('\x1b[1m\x1b[35mANSI bold magenta\x1b[0m');
+        channel.appendLine('\x1b[4m\x1b[36mANSI underlined cyan\x1b[0m');
+        channel.appendLine('Mixed: \x1b[31mANSI error\x1b[0m and \x1b[32mANSI success\x1b[0m in one line');
+        channel.appendLine('\x1b[41m\x1b[37mANSI white on red background\x1b[0m');
     }
 }
 export const bindSampleOutputChannelWithSeverity = (bind: interfaces.Bind) => {
