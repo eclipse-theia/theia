@@ -348,12 +348,23 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         this.logger = options.logger;
     }
 
+    protected getRemoteEnv(): string[] | undefined {
+        const remoteEnv = this.config.remoteEnv;
+        if (!remoteEnv || Object.keys(remoteEnv).length === 0) {
+            return undefined;
+        }
+        return Object.entries(remoteEnv)
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}=${value}`);
+    }
+
     async forwardOut(socket: Socket, port?: number): Promise<void> {
         const node = `${this.remoteSetupResult.nodeDirectory}/bin/node`;
         const devContainerServer = `${this.remoteSetupResult.applicationDirectory}/backend/dev-container-server.js`;
         try {
             const ttySession = await this.container.exec({
                 Cmd: ['sh', '-c', `${node} ${devContainerServer} -target-port=${port ?? this.remotePort}`],
+                Env: this.getRemoteEnv(),
                 AttachStdin: true, AttachStdout: true, AttachStderr: true
             });
 
@@ -371,7 +382,9 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         const deferred = new Deferred<RemoteExecResult>();
         try {
             // TODO add windows container support
-            const execution = await this.container.exec({ Cmd: ['sh', '-c', `${cmd} ${args?.join(' ') ?? ''}`], AttachStdout: true, AttachStderr: true });
+            const execution = await this.container.exec({
+                Cmd: ['sh', '-c', `${cmd} ${args?.join(' ') ?? ''}`], Env: this.getRemoteEnv(), AttachStdout: true, AttachStderr: true
+            });
             let stdoutBuffer = '';
             let stderrBuffer = '';
             const stream = await execution?.start({});
@@ -395,7 +408,9 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         const deferred = new Deferred<RemoteExecResult>();
         try {
             // TODO add windows container support
-            const execution = await this.container.exec({ Cmd: ['sh', '-c', `${cmd} ${args?.join(' ') ?? ''}`], AttachStdout: true, AttachStderr: true });
+            const execution = await this.container.exec({
+                Cmd: ['sh', '-c', `${cmd} ${args?.join(' ') ?? ''}`], Env: this.getRemoteEnv(), AttachStdout: true, AttachStderr: true
+            });
             let stdoutBuffer = '';
             let stderrBuffer = '';
             const stream = await execution?.start({});
