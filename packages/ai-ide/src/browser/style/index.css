@@ -1658,13 +1658,29 @@
   color: var(--theia-errorForeground);
 }
 
+.user-interaction-tool.status.waiting {
+  color: var(--theia-disabledForeground);
+}
+
+/* Reuses the dots keyframes defined by ai-chat-ui's chat node header marker.
+   The fixed width reserves space for the longest dots state ("...") so the
+   label doesn't shift horizontally as the dots animate. */
+.user-interaction-tool.status.waiting::after {
+  content: "";
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1s steps(1, end) infinite;
+}
+
 .user-interaction-tool.progress {
   display: flex;
   gap: 4px;
-  padding: 0 calc(var(--theia-ui-padding) * 2) var(--theia-ui-padding);
+  padding: 0 calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 2);
 }
 
 .user-interaction-tool.progress-dot {
+  position: relative;
   flex: 1;
   height: 3px;
   padding: 0;
@@ -1672,6 +1688,14 @@
   border-radius: 2px;
   background-color: var(--theia-widget-border);
   cursor: pointer;
+}
+
+/* Expands the hit target above and below the slim visible bar so the
+   button is easier to click without changing its visual size. */
+.user-interaction-tool.progress-dot::after {
+  content: "";
+  position: absolute;
+  inset: -8px -2px;
 }
 
 .user-interaction-tool.progress-dot:hover {
@@ -1739,7 +1763,10 @@
 
 .user-interaction-tool.option-button {
   position: relative;
-  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 3);
+  margin-left: 0;
+  /* Symmetric horizontal padding reserves space for the absolutely-positioned
+     check icon on the left without shifting the centered label off-center. */
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 4);
   font-size: var(--theia-ui-font-size1);
   min-width: 100px;
 }
@@ -1758,7 +1785,7 @@
   display: flex;
   flex-direction: column;
   gap: calc(var(--theia-ui-padding) / 2);
-  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  padding: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 2) var(--theia-ui-padding);
 }
 
 .user-interaction-tool.comment-input-row {

@@ -53,7 +53,8 @@ export {
     UserInteractionResult,
     resolveContentRef,
     parseUserInteractionArgs,
-    parseUserInteractionInput
+    parseUserInteractionInput,
+    parseUserInteractionResult
 } from '../common/user-interaction-tool';
 
 interface PendingInteraction {
@@ -164,12 +165,17 @@ export class UserInteractionTool implements ToolProvider {
         return {
             id: UserInteractionTool.ID,
             name: UserInteractionTool.ID,
-            description: 'Present an interactive multi-step wizard to the user. Each step has a title, a markdown message, optional option buttons, '
-                + 'and optional file/diff links that auto-open when the step is reached. The user advances with a hardcoded "Next" button '
-                + '(or "Finish" on the last step) and may add free-form comments on every step. The tool returns a JSON string with '
-                + '{ "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. If the user cancels mid-wizard, '
-                + 'the tool returns whatever has been collected so far with "completed": false. Use this to walk users through a series '
-                + 'of pre-determined findings or decisions in a single tool call.',
+            description: 'Present an interactive interaction to the user. Each step has a title, a markdown message, optional option buttons, '
+                + 'and optional file/diff links that auto-open when the step is reached. '
+                + 'Single-step behavior: a single-step interaction with options waits for the user to pick one option, which immediately completes the interaction; '
+                + 'a single-step interaction without options is purely informational and is auto-completed by the tool '
+                + '(do not promise the user a "Finish" or "Next" button — there is none, and no comments can be entered). '
+                + 'Multi-step behavior: the user advances through steps with a "Next" button (or "Finish" on the last step), can navigate freely between steps, '
+                + 'and may add free-form comments on every step. '
+                + 'The tool returns a JSON string with { "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. '
+                + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
+                + 'Use this to walk users through a series of pre-determined findings or decisions in a single tool call, '
+                + 'or to surface a single message/diff that should be shown inline in the chat.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -255,12 +261,24 @@ export class UserInteractionTool implements ToolProvider {
             const left = resolveContentRef(link.ref) as PathContentRef;
             if (left.gitRef) {
                 const uri = this.resolveUri(left, workspaceRoot);
-                if (uri) {
-                    await open(this.openerService, uri);
+                let targetUri: URI;
+                if (uri === undefined) {
+                    targetUri = this.errorContentUri(left.path, left.gitRef);
+                } else if (await this.canResolveUri(uri)) {
+                    targetUri = uri;
+                } else {
+                    // SCM is available but reading at this ref failed — likely the
+                    // ref does not exist or the file did not exist at that ref.
+                    targetUri = this.refNotFoundUri(left.path, left.gitRef);
                 }
+                await open(this.openerService, targetUri);
             } else {
                 const fileUri = workspaceRoot.resolve(left.path);
                 this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
+                if (!(await this.canResolveUri(fileUri))) {
+                    await open(this.openerService, this.fileNotFoundUri(left.path));
+                    return;
+                }
                 const selection = left.line
                     ? { start: { line: left.line - 1, character: 0 } }
                     : undefined;
@@ -333,6 +351,18 @@ export class UserInteractionTool implements ToolProvider {
         }
 
         const steps = parsed.interactions as UserInteractionStep[];
+
+        // Single-step interactions without options are purely informational
+        // (message + optional links/diffs) and should not block the agent.
+        // Resolve immediately with completed=true.
+        if (steps.length === 1 && (!steps[0].options || steps[0].options.length === 0)) {
+            const result: UserInteractionResult = {
+                completed: true,
+                steps: [{ title: steps[0].title }]
+            };
+            return JSON.stringify(result);
+        }
+
         const pending: PendingInteraction = {
             deferred: new Deferred<string>(),
             steps,
@@ -374,6 +404,17 @@ export class UserInteractionTool implements ToolProvider {
         const message = `Unable to resolve revision '${gitRef}' for '${path}'.\n\n`
             + 'No SCM provider is available to retrieve this revision. '
             + 'Ensure the Git extension is active and the repository is recognized.';
+        return new URI().withScheme(MEMORY_TEXT_READONLY).withPath(path).withQuery(message);
+    }
+
+    protected refNotFoundUri(path: string, gitRef: string): URI {
+        const message = `Could not load '${path}' at revision '${gitRef}'.\n\n`
+            + 'The revision may not exist, or the file did not exist at that revision.';
+        return new URI().withScheme(MEMORY_TEXT_READONLY).withPath(path).withQuery(message);
+    }
+
+    protected fileNotFoundUri(path: string): URI {
+        const message = `Could not load '${path}'.\n\nThe file does not exist in the current workspace.`;
         return new URI().withScheme(MEMORY_TEXT_READONLY).withPath(path).withQuery(message);
     }
 

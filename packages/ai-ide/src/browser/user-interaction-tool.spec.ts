@@ -95,7 +95,7 @@ describe('UserInteractionTool', () => {
         const toolRequest = tool.getTool();
         expect(toolRequest.id).to.equal('userInteraction');
         expect(toolRequest.name).to.equal('userInteraction');
-        expect(toolRequest.description).to.contain('multi-step wizard');
+        expect(toolRequest.description).to.contain('interactive interaction');
         expect(toolRequest.parameters.required).to.deep.equal(['interactions']);
     });
 

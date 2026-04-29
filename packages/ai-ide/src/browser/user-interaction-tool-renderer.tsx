@@ -32,10 +32,12 @@ import {
     PathContentRef,
     UserInteractionArgs,
     UserInteractionLink,
+    UserInteractionResult,
     UserInteractionStep,
     isEmptyContentRef,
     parseUserInteractionArgs,
     parseUserInteractionInput,
+    parseUserInteractionResult,
     resolveContentRef,
 } from '../common/user-interaction-tool';
 
@@ -45,6 +47,7 @@ interface UserInteractionComponentProps {
     tool: UserInteractionTool;
     finished: boolean;
     canceled: boolean;
+    result: UserInteractionResult | undefined;
     openerService: OpenerService;
 }
 
@@ -54,7 +57,7 @@ interface StepState {
 }
 
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, canceled, openerService
+    args, toolCallId, tool, finished, canceled, result, openerService
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
@@ -101,15 +104,6 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
 
     const isSingleStep = stepCount === 1;
     const hasOptions = !!activeStep?.options && activeStep.options.length > 0;
-    const isSingleInformationalStep = isSingleStep && !hasOptions;
-
-    // Single-step interactions without any actions are purely informational and
-    // should not block the agent. Auto-complete them once rendered.
-    React.useEffect(() => {
-        if (!finished && isSingleInformationalStep) {
-            tool.completeInteraction(toolCallId);
-        }
-    }, [finished, isSingleInformationalStep, tool, toolCallId]);
 
     const handleOptionClick = React.useCallback((value: string) => {
         if (finished) {
@@ -199,21 +193,37 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             <div className='tool-call header'>
                 <span className={codicon('comment-discussion')} />
                 <span className='user-interaction-tool title'>{activeStep.title}</span>
-                {!isSingleStep && (
-                    canceled
-                        ? <span className='user-interaction-tool status canceled'>
-                            <i className={codicon('close')} />
-                            {nls.localizeByDefault('Canceled')}
-                        </span>
-                        : finished
-                            ? <span className='user-interaction-tool status completed'>
+                {(() => {
+                    // The tool's own result is authoritative: a completed
+                    // interaction must stay "Completed" even if the chat
+                    // session is canceled later.
+                    const status: 'completed' | 'canceled' | 'waiting' =
+                        result?.completed === true ? 'completed' :
+                        result?.completed === false ? 'canceled' :
+                        canceled ? 'canceled' :
+                        'waiting';
+                    if (status === 'completed') {
+                        return (
+                            <span className='user-interaction-tool status completed'>
                                 <i className={codicon('check')} />
                                 {nls.localize('theia/ai-ide/userInteractionCompleted', 'Completed')}
                             </span>
-                            : <span className='theia-ChatContentInProgress user-interaction-tool status' role='status' aria-live='polite'>
-                                {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                        );
+                    }
+                    if (status === 'canceled') {
+                        return (
+                            <span className='user-interaction-tool status canceled'>
+                                <i className={codicon('close')} />
+                                {nls.localize('theia/ai-ide/userInteractionCanceled', 'Canceled')}
                             </span>
-                )}
+                        );
+                    }
+                    return (
+                        <span className='user-interaction-tool status waiting' role='status' aria-live='polite'>
+                            {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                        </span>
+                    );
+                })()}
             </div>
             {!isSingleStep && <StepProgress current={currentStep} total={stepCount} onSelect={goToStep} steps={steps} />}
             {activeStep.links && activeStep.links.length > 0 && (
@@ -253,7 +263,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                             <input
                                 type='text'
                                 className='theia-input user-interaction-tool comment-input-field'
-                                placeholder={nls.localize('theia/ai-ide/userInteractionCommentPlaceholder', 'Add a comment...')}
+                                placeholder={nls.localize('theia/ai-ide/userInteractionCommentPlaceholder', 'Add a comment for this step...')}
                                 value={pendingComment}
                                 onChange={e => setPendingComment(e.target.value)}
                                 onKeyDown={handleCommentKeyDown}
@@ -464,6 +474,7 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 tool={this.userInteractionTool}
                 finished={response.finished}
                 canceled={parentNode.response.isCanceled}
+                result={parseUserInteractionResult(response.result)}
                 openerService={this.openerService}
                 response={response}
                 confirmationMode={confirmationMode}

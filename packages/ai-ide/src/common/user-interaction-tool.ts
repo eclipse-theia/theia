@@ -97,6 +97,25 @@ export function parseUserInteractionInput(args: string | undefined): UserInterac
     }
 }
 
+export function parseUserInteractionResult(raw: unknown): UserInteractionResult | undefined {
+    let candidate: unknown = raw;
+    if (typeof raw === 'string') {
+        try {
+            candidate = JSON.parse(raw);
+        } catch {
+            return undefined;
+        }
+    }
+    if (!candidate || typeof candidate !== 'object') {
+        return undefined;
+    }
+    const obj = candidate as Record<string, unknown>;
+    if (typeof obj.completed !== 'boolean' || !Array.isArray(obj.steps)) {
+        return undefined;
+    }
+    return obj as unknown as UserInteractionResult;
+}
+
 export function parseUserInteractionArgs(args: string | undefined): UserInteractionArgs | undefined {
     if (!args) {
         return undefined;
