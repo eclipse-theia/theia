@@ -27,7 +27,8 @@ import {
     ResolvedAIVariable,
     CapabilityAwareContext,
     AgentService,
-    AgentsVariableContribution
+    AgentsVariableContribution,
+    ToolInvocationRegistry
 } from '../common';
 import { PromptVariableContribution } from './prompt-variable-contribution';
 import { SkillService } from './skill-service';
@@ -105,6 +106,9 @@ export class GenericCapabilitiesVariableContribution implements AIVariableContri
     @inject(AgentsVariableContribution) @optional()
     protected readonly agentsContribution: AgentsVariableContribution | undefined;
 
+    @inject(ToolInvocationRegistry) @optional()
+    protected readonly toolInvocationRegistry: ToolInvocationRegistry | undefined;
+
     @inject(PromptVariableContribution) @optional()
     protected readonly promptContribution: PromptVariableContribution | undefined;
 
@@ -170,12 +174,20 @@ export class GenericCapabilitiesVariableContribution implements AIVariableContri
      * The chat request parser will pick these up and add them to the toolRequests map.
      */
     protected resolveSelectedFunctions(variable: AIVariable, functionIds: string[] | undefined): ResolvedAIVariable {
-        if (!functionIds || functionIds.length === 0) {
+        if (!functionIds || functionIds.length === 0 || !this.toolInvocationRegistry) {
+            return { variable, value: '' };
+        }
+
+        // Filter out stale/orphaned tool IDs that no longer exist in the registry
+        const validIds = functionIds
+            .filter(id => this.toolInvocationRegistry!.getFunction(id) !== undefined);
+
+        if (validIds.length === 0) {
             return { variable, value: '' };
         }
 
         // Output function references in ~{id} format so the chat parser picks them up
-        const functionRefs = functionIds.map(id => `~{${id}}`).join('\n');
+        const functionRefs = validIds.map(id => `~{${id}}`).join('\n');
         return { variable, value: functionRefs };
     }
 
