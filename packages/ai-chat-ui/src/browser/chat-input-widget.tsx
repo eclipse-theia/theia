@@ -248,10 +248,10 @@ export class AIChatInputWidget extends ReactWidget {
     protected currentReasoningSupport?: ReasoningSupport;
     /** Id (`provider/model`) of the model that backs {@link currentReasoningSupport}; used to resolve preference defaults. */
     protected currentLanguageModelId?: string;
-    /** Saved reasoning selection for the receiving agent (loaded from {@link AISettingsService}); used to detect unsaved changes. */
+    /** Saved reasoning selection for the receiving agent (loaded from {@link AISettingsService}); kept in sync with the persisted value. */
     protected savedReasoning?: ReasoningSettings;
 
-    protected handleReasoningChange = (level: ReasoningLevel): void => {
+    protected handleReasoningChange = async (level: ReasoningLevel): Promise<void> => {
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
         if (!session) {
             return;
@@ -265,6 +265,20 @@ export class AIChatInputWidget extends ReactWidget {
             }
         };
         (session.model as MutableChatModel).setSettings(newSettings);
+
+        // Auto-persist the reasoning selection per-agent so it is restored on the next session
+        // and the capabilities indicator does not light up for an unrelated configuration concern.
+        if (this.receivingAgent) {
+            try {
+                await this.aiSettingsService.updateAgentSettings(this.receivingAgent.agentId, {
+                    reasoning: { level }
+                });
+                this.savedReasoning = { level };
+            } catch (error) {
+                console.error('Failed to persist reasoning selection:', error);
+            }
+        }
+
         this.update();
     };
 
@@ -376,7 +390,7 @@ export class AIChatInputWidget extends ReactWidget {
                 : new Map<string, boolean>();
             this.genericCapabilitySelections = savedGenericSelections ?? {};
             // Mirror the saved per-agent reasoning into the chat session so the selector reflects it
-            // immediately and `hasReasoningChangesFromSaved` can compare like-with-like.
+            // immediately on session/agent switch.
             this.applyReasoningToSession(savedReasoning);
         }
 
@@ -534,32 +548,20 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
-     * Checks if the current session reasoning differs from the saved per-agent value.
-     */
-    protected hasReasoningChangesFromSaved(): boolean {
-        if (!this.currentReasoningSupport) {
-            return false;
-        }
-        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
-        const sessionLevel = session?.model.settings?.commonSettings?.reasoning?.level;
-        const savedLevel = this.savedReasoning?.level;
-        return sessionLevel !== savedLevel;
-    }
-
-    /**
-     * Checks if there are any unsaved changes (capability overrides, generic selections, or reasoning).
+     * Checks if there are any unsaved changes (capability overrides or generic selections).
+     * Reasoning is auto-persisted in {@link handleReasoningChange} and is intentionally excluded.
      */
     public hasAnyChangesFromSaved(): boolean {
         if (this.receivingAgent === undefined) {
             return false;
         }
         return this.hasCapabilityChangesFromSaved()
-            || this.hasGenericCapabilityChangesFromSaved()
-            || this.hasReasoningChangesFromSaved();
+            || this.hasGenericCapabilityChangesFromSaved();
     }
 
     /**
-     * Saves current capability selections and reasoning to settings.
+     * Saves current capability selections to settings.
+     * Reasoning is auto-persisted via {@link handleReasoningChange} and is not part of this flow.
      */
     public async saveCurrentSelectionsToSettings(): Promise<void> {
         if (!this.receivingAgent) {
@@ -574,16 +576,12 @@ export class AIChatInputWidget extends ReactWidget {
             capabilityOverrides[key] = value;
         }
 
-        const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
-        const sessionReasoning = session?.model.settings?.commonSettings?.reasoning;
-
         try {
             await this.aiSettingsService.updateAgentSettings(agentId, {
                 capabilityOverrides: Object.keys(capabilityOverrides).length > 0 ? capabilityOverrides : undefined,
                 genericCapabilitySelections: GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
                     ? this.genericCapabilitySelections
-                    : undefined,
-                reasoning: sessionReasoning ? { ...sessionReasoning } : undefined
+                    : undefined
             });
 
             // Update saved state to match current
@@ -591,7 +589,6 @@ export class AIChatInputWidget extends ReactWidget {
             this.savedGenericCapabilitySelections = GenericCapabilitySelections.hasSelections(this.genericCapabilitySelections)
                 ? { ...this.genericCapabilitySelections }
                 : undefined;
-            this.savedReasoning = sessionReasoning ? { ...sessionReasoning } : undefined;
 
             this.update();
         } catch (error) {
@@ -2177,15 +2174,6 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                         hoverService={hoverService}
                     />
                 )}
-                {reasoningSelectorProps.show && reasoningSelectorProps.reasoningSupport && (
-                    <ReasoningSelector
-                        reasoningSupport={reasoningSelectorProps.reasoningSupport}
-                        currentLevel={reasoningSelectorProps.currentLevel}
-                        onReasoningChange={reasoningSelectorProps.onReasoningChange}
-                        disabled={!isEnabled}
-                        hoverService={hoverService}
-                    />
-                )}
                 {capabilitiesToggle.show && (
                     <span
                         className={`option${capabilitiesToggle.isOpen ? ' toggled' : ''}`}
@@ -2208,6 +2196,15 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                             <span className="theia-capabilities-unsaved-indicator" />
                         )}
                     </span>
+                )}
+                {reasoningSelectorProps.show && reasoningSelectorProps.reasoningSupport && (
+                    <ReasoningSelector
+                        reasoningSupport={reasoningSelectorProps.reasoningSupport}
+                        currentLevel={reasoningSelectorProps.currentLevel}
+                        onReasoningChange={reasoningSelectorProps.onReasoningChange}
+                        disabled={!isEnabled}
+                        hoverService={hoverService}
+                    />
                 )}
             </div>
         </div>
@@ -2407,7 +2404,7 @@ const ReasoningSelector: React.FunctionComponent<ReasoningSelectorProps> = React
     return (
         <span onMouseEnter={hoverHandler(hoverService, title)}>
             <SelectComponent
-                className={`theia-ChatInput-ReasoningSelector${disabled ? ' disabled' : ''}`}
+                className={`theia-ChatInput-ReasoningSelector reasoning-level-${effectiveLevel}${disabled ? ' disabled' : ''}`}
                 options={options}
                 defaultValue={effectiveLevel}
                 onChange={handleChange}
