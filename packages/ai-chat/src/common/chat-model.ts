@@ -23,11 +23,11 @@ import {
     AIVariableResolutionRequest,
     GenericCapabilitySelections,
     LanguageModelMessage,
+    ReasoningSettings,
     ResolvedAIContextVariable,
     ResolvedAIVariable,
     TextMessage,
     ThinkingMessage,
-    ThinkingModeSettings,
     ToolCallResult,
     ToolRequest,
     ToolResultMessage,
@@ -221,11 +221,8 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
 }
 
 export interface CommonChatSessionSettings {
-    /**
-     * Theia-specific settings for extended thinking mode.
-     * These are processed by Theia and converted to provider-specific formats.
-     */
-    thinkingMode?: ThinkingModeSettings;
+    /** Reasoning configuration for this session; applied to reasoning-capable models. */
+    reasoning?: ReasoningSettings;
     /** Per-session tool confirmation timeout in seconds. Overrides the global preference when set. */
     confirmationTimeout?: number;
 }

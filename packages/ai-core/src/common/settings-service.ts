@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { Event } from '@theia/core';
-import { LanguageModelRequirement } from './language-model';
+import { LanguageModelRequirement, ReasoningSettings } from './language-model';
 import { NotificationType } from './notification-types';
 import { GenericCapabilitySelections } from './capability-utils';
 
@@ -58,4 +58,10 @@ export interface AgentSettings {
      * Stores selected IDs for each capability type.
      */
     genericCapabilitySelections?: GenericCapabilitySelections;
+    /**
+     * Persisted reasoning selection for this agent. When set, the chat input's reasoning selector
+     * is initialized to this value at session start instead of falling back to the preference
+     * default or the model's declared default.
+     */
+    reasoning?: ReasoningSettings;
 }

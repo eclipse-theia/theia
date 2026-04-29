@@ -24,12 +24,13 @@ import {
     NOTIFICATION_TYPE_DESCRIPTIONS,
     NotificationType
 } from './notification-types';
+import { ReasoningSettings } from './language-model';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences/title', 'AI Features');
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
-export const PREFERENCE_NAME_THINKING_MODE = 'ai-features.thinkingMode.defaults';
+export const PREFERENCE_NAME_REASONING = 'ai-features.reasoning.defaults';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
 export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
 export const PREFERENCE_NAME_SKILL_DIRECTORIES = 'ai-features.skills.skillDirectories';
@@ -149,19 +150,30 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             },
             default: []
         },
-        [PREFERENCE_NAME_THINKING_MODE]: {
-            title: nls.localize('theia/ai/core/thinkingMode/title', 'Thinking Mode Settings'),
-            markdownDescription: nls.localize('theia/ai/core/thinkingMode/mdDescription',
-                'Allows specifying thinking mode settings for models that support extended thinking capabilities.\n\
-            Each setting consists of:\n\
-            - `scope`: Defines when the setting applies:\n\
-              - `modelId` (optional): The model ID to match\n\
-              - `providerId` (optional): The provider ID to match\n\
-              - `agentId` (optional): The agent ID to match\n\
-            - `thinkingMode`: Thinking mode configuration:\n\
-              - `enabled` (boolean): Whether thinking mode is enabled\n\
-              - `budgetTokens` (number, optional): Maximum tokens for thinking (if supported by the model)\n\
-            Settings are matched based on specificity (agent: 100, model: 10, provider: 1 points).'),
+        [PREFERENCE_NAME_REASONING]: {
+            title: nls.localize('theia/ai/core/reasoning/title', 'Reasoning Defaults'),
+            markdownDescription: nls.localize('theia/ai/core/reasoning/mdDescription',
+                'Default value for the chat input\'s reasoning selector, applied to models that support reasoning.\n\n'
+                + 'This is a UI-level setting: the chosen level is translated to the provider\'s native API parameters'
+                + ' at request time (e.g. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`,'
+                + ' Gemini `thinkingConfig`) and takes precedence over any raw values supplied via'
+                + ' `#ai-features.modelSettings.requestSettings#` for the same fields.\n\n'
+                + 'Each entry consists of:\n'
+                + '- `scope`: Defines when the setting applies (`modelId`, `providerId`, `agentId`).\n'
+                + '- `reasoning.level`: One of `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\n'
+                + 'Precedence at runtime (highest first): session override via the selector → this preference →'
+                + ' the model\'s declared default. Whichever the selector displays is what gets sent. To override'
+                + ' a provider\'s reasoning field manually via `#ai-features.modelSettings.requestSettings#`, set'
+                + ' `reasoning.level` to `off` here so the level-based translation is disabled.\n\n'
+                + 'Entries are matched based on scope specificity (agent: 100, model: 10, provider: 1 points).\n\n'
+                + 'Example:\n'
+                + '```json\n'
+                + '[\n'
+                + '  { "scope": { "providerId": "anthropic" }, "reasoning": { "level": "medium" } },\n'
+                + '  { "scope": { "modelId": "openai/gpt-5" }, "reasoning": { "level": "high" } },\n'
+                + '  { "scope": { "agentId": "Coder" }, "reasoning": { "level": "off" } }\n'
+                + ']\n'
+                + '```'),
             type: 'array',
             items: {
                 type: 'object',
@@ -169,37 +181,22 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                     scope: {
                         type: 'object',
                         properties: {
-                            modelId: {
-                                type: 'string',
-                                description: nls.localize('theia/ai/core/thinkingMode/scope/modelId/description', 'The (optional) model id')
-                            },
-                            providerId: {
-                                type: 'string',
-                                description: nls.localize('theia/ai/core/thinkingMode/scope/providerId/description', 'The (optional) provider id to apply the settings to.')
-                            },
-                            agentId: {
-                                type: 'string',
-                                description: nls.localize('theia/ai/core/thinkingMode/scope/agentId/description', 'The (optional) agent id to apply the settings to.')
-                            }
+                            modelId: { type: 'string' },
+                            providerId: { type: 'string' },
+                            agentId: { type: 'string' }
                         }
                     },
-                    thinkingMode: {
+                    reasoning: {
                         type: 'object',
                         additionalProperties: false,
-                        description: nls.localize('theia/ai/core/thinkingMode/thinkingMode/description', 'Thinking mode configuration.'),
                         properties: {
-                            enabled: {
-                                type: 'boolean',
-                                default: false,
-                                description: nls.localize('theia/ai/core/thinkingMode/thinkingMode/enabled/description', 'Whether thinking mode is enabled.')
-                            },
-                            budgetTokens: {
-                                type: 'number',
-                                description: nls.localize('theia/ai/core/thinkingMode/thinkingMode/budgetTokens/description',
-                                    'Maximum tokens to use for thinking. Only applicable if the model supports thinking budget.')
+                            level: {
+                                type: 'string',
+                                enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+                                default: 'auto'
                             }
                         },
-                        required: ['enabled']
+                        required: ['level']
                     }
                 },
                 additionalProperties: false
@@ -236,7 +233,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
 export interface AICoreConfiguration {
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
-    [PREFERENCE_NAME_THINKING_MODE]: Array<ThinkingModeSetting> | undefined;
+    [PREFERENCE_NAME_REASONING]: Array<ReasoningPreferenceEntry> | undefined;
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
     [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
     [PREFERENCE_NAME_SKILL_DIRECTORIES]: string[] | undefined;
@@ -254,9 +251,9 @@ export interface Scope {
     agentId?: string;
 }
 
-export interface ThinkingModeSetting {
+export interface ReasoningPreferenceEntry {
     scope?: Scope;
-    thinkingMode?: { enabled: boolean; budgetTokens?: number };
+    reasoning?: ReasoningSettings;
 }
 
 export const AICorePreferences = Symbol('AICorePreferences');
