@@ -228,9 +228,10 @@ export class PluginScmHistoryProvider implements ScmHistoryProvider {
 
     async provideHistoryItems(options: ScmHistoryOptions, token: CancellationToken): Promise<ScmHistoryItem[] | undefined> {
         const dto: ScmHistoryOptionsDto = {
-            cursor: options.cursor,
+            skip: options.skip,
             limit: options.limit,
             historyItemRefs: options.historyItemRefs ? [...options.historyItemRefs] : undefined,
+            filterText: options.filterText,
         };
         const cts = new CancellationTokenSource();
         const listener = token.onCancellationRequested(() => cts.cancel());

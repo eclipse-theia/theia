@@ -1165,9 +1165,10 @@ export interface ScmHistoryItemChangeDto {
 }
 
 export interface ScmHistoryOptionsDto {
-    cursor?: string;
-    limit?: number | { id: string };
+    skip?: number;
+    limit?: number | { id?: string };
     historyItemRefs?: string[];
+    filterText?: string;
 }
 
 export interface SourceControlResourceState {

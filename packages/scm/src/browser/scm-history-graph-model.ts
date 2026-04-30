@@ -41,7 +41,6 @@ export class ScmHistoryGraphModel {
     protected _hasMore = false;
     protected _loading = false;
     protected _hasAttemptedLoad = false;
-    protected _cursor: string | undefined;
     protected _provider: ScmHistoryProvider | undefined;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
@@ -115,7 +114,6 @@ export class ScmHistoryGraphModel {
         }
 
         this._entries = [];
-        this._cursor = undefined;
         this._hasMore = false;
 
         this.loadPage();
@@ -145,7 +143,7 @@ export class ScmHistoryGraphModel {
         try {
             const historyItemRefs = this.getCurrentHistoryItemRefs();
             const options: ScmHistoryOptions = {
-                cursor: this._cursor,
+                skip: this._entries.length,
                 limit: PAGE_SIZE,
                 historyItemRefs: historyItemRefs.length > 0 ? historyItemRefs : undefined,
             };
@@ -156,21 +154,11 @@ export class ScmHistoryGraphModel {
             }
 
             const fetchedItems: ScmHistoryItem[] = items ?? [];
-            if (fetchedItems.length > 0) {
-                this._cursor = fetchedItems[fetchedItems.length - 1].id;
-            }
+            this._hasMore = fetchedItems.length >= PAGE_SIZE;
 
-            // Deduplicate: the cursor-based pagination may re-return the
-            // last item of the previous page. Filter out any items that
-            // were already loaded to prevent graph duplication on scroll.
+            // Filter out any items already loaded so the graph does not show duplicates.
             const existingIds = new Set(this._entries.map(e => e.item.id));
             const newItems = fetchedItems.filter(i => !existingIds.has(i.id));
-
-            // Only advertise more pages when the provider actually produced
-            // progress: a full page AND at least one new item. If the provider
-            // re-returns only items we already have, further requests would
-            // be stuck in a loop without ever advancing the cursor.
-            this._hasMore = fetchedItems.length >= PAGE_SIZE && newItems.length > 0;
 
             const allItems = [...this._entries.map(e => e.item), ...newItems];
             const graphRows = computeGraphRows(allItems.map(i => ({
@@ -196,9 +184,9 @@ export class ScmHistoryGraphModel {
     }
 
     /**
-     * Returns the set of ref IDs to pass to `provideHistoryItems`.
-     * Mirrors what VS Code's SCM Graph view does: only pass the current
-     * branch ref, its remote tracking ref, and the merge-base ref.
+     * Returns the revisions of the current branch ref, its remote tracking ref,
+     * and the merge-base ref to pass to `provideHistoryItems`. Providers walk
+     * history starting from these revisions.
      */
     protected getCurrentHistoryItemRefs(): string[] {
         if (!this._provider) {
@@ -206,13 +194,13 @@ export class ScmHistoryGraphModel {
         }
         const refs: string[] = [];
         if (this._provider.currentHistoryItemRef) {
-            refs.push(this._provider.currentHistoryItemRef.id);
+            refs.push(this._provider.currentHistoryItemRef.revision ?? this._provider.currentHistoryItemRef.id);
         }
         if (this._provider.currentHistoryItemRemoteRef) {
-            refs.push(this._provider.currentHistoryItemRemoteRef.id);
+            refs.push(this._provider.currentHistoryItemRemoteRef.revision ?? this._provider.currentHistoryItemRemoteRef.id);
         }
         if (this._provider.currentHistoryItemBaseRef) {
-            refs.push(this._provider.currentHistoryItemBaseRef.id);
+            refs.push(this._provider.currentHistoryItemBaseRef.revision ?? this._provider.currentHistoryItemBaseRef.id);
         }
         return refs;
     }

@@ -53,9 +53,10 @@ interface HistoryItem {
 }
 
 interface HistoryOptions {
-    readonly cursor?: string;
-    readonly limit?: number | { id: string };
+    readonly skip?: number;
+    readonly limit?: number | { id?: string };
     readonly historyItemRefs?: readonly string[];
+    readonly filterText?: string;
 }
 
 /**

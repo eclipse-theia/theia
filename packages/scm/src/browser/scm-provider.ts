@@ -123,9 +123,10 @@ export interface ScmHistoryItemRefsChangeEvent {
 }
 
 export interface ScmHistoryOptions {
-    readonly cursor?: string;
-    readonly limit?: number | { id: string };
+    readonly skip?: number;
+    readonly limit?: number | { id?: string };
     readonly historyItemRefs?: readonly string[];
+    readonly filterText?: string;
 }
 
 export interface ScmHistoryItemStatistics {

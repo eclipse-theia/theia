@@ -34,15 +34,15 @@ class StubHistoryProvider implements ScmHistoryProvider {
 
     /** Pages this provider will return on consecutive calls (FIFO). */
     pages: ScmHistoryItem[][] = [];
-    /** Captured cursors for each call. */
-    receivedCursors: (string | undefined)[] = [];
+    /** Captured options for each call (so tests can assert what was sent). */
+    receivedOptions: ScmHistoryOptions[] = [];
 
     async provideHistoryItemRefs(): Promise<ScmHistoryItemRef[] | undefined> {
         return [];
     }
 
     async provideHistoryItems(options: ScmHistoryOptions): Promise<ScmHistoryItem[] | undefined> {
-        this.receivedCursors.push(options.cursor);
+        this.receivedOptions.push(options);
         return this.pages.shift() ?? [];
     }
 
@@ -73,12 +73,8 @@ function makeItems(start: number, count: number): ScmHistoryItem[] {
 }
 
 /**
- * Creates a model instance with a stub history provider, bypassing inversify
- * and the SCM service so we can directly drive pagination and observe state.
- *
- * The model's @postConstruct refresh() runs against an empty SCM service
- * (no selected repository), which leaves the model idle. We then wire the
- * provider in and exercise pagination via loadPage() directly.
+ * Instantiates the model with a stub provider, bypassing inversify and the
+ * SCM service so tests can drive pagination directly via loadPage().
  */
 function createModel(provider: ScmHistoryProvider): { model: ScmHistoryGraphModel; loadPage(): Promise<void> } {
     const model = new ScmHistoryGraphModel();
@@ -95,9 +91,7 @@ function createModel(provider: ScmHistoryProvider): { model: ScmHistoryGraphMode
         onDidChangeSelectedRepository: new Emitter<ScmRepository | undefined>().event,
         selectedRepository: undefined,
     };
-    // Drive postConstruct manually now that the dependency is in place.
     internals.init();
-    // Inject the provider directly, bypassing the SCM service lookup.
     internals._provider = provider;
     return {
         model,
@@ -107,7 +101,7 @@ function createModel(provider: ScmHistoryProvider): { model: ScmHistoryGraphMode
 
 describe('ScmHistoryGraphModel - pagination', () => {
 
-    it('hasMore is true when a full page returns and contains new items', async () => {
+    it('hasMore is true when a full page returns', async () => {
         const provider = new StubHistoryProvider();
         provider.pages = [makeItems(1, PAGE_SIZE)];
         const { model, loadPage } = createModel(provider);
@@ -116,7 +110,6 @@ describe('ScmHistoryGraphModel - pagination', () => {
 
         expect(model.entries).to.have.length(PAGE_SIZE);
         expect(model.hasMore).to.be.true;
-        expect(provider.receivedCursors).to.deep.equal([undefined]);
     });
 
     it('hasMore is false when fewer than a full page is returned', async () => {
@@ -130,65 +123,49 @@ describe('ScmHistoryGraphModel - pagination', () => {
         expect(model.hasMore).to.be.false;
     });
 
-    it('deduplicates items returned across pages without growing entries beyond the unique set', async () => {
-        const provider = new StubHistoryProvider();
-        // Page 1: items c1..c50. Page 2 echoes the cursor commit (item c50)
-        // plus 49 new items c51..c99 -> 50 fetched, 49 new.
-        provider.pages = [
-            makeItems(1, PAGE_SIZE),
-            makeItems(50, PAGE_SIZE), // includes item id 'c50' as the first
-        ];
-        const { model, loadPage } = createModel(provider);
-
-        await loadPage();
-        expect(model.entries).to.have.length(PAGE_SIZE);
-        await loadPage();
-
-        const ids = model.entries.map(e => e.item.id);
-        const uniqueIds = new Set(ids);
-        expect(ids.length).to.equal(uniqueIds.size, 'no duplicates expected after dedup');
-        // 50 from page 1 + 49 unique from page 2.
-        expect(model.entries).to.have.length(PAGE_SIZE + (PAGE_SIZE - 1));
-        expect(model.hasMore).to.be.true;
-    });
-
-    // Regression test for https://github.com/eclipse-theia/theia/pull/17263 -
-    // when a full page comes back but every item is a duplicate (e.g. the
-    // provider re-returns already-loaded items because the cursor cannot be
-    // honored), `hasMore` must become false instead of leaving "Load more"
-    // visible but unable to make progress.
-    it('hasMore becomes false when a full page returns only duplicates', async () => {
-        const provider = new StubHistoryProvider();
-        const firstPage = makeItems(1, PAGE_SIZE);
-        provider.pages = [
-            firstPage,
-            // Provider echoes the SAME 50 items - all duplicates.
-            firstPage.slice(),
-        ];
-        const { model, loadPage } = createModel(provider);
-
-        await loadPage();
-        expect(model.entries).to.have.length(PAGE_SIZE);
-        expect(model.hasMore).to.be.true;
-
-        await loadPage();
-        expect(model.entries).to.have.length(PAGE_SIZE, 'should not grow when all items are duplicates');
-        expect(model.hasMore).to.be.false;
-    });
-
-    it('advances the cursor to the last fetched item across pages', async () => {
+    it('paginates using skip = current entry count', async () => {
         const provider = new StubHistoryProvider();
         provider.pages = [
             makeItems(1, PAGE_SIZE),
             makeItems(51, PAGE_SIZE),
+            makeItems(101, 10),
         ];
+        const { model, loadPage } = createModel(provider);
+
+        await loadPage();
+        expect(model.entries).to.have.length(PAGE_SIZE);
+        expect(provider.receivedOptions[0].skip).to.equal(0);
+
+        await loadPage();
+        expect(model.entries).to.have.length(2 * PAGE_SIZE);
+        expect(provider.receivedOptions[1].skip).to.equal(PAGE_SIZE);
+
+        await loadPage();
+        expect(model.entries).to.have.length(2 * PAGE_SIZE + 10);
+        expect(provider.receivedOptions[2].skip).to.equal(2 * PAGE_SIZE);
+    });
+
+    it('passes skip and not cursor (cursor is not part of the VS Code SCM history options API)', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, PAGE_SIZE)];
         const { loadPage } = createModel(provider);
 
         await loadPage();
-        await loadPage();
 
-        // First call has no cursor; second call uses the id of the last item
-        // from page 1 (c50).
-        expect(provider.receivedCursors).to.deep.equal([undefined, 'c50']);
+        expect((provider.receivedOptions[0] as { cursor?: string }).cursor).to.be.undefined;
+        expect(provider.receivedOptions[0]).to.have.property('skip');
+    });
+
+    it('does not grow entries when a provider re-returns duplicates', async () => {
+        const provider = new StubHistoryProvider();
+        const firstPage = makeItems(1, PAGE_SIZE);
+        provider.pages = [firstPage, firstPage.slice()];
+        const { model, loadPage } = createModel(provider);
+
+        await loadPage();
+        expect(model.entries).to.have.length(PAGE_SIZE);
+
+        await loadPage();
+        expect(model.entries).to.have.length(PAGE_SIZE, 'should not grow when all items are duplicates');
     });
 });
