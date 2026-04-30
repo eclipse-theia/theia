@@ -310,14 +310,14 @@ Use the following JSON shape for diff links (the left ref points to the merge ba
 \`\`\`json
 {"ref": {"path": "src/foo.ts", "gitRef": "<merge-base-sha>"}, "rightRef": {"path": "src/foo.ts", "line": 42}}
 \`\`\`
-For unmodified reference files (no diff), use a simple string ref:
+For unmodified reference files (no diff), use a single ref with just the path:
 \`\`\`json
-{"ref": "src/bar.ts"}
+{"ref": {"path": "src/bar.ts"}}
 \`\`\`
 
 For newly added files (no previous version exists), use an empty left ref:
 \`\`\`json
-{"ref": {"empty": true, "label": "new file"}, "rightRef": "src/new-file.ts"}
+{"ref": {"empty": true, "label": "new file"}, "rightRef": {"path": "src/new-file.ts"}}
 \`\`\`
 
 For deleted files (no current version exists), use an empty right ref:
@@ -327,7 +327,7 @@ For deleted files (no current version exists), use an empty right ref:
 
 For renamed or moved files, use the old path on the left and the new path on the right:
 \`\`\`json
-{"ref": {"path": "src/old-path/foo.ts", "gitRef": "<merge-base-sha>"}, "rightRef": "src/new-path/foo.ts"}
+{"ref": {"path": "src/old-path/foo.ts", "gitRef": "<merge-base-sha>"}, "rightRef": {"path": "src/new-path/foo.ts"}}
 \`\`\`
 This also works for files that were both renamed and modified — the diff will show content changes alongside the path change.
 

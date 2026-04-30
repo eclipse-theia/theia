@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core/lib/common/nls';
+
 export const USER_INTERACTION_FUNCTION_ID = 'userInteraction';
 
 export interface EmptyContentRef {
@@ -47,10 +49,18 @@ export function resolveContentRef(ref: ContentRef): PathContentRef | EmptyConten
     return ref;
 }
 
-const SHA_PREFIX_LENGTH = 8;
+const SHA_PREFIX_LENGTH = 7;
+
+function workingCopyLabel(): string {
+    return nls.localize('theia/ai-ide/userInteractionWorkingCopy', 'Working Copy');
+}
+
+function emptyLabel(): string {
+    return nls.localize('theia/ai-ide/userInteractionEmpty', 'Empty');
+}
 
 function gitRefTag(ref: PathContentRef): string {
-    return ref.gitRef ? ref.gitRef.substring(0, SHA_PREFIX_LENGTH) : 'Working Copy';
+    return ref.gitRef ? ref.gitRef.substring(0, SHA_PREFIX_LENGTH) : workingCopyLabel();
 }
 
 export function buildDiffLabel(
@@ -60,13 +70,13 @@ export function buildDiffLabel(
     const leftIsEmpty = isEmptyContentRef(left);
     const rightIsEmpty = isEmptyContentRef(right);
     if (leftIsEmpty && rightIsEmpty) {
-        return `${left.label || 'Empty'} ⟷ ${right.label || 'Empty'}`;
+        return `${left.label || emptyLabel()} ⟷ ${right.label || emptyLabel()}`;
     }
     if (leftIsEmpty) {
-        return `${(right as PathContentRef).path} (${left.label || 'Empty'} ⟷ ${gitRefTag(right as PathContentRef)})`;
+        return `${(right as PathContentRef).path} (${left.label || emptyLabel()} ⟷ ${gitRefTag(right as PathContentRef)})`;
     }
     if (rightIsEmpty) {
-        return `${(left as PathContentRef).path} (${gitRefTag(left as PathContentRef)} ⟷ ${right.label || 'Empty'})`;
+        return `${(left as PathContentRef).path} (${gitRefTag(left as PathContentRef)} ⟷ ${right.label || emptyLabel()})`;
     }
     const leftPath = left as PathContentRef;
     const rightPath = right as PathContentRef;

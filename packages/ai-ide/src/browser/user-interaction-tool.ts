@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
 import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
@@ -46,6 +46,112 @@ interface PendingInteraction {
     resolved: boolean;
 }
 
+// Schemas are module-level constants so they are built once at load time
+// rather than reconstructed on every getTool() call. We use a single object
+// schema (no oneOf/anyOf) since some providers (notably OpenAI) handle union
+// types poorly. The runtime parser additionally accepts plain string paths
+// as shorthand.
+const CONTENT_REF_SCHEMA: ToolRequestParameterProperty = {
+    type: 'object',
+    properties: {
+        path: {
+            type: 'string',
+            description: 'Workspace-relative file path. Required unless "empty" is true.'
+        },
+        gitRef: {
+            type: 'string',
+            description: 'Optional git ref (branch, tag, or commit hash). Ignored when "empty" is true.'
+        },
+        line: {
+            type: 'number',
+            description: 'Optional 1-based line number to scroll to. Ignored when "empty" is true.'
+        },
+        empty: {
+            type: 'boolean',
+            description: 'Set to true to mark this side as intentionally empty (e.g., for newly added or deleted files in a diff).'
+        },
+        label: {
+            type: 'string',
+            description: 'Optional label for an empty side (e.g., "new file", "deleted"). Only used when "empty" is true.'
+        }
+    },
+    description: 'Content reference. Provide "path" for a real file (optionally with "gitRef" and/or "line"), '
+        + 'or set "empty": true to represent a missing side of a diff.'
+};
+
+const STEP_SCHEMA: ToolRequestParameterProperty = {
+    type: 'object',
+    properties: {
+        title: { type: 'string', description: 'A short title for this step.' },
+        message: { type: 'string', description: 'A markdown-formatted message to present to the user.' },
+        options: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    text: { type: 'string', description: 'Display text for the option button.' },
+                    value: { type: 'string', description: 'Value returned when the user selects this option.' },
+                    description: { type: 'string', description: 'Optional longer description shown with the option.' },
+                    buttonLabel: { type: 'string', description: 'Optional prominent button label text. Falls back to text if not provided.' }
+                },
+                required: ['text', 'value']
+            },
+            description: 'Optional buttons offered to the user for this step. Omit for purely informational steps; '
+                + 'a hardcoded "Next"/"Finish" button is always shown to advance.'
+        },
+        links: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    ref: {
+                        ...CONTENT_REF_SCHEMA,
+                        description: 'Content reference for the file (or left side of a diff). '
+                            + 'Provide "path" for a real file, or "empty": true for files that did not exist.'
+                    },
+                    rightRef: {
+                        ...CONTENT_REF_SCHEMA,
+                        description: 'Optional right-side content reference for diff views. '
+                            + 'Provide "path" for a real file, or "empty": true for files that no longer exist.'
+                    },
+                    label: { type: 'string', description: 'Optional label for the link or diff tab.' },
+                    autoOpen: {
+                        type: 'boolean',
+                        description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to true.'
+                    }
+                },
+                required: ['ref']
+            },
+            description: 'Optional links to files or diffs to show alongside this step.'
+        }
+    },
+    required: ['title', 'message']
+};
+
+const TOOL_PARAMETERS: ToolRequestParameters = {
+    type: 'object',
+    properties: {
+        interactions: {
+            type: 'array',
+            items: STEP_SCHEMA,
+            description: 'Ordered list of wizard steps. The user walks through them sequentially without a back button.'
+        }
+    },
+    required: ['interactions']
+};
+
+const TOOL_DESCRIPTION = 'Present an interactive interaction to the user. Each step has a title, a markdown message, optional option buttons, '
+    + 'and optional file/diff links that auto-open when the step is reached. '
+    + 'Single-step behavior: a single-step interaction with options waits for the user to pick one option, which immediately completes the interaction; '
+    + 'a single-step interaction without options is purely informational and is auto-completed by the tool '
+    + '(do not promise the user a "Finish" or "Next" button — there is none, and no comments can be entered). '
+    + 'Multi-step behavior: the user advances through steps with a "Next" button (or "Finish" on the last step), can navigate freely between steps, '
+    + 'and may add free-form comments on every step. '
+    + 'The tool returns a JSON string with { "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. '
+    + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
+    + 'Use this to walk users through a series of pre-determined findings or decisions in a single tool call, '
+    + 'or to surface a single message/diff that should be shown inline in the chat.';
+
 @injectable()
 export class UserInteractionTool implements ToolProvider {
     static ID = USER_INTERACTION_FUNCTION_ID;
@@ -68,117 +174,12 @@ export class UserInteractionTool implements ToolProvider {
     protected readonly pendingInteractions = new Map<string, PendingInteraction>();
 
     getTool(): ToolRequest {
-        const contentRefSchema = {
-            oneOf: [
-                {
-                    type: 'string',
-                    description: 'Workspace-relative file path. Shorthand for { "path": "..." }.'
-                },
-                {
-                    type: 'object',
-                    properties: {
-                        path: {
-                            type: 'string',
-                            description: 'Workspace-relative file path. Required unless "empty" is true.'
-                        },
-                        gitRef: {
-                            type: 'string',
-                            description: 'Optional git ref (branch, tag, or commit hash). Ignored when "empty" is true.'
-                        },
-                        line: {
-                            type: 'number',
-                            description: 'Optional 1-based line number to scroll to. Ignored when "empty" is true.'
-                        },
-                        empty: {
-                            type: 'boolean',
-                            description: 'Set to true to mark this side as intentionally empty (e.g., for newly added or deleted files in a diff).'
-                        },
-                        label: {
-                            type: 'string',
-                            description: 'Optional label for an empty side (e.g., "new file", "deleted"). Only used when "empty" is true.'
-                        }
-                    }
-                }
-            ],
-            description: 'Content reference. Provide "path" for a real file (optionally with "gitRef" and/or "line"), '
-                + 'a plain string as shorthand for a workspace-relative path, '
-                + 'or set "empty": true to represent a missing side of a diff.'
-        };
-        const stepSchema = {
-            type: 'object',
-            properties: {
-                title: { type: 'string', description: 'A short title for this step.' },
-                message: { type: 'string', description: 'A markdown-formatted message to present to the user.' },
-                options: {
-                    type: 'array',
-                    items: {
-                        type: 'object',
-                        properties: {
-                            text: { type: 'string', description: 'Display text for the option button.' },
-                            value: { type: 'string', description: 'Value returned when the user selects this option.' },
-                            description: { type: 'string', description: 'Optional longer description shown with the option.' },
-                            buttonLabel: { type: 'string', description: 'Optional prominent button label text. Falls back to text if not provided.' }
-                        },
-                        required: ['text', 'value']
-                    },
-                    description: 'Optional buttons offered to the user for this step. Omit for purely informational steps; '
-                        + 'a hardcoded "Next"/"Finish" button is always shown to advance.'
-                },
-                links: {
-                    type: 'array',
-                    items: {
-                        type: 'object',
-                        properties: {
-                            ref: {
-                                ...contentRefSchema,
-                                description: 'Content reference for the file (or left side of a diff). '
-                                    + 'Provide "path" for a real file, or "empty": true for files that did not exist.'
-                            },
-                            rightRef: {
-                                ...contentRefSchema,
-                                description: 'Optional right-side content reference for diff views. '
-                                    + 'Provide "path" for a real file, or "empty": true for files that no longer exist.'
-                            },
-                            label: { type: 'string', description: 'Optional label for the link or diff tab.' },
-                            autoOpen: {
-                                type: 'boolean',
-                                description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to true.'
-                            }
-                        },
-                        required: ['ref']
-                    },
-                    description: 'Optional links to files or diffs to show alongside this step.'
-                }
-            },
-            required: ['title', 'message']
-        };
-
         return {
             id: UserInteractionTool.ID,
             name: UserInteractionTool.ID,
             providerName: 'ai-ide',
-            description: 'Present an interactive interaction to the user. Each step has a title, a markdown message, optional option buttons, '
-                + 'and optional file/diff links that auto-open when the step is reached. '
-                + 'Single-step behavior: a single-step interaction with options waits for the user to pick one option, which immediately completes the interaction; '
-                + 'a single-step interaction without options is purely informational and is auto-completed by the tool '
-                + '(do not promise the user a "Finish" or "Next" button — there is none, and no comments can be entered). '
-                + 'Multi-step behavior: the user advances through steps with a "Next" button (or "Finish" on the last step), can navigate freely between steps, '
-                + 'and may add free-form comments on every step. '
-                + 'The tool returns a JSON string with { "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. '
-                + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
-                + 'Use this to walk users through a series of pre-determined findings or decisions in a single tool call, '
-                + 'or to surface a single message/diff that should be shown inline in the chat.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    interactions: {
-                        type: 'array',
-                        items: stepSchema,
-                        description: 'Ordered list of wizard steps. The user walks through them sequentially without a back button.'
-                    }
-                },
-                required: ['interactions']
-            },
+            description: TOOL_DESCRIPTION,
+            parameters: TOOL_PARAMETERS,
             handler: (argString: string, ctx) => this.handleInteraction(argString, ctx)
         };
     }

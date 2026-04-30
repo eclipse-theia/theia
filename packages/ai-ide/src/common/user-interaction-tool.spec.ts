@@ -226,12 +226,12 @@ describe('buildDiffLabel', () => {
 
     it('formats empty left vs path with gitRef', () => {
         expect(buildDiffLabel({ empty: true, label: 'New' }, { path: 'src/x.ts', gitRef: 'abcdef0123' }))
-            .to.equal('src/x.ts (New ⟷ abcdef01)');
+            .to.equal('src/x.ts (New ⟷ abcdef0)');
     });
 
     it('formats path with gitRef vs working copy of same path', () => {
         expect(buildDiffLabel({ path: 'src/x.ts', gitRef: 'abcdef0123' }, { path: 'src/x.ts' }))
-            .to.equal('src/x.ts (abcdef01 ⟷ Working Copy)');
+            .to.equal('src/x.ts (abcdef0 ⟷ Working Copy)');
     });
 
     it('formats two different paths', () => {

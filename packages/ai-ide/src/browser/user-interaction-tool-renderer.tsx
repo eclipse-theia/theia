@@ -396,7 +396,9 @@ const LinkButton: React.FC<{ link: UserInteractionLink; onClick: () => void }> =
     } else if (isDiff) {
         label = buildDiffLabel(left, resolveContentRef(link.rightRef!));
     } else {
-        label = isEmptyContentRef(left) ? (left.label || 'Empty') : left.path;
+        label = isEmptyContentRef(left)
+            ? (left.label || nls.localize('theia/ai-ide/userInteractionEmpty', 'Empty'))
+            : left.path;
     }
 
     return (
