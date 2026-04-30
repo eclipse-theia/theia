@@ -585,22 +585,38 @@ new Path(absolutePathString).relative(pathString)
 
 ## Logging
 
-<a name="logging-use-console-log"></a>
+<a name="use-named-loggers"></a>
 
-* [1.](#logging-use-console-log) Use `console` instead of `ILogger` for the root (top-level) logging.
+* [1.](#use-named-loggers) Whenever you need to log and you are within an Inversify context, inject a named loggers
 
 ```ts
 // bad
 @inject(ILogger)
 protected readonly logger: ILogger;
 
+// without a named logger this is the same call as 'console.info'
 this.logger.info(``);
 
 // good
-console.info(``)
+@inject(ILogger) @named('my-logger')
+this.logger.info(``)
 ```
 
-> Why? All calls to console are intercepted on the frontend and backend and then forwarded to an `ILogger` instance already. The log level can be configured from the CLI: `theia start --log-level=debug`.
+> Why? The log level of all named loggers can be separately configured and even changed at runtime. This is useful for filtering logs to only the use cases the developer is interested in. See [here](https://github.com/eclipse-theia/theia/tree/master/packages/core#logging-configuration) for more information.
+
+<a name="naming-loggers"></a>
+
+* [2.](#naming-loggers) Use the following convention when naming loggers: `<package-name>:<node|common|browser>/<file-name>`
+
+```ts
+// bad
+@inject(ILogger) @named('MyClass')
+protected readonly logger: ILogger;
+
+// good
+@inject(ILogger) @named('@theia/core:node/backend-remote-service');
+```
+> Following this convention allows to easily find the source of the logs.
 
 ## "To Do" Tags
 
