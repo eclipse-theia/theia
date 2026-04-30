@@ -87,6 +87,12 @@
           "modelId": {
             "title": "Model Kimliği"
           },
+          "reasoningApi": {
+            "title": "Hangi Anthropic akıl yürütme API şekli kullanılacak: uyarlanabilir düşünme için `effort` (Claude 4.6+), eski genişletilmiş düşünme için `budget` (Claude 4.0–4.5) veya devre dışı bırakmak için `null`. Varsayılan olarak model adından çıkarılır."
+          },
+          "supportsXHighEffort": {
+            "title": "Modelin Anthropic `xhigh` çaba değerini kabul edip etmediğini gösterir. Varsayılan olarak model adından çıkarılır."
+          },
           "url": {
             "title": "Modelin barındırıldığı Anthropic API uyumlu uç nokta"
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "Kod Bloğunu Kopyala",
         "couldNotSendRequestToSession": "\"{0}\" isteği {1} oturumuna gönderilemedi.",
         "delegation-response-renderer": {
+          "interactionNeeded": "Kullanıcı etkileşimi gereklidir",
           "prompt": {
             "label": "Delege edilmiş istem:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "Bu görevi gerçekleştirin.",
         "persistedSession": "Kalıcı oturum (geri yüklemek için tıklayın)",
         "promptFragmentsDescription": "Sohbete eklenecek özel komut istemi parçaları",
+        "reasoning": {
+          "high": "Yüksek",
+          "low": "Düşük",
+          "medium": "Orta",
+          "minimal": "Minimal"
+        },
         "removeChat": "Sohbeti Kaldır",
-        "renameChat": "Sohbeti Yeniden Adlandır",
         "requestNotFoundForRetry": "Yeniden denemek için istek bulunamadı",
         "responseFrom": "{0}'dan gelen yanıt",
         "saveCurrentSelectionsToSettings": "Yetenek ayarlarını kaydet",
@@ -320,6 +332,18 @@
           "cantDisplay": "Yanıt görüntülenemiyor, lütfen ChatResponsePartRenderers'ınızı kontrol edin!"
         },
         "toggleCapabilitiesConfig": "Yetenek Yapılandırmasını Değiştir",
+        "tokenUsageIndicatorEnabled": "Deney amaçlı jeton kullanım göstergesinin sohbet görünümünde gösterilip gösterilmeyeceğini kontrol eder. Bu özellik deneme amaçlıdır ve jeton sayıları modele ve sağlayıcıya bağlı olarak yanlış olabilir.",
+        "tokenUsageLabel": "Token Kullanımı",
+        "tokenUsageOverflow": "Token kullanımı uyarı eşiğini çok aştı. Sıkıştırmayı veya yeni bir oturum başlatmayı düşünün.",
+        "tokenUsageTooltipCacheCreate": "Önbellek oluşturma: {0}",
+        "tokenUsageTooltipCacheRead": "Önbellek okuma: {0}",
+        "tokenUsageTooltipTotal": "Toplam: {0} / {1} ({2} %)",
+        "tokenUsageWarning": "Token kullanım uyarı eşiğine ulaşıldı.",
+        "tokenUsageWarningEnabled": "Bir sohbet oturumunun token kullanımı yapılandırılan eşiği aştığında bir bildirim gösterilip gösterilmeyeceğini kontrol eder. Dil modeli sağlayıcısının token kullanımını bildirmesi gerekir.",
+        "tokenUsageWarningMessage": "Sohbet oturumu jetonu kullanımı, bağlam penceresinin %{0}'sine ulaştı. Sınıra ulaşmamak için bu oturumu özetlemeyi veya yeni bir oturum başlatmayı düşünün.",
+        "tokenUsageWarningNewSessionAction": "Yeni Sohbet Başlat",
+        "tokenUsageWarningSummarizeAction": "Mevcut Oturumu Özetle",
+        "tokenUsageWarningThresholdPercentage": "Token kullanım uyarısının tetiklendiği model bağlam penceresinin yüzdesi. Bu değer aynı zamanda token kullanım göstergesinin uyarı/hata renk şeritlerini de belirler. Şu anda varsayılan 200k bağlam penceresi temel alınarak hesaplanır; kullanılabilir olduğunda model başına gerçek bağlam boyutu kullanılacaktır.",
         "toolcall-part-renderer": {
           "denied": "Yürütme reddedildi",
           "finished": "Çalıştır",
@@ -376,7 +400,6 @@
         "directory": "Dizin",
         "domain": "Etki alanı",
         "editAutomatically": "Otomatik olarak düzenle",
-        "editNumber": "{0}'ı düzenle",
         "editing": "Düzenleme",
         "editsCount": "{0} düzenlemeler",
         "emptyTodoList": "No todos mevcut",
@@ -496,8 +519,7 @@
         "oneItem": "1 öğe",
         "searched": "Aranan",
         "searching": "Arama",
-        "todoList": "Tüm Liste",
-        "webSearch": "Web Arama"
+        "todoList": "Tüm Liste"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "Eylemler",
           "addCustomAgent": "Özel Ajan Ekle",
           "availableCapabilities": "Mevcut Yetenekler",
           "completionNotificationDescriptionPrefix": "Bu aracı görevini tamamladığında nasıl bilgilendirilmek istediğinizi seçin. \"Varsayılan\" seçeneği ",
@@ -730,6 +753,9 @@
             "title": "Dil Modeli Takma Adları"
           }
         },
+        "productNameVariable": {
+          "description": "Kullanıcının çalıştığı ürünün/uygulamanın adı"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "Etkin özelleştirme",
           "createCustomizationTitle": "Özelleştirme Oluştur",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "AI Komut Şablonları"
         },
+        "reasoning": {
+          "mdDescription": "Sohbet girdisinin akıl yürütme seçicisi için varsayılan değer, akıl yürütmeyi destekleyen modellere uygulanır.\n\nBu bir UI düzeyinde ayardır: seçilen düzey, istek sırasında sağlayıcının yerel API parametrelerine çevrilir (ör. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) ve aynı alanlar için `#ai-features.modelSettings.requestSettings#` aracılığıyla sağlanan ham değerlerden önceliklidir.\n\nHer giriş şunlardan oluşur:\n- `scope`: Ayarın ne zaman geçerli olacağını tanımlar (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: `off`, `minimal`, `low`, `medium`, `high`, `auto` seçeneklerinden biri.\n\nÇalışma zamanında öncelik (en yüksekten başlayarak): seçici aracılığıyla oturum geçersiz kılma → bu tercih → modelin beyan edilen varsayılanı. Seçicinin görüntülediği değer gönderilir. Bir sağlayıcının reasoning alanını `#ai-features.modelSettings.requestSettings#` aracılığıyla manuel olarak geçersiz kılmak için, burada `reasoning.level` değerini `off` olarak ayarlayın, böylece seviyeye dayalı çeviri devre dışı bırakılır.\n\nGirdiler, kapsam özgüllüğüne göre eşleştirilir (ajan: 100, model: 10, sağlayıcı: 1 puan).\n\nÖrnek:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "Gerekçe Varsayılanlar"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "Llm'ye geri gönderilen mesajların nasıl işleneceğine ilişkin istemci ayarları.",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "düzenlendi",
           "unavailableVariant": "Kullanılamıyor"
-        },
-        "thinkingMode": {
-          "mdDescription": "Genişletilmiş düşünme yeteneklerini destekleyen modeller için düşünme modu ayarlarının belirtilmesine olanak tanır.\nHer ayar şunlardan oluşur:\n- `scope`: Ayarın ne zaman geçerli olacağını tanımlar:\n- `modelId` (isteğe bağlı): Eşleşecek model kimliği\n- `providerId` (isteğe bağlı): Eşleşecek sağlayıcı kimliği\n- `agentId` (isteğe bağlı): Eşleşecek ajan kimliği\n- `thinkingMode`: Düşünme modu yapılandırması:\n- `enabled` (boolean): Düşünme modunun etkin olup olmadığı\n- `budgetTokens` (sayı, isteğe bağlı): Düşünme için maksimum jeton sayısı (model tarafından destekleniyorsa)\nAyarlar, özgüllüğe göre eşleştirilir (ajan: 100, model: 10, sağlayıcı: 1 puan).",
-          "scope": {
-            "agentId": {
-              "description": "Ayarların uygulanacağı (isteğe bağlı) ajan kimliği."
-            },
-            "modelId": {
-              "description": "(İsteğe bağlı) model kimliği"
-            },
-            "providerId": {
-              "description": "Ayarları uygulamak için (isteğe bağlı) sağlayıcı kimliği."
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "Düşünmek için kullanılacak maksimum jeton sayısı. Yalnızca model düşünme bütçesini destekliyorsa geçerlidir."
-            },
-            "description": "Düşünme modu yapılandırması.",
-            "enabled": {
-              "description": "Düşünme modunun etkin olup olmadığı."
-            }
-          },
-          "title": "Düşünme Modu Ayarları"
         },
         "todayVariable": {
           "description": "Bugün için bir şeyler yapın",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "Komut İstemi Varyantı",
           "request": "Talep",
+          "response": "Yanıt",
           "timestamp": "Zaman damgası",
           "title": "Talep"
         },
@@ -963,14 +970,15 @@
           "selections": "Seçimler"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "Kullanıcının ajan modu uyarısını onaylayıp onaylamadığı. Ajan modu, ek onay gerektirmeden özerk dosya değişikliklerine izin verir. Bir sonraki ajan modu isteğinde onay mesajını tekrar görmek için `false` olarak ayarlayın."
+          "enabled": {
+            "mdDescription": "Coder ajanı için ajan modunu etkinleştirin. Ajan modu, ek onay gerekmeden otonom dosya değişikliklerine izin verir.                 Bu ayar `true` olarak belirlenene kadar, ajan modu kullanılırken ilk kullanım onay iletişim kutusu görüntülenir."
           }
         },
         "agentModeConfirmation": {
-          "confirm": "Onayla",
+          "continueAgentMode": "Ajan Moduna devam et",
+          "continueEditMode": "Düzenleme Moduna devam et",
+          "info": "Ajan Modu ile devam etmek, onayınızı kaydeder. Bunu daha sonra `ai-features.agentMode.enabled` ayarı aracılığıyla tekrar iptal edebilirsiniz.\n\nDüzenleme Modu ile devam etmek, varsayılan modunuzu Düzenleme Modu olarak değiştirir.\n\nMod seçiciyi kullanarak veya AI Yapılandırması'ndan istediğiniz zaman modları değiştirebilirsiniz.",
           "msg": "Bu ajan **ajans modu** kullanır. Otonom akışı etkinleştirmek için, ek bir onay almadan çalışma alanı dosyalarınıza doğrudan yazabilir.\n\nDeğişiklikleri gözden geçirebilmeniz ve geri alabilmeniz için sürüm kontrolü (ör. Git) kullanmanız önerilir.\n\nAşağıdaki sohbet giriş alanındaki mod seçiciyi kullanarak **Düzenleme Modu**'na geçebilir veya salt okunur planlama için **Architect** ajanını kullanabilirsiniz.\n\nBu onay, bu çalışma alanı için kaydedilir ve bir daha gösterilmez. Bunu sıfırlamak veya genel olarak yapılandırmak için Ayarlar'da `ai-features.agentMode.confirmed` öğesini arayın.",
-          "question": "Ajan Modu ile devam etmek istiyor musunuz?",
           "waiting": "Onay bekleniyor..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "Claude Code gibi bazı ajanlar Theia Dil Modellerine ihtiyaç duymaz.",
         "chatDisabledMessage": {
           "title": "AI Özellikleri Devre Dışı Bırakıldı"
+        },
+        "chatRestrictedMessage": {
+          "title": "AI Özellikleri Kısıtlanmıştır"
         },
         "codeReviewerAgent": {
           "description": "Kod değişikliklerini analiz eden ve yapılandırılmış kararlar veren bir kod inceleme asistanı. Tamamlanma kriterlerini, derleme/lint/test kanıtlarını ve kod kalitesini kontrol eder."
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "Ajanın GitHub ile etkileşime girmesine olanak tanır. Bunun için ajan, sorunları, çekme isteklerini, yorumları ve depo içeriğini okuyup yazabilen GitHub ajanına yetki verebilir.",
-          "name": "GitHub"
+          "description": "Ajanın GitHub ile etkileşime girmesine olanak tanır. Bunun için ajan, sorunları, çekme isteklerini, yorumları ve depo içeriğini okuyup yazabilen GitHub ajanına yetki verebilir."
         },
         "githubRepoName": {
           "description": "Mevcut GitHub deposunun adı (ör. \"eclipse-theia/theia\")"
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "`@{0}`'e devretme"
           }
         },
+        "prReviewAgent": {
+          "description": "Tam bir kod inceleme iş akışını koordine eden, yapay zeka destekli bir PR inceleme aracısı: PR bilgilerini alır, kod tabanını inceler, yapılandırılmış analizler gerçekleştirir, diff görüntüleyicilerle kullanıcıyı bulgular arasında etkileşimli bir şekilde yönlendirir ve isteğe bağlı olarak GitHub'da bekleyen bir inceleme oluşturur."
+        },
         "prompt-template-description": "[AI Yapılandırma Görünümü]({0}) içinde AI ajanları için komut istem varyantlarını seçin ve komut istem şablonlarını özelleştirin.",
         "recentChats": "Son Sohbetler",
-        "renameChat": "Sohbeti Yeniden Adlandır",
+        "restrictedModeDetails": "AI sohbeti, satır içi öneriler, kod eylemleri ve komut şablonları devre dışıdır",
+        "restrictedModeLabel": "AI Özellikleri (Kısıtlı Modda devre dışı bırakılmıştır)",
         "shellAllowlist": {
           "placeholder": "Örneğin, \"git log\" (tam) veya \"git log *\" (argümanlarla)."
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "Model Kimliği"
           },
+          "reasoningSupport": {
+            "title": "Modelin akıl yürütme yeteneklerini bildirir. Ayarlandığında, sohbet bu model için bir akıl yürütme seçici gösterir. Devre dışı bırakmak için `null` olarak ayarlayın. Varsayılan olarak model adından çıkarılır."
+          },
           "supportsStructuredOutput": {
             "title": "Modelin yapılandırılmış çıktıyı destekleyip desteklemediğini gösterir. Varsayılan olarak `true`."
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Gelişmiş Ayarlar (JSON)",
-        "budgetTokens": "Bütçe jetonları:",
         "confirmationTimeout": "Onay Zaman Aşımı",
         "confirmationTimeoutNote": "Belirtilen süreden sonra araç onaylarını otomatik olarak reddet. Bu oturum için genel tercihi geçersiz kılar.",
         "enableConfirmationTimeout": "Onay zaman aşımını etkinleştir",
-        "enableThinking": "Genişletilmiş düşünmeyi etkinleştirin",
-        "thinkingMode": "Düşünme Modu",
-        "thinkingModeNote": "Bazı modeller bu ayarı yok sayabilir.",
         "timeoutSeconds": "Zaman aşımı (saniye):",
         "title": "Oturum Ayarlarını Yap",
         "tooltip": "Oturum Ayarlarını Yap"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "Görev Bağlamı: Oturumu Başlat",
       "navigate-back": "Geri Dön",
       "navigate-forward": "İleriye Git",
+      "noOutput": "Çıktı yok",
       "open-current-session-summary": "Geçerli Oturum Özetini Aç",
       "open-settings-tooltip": "AI ayarlarını aç...",
       "renameChat": "Sohbeti Yeniden Adlandır",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "\"{0}\" ajanı görevini tamamladı.",
       "agentCompletionMessageWithSession": "Ajan \"{0}\" \"{1}\" içindeki görevini tamamladı.",
       "agentCompletionTitle": "Ajan \"{0}\" Görevi Tamamlandı",
+      "aiDisabledInRestrictedMode": "Güvenilmeyen çalışma alanlarında AI özellikleri kullanılamaz.",
       "preferences": {
+        "linuxEnvHint": "Linux'ta, uygulamayı masaüstü kısayolundan başlatıyorsanız, değişkenin `~/.profile` dosyasında (sadece `~/.bashrc` dosyasında değil) tanımlandığından emin olun. Ayrıntılar için [belgelere](https://theia-ide.org/docs/user_ai/#setting-api-keys) bakın.",
         "title": "AI Özellikleri"
       },
       "showChat": "Sohbeti Göster"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<bilet numarası>",
         "description": "GitHub biletini analiz edin ve çözümü uygulayın."
       },
-      "open-agent-settings-tooltip": "Aracı ayarlarını aç...",
+      "open-ai-configuration-tooltip": "Open AI Yapılandırması",
       "rememberCommand": {
         "argumentHint": "[konu ipucu]",
         "description": "Konuşmalardan konuları çıkarın ve proje bilgilerini güncelleyin"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "Görev yok"
-      }
+      },
+      "userInteractionCanceled": "İptal edildi",
+      "userInteractionCommentPlaceholder": "Bu adım için bir yorum ekleyin...",
+      "userInteractionEmpty": "Boş",
+      "userInteractionFinishStep": "Bitir",
+      "userInteractionGoToStep": "{0} adımına gidin: {1}",
+      "userInteractionMalformed": "Kullanıcı etkileşimi görüntülenemedi",
+      "userInteractionMalformedFallback": "Argümanlar ayrıştırılamadı.",
+      "userInteractionPreparing": "Kullanıcı etkileşimi hazırlanıyor...",
+      "userInteractionPreparingSteps": "Hazırlık: {0} ({1} adımları)",
+      "userInteractionPreparingTitle": "Hazırlık: {0}",
+      "userInteractionStepLabel": "{1}'un {0}. adımı",
+      "userInteractionWorkingCopy": "Çalışma Kopyası"
     },
     "ai-mcp": {
       "blockedServersLabel": "MCP Sunucuları (otomatik başlatma engellenmiş)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "İptal edildi",
       "executionDenied": "Reddedildi",
       "executionDeniedWithReason": "Sebep gösterilerek reddedildi",
-      "noOutput": "Çıktı yok",
       "partialOutput": "Kısmi Çıktı",
       "shellCommandAllowlist": {
         "description": "Kabuk komut kalıplarının listesi. * karakterini joker karakter olarak kullanın: \"git log\" (tam eşleşme), \"git log *\" (isteğe bağlı argümanlarla), \"* --version\" (--version ile biten herhangi bir komut). Joker karakterin önünde boşluk olmalıdır. Tehlikeli kalıplara sahip komutlar ($, ters eğik çizgi) asla otomatik olarak izin verilmez."
@@ -1695,9 +1722,6 @@
         "enhanced": "Ek bilgilerle birlikte sekmenin gelişmiş bir önizlemesini görüntüleyin.",
         "visual": "Sekmenin görsel önizlemesini görüntüleyin."
       },
-      "file": {
-        "browse": "Gözat"
-      },
       "highlightModifiedTabs": "Değiştirilmiş (kirli) düzenleyici sekmelerine üst kenarlık çizilip çizilmeyeceğini kontrol eder.",
       "keybinding": {
         "duplicateModifierError": "{0}'da tuş ataması yapılamıyor Yinelenen değiştiriciler",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "Pano erişimi reddedildi. Tarayıcınızın izinlerini kontrol edin.",
         "clipboardWarnFirefox": "Pano API'si kullanılamaz. \"{1}\" (Gelişmiş) sayfasında \"{0}\" (Pano API'sini etkinleştir) tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. Bu, FireFox'un sistem panosuna tam erişim izni verecektir."
       },
-      "offline": "Çevrimdışı",
       "pasteWarn": "Lütfen tarayıcının yapıştır komutunu veya kısayolunu kullanın.",
       "quitMessage": "Kaydedilmemiş değişiklikler kaydedilmeyecektir.",
       "resetWorkbenchLayout": "Çalışma Alanı Düzenini Sıfırla",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "Hedef konum Ln {0}, Col {1} konumuna kaydırılacaktır. Yine de çalıştırmak ister misiniz?",
       "confirmRunToShiftedPosition_title": "Geçerli iş parçacığını tam olarak belirtilen konuma çalıştıramıyor",
       "consoleFilterAriaLabel": "Hata ayıklama konsolu çıktısını filtrele",
+      "consoleFilterPlaceholder": "Filtre (örn. metin, !hariç tut)",
       "consoleFilterTooltip": "Konsol çıktısını metne göre filtreleyin. Birden fazla terimi virgülle ayırın. Bir terimi hariç tutmak için önüne `!` ekleyin.\n\nÖrnekler:\n\n- `metin` - \"metin\" içeren satırları göster\n- `metin, diğer` - \"metin\" veya \"diğer\" içeren satırları göster\n- `!metin` - \"metin\" içeren satırları gizle\n- `metin, !diğer` - \"metin\"i göster, ancak \"diğer\"i gizle",
       "consoleSessionSelectorTooltip": "Hata ayıklama oturumları arasında geçiş yapın. Her hata ayıklama oturumunun kendi konsol çıkışı vardır.",
       "consoleSeverityTooltip": "Konsol çıktısını önem düzeyine göre filtreleyin. Yalnızca seçilen önem düzeyine sahip mesajlar gösterilecektir.",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "Hata ayıklama adaptörleriyle izleme iletişimini etkinleştir/devre dışı bırak",
       "unknownSession": "Bilinmeyen Oturum",
       "unverifiedBreakpoint": "Doğrulanmamış {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "{0} adresindeki Devcontainer dosyası çalışma alanında bulunamadı",
+      "failedToRebuild": "Konteyneri yeniden oluşturulamadı: {0}",
+      "noDevcontainerFileSpecified": "Çalışma alanı için devcontainer dosyası belirtilmedi",
+      "removingOldContainer": "Eski konteyner kaldırılıyor..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "Etkinleştirildiğinde, otomatik kaydetme işlevini, otomatik kaydetme tetiklendiği anda içinde hata bildirilmeyen dosyalarla sınırlayacaktır. Yalnızc{0}i etkinleştirildiğinde geçerlidir.",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "Çalışan Konteynere Ekle",
         "connect": "Konteynerde Yeniden Aç",
         "noDevcontainerFiles": "Çalışma alanında devcontainer.json dosyası bulunamadı. Devcontainer.json dosyasının bulunduğu bir .devcontainer dizini olduğundan emin olun.",
-        "selectDevcontainer": "Bir devcontainer.json dosyası seçin"
+        "noRunningContainers": "Çalışan konteyner bulunamadı.",
+        "rebuild": "Konteyneri Yeniden Oluştur",
+        "rebuilding": "Dev konteynerini yeniden oluşturma",
+        "reopenInContainer": "Konteynerde Yeniden Aç",
+        "selectContainer": "Eklenecek çalışan bir konteyner seçin",
+        "selectDevcontainer": "Bir devcontainer.json dosyası seçin",
+        "suggestion": "Bu çalışma alanında bir geliştirme konteyneri yapılandırması bulunmaktadır. Konteynerde yeniden açmak ister misiniz?"
+      },
+      "port-forwarding": {
+        "focusPorts": "Bağlantı Noktaları: Bağlantı Noktaları Görünümüne Odaklanma"
       },
       "ssh": {
         "connect": "Geçerli Pencereyi Ana Bilgisayara Bağla...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "1 saat önce",
+      "1MinuteAgo": "1 dakika önce",
       "amend": "Değiştir",
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Son taahhüdü değiştir",
@@ -2133,9 +2175,12 @@
         "close": "Kapat Değiştir Peek Görünümü"
       },
       "history": "Geçmiş",
+      "justNow": "az önce",
       "mergeEditor": {
         "resetConfirmationTitle": "Bu düzenleyicide birleştirme sonucunu gerçekten sıfırlamak istiyor musunuz?"
       },
+      "noChanges": "Değiştirilen dosya yok.",
+      "noHistory": "Kaynak kontrol geçmişi mevcut değildir.",
       "noHistoryForError": "{0} için geçmiş bilgisi mevcut değildir.",
       "prepositionIn": "ve",
       "unamend": "Değiştirilemez",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Tüm Test Çalıştırmalarını İptal Et",
+      "showTestOutput": "Test Çıktısını Göster",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} {1}'u çalıştır",
       "testRuns": "Test Çalıştırmaları"

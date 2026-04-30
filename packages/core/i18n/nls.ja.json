@@ -87,6 +87,12 @@
           "modelId": {
             "title": "モデルID"
           },
+          "reasoningApi": {
+            "title": "Anthropicの推論APIのどのシェイプを使用するか:適応型思考には `effort`(Claude 4.6+)、レガシー拡張思考には `budget`(Claude 4.0–4.5)、無効化するには `null`。デフォルトではモデル名から推測されます。"
+          },
+          "supportsXHighEffort": {
+            "title": "モデルがAnthropicの`xhigh`エフォート値を受け入れるかどうかを示します。デフォルトではモデル名から推測されます。"
+          },
           "url": {
             "title": "モデルがホストされているAnthropic API互換エンドポイント"
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "コードブロックをコピー",
         "couldNotSendRequestToSession": "セッション {1} へのリクエスト \"{0}\" を送信できませんでした",
         "delegation-response-renderer": {
+          "interactionNeeded": "ユーザーによる操作が必要",
           "prompt": {
             "label": "委譲プロンプト:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "このタスクを実行してください。",
         "persistedSession": "永続化されたセッション(クリックで復元)",
         "promptFragmentsDescription": "会話に含めるカスタムプロンプトフラグメント",
+        "reasoning": {
+          "high": "高",
+          "low": "低",
+          "medium": "中",
+          "minimal": "最小限"
+        },
         "removeChat": "チャットを削除",
-        "renameChat": "チャットの名前変更",
         "requestNotFoundForRetry": "リクエストが見つかりません。再試行してください。",
         "responseFrom": "{0}からの応答",
         "saveCurrentSelectionsToSettings": "機能設定の保存",
@@ -320,6 +332,18 @@
           "cantDisplay": "応答を表示できません。ChatResponsePartRenderers を確認してください！"
         },
         "toggleCapabilitiesConfig": "機能設定の切り替え",
+        "tokenUsageIndicatorEnabled": "チャットビューに実験的なトークン使用量インジケーターを表示するかどうかを制御します。この機能は実験的なものであり、モデルやプロバイダーによってはトークン数が不正確になる場合があります。",
+        "tokenUsageLabel": "トークンの使用方法",
+        "tokenUsageOverflow": "トークンの使用量が警告閾値を大幅に超えています。圧縮するか、新しいセッションを開始することを検討してください。",
+        "tokenUsageTooltipCacheCreate": "キャッシュの作成: {0}",
+        "tokenUsageTooltipCacheRead": "キャッシュ読み取り: {0}",
+        "tokenUsageTooltipTotal": "合計:{0} / {1} ({2} %)",
+        "tokenUsageWarning": "トークン使用量の警告閾値に達しました。",
+        "tokenUsageWarningEnabled": "チャットセッションのトークン使用量が設定された閾値を超えた際に通知を表示するかどうかを制御します。この機能を利用するには、言語モデルプロバイダーがトークン使用量を報告する必要があります。",
+        "tokenUsageWarningMessage": "チャットセッションのトークン使用量が、コンテキストウィンドウの{0}%に達しました。制限に達しないよう、このセッションを要約するか、新しいセッションを開始することを検討してください。",
+        "tokenUsageWarningNewSessionAction": "新しいチャットを開始",
+        "tokenUsageWarningSummarizeAction": "現在のセッションを要約する",
+        "tokenUsageWarningThresholdPercentage": "トークン使用量の警告がトリガーされる、モデルのコンテキストウィンドウ内の割合。この値は、トークン使用量インジケーターの警告/エラーの色帯も決定します。現在は20万トークンのコンテキストウィンドウを想定して計算されていますが、モデルごとの実際のコンテキストサイズが利用可能になり次第、そちらを使用するようになります。",
         "toolcall-part-renderer": {
           "denied": "実行が拒否されました",
           "finished": "実行",
@@ -376,7 +400,6 @@
         "directory": "ディレクトリ",
         "domain": "ドメイン",
         "editAutomatically": "自動編集",
-        "editNumber": "{0} を編集",
         "editing": "編集",
         "editsCount": "{0} 編集",
         "emptyTodoList": "No todos available",
@@ -496,8 +519,7 @@
         "oneItem": "1項目",
         "searched": "検索",
         "searching": "検索",
-        "todoList": "Todo List",
-        "webSearch": "Web検索"
+        "todoList": "Todo List"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "アクション",
           "addCustomAgent": "カスタムエージェントを追加",
           "availableCapabilities": "利用可能な機能",
           "completionNotificationDescriptionPrefix": "このエージェントがタスクを完了した際の通知方法を選択してください。「デフォルト」は ",
@@ -730,6 +753,9 @@
             "title": "言語モデルの別名"
           }
         },
+        "productNameVariable": {
+          "description": "ユーザーが操作している製品／アプリケーションの名前"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "アクティブなカスタマイズ",
           "createCustomizationTitle": "カスタマイズを作成",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "AIプロンプトテンプレート"
         },
+        "reasoning": {
+          "mdDescription": "推論機能に対応するモデルに適用される、チャット入力の推論セレクタのデフォルト値。\n\nこれは UI レベルの設定です。選択されたレベルは、リクエスト時にプロバイダーのネイティブ API パラメーターに変換されます(例:Anthropic の `thinking` / `output_config.effort`、OpenAI の `reasoning.effort`、Gemini の `thinkingConfig`)。また、同じフィールドに対して `#ai-features.modelSettings.requestSettings#` 経由で提供される生の値よりも優先されます。\n\n各エントリは以下の構成です:\n- `scope`: 設定が適用されるタイミングを定義します(`modelId`、`providerId`、`agentId`)。\n- `reasoning.level`: `off`、`minimal`、`low`、`medium`、`high`、`auto` のいずれか。\n\n実行時の優先順位(高い順):セレクターによるセッションのオーバーライド → この設定 → モデルで宣言されたデフォルト。セレクターに表示される値が送信されます。`#ai-features.modelSettings.requestSettings#` 経由でプロバイダーの reasoning フィールドを手動で上書きするには、ここで `reasoning.level` を `off` に設定し、レベルに基づく変換を無効にしてください。\n\nエントリはスコープの特異性に基づいて照合されます(agent: 100、model: 10、provider: 1 ポイント)。\n\n例:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "デフォルト設定の根拠"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "LLMに送信されるメッセージの処理方法に関するクライアント設定。",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "編集済み",
           "unavailableVariant": "利用不可"
-        },
-        "thinkingMode": {
-          "mdDescription": "拡張思考機能をサポートするモデル向けに思考モード設定を指定可能。\n            各設定は以下で構成される:\n            - `scope`: 設定の適用条件を定義:\n              - `modelId` (オプション): 一致させるモデルID\n              - `providerId` (オプション): 一致させるプロバイダーID\n              - `agentId` (オプション): 一致させるエージェントID\n            - `thinkingMode`: 思考モードの設定:\n              - `enabled` (ブール値): 思考モードを有効にするかどうか\n              - `budgetTokens` (数値、オプション): 思考に割り当てる最大トークン数(モデルがサポートしている場合)\n            設定は特異性に基づいて照合されます(エージェント: 100点、モデル: 10点、プロバイダー: 1点)。",
-          "scope": {
-            "agentId": {
-              "description": "設定を適用する(オプションの)エージェントID。"
-            },
-            "modelId": {
-              "description": "(オプションの)モデルID"
-            },
-            "providerId": {
-              "description": "設定を適用する(オプションの)プロバイダーID。"
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "思考に使用する最大トークン数。モデルが思考予算をサポートしている場合にのみ適用されます。"
-            },
-            "description": "思考モードの設定。",
-            "enabled": {
-              "description": "思考モードが有効かどうか。"
-            }
-          },
-          "title": "思考モード設定"
         },
         "todayVariable": {
           "description": "今日の何かをする",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "プロンプトのバリエーション",
           "request": "リクエスト",
+          "response": "回答",
           "timestamp": "タイムスタンプ",
           "title": "リクエスト"
         },
@@ -963,14 +970,15 @@
           "selections": "選択項目"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "ユーザーがエージェントモードの警告を確認したかどうか。エージェントモードでは、追加の確認なしにファイルを自動的に変更できます。次のエージェントモードの要求時に再度確認を表示するには、`false` に設定してください。"
+          "enabled": {
+            "mdDescription": "Coderエージェントのエージェントモードを有効にします。エージェントモードでは、追加の確認なしにファイルの自動変更が可能になります。                 この設定が `true` に設定されるまでは、エージェントモードを使用する際に初回使用時の確認ダイアログが表示されます。"
           }
         },
         "agentModeConfirmation": {
-          "confirm": "確認",
+          "continueAgentMode": "エージェントモードを続行",
+          "continueEditMode": "編集モードを続行",
+          "info": "エージェントモードで続行すると、確認内容が保存されます。後で `ai-features.agentMode.enabled` 設定を通じて、この設定を再度無効にすることができます。\n\n編集モードで続行すると、デフォルトモードが編集モードに変更されます。\n\nモードは、モードセレクターまたは AI 設定からいつでも変更できます。",
           "msg": "このエージェントは**エージェントモード**を使用します。自律的な処理を可能にするため、追加の確認なしにワークスペースのファイルに直接書き込むことができます。\n\n変更内容をレビューしたり元に戻したりできるように、バージョン管理システム(例:Git)の使用を推奨します。\n\n下のチャット入力エリアにあるモードセレクターを使用して**編集モード**に切り替えるか、読み取り専用の計画作成には**Architect**エージェントをご利用ください。\n\nこの確認設定はワークスペースごとに保存され、再度表示されることはありません。リセットまたはグローバルに設定するには、設定画面で `ai-features.agentMode.confirmed` を探してください。",
-          "question": "エージェントモードで続行しますか?",
           "waiting": "確認を待っています..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "Claude Codeのような一部のエージェントはTheia言語モデルを必要としません",
         "chatDisabledMessage": {
           "title": "AI機能は無効化されています"
+        },
+        "chatRestrictedMessage": {
+          "title": "AI機能は制限されています"
         },
         "codeReviewerAgent": {
           "description": "コードの変更を分析し、構造化された評価結果を返すコードレビューアシスタント。完了基準、ビルド／リンティング／テストの結果、およびコード品質をチェックします。"
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "エージェントがGitHubと連携することを許可します。このため、エージェントはGitHubエージェントに委任でき、             これにより課題、プルリクエスト、コメント、リポジトリの内容を読み書きできます。",
-          "name": "GitHub"
+          "description": "エージェントがGitHubと連携することを許可します。このため、エージェントはGitHubエージェントに委任でき、             これにより課題、プルリクエスト、コメント、リポジトリの内容を読み書きできます。"
         },
         "githubRepoName": {
           "description": "現在のGitHubリポジトリ名(例: \"eclipse-theia/theia\")"
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "`@{0}` への委任"
           }
         },
+        "prReviewAgent": {
+          "description": "コードレビューのワークフロー全体を調整する、AI搭載のPRレビューエージェント。PR情報の取得、コードベースの探索、構造化された分析の実施、diffビューアを用いた発見事項のインタラクティブな説明、およびオプションでGitHub上に保留中のレビューを作成します。"
+        },
         "prompt-template-description": "[AI設定ビュー]({0})でAIエージェントのプロンプトバリエーションを選択し、プロンプトテンプレートをカスタマイズします。",
         "recentChats": "最近のチャット",
-        "renameChat": "チャットの名前変更",
+        "restrictedModeDetails": "AIチャット、インライン提案、コードアクション、およびプロンプトテンプレートは無効になっています",
+        "restrictedModeLabel": "AI機能(制限モードでは無効化されています)",
         "shellAllowlist": {
           "placeholder": "例: \"git log\" (正確なコマンド) または \"git log *\" (引数付き)"
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "モデルID"
           },
+          "reasoningSupport": {
+            "title": "モデルの推論機能を宣言します。設定すると、チャットにこのモデルの推論セレクターが表示されます。無効にするには `null` に設定してください。デフォルトではモデル名から推測されます。"
+          },
           "supportsStructuredOutput": {
             "title": "モデルが構造化出力をサポートするかどうかを示します。デフォルトは`true`です。"
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "詳細設定 (JSON)",
-        "budgetTokens": "予算トークン:",
         "confirmationTimeout": "確認タイムアウト",
         "confirmationTimeoutNote": "指定した時間が経過すると、ツールの確認ダイアログを自動的に拒否します。このセッションでは、グローバル設定よりも優先されます。",
         "enableConfirmationTimeout": "確認のタイムアウトを有効にする",
-        "enableThinking": "拡張思考を有効にする",
-        "thinkingMode": "思考モード",
-        "thinkingModeNote": "一部のモデルではこの設定が無視される場合があります。",
         "timeoutSeconds": "タイムアウト(秒):",
         "title": "セッション設定を設定する",
         "tooltip": "セッション設定を設定する"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "タスクコンテキスト: セッションの開始",
       "navigate-back": "戻る",
       "navigate-forward": "前方へ移動",
+      "noOutput": "出力なし",
       "open-current-session-summary": "現在のセッションの概要を開く",
       "open-settings-tooltip": "AI設定を開く...",
       "renameChat": "チャットの名前変更",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "エージェント「{0}」はタスクを完了しました。",
       "agentCompletionMessageWithSession": "エージェント「{0}」は「{1}」におけるタスクを完了しました。",
       "agentCompletionTitle": "エージェント「{0}」タスク完了",
+      "aiDisabledInRestrictedMode": "信頼されていないワークスペースでは、AI機能は利用できません。",
       "preferences": {
+        "linuxEnvHint": "Linux では、デスクトップのショートカットからアプリケーションを起動する場合、変数が `~/.profile`(`~/.bashrc` だけでなく)に定義されていることを確認してください。詳細については、[ドキュメント](https://theia-ide.org/docs/user_ai/#setting-api-keys)を参照してください。",
         "title": "AI機能"
       },
       "showChat": "チャットを表示"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<チケット番号>",
         "description": "GitHubチケットを分析し、解決策を実装する"
       },
-      "open-agent-settings-tooltip": "エージェント設定を開く...",
+      "open-ai-configuration-tooltip": "OpenAIの設定",
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "会話からトピックを抽出し、プロジェクト情報を更新する"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "タスクなし"
-      }
+      },
+      "userInteractionCanceled": "キャンセルされました",
+      "userInteractionCommentPlaceholder": "この手順についてコメントを追加...",
+      "userInteractionEmpty": "空",
+      "userInteractionFinishStep": "完了",
+      "userInteractionGoToStep": "ステップ{0}へ進む:{1}",
+      "userInteractionMalformed": "ユーザー操作を表示できませんでした",
+      "userInteractionMalformedFallback": "引数を解析できませんでした。",
+      "userInteractionPreparing": "ユーザー操作の準備中...",
+      "userInteractionPreparingSteps": "準備中:{0}({1}の手順)",
+      "userInteractionPreparingTitle": "準備中:{0}",
+      "userInteractionStepLabel": "{1} のステップ{0}",
+      "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
       "blockedServersLabel": "MCPサーバー(自動起動がブロックされています)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "キャンセル済み",
       "executionDenied": "拒否されました",
       "executionDeniedWithReason": "拒否されました(理由あり)",
-      "noOutput": "出力なし",
       "partialOutput": "部分的な出力",
       "shellCommandAllowlist": {
         "description": "シェルコマンドパターンのリスト。ワイルドカードとして * を使用: \"git log\"(完全一致)、\"git log *\"(オプション引数付き)、\"* --version\"(--version で終わる任意のコマンド)。ワイルドカードの前には必ずスペースを置くこと。危険なパターン($、バッククォート)を含むコマンドは自動許可されない。"
@@ -1695,9 +1722,6 @@
         "enhanced": "タブの詳細情報を追加した拡張プレビューを表示します。",
         "visual": "タブの視覚的なプレビューを表示する。"
       },
-      "file": {
-        "browse": "閲覧"
-      },
       "highlightModifiedTabs": "編集済み(変更済み)のエディタタブに上部の境界線を表示するかどうかを制御します。",
       "keybinding": {
         "duplicateModifierError": "キーバインディングを解析できません {0} 重複する修飾子",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザの権限設定を確認してください。",
         "clipboardWarnFirefox": "クリップボードAPIは利用できません。これを有効にするには、「{1}」ページで「{0}」設定を有効にしてください。その後、Theiaを再読み込みしてください。ただし、これによりFireFoxがシステムクリップボードへの完全なアクセス権を取得することになります。"
       },
-      "offline": "オフライン",
       "pasteWarn": "ブラウザの貼り付けコマンドまたはショートカットをご利用ください。",
       "quitMessage": "未保存の変更は保存されません。",
       "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "ターゲット位置は行{0}、列{1}にシフトされます。実行しますか?",
       "confirmRunToShiftedPosition_title": "現在のスレッドを指定された位置に正確に実行できません",
       "consoleFilterAriaLabel": "デバッグコンソールの出力をフィルタリングする",
+      "consoleFilterPlaceholder": "フィルター(例:text、!exclude)",
       "consoleFilterTooltip": "テキストでコンソール出力をフィルタリングします。複数の用語はコンマで区切ります。除外する用語には `!` を接頭辞として付けます。\n\n例:\n\n- `text` - \"text\"を含む行を表示\n- `text, other` - \"text\"または\"other\"を含む行を表示\n- `!text` - \"text\"を含む行を非表示\n- `text, !other` - \"text\"を表示し、\"other\"を非表示",
       "consoleSessionSelectorTooltip": "デバッグセッションを切り替えます。各デバッグセッションには独自のコンソール出力があります。",
       "consoleSeverityTooltip": "深刻度レベルでコンソール出力をフィルタリングします。選択した深刻度を持つメッセージのみが表示されます。",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "デバッグアダプターとの通信トレースを有効化/無効化",
       "unknownSession": "不明なセッション",
       "unverifiedBreakpoint": "未検証 {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "{0} にある Devcontainer ファイルがワークスペースに見つかりません",
+      "failedToRebuild": "コンテナの再構築に失敗しました: {0}",
+      "noDevcontainerFileSpecified": "ワークスペースにdevcontainerファイルが指定されていません",
+      "removingOldContainer": "古いコンテナを削除中..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "有効にすると、自動保存がトリガーされた時点でエラーが報告されていないファイルに対してのみ、エディタの自動保存が制限されます。{0}が有効になっている場合にのみ適用されます。",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "実行中のコンテナに接続",
         "connect": "コンテナ内で再開",
         "noDevcontainerFiles": "ワークスペース内にdevcontainer.jsonファイルが見つかりません。.devcontainerディレクトリ内にdevcontainer.jsonファイルが存在することを確認してください。",
-        "selectDevcontainer": "devcontainer.json ファイルを選択してください"
+        "noRunningContainers": "実行中のコンテナが見つかりませんでした。",
+        "rebuild": "コンテナの再構築",
+        "rebuilding": "開発用コンテナの再構築",
+        "reopenInContainer": "コンテナで再起動",
+        "selectContainer": "接続する実行中のコンテナを選択してください",
+        "selectDevcontainer": "devcontainer.json ファイルを選択してください",
+        "suggestion": "このワークスペースには開発用コンテナの設定が適用されています。コンテナ内で再度開きますか?"
+      },
+      "port-forwarding": {
+        "focusPorts": "ポート:ポートビューに焦点を当てる"
       },
       "ssh": {
         "connect": "現在のウィンドウをホストに接続...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "1時間前",
+      "1MinuteAgo": "1分前",
       "amend": "修正",
       "amendHeadCommit": "HEAD コミット",
       "amendLastCommit": "最後のコミットを修正する",
@@ -2133,9 +2175,12 @@
         "close": "閉じる 変更 プレビュー表示"
       },
       "history": "履歴",
+      "justNow": "ついさっき",
       "mergeEditor": {
         "resetConfirmationTitle": "このエディターでマージ結果を本当にリセットしますか?"
       },
+      "noChanges": "変更されたファイルはありません。",
+      "noHistory": "ソース管理の履歴はありません。",
       "noHistoryForError": "{0}には履歴がありません",
       "prepositionIn": "および",
       "unamend": "変更不可",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "すべてのテスト実行をキャンセル",
+      "showTestOutput": "テスト出力を表示",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} {1} を実行",
       "testRuns": "テスト実行"

@@ -87,6 +87,12 @@
           "modelId": {
             "title": "ID modello"
           },
+          "reasoningApi": {
+            "title": "Quale forma dell'API di ragionamento antropico utilizzare: `effort` per il pensiero adattivo (Claude 4.6+), `budget` per il pensiero esteso legacy (Claude 4.0–4.5) o `null` per disabilitarlo. Dedotto dal nome del modello per impostazione predefinita."
+          },
+          "supportsXHighEffort": {
+            "title": "Indica se il modello accetta il valore di sforzo `xhigh` di Anthropic. Per impostazione predefinita, viene dedotto dal nome del modello."
+          },
           "url": {
             "title": "L'endpoint compatibile con l'API Anthropic dove è ospitato il modello."
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "Copia blocco di codice",
         "couldNotSendRequestToSession": "Impossibile inviare la richiesta \"{0}\" alla sessione {1}",
         "delegation-response-renderer": {
+          "interactionNeeded": "È richiesta l'interazione dell'utente",
           "prompt": {
             "label": "Prompt delegato:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "Esegui questa operazione.",
         "persistedSession": "Sessione persistente (clicca per ripristinare)",
         "promptFragmentsDescription": "Frammenti di prompt personalizzati da includere nella conversazione",
+        "reasoning": {
+          "high": "Alto",
+          "low": "Basso",
+          "medium": "Medio",
+          "minimal": "Minimo"
+        },
         "removeChat": "Rimuovi chat",
-        "renameChat": "Rinomina chat",
         "requestNotFoundForRetry": "Richiesta non trovata per riprovare",
         "responseFrom": "Risposta da {0}",
         "saveCurrentSelectionsToSettings": "Salva impostazioni funzionalità",
@@ -320,6 +332,18 @@
           "cantDisplay": "Impossibile visualizzare la risposta, controlla i tuoi ChatResponsePartRenderers!"
         },
         "toggleCapabilitiesConfig": "Configurazione delle funzionalità di attivazione/disattivazione",
+        "tokenUsageIndicatorEnabled": "Controlla se l'indicatore sperimentale dell'utilizzo dei token viene visualizzato nella vista chat. Questa funzione è sperimentale e il conteggio dei token potrebbe essere impreciso a seconda del modello e del provider.",
+        "tokenUsageLabel": "Utilizzo dei token",
+        "tokenUsageOverflow": "L'utilizzo dei token ha superato di gran lunga la soglia di avviso. Valutare la possibilità di comprimere o avviare una nuova sessione.",
+        "tokenUsageTooltipCacheCreate": "Creazione della cache: {0}",
+        "tokenUsageTooltipCacheRead": "Lettura dalla cache: {0}",
+        "tokenUsageTooltipTotal": "Totale: {0} / {1} ({2} %)",
+        "tokenUsageWarning": "Soglia di avviso sull'utilizzo dei token raggiunta.",
+        "tokenUsageWarningEnabled": "Controlla se viene visualizzata una notifica quando l'utilizzo dei token di una sessione di chat supera la soglia configurata. Richiede che il fornitore del modello linguistico segnali l'utilizzo dei token.",
+        "tokenUsageWarningMessage": "L'utilizzo del token della sessione di chat ha raggiunto l'{0}% della finestra di contesto. Valuta la possibilità di riassumere questa sessione o di avviarne una nuova per evitare di raggiungere il limite.",
+        "tokenUsageWarningNewSessionAction": "Avvia nuova chat",
+        "tokenUsageWarningSummarizeAction": "Riepilogo della sessione corrente",
+        "tokenUsageWarningThresholdPercentage": "Percentuale della finestra di contesto del modello alla quale viene attivato l'avviso sull'utilizzo dei token. Questo valore determina anche le fasce di colore di avviso/errore dell'indicatore di utilizzo dei token. Attualmente viene calcolato sulla base di una finestra di contesto ipotizzata di 200k; utilizzerà la dimensione reale del contesto per modello una volta disponibile.",
         "toolcall-part-renderer": {
           "denied": "Esecuzione negata",
           "finished": "Esegui",
@@ -376,7 +400,6 @@
         "directory": "Directory",
         "domain": "Dominio",
         "editAutomatically": "Modifica automatica",
-        "editNumber": "Modifica {0}",
         "editing": "Modifica",
         "editsCount": "{0} modifiche",
         "emptyTodoList": "Non tutti disponibili",
@@ -496,8 +519,7 @@
         "oneItem": "1 elemento",
         "searched": "Ricerca",
         "searching": "Ricerca",
-        "todoList": "Elenco completo",
-        "webSearch": "Ricerca web"
+        "todoList": "Elenco completo"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "Azioni",
           "addCustomAgent": "Aggiungi agente personalizzato",
           "availableCapabilities": "Funzionalità disponibili",
           "completionNotificationDescriptionPrefix": "Seleziona come desideri essere avvisato quando questo agente completa la sua attività. \"Predefinito\" utilizza il ",
@@ -730,6 +753,9 @@
             "title": "Alias del modello linguistico"
           }
         },
+        "productNameVariable": {
+          "description": "Il nome del prodotto/dell'applicazione con cui l'utente sta lavorando"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "Personalizzazione attiva",
           "createCustomizationTitle": "Crea personalizzazione",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "Modelli di prompt AI"
         },
+        "reasoning": {
+          "mdDescription": "Valore predefinito per il selettore di ragionamento dell'input della chat, applicato ai modelli che supportano il ragionamento.\n\nSi tratta di un'impostazione a livello di interfaccia utente: il livello scelto viene tradotto nei parametri API nativi del provider al momento della richiesta (ad esempio Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) e ha la precedenza su qualsiasi valore grezzo fornito tramite `#ai-features.modelSettings.requestSettings#` per gli stessi campi.\n\nOgni voce è composta da:\n- `scope`: definisce quando si applica l'impostazione (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: uno tra `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\nPriorità in fase di esecuzione (dalla più alta alla più bassa): sovrascrittura della sessione tramite il selettore → questa preferenza → l'impostazione predefinita dichiarata dal modello. Viene inviato ciò che viene visualizzato dal selettore. Per sovrascrivere manualmente il campo di ragionamento di un provider tramite `#ai-features.modelSettings.requestSettings#`, impostare qui `reasoning.level` su `off` in modo da disabilitare la traduzione basata sul livello.\n\nLe voci vengono abbinate in base alla specificità dell'ambito (agente: 100, modello: 10, provider: 1 punto).\n\nEsempio:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "Ragionamento Impostazioni predefinite"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "Impostazioni client relative alla gestione dei messaggi inviati all'llm.",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "modificato",
           "unavailableVariant": "Non disponibile"
-        },
-        "thinkingMode": {
-          "mdDescription": "Consente di specificare le impostazioni della modalità di pensiero per i modelli che supportano capacità di pensiero estese.\n            Ogni impostazione è composta da:\n            - `scope`: definisce quando l'impostazione è applicabile:\n              - `modelId` (facoltativo): l'ID del modello da abbinare\n              - `providerId` (facoltativo): l'ID del provider da abbinare\n              - `agentId` (facoltativo): L'ID agente da abbinare\n- `thinkingMode`: Configurazione della modalità di pensiero:\n- `enabled` (booleano): Se la modalità di pensiero è abilitata\n- `budgetTokens` (numero, facoltativo): Token massimi per il pensiero (se supportati dal modello)\nLe impostazioni vengono abbinate in base alla specificità (agente: 100, modello: 10, provider: 1 punto).",
-          "scope": {
-            "agentId": {
-              "description": "L'ID agente (facoltativo) a cui applicare le impostazioni."
-            },
-            "modelId": {
-              "description": "L'ID del modello (facoltativo)"
-            },
-            "providerId": {
-              "description": "L'ID provider (facoltativo) a cui applicare le impostazioni."
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "Numero massimo di token da utilizzare per il ragionamento. Applicabile solo se il modello supporta il budget di ragionamento."
-            },
-            "description": "Configurazione della modalità di pensiero.",
-            "enabled": {
-              "description": "Se la modalità di riflessione è abilitata."
-            }
-          },
-          "title": "Impostazioni della modalità di pensiero"
         },
         "todayVariable": {
           "description": "Qualcosa da fare per oggi",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "Variante del prompt",
           "request": "Richiesta",
+          "response": "Risposta",
           "timestamp": "Timestamp",
           "title": "Richiesta"
         },
@@ -963,14 +970,15 @@
           "selections": "Selezioni"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "Se l'utente ha confermato l'avviso relativo alla modalità agente. La modalità agente consente modifiche autonome ai file senza ulteriore conferma. Impostare su `false` per visualizzare nuovamente la conferma alla successiva richiesta in modalità agente."
+          "enabled": {
+            "mdDescription": "Abilita la modalità agente per l'agente Coder. La modalità agente consente modifiche autonome ai file senza ulteriore conferma.                 Quando si utilizza la modalità agente, viene visualizzata una finestra di dialogo di conferma al primo utilizzo finché questa opzione non viene impostata su `true`."
           }
         },
         "agentModeConfirmation": {
-          "confirm": "Conferma",
+          "continueAgentMode": "Continua con la modalità Agente",
+          "continueEditMode": "Continua con la modalità Modifica",
+          "info": "Proseguendo con la modalità Agente, la conferma viene salvata. È possibile revocarla in un secondo momento tramite l'impostazione `ai-features.agentMode.enabled`.\n\nProseguendo con la modalità Modifica, la modalità predefinita viene impostata su Modifica.\n\nÈ possibile cambiare modalità in qualsiasi momento tramite il selettore di modalità o nella configurazione AI.",
           "msg": "Questo agente utilizza una **modalità agentica**. Per consentire un flusso autonomo, è in grado di scrivere direttamente nei file del tuo spazio di lavoro senza ulteriore conferma.\n\nSi consiglia di utilizzare il controllo di versione (ad es. Git) in modo da poter rivedere e ripristinare le modifiche.\n\nPuoi passare alla **Modalità Modifica** utilizzando il selettore di modalità nell'area di immissione della chat qui sotto, oppure utilizzare l'agente **Architect** per la pianificazione in sola lettura.\n\nQuesta conferma viene salvata per questo spazio di lavoro e non verrà più visualizzata. Per reimpostarla o configurarla globalmente, cerca `ai-features.agentMode.confirmed` nelle Impostazioni.",
-          "question": "Vuoi procedere con la modalità Agente?",
           "waiting": "In attesa di conferma..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "Alcuni agenti come Claude Code non richiedono i modelli linguistici Theia.",
         "chatDisabledMessage": {
           "title": "Le funzionalità AI sono disabilitate"
+        },
+        "chatRestrictedMessage": {
+          "title": "Le funzionalità AI sono limitate"
         },
         "codeReviewerAgent": {
           "description": "Un assistente alla revisione del codice che analizza le modifiche al codice e restituisce verdetti strutturati.         Verifica i criteri di completamento, le prove di build/lint/test e la qualità del codice."
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "Consente all'agente di interagire con GitHub. A tal fine, l'agente può delegare all'agente GitHub, che può leggere e scrivere problemi, richieste di pull, commenti e contenuti del repository.",
-          "name": "GitHub"
+          "description": "Consente all'agente di interagire con GitHub. A tal fine, l'agente può delegare all'agente GitHub, che può leggere e scrivere problemi, richieste di pull, commenti e contenuti del repository."
         },
         "githubRepoName": {
           "description": "Il nome dell'attuale repository GitHub (ad esempio, \"eclipse-theia/theia\")"
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "Delega a `@{0}`"
           }
         },
+        "prReviewAgent": {
+          "description": "Un agente di revisione PR basato sull'intelligenza artificiale che coordina un flusso di lavoro completo di revisione del codice: recupera le informazioni sul PR, esplora il codice sorgente, esegue analisi strutturate, guida interattivamente l'utente attraverso i risultati con visualizzatori di differenze e, facoltativamente, crea una revisione in sospeso su GitHub."
+        },
         "prompt-template-description": "Seleziona le varianti di prompt e personalizza i modelli di prompt per gli agenti AI nella [Vista di configurazione AI]({0}).",
         "recentChats": "Chat recenti",
-        "renameChat": "Rinomina chat",
+        "restrictedModeDetails": "Chat AI, suggerimenti in linea, azioni sul codice e modelli di prompt sono disabilitati",
+        "restrictedModeLabel": "Funzionalità AI (disabilitate in modalità limitata)",
         "shellAllowlist": {
           "placeholder": "Ad esempio, \"git log\" (esatto) o \"git log *\" (con argomenti)."
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "ID modello"
           },
+          "reasoningSupport": {
+            "title": "Dichiara le capacità di ragionamento del modello. Quando è impostato, la chat mostra un selettore di ragionamento per questo modello. Impostare su `null` per disabilitarlo. Per impostazione predefinita, viene dedotto dal nome del modello."
+          },
           "supportsStructuredOutput": {
             "title": "Indica se il modello supporta l'output strutturato. `true` per impostazione predefinita."
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Impostazioni avanzate (JSON)",
-        "budgetTokens": "Gettoni di budget:",
         "confirmationTimeout": "Timeout di conferma",
         "confirmationTimeoutNote": "Rifiuta automaticamente le conferme degli strumenti dopo il tempo specificato. Ignora l'impostazione globale per questa sessione.",
         "enableConfirmationTimeout": "Abilita timeout di conferma",
-        "enableThinking": "Abilita il pensiero esteso",
-        "thinkingMode": "Modalità di pensiero",
-        "thinkingModeNote": "Alcuni modelli potrebbero ignorare questa impostazione.",
         "timeoutSeconds": "Timeout (secondi):",
         "title": "Impostazioni di sessione",
         "tooltip": "Impostazioni di sessione"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "Contesto dell'attività: Avvia sessione",
       "navigate-back": "Torna indietro",
       "navigate-forward": "Naviga in avanti",
+      "noOutput": "Nessun output",
       "open-current-session-summary": "Apri riepilogo sessione corrente",
       "open-settings-tooltip": "Apri le impostazioni AI...",
       "renameChat": "Rinomina chat",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "L'agente \"{0}\" ha completato la sua attività.",
       "agentCompletionMessageWithSession": "L'agente \"{0}\" ha completato la sua attività in \"{1}\".",
       "agentCompletionTitle": "Agente \"{0}\" Attività completata",
+      "aiDisabledInRestrictedMode": "Le funzionalità AI non sono disponibili negli spazi di lavoro non attendibili.",
       "preferences": {
+        "linuxEnvHint": "Su Linux, assicurati che la variabile sia definita in `~/.profile` (non solo in `~/.bashrc`) se avvii l'applicazione da un collegamento sul desktop. Consulta la [documentazione](https://theia-ide.org/docs/user_ai/#setting-api-keys) per i dettagli.",
         "title": "Funzionalità AI"
       },
       "showChat": "Mostra chat"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<numero-ticket>",
         "description": "Analizzare un ticket GitHub e implementare la soluzione"
       },
-      "open-agent-settings-tooltip": "Apri le impostazioni dell'agente...",
+      "open-ai-configuration-tooltip": "Configurazione Open AI",
       "rememberCommand": {
         "argumentHint": "[suggerimento argomento]",
         "description": "Estrai argomenti dalla conversazione e aggiorna le informazioni sul progetto"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "Nessuna attività"
-      }
+      },
+      "userInteractionCanceled": "Annullato",
+      "userInteractionCommentPlaceholder": "Aggiungi un commento per questo passaggio...",
+      "userInteractionEmpty": "Vuoto",
+      "userInteractionFinishStep": "Fine",
+      "userInteractionGoToStep": "Vai al passaggio {0}: {1}",
+      "userInteractionMalformed": "Impossibile visualizzare l'interazione dell'utente",
+      "userInteractionMalformedFallback": "Impossibile analizzare gli argomenti.",
+      "userInteractionPreparing": "Preparazione dell'interazione con l'utente...",
+      "userInteractionPreparingSteps": "Preparazione: {0} (passaggi per {1})",
+      "userInteractionPreparingTitle": "Preparazione: {0}",
+      "userInteractionStepLabel": "Passaggio {0} di {1}",
+      "userInteractionWorkingCopy": "Copia di lavoro"
     },
     "ai-mcp": {
       "blockedServersLabel": "Server MCP (avvio automatico bloccato)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "Annullato",
       "executionDenied": "Negato",
       "executionDeniedWithReason": "Negato con motivazione",
-      "noOutput": "Nessun output",
       "partialOutput": "Output parziale",
       "shellCommandAllowlist": {
         "description": "Elenco dei modelli di comandi shell. Utilizzare * come carattere jolly: \"git log\" (corrispondenza esatta), \"git log *\" (con argomenti opzionali), \"* --version\" (qualsiasi comando che termina con --version). Il carattere jolly deve essere preceduto da uno spazio. I comandi con modelli pericolosi ($, backtick) non vengono mai consentiti automaticamente."
@@ -1695,9 +1722,6 @@
         "enhanced": "Visualizza un'anteprima migliorata della scheda con informazioni aggiuntive.",
         "visual": "Visualizza un'anteprima visiva della scheda."
       },
-      "file": {
-        "browse": "Sfoglia"
-      },
       "highlightModifiedTabs": "Controlla se il bordo superiore viene disegnato o meno sulle schede dell'editor modificate (sporche).",
       "keybinding": {
         "duplicateModifierError": "Impossibile analizzare l'associazione dei tasti {0} Modificatori duplicati",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "L'accesso agli appunti è negato. Controlla le autorizzazioni del tuo browser.",
         "clipboardWarnFirefox": "L'API degli appunti non è disponibile. Può essere abilitata tramite la preferenza \"{0}\" nella pagina \"{1}\". Quindi ricaricare Theia. Si noti che ciò consentirà a FireFox di ottenere l'accesso completo agli appunti di sistema."
       },
-      "offline": "Offline",
       "pasteWarn": "Utilizza il comando Incolla o la scorciatoia del browser.",
       "quitMessage": "Le modifiche non salvate non verranno salvate.",
       "resetWorkbenchLayout": "Reimposta layout Workbench",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "La posizione di destinazione verrà spostata a Ln {0} , Col {1}. Eseguire comunque?",
       "confirmRunToShiftedPosition_title": "Impossibile eseguire il thread corrente esattamente nella posizione specificata",
       "consoleFilterAriaLabel": "Filtra l'output della console di debug",
+      "consoleFilterPlaceholder": "Filtro (ad es. testo, !escludi)",
       "consoleFilterTooltip": "Filtra l'output della console in base al testo. Separa i termini multipli con virgole. Prefissa con `!` per escludere un termine.\n\nEsempi:\n\n- `testo` - mostra le righe contenenti \"testo\"\n- `testo, altro` - mostra le righe contenenti \"testo\" o \"altro\"\n- `!testo` - nasconde le righe contenenti \"testo\"\n- `testo, !altro` - mostra \"testo\" ma nasconde \"altro\"",
       "consoleSessionSelectorTooltip": "Passare da una sessione di debug all'altra. Ogni sessione di debug ha una propria console di output.",
       "consoleSeverityTooltip": "Filtra l'output della console in base al livello di gravità. Verranno visualizzati solo i messaggi con il livello di gravità selezionato.",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "Abilita/disabilita le comunicazioni di tracciamento con gli adattatori di debug",
       "unknownSession": "Sessione sconosciuta",
       "unverifiedBreakpoint": "Non verificato {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "File Devcontainer all'indirizzo {0} non trovato nell'area di lavoro",
+      "failedToRebuild": "Impossibile ricostruire il container: {0}",
+      "noDevcontainerFileSpecified": "Nessun file devcontainer specificato per l'area di lavoro",
+      "removingOldContainer": "Rimozione del vecchio container..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "Se abilitata, limiterà il salvataggio automatico degli editor ai file che non presentano errori segnalati al momento in cui viene attivato il salvataggio automatico. Si applica solo quando è abilitata l'opzione \"{0}\".",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "Collega al container in esecuzione",
         "connect": "Riapri nel contenitore",
         "noDevcontainerFiles": "Nessun file devcontainer.json trovato nell'area di lavoro. Assicurati di avere una directory .devcontainer con un file devcontainer.json.",
-        "selectDevcontainer": "Selezionare un file devcontainer.json"
+        "noRunningContainers": "Nessun contenitore in esecuzione trovato.",
+        "rebuild": "Ricostruisci contenitore",
+        "rebuilding": "Ricostruzione del container di sviluppo",
+        "reopenInContainer": "Riapri nel contenitore",
+        "selectContainer": "Seleziona un container in esecuzione a cui collegarti",
+        "selectDevcontainer": "Selezionare un file devcontainer.json",
+        "suggestion": "Questo spazio di lavoro ha una configurazione con container di sviluppo. Vuoi riaprirlo in un container?"
+      },
+      "port-forwarding": {
+        "focusPorts": "Porte: Concentrati sulla vista Porte"
       },
       "ssh": {
         "connect": "Connetti finestra corrente all'host...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "1 ora fa",
+      "1MinuteAgo": "1 minuto fa",
       "amend": "Modifica",
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Modifica ultimo commit",
@@ -2133,9 +2175,12 @@
         "close": "Chiudi Modifica Anteprima"
       },
       "history": "Cronologia",
+      "justNow": "proprio ora",
       "mergeEditor": {
         "resetConfirmationTitle": "Vuoi davvero reimpostare il risultato dell'unione in questo editor?"
       },
+      "noChanges": "Nessun file modificato.",
+      "noHistory": "Non è disponibile alcuna cronologia del controllo del codice sorgente.",
       "noHistoryForError": "Non è disponibile alcuna cronologia per {0}",
       "prepositionIn": "e",
       "unamend": "Non modificare",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Annulla tutte le esecuzioni di test",
+      "showTestOutput": "Mostra output del test",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} run {1}",
       "testRuns": "Esecuzioni di test"

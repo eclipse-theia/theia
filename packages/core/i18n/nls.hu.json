@@ -87,6 +87,12 @@
           "modelId": {
             "title": "Modellazonosító"
           },
+          "reasoningApi": {
+            "title": "Melyik Anthropic reasoning API formát használja: `effort` az adaptív gondolkodáshoz (Claude 4.6+), `budget` a hagyományos kiterjesztett gondolkodáshoz (Claude 4.0–4.5), vagy `null` a letiltáshoz. Alapértelmezés szerint a modell nevéből következtethető."
+          },
+          "supportsXHighEffort": {
+            "title": "Jelzi, hogy a modell elfogadja-e az Anthropic `xhigh` erőfeszítési értéket. Alapértelmezés szerint a modell nevéből következtethető."
+          },
           "url": {
             "title": "Az Anthropic API-kompatibilis végpont, ahol a modell található"
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "Kódblokk másolása",
         "couldNotSendRequestToSession": "Nem sikerült elküldeni a „{0}” kérést a {1} munkamenethez.",
         "delegation-response-renderer": {
+          "interactionNeeded": "Felhasználói beavatkozás szükséges",
           "prompt": {
             "label": "Delegált prompt:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "Végezze el ezt a feladatot.",
         "persistedSession": "Tartós munkamenet (kattintson a visszaállításhoz)",
         "promptFragmentsDescription": "A beszélgetésbe beillesztendő egyéni prompt-fragmentumok",
+        "reasoning": {
+          "high": "Magas",
+          "low": "Alacsony",
+          "medium": "Közepes",
+          "minimal": "Minimális"
+        },
         "removeChat": "Csevegés eltávolítása",
-        "renameChat": "Csevegés átnevezése",
         "requestNotFoundForRetry": "A kérés nem található, próbálkozzon újra",
         "responseFrom": "Válasz az {0} webhelyről",
         "saveCurrentSelectionsToSettings": "Beállítások mentése",
@@ -320,6 +332,18 @@
           "cantDisplay": "Nem lehet megjeleníteni a választ, ellenőrizze a ChatResponsePartRenderers fájlt!"
         },
         "toggleCapabilitiesConfig": "Kapacitások konfigurációjának váltása",
+        "tokenUsageIndicatorEnabled": "Meghatározza, hogy a kísérleti tokenhasználati jelző megjelenik-e a csevegőablakban. Ez a funkció kísérleti jellegű, és a tokenek száma a modelltől és a szolgáltatótól függően pontatlan lehet.",
+        "tokenUsageLabel": "Token használata",
+        "tokenUsageOverflow": "A tokenek használata jóval meghaladja a figyelmeztető küszöbértéket. Fontolja meg a tömörítést vagy egy új munkamenet indítását.",
+        "tokenUsageTooltipCacheCreate": "Cache létrehozása: {0}",
+        "tokenUsageTooltipCacheRead": "Cache read: {0}",
+        "tokenUsageTooltipTotal": "Összesen: {0} / {1} ({2} %)",
+        "tokenUsageWarning": "Elérte a tokenhasználati figyelmeztető küszöbértéket.",
+        "tokenUsageWarningEnabled": "Ezt a beállítást használja, ha értesítést szeretne kapni, amikor egy csevegési munkamenet tokenhasználata átlép egy beállított küszöbértéket. Ehhez szükséges, hogy a nyelvi modell szolgáltatója jelentse a tokenhasználatot.",
+        "tokenUsageWarningMessage": "A csevegési munkamenet tokenhasználata elérte a kontextusablak {0} %-át. Fontolja meg a munkamenet összefoglalását vagy egy új munkamenet indítását, hogy elkerülje a korlát elérése.",
+        "tokenUsageWarningNewSessionAction": "Új csevegés indítása",
+        "tokenUsageWarningSummarizeAction": "A jelenlegi munkamenet összefoglalása",
+        "tokenUsageWarningThresholdPercentage": "A modell kontextusablakának százalékos aránya, amelynél a tokenhasználati figyelmeztetés aktiválódik. Ez az érték határozza meg a tokenhasználati jelző figyelmeztető/hibajelző színsávjait is. Jelenleg egy feltételezett 200k-s kontextusablakhoz viszonyítva határozza meg; amint elérhetővé válik, a modellre vonatkozó tényleges kontextusméretet fogja használni.",
         "toolcall-part-renderer": {
           "denied": "Végrehajtás megtagadva",
           "finished": "Futtatás",
@@ -376,7 +400,6 @@
         "directory": "Könyvtár",
         "domain": "Domain",
         "editAutomatically": "Automatikus szerkesztés",
-        "editNumber": "{0} szerkesztése",
         "editing": "Szerkesztés",
         "editsCount": "{0} szerkesztések",
         "emptyTodoList": "Nincs elérhető",
@@ -496,8 +519,7 @@
         "oneItem": "1 elem",
         "searched": "Keresett",
         "searching": "Keresés",
-        "todoList": "Minden lista",
-        "webSearch": "Webes keresés"
+        "todoList": "Minden lista"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "Műveletek",
           "addCustomAgent": "Egyéni ügynök hozzáadása",
           "availableCapabilities": "Elérhető funkciók",
           "completionNotificationDescriptionPrefix": "Válassza ki, hogyan szeretne értesítést kapni, amikor ez az ügynök befejezi a feladatát. Az „Alapértelmezett” beállítás a ",
@@ -730,6 +753,9 @@
             "title": "Nyelvi modell álnevek"
           }
         },
+        "productNameVariable": {
+          "description": "A termék/alkalmazás neve, amellyel a felhasználó dolgozik"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "Aktív testreszabás",
           "createCustomizationTitle": "Egyéni beállítások létrehozása",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "AI prompt sablonok"
         },
+        "reasoning": {
+          "mdDescription": "A csevegőbeviteli mező érvelés-választójának alapértelmezett értéke, amely az érvelést támogató modellekre vonatkozik.\n\nEz egy felhasználói felület szintű beállítás: a kiválasztott szintet a kéréskor lefordítják a szolgáltató natív API-paramétereire (pl. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`), és ez elsőbbséget élvez az ugyanazon mezők számára a `#ai-features.modelSettings.requestSettings#`-en keresztül megadott nyers értékekkel szemben.\n\nMinden bejegyzés a következőkből áll:\n- `scope`: Meghatározza, mikor érvényes a beállítás (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: Az `off`, `minimal`, `low`, `medium`, `high`, `auto` értékek egyike.\n\nElsőbbség futásidőben (a legmagasabb az első): a szelektoron keresztüli munkamenet-felülírás → ez a beállítás → a modell deklarált alapértelmezése. Amit a szelektor megjeleníti, az kerül elküldésre. Ha egy szolgáltató reasoning mezőjét manuálisan szeretné felülírni a `#ai-features.modelSettings.requestSettings#` segítségével, állítsa itt a `reasoning.level` értéket `off`-ra, így a szintalapú átalakítás le lesz tiltva.\n\nA bejegyzések a hatókör specifikussága alapján kerülnek összehangolásra (ügynök: 100, modell: 10, szolgáltató: 1 pont).\n\nPélda:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "Alapértelmezett értékek"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "Ügyfélbeállítások az llm-nek visszaküldött üzenetek kezelésére vonatkozóan.",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "szerkesztve",
           "unavailableVariant": "Nem elérhető"
-        },
-        "thinkingMode": {
-          "mdDescription": "Lehetővé teszi a kiterjesztett gondolkodási képességeket támogató modellek gondolkodási módjának beállításait.\nMinden beállítás a következőket tartalmazza:\n- `scope`: Meghatározza, mikor alkalmazandó a beállítás:\n- `modelId` (opcionális): A megfelelő modell azonosítója\n- `providerId` (opcionális): A megfelelő szolgáltató azonosítója\n- `agentId` (opcionális): A megfelelő ügynök azonosítója\n- `thinkingMode`: Gondolkodási mód konfigurációja:\n- `enabled` (boolean): A gondolkodási mód engedélyezése\n- `budgetTokens` (szám, opcionális): A gondolkodáshoz rendelkezésre álló maximális tokenek száma (ha a modell támogatja)\nA beállítások a specifikusság alapján kerülnek összehangolásra (ügynök: 100, modell: 10, szolgáltató: 1 pont).",
-          "scope": {
-            "agentId": {
-              "description": "Az (opcionális) ügynökazonosító, amelyre a beállításokat alkalmazni kell."
-            },
-            "modelId": {
-              "description": "Az (opcionális) modellazonosító"
-            },
-            "providerId": {
-              "description": "A beállítások alkalmazásához szükséges (opcionális) szolgáltatói azonosító."
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "A gondolkodáshoz felhasználható maximális tokenek száma. Csak akkor alkalmazható, ha a modell támogatja a gondolkodási költségkeretet."
-            },
-            "description": "Gondolkodási mód konfigurációja.",
-            "enabled": {
-              "description": "A gondolkodási mód engedélyezve van-e."
-            }
-          },
-          "title": "Gondolkodási mód beállítások"
         },
         "todayVariable": {
           "description": "Csinál valamit a mai napra",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "Prompt változat",
           "request": "Kérés",
+          "response": "Válasz",
           "timestamp": "Időbélyeg",
           "title": "Kérés"
         },
@@ -963,14 +970,15 @@
           "selections": "Kiválasztások"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "Hogy a felhasználó megerősítette-e az ügynökmódra vonatkozó figyelmeztetést. Az ügynökmód lehetővé teszi a fájlok önálló módosítását további megerősítés nélkül. Állítsa `false` értékre, hogy a következő ügynökmód-kéréskor újra megjelenjen a megerősítés."
+          "enabled": {
+            "mdDescription": "Engedélyezze az ügynök módot a Coder ügynök számára. Az ügynök mód lehetővé teszi a fájlok önálló módosítását további megerősítés nélkül. Az ügynök mód használatakor az első használatkor megerősítő párbeszédablak jelenik meg, amíg ezt `true`-ra nem állítja."
           }
         },
         "agentModeConfirmation": {
-          "confirm": "Megerősítés",
+          "continueAgentMode": "Folytatás az ügynöki módban",
+          "continueEditMode": "Folytatás a szerkesztési módban",
+          "info": "Az Agent Mode (Ügynök mód) folytatásával a megerősítés mentésre kerül. Ezt később az `ai-features.agentMode.enabled` beállításon keresztül visszavonhatja.\n\nAz Edit Mode (Szerkesztési mód) folytatásával az alapértelmezett mód szerkesztési módra vált.\n\nA módokat bármikor megváltoztathatja a módválasztó segítségével vagy az AI konfigurációban.",
           "msg": "Ez az ügynök **ügynöki módot** használ. Az autonóm folyamat engedélyezéséhez képes további megerősítés nélkül közvetlenül írni a munkaterületi fájlokba.\n\nJavasolt a verziókezelés (pl. Git) használata, hogy áttekintse és visszavonhassa a változtatásokat.\n\nAz alábbi csevegőmezőben található módválasztóval átválthat **szerkesztési módra**, vagy használhatja az **Architect** ügynököt olvasási joggal rendelkező tervezéshez.\n\nEz a megerősítés el lesz mentve ehhez a munkaterülethez, és többé nem jelenik meg. Ha globálisan szeretné visszaállítani vagy konfigurálni, keresse meg a `ai-features.agentMode.confirmed` beállítást a Beállítások között.",
-          "question": "Szeretne folytatni az ügynökmóddal?",
           "waiting": "Várakozás a megerősítésre..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "Egyes ügynökök, például a Claude Code, nem igénylik a Theia nyelvi modelleket.",
         "chatDisabledMessage": {
           "title": "Az AI funkciók le vannak tiltva"
+        },
+        "chatRestrictedMessage": {
+          "title": "Az AI funkciók korlátozottak"
         },
         "codeReviewerAgent": {
           "description": "Kódfelülvizsgálati asszisztens, amely elemzi a kódváltozásokat és strukturált értékeléseket ad vissza. Ellenőrzi a befejezési kritériumokat, a build/lint/teszt bizonyítékokat és a kódminőséget."
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "Lehetővé teszi az ügynök számára a GitHub-bal való interakciót. Ehhez az ügynök felhatalmazhatja a GitHub ügynököt, amely képes olvasni és írni a problémákat, pull requesteket, megjegyzéseket és a repository tartalmát.",
-          "name": "GitHub"
+          "description": "Lehetővé teszi az ügynök számára a GitHub-bal való interakciót. Ehhez az ügynök felhatalmazhatja a GitHub ügynököt, amely képes olvasni és írni a problémákat, pull requesteket, megjegyzéseket és a repository tartalmát."
         },
         "githubRepoName": {
           "description": "Az aktuális GitHub-tárhely neve (pl. „eclipse-theia/theia”)"
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "Feladat átruházása a `@{0}`-nek"
           }
         },
+        "prReviewAgent": {
+          "description": "Egy AI-alapú PR-felülvizsgálati ügynök, amely a teljes kódfelülvizsgálati munkafolyamatot irányítja: lekérdezi a PR-adatokat, feltérképezi a kódbázist, strukturált elemzést végez, interaktív módon végigvezeti a felhasználót a megállapításokon diff-nézegetők segítségével, és opcionálisan létrehoz egy függőben lévő felülvizsgálatot a GitHubon."
+        },
         "prompt-template-description": "Válassza ki a prompt változatokat és testreszabhatja a prompt sablonokat az AI ügynökök számára az [AI konfigurációs nézetben]({0}).",
         "recentChats": "Legutóbbi csevegések",
-        "renameChat": "Csevegés átnevezése",
+        "restrictedModeDetails": "Az AI-csevegés, a beépített javaslatok, a kódműveletek és a prompt-sablonok le vannak tiltva",
+        "restrictedModeLabel": "AI funkciók (korlátozott módban letiltva)",
         "shellAllowlist": {
           "placeholder": "Például: „git log” (pontosan) vagy „git log *” (argumentumokkal)."
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "Modellazonosító"
           },
+          "reasoningSupport": {
+            "title": "Meghatározza a modell következtetési képességeit. Ha be van állítva, a csevegőablakban megjelenik a modell következtetési választója. A letiltáshoz állítsa `null` értékre. Alapértelmezés szerint a modell nevéből következtethető."
+          },
           "supportsStructuredOutput": {
             "title": "Jelzi, hogy a modell támogatja-e a strukturált kimenetet. Alapértelmezés szerint `true`."
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Speciális beállítások (JSON)",
-        "budgetTokens": "Költségvetési tokenek:",
         "confirmationTimeout": "Megerősítési időtúllépés",
         "confirmationTimeoutNote": "A megadott idő elteltével automatikusan elutasítja az eszköz megerősítéseit. Felülírja a globális beállítást ebben a munkamenetben.",
         "enableConfirmationTimeout": "A megerősítés időtúllépésének engedélyezése",
-        "enableThinking": "Engedélyezze a kiterjesztett gondolkodást",
-        "thinkingMode": "Gondolkodási mód",
-        "thinkingModeNote": "Egyes modellek figyelmen kívül hagyhatják ezt a beállítást.",
         "timeoutSeconds": "Időkorlát (másodperc):",
         "title": "Munkamenet beállításainak megadása",
         "tooltip": "Munkamenet beállításainak megadása"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "Feladat kontextusa: Munkamenet indítása",
       "navigate-back": "Vissza",
       "navigate-forward": "Előre navigálás",
+      "noOutput": "Nincs kimenet",
       "open-current-session-summary": "Aktuális munkamenet összefoglalása megnyitása",
       "open-settings-tooltip": "Nyissa meg az AI beállításokat...",
       "renameChat": "Csevegés átnevezése",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "Az „{0}” ügynök befejezte feladatát.",
       "agentCompletionMessageWithSession": "Az „{0}” ügynök befejezte feladatát a „{1}” alkalmazásban.",
       "agentCompletionTitle": "Ügynök „{0}” feladat befejezve",
+      "aiDisabledInRestrictedMode": "Az AI funkciók nem érhetők el megbízhatatlan munkaterületeken.",
       "preferences": {
+        "linuxEnvHint": "Linux rendszeren győződjön meg arról, hogy a változó a `~/.profile` fájlban van definiálva (nem csak a `~/.bashrc` fájlban), ha az alkalmazást asztali parancsikonról indítja. A részleteket lásd a [dokumentációban](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
         "title": "AI funkciók"
       },
       "showChat": "Csevegés megjelenítése"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<jegy-szám>",
         "description": "GitHub jegy elemzése és a megoldás megvalósítása"
       },
-      "open-agent-settings-tooltip": "Nyissa meg az ügynök beállításait...",
+      "open-ai-configuration-tooltip": "Open AI konfiguráció",
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "Témák kivonása a beszélgetésből és a projektinformációk frissítése"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "Nincs feladat"
-      }
+      },
+      "userInteractionCanceled": "Törölve",
+      "userInteractionCommentPlaceholder": "Hozzászólás hozzáadása ehhez a lépéshez...",
+      "userInteractionEmpty": "Üres",
+      "userInteractionFinishStep": "Befejezés",
+      "userInteractionGoToStep": "Ugrás a {0} lépésre: {1}",
+      "userInteractionMalformed": "A felhasználói interakció nem jeleníthető meg",
+      "userInteractionMalformedFallback": "Az argumentumok nem értelmezhetők.",
+      "userInteractionPreparing": "Felhasználói interakció előkészítése...",
+      "userInteractionPreparingSteps": "Előkészítés: {0} (a {1} lépései)",
+      "userInteractionPreparingTitle": "Előkészítés: {0}",
+      "userInteractionStepLabel": "{0}. lépés a {1} oldalon",
+      "userInteractionWorkingCopy": "Munkakópia"
     },
     "ai-mcp": {
       "blockedServersLabel": "MCP-kiszolgálók (autostart blokkolva)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "Törölve",
       "executionDenied": "Elutasítva",
       "executionDeniedWithReason": "Elutasítva indokkal",
-      "noOutput": "Nincs kimenet",
       "partialOutput": "Részleges kimenet",
       "shellCommandAllowlist": {
         "description": "Shell parancsminták listája. Használja a * helyettesítő karaktert: „git log” (pontos egyezés), „git log *” (opcionális argumentumokkal), „* --version” (bármely --version végű parancs). A helyettesítő karakter előtt szóköznek kell lennie. A veszélyes mintákkal rendelkező parancsok ($, backticks) soha nem engedélyezhetők automatikusan."
@@ -1695,9 +1722,6 @@
         "enhanced": "A fül továbbfejlesztett előnézetének megjelenítése további információkkal.",
         "visual": "A lap vizuális előnézetének megjelenítése."
       },
-      "file": {
-        "browse": "Böngészés"
-      },
       "highlightModifiedTabs": "Szabályozza, hogy a módosított (piszkos) szerkesztőfülek felső szélén megjelenik-e a keret.",
       "keybinding": {
         "duplicateModifierError": "Nem lehet értelmezni a billentyűkombinációt {0} Duplikált módosítók",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "A vágólaphoz való hozzáférés megtagadva. Ellenőrizze a böngésző engedélyét.",
         "clipboardWarnFirefox": "A Clipboard API nem elérhető. A „{1}” (Beállítások > Általános) oldalon a „{0}” (Klipboard API engedélyezése) beállítással engedélyezhető. Ezután töltse be újra a Theia-t. Ne feledje, hogy ez lehetővé teszi a FireFox számára a rendszer klipboardjához való teljes hozzáférést."
       },
-      "offline": "Offline",
       "pasteWarn": "Kérjük, használja a böngésző beillesztési parancsát vagy gyorsbillentyűjét.",
       "quitMessage": "A nem mentett módosítások nem kerülnek mentésre.",
       "resetWorkbenchLayout": "A munkaasztal elrendezésének visszaállítása",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "A célpozíció az Ln {0}, Col {1} értékre változik. Akár így is futtatni szeretné?",
       "confirmRunToShiftedPosition_title": "A jelenlegi szál nem futtatható pontosan a megadott helyre.",
       "consoleFilterAriaLabel": "A hibakereső konzol kimenetének szűrése",
+      "consoleFilterPlaceholder": "Szűrő (pl. szöveg, !kizárás)",
       "consoleFilterTooltip": "Szűrje a konzol kimenetét szöveg szerint. Több kifejezést vesszővel válasszon el. A kifejezés kizárásához tegyen előtte egy `!` előtagot.\n\nPéldák:\n\n- `text` – a „text” szót tartalmazó sorok megjelenítése\n- `text, other` – a „text” vagy „other” szót tartalmazó sorok megjelenítése\n- `!text` – a „text” szót tartalmazó sorok elrejtése\n- `text, !other` – a „text” szó megjelenítése, de az „other” szó elrejtése",
       "consoleSessionSelectorTooltip": "Váltás a hibakeresési munkamenetek között. Minden hibakeresési munkamenetnek megvan a saját konzol kimenete.",
       "consoleSeverityTooltip": "A konzol kimenetének szűrése súlyossági szint szerint. Csak a kiválasztott súlyossági szintű üzenetek jelennek meg.",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "A nyomkövetési kommunikáció engedélyezése/letiltása hibakereső adapterekkel",
       "unknownSession": "Ismeretlen munkamenet",
       "unverifiedBreakpoint": "Nem ellenőrzött {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "A {0} címen található Devcontainer fájl nem található a munkaterületen",
+      "failedToRebuild": "A konténer újjáépítése sikertelen: {0}",
+      "noDevcontainerFileSpecified": "A munkaterülethez nincs megadva devcontainer fájl",
+      "removingOldContainer": "Régi konténer eltávolítása..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "Ha engedélyezve van, az automatikus mentést azokra a fájlokra korlátozza, amelyekben az automatikus mentés kiváltásakor nincs jelentett hiba. Csak akkor érvényes, ha a „{0}” (Automatikus mentés hibák nélkül) beállítás engedélyezve van.",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "Csatlakozás futó konténerhez",
         "connect": "Újra megnyitás konténerben",
         "noDevcontainerFiles": "A munkaterületen nem található devcontainer.json fájl. Győződjön meg arról, hogy rendelkezik-e .devcontainer könyvtárral, amely tartalmaz egy devcontainer.json fájlt.",
-        "selectDevcontainer": "Válasszon ki egy devcontainer.json fájlt"
+        "noRunningContainers": "Nincs futó konténer.",
+        "rebuild": "Konténer újjáépítése",
+        "rebuilding": "A fejlesztői konténer újjáépítése",
+        "reopenInContainer": "Újra megnyitás konténerben",
+        "selectContainer": "Válasszon ki egy futó konténert, amelyhez csatlakozni szeretne",
+        "selectDevcontainer": "Válasszon ki egy devcontainer.json fájlt",
+        "suggestion": "Ez a munkaterület dev konténer konfigurációval rendelkezik. Szeretné újra megnyitni egy konténerben?"
+      },
+      "port-forwarding": {
+        "focusPorts": "Portok: Fókusz a Portok nézeten"
       },
       "ssh": {
         "connect": "Jelenlegi ablak csatlakoztatása a gazdagéphez...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "1 órával ezelőtt",
+      "1MinuteAgo": "1 perce",
       "amend": "Módosítás",
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Utolsó commit módosítása",
@@ -2133,9 +2175,12 @@
         "close": "Bezárás Változtatás Peek View"
       },
       "history": "Történelem",
+      "justNow": "épp most",
       "mergeEditor": {
         "resetConfirmationTitle": "Tényleg vissza szeretné állítani az egyesítés eredményét ebben a szerkesztőben?"
       },
+      "noChanges": "Nincs módosított fájl.",
+      "noHistory": "Nincs elérhető forráskód-kezelési előzmény.",
       "noHistoryForError": "{0} esetében nincs elérhető előzmény.",
       "prepositionIn": "és",
       "unamend": "Unamend",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Minden tesztfutás törlése",
+      "showTestOutput": "Tesztkimenet megjelenítése",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} {1} futtatása",
       "testRuns": "Tesztfutások"
