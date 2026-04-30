@@ -29,7 +29,8 @@ class TestableCopilotLanguageModel extends CopilotLanguageModel {
             false,
             3,
             async () => 'test-token',
-            () => undefined
+            () => undefined,
+            () => 'test-user-agent'
         );
     }
 
