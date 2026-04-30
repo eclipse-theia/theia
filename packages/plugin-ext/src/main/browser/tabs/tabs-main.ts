@@ -101,8 +101,10 @@ export class TabsMainImpl implements TabsMain, Disposable {
 
         this.connectToSignal(this.toDisposeOnDestroy, this.applicationShell.mainPanel.widgetRemoved, (mainPanel, widget) => {
             if (!(widget instanceof TabBar)) {
-                const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, widget.title)!;
-                this.onTabClosed(tabInfo, widget.title);
+                const tabInfo = this.getOrRebuildModel(this.tabInfoLookup, widget.title);
+                if (tabInfo) {
+                    this.onTabClosed(tabInfo, widget.title);
+                }
                 if (this.tabGroupChanged) {
                     this.tabGroupChanged = false;
                     this.createTabsModel();
@@ -268,12 +270,12 @@ export class TabsMainImpl implements TabsMain, Disposable {
             a.id === b.id;
     }
 
-    protected getOrRebuildModel<T, R>(map: Map<T, R>, key: T): R {
+    protected getOrRebuildModel<T, R>(map: Map<T, R>, key: T): R | undefined {
         // something broke so we rebuild the model
         let item = map.get(key);
         if (!item) {
             this.createTabsModel();
-            item = map.get(key)!;
+            item = map.get(key);
         }
         return item;
     }
@@ -281,6 +283,9 @@ export class TabsMainImpl implements TabsMain, Disposable {
     // #region event listeners
     private onTabCreated(tabBar: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>): void {
         const group = this.getOrRebuildModel(this.tabGroupModel, tabBar);
+        if (!group) {
+            return;
+        }
         this.connectToSignal(this.getTitleDisposables(args.title), args.title.changed, this.onTabTitleChanged);
         const tabDto = this.createTabDto(args.title, group.groupId, true);
         this.tabInfoLookup.set(args.title, { group, tab: tabDto, tabIndex: args.index });
