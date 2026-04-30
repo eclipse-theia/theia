@@ -24,10 +24,10 @@ import {
     LocalizationExt
 } from '../../common/plugin-api-rpc';
 import { PluginMetadata, PluginModel } from '../../common/plugin-protocol';
-import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { ExtPluginApi, ExtPluginApiBackendInitializationFn } from '../../common/plugin-ext-api-contribution';
+import { ExtPluginApiAssembler } from '../../plugin/ext-plugin-api-assembler';
 import { DebugExtImpl } from '../../plugin/debug/debug-ext';
 import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
@@ -320,6 +320,9 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
     @inject(SecretsExtImpl)
     protected readonly secretsExt: SecretsExtImpl;
 
+    @inject(ExtPluginApiAssembler)
+    protected readonly pluginApiAssembler: ExtPluginApiAssembler;
+
     constructor() {
         super('PLUGIN_HOST', '/scanners/backend-init-theia.js',
             {
@@ -352,14 +355,8 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
         };
     }
 
-    protected createAPIFactory(extInterfaces: ExtInterfaces): PluginAPIFactory {
-        const {
-            envExt, debugExt, preferenceRegistryExt, editorsAndDocumentsExt, workspaceExt,
-            messageRegistryExt, clipboardExt, webviewExt, localizationExt
-        } = extInterfaces;
-        return createAPIFactory(this.rpc, this.pluginManager, envExt, debugExt, preferenceRegistryExt,
-            editorsAndDocumentsExt, workspaceExt, messageRegistryExt, clipboardExt, webviewExt,
-            localizationExt);
+    protected createAPIFactory(_extInterfaces: ExtInterfaces): PluginAPIFactory {
+        return this.pluginApiAssembler.createApiFactory(this.rpc);
     }
 
     protected initExtApi(extApi: ExtPluginApi): void {

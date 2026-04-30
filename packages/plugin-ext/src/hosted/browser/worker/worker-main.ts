@@ -21,19 +21,15 @@ import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-ap
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { ClipboardExt } from '../../../plugin/clipboard-ext';
+import { ExtPluginApiAssembler } from '../../../plugin/ext-plugin-api-assembler';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
-import { MessageRegistryExt } from '../../../plugin/message-registry';
-import { createAPIFactory } from '../../../plugin/plugin-context';
+
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { loadManifest } from './plugin-manifest-loader';
-import { EnvExtImpl } from '../../../plugin/env';
-import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
-import { LocalizationExtImpl } from '../../../plugin/localization-ext';
 import pluginHostModule from './worker-plugin-module';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,30 +148,14 @@ pluginManager.setPluginHost({
         }
     });
 
-const envExt = container.get(EnvExtImpl);
-const debugExt = container.get(DebugExtImpl);
 const preferenceRegistryExt = container.get(PreferenceRegistryExtImpl);
 const editorsAndDocuments = container.get(EditorsAndDocumentsExtImpl);
 const workspaceExt = container.get(WorkspaceExtImpl);
-const messageRegistryExt = container.get(MessageRegistryExt);
-const clipboardExt = container.get(ClipboardExt);
 const webviewExt = container.get(WebviewsExtImpl);
-const localizationExt = container.get(LocalizationExtImpl);
 const storageProxy = container.get(KeyValueStorageProxy);
 
-const apiFactory = createAPIFactory(
-    rpc,
-    pluginManager,
-    envExt,
-    debugExt,
-    preferenceRegistryExt,
-    editorsAndDocuments,
-    workspaceExt,
-    messageRegistryExt,
-    clipboardExt,
-    webviewExt,
-    localizationExt
-);
+const pluginApiAssembler = container.get(ExtPluginApiAssembler);
+const apiFactory = pluginApiAssembler.createApiFactory(rpc);
 let defaultApi: typeof theia;
 
 const handler = {

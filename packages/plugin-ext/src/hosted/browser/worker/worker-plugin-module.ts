@@ -16,6 +16,13 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'reflect-metadata';
 import { ContainerModule } from '@theia/core/shared/inversify';
+
+import { LegacyExtPluginApiContribution } from '../../../plugin/legacy-ext-plugin-api-contribution';
+import { TerminalExtPluginApiContribution } from '../../../plugin/terminal-ext-plugin-api-contribution';
+import { ScmExtPluginApiContribution } from '../../../plugin/scm-ext-plugin-api-contribution';
+import { CommandRegistryImpl } from '../../../plugin/command-registry';
+import { ScmExtImpl } from '../../../plugin/scm';
+import { ExtPluginApiAssembler } from '../../../plugin/ext-plugin-api-assembler';
 import { BasicChannel } from '@theia/core/lib/common/message-rpc/channel';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 import { LocalizationExt } from '../../../common/plugin-api-rpc';
@@ -23,7 +30,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
 import { MessageRegistryExt } from '../../../plugin/message-registry';
-import { MinimalTerminalServiceExt, PluginManagerExtImpl } from '../../../plugin/plugin-manager';
+import { AbstractPluginManagerExtImpl, MinimalTerminalServiceExt, PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { InternalStorageExt, KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { InternalSecretsExt, SecretsExtImpl } from '../../../plugin/secrets-ext';
@@ -57,6 +64,7 @@ export default new ContainerModule(bind => {
 
     bind(RPCProtocol).toConstantValue(rpc);
 
+    bind(AbstractPluginManagerExtImpl).toService(PluginManagerExtImpl);
     bind(PluginManagerExtImpl).toSelf().inSingletonScope();
     bind(EnvExtImpl).to(WorkerEnvExtImpl).inSingletonScope();
     bind(LocalizationExtImpl).toSelf().inSingletonScope();
@@ -79,4 +87,11 @@ export default new ContainerModule(bind => {
     bind(WebviewsExtImpl).toSelf().inSingletonScope();
     bind(TerminalServiceExtImpl).toSelf().inSingletonScope();
     bind(MinimalTerminalServiceExt).toService(TerminalServiceExtImpl);
+    bind(CommandRegistryImpl).toSelf().inSingletonScope();
+    bind(ScmExtImpl).toSelf().inSingletonScope();
+
+    bind(LegacyExtPluginApiContribution).toSelf().inSingletonScope();
+    bind(TerminalExtPluginApiContribution).toSelf().inSingletonScope();
+    bind(ScmExtPluginApiContribution).toSelf().inSingletonScope();
+    bind(ExtPluginApiAssembler).toSelf().inSingletonScope();
 });

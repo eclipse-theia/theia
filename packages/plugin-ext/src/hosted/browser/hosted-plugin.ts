@@ -27,7 +27,6 @@ import { PluginWorker } from './plugin-worker';
 import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
-import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, isCancelled,
@@ -73,6 +72,7 @@ import {
 } from '../common/hosted-plugin';
 import { isRemote } from '@theia/core/lib/browser/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { MainPluginApiAssembler } from '../../main/browser/main-plugin-api-assembler';
 
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
@@ -182,6 +182,9 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
 
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
+
+    @inject(MainPluginApiAssembler)
+    protected readonly pluginApiAssembler: MainPluginApiAssembler;
 
     constructor() {
         super(generateUuid());
@@ -362,7 +365,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
         const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
-        setUpPluginApi(rpc, this.container);
+        this.pluginApiAssembler.registerMainImplementations(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
