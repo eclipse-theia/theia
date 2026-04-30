@@ -1,12 +1,12 @@
 {
   "name": "@theia/scm",
-  "version": "1.70.0",
+  "version": "1.71.0",
   "description": "Theia - Source control Extension",
   "dependencies": {
-    "@theia/core": "1.70.0",
-    "@theia/editor": "1.70.0",
-    "@theia/filesystem": "1.70.0",
-    "@theia/monaco": "1.70.0",
+    "@theia/core": "1.71.0",
+    "@theia/editor": "1.71.0",
+    "@theia/filesystem": "1.71.0",
+    "@theia/monaco": "1.71.0",
     "@theia/monaco-editor-core": "1.108.201",
     "@types/diff": "^5.2.3",
     "diff": "^5.2.2",
@@ -50,7 +50,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.70.0"
+    "@theia/ext-scripts": "1.71.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
