@@ -55,98 +55,98 @@ container.load(pluginHostModule);
 const rpc: RPCProtocol = container.get(RPCProtocol);
 const pluginManager = container.get(PluginManagerExtImpl);
 pluginManager.setPluginHost({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    loadPlugin(plugin: Plugin): any {
-        if (plugin.pluginPath) {
-            if (isElectron()) {
-                ctx.importScripts(plugin.pluginPath);
-            } else {
-                if (plugin.lifecycle.frontendModuleName) {
-                    // Set current module name being imported
-                    ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
-                }
-
-                ctx.importScripts('./hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
-            }
-        }
-
-        if (plugin.lifecycle.frontendModuleName) {
-            if (!ctx[plugin.lifecycle.frontendModuleName]) {
-                console.error(`WebWorker: Cannot start plugin "${plugin.model.name}". Frontend plugin not found: "${plugin.lifecycle.frontendModuleName}"`);
-                return;
-            }
-            return ctx[plugin.lifecycle.frontendModuleName];
-        }
-    },
-    async init(rawPluginData: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
-        const result: Plugin[] = [];
-        const foreign: Plugin[] = [];
-        // Process the plugins concurrently, making sure to keep the order.
-        const plugins = await Promise.all<{
-            /** Where to push the plugin: `result` or `foreign` */
-            target: Plugin[],
-            plugin: Plugin
-        }>(rawPluginData.map(async plg => {
-            const pluginModel = plg.model;
-            const pluginLifecycle = plg.lifecycle;
-            if (pluginModel.entryPoint!.frontend) {
-                let frontendInitPath = pluginLifecycle.frontendInitPath;
-                if (frontendInitPath) {
-                    initialize(frontendInitPath, plg);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        loadPlugin(plugin: Plugin): any {
+            if (plugin.pluginPath) {
+                if (isElectron()) {
+                    ctx.importScripts(plugin.pluginPath);
                 } else {
-                    frontendInitPath = '';
+                    if (plugin.lifecycle.frontendModuleName) {
+                        // Set current module name being imported
+                        ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
+                    }
+
+                    ctx.importScripts('./hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
                 }
-                const rawModel = await loadManifest(pluginModel);
-                const plugin: Plugin = {
-                    pluginPath: pluginModel.entryPoint.frontend!,
-                    pluginFolder: pluginModel.packagePath,
-                    pluginUri: pluginModel.packageUri,
-                    model: pluginModel,
-                    lifecycle: pluginLifecycle,
-                    rawModel,
-                    isUnderDevelopment: !!plg.isUnderDevelopment
-                };
-                const apiImpl = apiFactory(plugin);
-                pluginsApiImpl.set(plugin.model.id, apiImpl);
-                pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
-                return { target: result, plugin };
-            } else {
-                return {
-                    target: foreign,
-                    plugin: {
-                        pluginPath: pluginModel.entryPoint.backend,
+            }
+
+            if (plugin.lifecycle.frontendModuleName) {
+                if (!ctx[plugin.lifecycle.frontendModuleName]) {
+                    console.error(`WebWorker: Cannot start plugin "${plugin.model.name}". Frontend plugin not found: "${plugin.lifecycle.frontendModuleName}"`);
+                    return;
+                }
+                return ctx[plugin.lifecycle.frontendModuleName];
+            }
+        },
+        async init(rawPluginData: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
+            const result: Plugin[] = [];
+            const foreign: Plugin[] = [];
+            // Process the plugins concurrently, making sure to keep the order.
+            const plugins = await Promise.all<{
+                /** Where to push the plugin: `result` or `foreign` */
+                target: Plugin[],
+                plugin: Plugin
+            }>(rawPluginData.map(async plg => {
+                const pluginModel = plg.model;
+                const pluginLifecycle = plg.lifecycle;
+                if (pluginModel.entryPoint!.frontend) {
+                    let frontendInitPath = pluginLifecycle.frontendInitPath;
+                    if (frontendInitPath) {
+                        initialize(frontendInitPath, plg);
+                    } else {
+                        frontendInitPath = '';
+                    }
+                    const rawModel = await loadManifest(pluginModel);
+                    const plugin: Plugin = {
+                        pluginPath: pluginModel.entryPoint.frontend!,
                         pluginFolder: pluginModel.packagePath,
                         pluginUri: pluginModel.packageUri,
                         model: pluginModel,
                         lifecycle: pluginLifecycle,
-                        get rawModel(): never {
-                            throw new Error('not supported');
-                        },
+                        rawModel,
                         isUnderDevelopment: !!plg.isUnderDevelopment
-                    }
-                };
-            }
-        }));
-        // Collect the ordered plugins and insert them in the target array:
-        for (const { target, plugin } of plugins) {
-            target.push(plugin);
-        }
-        return [result, foreign];
-    },
-    initExtApi(extApi: ExtPluginApi[]): void {
-        for (const api of extApi) {
-            try {
-                if (api.frontendExtApi) {
-                    ctx.importScripts(api.frontendExtApi.initPath);
-                    ctx[api.frontendExtApi.initVariable][api.frontendExtApi.initFunction](rpc, pluginsModulesNames);
+                    };
+                    const apiImpl = apiFactory(plugin);
+                    pluginsApiImpl.set(plugin.model.id, apiImpl);
+                    pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
+                    return { target: result, plugin };
+                } else {
+                    return {
+                        target: foreign,
+                        plugin: {
+                            pluginPath: pluginModel.entryPoint.backend,
+                            pluginFolder: pluginModel.packagePath,
+                            pluginUri: pluginModel.packageUri,
+                            model: pluginModel,
+                            lifecycle: pluginLifecycle,
+                            get rawModel(): never {
+                                throw new Error('not supported');
+                            },
+                            isUnderDevelopment: !!plg.isUnderDevelopment
+                        }
+                    };
                 }
+            }));
+            // Collect the ordered plugins and insert them in the target array:
+            for (const { target, plugin } of plugins) {
+                target.push(plugin);
+            }
+            return [result, foreign];
+        },
+        initExtApi(extApi: ExtPluginApi[]): void {
+            for (const api of extApi) {
+                try {
+                    if (api.frontendExtApi) {
+                        ctx.importScripts(api.frontendExtApi.initPath);
+                        ctx[api.frontendExtApi.initVariable][api.frontendExtApi.initFunction](rpc, pluginsModulesNames);
+                    }
 
-            } catch (e) {
-                console.error(e);
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
-    }
-});
+    });
 
 const preferenceRegistryExt = container.get(PreferenceRegistryExtImpl);
 const editorsAndDocuments = container.get(EditorsAndDocumentsExtImpl);
