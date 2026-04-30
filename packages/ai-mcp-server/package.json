@@ -1,11 +1,11 @@
 {
   "name": "@theia/ai-mcp-server",
-  "version": "1.70.0",
+  "version": "1.71.0",
   "description": "Theia - MCP Server",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@theia/core": "1.70.0",
-    "@theia/workspace": "1.70.0",
+    "@theia/core": "1.71.0",
+    "@theia/workspace": "1.71.0",
     "zod": "^4.3.6"
   },
   "publishConfig": {
@@ -43,7 +43,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.70.0"
+    "@theia/ext-scripts": "1.71.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
