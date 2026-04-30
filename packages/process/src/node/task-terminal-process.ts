@@ -17,6 +17,8 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { TerminalProcess, TerminalProcessOptions } from './terminal-process';
 
+const TASK_TERMINAL_EXIT_EVENT_DELAY = 50;
+
 export const TaskTerminalProcessFactory = Symbol('TaskTerminalProcessFactory');
 export interface TaskTerminalProcessFactory {
     (options: TerminalProcessOptions): TaskTerminalProcess;
@@ -56,12 +58,19 @@ export class TaskTerminalProcess extends TerminalProcess {
 
     protected override onTerminalExit(code: number | undefined, signal: string | undefined): void {
         this.injectCommandEndOsc();
-        this.emitOnExit(code, signal);
-        this.exited = true;
-        // Unregister process only if task terminal already attached (or failed attach),
-        // Fixes https://github.com/eclipse-theia/theia/issues/2961
-        if (this.attachmentAttempted) {
-            this.unregisterProcess();
+        const emitExit = () => {
+            this.emitOnExit(code, signal);
+            this.exited = true;
+            // Unregister process only if task terminal already attached (or failed attach),
+            // Fixes https://github.com/eclipse-theia/theia/issues/2961
+            if (this.attachmentAttempted) {
+                this.unregisterProcess();
+            }
+        };
+        if (this._enableCommandHistory) {
+            setTimeout(emitExit, TASK_TERMINAL_EXIT_EVENT_DELAY);
+        } else {
+            emitExit();
         }
     }
 
