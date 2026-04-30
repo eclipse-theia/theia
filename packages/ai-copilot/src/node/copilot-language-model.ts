@@ -28,7 +28,7 @@ import {
 import { CancellationToken } from '@theia/core';
 import OpenAI from 'openai';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
-import { ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
 import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
@@ -184,7 +184,38 @@ export class CopilotLanguageModel implements LanguageModel {
     }
 
     protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
-        return messages.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m));
+        const converted = messages.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m));
+        return this.mergeConsecutiveAssistantMessages(converted);
+    }
+
+    protected mergeConsecutiveAssistantMessages(messages: ChatCompletionMessageParam[]): ChatCompletionMessageParam[] {
+        const result: ChatCompletionMessageParam[] = [];
+        for (const message of messages) {
+            const previous = result[result.length - 1];
+            if (previous?.role === 'assistant' && message.role === 'assistant') {
+                const merged: ChatCompletionAssistantMessageParam = { ...previous, role: 'assistant' };
+
+                const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
+                const nextContent = typeof message.content === 'string' ? message.content : undefined;
+                if (previousContent && nextContent) {
+                    merged.content = `${previousContent}\n${nextContent}`;
+                } else if (nextContent) {
+                    merged.content = nextContent;
+                } else if (previousContent) {
+                    merged.content = previousContent;
+                }
+
+                const toolCalls = [...(previous.tool_calls ?? []), ...(message.tool_calls ?? [])];
+                if (toolCalls.length > 0) {
+                    merged.tool_calls = toolCalls;
+                }
+
+                result[result.length - 1] = merged;
+            } else {
+                result.push(message);
+            }
+        }
+        return result;
     }
 
     protected toOpenAIMessage(message: LanguageModelMessage): ChatCompletionMessageParam {

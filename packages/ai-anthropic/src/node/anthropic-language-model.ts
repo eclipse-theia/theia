@@ -111,9 +111,32 @@ function transformToAnthropicParams(
         }));
 
     return {
-        messages: convertedMessages,
+        messages: mergeConsecutiveSameRoleMessages(convertedMessages),
         systemMessage,
     };
+}
+
+export function mergeConsecutiveSameRoleMessages(messages: MessageParam[]): MessageParam[] {
+    const result: MessageParam[] = [];
+    for (const message of messages) {
+        const previous = result[result.length - 1];
+        if (previous?.role === message.role && (message.role === 'user' || message.role === 'assistant')) {
+            const previousContent = Array.isArray(previous.content)
+                ? previous.content
+                : [{ type: 'text', text: previous.content } as Anthropic.Messages.TextBlockParam];
+            const nextContent = Array.isArray(message.content)
+                ? message.content
+                : [{ type: 'text', text: message.content } as Anthropic.Messages.TextBlockParam];
+            result[result.length - 1] = {
+                ...previous,
+                role: message.role,
+                content: [...previousContent, ...nextContent]
+            };
+        } else {
+            result.push(message);
+        }
+    }
+    return result;
 }
 
 /**
