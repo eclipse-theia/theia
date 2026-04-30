@@ -18,12 +18,12 @@ import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceServiceImpl } from '@theia/workspace/lib/browser';
 import { Workspace, ProtocolBroadcastConnection } from 'open-collaboration-protocol';
 import { CollaborationURI } from './collaboration-file-system-provider';
 
 @injectable()
-export class CollaborationWorkspaceService extends WorkspaceService {
+export class CollaborationWorkspaceService extends WorkspaceServiceImpl {
 
     protected collabWorkspace?: Workspace;
     protected connection?: ProtocolBroadcastConnection;

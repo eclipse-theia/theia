@@ -29,7 +29,7 @@ import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContri
 import { MarkerInfoNode } from './marker-tree';
 import { MarkerTreeLabelProvider } from './marker-tree-label-provider';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceServiceImpl } from '@theia/workspace/lib/browser';
 import { WorkspaceUriLabelProviderContribution } from '@theia/workspace/lib/browser/workspace-uri-contribution';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -43,13 +43,13 @@ import * as temp from 'temp';
 disableJSDOM();
 
 let markerTreeLabelProvider: MarkerTreeLabelProvider;
-let workspaceService: WorkspaceService;
+let workspaceService: WorkspaceServiceImpl;
 
 before(() => {
     disableJSDOM = enableJSDOM();
     const testContainer = new Container();
 
-    workspaceService = new WorkspaceService();
+    workspaceService = new WorkspaceServiceImpl();
     testContainer.bind(WorkspaceService).toConstantValue(workspaceService);
     testContainer.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     testContainer.bind(ApplicationShell).toConstantValue({
@@ -82,7 +82,7 @@ before(() => {
     })).inSingletonScope();
 
     markerTreeLabelProvider = testContainer.get<MarkerTreeLabelProvider>(MarkerTreeLabelProvider);
-    workspaceService = testContainer.get<WorkspaceService>(WorkspaceService);
+    workspaceService = testContainer.get<WorkspaceServiceImpl>(WorkspaceService);
 });
 
 after(() => {

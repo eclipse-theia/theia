@@ -17,17 +17,14 @@
 import '@theia/core/lib/electron-common/electron-api';
 import { injectable } from '@theia/core/shared/inversify';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { WorkspaceService } from '../browser/workspace-service';
+import { WorkspaceServiceImpl } from '../browser/workspace-service';
 
 @injectable()
-export class ElectronWorkspaceService extends WorkspaceService {
-
+export class ElectronWorkspaceServiceImpl extends WorkspaceServiceImpl {
     protected override async setWorkspace(workspaceStat: FileStat | undefined): Promise<void> {
+        console.log('*** (electron) SET Workspace: ' + workspaceStat?.resource);
         await super.setWorkspace(workspaceStat);
-        if (this._workspace && !this.isUntitledWorkspace(this._workspace.resource)) {
-            const fsPath = this._workspace.resource.path.fsPath();
-            window.electronTheiaCore.addRecentDocument(fsPath);
-        }
+        const recent = await this.server.getRecentWorkspaces();
+        window.electronTheiaCore.updateRecentWorkspaces(recent);
     }
-
 }

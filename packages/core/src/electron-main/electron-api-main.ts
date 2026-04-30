@@ -16,9 +16,11 @@
 
 import {
     ipcMain, BrowserWindow, Menu, MenuItemConstructorOptions, webContents, WebContents, session, shell, clipboard, IpcMainEvent,
-    app
+    app, JumpListCategory, JumpListItem
 } from '@theia/electron/shared/electron';
 import * as nativeKeymap from '@theia/electron/shared/native-keymap';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 import { inject, injectable } from 'inversify';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
@@ -59,10 +61,10 @@ import {
     CHANNEL_OPEN_URL,
     CHANNEL_SET_THEME,
     CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
-    CHANNEL_ADD_RECENT_DOCUMENT
+    CHANNEL_UPDATE_RECENT_WORKSPACES
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
-import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
+import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
 import { createDisposableListener } from './event-utils';
 
 @injectable()
@@ -268,9 +270,46 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             }
         });
 
-        ipcMain.on(CHANNEL_ADD_RECENT_DOCUMENT, (_event, path) => {
-            app.addRecentDocument(path);
-        })
+        ipcMain.on(CHANNEL_UPDATE_RECENT_WORKSPACES, (_event, workspaces: string[]) => {
+            if (!isWindows) {
+                return;
+            }
+
+            const isDev = !app.isPackaged;
+            let main: string = '';
+            if (isDev) {
+                const pkgData = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+                main = pkgData.main;
+            }
+            const items: JumpListItem[] = workspaces.map(workspace => {
+                const uri = new URI(workspace);
+                const wspath = uri.path.fsPath();
+                const item: JumpListItem = {
+                    type: 'task',
+                    title: `${wspath}`.substring(0, 255),
+                    description: `${wspath}`.substring(0, 255),
+                    program: process.execPath,
+                    args: isDev ? `${path.resolve(process.cwd(), main)} ${wspath}` : wspath,
+                    iconPath: process.execPath,
+                    iconIndex: 0
+                };
+                return item;
+            });
+
+            const jumpList: JumpListCategory[] = [{
+                type: 'custom',
+                name: 'Recent Workspaces',
+                items
+            }];
+
+            const result = app.setJumpList(jumpList);
+
+            if (result === 'ok') {
+                console.debug('Jump List updated.');
+            } else {
+                console.warn(`Could not set Jump List with recent workspaces (result = "${result}")`);
+            }
+        });
     }
 
     private isASCI(accelerator: string | undefined): boolean {

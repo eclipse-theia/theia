@@ -28,7 +28,7 @@ import {
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
     CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
-    CHANNEL_ADD_RECENT_DOCUMENT
+    CHANNEL_UPDATE_RECENT_WORKSPACES
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -249,7 +249,7 @@ const api: TheiaCoreAPI = {
     },
     useNativeElements: !('THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS' in process.env && process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS === '1'),
 
-    addRecentDocument: (path: string): void => { ipcRenderer.send(CHANNEL_ADD_RECENT_DOCUMENT, path); }
+    updateRecentWorkspaces: (folders: string[]): void => { ipcRenderer.send(CHANNEL_UPDATE_RECENT_WORKSPACES, folders); }
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

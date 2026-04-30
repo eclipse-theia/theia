@@ -48,11 +48,90 @@ export interface WorkspaceHandlingContribution {
     modifyRecentWorkspaces?(workspaces: string[]): MaybePromise<string[]>;
 }
 
+export const WorkspaceService = Symbol('WorkspaceService');
+export interface WorkspaceService {
+    get ready(): Promise<void>;
+    get roots(): Promise<FileStat[]>;
+    tryGetRoots(): FileStat[];
+    get workspace(): FileStat | undefined;
+    get onWorkspaceChanged(): Event<FileStat[]>;
+    get onWorkspaceLocationChanged(): Event<FileStat | undefined>;
+    recentWorkspaces(): Promise<string[]>;
+    removeRecentWorkspace(uri: string): Promise<void>;
+    /**
+     * Returns `true` if theia has an opened workspace or folder
+     * @returns {boolean}
+     */
+    get opened(): boolean;
+    /**
+     * Returns `true` if a multiple-root workspace is currently open.
+     * @returns {boolean}
+     */
+    get isMultiRootWorkspaceOpened(): boolean;
+    /**
+     * Opens directory, or recreates a workspace from the file that `uri` points to.
+     */
+    open(uri: URI, options?: WorkspaceInput): void;
+    /**
+     * Adds root folder(s) to the workspace
+     * @param uris URI or URIs of the root folder(s) to add
+     */
+    addRoot(uris: URI[] | URI): Promise<void>;
+    /**
+     * Removes root folder(s) from workspace.
+     */
+    removeRoots(uris: URI[]): Promise<void>;
+    spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]>;
+    getUntitledWorkspace(): Promise<URI>;
+    /**
+     * Clears current workspace root.
+     */
+    close(): Promise<void>;
+    /**
+     * Return true if one of the paths in paths array is present in the workspace
+     * NOTE: You should always explicitly use `/` as the separator between the path segments.
+     */
+    containsSome(paths: string[]): Promise<boolean>;
+    /**
+     * `true` if the current workspace is configured using a configuration file.
+     *
+     * `false` if there is no workspace or the workspace is simply a folder.
+     */
+    get saved(): boolean;
+    /**
+     * Save workspace data into a file
+     * @param uri URI or FileStat of the workspace file
+     */
+    save(uri: URI | FileStat): Promise<void>;
+    /**
+     * Returns the workspace root uri that the given file belongs to.
+     * In case that the file is found in more than one workspace roots, returns the root that is closest to the file.
+     * If the file is not from the current workspace, returns `undefined`.
+     * @param uri URI of the file
+     */
+    getWorkspaceRootUri(uri: URI | undefined): URI | undefined;
+    /**
+     * Returns the relative path of the given file to the workspace root.
+     * @param uri URI of the file
+     * @see getWorkspaceRootUri(uri)
+     */
+    getWorkspaceRelativePath(uri: URI): Promise<string>;
+    areWorkspaceRoots(uris: URI[]): boolean;
+    isUntitledWorkspace(candidate?: URI): boolean;
+    isSafeToReload(withURI?: URI): Promise<boolean>;
+    /**
+     *
+     * @param key the property key under which to store the schema (e.g. tasks, launch)
+     * @param schema the schema for the property. If none is supplied, the update is treated as a deletion.
+     */
+    updateSchema(key: string, schema?: IJSONSchema): Promise<boolean>;
+};
+
 /**
  * The workspace service.
  */
 @injectable()
-export class WorkspaceService implements FrontendApplicationContribution, WorkspaceOpenHandlerContribution {
+export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicationContribution, WorkspaceOpenHandlerContribution {
 
     protected _workspace: FileStat | undefined;
 
@@ -248,6 +327,10 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         this.updateTitle();
         await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
         await this.updateWorkspace();
+        console.log('*** (core) SET Workspace: ' + workspaceStat?.resource);
+        const recent = await this.server.getRecentWorkspaces();
+        console.log(`****** Recent workspaces: ${recent}`);
+        window.electronTheiaCore.updateRecentWorkspaces(recent);
     }
 
     protected async updateWorkspace(): Promise<void> {
@@ -866,3 +949,4 @@ export namespace WorkspaceData {
         return data;
     }
 }
+
