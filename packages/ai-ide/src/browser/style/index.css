@@ -1632,3 +1632,302 @@
   margin-top: calc(var(--theia-ui-padding) / 2);
   margin-bottom: var(--theia-ui-padding);
 }
+
+/* User Interaction Tool Renderer Styles */
+.user-interaction-tool.title {
+  font-weight: 600;
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+  flex: 1;
+}
+
+.user-interaction-tool.status {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  font-size: var(--theia-ui-font-size0);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.user-interaction-tool.status.completed {
+  color: var(--theia-gitDecoration-addedResourceForeground, var(--theia-descriptionForeground));
+}
+
+.user-interaction-tool.status.canceled {
+  color: var(--theia-errorForeground);
+}
+
+.user-interaction-tool.status.waiting {
+  color: var(--theia-disabledForeground);
+}
+
+/* Reuses the dots keyframes defined by ai-chat-ui's chat node header marker.
+   The fixed width reserves space for the longest dots state ("...") so the
+   label doesn't shift horizontally as the dots animate. */
+.user-interaction-tool.status.waiting::after {
+  content: "";
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1s steps(1, end) infinite;
+}
+
+.user-interaction-tool.progress {
+  display: flex;
+  gap: 4px;
+  padding: 0 calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 2);
+}
+
+.user-interaction-tool.progress-dot {
+  position: relative;
+  flex: 1;
+  height: 3px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background-color: var(--theia-widget-border);
+  cursor: pointer;
+}
+
+/* Expands the hit target above and below the slim visible bar so the
+   button is easier to click without changing its visual size. */
+.user-interaction-tool.progress-dot::after {
+  content: "";
+  position: absolute;
+  inset: -8px -2px;
+}
+
+.user-interaction-tool.progress-dot:hover {
+  background-color: var(--theia-button-hoverBackground);
+}
+
+.user-interaction-tool.progress-dot:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 2px;
+}
+
+.user-interaction-tool.progress-dot.done {
+  background-color: var(--theia-button-background);
+}
+
+.user-interaction-tool.progress-dot.active {
+  background-color: var(--theia-focusBorder);
+}
+
+.user-interaction-tool.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: 0 calc(var(--theia-ui-padding) * 2) var(--theia-ui-padding);
+}
+
+.user-interaction-tool.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  background-color: var(--theia-button-secondaryBackground);
+  color: var(--theia-button-secondaryForeground);
+  border: 1px solid var(--theia-button-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  transition: background-color 0.15s;
+}
+
+.user-interaction-tool.link-button:hover {
+  background-color: var(--theia-button-secondaryHoverBackground);
+}
+
+.user-interaction-tool.message {
+  padding: 0 calc(var(--theia-ui-padding) * 2);
+  color: var(--theia-foreground);
+  line-height: 1.5;
+  /* Allow this flex child to shrink below the intrinsic width of its
+     contents (e.g. wide code blocks) instead of pushing the wizard wider. */
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.user-interaction-tool.message p {
+  margin: 0 0 calc(var(--theia-ui-padding) / 2) 0;
+}
+
+.user-interaction-tool.message p:last-child {
+  margin-bottom: 0;
+}
+
+.user-interaction-tool.message pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.user-interaction-tool.message code {
+  word-break: break-word;
+}
+
+.user-interaction-tool.message pre code {
+  word-break: normal;
+}
+
+.user-interaction-tool.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+}
+
+.user-interaction-tool.option-button {
+  /* Stack the label and the hidden bold spacer in the same grid cell so the
+     button reserves bold width up-front and does not grow when selected. */
+  display: inline-grid;
+  place-items: center;
+  margin-left: 0;
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 4);
+  font-size: var(--theia-ui-font-size1);
+  min-width: 100px;
+}
+
+.user-interaction-tool.option-button-label,
+.user-interaction-tool.option-button-bold-spacer {
+  grid-area: 1 / 1;
+}
+
+.user-interaction-tool.option-button-bold-spacer {
+  font-weight: bold;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.user-interaction-tool.option-button.selected .user-interaction-tool.option-button-label {
+  font-weight: bold;
+}
+
+.user-interaction-tool.option-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.user-interaction-tool.pending-text {
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+.user-interaction-tool.comment-section {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 2) var(--theia-ui-padding);
+}
+
+.user-interaction-tool.comment-input-row {
+  display: flex;
+  gap: var(--theia-ui-padding);
+  align-items: center;
+}
+
+.user-interaction-tool.comment-input-field {
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.user-interaction-tool.comment-submit {
+  white-space: nowrap;
+}
+
+.user-interaction-tool.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.user-interaction-tool.comment-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--theia-ui-padding);
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  background-color: var(--theia-editorWidget-background);
+  border: 1px solid var(--theia-widget-border);
+  border-radius: 3px;
+}
+
+.user-interaction-tool.comment-text {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.user-interaction-tool.comment-remove {
+  background: transparent;
+  border: none;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 3px;
+}
+
+.user-interaction-tool.comment-remove:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.user-interaction-tool.advance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
+  margin-top: calc(var(--theia-ui-padding) * 1.5);
+  background-color: var(--theia-titleBar-inactiveBackground, var(--theia-editorGroupHeader-tabsBackground));
+  border-top: 2px solid var(--theia-focusBorder);
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+.user-interaction-tool.page-counter {
+  font-family: var(--theia-code-font-family);
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 500;
+  color: var(--theia-descriptionForeground);
+  letter-spacing: 0.05em;
+  flex: 1;
+  text-align: center;
+}
+
+.user-interaction-tool.back-button,
+.user-interaction-tool.advance-button {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding)) calc(var(--theia-ui-padding) * 2.5);
+  font-size: var(--theia-ui-font-size1);
+  min-width: 110px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.user-interaction-tool.back-button {
+  justify-content: flex-start;
+}
+
+.user-interaction-tool.advance-button {
+  justify-content: flex-end;
+}
+
+.user-interaction-tool.back-button:disabled {
+  visibility: hidden;
+}
+
+.user-interaction-tool.option-button.selected {
+  outline: 2px solid var(--theia-focusBorder);
+  outline-offset: -2px;
+}
