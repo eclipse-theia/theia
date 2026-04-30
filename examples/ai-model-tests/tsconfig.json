@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2023",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "outDir": "lib",
+    "rootDir": "src",
+    "skipLibCheck": true
+  },
+  "include": [
+    "src"
+  ],
+  "references": []
+}
