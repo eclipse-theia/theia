@@ -130,7 +130,7 @@ function historyItemFromDto(dto: ScmHistoryItemDto): ScmHistoryItem {
     return {
         id: dto.id,
         parentIds: dto.parentIds,
-        subject: dto.subject,
+        subject: dto.subject ?? '',
         message: typeof dto.message === 'string' ? dto.message : dto.message?.value,
         author: dto.author,
         authorEmail: dto.authorEmail,
