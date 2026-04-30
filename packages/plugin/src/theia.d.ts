@@ -12711,6 +12711,70 @@ export module '@theia/plugin' {
         readonly description?: string;
     }
 
+    export interface SourceControlHistoryItemRef {
+        readonly id: string;
+        readonly name: string;
+        readonly description?: string;
+        readonly revision?: string;
+        readonly icon?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly category?: string;
+    }
+
+    export interface SourceControlHistoryItemRefsChangeEvent {
+        readonly added: readonly SourceControlHistoryItemRef[];
+        readonly removed: readonly SourceControlHistoryItemRef[];
+        readonly modified: readonly SourceControlHistoryItemRef[];
+    }
+
+    export interface SourceControlHistoryOptions {
+        readonly skip?: number;
+        readonly limit?: number | { id?: string };
+        readonly historyItemRefs?: readonly string[];
+        readonly filterText?: string;
+    }
+
+    export interface SourceControlHistoryItemStatistics {
+        readonly files: number;
+        readonly insertions: number;
+        readonly deletions: number;
+    }
+
+    export interface SourceControlHistoryItem {
+        readonly id: string;
+        readonly parentIds?: readonly string[];
+        readonly subject: string;
+        readonly message?: string | MarkdownString;
+        readonly author?: string;
+        readonly authorEmail?: string;
+        readonly authorIcon?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly displayId?: string;
+        readonly timestamp?: number;
+        readonly statistics?: SourceControlHistoryItemStatistics;
+        readonly references?: readonly SourceControlHistoryItemRef[];
+        readonly tooltip?: string | MarkdownString;
+    }
+
+    export interface SourceControlHistoryItemChange {
+        readonly uri: Uri;
+        readonly originalUri?: Uri;
+        readonly modifiedUri?: Uri;
+        readonly renameUri?: Uri;
+    }
+
+    export interface SourceControlHistoryProvider {
+        readonly currentHistoryItemRef?: SourceControlHistoryItemRef;
+        readonly currentHistoryItemRemoteRef?: SourceControlHistoryItemRef;
+        readonly currentHistoryItemBaseRef?: SourceControlHistoryItemRef;
+        readonly onDidChangeCurrentHistoryItemRefs: Event<void>;
+        readonly onDidChangeHistoryItemRefs: Event<SourceControlHistoryItemRefsChangeEvent>;
+
+        provideHistoryItemRefs(historyItemRefs: string[] | undefined, token: CancellationToken): ProviderResult<SourceControlHistoryItemRef[]>;
+        provideHistoryItems(options: SourceControlHistoryOptions, token: CancellationToken): ProviderResult<SourceControlHistoryItem[]>;
+        provideHistoryItemChanges(historyItemId: string, historyItemParentId: string | undefined, token: CancellationToken): ProviderResult<SourceControlHistoryItemChange[]>;
+        resolveHistoryItem(historyItemId: string, token: CancellationToken): ProviderResult<SourceControlHistoryItem>;
+        resolveHistoryItemRefsCommonAncestor(historyItemRefs: string[], token: CancellationToken): ProviderResult<string>;
+    }
+
     /**
      * An source control is able to provide {@link SourceControlResourceState resource states}
      * to the editor and interact with the editor in several source control related ways.
@@ -12783,6 +12847,11 @@ export module '@theia/plugin' {
          * Optional action button displayed under the source control's input box.
          */
         actionButton?: ScmActionButton;
+
+        /**
+         * Optional history provider.
+         */
+        historyProvider?: SourceControlHistoryProvider;
 
         /**
          * Dispose this source control.

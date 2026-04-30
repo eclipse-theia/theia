@@ -25,7 +25,7 @@ import { DirtyDiffWidget } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-wi
 import { Change, LineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
 import { IChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
-import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../../common';
+import { ScmCommandArg, ScmHistoryItemCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../../common';
 import { TestItemReference, TestMessageArg } from '../../../common/test-types';
 import { PluginScmProvider, PluginScmResource, PluginScmResourceGroup } from '../scm-main';
 import { TreeViewWidget } from '../view/tree-view-widget';
@@ -70,6 +70,9 @@ export class PluginMenuCommandAdapter {
             ['scm/resourceGroup/context', toScmArgs],
             ['scm/resourceState/context', toScmArgs],
             ['scm/repository', toScmArgs],
+            ['scm/history/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
+            ['scm/historyItem/context', (...args) => this.toScmHistoryArgs(...args)],
+            ['scm/historyItemRef/context', (...args) => this.toScmHistoryArgs(...args)],
             ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
             ['scm/sourceControl', toScmArgs],
             ['scm/sourceControl/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
@@ -146,6 +149,16 @@ export class PluginMenuCommandAdapter {
             }
         }
         return scmArgs;
+    }
+
+    protected toScmHistoryArgs(...args: any[]): any[] {
+        const result: any[] = [];
+        for (const arg of args) {
+            if (ScmHistoryItemCommandArg.is(arg) || ScmCommandArg.is(arg)) {
+                result.push(arg);
+            }
+        }
+        return result;
     }
 
     protected toScmArg(arg: any): ScmCommandArg | undefined {

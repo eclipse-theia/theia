@@ -962,6 +962,17 @@ export namespace ScmCommandArg {
     }
 }
 
+export interface ScmHistoryItemCommandArg {
+    sourceControlHandle: number;
+    id: string;
+    type: 'historyItem' | 'historyItemRef';
+}
+export namespace ScmHistoryItemCommandArg {
+    export function is(arg: unknown): arg is ScmHistoryItemCommandArg {
+        return isObject(arg) && 'sourceControlHandle' in arg && 'id' in arg && 'type' in arg;
+    }
+}
+
 export interface ScmExt {
     createSourceControl(plugin: Plugin, id: string, label: string, rootUri?: theia.Uri): theia.SourceControl;
     getLastInputBox(plugin: Plugin): theia.SourceControlInputBox | undefined;
@@ -970,6 +981,11 @@ export interface ScmExt {
     $validateInput(sourceControlHandle: number, value: string, cursorPosition: number): Promise<[string, number] | undefined>;
     $setSelectedSourceControl(selectedSourceControlHandle: number | undefined): Promise<void>;
     $provideOriginalResource(sourceControlHandle: number, uri: string, token: theia.CancellationToken): Promise<UriComponents | undefined>;
+    $provideHistoryItemRefs(sourceControlHandle: number, historyItemRefs: string[] | undefined, token: theia.CancellationToken): Promise<ScmHistoryItemRefDto[] | undefined>;
+    $provideHistoryItems(sourceControlHandle: number, options: ScmHistoryOptionsDto, token: theia.CancellationToken): Promise<ScmHistoryItemDto[] | undefined>;
+    $provideHistoryItemChanges(sourceControlHandle: number, historyItemId: string, historyItemParentId: string | undefined, token: theia.CancellationToken): Promise<ScmHistoryItemChangeDto[] | undefined>;
+    $resolveHistoryItem(sourceControlHandle: number, historyItemId: string, token: theia.CancellationToken): Promise<ScmHistoryItemDto | undefined>;
+    $resolveHistoryItemRefsCommonAncestor(sourceControlHandle: number, historyItemRefs: string[], token: theia.CancellationToken): Promise<string | undefined>;
 }
 
 export namespace TimelineCommandArg {
@@ -1054,6 +1070,8 @@ export interface ScmMain {
     $setInputBoxEnabled(sourceControlHandle: number, enabled: boolean): void;
 
     $setActionButton(sourceControlHandle: number, actionButton: ScmActionButton | undefined): void;
+    $onDidChangeCurrentHistoryItemRefs(sourceControlHandle: number): void;
+    $onDidChangeHistoryItemRefs(sourceControlHandle: number, event: ScmHistoryItemRefsChangeEventDto): void;
 }
 
 export interface SourceControlProviderFeatures {
@@ -1063,6 +1081,10 @@ export interface SourceControlProviderFeatures {
     acceptInputCommand?: Command;
     statusBarCommands?: Command[];
     contextValue?: string;
+    hasHistoryProvider?: boolean;
+    currentHistoryItemRef?: ScmHistoryItemRefDto;
+    currentHistoryItemRemoteRef?: ScmHistoryItemRefDto;
+    currentHistoryItemBaseRef?: ScmHistoryItemRefDto;
 }
 
 export interface SourceControlGroupFeatures {
@@ -1097,6 +1119,56 @@ export interface ScmRawResourceSplice {
 export interface ScmRawResourceSplices {
     handle: number,
     splices: ScmRawResourceSplice[]
+}
+
+export interface ScmHistoryItemRefDto {
+    id: string;
+    name: string;
+    description?: string;
+    revision?: string;
+    icon?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    category?: string;
+}
+
+export interface ScmHistoryItemRefsChangeEventDto {
+    added: ScmHistoryItemRefDto[];
+    removed: ScmHistoryItemRefDto[];
+    modified: ScmHistoryItemRefDto[];
+}
+
+export interface ScmHistoryItemStatisticsDto {
+    files: number;
+    insertions: number;
+    deletions: number;
+}
+
+export interface ScmHistoryItemDto {
+    id: string;
+    parentIds?: string[];
+    subject: string;
+    message?: string | MarkdownString;
+    author?: string;
+    authorEmail?: string;
+    authorIcon?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    displayId?: string;
+    timestamp?: number;
+    tooltip?: string | MarkdownString;
+    statistics?: ScmHistoryItemStatisticsDto;
+    references?: ScmHistoryItemRefDto[];
+}
+
+export interface ScmHistoryItemChangeDto {
+    uri: UriComponents;
+    originalUri?: UriComponents;
+    modifiedUri?: UriComponents;
+    renameUri?: UriComponents;
+}
+
+export interface ScmHistoryOptionsDto {
+    skip?: number;
+    limit?: number | { id?: string };
+    historyItemRefs?: string[];
+    filterText?: string;
 }
 
 export interface SourceControlResourceState {

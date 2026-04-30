@@ -23,6 +23,7 @@ import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-too
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmRepositoriesWidget, SCM_SOURCE_CONTROL_TITLE_MENU } from '@theia/scm/lib/browser/scm-repositories-widget';
+import { ScmHistoryGraphWidget, SCM_HISTORY_TITLE_MENU } from '@theia/scm/lib/browser/scm-history-graph-widget';
 import { KeybindingRegistry, QuickCommandService, codicon } from '@theia/core/lib/browser';
 import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
@@ -63,6 +64,7 @@ export class MenusContributionPointHandler {
         });
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_SCM_TITLE_MENU, widget => widget instanceof ScmWidget);
         this.tabBarToolbar.registerMenuDelegate(SCM_SOURCE_CONTROL_TITLE_MENU, widget => widget instanceof ScmRepositoriesWidget);
+        this.tabBarToolbar.registerMenuDelegate(SCM_HISTORY_TITLE_MENU, widget => widget instanceof ScmHistoryGraphWidget);
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => !CodeEditorWidgetUtil.is(widget));
     }
 
