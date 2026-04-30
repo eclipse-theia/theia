@@ -282,11 +282,11 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
         try {
             this.bodyElement = document.createElement('div');
             this.bodyElement.classList.add('body');
+            super.create();
             this.diffEditorPromise = this.widget.editorProvider.createEmbeddedDiffEditor(this.editor, this.bodyElement, this.widget.previousRevisionUri);
             const diffEditor = await this.diffEditorPromise;
             this.diffEditor = diffEditor;
             this.toDispose.push(diffEditor);
-            super.create();
             return diffEditor;
         } catch (e) {
             this.dispose();
