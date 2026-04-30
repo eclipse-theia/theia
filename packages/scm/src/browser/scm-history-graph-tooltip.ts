@@ -130,9 +130,11 @@ export function buildHtmlTooltip(entry: HistoryGraphEntry, markdownRenderer: Mar
     }
 
     // Body
-    const bodyText = (item.message && item.message.trim() !== item.subject.trim())
-        ? item.message.trim()
-        : item.subject;
+    const subject = item.subject ?? '';
+    const message = item.message?.trim();
+    const bodyText = (message && message !== subject.trim())
+        ? message
+        : subject;
     const bodyMd = new MarkdownStringImpl(bodyText);
     const rendered = markdownRenderer.render(bodyMd);
     container.appendChild(rendered.element);
