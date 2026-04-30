@@ -134,3 +134,197 @@ body {
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
   }
 }
+
+/* Walkthrough styles */
+
+.gs-walkthrough-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.gs-walkthrough-card {
+  border: 1px solid var(--theia-contrastBorder);
+  border-radius: 4px;
+  padding: 12px;
+  cursor: pointer;
+  min-width: 200px;
+  max-width: 300px;
+  transition: background-color 0.1s;
+}
+
+.gs-walkthrough-card:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.gs-walkthrough-card:focus {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+.gs-walkthrough-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.gs-walkthrough-card-title {
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 600;
+  margin: 0;
+}
+
+.gs-walkthrough-icon {
+  font-size: var(--theia-ui-font-size2);
+}
+
+.gs-walkthrough-card-description {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  margin: 4px 0 8px 0;
+  line-height: 1.4;
+}
+
+.gs-walkthrough-card-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gs-walkthrough-progress-bar {
+  flex: 1;
+  height: 4px;
+  background-color: var(--theia-editorWidget-border, rgba(128, 128, 128, 0.3));
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.gs-walkthrough-progress-fill {
+  height: 100%;
+  background-color: var(--theia-progressBar-background, var(--theia-focusBorder));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.gs-walkthrough-progress-text {
+  color: var(--theia-walkthrough-progress-foreground, var(--theia-descriptionForeground));
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+}
+
+.gs-walkthrough-detail {
+  margin-top: 8px;
+}
+
+.gs-walkthrough-detail-header {
+  margin-bottom: 12px;
+}
+
+.gs-walkthrough-back-link {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.gs-walkthrough-back-link:hover {
+  text-decoration: underline;
+}
+
+.gs-walkthrough-detail-title {
+  font-size: var(--theia-ui-font-size3);
+  font-weight: 600;
+  margin: 4px 0;
+}
+
+.gs-walkthrough-detail-description {
+  color: var(--theia-descriptionForeground);
+  margin: 4px 0 12px 0;
+}
+
+.gs-walkthrough-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gs-walkthrough-step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.gs-walkthrough-step-item:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.gs-walkthrough-step-item.selected {
+  background-color: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.gs-walkthrough-step-item.completed .gs-walkthrough-step-icon {
+  color: var(--theia-charts-green, #388a34);
+}
+
+.gs-walkthrough-step-icon {
+  font-size: var(--theia-ui-font-size2);
+}
+
+.gs-walkthrough-step-title {
+  font-weight: 500;
+}
+
+.gs-walkthrough-step-content {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--theia-contrastBorder);
+  border-radius: 4px;
+}
+
+.gs-walkthrough-step-detail h3 {
+  margin-top: 0;
+}
+
+.gs-walkthrough-step-detail p {
+  color: var(--theia-descriptionForeground);
+  line-height: 1.5;
+}
+
+.gs-walkthrough-media-image {
+  max-width: 100%;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.gs-walkthrough-media-markdown {
+  margin-top: 8px;
+}
+
+.gs-walkthrough-step-description {
+  line-height: 1.5;
+}
+
+.gs-walkthrough-step-description a {
+  color: var(--theia-textLink-foreground);
+  text-decoration: none;
+}
+
+.gs-walkthrough-step-description a:hover {
+  text-decoration: underline;
+}
+
+.gs-walkthrough-step-description code {
+  font-family: var(--theia-code-font-family);
+  font-size: var(--theia-code-font-size);
+  background: var(--theia-textCodeBlock-background);
+  padding: 1px 3px;
+  border-radius: 3px;
+}

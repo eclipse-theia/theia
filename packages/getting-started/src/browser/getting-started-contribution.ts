@@ -27,6 +27,10 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Color } from '@theia/core/lib/common/color';
+import { WalkthroughService } from './walkthrough-service';
 
 /**
  * Triggers opening the `GettingStartedWidget`.
@@ -36,8 +40,13 @@ export const GettingStartedCommand = {
     label: GettingStartedWidget.LABEL
 };
 
+// WalkthroughCommands imported from common and re-exported for backward compatibility
+import { WalkthroughCommands } from '../common/walkthrough-commands';
+export { WalkthroughCommands };
+
 @injectable()
-export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget> implements FrontendApplicationContribution, PreferenceContribution {
+export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget>
+    implements FrontendApplicationContribution, PreferenceContribution, ColorContribution {
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -59,6 +68,9 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(WalkthroughService)
+    protected readonly walkthroughService: WalkthroughService;
 
     constructor() {
         super({
@@ -133,6 +145,21 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         registry.registerCommand(GettingStartedCommand, {
             execute: () => this.openView({ reveal: true, activate: true }),
         });
+        registry.registerCommand(WalkthroughCommands.OPEN_WALKTHROUGH, {
+            execute: async (walkthroughId?: string) => {
+                await this.openView({ reveal: true, activate: true });
+                if (walkthroughId) {
+                    this.walkthroughService.selectWalkthrough(walkthroughId);
+                }
+            }
+        });
+        registry.registerCommand(WalkthroughCommands.RESET_WALKTHROUGH_PROGRESS, {
+            execute: async (walkthroughId?: string) => {
+                if (walkthroughId) {
+                    await this.walkthroughService.resetProgress(walkthroughId);
+                }
+            }
+        });
     }
 
     override registerMenus(menus: MenuModelRegistry): void {
@@ -141,5 +168,25 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
             label: GettingStartedCommand.label,
             order: 'a10'
         });
+    }
+
+    registerColors(colors: ColorRegistry): void {
+        colors.register(
+            {
+                id: 'walkthrough.stepTitle.foreground',
+                defaults: { dark: '#FFFFFF', light: '#000000', hcDark: '#FFFFFF', hcLight: '#000000' },
+                description: 'Foreground color of walkthrough step titles.'
+            },
+            {
+                id: 'walkthrough.progress.foreground',
+                defaults: {
+                    dark: Color.transparent('foreground', 0.7),
+                    light: Color.transparent('foreground', 0.7),
+                    hcDark: 'foreground',
+                    hcLight: 'foreground'
+                },
+                description: 'Foreground color for walkthrough progress indicators.'
+            }
+        );
     }
 }

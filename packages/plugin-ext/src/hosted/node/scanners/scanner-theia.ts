@@ -64,7 +64,10 @@ import {
     TerminalProfile,
     PluginIconContribution,
     PluginEntryPoint,
-    PluginPackageContribution
+    PluginPackageContribution,
+    WalkthroughContribution,
+    WalkthroughStepContribution,
+    PluginPackageWalkthroughStep
 } from '../../../common/plugin-protocol';
 import { promises as fs, readdirSync } from 'fs';
 import * as path from 'path';
@@ -528,6 +531,12 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             }
         }
 
+        try {
+            contributions.walkthroughs = this.readWalkthroughs(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'walkthroughs'.`, rawPlugin.contributes.walkthroughs, err);
+        }
+
         return contributions;
     }
 
@@ -562,6 +571,90 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             path: packageTranslation.path
         };
         return translation;
+    }
+
+    protected readWalkthroughs(pck: PluginPackage): WalkthroughContribution[] | undefined {
+        if (!pck.contributes || !pck.contributes.walkthroughs) {
+            return undefined;
+        }
+        const pluginId = PluginIdentifiers.componentsToUnversionedId({ publisher: pck.publisher, name: pck.name, version: pck.version });
+        const result: WalkthroughContribution[] = [];
+        for (const walkthrough of pck.contributes.walkthroughs) {
+            if (typeof walkthrough.id !== 'string' || !walkthrough.id) {
+                console.error("'contributes.walkthroughs.id' must be defined and non-empty");
+                continue;
+            }
+            if (typeof walkthrough.title !== 'string' || !walkthrough.title) {
+                console.error("'contributes.walkthroughs.title' must be defined and non-empty");
+                continue;
+            }
+            if (!Array.isArray(walkthrough.steps)) {
+                console.error("'contributes.walkthroughs.steps' must be an array");
+                continue;
+            }
+            const steps: WalkthroughStepContribution[] = [];
+            for (const step of walkthrough.steps) {
+                if (typeof step.id !== 'string' || !step.id) {
+                    console.error("'contributes.walkthroughs.steps.id' must be defined and non-empty");
+                    continue;
+                }
+                if (typeof step.title !== 'string' || !step.title) {
+                    console.error("'contributes.walkthroughs.steps.title' must be defined and non-empty");
+                    continue;
+                }
+                steps.push({
+                    id: step.id,
+                    title: step.title,
+                    description: step.description || '',
+                    media: this.resolveWalkthroughMedia(pck, step.media),
+                    completionEvents: step.completionEvents,
+                    when: step.when
+                });
+            }
+            result.push({
+                id: walkthrough.id,
+                title: walkthrough.title,
+                description: walkthrough.description || '',
+                steps,
+                featuredFor: walkthrough.featuredFor,
+                when: walkthrough.when,
+                icon: walkthrough.icon,
+                pluginId,
+                extensionUri: pck.packagePath
+            });
+        }
+        return result.length > 0 ? result : undefined;
+    }
+
+    protected resolveWalkthroughMedia(
+        pck: PluginPackage,
+        media?: PluginPackageWalkthroughStep['media']
+    ): WalkthroughStepContribution['media'] {
+        if (!media) {
+            return undefined;
+        }
+        if ('markdown' in media) {
+            return { markdown: this.toPluginUrl(pck, media.markdown) };
+        }
+        if ('svg' in media) {
+            return { svg: this.toPluginUrl(pck, media.svg) };
+        }
+        if ('image' in media) {
+            const altText = 'altText' in media ? media.altText as string : undefined;
+            if (typeof media.image === 'string') {
+                return { image: this.toPluginUrl(pck, media.image), ...(altText !== undefined && { altText }) };
+            }
+            return {
+                image: {
+                    dark: this.toPluginUrl(pck, media.image.dark),
+                    light: this.toPluginUrl(pck, media.image.light),
+                    hc: this.toPluginUrl(pck, media.image.hc),
+                    hcLight: this.toPluginUrl(pck, media.image.hcLight)
+                },
+                ...(altText !== undefined && { altText })
+            };
+        }
+        return undefined;
     }
 
     protected readCommand({ command, title, shortTitle, original, category, icon, enablement }: PluginPackageCommand, pck: PluginPackage): PluginCommand {
