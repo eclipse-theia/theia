@@ -94,6 +94,7 @@
   - Removed protected method `removeFromCounter(widget)`
   - Removed protected method `createCounterForUri(uri)` (replaced by `nextCounter()`)
   - Removed protected method `getOrCreateCounterForUri(uri)`
+- [editor] replaced protected field `EditorManager.recentlyVisibleIds` with `recentlyVisibleEditors` as part of [#17242](https://github.com/eclipse-theia/theia/pull/17242)
 - [plugin-ext] changed the timing of plugin contribution loading: `beforeLoadContributions` now waits for `attached_shell` instead of `initialized_layout`. Overrides of `beforeLoadContributions` or `loadContributions` that assume the full layout is already initialized may need to adjust their logic [#17278](https://github.com/eclipse-theia/theia/pull/17278)
 - [core] disabled Lumino's overflow menu feature in the main menu bar by passing `overflowMenuOptions: { isVisible: false }` to the `MenuBarWidget` constructor. The feature was never functional in Theia and could cause a `RangeError` when toggling menu bar visibility. Adopters who need overflow menu support can override `BrowserMainMenuFactory.createMenuBar` to construct the `DynamicMenuBarWidget` with different options [#17362](https://github.com/eclipse-theia/theia/pull/17362)
 - [core] removed protected methods `addBlurListener(widget, saveable)` and `windowHasFocus(document)` from `SaveableService`. Window-level focus tracking is now handled by the new `WindowFocusService` [#17360](https://github.com/eclipse-theia/theia/pull/17360)
