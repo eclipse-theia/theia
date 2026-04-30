@@ -261,6 +261,18 @@ describe('UserInteractionTool', () => {
         expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
     });
 
+    it('should forward right-side line as selection when opening a diff', async () => {
+        await tool.openLink({ ref: 'src/foo.ts', rightRef: { path: 'src/foo.ts', line: 42 } });
+        const getOpenerCall = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0);
+        expect(getOpenerCall.args[1]).to.deep.equal({ selection: { start: { line: 41, character: 0 } } });
+    });
+
+    it('should fall back to left-side line when right side has none', async () => {
+        await tool.openLink({ ref: { path: 'src/foo.ts', line: 7 }, rightRef: 'src/foo.ts' });
+        const getOpenerCall = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0);
+        expect(getOpenerCall.args[1]).to.deep.equal({ selection: { start: { line: 6, character: 0 } } });
+    });
+
     it('should treat new files (content unreadable at gitRef) as empty rather than an error', async () => {
         mockResourceProvider.callsFake(async (uri: URI) => {
             if (uri.scheme === 'git') {

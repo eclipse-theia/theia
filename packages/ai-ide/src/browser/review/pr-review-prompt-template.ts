@@ -306,9 +306,9 @@ Group related files into logical areas. Interleave areas with and without findin
 
 **DIFF PREFERENCE RULE:** ALWAYS use diff links with gitRef for files that are part of the PR changes. Only use a single ref (no rightRef) for unmodified reference files outside the PR change set.
 
-Use the following JSON shape for diff links (the left ref points to the merge base, the right ref to the working copy):
+Use the following JSON shape for diff links (the left ref points to the merge base, the right ref to the working copy). Put the finding's \`line\` on the right (working copy) ref so the diff editor jumps to that line:
 \`\`\`json
-{"ref": {"path": "src/foo.ts", "gitRef": "<merge-base-sha>", "line": 42}, "rightRef": "src/foo.ts"}
+{"ref": {"path": "src/foo.ts", "gitRef": "<merge-base-sha>"}, "rightRef": {"path": "src/foo.ts", "line": 42}}
 \`\`\`
 For unmodified reference files (no diff), use a simple string ref:
 \`\`\`json

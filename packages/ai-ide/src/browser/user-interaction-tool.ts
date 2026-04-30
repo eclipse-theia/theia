@@ -35,6 +35,7 @@ import {
     UserInteractionStepResult,
     buildDiffLabel,
     isEmptyContentRef,
+    parseUserInteractionArgs,
     resolveContentRef
 } from '../common/user-interaction-tool';
 
@@ -68,30 +69,39 @@ export class UserInteractionTool implements ToolProvider {
 
     getTool(): ToolRequest {
         const contentRefSchema = {
-            type: 'object',
-            properties: {
-                path: {
+            oneOf: [
+                {
                     type: 'string',
-                    description: 'Workspace-relative file path. Required unless "empty" is true.'
+                    description: 'Workspace-relative file path. Shorthand for { "path": "..." }.'
                 },
-                gitRef: {
-                    type: 'string',
-                    description: 'Optional git ref (branch, tag, or commit hash). Ignored when "empty" is true.'
-                },
-                line: {
-                    type: 'number',
-                    description: 'Optional 1-based line number to scroll to. Ignored when "empty" is true.'
-                },
-                empty: {
-                    type: 'boolean',
-                    description: 'Set to true to mark this side as intentionally empty (e.g., for newly added or deleted files in a diff).'
-                },
-                label: {
-                    type: 'string',
-                    description: 'Optional label for an empty side (e.g., "new file", "deleted"). Only used when "empty" is true.'
+                {
+                    type: 'object',
+                    properties: {
+                        path: {
+                            type: 'string',
+                            description: 'Workspace-relative file path. Required unless "empty" is true.'
+                        },
+                        gitRef: {
+                            type: 'string',
+                            description: 'Optional git ref (branch, tag, or commit hash). Ignored when "empty" is true.'
+                        },
+                        line: {
+                            type: 'number',
+                            description: 'Optional 1-based line number to scroll to. Ignored when "empty" is true.'
+                        },
+                        empty: {
+                            type: 'boolean',
+                            description: 'Set to true to mark this side as intentionally empty (e.g., for newly added or deleted files in a diff).'
+                        },
+                        label: {
+                            type: 'string',
+                            description: 'Optional label for an empty side (e.g., "new file", "deleted"). Only used when "empty" is true.'
+                        }
+                    }
                 }
-            },
+            ],
             description: 'Content reference. Provide "path" for a real file (optionally with "gitRef" and/or "line"), '
+                + 'a plain string as shorthand for a workspace-relative path, '
                 + 'or set "empty": true to represent a missing side of a diff.'
         };
         const stepSchema = {
@@ -245,7 +255,13 @@ export class UserInteractionTool implements ToolProvider {
             const right = resolveContentRef(link.rightRef);
             const diffLabel = link.label || buildDiffLabel(left, right);
             const diffUri = DiffUris.encode(resolvedLeftUri, resolvedRightUri, diffLabel);
-            await open(this.openerService, diffUri);
+            // Prefer the right-side line (working copy) since diff editors reveal
+            // selections on the modified editor; fall back to the left-side line.
+            const line = (!isEmptyContentRef(right) && right.line)
+                || (!isEmptyContentRef(left) && left.line)
+                || undefined;
+            const selection = line ? { start: { line: line - 1, character: 0 } } : undefined;
+            await open(this.openerService, diffUri, { selection });
         } else {
             if (isEmptyContentRef(link.ref)) {
                 return;
@@ -298,13 +314,16 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     protected async handleInteraction(argString: string, ctx: ToolInvocationContext | undefined): Promise<string> {
-        let parsed: { interactions?: unknown };
         try {
-            parsed = JSON.parse(argString);
+            JSON.parse(argString);
         } catch {
             return JSON.stringify({ error: 'Invalid arguments' });
         }
-        if (!Array.isArray(parsed.interactions) || parsed.interactions.length === 0) {
+        // Validate via the shared parser so the tool only ever waits for steps that
+        // the renderer would actually render. Otherwise the agent could send a
+        // step the UI filters out, leaving the tool blocked on input forever.
+        const validated = parseUserInteractionArgs(argString);
+        if (!validated || validated.interactions.length === 0) {
             return JSON.stringify({ error: 'No interactions provided' });
         }
 
@@ -313,7 +332,7 @@ export class UserInteractionTool implements ToolProvider {
             return JSON.stringify({ error: 'No tool call ID available' });
         }
 
-        const steps = parsed.interactions as UserInteractionStep[];
+        const steps: UserInteractionStep[] = validated.interactions;
 
         // Single-step interactions without options are purely informational
         // (message + optional links/diffs) and should not block the agent.

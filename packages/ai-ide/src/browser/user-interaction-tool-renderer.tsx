@@ -429,6 +429,34 @@ const StreamingProgress: React.FC<{ title: string; stepCount: number }> = ({ tit
     );
 };
 
+const MalformedInteraction: React.FC<{ message: string }> = ({ message }) => (
+    <div className='tool-call container'>
+        <div className='tool-call header error'>
+            <span className={codicon('comment-discussion')} />
+            <span className='user-interaction-tool title'>
+                {nls.localize('theia/ai-ide/userInteractionMalformed', 'User interaction could not be displayed')}
+            </span>
+        </div>
+        <div className='tool-call error-message'>{message}</div>
+    </div>
+);
+
+interface ToolErrorResult { error: string }
+function parseToolErrorResult(raw: unknown): ToolErrorResult | undefined {
+    let candidate: unknown = raw;
+    if (typeof raw === 'string') {
+        try {
+            candidate = JSON.parse(raw);
+        } catch {
+            return undefined;
+        }
+    }
+    if (candidate && typeof candidate === 'object' && typeof (candidate as { error?: unknown }).error === 'string') {
+        return candidate as ToolErrorResult;
+    }
+    return undefined;
+}
+
 @injectable()
 export class UserInteractionToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
 
@@ -458,6 +486,16 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
         const args = parseUserInteractionArgs(response.arguments);
 
         if (!args || !response.id) {
+            // The tool already returned a result but the args don't validate: this
+            // is a malformed invocation (e.g., the agent sent a step the tool
+            // rejected, or arguments that fail shared parsing). Show an error state
+            // instead of a perpetual loading spinner.
+            if (response.result !== undefined) {
+                const error = parseToolErrorResult(response.result);
+                const message = error?.error
+                    ?? nls.localize('theia/ai-ide/userInteractionMalformedFallback', 'The arguments could not be parsed.');
+                return <MalformedInteraction message={message} />;
+            }
             const input = parseUserInteractionInput(response.arguments);
             return <StreamingProgress title={input.title} stepCount={input.stepCount} />;
         }
