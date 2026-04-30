@@ -40,7 +40,7 @@ export function anthropicReasoningFor(
         const effort = anthropicEffortForLevel(level, supportsXHighEffort);
         // On `auto`, omit `output_config` so Anthropic's own default applies.
         return {
-            thinking: { type: 'adaptive' },
+            thinking: { type: 'adaptive', display: 'summarized' },
             ...(effort ? { output_config: { effort } } : {})
         };
     }

@@ -457,7 +457,7 @@ describe('AnthropicModel', () => {
         it('maps level=minimal to effort=low', () => {
             const model = createReasoningModel('claude-opus-4-6', 'effort');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } });
-            expect(result.thinking).to.deep.equal({ type: 'adaptive' });
+            expect(result.thinking).to.deep.equal({ type: 'adaptive', display: 'summarized' });
             expect(result.output_config).to.deep.equal({ effort: 'low' });
         });
         it('maps level=low to effort=medium', () => {
@@ -483,7 +483,7 @@ describe('AnthropicModel', () => {
         it('omits output_config on level=auto so the provider default applies', () => {
             const model = createReasoningModel('claude-opus-4-6', 'effort');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' } });
-            expect(result.thinking).to.deep.equal({ type: 'adaptive' });
+            expect(result.thinking).to.deep.equal({ type: 'adaptive', display: 'summarized' });
             expect(result.output_config).to.equal(undefined);
         });
         it('omits thinking entirely when level=off', () => {
