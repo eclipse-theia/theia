@@ -87,6 +87,12 @@
           "modelId": {
             "title": "模型 ID"
           },
+          "reasoningApi": {
+            "title": "應使用哪種 Anthropic 推理 API 模式:`effort` 用於適應性思考(Claude 4.6+)、`budget` 用於傳統擴展思考(Claude 4.0–4.5),或 `null` 以停用。預設會根據模型名稱推斷。"
+          },
+          "supportsXHighEffort": {
+            "title": "表示模型是否接受 Anthropic 的 `xhigh` 努力值。預設情況下由模型名稱推斷得出。"
+          },
           "url": {
             "title": "該模型所託管的 Anthropic API 相容端點"
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "複製程式碼區塊",
         "couldNotSendRequestToSession": "無法向會話 {1} 發送請求 \"{0}\"",
         "delegation-response-renderer": {
+          "interactionNeeded": "需要使用者互動",
           "prompt": {
             "label": "委派提示:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "執行此任務。",
         "persistedSession": "持久化會話(點擊恢復)",
         "promptFragmentsDescription": "對話中需包含的自訂提示片段",
+        "reasoning": {
+          "high": "高",
+          "low": "低",
+          "medium": "中級",
+          "minimal": "簡約"
+        },
         "removeChat": "移除聊天功能",
-        "renameChat": "重新命名聊天",
         "requestNotFoundForRetry": "請求未找到,請重試",
         "responseFrom": "來自 {0} 的回應",
         "saveCurrentSelectionsToSettings": "儲存功能設定",
@@ -320,6 +332,18 @@
           "cantDisplay": "無法顯示回應,請檢查您的 ChatResponsePartRenderers！"
         },
         "toggleCapabilitiesConfig": "切換功能設定",
+        "tokenUsageIndicatorEnabled": "控制是否在聊天視圖中顯示實驗性的代幣使用量指示器。此功能尚處於實驗階段,根據模型和供應商的不同,代幣計數可能不準確。",
+        "tokenUsageLabel": "詞彙用法",
+        "tokenUsageOverflow": "代幣使用量已遠超過警告閾值。請考慮壓縮資料或開始新的工作階段。",
+        "tokenUsageTooltipCacheCreate": "快取建立:{0}",
+        "tokenUsageTooltipCacheRead": "快取讀取:{0}",
+        "tokenUsageTooltipTotal": "總計:{0} / {1} ({2} %)",
+        "tokenUsageWarning": "已達到代碼使用警告閾值。",
+        "tokenUsageWarningEnabled": "控制當聊天會話的字元使用量超過設定的閾值時,是否顯示通知。此功能需語言模型提供者回報字元使用量。",
+        "tokenUsageWarningMessage": "聊天會話的標記使用量已佔上下文視窗的 {0}%。請考慮彙總此會話或開啟新會話,以避免觸及上限。",
+        "tokenUsageWarningNewSessionAction": "開始新聊天",
+        "tokenUsageWarningSummarizeAction": "摘要當前工作階段",
+        "tokenUsageWarningThresholdPercentage": "觸發詞彙使用警告時,模型上下文視窗所佔的比例。此數值亦決定詞彙使用指標的警告/錯誤色帶。目前以假設的 200k 上下文視窗為基準;一旦取得實際的模型上下文大小,將改用該數值。",
         "toolcall-part-renderer": {
           "denied": "執行遭拒",
           "finished": "執行",
@@ -376,7 +400,6 @@
         "directory": "目錄",
         "domain": "網域",
         "editAutomatically": "自動編輯",
-        "editNumber": "編輯 {0}",
         "editing": "編輯",
         "editsCount": "{0} 編輯",
         "emptyTodoList": "無可用翻譯",
@@ -496,8 +519,7 @@
         "oneItem": "1 項",
         "searched": "搜尋",
         "searching": "搜尋",
-        "todoList": "待辦事項清單",
-        "webSearch": "網頁搜尋"
+        "todoList": "待辦事項清單"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "動作",
           "addCustomAgent": "新增自訂代理程式",
           "availableCapabilities": "可用功能",
           "completionNotificationDescriptionPrefix": "選擇您希望在此代理完成任務時接收的通知方式。「預設」選項採用 ",
@@ -730,6 +753,9 @@
             "title": "語言模型別名"
           }
         },
+        "productNameVariable": {
+          "description": "使用者正在使用的產品／應用程式名稱"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "主動自訂",
           "createCustomizationTitle": "建立自訂設定",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "AI 提示詞範本"
         },
+        "reasoning": {
+          "mdDescription": "聊天輸入欄位中「推理選項」的預設值,適用於支援推理功能的模型。\n\n此為 UI 層級設定:所選等級會在請求時轉換為供應商的原生 API 參數(例如 Anthropic 的 `thinking` / `output_config.effort`、OpenAI 的 `reasoning.effort`、Gemini 的 `thinkingConfig`),且優先於透過 `#ai-features.modelSettings.requestSettings#` 針對相同欄位提供的任何原始值。\n\n每個條目包含:\n- `scope`:定義設定的適用時機(`modelId`、`providerId`、`agentId`)。\n- `reasoning.level`:取值為 `off`、`minimal`、`low`、`medium`、`high` 或 `auto`。\n\n執行時的優先順序(由高至低):透過選擇器進行的會話覆寫 → 本設定 → 模型宣告的預設值。選擇器顯示的值即為實際傳送的值。若要透過 `#ai-features.modelSettings.requestSettings#` 手動覆寫供應商的推理欄位,請在此處將 `reasoning.level` 設為 `off`,以停用基於層級的轉換。\n\n條目會根據作用域的特定性進行匹配(代理:100,模型:10,供應商:1 分)。\n\n範例:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "預設值邏輯"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "客戶端設定用於處理發送回大型語言模型(LLM)的訊息。",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "編輯",
           "unavailableVariant": "不可用"
-        },
-        "thinkingMode": {
-          "mdDescription": "允許為支援擴展思考功能的模型指定思考模式設定。\n            每項設定包含:\n            - `scope`:定義設定適用時機:\n              - `modelId`(可選):需匹配的模型 ID\n              - `providerId`(可選):需匹配的供應商 ID\n              - `agentId`(可選): 需匹配的代理程式ID\n            - `thinkingMode`:思考模式配置:\n              - `enabled`(布林值):是否啟用思考模式\n              - `budgetTokens`(數字,可選):思考操作的最大代幣數(若模型支援此功能)\n            設定匹配依優先級排序(代理程式:100分,模型:10分,供應商:1分)。",
-          "scope": {
-            "agentId": {
-              "description": "(可選)需套用設定的代理程式識別碼。"
-            },
-            "modelId": {
-              "description": "(可選)模型識別碼"
-            },
-            "providerId": {
-              "description": "(可選)設定套用的提供者識別碼。"
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "思考時使用的最大代幣數。僅適用於支援思考預算的模型。"
-            },
-            "description": "思考模式設定。",
-            "enabled": {
-              "description": "思考模式是否已啟用。"
-            }
-          },
-          "title": "思考模式設定"
         },
         "todayVariable": {
           "description": "今日要辦的事",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "提示變體",
           "request": "請求",
+          "response": "回應",
           "timestamp": "時間戳記",
           "title": "請求"
         },
@@ -963,14 +970,15 @@
           "selections": "選項"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "使用者是否已確認代理模式警告。代理模式允許在無需進一步確認的情況下自動修改檔案。若設定為 `false`,則在下一次代理模式請求時將再次顯示確認訊息。"
+          "enabled": {
+            "mdDescription": "啟用 Coder 代理程式之代理模式。代理模式允許在無需進一步確認的情況下自動修改檔案。                 當使用代理模式時,系統會顯示首次使用確認對話方塊,直到此設定被設為 `true` 為止。"
           }
         },
         "agentModeConfirmation": {
-          "confirm": "確認",
+          "continueAgentMode": "繼續使用代理模式",
+          "continueEditMode": "繼續進入編輯模式",
+          "info": "若繼續使用「代理模式」,您的確認設定將被儲存。您稍後可透過 `ai-features.agentMode.enabled` 設定再次撤銷此設定。\n\n若繼續使用「編輯模式」,您的預設模式將變更為「編輯模式」。\n\n您可隨時透過模式選擇器或 AI 設定來變更模式。",
           "msg": "此代理程式採用 **代理模式**。為啟用自主流程,它能夠在無需進一步確認的情況下,直接寫入您的工作區檔案。\n\n建議使用版本控制系統(例如 Git),以便您能檢視並還原變更。\n\n您可以透過下方聊天輸入區的模式選擇器切換至 **編輯模式**,或使用 **Architect** 代理程式進行唯讀規劃。\n\n此確認設定將儲存於此工作區,且不會再次顯示。若要重設或進行全域設定,請在「設定」中搜尋 `ai-features.agentMode.confirmed`。",
-          "question": "您要繼續使用代理模式嗎?",
           "waiting": "等待確認中..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "部分代理程式(如Claude Code)無需使用Theia語言模型",
         "chatDisabledMessage": {
           "title": "AI 功能已停用"
+        },
+        "chatRestrictedMessage": {
+          "title": "AI 功能受限"
         },
         "codeReviewerAgent": {
           "description": "一款能分析程式碼變更並回傳結構化評估結果的程式碼審查助手。         會檢查完成標準、建置／語法檢查／測試證明,以及程式碼品質。"
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "允許代理程式與 GitHub 進行互動。為此,代理程式可委派給 GitHub 代理程式,該代理程式能讀取與寫入問題、拉取請求、評論及儲存庫內容。",
-          "name": "GitHub"
+          "description": "允許代理程式與 GitHub 進行互動。為此,代理程式可委派給 GitHub 代理程式,該代理程式能讀取與寫入問題、拉取請求、評論及儲存庫內容。"
         },
         "githubRepoName": {
           "description": "當前 GitHub 儲存庫名稱(例如:\"eclipse-theia/theia\")"
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "委派至 `@{0}`"
           }
         },
+        "prReviewAgent": {
+          "description": "一款由人工智慧驅動的 PR 審查代理程式,可統籌完整的程式碼審查工作流程:擷取 PR 資訊、探索程式碼庫、執行結構化分析、透過 diff 檢視器引導使用者互動檢視發現的問題,並可選擇在 GitHub 上建立待審查項目。"
+        },
         "prompt-template-description": "在 [AI 設定檢視窗] ({0}) 中選擇提示語變體並自訂 AI 代理的提示語範本。",
         "recentChats": "最近的對話",
-        "renameChat": "重新命名聊天",
+        "restrictedModeDetails": "AI 聊天、內嵌建議、程式碼操作及提示範本已停用",
+        "restrictedModeLabel": "AI 功能(在受限模式下已停用)",
         "shellAllowlist": {
           "placeholder": "例如:\"git log\"(精確指令)或 \"git log *\"(帶參數指令)"
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "模型 ID"
           },
+          "reasoningSupport": {
+            "title": "宣告模型的推理能力。設定此選項後,聊天視窗會顯示該模型的推理選單。設定為 `null` 即可停用。預設值會根據模型名稱推斷而出。"
+          },
           "supportsStructuredOutput": {
             "title": "指示模型是否支援結構化輸出。預設值為 `true`。"
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "進階設定 (JSON)",
-        "budgetTokens": "預算代幣:",
         "confirmationTimeout": "確認超時",
         "confirmationTimeoutNote": "在指定時間後自動拒絕工具確認視窗。此設定將覆寫本次工作階段的全球偏好設定。",
         "enableConfirmationTimeout": "啟用確認超時",
-        "enableThinking": "啟用擴展思考",
-        "thinkingMode": "思考模式",
-        "thinkingModeNote": "某些型號可能忽略此設定。",
         "timeoutSeconds": "超時 (秒):",
         "title": "設定工作階段設定",
         "tooltip": "設定工作階段設定"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "任務背景:啟動會話",
       "navigate-back": "返回",
       "navigate-forward": "向前導航",
+      "noOutput": "無輸出",
       "open-current-session-summary": "開啟當前工作階段摘要",
       "open-settings-tooltip": "開啟 AI 設定...",
       "renameChat": "重新命名聊天",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "代理程式「{0}」已完成其任務。",
       "agentCompletionMessageWithSession": "代理程式「{0}」已於「{1}」完成其任務。",
       "agentCompletionTitle": "代理程式「{0}」任務已完成",
+      "aiDisabledInRestrictedMode": "在未受信任的工作區中,無法使用 AI 功能。",
       "preferences": {
+        "linuxEnvHint": "在 Linux 系統上,若您是透過桌面捷徑啟動應用程式,請確保該變數已定義在 `~/.profile` 檔案中(而非僅在 `~/.bashrc`)。詳情請參閱 [文件](https://theia-ide.org/docs/user_ai/#setting-api-keys)。",
         "title": "AI 功能"
       },
       "showChat": "顯示聊天"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<票號>",
         "description": "分析 GitHub 問題單並實作解決方案"
       },
-      "open-agent-settings-tooltip": "開啟代理程式設定...",
+      "open-ai-configuration-tooltip": "OpenAI 設定",
       "rememberCommand": {
         "argumentHint": "[主題提示]",
         "description": "從對話中提取主題並更新專案資訊"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "無任務"
-      }
+      },
+      "userInteractionCanceled": "已取消",
+      "userInteractionCommentPlaceholder": "為此步驟添加註解...",
+      "userInteractionEmpty": "空白",
+      "userInteractionFinishStep": "完成",
+      "userInteractionGoToStep": "前往步驟 {0}:{1}",
+      "userInteractionMalformed": "無法顯示使用者互動",
+      "userInteractionMalformedFallback": "無法解析該參數。",
+      "userInteractionPreparing": "正在準備使用者互動...",
+      "userInteractionPreparingSteps": "準備中:{0}({1} 步驟)",
+      "userInteractionPreparingTitle": "準備中:{0}",
+      "userInteractionStepLabel": "{1} 的第 {0} 步",
+      "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
       "blockedServersLabel": "MCP 伺服器(自動啟動遭封鎖)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "已取消",
       "executionDenied": "拒絕",
       "executionDeniedWithReason": "拒絕並附理由",
-      "noOutput": "無輸出",
       "partialOutput": "部分輸出",
       "shellCommandAllowlist": {
         "description": "殼層指令模式清單。使用 * 作為萬用字元:\"git log\"(精確匹配)\"git log *\"(可選參數)\"* --version\"(任何以 --version 結尾的指令)萬用字元必須置於空格之前。含危險模式的指令(如 $、反引號)絕不自動允許。"
@@ -1695,9 +1722,6 @@
         "enhanced": "顯示帶有額外資訊的增強式分頁預覽。",
         "visual": "顯示標籤頁的視覺預覽。"
       },
-      "file": {
-        "browse": "瀏覽"
-      },
       "highlightModifiedTabs": "控制是否在已修改(髒污狀態)的編輯器標籤頁上繪製頂部邊框。",
       "keybinding": {
         "duplicateModifierError": "無法解析鍵盤快捷鍵 {0} 重複修飾符",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "剪貼簿存取權限遭拒絕。請檢查瀏覽器的權限設定。",
         "clipboardWarnFirefox": "剪貼簿 API 目前不可用。可透過「{1}」頁面中的「{0}」選項啟用此功能,啟用後請重新載入 Theia。請注意,此設定將允許 Firefox 完全存取系統剪貼簿。"
       },
-      "offline": "離線",
       "pasteWarn": "請使用瀏覽器的貼上指令或快捷鍵。",
       "quitMessage": "任何未儲存的變更將不會被儲存。",
       "resetWorkbenchLayout": "重設工作區佈局",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "目標位置將移至行{0},列{1}。仍要執行嗎?",
       "confirmRunToShiftedPosition_title": "無法將當前執行緒精確執行至指定位置",
       "consoleFilterAriaLabel": "過濾除錯控制台輸出",
+      "consoleFilterPlaceholder": "篩選 (例如:文字、!排除)",
       "consoleFilterTooltip": "透過文字過濾控制台輸出。多個術語以逗號分隔。以 `!` 前置符排除特定術語。\n\n範例:\n\n- `文字` - 顯示包含「文字」的行\n- `文字, 其他` - 顯示包含「文字」或「其他」的行\n- `!文字` - 隱藏包含「文字」的行\n- `文字, !其他` - 顯示「文字」但隱藏「其他」",
       "consoleSessionSelectorTooltip": "在不同除錯工作階段之間切換。每個除錯工作階段皆擁有獨立的控制台輸出。",
       "consoleSeverityTooltip": "依嚴重性等級過濾控制台輸出。僅顯示符合所選嚴重性等級的訊息。",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "啟用/停用與除錯轉接器的追蹤通訊",
       "unknownSession": "未知會話",
       "unverifiedBreakpoint": "未經核實的 {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "工作區中未找到位於 {0} 的 Devcontainer 檔案",
+      "failedToRebuild": "重建容器失敗:{0}",
+      "noDevcontainerFileSpecified": "工作區未指定 devcontainer 檔案",
+      "removingOldContainer": "正在移除舊容器..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "啟用此功能後,將限制編輯器的自動儲存功能,僅針對在觸發自動儲存時未報告任何錯誤的檔案進行儲存。此設定僅在啟用「{0}」時生效。",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "附加至正在執行的容器",
         "connect": "重新開啟於容器中",
         "noDevcontainerFiles": "工作區中未找到 devcontainer.json 檔案。請確認您已建立包含 devcontainer.json 檔案的 .devcontainer 目錄。",
-        "selectDevcontainer": "選擇一個 devcontainer.json 檔案"
+        "noRunningContainers": "未找到正在執行的容器。",
+        "rebuild": "重建容器",
+        "rebuilding": "重建開發容器",
+        "reopenInContainer": "在容器中重新開啟",
+        "selectContainer": "選擇一個正在運行的容器以進行附加",
+        "selectDevcontainer": "選擇一個 devcontainer.json 檔案",
+        "suggestion": "此工作區具有開發容器設定。您是否要在容器中重新開啟它?"
+      },
+      "port-forwarding": {
+        "focusPorts": "連接埠:聚焦於「連接埠檢視」"
       },
       "ssh": {
         "connect": "將當前視窗連接到主機...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "1 小時前",
+      "1MinuteAgo": "1 分鐘前",
       "amend": "修正",
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最後一次提交",
@@ -2133,9 +2175,12 @@
         "close": "關閉 變更 預覽檢視"
       },
       "history": "歷史",
+      "justNow": "剛才",
       "mergeEditor": {
         "resetConfirmationTitle": "您確定要重置此編輯器中的合併結果嗎?"
       },
+      "noChanges": "沒有修改過的檔案。",
+      "noHistory": "無版本控制歷史紀錄。",
       "noHistoryForError": "{0} 目前沒有可用歷史紀錄",
       "prepositionIn": "以及",
       "unamend": "不修改",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "取消所有測試執行",
+      "showTestOutput": "顯示測試輸出",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} 執行 {1}",
       "testRuns": "測試執行"

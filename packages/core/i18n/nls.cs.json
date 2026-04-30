@@ -87,6 +87,12 @@
           "modelId": {
             "title": "ID modelu"
           },
+          "reasoningApi": {
+            "title": "Který tvar API antropického uvažování použít: `effort` pro adaptivní uvažování (Claude 4.6+), `budget` pro starší rozšířené uvažování (Claude 4.0–4.5) nebo `null` pro deaktivaci. Ve výchozím nastavení se odvozuje od názvu modelu."
+          },
+          "supportsXHighEffort": {
+            "title": "Označuje, zda model akceptuje hodnotu úsilí Anthropic `xhigh`. Ve výchozím nastavení se odvozuje z názvu modelu."
+          },
           "url": {
             "title": "Koncový bod kompatibilní s Anthropic API, kde je model hostován."
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "Kopírovat blok kódu",
         "couldNotSendRequestToSession": "Nebylo možné odeslat požadavek „{0}“ do relace {1}",
         "delegation-response-renderer": {
+          "interactionNeeded": "Je nutná interakce uživatele",
           "prompt": {
             "label": "Delegované výzvy:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "Proveďte tento úkol.",
         "persistedSession": "Trvalá relace (kliknutím obnovíte)",
         "promptFragmentsDescription": "Vlastní fragmenty výzev, které mají být zahrnuty do konverzace",
+        "reasoning": {
+          "high": "Vysoká",
+          "low": "Nízká",
+          "medium": "Střední",
+          "minimal": "Minimální"
+        },
         "removeChat": "Odebrat chat",
-        "renameChat": "Přejmenovat chat",
         "requestNotFoundForRetry": "Požadavek nebyl nalezen, zkuste to znovu.",
         "responseFrom": "Odpověď od {0}",
         "saveCurrentSelectionsToSettings": "Uložit nastavení funkcí",
@@ -320,6 +332,18 @@
           "cantDisplay": "Nelze zobrazit odpověď, zkontrolujte prosím ChatResponsePartRenderers!"
         },
         "toggleCapabilitiesConfig": "Přepínání konfigurace funkcí",
+        "tokenUsageIndicatorEnabled": "Určuje, zda se v zobrazení chatu zobrazuje experimentální indikátor využití tokenů. Tato funkce je experimentální a počty tokenů mohou být nepřesné v závislosti na modelu a poskytovateli.",
+        "tokenUsageLabel": "Použití tokenů",
+        "tokenUsageOverflow": "Využití tokenů výrazně překračuje varovnou hranici. Zvažte komprimaci nebo zahájení nové relace.",
+        "tokenUsageTooltipCacheCreate": "Vytvoření mezipaměti: {0}",
+        "tokenUsageTooltipCacheRead": "Čtení z mezipaměti: {0}",
+        "tokenUsageTooltipTotal": "Celkem: {0} / {1} ({2} %)",
+        "tokenUsageWarning": "Byla dosažena prahová hodnota varování o využití tokenů.",
+        "tokenUsageWarningEnabled": "Určuje, zda se zobrazí oznámení, když využití tokenů v chatové relaci překročí nastavenou hranici. Vyžaduje, aby poskytovatel jazykového modelu hlásil využití tokenů.",
+        "tokenUsageWarningMessage": "Využití tokenů chatové relace dosáhlo {0} % kontextového okna. Zvažte shrnutí této relace nebo zahájení nové, abyste se vyhnuli dosažení limitu.",
+        "tokenUsageWarningNewSessionAction": "Zahájit nový chat",
+        "tokenUsageWarningSummarizeAction": "Shrnutí aktuální relace",
+        "tokenUsageWarningThresholdPercentage": "Procento kontextového okna modelu, při kterém se spustí varování o využití tokenů. Tato hodnota také určuje barevné pruhy varování/chyb v indikátoru využití tokenů. V současné době se počítá s předpokládaným kontextovým oknem o velikosti 200 kB; jakmile bude k dispozici skutečná velikost kontextu pro daný model, bude použita tato hodnota.",
         "toolcall-part-renderer": {
           "denied": "Provedení zamítnuto",
           "finished": "Spustit",
@@ -376,7 +400,6 @@
         "directory": "Adresář",
         "domain": "Doména",
         "editAutomatically": "Automaticky upravit",
-        "editNumber": "Upravit {0}",
         "editing": "Úpravy",
         "editsCount": "{0} úpravy",
         "emptyTodoList": "No todos available",
@@ -496,8 +519,7 @@
         "oneItem": "1 položka",
         "searched": "Hledáno",
         "searching": "Vyhledávání",
-        "todoList": "Seznam úkolů",
-        "webSearch": "Vyhledávání na webu"
+        "todoList": "Seznam úkolů"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "Akce",
           "addCustomAgent": "Přidat vlastní agenta",
           "availableCapabilities": "Dostupné funkce",
           "completionNotificationDescriptionPrefix": "Vyberte, jakým způsobem chcete být informováni, když tento agent dokončí svůj úkol. „Výchozí“ používá ",
@@ -730,6 +753,9 @@
             "title": "Aliasy jazykového modelu"
           }
         },
+        "productNameVariable": {
+          "description": "Název produktu/aplikace, se kterou uživatel pracuje"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "Aktivní přizpůsobení",
           "createCustomizationTitle": "Vytvořit přizpůsobení",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "Šablony AI Prompt"
         },
+        "reasoning": {
+          "mdDescription": "Výchozí hodnota pro volič uvažování v chatovém vstupu, použitá u modelů, které podporují uvažování.\n\nJedná se o nastavení na úrovni uživatelského rozhraní: zvolená úroveň se v okamžiku požadavku převede na nativní parametry API poskytovatele (např. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) a má přednost před jakýmikoli surovými hodnotami dodanými prostřednictvím `#ai-features.modelSettings.requestSettings#` pro stejná pole.\n\nKaždý záznam se skládá z:\n- `scope`: Definuje, kdy se nastavení použije (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: Jedna z hodnot `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\nPriorita při běhu (nejvyšší jako první): přepsání relace pomocí selektoru → tato preference → deklarované výchozí nastavení modelu. Odesláno bude to, co zobrazí selektor. Chcete-li ručně přepsat pole reasoning poskytovatele pomocí `#ai-features.modelSettings.requestSettings#`, nastavte zde `reasoning.level` na `off`, aby byl překlad založený na úrovni deaktivován.\n\nZáznamy se porovnávají na základě specifikace rozsahu (agent: 100, model: 10, poskytovatel: 1 bod).\n\nPříklad:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "Výchozí nastavení"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "Nastavení klienta pro zpracování zpráv, které jsou odesílány zpět do llm.",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "upraveno",
           "unavailableVariant": "Není k dispozici"
-        },
-        "thinkingMode": {
-          "mdDescription": "Umožňuje specifikovat nastavení režimu uvažování pro modely, které podporují rozšířené schopnosti uvažování.\nKaždé nastavení se skládá z:\n- `scope`: Definuje, kdy se nastavení použije:\n- `modelId` (volitelné): ID modelu, které se má porovnat\n- `providerId` (volitelné): ID poskytovatele, které se má porovnat\n- `agentId` (volitelné): ID agenta, které se má shodovat\n- `thinkingMode`: Konfigurace režimu uvažování:\n- `enabled` (boolean): Zda je režim uvažování povolen\n- `budgetTokens` (číslo, volitelné): Maximální počet tokenů pro uvažování (pokud to model podporuje)\nNastavení se shodují na základě specifičnosti (agent: 100, model: 10, poskytovatel: 1 bod).",
-          "scope": {
-            "agentId": {
-              "description": "(Volitelné) ID agenta, na které se nastavení vztahuje."
-            },
-            "modelId": {
-              "description": "(Volitelné) ID modelu"
-            },
-            "providerId": {
-              "description": "(Volitelné) ID poskytovatele, na které se nastavení vztahuje."
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "Maximální počet tokenů, které lze použít pro myšlení. Platí pouze v případě, že model podporuje rozpočet pro myšlení."
-            },
-            "description": "Konfigurace režimu myšlení.",
-            "enabled": {
-              "description": "Zda je zapnutý režim přemýšlení."
-            }
-          },
-          "title": "Nastavení režimu přemýšlení"
         },
         "todayVariable": {
           "description": "Dělejte něco pro dnešek",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "Varianta výzvy",
           "request": "Žádost",
+          "response": "Odpověď",
           "timestamp": "Časové razítko",
           "title": "Žádost"
         },
@@ -963,14 +970,15 @@
           "selections": "Výběry"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "Zda uživatel potvrdil varování o režimu agenta. Režim agenta umožňuje autonomní úpravy souborů bez dalšího potvrzení. Nastavte na `false`, aby se při příštím požadavku na režim agenta znovu zobrazilo potvrzení."
+          "enabled": {
+            "mdDescription": "Povolit režim agenta pro agenta Coder. Režim agenta umožňuje autonomní úpravy souborů bez dalšího potvrzení. Při použití režimu agenta se zobrazí dialogové okno s potvrzením prvního použití, dokud není tato možnost nastavena na `true`."
           }
         },
         "agentModeConfirmation": {
-          "confirm": "Potvrdit",
+          "continueAgentMode": "Pokračovat v režimu agenta",
+          "continueEditMode": "Pokračovat v režimu úprav",
+          "info": "Pokračováním v režimu agenta se vaše potvrzení uloží. Toto nastavení můžete později znovu zrušit pomocí nastavení `ai-features.agentMode.enabled`.\n\nPokračováním v režimu úprav se váš výchozí režim změní na režim úprav.\n\nRežimy můžete kdykoli změnit pomocí voliče režimů nebo v konfiguraci AI.",
           "msg": "Tento agent používá **agentský režim**. Aby umožnil autonomní průběh, je schopen přímo zapisovat do souborů vašeho pracovního prostoru bez dalšího potvrzení.\n\nDoporučujeme používat správu verzí (např. Git), abyste mohli změny zkontrolovat a vrátit zpět.\n\nDo **režimu úprav** můžete přepnout pomocí voliče režimu v oblasti pro zadávání textu v chatu níže, nebo můžete pro plánování pouze pro čtení použít agenta **Architect**.\n\nToto potvrzení se uloží pro tento pracovní prostor a již se znovu nezobrazí. Chcete-li jej resetovat nebo globálně nakonfigurovat, vyhledejte v nastavení položku `ai-features.agentMode.confirmed`.",
-          "question": "Chcete pokračovat v režimu agenta?",
           "waiting": "Čekání na potvrzení..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "Někteří agenti, jako například Claude Code, nevyžadují jazykové modely Theia.",
         "chatDisabledMessage": {
           "title": "Funkce AI jsou deaktivovány"
+        },
+        "chatRestrictedMessage": {
+          "title": "Funkce AI jsou omezené"
         },
         "codeReviewerAgent": {
           "description": "Asistent pro kontrolu kódu, který analyzuje změny v kódu a vrací strukturované závěry. Kontroluje kritéria dokončení, důkazy o sestavení/lintování/testování a kvalitu kódu."
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "Umožňuje agentovi komunikovat s GitHubem. Za tímto účelem může agent delegovat na agenta GitHubu, který může číst a zapisovat problémy, žádosti o stažení, komentáře a obsah úložiště.",
-          "name": "GitHub"
+          "description": "Umožňuje agentovi komunikovat s GitHubem. Za tímto účelem může agent delegovat na agenta GitHubu, který může číst a zapisovat problémy, žádosti o stažení, komentáře a obsah úložiště."
         },
         "githubRepoName": {
           "description": "Název aktuálního repozitáře GitHub (např. „eclipse-theia/theia“)."
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "Delegování na „@{0}“"
           }
         },
+        "prReviewAgent": {
+          "description": "Agent pro kontrolu PR založený na umělé inteligenci, který koordinuje celý pracovní postup kontroly kódu: načítá informace o PR, prozkoumává kódovou základnu, provádí strukturovanou analýzu, interaktivně provádí uživatele nálezy pomocí prohlížečů rozdílů a volitelně vytváří čekající kontrolu na GitHubu."
+        },
         "prompt-template-description": "Vyberte varianty výzev a přizpůsobte šablony výzev pro agenty AI v [zobrazení konfigurace AI]({0}).",
         "recentChats": "Nedávné chaty",
-        "renameChat": "Přejmenovat chat",
+        "restrictedModeDetails": "Chat s AI, návrhy v textu, akce s kódem a šablony výzev jsou deaktivovány",
+        "restrictedModeLabel": "Funkce AI (v omezeném režimu zakázány)",
         "shellAllowlist": {
           "placeholder": "Např. „git log“ (přesné) nebo „git log *“ (s argumenty)"
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "ID modelu"
           },
+          "reasoningSupport": {
+            "title": "Deklaruje schopnosti modelu v oblasti uvažování. Pokud je nastaveno, chat zobrazí volič uvažování pro tento model. Nastavte na `null` pro deaktivaci. Ve výchozím nastavení se odvozuje z názvu modelu."
+          },
           "supportsStructuredOutput": {
             "title": "Označuje, zda model podporuje strukturovaný výstup. Výchozí hodnota je „true“."
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Pokročilá nastavení (JSON)",
-        "budgetTokens": "Rozpočtové tokeny:",
         "confirmationTimeout": "Časový limit potvrzení",
         "confirmationTimeoutNote": "Po uplynutí zadané doby automaticky zamítnout potvrzení nástrojů. Přepíše globální nastavení pro tuto relaci.",
         "enableConfirmationTimeout": "Časový limit pro potvrzení povolení",
-        "enableThinking": "Povolit rozšířené myšlení",
-        "thinkingMode": "Režim přemýšlení",
-        "thinkingModeNote": "Některé modely mohou toto nastavení ignorovat.",
         "timeoutSeconds": "Časový limit (v sekundách):",
         "title": "Nastavit parametry relace",
         "tooltip": "Nastavit parametry relace"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "Kontext úkolu: Zahájit relaci",
       "navigate-back": "Navigovat zpět",
       "navigate-forward": "Přejít vpřed",
+      "noOutput": "Žádný výstup",
       "open-current-session-summary": "Otevřít souhrn aktuální relace",
       "open-settings-tooltip": "Otevřít nastavení AI...",
       "renameChat": "Přejmenovat chat",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "Agent „{0}“ dokončil svůj úkol.",
       "agentCompletionMessageWithSession": "Agent „{0}“ dokončil svůj úkol v „{1}“.",
       "agentCompletionTitle": "Agent „{0}“ Úkol dokončen",
+      "aiDisabledInRestrictedMode": "Funkce AI nejsou k dispozici v nedůvěryhodných pracovních prostorech.",
       "preferences": {
+        "linuxEnvHint": "V systému Linux se ujistěte, že je proměnná definována v `~/.profile` (nejen v `~/.bashrc`), pokud spouštíte aplikaci z ikony na ploše. Podrobnosti najdete v [dokumentaci](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
         "title": "Funkce AI"
       },
       "showChat": "Zobrazit chat"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<číslo lístku>",
         "description": "Analyzujte ticket GitHub a implementujte řešení."
       },
-      "open-agent-settings-tooltip": "Otevřít nastavení agenta...",
+      "open-ai-configuration-tooltip": "Konfigurace Open AI",
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "Extrahujte témata z konverzace a aktualizujte informace o projektu"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "Žádné úkoly"
-      }
+      },
+      "userInteractionCanceled": "Zrušeno",
+      "userInteractionCommentPlaceholder": "Přidejte komentář k tomuto kroku...",
+      "userInteractionEmpty": "Prázdné",
+      "userInteractionFinishStep": "Dokončit",
+      "userInteractionGoToStep": "Přejděte ke kroku {0}: {1}",
+      "userInteractionMalformed": "Interakce uživatele nemohla být zobrazena",
+      "userInteractionMalformedFallback": "Argumenty nebylo možné analyzovat.",
+      "userInteractionPreparing": "Příprava interakce s uživatelem...",
+      "userInteractionPreparingSteps": "Příprava: {0} (kroky {1})",
+      "userInteractionPreparingTitle": "Příprava: {0}",
+      "userInteractionStepLabel": "Krok {0} z {1}",
+      "userInteractionWorkingCopy": "Pracovní kopie"
     },
     "ai-mcp": {
       "blockedServersLabel": "Servery MCP (blokováno automatické spuštění)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "Zrušeno",
       "executionDenied": "Odmítnuto",
       "executionDeniedWithReason": "Odmítnuto s odůvodněním",
-      "noOutput": "Žádný výstup",
       "partialOutput": "Částečný výstup",
       "shellCommandAllowlist": {
         "description": "Seznam vzorů příkazů shellu. Použijte * jako zástupný znak: „git log“ (přesná shoda), „git log *“ (s volitelnými argumenty), „* --version“ (jakýkoli příkaz končící --version). Před zástupným znakem musí být mezera. Příkazy s nebezpečnými vzory ($, zpětné lomítko) nejsou nikdy automaticky povoleny."
@@ -1695,9 +1722,6 @@
         "enhanced": "Zobrazit vylepšený náhled karty s dalšími informacemi.",
         "visual": "Zobrazit vizuální náhled karty."
       },
-      "file": {
-        "browse": "Procházet"
-      },
       "highlightModifiedTabs": "Ovládá, zda se na upravených (znečištěných) záložkách editoru vykreslí horní okraj.",
       "keybinding": {
         "duplicateModifierError": "Nelze analyzovat klávesovou zkratku {0} Duplicitní modifikátory",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "Přístup ke schránce je odepřen. Zkontrolujte oprávnění svého prohlížeče.",
         "clipboardWarnFirefox": "API schránky není k dispozici. Lze jej povolit pomocí předvolby „{0}“ na stránce „{1}“. Poté znovu načtěte Theia. Upozorňujeme, že to umožní FireFoxu plný přístup ke schránce systému."
       },
-      "offline": "Offline",
       "pasteWarn": "Použijte příkaz nebo klávesovou zkratku pro vložení v prohlížeči.",
       "quitMessage": "Jakékoli neuložené změny nebudou uloženy.",
       "resetWorkbenchLayout": "Obnovit rozložení pracovního prostředí",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "Cílová pozice bude posunuta na řádek {0}, sloupec {1}. Spustit i tak?",
       "confirmRunToShiftedPosition_title": "Nelze spustit aktuální vlákno přesně na zadaném místě.",
       "consoleFilterAriaLabel": "Filtrovat výstup ladicí konzole",
+      "consoleFilterPlaceholder": "Filtr (např. text, !exclude)",
       "consoleFilterTooltip": "Filtrujte výstup konzole podle textu. Více termínů oddělte čárkami. Před termín, který chcete vyloučit, vložte předponu „!“.\n\nPříklady:\n\n- `text` – zobrazí řádky obsahující „text“\n- `text, other` – zobrazí řádky obsahující „text“ nebo „other“\n- `!text` – skryje řádky obsahující „text“\n- `text, !other` – zobrazí „text“, ale skryje „other“",
       "consoleSessionSelectorTooltip": "Přepínání mezi ladicími relacemi. Každá ladicí relace má vlastní výstup konzoly.",
       "consoleSeverityTooltip": "Filtrujte výstup konzoly podle úrovně závažnosti. Zobrazí se pouze zprávy s vybranou úrovní závažnosti.",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "Povolit/zakázat sledování komunikace s ladicími adaptéry",
       "unknownSession": "Neznámá relace",
       "unverifiedBreakpoint": "Neověřeno {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "Soubor Devcontainer na adrese {0} nebyl nalezen v pracovním prostoru",
+      "failedToRebuild": "Nepodařilo se znovu sestavit kontejner: {0}",
+      "noDevcontainerFileSpecified": "Pro pracovní prostor nebyl zadán žádný soubor devcontainer",
+      "removingOldContainer": "Odstraňování starého kontejneru..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "Pokud je tato funkce povolena, omezí automatické ukládání editorů na soubory, u nichž nejsou v okamžiku spuštění automatického ukládání hlášeny žádné chyby. Platí pouze v případě, že je povolena funkce „{0}“.",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "Připojit k běžícímu kontejneru",
         "connect": "Znovu otevřít v kontejneru",
         "noDevcontainerFiles": "V pracovním prostoru nebyly nalezeny žádné soubory devcontainer.json. Ujistěte se, že máte adresář .devcontainer se souborem devcontainer.json.",
-        "selectDevcontainer": "Vyberte soubor devcontainer.json"
+        "noRunningContainers": "Nebyly nalezeny žádné spuštěné kontejnery.",
+        "rebuild": "Přestavět kontejner",
+        "rebuilding": "Přestavba vývojového kontejneru",
+        "reopenInContainer": "Znovu otevřít v kontejneru",
+        "selectContainer": "Vyberte spuštěný kontejner, ke kterému se chcete připojit",
+        "selectDevcontainer": "Vyberte soubor devcontainer.json",
+        "suggestion": "Tento pracovní prostor má konfiguraci vývojového kontejneru. Chcete jej znovu otevřít v kontejneru?"
+      },
+      "port-forwarding": {
+        "focusPorts": "Porty: Zaměření na zobrazení portů"
       },
       "ssh": {
         "connect": "Připojit aktuální okno k hostiteli...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "Před 1 hodinou",
+      "1MinuteAgo": "Před 1 minutou",
       "amend": "Změnit",
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Upravit poslední commit",
@@ -2133,9 +2175,12 @@
         "close": "Zavřít Změnit Náhled"
       },
       "history": "Historie",
+      "justNow": "právě teď",
       "mergeEditor": {
         "resetConfirmationTitle": "Opravdu chcete resetovat výsledek sloučení v tomto editoru?"
       },
+      "noChanges": "Žádné změněné soubory.",
+      "noHistory": "Historie správy zdrojů není k dispozici.",
       "noHistoryForError": "Pro {0} není k dispozici žádná historie.",
       "prepositionIn": "v",
       "unamend": "Bez úprav",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Zrušit všechny testovací běhy",
+      "showTestOutput": "Zobrazit výstup testu",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} spustit {1}",
       "testRuns": "Testovací běhy"

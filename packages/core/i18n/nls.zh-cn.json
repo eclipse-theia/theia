@@ -87,6 +87,12 @@
           "modelId": {
             "title": "模型ID"
           },
+          "reasoningApi": {
+            "title": "应使用哪种 Anthropic 推理 API 模式:`effort` 用于自适应推理(Claude 4.6+),`budget` 用于传统扩展推理(Claude 4.0–4.5),或 `null` 用于禁用。默认根据模型名称推断。"
+          },
+          "supportsXHighEffort": {
+            "title": "指示模型是否接受 Anthropic 的 `xhigh` 工作量值。默认情况下由模型名称推断得出。"
+          },
           "url": {
             "title": "托管该模型的Anthropic API兼容端点"
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "复制代码块",
         "couldNotSendRequestToSession": "无法向会话{1}发送请求\"{0}\"",
         "delegation-response-renderer": {
+          "interactionNeeded": "需要用户交互",
           "prompt": {
             "label": "委托提示:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "执行此任务。",
         "persistedSession": "持久化会话(点击恢复)",
         "promptFragmentsDescription": "用于对话的自定义提示片段",
+        "reasoning": {
+          "high": "高",
+          "low": "低",
+          "medium": "中等",
+          "minimal": "简约"
+        },
         "removeChat": "移除聊天功能",
-        "renameChat": "重命名聊天",
         "requestNotFoundForRetry": "请求未找到,请重试",
         "responseFrom": "来自 {0} 的响应",
         "saveCurrentSelectionsToSettings": "保存功能设置",
@@ -320,6 +332,18 @@
           "cantDisplay": "无法显示响应,请检查您的ChatResponsePartRenderers！"
         },
         "toggleCapabilitiesConfig": "切换功能配置",
+        "tokenUsageIndicatorEnabled": "控制是否在聊天视图中显示实验性的令牌使用指示器。此功能尚处于实验阶段,根据模型和提供商的不同,令牌计数可能不准确。",
+        "tokenUsageLabel": "术语用法",
+        "tokenUsageOverflow": "令牌使用量已远超警告阈值。请考虑压缩数据或启动新会话。",
+        "tokenUsageTooltipCacheCreate": "缓存创建:{0}",
+        "tokenUsageTooltipCacheRead": "缓存读取:{0}",
+        "tokenUsageTooltipTotal": "总计:{0} / {1} ({2} %)",
+        "tokenUsageWarning": "已达到令牌使用警告阈值。",
+        "tokenUsageWarningEnabled": "控制当聊天会话的令牌使用量超过配置的阈值时是否显示通知。需要语言模型提供商报告令牌使用情况。",
+        "tokenUsageWarningMessage": "聊天会话的令牌使用量已达到上下文窗口的{0}%。请考虑总结本次会话或开始新会话,以避免达到上限。",
+        "tokenUsageWarningNewSessionAction": "开始新聊天",
+        "tokenUsageWarningSummarizeAction": "总结当前会话",
+        "tokenUsageWarningThresholdPercentage": "触发令牌使用警告时,模型上下文窗口所占的比例。该值同时决定令牌使用指示器的警告/错误颜色区间。当前基于预设的 200k 上下文窗口进行计算;一旦获得实际的模型上下文大小,将改用该值。",
         "toolcall-part-renderer": {
           "denied": "执行被拒绝",
           "finished": "运行",
@@ -376,7 +400,6 @@
         "directory": "目录",
         "domain": "领域",
         "editAutomatically": "自动编辑",
-        "editNumber": "编辑{0}",
         "editing": "编辑",
         "editsCount": "{0} 编辑",
         "emptyTodoList": "暂无可用翻译",
@@ -496,8 +519,7 @@
         "oneItem": "1 项",
         "searched": "已检索",
         "searching": "搜索",
-        "todoList": "Todo List",
-        "webSearch": "网络搜索"
+        "todoList": "Todo List"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "操作",
           "addCustomAgent": "添加自定义代理",
           "availableCapabilities": "可用功能",
           "completionNotificationDescriptionPrefix": "选择当此代理完成任务时希望接收的通知方式。\"默认\"使用 ",
@@ -730,6 +753,9 @@
             "title": "语言模型别名"
           }
         },
+        "productNameVariable": {
+          "description": "用户正在使用的产品/应用程序的名称"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "活动自定义",
           "createCustomizationTitle": "创建自定义",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "AI 提示词模板"
         },
+        "reasoning": {
+          "mdDescription": "聊天输入中推理选择器的默认值,适用于支持推理功能的模型。\n\n这是一项 UI 级设置:所选级别将在请求时转换为提供商的原生 API 参数(例如 Anthropic 的 `thinking` / `output_config.effort`、OpenAI 的 `reasoning.effort`、Gemini 的 `thinkingConfig`),并优先于通过 `#ai-features.modelSettings.requestSettings#` 为相同字段提供的任何原始值。\n\n每个条目包含:\n- `scope`:定义设置的适用范围(`modelId`、`providerId`、`agentId`)。\n- `reasoning.level`:取值为 `off`、`minimal`、`low`、`medium`、`high` 或 `auto`。\n\n运行时的优先级(从高到低):通过选择器覆盖的会话设置 → 本项首选项 → 模型声明的默认值。选择器显示的值即为最终发送的值。若需通过 `#ai-features.modelSettings.requestSettings#` 手动覆盖提供商的推理字段,请在此处将 `reasoning.level` 设为 `off`,以禁用基于级别的转换。\n\n条目匹配基于作用域的优先级(agent: 100, model: 10, provider: 1)。\n\n示例:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "推理默认值"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "客户端设置用于处理发回至大型语言模型的消息。",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "编辑",
           "unavailableVariant": "不可用"
-        },
-        "thinkingMode": {
-          "mdDescription": "允许为支持扩展思考能力的模型指定思考模式设置。\n            每个设置包含:\n            - `scope`:定义设置的适用条件:\n              - `modelId`(可选):匹配的模型ID\n              - `providerId`(可选):匹配的提供商ID\n              - `agentId`(可选): 匹配的代理ID\n            - `thinkingMode`:思考模式配置:\n              - `enabled`(布尔值):是否启用思考模式\n              - `budgetTokens`(数字,可选):思考的最大令牌数(若模型支持)\n            设置匹配基于特异性(代理:100分,模型:10分,提供商:1分)。",
-          "scope": {
-            "agentId": {
-              "description": "(可选)应用设置的代理ID。"
-            },
-            "modelId": {
-              "description": "(可选)模型ID"
-            },
-            "providerId": {
-              "description": "(可选)应用设置的提供者ID。"
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "用于思考的最大令牌数。仅当模型支持思考预算时适用。"
-            },
-            "description": "思维模式配置。",
-            "enabled": {
-              "description": "是否启用了思考模式。"
-            }
-          },
-          "title": "思考模式设置"
         },
         "todayVariable": {
           "description": "今日要事",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "提示变体",
           "request": "请求",
+          "response": "响应",
           "timestamp": "时间戳",
           "title": "请求"
         },
@@ -963,14 +970,15 @@
           "selections": "选项"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "用户是否已确认代理模式警告。代理模式允许在无需进一步确认的情况下自主修改文件。若设置为 `false`,则在下一次代理模式请求时将再次显示确认提示。"
+          "enabled": {
+            "mdDescription": "为 Coder 代理启用代理模式。代理模式允许在无需进一步确认的情况下自主修改文件。                 在将此选项设置为 `true` 之前,使用代理模式时会显示首次使用确认对话框。"
           }
         },
         "agentModeConfirmation": {
-          "confirm": "确认",
+          "continueAgentMode": "继续使用代理模式",
+          "continueEditMode": "继续进入编辑模式",
+          "info": "继续使用代理模式将保存您的确认。您稍后可通过 `ai-features.agentMode.enabled` 设置撤销此设置。\n\n继续使用编辑模式将把默认模式更改为编辑模式。\n\n您可以随时通过模式选择器或在 AI 配置中切换模式。",
           "msg": "该代理采用**代理模式**。为实现自主流程,它能够直接写入您的工作区文件,无需进一步确认。\n\n建议使用版本控制(例如 Git),以便您审查和回滚更改。\n\n您可以通过下方聊天输入区域中的模式选择器切换至**编辑模式**,或使用**Architect**代理进行只读规划。\n\n此确认设置将保存至当前工作区,且不会再次显示。若需重置或进行全局配置,请在“设置”中查找 `ai-features.agentMode.confirmed`。",
-          "question": "您要继续使用代理模式吗?",
           "waiting": "正在等待确认..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "某些智能体(如Claude Code)无需Theia语言模型支持",
         "chatDisabledMessage": {
           "title": "AI功能已禁用"
+        },
+        "chatRestrictedMessage": {
+          "title": "AI 功能受限"
         },
         "codeReviewerAgent": {
           "description": "一款代码审查助手,用于分析代码变更并返回结构化的审查结果。         检查完成标准、构建/代码检查/测试证据以及代码质量。"
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "允许代理与 GitHub 进行交互。为此,该代理可委托 GitHub 代理执行操作,后者能够读写问题、拉取请求、评论及仓库内容。",
-          "name": "GitHub"
+          "description": "允许代理与 GitHub 进行交互。为此,该代理可委托 GitHub 代理执行操作,后者能够读写问题、拉取请求、评论及仓库内容。"
         },
         "githubRepoName": {
           "description": "当前GitHub仓库名称(例如\"eclipse-theia/theia\")"
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "委托给 `@{0}`"
           }
         },
+        "prReviewAgent": {
+          "description": "一款由人工智能驱动的 PR 审查代理,可协调完整的代码审查工作流:获取 PR 信息、探索代码库、执行结构化分析、通过差异查看器引导用户交互式查看审查结果,并可选地在 GitHub 上创建待审请求。"
+        },
         "prompt-template-description": "在[AI配置视图]({0})中为AI代理选择提示变体并自定义提示模板。",
         "recentChats": "最近聊天记录",
-        "renameChat": "重命名聊天",
+        "restrictedModeDetails": "AI 聊天、内联建议、代码操作和提示模板已禁用",
+        "restrictedModeLabel": "AI 功能(在受限模式下已禁用)",
         "shellAllowlist": {
           "placeholder": "例如:\"git log\"(精确命令)或\"git log *\"(带参数的命令)"
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "模型ID"
           },
+          "reasoningSupport": {
+            "title": "声明模型的推理能力。设置后,聊天界面将显示该模型的推理选择器。设置为 `null` 即可禁用。默认根据模型名称推断。"
+          },
           "supportsStructuredOutput": {
             "title": "指示模型是否支持结构化输出。默认值为`true`。"
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "高级设置(JSON)",
-        "budgetTokens": "预算代币:",
         "confirmationTimeout": "确认超时",
         "confirmationTimeoutNote": "在指定时间后自动拒绝工具确认。此设置将覆盖当前会话的全局首选项。",
         "enableConfirmationTimeout": "启用确认超时",
-        "enableThinking": "启用扩展思维",
-        "thinkingMode": "思考模式",
-        "thinkingModeNote": "某些型号可能忽略此设置。",
         "timeoutSeconds": "超时(秒):",
         "title": "设置会话设置",
         "tooltip": "设置会话设置"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "任务背景:启动会话",
       "navigate-back": "返回导航",
       "navigate-forward": "向前导航",
+      "noOutput": "无输出",
       "open-current-session-summary": "打开当前会话摘要",
       "open-settings-tooltip": "打开 AI 设置...",
       "renameChat": "重命名聊天",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "代理\"{0}\"已完成其任务。",
       "agentCompletionMessageWithSession": "代理\"{0}\"已在\"{1}\"中完成其任务。",
       "agentCompletionTitle": "代理\"{0}\"任务已完成",
+      "aiDisabledInRestrictedMode": "在不受信任的工作区中,AI 功能不可用。",
       "preferences": {
+        "linuxEnvHint": "在 Linux 系统中,若通过桌面快捷方式启动应用程序,请确保该变量已在 `~/.profile`(而非仅在 `~/.bashrc`)中定义。详情请参阅 [文档](https://theia-ide.org/docs/user_ai/#setting-api-keys)。",
         "title": "AI功能"
       },
       "showChat": "显示聊天"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<工单编号>",
         "description": "分析GitHub工单并实施解决方案"
       },
-      "open-agent-settings-tooltip": "打开代理设置...",
+      "open-ai-configuration-tooltip": "OpenAI 配置",
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "从对话中提取主题并更新项目信息"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "无任务"
-      }
+      },
+      "userInteractionCanceled": "已取消",
+      "userInteractionCommentPlaceholder": "为这一步添加评论...",
+      "userInteractionEmpty": "空",
+      "userInteractionFinishStep": "完成",
+      "userInteractionGoToStep": "前往步骤 {0}:{1}",
+      "userInteractionMalformed": "无法显示用户交互",
+      "userInteractionMalformedFallback": "无法解析参数。",
+      "userInteractionPreparing": "正在准备用户交互...",
+      "userInteractionPreparingSteps": "准备工作:{0}({1} 步骤)",
+      "userInteractionPreparingTitle": "准备中:{0}",
+      "userInteractionStepLabel": "{1} 的第{0}步",
+      "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
       "blockedServersLabel": "MCP服务器(自动启动被阻止)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "已取消",
       "executionDenied": "拒绝",
       "executionDeniedWithReason": "拒绝并说明原因",
-      "noOutput": "无输出",
       "partialOutput": "部分输出",
       "shellCommandAllowlist": {
         "description": "shell命令模式列表。使用*作为通配符:\"git log\"(精确匹配)\"git log *\"(带可选参数)\"* --version\"(任何以--version结尾的命令)。通配符前必须留空格。危险模式命令(含$、反引号)永不自动允许。"
@@ -1695,9 +1722,6 @@
         "enhanced": "显示包含附加信息的增强型标签页预览。",
         "visual": "显示标签页的视觉预览。"
       },
-      "file": {
-        "browse": "浏览"
-      },
       "highlightModifiedTabs": "控制是否在已修改(脏)的编辑器标签页上绘制顶部边框。",
       "keybinding": {
         "duplicateModifierError": "无法解析键绑定 {0} 重复修饰符",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "剪贴板访问被拒绝。请检查浏览器的权限设置。",
         "clipboardWarnFirefox": "剪贴板 API 不可用。可通过 '{1}' 页面的 '{0}' 选项启用该功能,随后需重新加载 Theia。注意:此操作将允许 Firefox 完全访问系统剪贴板。"
       },
-      "offline": "离线",
       "pasteWarn": "请使用浏览器的粘贴命令或快捷键。",
       "quitMessage": "任何未保存的更改都将不会被保存。",
       "resetWorkbenchLayout": "重置工作区布局",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "目标位置将移至行{0},列{1}。是否继续执行?",
       "confirmRunToShiftedPosition_title": "无法将当前线程精确运行至指定位置",
       "consoleFilterAriaLabel": "过滤调试控制台输出",
+      "consoleFilterPlaceholder": "过滤器(例如:文本、!exclude)",
       "consoleFilterTooltip": "按文本过滤控制台输出。多个术语用逗号分隔。以`!`开头表示排除该术语。\n\n示例:\n\n- `text` - 显示包含\"text\"的行\n- `text, other` - 显示包含\"text\"或\"other\"的行\n- `!text` - 隐藏包含\"text\"的行\n- `text, !other` - 显示\"text\"但隐藏\"other\"",
       "consoleSessionSelectorTooltip": "在调试会话之间切换。每个调试会话都有独立的控制台输出。",
       "consoleSeverityTooltip": "按严重程度过滤控制台输出。仅显示所选严重程度的消息。",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "启用/禁用与调试适配器的跟踪通信",
       "unknownSession": "未知会话",
       "unverifiedBreakpoint": "未经核实的{0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "工作区中未找到位于 {0} 的 Devcontainer 文件",
+      "failedToRebuild": "重建容器失败:{0}",
+      "noDevcontainerFileSpecified": "未为工作区指定 devcontainer 文件",
+      "removingOldContainer": "正在删除旧容器..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "启用后,将仅对在触发自动保存时未报告任何错误的文件进行编辑器的自动保存。仅在启用“{0}”时生效。",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "连接到正在运行的容器",
         "connect": "在容器中重新打开",
         "noDevcontainerFiles": "工作区中未找到 devcontainer.json 文件。请确保您拥有包含 devcontainer.json 文件的 .devcontainer 目录。",
-        "selectDevcontainer": "选择一个 devcontainer.json 文件"
+        "noRunningContainers": "未找到正在运行的容器。",
+        "rebuild": "重建容器",
+        "rebuilding": "重建开发容器",
+        "reopenInContainer": "在容器中重新打开",
+        "selectContainer": "选择一个正在运行的容器进行挂载",
+        "selectDevcontainer": "选择一个 devcontainer.json 文件",
+        "suggestion": "此工作区具有开发容器配置。您是否要在容器中重新打开它?"
+      },
+      "port-forwarding": {
+        "focusPorts": "端口:重点关注“端口”视图"
       },
       "ssh": {
         "connect": "将当前窗口连接至主机...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "1 小时前",
+      "1MinuteAgo": "1分钟前",
       "amend": "修订",
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最后一次提交",
@@ -2133,9 +2175,12 @@
         "close": "关闭 更改 预览视图"
       },
       "history": "历史",
+      "justNow": "刚才",
       "mergeEditor": {
         "resetConfirmationTitle": "您确定要重置此编辑器中的合并结果吗?"
       },
+      "noChanges": "没有修改过的文件。",
+      "noHistory": "没有源代码控制历史记录。",
       "noHistoryForError": "{0} 没有历史记录",
       "prepositionIn": "以及",
       "unamend": "不修改",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "取消所有测试运行",
+      "showTestOutput": "显示测试输出",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} 运行 {1}",
       "testRuns": "测试运行"

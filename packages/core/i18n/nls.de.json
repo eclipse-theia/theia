@@ -87,6 +87,12 @@
           "modelId": {
             "title": "Modell-ID"
           },
+          "reasoningApi": {
+            "title": "Welche Form der Anthropic-Reasoning-API soll verwendet werden: `effort` für adaptives Denken (Claude 4.6+), `budget` für erweitertes Denken (Claude 4.0–4.5) oder `null` zum Deaktivieren. Wird standardmäßig aus dem Modellnamen abgeleitet."
+          },
+          "supportsXHighEffort": {
+            "title": "Gibt an, ob das Modell den anthropischen Aufwandswert `xhigh` akzeptiert. Wird standardmäßig aus dem Modellnamen abgeleitet."
+          },
           "url": {
             "title": "Der Anthropic-API-kompatible Endpunkt, auf dem das Modell gehostet wird."
           },
@@ -256,6 +262,7 @@
         "copyCodeBlock": "Code-Block kopieren",
         "couldNotSendRequestToSession": "Die Anfrage „{0}“ konnte nicht an die Sitzung {1} gesendet werden.",
         "delegation-response-renderer": {
+          "interactionNeeded": "Benutzerinteraktion erforderlich",
           "prompt": {
             "label": "Delegierte Eingabeaufforderung:"
           },
@@ -297,8 +304,13 @@
         "performThisTask": "Führen Sie diese Aufgabe aus.",
         "persistedSession": "Persistente Sitzung (zum Wiederherstellen anklicken)",
         "promptFragmentsDescription": "Benutzerdefinierte Eingabeaufforderungsfragmente, die in die Konversation aufgenommen werden sollen",
+        "reasoning": {
+          "high": "Hoch",
+          "low": "Niedrig",
+          "medium": "Mittel",
+          "minimal": "Minimal"
+        },
         "removeChat": "Chat entfernen",
-        "renameChat": "Chat umbenennen",
         "requestNotFoundForRetry": "Anfrage nicht gefunden für Wiederholungsversuch",
         "responseFrom": "Antwort von {0}",
         "saveCurrentSelectionsToSettings": "Einstellungen für Funktionen speichern",
@@ -320,6 +332,18 @@
           "cantDisplay": "Die Antwort kann nicht angezeigt werden. Bitte überprüfen Sie Ihre ChatResponsePartRenderers!"
         },
         "toggleCapabilitiesConfig": "Konfiguration der Umschaltfunktionen",
+        "tokenUsageIndicatorEnabled": "Steuert, ob die experimentelle Token-Verwendungsanzeige in der Chat-Ansicht angezeigt wird. Diese Funktion ist experimentell und die Token-Zählungen können je nach Modell und Anbieter ungenau sein.",
+        "tokenUsageLabel": "Verwendung von Tokens",
+        "tokenUsageOverflow": "Die Token-Nutzung liegt deutlich über dem Warnschwellenwert. Erwägen Sie eine Komprimierung oder starten Sie eine neue Sitzung.",
+        "tokenUsageTooltipCacheCreate": "Cache-Erstellung: {0}",
+        "tokenUsageTooltipCacheRead": "Cache-Lesezugriff: {0}",
+        "tokenUsageTooltipTotal": "Gesamt: {0} / {1} ({2} %)",
+        "tokenUsageWarning": "Schwellenwert für die Warnung zur Token-Nutzung erreicht.",
+        "tokenUsageWarningEnabled": "Steuert, ob eine Benachrichtigung angezeigt wird, wenn die Token-Nutzung einer Chat-Sitzung den konfigurierten Schwellenwert überschreitet. Erfordert, dass der Sprachmodell-Anbieter die Token-Nutzung meldet.",
+        "tokenUsageWarningMessage": "Die Nutzung des Chat-Sitzungstokens hat {0} % des Kontextfensters erreicht. Ziehe in Erwägung, diese Sitzung zusammenzufassen oder eine neue zu starten, um das Limit nicht zu überschreiten.",
+        "tokenUsageWarningNewSessionAction": "Neuen Chat starten",
+        "tokenUsageWarningSummarizeAction": "Aktuelle Sitzung zusammenfassen",
+        "tokenUsageWarningThresholdPercentage": "Prozentualer Anteil des Kontextfensters des Modells, bei dem die Warnung zur Token-Verwendung ausgelöst wird. Dieser Wert bestimmt auch die Farbbereiche für Warnungen und Fehler im Token-Verwendungsindikator. Derzeit wird ein angenommenes Kontextfenster von 200 KB zugrunde gelegt; sobald verfügbar, wird die tatsächliche Kontextgröße pro Modell verwendet.",
         "toolcall-part-renderer": {
           "denied": "Ausführung verweigert",
           "finished": "Ausführen",
@@ -376,7 +400,6 @@
         "directory": "Verzeichnis",
         "domain": "Domäne",
         "editAutomatically": "Automatisch bearbeiten",
-        "editNumber": "Bearbeiten {0}",
         "editing": "Bearbeiten",
         "editsCount": "{0} Bearbeitungen",
         "emptyTodoList": "Nicht verfügbar",
@@ -496,8 +519,7 @@
         "oneItem": "1 Element",
         "searched": "Gesucht",
         "searching": "Suchen",
-        "todoList": "Todo-Liste",
-        "webSearch": "Websuche"
+        "todoList": "Todo-Liste"
       },
       "completion": {
         "agent": {
@@ -599,6 +621,7 @@
       },
       "core": {
         "agentConfiguration": {
+          "actions": "Aktionen",
           "addCustomAgent": "Benutzerdefinierten Agenten hinzufügen",
           "availableCapabilities": "Verfügbare Funktionen",
           "completionNotificationDescriptionPrefix": "Wählen Sie aus, wie Sie benachrichtigt werden möchten, wenn dieser Agent seine Aufgabe abgeschlossen hat. „Standard“ verwendet die ",
@@ -730,6 +753,9 @@
             "title": "Sprachmodell-Aliase"
           }
         },
+        "productNameVariable": {
+          "description": "Der Name des Produkts/der Anwendung, mit der der Benutzer arbeitet"
+        },
         "promptFragmentsConfiguration": {
           "activeCustomizationTitle": "Aktive Anpassung",
           "createCustomizationTitle": "Anpassung erstellen",
@@ -781,6 +807,10 @@
         "prompts": {
           "category": "AI-Prompt-Vorlagen"
         },
+        "reasoning": {
+          "mdDescription": "Standardwert für den Reasoning-Selektor der Chat-Eingabe, der auf Modelle angewendet wird, die Reasoning unterstützen.\n\nDies ist eine Einstellung auf UI-Ebene: Die gewählte Stufe wird zum Zeitpunkt der Anfrage in die nativen API-Parameter des Anbieters übersetzt (z. B. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`, Gemini `thinkingConfig`) und hat Vorrang vor allen Rohwerten, die über `#ai-features.modelSettings.requestSettings#` für dieselben Felder bereitgestellt werden.\n\nJeder Eintrag besteht aus:\n- `scope`: Legt fest, wann die Einstellung gilt (`modelId`, `providerId`, `agentId`).\n- `reasoning.level`: Entweder `off`, `minimal`, `low`, `medium`, `high` oder `auto`.\n\nPriorität zur Laufzeit (höchste zuerst): Überschreibung der Sitzung über den Selektor → diese Einstellung → die vom Modell deklarierte Standardeinstellung. Was auch immer der Selektor anzeigt, wird gesendet. Um das Reasoning-Feld eines Anbieters manuell über `#ai-features.modelSettings.requestSettings#` zu überschreiben, setzen Sie `reasoning.level` hier auf `off`, damit die stufenbasierte Übersetzung deaktiviert wird.\n\nEinträge werden anhand der Spezifität des Geltungsbereichs abgeglichen (Agent: 100, Modell: 10, Anbieter: 1 Punkt).\n\nBeispiel:\n```json\n[\n  { \"scope\": { \"providerId\": \"anthropic\" }, \"reasoning\": { \"level\": \"medium\" } },\n  { \"scope\": { \"modelId\": \"openai/gpt-5\" }, \"reasoning\": { \"level\": \"high\" } },\n  { \"scope\": { \"agentId\": \"Coder\" }, \"reasoning\": { \"level\": \"off\" } }\n]\n```",
+          "title": "Standardwerte"
+        },
         "requestSettings": {
           "clientSettings": {
             "description": "Client-Einstellungen für die Behandlung von Meldungen, die an das LLM zurückgesendet werden.",
@@ -820,30 +850,6 @@
         "templateSettings": {
           "edited": "bearbeitet",
           "unavailableVariant": "Nicht verfügbar"
-        },
-        "thinkingMode": {
-          "mdDescription": "Ermöglicht die Festlegung von Einstellungen für den Denkmodus für Modelle, die erweiterte Denkfunktionen unterstützen.\nJede Einstellung besteht aus:\n- `scope`: Legt fest, wann die Einstellung gilt:\n- `modelId` (optional): Die zuzuordnende Modell-ID\n- `providerId` (optional): Die zuzuordnende Anbieter-ID\n- `agentId` (optional): Die zuzuordnende Agent-ID\n- `thinkingMode`: Konfiguration des Denkmodus:\n- `enabled` (boolesch): Gibt an, ob der Denkmodus aktiviert ist\n- `budgetTokens` (Zahl, optional): Maximale Anzahl an Tokens für das Denken (sofern vom Modell unterstützt)\nDie Einstellungen werden anhand ihrer Spezifität abgeglichen (Agent: 100, Modell: 10, Anbieter: 1 Punkt).",
-          "scope": {
-            "agentId": {
-              "description": "Die (optionale) Agent-ID, auf die die Einstellungen angewendet werden sollen."
-            },
-            "modelId": {
-              "description": "Die (optionale) Modell-ID"
-            },
-            "providerId": {
-              "description": "Die (optionale) Anbieter-ID, auf die die Einstellungen angewendet werden sollen."
-            }
-          },
-          "thinkingMode": {
-            "budgetTokens": {
-              "description": "Maximale Anzahl von Tokens, die zum Denken verwendet werden können. Gilt nur, wenn das Modell ein Denkbudget unterstützt."
-            },
-            "description": "Konfiguration des Denkmodus.",
-            "enabled": {
-              "description": "Ob der Denkmodus aktiviert ist."
-            }
-          },
-          "title": "Einstellungen für den Denkmodus"
         },
         "todayVariable": {
           "description": "Etwas für heute tun",
@@ -905,6 +911,7 @@
         "request-card": {
           "promptVariant": "Eingabeaufforderungsvariante",
           "request": "Anfrage",
+          "response": "Antwort",
           "timestamp": "Zeitstempel",
           "title": "Anfrage"
         },
@@ -963,14 +970,15 @@
           "selections": "Auswahlmöglichkeiten"
         },
         "agentMode": {
-          "confirmed": {
-            "mdDescription": "Gibt an, ob der Benutzer die Warnung zum Agent-Modus bestätigt hat. Der Agent-Modus ermöglicht autonome Dateiänderungen ohne weitere Bestätigung. Setzen Sie den Wert auf `false`, um die Bestätigung bei der nächsten Anfrage im Agent-Modus erneut anzuzeigen."
+          "enabled": {
+            "mdDescription": "Aktivieren Sie den Agent-Modus für den Coder-Agenten. Der Agent-Modus ermöglicht autonome Dateiänderungen ohne weitere Bestätigung.                 Bei Verwendung des Agent-Modus wird ein Bestätigungsdialog bei der ersten Verwendung angezeigt, bis dieser auf `true` gesetzt wird."
           }
         },
         "agentModeConfirmation": {
-          "confirm": "Bestätigen",
+          "continueAgentMode": "Weiter mit dem Agent-Modus",
+          "continueEditMode": "Weiter mit dem Bearbeitungsmodus",
+          "info": "Wenn Sie mit dem Agent-Modus fortfahren, wird Ihre Bestätigung gespeichert. Sie können dies später über die Einstellung `ai-features.agentMode.enabled` wieder rückgängig machen.\n\nWenn Sie mit dem Bearbeitungsmodus fortfahren, wird Ihr Standardmodus auf den Bearbeitungsmodus umgestellt.\n\nSie können den Modus jederzeit über die Modusauswahl oder in der KI-Konfiguration ändern.",
           "msg": "Dieser Agent verwendet einen **Agentic-Modus**. Um einen autonomen Ablauf zu ermöglichen, kann er ohne weitere Bestätigung direkt in Ihre Arbeitsbereichsdateien schreiben.\n\nEs wird empfohlen, eine Versionskontrolle (z. B. Git) zu verwenden, damit Sie Änderungen überprüfen und rückgängig machen können.\n\nSie können über die Modusauswahl im Chat-Eingabebereich unten in den **Bearbeitungsmodus** wechseln oder den **Architect**-Agenten für die schreibgeschützte Planung verwenden.\n\nDiese Bestätigung wird für diesen Arbeitsbereich gespeichert und nicht erneut angezeigt. Um sie zurückzusetzen oder global zu konfigurieren, suchen Sie in den Einstellungen nach `ai-features.agentMode.confirmed`.",
-          "question": "Möchten Sie mit dem Agent-Modus fortfahren?",
           "waiting": "Warten auf Bestätigung..."
         },
         "app-tester": {
@@ -1007,6 +1015,9 @@
         "bypassHint": "Einige Agenten wie Claude Code benötigen keine Theia-Sprachmodelle.",
         "chatDisabledMessage": {
           "title": "KI-Funktionen sind deaktiviert"
+        },
+        "chatRestrictedMessage": {
+          "title": "KI-Funktionen sind eingeschränkt"
         },
         "codeReviewerAgent": {
           "description": "Ein Code-Review-Assistent, der Codeänderungen analysiert und strukturierte Bewertungen liefert. Er überprüft die Fertigstellungskriterien, Build-/Lint-/Testnachweise sowie die Codequalität."
@@ -1079,8 +1090,7 @@
           }
         },
         "githubCapability": {
-          "description": "Ermöglicht dem Agenten die Interaktion mit GitHub. Dazu kann der Agent Aufgaben an den GitHub-Agenten delegieren, der Issues, Pull-Anfragen, Kommentare und Repository-Inhalte lesen und schreiben kann.",
-          "name": "GitHub"
+          "description": "Ermöglicht dem Agenten die Interaktion mit GitHub. Dazu kann der Agent Aufgaben an den GitHub-Agenten delegieren, der Issues, Pull-Anfragen, Kommentare und Repository-Inhalte lesen und schreiben kann."
         },
         "githubRepoName": {
           "description": "Der Name des aktuellen GitHub-Repositorys (z. B. „eclipse-theia/theia”)"
@@ -1104,9 +1114,13 @@
             "delegatingToAgent": "Delegieren an „@{0}“"
           }
         },
+        "prReviewAgent": {
+          "description": "Ein KI-gestützter PR-Review-Agent, der einen vollständigen Code-Review-Workflow koordiniert: Er ruft PR-Informationen ab, untersucht die Codebasis, führt strukturierte Analysen durch, führt den Benutzer interaktiv mit Diff-Viewern durch die Ergebnisse und erstellt optional einen ausstehenden Review auf GitHub."
+        },
         "prompt-template-description": "Wählen Sie Eingabeaufforderungsvarianten aus und passen Sie Eingabeaufforderungsvorlagen für KI-Agenten in der [KI-Konfigurationsansicht]({0}) an.",
         "recentChats": "Aktuelle Chats",
-        "renameChat": "Chat umbenennen",
+        "restrictedModeDetails": "KI-Chat, Inline-Vorschläge, Code-Aktionen und Eingabeaufforderungsvorlagen sind deaktiviert",
+        "restrictedModeLabel": "KI-Funktionen (im eingeschränkten Modus deaktiviert)",
         "shellAllowlist": {
           "placeholder": "z. B. „git log“ (genau) oder „git log *“ (mit Argumenten)"
         },
@@ -1326,6 +1340,9 @@
           "modelId": {
             "title": "Modell-ID"
           },
+          "reasoningSupport": {
+            "title": "Legt die Schlussfolgerungsfähigkeiten des Modells fest. Wenn diese Option aktiviert ist, zeigt der Chat einen Auswahlschalter für die Schlussfolgerungsfunktion dieses Modells an. Setzen Sie den Wert auf `null`, um die Funktion zu deaktivieren. Wird standardmäßig aus dem Modellnamen abgeleitet."
+          },
           "supportsStructuredOutput": {
             "title": "Gibt an, ob das Modell strukturierte Ausgaben unterstützt. Standardmäßig „true“."
           },
@@ -1390,13 +1407,9 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Erweiterte Einstellungen (JSON)",
-        "budgetTokens": "Budget-Token:",
         "confirmationTimeout": "Zeitlimit für die Bestätigung",
         "confirmationTimeoutNote": "Bestätigungsaufforderungen des Tools nach Ablauf der angegebenen Zeit automatisch ablehnen. Überschreibt die globale Einstellung für diese Sitzung.",
         "enableConfirmationTimeout": "Zeitlimit für Bestätigungsaufforderung aktivieren",
-        "enableThinking": "Erweitertes Denken aktivieren",
-        "thinkingMode": "Denkmodus",
-        "thinkingModeNote": "Einige Modelle ignorieren diese Einstellung möglicherweise.",
         "timeoutSeconds": "Zeitlimit (Sekunden):",
         "title": "Sitzungseinstellungen festlegen",
         "tooltip": "Sitzungseinstellungen festlegen"
@@ -1519,6 +1532,7 @@
       "initiate-session-task-context": "Aufgabenkontext: Sitzung starten",
       "navigate-back": "Zurück navigieren",
       "navigate-forward": "Vorwärts navigieren",
+      "noOutput": "Keine Ausgabe",
       "open-current-session-summary": "Aktuelle Sitzung öffnen Zusammenfassung",
       "open-settings-tooltip": "AI-Einstellungen öffnen...",
       "renameChat": "Chat umbenennen",
@@ -1536,7 +1550,9 @@
       "agentCompletionMessage": "Der Agent „{0}“ hat seine Aufgabe abgeschlossen.",
       "agentCompletionMessageWithSession": "Der Agent „{0}“ hat seine Aufgabe in „{1}“ abgeschlossen.",
       "agentCompletionTitle": "Agent „{0}“ Aufgabe abgeschlossen",
+      "aiDisabledInRestrictedMode": "KI-Funktionen sind in nicht vertrauenswürdigen Arbeitsbereichen nicht verfügbar.",
       "preferences": {
+        "linuxEnvHint": "Stellen Sie unter Linux sicher, dass die Variable in `~/.profile` (nicht nur in `~/.bashrc`) definiert ist, wenn Sie die Anwendung über eine Desktop-Verknüpfung starten. Weitere Informationen finden Sie in der [Dokumentation](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
         "title": "KI-Funktionen"
       },
       "showChat": "Chat anzeigen"
@@ -1561,7 +1577,7 @@
         "argumentHint": "<Ticketnummer>",
         "description": "Analysieren Sie ein GitHub-Ticket und implementieren Sie die Lösung."
       },
-      "open-agent-settings-tooltip": "Agent-Einstellungen öffnen...",
+      "open-ai-configuration-tooltip": "Open AI-Konfiguration",
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "Themen aus Gesprächen extrahieren und Projektinformationen aktualisieren"
@@ -1572,7 +1588,19 @@
       },
       "todoTool": {
         "noTasks": "Keine Aufgaben"
-      }
+      },
+      "userInteractionCanceled": "Abgebrochen",
+      "userInteractionCommentPlaceholder": "Fügen Sie einen Kommentar zu diesem Schritt hinzu...",
+      "userInteractionEmpty": "Leer",
+      "userInteractionFinishStep": "Fertigstellen",
+      "userInteractionGoToStep": "Weiter zu Schritt {0}: {1}",
+      "userInteractionMalformed": "Benutzerinteraktion konnte nicht angezeigt werden",
+      "userInteractionMalformedFallback": "Die Argumente konnten nicht analysiert werden.",
+      "userInteractionPreparing": "Benutzerinteraktion wird vorbereitet...",
+      "userInteractionPreparingSteps": "Vorbereitung: {0} (Schritte unter {1})",
+      "userInteractionPreparingTitle": "In Vorbereitung: {0}",
+      "userInteractionStepLabel": "Schritt {0} von {1}",
+      "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
       "blockedServersLabel": "MCP-Server (Autostart blockiert)"
@@ -1600,7 +1628,6 @@
       "executionCanceled": "Abgebrochen",
       "executionDenied": "Verweigert",
       "executionDeniedWithReason": "Abgelehnt mit Begründung",
-      "noOutput": "Keine Ausgabe",
       "partialOutput": "Teilausgabe",
       "shellCommandAllowlist": {
         "description": "Liste der Shell-Befehlsmuster. Verwenden Sie * als Platzhalter: „git log“ (exakte Übereinstimmung), „git log *“ (mit optionalen Argumenten), „* --version“ (jeder Befehl, der mit --version endet). Dem Platzhalter muss ein Leerzeichen vorangestellt werden. Befehle mit gefährlichen Mustern ($, Backticks) werden niemals automatisch zugelassen."
@@ -1695,9 +1722,6 @@
         "enhanced": "Zeigen Sie eine erweiterte Vorschau der Registerkarte mit zusätzlichen Informationen an.",
         "visual": "Zeigen Sie eine visuelle Vorschau der Registerkarte an."
       },
-      "file": {
-        "browse": "Durchsuchen"
-      },
       "highlightModifiedTabs": "Steuert, ob ein oberer Rand auf geänderten (verschmutzten) Editor-Registerkarten gezeichnet wird oder nicht.",
       "keybinding": {
         "duplicateModifierError": "Keybinding kann nicht analysiert werden {0} Doppelte Modifikatoren",
@@ -1718,7 +1742,6 @@
         "clipboardWarn": "Der Zugriff auf die Zwischenablage wird verweigert. Überprüfen Sie die Berechtigungen Ihres Browsers.",
         "clipboardWarnFirefox": "Die Clipboard-API ist nicht verfügbar. Sie kann über die Einstellung „{0}“ auf der Seite „{1}“ aktiviert werden. Laden Sie anschließend Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die System-Zwischenablage erhält."
       },
-      "offline": "Offline",
       "pasteWarn": "Bitte verwenden Sie den Befehl „Einfügen“ oder die Tastenkombination Ihres Browsers.",
       "quitMessage": "Nicht gespeicherte Änderungen werden nicht gespeichert.",
       "resetWorkbenchLayout": "Workbench-Layout zurücksetzen",
@@ -1764,6 +1787,7 @@
       "confirmRunToShiftedPosition_msg": "Die Zielposition wird auf Zeile {0} und Spalte {1} verschoben. Trotzdem ausführen?",
       "confirmRunToShiftedPosition_title": "Der aktuelle Thread kann nicht genau an der angegebenen Stelle ausgeführt werden.",
       "consoleFilterAriaLabel": "Filter für die Ausgabe der Debug-Konsole",
+      "consoleFilterPlaceholder": "Filter (z. B. Text, !exclude)",
       "consoleFilterTooltip": "Filtern Sie die Konsolenausgabe nach Text. Trennen Sie mehrere Begriffe durch Kommas. Setzen Sie ein „!“ vor einen Begriff, um ihn auszuschließen.\n\nBeispiele:\n\n- „text“ – Zeilen anzeigen, die „text“ enthalten\n- „text, other“ – Zeilen anzeigen, die „text“ oder „other“ enthalten\n- „!text“ – Zeilen ausblenden, die „text“ enthalten\n- „text, !other“ – „text“ anzeigen, aber „other“ ausblenden",
       "consoleSessionSelectorTooltip": "Wechseln Sie zwischen Debug-Sitzungen. Jede Debug-Sitzung hat ihre eigene Konsolenausgabe.",
       "consoleSeverityTooltip": "Filtern Sie die Konsolenausgabe nach Schweregrad. Es werden nur Meldungen mit dem ausgewählten Schweregrad angezeigt.",
@@ -1801,6 +1825,12 @@
       "toggleTracing": "Aktivieren/Deaktivieren der Ablaufverfolgung der Kommunikation mit Debug-Adaptern",
       "unknownSession": "Unbekannte Sitzung",
       "unverifiedBreakpoint": "Unverifizierte {0}"
+    },
+    "dev-container": {
+      "devcontainerFileNotFound": "Devcontainer-Datei unter {0} im Arbeitsbereich nicht gefunden",
+      "failedToRebuild": "Fehler beim Neuerstellen des Containers: {0}",
+      "noDevcontainerFileSpecified": "Keine Devcontainer-Datei für den Arbeitsbereich angegeben",
+      "removingOldContainer": "Alten Container entfernen..."
     },
     "editor": {
       "autoSaveWhenNoErrors": "Wenn diese Option aktiviert ist, wird die automatische Speicherung in Editoren auf Dateien beschränkt, in denen zum Zeitpunkt der automatischen Speicherung keine Fehler gemeldet werden. Gilt nur, wenn „{0}“ aktiviert ist.",
@@ -2100,9 +2130,19 @@
     },
     "remote": {
       "dev-container": {
+        "attach": "An laufenden Container anhängen",
         "connect": "In Container erneut öffnen",
         "noDevcontainerFiles": "Es wurden keine devcontainer.json-Dateien im Arbeitsbereich gefunden. Bitte stellen Sie sicher, dass Sie über ein .devcontainer-Verzeichnis mit einer devcontainer.json-Datei verfügen.",
-        "selectDevcontainer": "Wählen Sie eine devcontainer.json-Datei aus."
+        "noRunningContainers": "Es wurden keine laufenden Container gefunden.",
+        "rebuild": "Container neu erstellen",
+        "rebuilding": "Entwickler-Container neu erstellen",
+        "reopenInContainer": "In Container erneut öffnen",
+        "selectContainer": "Wählen Sie einen laufenden Container aus, an den Sie sich anschließen möchten",
+        "selectDevcontainer": "Wählen Sie eine devcontainer.json-Datei aus.",
+        "suggestion": "Dieser Arbeitsbereich verfügt über eine Dev-Container-Konfiguration. Möchten Sie ihn in einem Container erneut öffnen?"
+      },
+      "port-forwarding": {
+        "focusPorts": "Ports: Fokus auf die Portansicht"
       },
       "ssh": {
         "connect": "Aktuelles Fenster mit Host verbinden...",
@@ -2125,6 +2165,8 @@
       }
     },
     "scm": {
+      "1HourAgo": "vor 1 Stunde",
+      "1MinuteAgo": "vor 1 Minute",
       "amend": "Ändern",
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Letzten Commit ändern",
@@ -2133,9 +2175,12 @@
         "close": "Schließen Ändern Vorschau anzeigen"
       },
       "history": "Geschichte",
+      "justNow": "gerade eben",
       "mergeEditor": {
         "resetConfirmationTitle": "Möchten Sie das Zusammenführungsergebnis in diesem Editor wirklich zurücksetzen?"
       },
+      "noChanges": "Keine geänderten Dateien.",
+      "noHistory": "Es ist kein Versionsverlauf verfügbar.",
       "noHistoryForError": "Für „{0}“ ist kein Verlauf verfügbar.",
       "prepositionIn": "und",
       "unamend": "Unamend",
@@ -2238,6 +2283,7 @@
     },
     "test": {
       "cancelAllTestRuns": "Alle Testläufe abbrechen",
+      "showTestOutput": "Testausgabe anzeigen",
       "stackFrameAt": "at",
       "testRunDefaultName": "{0} Ausführungs{1}",
       "testRuns": "Testläufe"
