@@ -30,6 +30,21 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { OpenerService, open } from '@theia/core/lib/browser';
 import { URI } from '@theia/core';
 
+export interface MarkdownRenderProps {
+    text: string | MarkdownString;
+    openerService: OpenerService;
+    className?: string;
+}
+
+/**
+ * Renders the given markdown via {@link useMarkdownRendering} into a `<div>`.
+ * Shared component for use across chat response renderers.
+ */
+export const MarkdownRender: React.FC<MarkdownRenderProps> = ({ text, openerService, className }) => {
+    const ref = useMarkdownRendering(text, openerService);
+    return <div className={className} ref={ref}></div>;
+};
+
 @injectable()
 export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
     @inject(OpenerService) protected readonly openerService: OpenerService;
@@ -51,15 +66,9 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
             return null;
         }
 
-        return <MarkdownRender response={response} openerService={this.openerService} />;
+        return <MarkdownRender text={response.content} openerService={this.openerService} />;
     }
 }
-
-const MarkdownRender = ({ response, openerService }: { response: MarkdownChatResponseContent | InformationalChatResponseContent; openerService: OpenerService }) => {
-    const ref = useMarkdownRendering(response.content, openerService);
-
-    return <div ref={ref}></div>;
-};
 
 export interface DeclaredEventsEventListenerObject extends EventListenerObject {
     handledEvents?: (keyof HTMLElementEventMap)[];

@@ -24,7 +24,7 @@ import * as React from '@theia/core/shared/react';
 import { createConfirmationHandlers, ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
-import { useMarkdownRendering } from './markdown-part-renderer';
+import { MarkdownRender } from './markdown-part-renderer';
 import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
@@ -67,6 +67,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             onAllow={handleAllow}
             onDeny={handleDeny}
             contextMenuRenderer={this.contextMenuRenderer}
+            openerService={this.openerService}
         />;
     }
 
@@ -84,7 +85,8 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             showArgsTooltip={this.showArgsTooltip.bind(this)}
             responseRenderer={this.renderResult.bind(this)}
             requestCanceled={parentNode.response.isCanceled}
-            contextMenuRenderer={this.contextMenuRenderer} />;
+            contextMenuRenderer={this.contextMenuRenderer}
+            openerService={this.openerService} />;
     }
 
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
@@ -185,6 +187,7 @@ interface ToolCallContentProps {
     responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService: OpenerService;
 }
 
 /**
@@ -200,7 +203,8 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     getArgumentsLabel,
     requestCanceled,
     showArgsTooltip,
-    contextMenuRenderer
+    contextMenuRenderer,
+    openerService
 }) => {
     const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
     const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
@@ -290,14 +294,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         onAllow={handleAllow}
                         onDeny={handleDeny}
                         contextMenuRenderer={contextMenuRenderer}
+                        openerService={openerService}
                     />
                 </span>
             )}
         </div>
     );
-};
-
-const MarkdownRender = ({ text, openerService }: { text: string; openerService: OpenerService }) => {
-    const ref = useMarkdownRendering(text, openerService);
-    return <div ref={ref}></div>;
 };
