@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ConfirmationScope, CountdownTimerProps, ToolConfirmationCallbacks, ToolConfirmationActionsProps, ToolConfirmationProps } from './tool-confirmation';
 
 const mockContextMenuRenderer = {} as ContextMenuRenderer;
+const mockOpenerService = {} as OpenerService;
 
 describe('Tool Confirmation Types', () => {
     describe('ConfirmationScope', () => {
@@ -118,6 +119,17 @@ describe('Tool Confirmation Types', () => {
                 contextMenuRenderer: mockContextMenuRenderer
             };
             expect(props.toolRequest).to.be.undefined;
+        });
+
+        it('should accept an optional openerService for rendering arguments', () => {
+            const props: ToolConfirmationProps = {
+                response: { kind: 'toolCall', id: 'test', name: 'test', arguments: '{"foo":"bar"}' } as ToolConfirmationProps['response'],
+                onAllow: () => { },
+                onDeny: () => { },
+                contextMenuRenderer: mockContextMenuRenderer,
+                openerService: mockOpenerService
+            };
+            expect(props.openerService).to.equal(mockOpenerService);
         });
     });
 });

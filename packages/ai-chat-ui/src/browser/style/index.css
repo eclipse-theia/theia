@@ -1019,6 +1019,65 @@ div:last-child>.theia-ChatNode {
   overflow: auto;
 }
 
+.theia-tool-confirmation-description {
+  margin: 6px 0 8px 0;
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+details.theia-tool-confirmation-args {
+  margin: 4px 0;
+}
+
+details.theia-tool-confirmation-args>summary {
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  user-select: none;
+}
+
+details.theia-tool-confirmation-args>summary .label {
+  font-weight: bold;
+}
+
+.theia-tool-confirmation-args-summary {
+  color: var(--theia-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.theia-tool-confirmation-args-content {
+  margin: 4px 0;
+  padding: 8px;
+  background-color: var(--theia-editor-background);
+  border: 1px solid var(--theia-dropdown-border);
+  border-radius: 3px;
+  max-height: 200px;
+  overflow: auto;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-tool-confirmation-args-content p {
+  margin: 4px 0;
+}
+
+.theia-tool-confirmation-args-content pre {
+  margin: 4px 0;
+  padding: 6px;
+  background-color: var(--theia-editorWidget-background);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.theia-tool-confirmation-args-content code {
+  word-break: break-word;
+}
+
 .theia-tool-confirmation-actions {
   display: flex;
   justify-content: flex-end;

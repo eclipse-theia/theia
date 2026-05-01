@@ -16,13 +16,15 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolRequest } from '@theia/ai-core';
 import { CommandMenu, ContextExpressionMatcher, MenuPath } from '@theia/core/lib/common/menu';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { MarkdownRender } from './markdown-part-renderer';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 export interface CountdownTimerProps {
     response: ToolCallChatResponseContent;
@@ -430,9 +432,10 @@ export interface ToolConfirmationProps extends Pick<ToolConfirmationCallbacks, '
     onAllow: (scope?: ConfirmationScope) => void;
     onDeny: (scope?: ConfirmationScope, reason?: string) => void;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService?: OpenerService;
 }
 
-export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, toolRequest, onAllow, onDeny, contextMenuRenderer }) => {
+export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, toolRequest, onAllow, onDeny, contextMenuRenderer, openerService }) => {
     const [state, setState] = React.useState<ToolConfirmationState>('waiting');
 
     const handleAllow = React.useCallback((scope: ConfirmationScope) => {
@@ -471,6 +474,14 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
                     <span className="label">{nls.localizeByDefault('Tool')}:</span>
                     <span className="value">{response.name}</span>
                 </div>
+                {toolRequest?.description && (
+                    <div className="theia-tool-confirmation-description">
+                        {toolRequest.description}
+                    </div>
+                )}
+                {openerService && (
+                    <ToolArgsDisplay args={response.arguments} openerService={openerService} />
+                )}
             </div>
             <ToolConfirmationActions
                 toolName={response.name ?? 'unknown'}
@@ -481,6 +492,33 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
             />
             <CountdownTimer response={response} />
         </div>
+    );
+};
+
+interface ToolArgsDisplayProps {
+    args: string | undefined;
+    openerService: OpenerService;
+}
+
+const ToolArgsDisplay: React.FC<ToolArgsDisplayProps> = ({ args, openerService }) => {
+    const hasArgs = !!args && !!args.trim() && args.trim() !== '{}';
+    if (!hasArgs) {
+        // eslint-disable-next-line no-null/no-null
+        return null;
+    }
+    const summaryLabel = condenseArguments(args!) ?? '\u2026';
+    return (
+        <details className="theia-tool-confirmation-args">
+            <summary>
+                <span className="label">{nls.localizeByDefault('Arguments')}:</span>
+                <span className="theia-tool-confirmation-args-summary">{summaryLabel}</span>
+            </summary>
+            <MarkdownRender
+                text={formatArgsForTooltip(args!)}
+                openerService={openerService}
+                className="theia-tool-confirmation-args-content"
+            />
+        </details>
     );
 };
 
