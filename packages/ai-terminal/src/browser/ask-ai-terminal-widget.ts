@@ -53,36 +53,29 @@ export class AskAITerminalOverlay implements Disposable {
         protected readonly terminalWidget: TerminalWidgetImpl,
         inputWidgetFactory: AskAITerminalInputFactory,
         onSubmit: (chatRequest: ChatRequest) => void | Promise<void>,
-        onCancel: () => void
+        onCancel: () => void,
+        onDispose: () => void
     ) {
         this.containerNode = document.createElement('div');
         this.containerNode.className = 'ai-terminal-ask-overlay';
         terminalWidget.node.appendChild(this.containerNode);
         this.toDispose.push(Disposable.create(() => {
             if (this.containerNode.parentNode) {
-                this.terminalWidget.node.removeChild(this.containerNode);
+                this.containerNode.remove();
             }
         }));
+        this.toDispose.push(Disposable.create(onDispose));
+        this.toDispose.push(this.terminalWidget.onDidDispose(() => this.dispose()));
 
         this.inputWidget = inputWidgetFactory({
-            onSubmit: async request => {
-                await onSubmit(request);
-                this.dispose();
-            },
-            onCancel: () => {
-                onCancel();
-                this.dispose();
-            }
+            onSubmit,
+            onCancel
         });
         this.toDispose.push(this.inputWidget);
 
         this.containerNode.appendChild(this.inputWidget.node);
         this.inputWidget.activate();
         this.inputWidget.update();
-    }
-
-    addDisposable(disposable: Disposable): void {
-        this.toDispose.push(disposable);
     }
 
     dispose(): void {
