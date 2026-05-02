@@ -53,6 +53,9 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
     @inject(ILogger)
     protected readonly logger: ILogger;
 
+    /** Fallback line count when command history is unavailable. 50 is a heuristic. */
+    protected static readonly FALLBACK_TERMINAL_LINE_COUNT = 50;
+
     registerVariables(service: AIVariableService): void {
         service.registerResolver(TERMINAL_COMMAND_BLOCK, this);
         service.registerArgumentPicker(TERMINAL_COMMAND_BLOCK, () => this.pickCommandBlock());
@@ -68,7 +71,11 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
             return undefined;
         }
         if (!terminal.commandHistoryState) {
-            const bufferContent = terminal.buffer.getLines(Math.max(terminal.buffer.length - 50, 0), 50).join('\n');
+            const bufferContent = terminal.buffer.getLines(
+                Math.max(terminal.buffer.length
+                    - AiTerminalCommandBlockVariableContribution.FALLBACK_TERMINAL_LINE_COUNT, 0),
+                AiTerminalCommandBlockVariableContribution.FALLBACK_TERMINAL_LINE_COUNT
+            ).join('\n');
             if (!bufferContent) {
                 return undefined;
             }
@@ -110,6 +117,11 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
         }
         const commandHistory = this.terminalService.lastUsedTerminal.commandHistoryState.commandHistory;
         const quickPick = this.quickInputService.createQuickPick();
+        quickPick.title = nls.localize('theia/ai/terminal/terminalCommandBlockAIVariable/quickPick/title', 'Select a command and its output from the terminal history');
+        quickPick.placeholder = nls.localize(
+            'theia/ai/terminal/terminalCommandBlockAIVariable/quickPick/placeholder',
+            'Type to filter commands'
+        );
         quickPick.items = commandHistory.map((block, i) => (
             {
                 label: block.command,

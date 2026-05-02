@@ -28,10 +28,10 @@ import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execut
 import { ShellCommandPermissionService } from './shell-command-permission-service';
 import { shellCommandPreferences } from '../common/shell-command-preferences';
 import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/shell-command-analyzer';
+import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-command-block-variable';
 
 import '../../src/browser/style/ai-terminal.css';
 import '../../src/browser/style/shell-execution-tool.css';
-import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-command-block-variable';
 
 export default new ContainerModule(bind => {
     bind(AiTerminalCommandContribution).toSelf().inSingletonScope();
