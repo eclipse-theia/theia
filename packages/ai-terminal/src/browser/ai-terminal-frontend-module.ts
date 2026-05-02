@@ -31,6 +31,7 @@ import { DefaultShellCommandAnalyzer, ShellCommandAnalyzer } from '../common/she
 
 import '../../src/browser/style/ai-terminal.css';
 import '../../src/browser/style/shell-execution-tool.css';
+import { AskAITerminalInputArgs, AskAITerminalInputConfiguration, AskAITerminalInputFactory, AskAITerminalInputWidget } from './ask-ai-terminal-widget';
 
 export default new ContainerModule(bind => {
     bind(AiTerminalCommandContribution).toSelf().inSingletonScope();
@@ -55,4 +56,26 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: shellCommandPreferences });
 
     bind(ShellCommandAnalyzer).to(DefaultShellCommandAnalyzer).inSingletonScope();
+
+    bind(AskAITerminalInputFactory).toFactory(ctx => (args: AskAITerminalInputArgs) => {
+        const container = ctx.container.createChild();
+        container.bind(AskAITerminalInputArgs).toConstantValue(args);
+        container.bind(AskAITerminalInputConfiguration).toConstantValue({
+            showContext: true,
+            showPinnedAgent: true,
+            showChangeSet: false,
+            showSuggestions: false,
+            showCapabilities: false
+        } satisfies AskAITerminalInputConfiguration);
+        container.bind(AskAITerminalInputWidget).toSelf().inTransientScope();
+        const widget = container.get(AskAITerminalInputWidget);
+        // Release the child container when the widget is disposed to prevent
+        // the parent container from retaining a reference to it indefinitely.
+        const originalDispose = widget.dispose.bind(widget);
+        widget.dispose = () => {
+            container.unbindAll();
+            originalDispose();
+        };
+        return widget;
+    });
 });

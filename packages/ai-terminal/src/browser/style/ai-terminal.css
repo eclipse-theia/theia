@@ -100,3 +100,13 @@
 .ai-terminal-chat-result p.command {
   font-family: "Droid Sans Mono", "monospace", monospace;
 }
+
+.ai-terminal-ask-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 15;
+  box-sizing: border-box;
+  padding: 8px;
+}
