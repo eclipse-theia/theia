@@ -28,7 +28,7 @@ import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalBlock, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { AskAITerminalInputFactory, AskAITerminalOverlay } from './ask-ai-terminal-widget';
-import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatAgentService, ChatService } from '@theia/ai-chat';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
@@ -68,6 +68,11 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
+
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
+
+    protected askAiInputOverlay: AskAITerminalOverlay | undefined;
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
@@ -110,12 +115,11 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             execute: async (terminalBlock: TerminalBlock) => {
                 const currentTerminal = this.terminalService.currentTerminal;
                 if (currentTerminal instanceof TerminalWidgetImpl) {
-                    if (currentTerminal.node.querySelector('.ai-terminal-ask-overlay')) {
-                        return;
-                    }
-                    const cwd = (await (currentTerminal as TerminalWidgetImpl).cwd).toString();
+                    this.cleanupInputOverlay();
+                    const coderAgent = this.chatAgentService.getAgent('Coder');
+                    const cwd = (await currentTerminal.cwd).toString();
                     const shell = await this.getTerminalShell(currentTerminal);
-                    const overlay = new AskAITerminalOverlay(
+                    this.askAiInputOverlay = new AskAITerminalOverlay(
                         currentTerminal,
                         this.askAITerminalInputFactory,
                         chatRequest => {
@@ -130,12 +134,13 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                                 '### User Questions',
                                 chatRequest.text
                             ].join('\n');
-                            const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+                            const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, coderAgent);
                             this.chatService.sendRequest(session.id, { ...chatRequest, text });
+                            this.cleanupInputOverlay();
                         },
-                        () => {/* No Op */ }
+                        () => this.cleanupInputOverlay(),
+                        () => { this.askAiInputOverlay = undefined; },
                     );
-                    overlay.addDisposable(currentTerminal.onDidDispose(() => overlay.dispose()));
                 }
             },
             isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
@@ -148,6 +153,13 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             return processInfo ? processInfo.executable : undefined;
         } catch {
             return undefined;
+        }
+    }
+
+    protected cleanupInputOverlay(): void {
+        if (this.askAiInputOverlay) {
+            this.askAiInputOverlay.dispose();
+            this.askAiInputOverlay = undefined;
         }
     }
 
