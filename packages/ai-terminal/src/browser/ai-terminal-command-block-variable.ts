@@ -81,8 +81,16 @@ export class AiTerminalCommandBlockVariableContribution implements AIVariableCon
         if (commandHistory.length === 0) {
             return undefined;
         }
-        const commandIndex = request.arg !== undefined ? Number(request.arg.trim()) : commandHistory.length - 1;
-        if (Number.isNaN(commandIndex) || !Number.isInteger(commandIndex) || commandIndex < 0 || commandIndex >= commandHistory.length) {
+
+        let commandIndex;
+        if (request.arg === undefined) {
+            commandIndex = commandHistory.length - 1;
+        } else {
+            const trimmedArg = request.arg.trim();
+            commandIndex = trimmedArg.length > 0 ? Number(trimmedArg) : NaN;
+        }
+
+        if (!Number.isInteger(commandIndex) || commandIndex < 0 || commandIndex >= commandHistory.length) {
             this.logger.warn(`Invalid terminal command index (must be an integer and between 0 and ${commandHistory.length - 1}): ${request.arg}`);
             return undefined;
         }
