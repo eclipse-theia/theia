@@ -106,7 +106,8 @@ export class OpenAiModel implements LanguageModel {
         public maxRetries: number = 3,
         public useResponseApi: boolean = false,
         public proxy?: string,
-        public reasoningSupport?: ReasoningSupport
+        public reasoningSupport?: ReasoningSupport,
+        public maxInputTokens?: number
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
