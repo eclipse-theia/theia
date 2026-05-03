@@ -14,17 +14,34 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/node';
+import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
+import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { Anthropic } from '@anthropic-ai/sdk';
+import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
+
+const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
+interface ResolvedModelMetadata {
+    maxInputTokens?: number;
+    maxTokens: number;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    supportsXHighEffort?: boolean;
+}
 
 @injectable()
 export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageModelsManager {
 
     protected _apiKey: string | undefined;
     protected _proxyUrl: string | undefined;
+    /** Cached `/v1/models` lookups keyed by `${baseURL}::${model}`. Failed lookups are evicted so the next call retries. */
+    protected readonly modelInfoCache = new Map<string, Promise<ModelInfo>>();
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -34,61 +51,141 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     }
 
     async createOrUpdateLanguageModels(...modelDescriptions: AnthropicModelDescription[]): Promise<void> {
-        for (const modelDescription of modelDescriptions) {
-            const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
-            const apiKeyProvider = () => {
-                if (modelDescription.apiKey === true) {
-                    return this.apiKey;
-                }
-                if (modelDescription.apiKey) {
-                    return modelDescription.apiKey;
-                }
-                return undefined;
-            };
-            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl);
+        await Promise.all(modelDescriptions.map(description => this.createOrUpdateLanguageModel(description)));
+    }
 
-            // Determine status based on API key and custom url presence
-            const status = this.calculateStatus(modelDescription, apiKeyProvider());
-
-            if (model) {
-                if (!(model instanceof AnthropicModel)) {
-                    console.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
-                    continue;
-                }
-                await this.languageModelRegistry.patchLanguageModel<AnthropicModel>(modelDescription.id, {
-                    model: modelDescription.model,
-                    enableStreaming: modelDescription.enableStreaming,
-                    url: modelDescription.url,
-                    useCaching: modelDescription.useCaching,
-                    apiKey: apiKeyProvider,
-                    status,
-                    maxTokens: modelDescription.maxTokens !== undefined ? modelDescription.maxTokens : DEFAULT_MAX_TOKENS,
-                    maxRetries: modelDescription.maxRetries,
-                    proxy: proxyUrl,
-                    reasoningSupport: modelDescription.reasoningSupport,
-                    reasoningApi: modelDescription.reasoningApi,
-                    supportsXHighEffort: modelDescription.supportsXHighEffort
-                });
-            } else {
-                this.languageModelRegistry.addLanguageModels([
-                    new AnthropicModel(
-                        modelDescription.id,
-                        modelDescription.model,
-                        status,
-                        modelDescription.enableStreaming,
-                        modelDescription.useCaching,
-                        apiKeyProvider,
-                        modelDescription.url,
-                        modelDescription.maxTokens,
-                        modelDescription.maxRetries,
-                        proxyUrl,
-                        modelDescription.reasoningSupport,
-                        modelDescription.reasoningApi,
-                        modelDescription.supportsXHighEffort
-                    )
-                ]);
+    protected async createOrUpdateLanguageModel(modelDescription: AnthropicModelDescription): Promise<void> {
+        const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
+        const apiKeyProvider = () => {
+            if (modelDescription.apiKey === true) {
+                return this.apiKey;
             }
+            if (modelDescription.apiKey) {
+                return modelDescription.apiKey;
+            }
+            return undefined;
+        };
+        const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl);
+
+        const apiKey = apiKeyProvider();
+        const status = this.calculateStatus(modelDescription, apiKey);
+        const metadata = await this.resolveMetadata(modelDescription, apiKey, proxyUrl);
+
+        if (model) {
+            if (!(model instanceof AnthropicModel)) {
+                console.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
+                return;
+            }
+            await this.languageModelRegistry.patchLanguageModel<AnthropicModel>(modelDescription.id, {
+                model: modelDescription.model,
+                enableStreaming: modelDescription.enableStreaming,
+                url: modelDescription.url,
+                useCaching: modelDescription.useCaching,
+                apiKey: apiKeyProvider,
+                status,
+                maxTokens: metadata.maxTokens,
+                maxRetries: modelDescription.maxRetries,
+                proxy: proxyUrl,
+                reasoningSupport: metadata.reasoningSupport,
+                reasoningApi: metadata.reasoningApi,
+                supportsXHighEffort: metadata.supportsXHighEffort,
+                maxInputTokens: metadata.maxInputTokens
+            });
+        } else {
+            this.languageModelRegistry.addLanguageModels([
+                new AnthropicModel(
+                    modelDescription.id,
+                    modelDescription.model,
+                    status,
+                    modelDescription.enableStreaming,
+                    modelDescription.useCaching,
+                    apiKeyProvider,
+                    modelDescription.url,
+                    metadata.maxTokens,
+                    modelDescription.maxRetries,
+                    proxyUrl,
+                    metadata.reasoningSupport,
+                    metadata.reasoningApi,
+                    metadata.supportsXHighEffort,
+                    metadata.maxInputTokens
+                )
+            ]);
         }
+    }
+
+    /** `maxTokens` falls back to {@link DEFAULT_MAX_TOKENS} since the Messages API requires it. */
+    protected async resolveMetadata(
+        description: AnthropicModelDescription,
+        apiKey: string | undefined,
+        proxyUrl: string | undefined
+    ): Promise<ResolvedModelMetadata> {
+        const info = await this.fetchModelInfo(description, apiKey, proxyUrl);
+        const reasoningApi = this.deriveReasoningApi(info);
+        return {
+            maxInputTokens: info?.max_input_tokens ?? undefined,
+            maxTokens: info?.max_tokens ?? DEFAULT_MAX_TOKENS,
+            reasoningSupport: reasoningApi ? ANTHROPIC_REASONING_SUPPORT : undefined,
+            reasoningApi,
+            supportsXHighEffort: this.deriveSupportsXHighEffort(info)
+        };
+    }
+
+    protected async fetchModelInfo(
+        modelDescription: AnthropicModelDescription,
+        apiKey: string | undefined,
+        proxyUrl: string | undefined
+    ): Promise<ModelInfo | undefined> {
+        if (!apiKey) {
+            return undefined;
+        }
+        const cacheKey = `${modelDescription.url ?? ''}::${modelDescription.model}`;
+        const cached = this.modelInfoCache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+        const fetchPromise = this.retrieveModelInfo(modelDescription, apiKey, proxyUrl);
+        this.modelInfoCache.set(cacheKey, fetchPromise);
+        try {
+            return await fetchPromise;
+        } catch (error) {
+            this.modelInfoCache.delete(cacheKey);
+            console.warn(`Anthropic: failed to retrieve model info for '${modelDescription.id}':`,
+                error instanceof Error ? error.message : error);
+            return undefined;
+        }
+    }
+
+    protected retrieveModelInfo(
+        modelDescription: AnthropicModelDescription,
+        apiKey: string,
+        proxyUrl: string | undefined
+    ): Promise<ModelInfo> {
+        const anthropic = new Anthropic({
+            apiKey,
+            baseURL: modelDescription.url,
+            fetch: createProxyFetch(proxyUrl)
+        });
+        return anthropic.models.retrieve(modelDescription.model);
+    }
+
+    /** Adaptive thinking (`effort`) is preferred when available; older 4.x models only support the legacy extended thinking (`budget`) API. */
+    protected deriveReasoningApi(info: ModelInfo | undefined): ReasoningApi | undefined {
+        const thinking = info?.capabilities?.thinking;
+        if (!thinking?.supported) {
+            return undefined;
+        }
+        if (thinking.types.adaptive.supported) {
+            return 'effort';
+        }
+        if (thinking.types.enabled.supported) {
+            return 'budget';
+        }
+        return undefined;
+    }
+
+    protected deriveSupportsXHighEffort(info: ModelInfo | undefined): boolean | undefined {
+        const xhigh = info?.capabilities?.effort?.xhigh;
+        return xhigh ? xhigh.supported : undefined;
     }
 
     removeLanguageModels(...modelIds: string[]): void {
@@ -111,11 +208,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         }
     }
 
-    /**
-     * Returns the status for a language model based on the presence of an API key or custom url.
-     */
     protected calculateStatus(modelDescription: AnthropicModelDescription, effectiveApiKey: string | undefined): LanguageModelStatus {
-        // Always mark custom models (models with url) as ready for now as we do not know about API Key requirements
+        // Custom endpoints have unknown auth requirements, so we cannot derive a meaningful status.
         if (modelDescription.url) {
             return { status: 'ready' };
         }

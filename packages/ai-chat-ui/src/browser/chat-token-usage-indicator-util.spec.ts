@@ -18,6 +18,7 @@ import { expect } from 'chai';
 import { Emitter, Event } from '@theia/core';
 import { ChatModel, ChatRequestModel, ResponseTokenUsage } from '@theia/ai-chat';
 import {
+    buildBarTooltip,
     computeSessionTokenUsage,
     decideTokenUsageWarning,
     formatTokenCount,
@@ -218,6 +219,36 @@ describe('ChatTokenUsageIndicator', () => {
 
         it('is true for tokens above the threshold', () => {
             expect(isAboveTokenUsageWarningThreshold(THRESHOLD + 1, THRESHOLD)).to.equal(true);
+        });
+    });
+
+    describe('buildBarTooltip', () => {
+        it('returns undefined when no usage is provided', () => {
+            expect(buildBarTooltip(undefined, 0, THRESHOLD, CONTEXT_WINDOW)).to.equal(undefined);
+        });
+
+        it('uses the provided contextWindowSize as denominator in the total line', () => {
+            const tooltip = buildBarTooltip(
+                { inputTokens: 50, outputTokens: 50 },
+                100,
+                THRESHOLD,
+                CONTEXT_WINDOW
+            );
+            expect(tooltip).to.not.equal(undefined);
+            // 100 / 200 -> 50%, formatted as "100 / 200"
+            expect(tooltip!.value).to.contain('100');
+            expect(tooltip!.value).to.contain('200');
+            expect(tooltip!.value).to.contain('50%');
+        });
+
+        it('falls back to the default context window when none is provided', () => {
+            const tooltip = buildBarTooltip(
+                { inputTokens: 100, outputTokens: 100 },
+                200,
+                THRESHOLD
+            );
+            // The fallback (200k) should appear in the total line.
+            expect(tooltip!.value).to.contain('200.0k');
         });
     });
 
