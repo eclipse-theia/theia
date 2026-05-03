@@ -13,54 +13,24 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ReasoningApi, ReasoningSupport } from '@theia/ai-core';
-
 export const ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH = '/services/anthropic/language-model-manager';
 export const AnthropicLanguageModelsManager = Symbol('AnthropicLanguageModelsManager');
 
 export interface AnthropicModelDescription {
-    /**
-     * The identifier of the model which will be shown in the UI.
-     */
+    /** The identifier of the model which will be shown in the UI. */
     id: string;
-    /**
-     * The model ID as used by the Anthropic API.
-     */
+    /** The model ID as used by the Anthropic API. */
     model: string;
-    /**
-     * The Anthropic API compatible endpoint where the model is hosted. If not provided the default Anthropic endpoint will be used.
-     */
+    /** The Anthropic API compatible endpoint where the model is hosted. If not provided the default Anthropic endpoint will be used. */
     url?: string;
-    /**
-     * The key for the model. If 'true' is provided the global Anthropic API key will be used.
-     */
+    /** The key for the model. If `true` is provided the global Anthropic API key will be used. */
     apiKey: string | true | undefined;
-    /**
-     * Indicate whether the streaming API shall be used.
-     */
+    /** Indicate whether the streaming API shall be used. */
     enableStreaming: boolean;
-    /**
-     * Indicate whether the model supports prompt caching.
-     */
+    /** Indicate whether the model supports prompt caching. */
     useCaching: boolean;
-    /**
-     * Maximum number of tokens to generate. Default is 4096.
-     */
-    maxTokens?: number;
-    /**
-     * Maximum number of retry attempts when a request fails. Default is 3.
-     */
+    /** Maximum number of retry attempts when a request fails. Default is 3. */
     maxRetries: number;
-    /** When set, the UI exposes a reasoning selector and requests are translated to {@link reasoningApi}. */
-    reasoningSupport?: ReasoningSupport;
-    /**
-     * Which Anthropic reasoning API shape to use. Required when `reasoningSupport` is set.
-     * - `'effort'`: adaptive thinking (`thinking: { type: 'adaptive' }` + `output_config: { effort }`)
-     * - `'budget'`: extended thinking (`thinking: { type: 'enabled', budget_tokens: N }`)
-     */
-    reasoningApi?: ReasoningApi;
-    /** True on models that accept the Anthropic `xhigh` effort value. */
-    supportsXHighEffort?: boolean;
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;

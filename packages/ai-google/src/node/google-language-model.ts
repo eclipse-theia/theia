@@ -151,7 +151,8 @@ export class GoogleModel implements LanguageModel {
         public apiKey: () => string | undefined,
         public retrySettings: () => GoogleLanguageModelRetrySettings,
         public reasoningSupport?: ReasoningSupport,
-        public reasoningApi?: ReasoningApi
+        public reasoningApi?: ReasoningApi,
+        public maxInputTokens?: number
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
