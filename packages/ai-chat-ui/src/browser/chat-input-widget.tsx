@@ -2742,10 +2742,7 @@ function buildContextUI(
                 // Use the path directly as the key (same as storage)
                 const validationResult = fileValidationState.get(element.arg);
                 if (validationResult) {
-                    if (validationResult.state === FileValidationState.INVALID_SECONDARY) {
-                        className = 'warning-file';
-                        validationMessage = validationResult.message;
-                    } else if (validationResult.state === FileValidationState.INVALID_NOT_FOUND) {
+                    if (validationResult.state === FileValidationState.INVALID_NOT_FOUND) {
                         className = 'invalid-file';
                         validationMessage = validationResult.message;
                     }

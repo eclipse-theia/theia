@@ -211,6 +211,8 @@ export class CodexFrontendService {
         return undefined;
     }
 
+    // TODO: multi-root workspace support - currently only uses the first (primary) workspace root.
+    // In a multi-root workspace, the workspace root should be determined based on the active editor or user context.
     protected async getWorkspaceRoot(): Promise<string | undefined> {
         const roots = await this.workspaceService.roots;
         if (roots && roots.length > 0) {
