@@ -36,12 +36,16 @@ import {
     ParsedChatRequest,
     ParsedChatRequestPart,
 } from './parsed-chat-request';
-import { AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import {
+    AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, parseFunctionReference, ToolInvocationRegistry, ToolRequest
+} from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 
 const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
-const functionReg = /^~([\w_\-\.]+)(?=(\s|$|\b))/i; // A ~ tool function
-const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i; // A ~{} prompt-format tool function
+// A ~ tool function. The optional `?` prefix marks the tool as deferred,
+// e.g. `~?functionId` (chat format) or `~{?functionId}` (prompt format).
+const functionReg = /^~(\??[\w_\-\.]+)(?=(\s|$|\b))/i;
+const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i;
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
 const commandReg = /^\/([\w_\-]+)(?:\s+(.+?))?(?=\s*$)/; // A /-command with optional arguments (/commandname arg1 arg2)
 
@@ -67,7 +71,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
 
     async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
         // Parse the request into parts
-        const { parts, toolRequests } = this.parseParts(request, location);
+        const { parts, toolRequests, deferredToolIds } = this.parseParts(request, location);
 
         // Resolve all variables and add them to the variable parts.
         // Parse resolved variable texts again for tool requests.
@@ -84,7 +88,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 if (resolvedVariable) {
                     part.resolution = resolvedVariable;
                     // Resolve tool requests in resolved variables
-                    this.parseFunctionsFromVariableText(resolvedVariable.value, toolRequests);
+                    this.parseFunctionsFromVariableText(resolvedVariable.value, toolRequests, deferredToolIds);
                 } else {
                     this.logger.warn(`Failed to resolve variable ${part.variableName} for ${location}`);
                 }
@@ -95,19 +99,21 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         // We want to return all recursively resolved variables, thus use the whole cache.
         const resolvedVariables = await getAllResolvedAIVariables(variableCache);
 
-        return { request, parts, toolRequests, variables: resolvedVariables };
+        return { request, parts, toolRequests, deferredToolIds, variables: resolvedVariables };
     }
 
     protected parseParts(request: ChatRequest, location: ChatAgentLocation): {
         parts: ParsedChatRequestPart[];
         toolRequests: Map<string, ToolRequest>;
+        deferredToolIds: Set<string>;
         variables: Map<string, AIVariable>;
     } {
         const parts: ParsedChatRequestPart[] = [];
         const variables = new Map<string, AIVariable>();
         const toolRequests = new Map<string, ToolRequest>();
+        const deferredToolIds = new Set<string>();
         if (!request.text) {
-            return { parts, toolRequests, variables };
+            return { parts, toolRequests, deferredToolIds, variables };
         }
         const message = request.text;
         for (let i = 0; i < message.length; i++) {
@@ -138,6 +144,9 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                     newPart = functionPart;
                     if (functionPart) {
                         toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
+                        if (functionPart.deferred) {
+                            deferredToolIds.add(functionPart.toolRequest.id);
+                        }
                     }
                 } else if (char === chatVariableLeader) {
                     const variablePart = this.tryToParseVariable(
@@ -189,13 +198,13 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 )
             );
         }
-        return { parts, toolRequests, variables };
+        return { parts, toolRequests, deferredToolIds, variables };
     }
 
     /**
      * Parse text for tool requests and add them to the given map
      */
-    private parseFunctionsFromVariableText(text: string, toolRequests: Map<string, ToolRequest>): void {
+    private parseFunctionsFromVariableText(text: string, toolRequests: Map<string, ToolRequest>, deferredToolIds: Set<string>): void {
         for (let i = 0; i < text.length; i++) {
             const char = text.charAt(i);
 
@@ -205,6 +214,9 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 if (functionPart) {
                     // Add the found tool request to the given map
                     toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
+                    if (functionPart.deferred) {
+                        deferredToolIds.add(functionPart.toolRequest.id);
+                    }
                 }
             }
         }
@@ -288,13 +300,14 @@ export class ChatRequestParserImpl implements ChatRequestParser {
     }
 
     private tryToParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {
-        // Support both the and chat and prompt formats for functions
+        // Support both the chat and prompt formats for functions
         const nextFunctionMatch = message.match(functionPromptFormatReg) || message.match(functionReg);
         if (!nextFunctionMatch) {
             return;
         }
 
-        const [full, id] = nextFunctionMatch;
+        const [full, rawId] = nextFunctionMatch;
+        const { id, deferred } = parseFunctionReference(rawId);
 
         const maybeToolRequest = this.toolInvocationRegistry.getFunction(id);
         if (!maybeToolRequest) {
@@ -302,6 +315,6 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         }
 
         const functionRange = offsetRange(offset, offset + full.length);
-        return new ParsedChatRequestFunctionPart(functionRange, maybeToolRequest);
+        return new ParsedChatRequestFunctionPart(functionRange, maybeToolRequest, deferred);
     }
 }

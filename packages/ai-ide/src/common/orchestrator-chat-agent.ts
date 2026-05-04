@@ -106,6 +106,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
         toolRequests: ChatToolRequest[],
+        deferredToolIds: string[] | undefined,
         languageModel: LanguageModel,
         promptVariantId?: string,
         isPromptVariantCustomized?: boolean
@@ -121,6 +122,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
             {
                 messages,
                 tools,
+                deferredToolIds,
                 settings,
                 reasoning: commonSettings?.reasoning,
                 agentId: this.id,

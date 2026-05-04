@@ -48,6 +48,7 @@ interface MCPServerFormData {
     serverAuthTokenHeader: string;
     headers: string;
     autostart: boolean;
+    deferLoading: boolean;
 }
 
 const DEFAULT_FORM_DATA: MCPServerFormData = {
@@ -60,7 +61,8 @@ const DEFAULT_FORM_DATA: MCPServerFormData = {
     serverAuthToken: '',
     serverAuthTokenHeader: '',
     headers: '',
-    autostart: true
+    autostart: true,
+    deferLoading: false
 };
 
 class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
@@ -155,6 +157,17 @@ class MCPServerDialog extends ReactDialog<MCPServerFormData | undefined> {
                             onChange={e => this.handleFormChange('autostart', e.target.checked)}
                         />
                         {nls.localize('theia/ai/mcpConfiguration/form/autostart', 'Autostart')}
+                    </label>
+                </div>
+                <div className="mcp-form-field mcp-form-checkbox">
+                    <label>
+                        <input
+                            type="checkbox"
+                            className='theia-input'
+                            checked={this.formData.deferLoading}
+                            onChange={e => this.handleFormChange('deferLoading', e.target.checked)}
+                        />
+                        {nls.localize('theia/ai/mcpConfiguration/form/deferLoading', 'Defer tool loading (discover tools on demand via the provider tool search)')}
                     </label>
                 </div>
             </div>
@@ -551,6 +564,20 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         );
     }
 
+    protected renderDeferLoadingSection(server: MCPServerDescription): React.ReactNode {
+        if (!server.deferLoading) {
+            return;
+        }
+        return (
+            <div className="mcp-property-row">
+                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/deferLoading', 'Defer tool loading')}:</span>
+                <span className="mcp-autostart-badge" style={{ color: 'var(--theia-successForeground)' }}>
+                    {nls.localizeByDefault('Enabled')}
+                </span>
+            </div>
+        );
+    }
+
     protected renderToolsSection(server: MCPServerDescription): React.ReactNode {
         if (!server.tools || server.tools.length === 0) {
             return;
@@ -651,6 +678,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {this.renderServerAuthTokenSection(server)}
                     {this.renderServerHeadersSection(server)}
                     {this.renderAutostartSection(server)}
+                    {this.renderDeferLoadingSection(server)}
                 </div>
                 {this.renderToolsSection(server)}
             </div>
@@ -684,7 +712,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 serverAuthToken: '',
                 serverAuthTokenHeader: '',
                 headers: '',
-                autostart: server.autostart ?? true
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         } else if (isRemoteMCPServerDescription(server)) {
             formData = {
@@ -699,7 +728,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 headers: server.headers
                     ? Object.entries(server.headers).map(([k, v]) => `${k}=${v}`).join('\n')
                     : '',
-                autostart: server.autostart ?? true
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         } else {
             return;
@@ -744,7 +774,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         if (formData.serverType === 'local') {
             const serverConfig: Partial<LocalMCPServerDescription> = {
                 command: formData.command.trim(),
-                autostart: formData.autostart
+                autostart: formData.autostart,
+                deferLoading: formData.deferLoading
             };
             if (formData.args.trim()) {
                 serverConfig.args = formData.args.trim().split(/\s+/);
@@ -757,7 +788,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         } else {
             const serverConfig: Partial<RemoteMCPServerDescription> = {
                 serverUrl: formData.serverUrl.trim(),
-                autostart: formData.autostart
+                autostart: formData.autostart,
+                deferLoading: formData.deferLoading
             };
             if (formData.serverAuthToken.trim()) {
                 serverConfig.serverAuthToken = formData.serverAuthToken.trim();
