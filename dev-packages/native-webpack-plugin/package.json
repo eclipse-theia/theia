@@ -30,8 +30,8 @@
   },
   "dependencies": {
     "detect-libc": "^2.1.2",
-    "tslib": "^2.6.2",
-    "webpack": "^5.105.4"
+    "tslib": "^2.8.1",
+    "webpack": "^5.106.2"
   },
   "gitHead": "21358137e41342742707f660b8e222f940a27652"
 }

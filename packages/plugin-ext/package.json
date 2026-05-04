@@ -40,14 +40,14 @@
     "decompress": "^4.2.1",
     "escape-html": "^1.0.3",
     "filenamify": "^4.3.0",
-    "is-electron": "^2.2.0",
+    "is-electron": "^2.2.2",
     "jsonc-parser": "^2.3.1",
     "lodash.clonedeep": "^4.5.0",
     "macaddress": "^0.5.4",
     "mime": "^2.6.0",
     "node-pty": "1.2.0-beta.12",
     "semver": "^7.7.4",
-    "tslib": "^2.6.2",
+    "tslib": "^2.8.1",
     "vhost": "^3.0.2",
     "vscode-textmate": "^9.3.2"
   },
@@ -90,9 +90,9 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.71.0",
-    "@types/decompress": "^4.2.2",
+    "@types/decompress": "^4.2.7",
     "@types/escape-html": "^0.0.20",
-    "@types/lodash.clonedeep": "^4.5.3"
+    "@types/lodash.clonedeep": "^4.5.9"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

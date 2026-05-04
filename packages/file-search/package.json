@@ -9,7 +9,7 @@
     "@theia/process": "1.71.0",
     "@theia/workspace": "1.71.0",
     "@vscode/ripgrep": "^1.17.1",
-    "tslib": "^2.6.2"
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"

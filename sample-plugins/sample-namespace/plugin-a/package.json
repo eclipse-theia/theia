@@ -22,7 +22,7 @@
     "onCommand:plugin-a.hello"
   ],
   "devDependencies": {
-    "@types/vscode": "^1.50.0"
+    "@types/vscode": "^1.118.0"
   },
   "scripts": {
     "build": "vsce package --no-dependencies"

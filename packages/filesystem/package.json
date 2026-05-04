@@ -9,7 +9,7 @@
     "@types/tar-fs": "^1.16.3",
     "@types/tar-stream": "^3.1.4",
     "async-mutex": "^0.3.2",
-    "body-parser": "^1.20.4",
+    "body-parser": "^1.20.5",
     "http-status-codes": "^1.4.0",
     "ignore": "^6.0.2",
     "minimatch": "^10.2.5",
@@ -18,9 +18,9 @@
     "rimraf": "^5.0.10",
     "stat-mode": "^1.0.0",
     "tar-fs": "^3.1.2",
-    "tar-stream": "^3.1.8",
+    "tar-stream": "^3.2.0",
     "trash": "^7.2.0",
-    "tslib": "^2.6.2",
+    "tslib": "^2.8.1",
     "vscode-languageserver-textdocument": "^1.0.12"
   },
   "publishConfig": {

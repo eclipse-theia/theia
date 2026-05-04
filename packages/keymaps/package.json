@@ -9,7 +9,7 @@
     "@theia/preferences": "1.71.0",
     "@theia/userstorage": "1.71.0",
     "jsonc-parser": "^2.3.1",
-    "tslib": "^2.6.2"
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.71.0"

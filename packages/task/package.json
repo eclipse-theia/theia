@@ -18,7 +18,7 @@
     "async-mutex": "^0.3.2",
     "jsonc-parser": "^2.3.1",
     "p-debounce": "^2.1.0",
-    "tslib": "^2.6.2"
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"

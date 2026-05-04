@@ -37,8 +37,8 @@
     "ignore": "^6.0.2",
     "js-yaml": "^4.1.1",
     "minimatch": "^10.2.5",
-    "puppeteer-core": "^24.40.0",
-    "simple-git": "^3.33.0"
+    "puppeteer-core": "^24.42.0",
+    "simple-git": "^3.36.0"
   },
   "publishConfig": {
     "access": "public"
