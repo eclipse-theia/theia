@@ -426,7 +426,7 @@ export class GettingStartedWidget extends ReactWidget {
 
     protected renderNews(): React.ReactNode {
         return <div className='gs-section'>
-            <h3 className='gs-section-header'>🚀 {nls.localize('theia/getting-started/ai/header', 'AI Support in the Theia IDE is available!')} ✨</h3>
+            <h3 className='gs-section-header'>🚀 {nls.localize('theia/getting-started/ai/header', 'AI Support in {0} is available!', this.applicationName)} ✨</h3>
             <div className='gs-action-container'>
                 <a
                     role={'button'}
@@ -444,11 +444,11 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-container gs-aifeature-container'>
             <div className='flex-grid'>
                 <div className='col'>
-                    <h3 className='gs-section-header'> 🚀 {nls.localize('theia/getting-started/ai/header', 'AI Support in the Theia IDE is available!')} ✨</h3>
+                    <h3 className='gs-section-header'> 🚀 {nls.localize('theia/getting-started/ai/header', 'AI Support in {0} is available!', this.applicationName)} ✨</h3>
                     <LocalizedMarkdown className='gs-action-container'
                         localizationKey='theia/getting-started/ai/features'
                         defaultMarkdown={`
-Theia IDE now contains AI support, offering powerful AI capabilities within your IDE.\\
+{3} now contains AI support, offering powerful AI capabilities within your IDE.\\
 Please note that these features are disabled by default, ensuring that users can opt-in at their discretion.
 For those who choose to enable AI support, it is important to be aware that these may generate continuous
 requests to the language models (LLMs) you provide access to. This might incur costs that you need to monitor closely.\\
@@ -459,7 +459,7 @@ Thank you for being part of our community!\\
 The AI features are built on the framework Theia AI. If you want to build a custom AI-powered tool or IDE, Theia AI has been published as stable release.
 Check out [the Theia AI documentation]({2})!
 `}
-                        args={[this.userAIDocUrl, this.ghProjectUrl, this.theiaAIDocUrl]}
+                        args={[this.userAIDocUrl, this.ghProjectUrl, this.theiaAIDocUrl, this.applicationName]}
                         markdownRenderer={this.markdownRenderer}
                     />
                     <div className='gs-action-container'>

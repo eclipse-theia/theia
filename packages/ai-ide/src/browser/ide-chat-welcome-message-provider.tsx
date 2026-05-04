@@ -26,6 +26,7 @@ import { DEFAULT_CHAT_AGENT_PREF, BYPASS_MODEL_REQUIREMENT_PREF } from '@theia/a
 import { ChatAgentRecommendationService, ChatAgentService } from '@theia/ai-chat/lib/common';
 import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
 const TheiaIdeAiLogo = ({ width = 120, height = 120, className = '' }) =>
@@ -214,13 +215,14 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
             <LocalizedMarkdown
                 localizationKey="theia/ai/ide/chatWelcomeMessage"
                 defaultMarkdown={`
-## Ask the Theia IDE AI
+## Ask the {7} AI
 
 Use *@AgentName* to talk to a specialized agent, like *@{0}*, *@{1}*, or *@{2}*.
 
 Attach context with *#{3}*, *#{4}*, *#{5}*, or click {6}. [Learn more](https://theia-ide.org/docs/user_ai/#chat).
 `}
-                args={['Coder', 'Architect', 'Universal', 'file', '_f', 'selectedText', '<span class="codicon codicon-attach"></span>']}
+                args={['Coder', 'Architect', 'Universal', 'file', '_f', 'selectedText', '<span class="codicon codicon-attach"></span>',
+                    FrontendApplicationConfigProvider.get().applicationName]}
                 markdownRenderer={this.markdownRenderer}
                 className="theia-WelcomeMessage-Content"
                 markdownOptions={{ supportHtml: true }}
