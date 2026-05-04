@@ -7,7 +7,7 @@
     "@theia/filesystem": "1.71.0",
     "@theia/variable-resolver": "1.71.0",
     "jsonc-parser": "^2.3.1",
-    "tslib": "^2.6.2",
+    "tslib": "^2.8.1",
     "valid-filename": "^2.0.1"
   },
   "publishConfig": {

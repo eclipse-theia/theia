@@ -32,7 +32,7 @@
     "@babel/core": "^7.29.0",
     "@babel/plugin-transform-classes": "^7.28.6",
     "@babel/plugin-transform-runtime": "^7.29.0",
-    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-env": "^7.29.3",
     "@theia/application-package": "1.71.0",
     "@theia/ffmpeg": "1.71.0",
     "@theia/native-webpack-plugin": "1.71.0",
@@ -43,8 +43,8 @@
     "compression-webpack-plugin": "^9.2.0",
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^6.11.0",
-    "@electron/rebuild": "^4.0.3",
-    "fs-extra": "^4.0.2",
+    "@electron/rebuild": "^4.0.4",
+    "fs-extra": "^4.0.3",
     "http-server": "^14.1.1",
     "ignore-loader": "^0.1.2",
     "less": "^3.13.1",
@@ -57,12 +57,12 @@
     "source-map-support": "^0.5.21",
     "string-replace-loader": "^3.3.0",
     "style-loader": "^2.0.0",
-    "tslib": "^2.6.2",
+    "tslib": "^2.8.1",
     "umd-compat-loader": "^2.1.2",
-    "webpack": "^5.105.4",
+    "webpack": "^5.106.2",
     "webpack-cli": "4.7.0",
     "worker-loader": "^3.0.8",
-    "yargs": "^15.3.1"
+    "yargs": "^15.4.1"
   },
   "peerDependencies": {
     "@theia/electron": "*"

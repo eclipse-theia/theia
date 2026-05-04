@@ -6,8 +6,8 @@
     "@theia/ai-core": "1.71.0",
     "@theia/ai-openai": "1.71.0",
     "@theia/core": "1.71.0",
-    "openai": "^6.33.0",
-    "tslib": "^2.6.2"
+    "openai": "^6.35.0",
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"
