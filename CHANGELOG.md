@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+<a name="breaking_changes_1.72.0">[Breaking Changes:](#breaking_changes_1.72.0)</a>
+
+- [native-webpack-plugin] The `@theia/native-webpack-plugin` package has been renamed to `@theia/bundle-plugin` [#14414](https://github.com/eclipse-theia/theia/pull/14414).
+
 ## 1.71.0 - 4/30/2026
 
 - [ai] replaced the per-model thinking-mode toggle with a provider-agnostic reasoning selector and `ReasoningSettings` abstraction; the chosen level can be persisted per agent via the chat capabilities save action [#17363](https://github.com/eclipse-theia/theia/pull/17363)
