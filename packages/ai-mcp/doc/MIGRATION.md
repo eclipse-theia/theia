@@ -121,6 +121,23 @@ the SDK client today must continue to replace `MCPServerManagerImpl`
 until a follow-up widens `MCPClient`'s public surface. Track progress in
 the RFC discussion on `eclipse-theia/theia`.
 
+### `MCPClient` event surface (RFC Q3)
+
+`MCPClient` exposes `onDidAddTools` and `onClose` events so reactive
+status-bar / sidebar / telemetry consumers don't have to poll. The
+default factory wires internal `__fireDidAddTools` / `__fireClose`
+helpers that the in-tree `MCPServer` orchestration calls when tools
+arrive or the transport closes. Plugin factories must wire their own
+emitters — the contract is just the two `Event` getters on `MCPClient`.
+
+This was promoted from a "later RFC" item to the public surface based on
+downstream consumer demand: a reference implementation
+([`Sutra IDE`](https://github.com/dwbimstr/theia-sutra-ide), commit
+[`ff374f0`](https://github.com/dwbimstr/theia-sutra-ide/commit/ff374f0))
+needed `onDidChange`-equivalent push semantics to drop status-bar
+refresh latency from ~4s to ~50ms. Polling-only would force every
+consumer to reinvent reactive state on top of a stale tick.
+
 ### Resolver ordering
 
 Resolver chains run **priority-descending**. If your resolver returns

@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Event } from '@theia/core/lib/common/event';
 import { MCPServerDescription, ToolInformation } from './mcp-server-manager';
 import { MCPCredentialRequest } from './mcp-credential-resolver';
 import { MCPTransport } from './mcp-transport-provider';
@@ -22,10 +23,37 @@ import { MCPTransport } from './mcp-transport-provider';
  * Public surface of the MCP client the server manager consumes. Narrower
  * than the `@modelcontextprotocol/sdk` `Client` so plugins can wrap / replace
  * it without depending on the SDK internals.
+ *
+ * Reactive surfaces (status-bar indicators, sidebar lists, telemetry
+ * pills) need push-based notification when the client's tool inventory
+ * or connection state changes — polling on a multi-second tick is a poor
+ * default for chat-adjacent UI. The two events below are the minimum
+ * surface needed; richer events (per-tool removal, error diagnostics)
+ * can be added in a follow-up RFC if downstream consumers ask.
  */
 export interface MCPClient {
     readonly name: string;
     readonly tools: ToolInformation[];
+    /**
+     * Fires when one or more tools are advertised by the connected MCP
+     * server after the initial handshake. The `tools` array on this
+     * interface is the canonical source of truth — this event signals
+     * that consumers should re-read it.
+     *
+     * Common emission sites: dynamic-tool-registration servers, plugin-
+     * loaded MCP modules that publish tools after init, server-driven
+     * `tools/list_changed` notifications.
+     */
+    readonly onDidAddTools: Event<ToolInformation[]>;
+    /**
+     * Fires once when the underlying transport closes — gracefully
+     * (caller invoked `stop()`) or with an error. Reactive UIs use this
+     * to flip a connected/disconnected indicator without polling.
+     *
+     * The argument is the error that triggered the close, or `undefined`
+     * for a graceful close.
+     */
+    readonly onClose: Event<Error | undefined>;
     start(): Promise<void>;
     stop(): Promise<void>;
 }
