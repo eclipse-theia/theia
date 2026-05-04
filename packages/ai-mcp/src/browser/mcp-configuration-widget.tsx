@@ -462,6 +462,20 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         );
     }
 
+    protected renderDeferLoadingSection(server: MCPServerDescription): React.ReactNode {
+        if (!server.deferLoading) {
+            return;
+        }
+        return (
+            <div className="mcp-property-row">
+                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/deferLoading', 'Defer tool loading')}:</span>
+                <span className="mcp-autostart-badge" style={{ color: 'var(--theia-successForeground)' }}>
+                    {nls.localizeByDefault('Enabled')}
+                </span>
+            </div>
+        );
+    }
+
     protected renderToolsSection(server: MCPServerDescription): React.ReactNode {
         if (!server.tools || server.tools.length === 0) {
             return;
@@ -563,6 +577,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {this.renderServerHeadersSection(server)}
                     {this.renderOAuthSection(server)}
                     {this.renderAutostartSection(server)}
+                    {this.renderDeferLoadingSection(server)}
                 </div>
                 {this.renderToolsSection(server)}
             </div>

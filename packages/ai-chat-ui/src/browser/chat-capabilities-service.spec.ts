@@ -173,5 +173,18 @@ describe('ChatCapabilitiesServiceImpl', () => {
             expect(result.functions).to.deep.equal([]);
             expect(result.variables).to.deep.equal([]);
         });
+
+        it('extracts function ids without the deferred marker prefix', () => {
+            const template = `
+        You have access to these tools (some deferred):
+        ~{eagerTool}
+        ~{?deferredTool}
+        ~{? spacedDeferredTool }
+            `;
+
+            const result = extract(template);
+
+            expect(result.functions).to.deep.equal(['eagerTool', 'deferredTool', 'spacedDeferredTool']);
+        });
     });
 });

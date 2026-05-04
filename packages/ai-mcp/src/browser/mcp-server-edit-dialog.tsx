@@ -41,6 +41,7 @@ export interface MCPServerFormData {
     oauthAuthorizationServer: string;
     oauthResource: string;
     autostart: boolean;
+    deferLoading: boolean;
 }
 
 export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
@@ -58,7 +59,8 @@ export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
     oauthScopes: '',
     oauthAuthorizationServer: '',
     oauthResource: '',
-    autostart: true
+    autostart: true,
+    deferLoading: false
 };
 
 /**
@@ -174,6 +176,17 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                             onChange={e => this.handleFormChange('autostart', e.target.checked)}
                         />
                         {nls.localize('theia/ai/mcpConfiguration/form/autostart', 'Autostart')}
+                    </label>
+                </div>
+                <div className="mcp-form-field mcp-form-checkbox">
+                    <label>
+                        <input
+                            type="checkbox"
+                            className='theia-input'
+                            checked={this.formData.deferLoading}
+                            onChange={e => this.handleFormChange('deferLoading', e.target.checked)}
+                        />
+                        {nls.localize('theia/ai/mcpConfiguration/form/deferLoading', 'Defer tool loading (discover tools on demand via the provider tool search)')}
                     </label>
                 </div>
             </div>

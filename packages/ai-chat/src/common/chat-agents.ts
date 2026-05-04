@@ -86,6 +86,13 @@ export interface SystemMessageDescription {
     text: string;
     /** All functions references in the system message. */
     functionDescriptions?: Map<string, ToolRequest>;
+    /**
+     * Ids of functions referenced in the system message that were marked as
+     * deferred (`~{?functionId}`). Providers that support deferred tool
+     * loading can use this to set the appropriate flag on the tool definition
+     * and include the tool search tool in the request.
+     */
+    deferredFunctionIds?: Set<string>;
     /** The prompt variant ID used */
     promptVariantId?: string;
     /** Whether the prompt variant is customized */
@@ -100,6 +107,7 @@ export namespace SystemMessageDescription {
         return {
             text: resolvedPrompt.text,
             functionDescriptions: resolvedPrompt.functionDescriptions,
+            deferredFunctionIds: resolvedPrompt.deferredFunctionIds,
             promptVariantId,
             isPromptVariantCustomized
         };
@@ -256,10 +264,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
+            const deferredSet = new Set<string>();
+            request.message.deferredToolIds?.forEach(id => deferredSet.add(id));
+            systemMessageDescription?.deferredFunctionIds?.forEach(id => deferredSet.add(id));
+            const deferredToolIds = deferredSet.size > 0 ? Array.from(deferredSet) : undefined;
             const languageModelResponse = await this.sendLlmRequest(
                 request,
                 messages,
                 tools,
+                deferredToolIds,
                 languageModel,
                 systemMessageDescription?.promptVariantId,
                 systemMessageDescription?.isPromptVariantCustomized
@@ -349,6 +362,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
         const resolvedTexts: string[] = [];
         let combinedFunctions = systemMessage.functionDescriptions;
+        const combinedDeferred = new Set<string>(systemMessage.deferredFunctionIds ?? []);
 
         for (const resolvedFragment of resolvedResults) {
             if (resolvedFragment && resolvedFragment.text.trim()) {
@@ -363,6 +377,12 @@ export abstract class AbstractChatAgent implements ChatAgent {
                         }
                     }
                 }
+                // Merge deferred function ids
+                if (resolvedFragment.deferredFunctionIds && resolvedFragment.deferredFunctionIds.size > 0) {
+                    for (const id of resolvedFragment.deferredFunctionIds) {
+                        combinedDeferred.add(id);
+                    }
+                }
             }
         }
 
@@ -375,7 +395,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return {
             ...systemMessage,
             text: combinedText,
-            functionDescriptions: combinedFunctions
+            functionDescriptions: combinedFunctions,
+            deferredFunctionIds: combinedDeferred.size > 0 ? combinedDeferred : undefined
         };
     }
 
@@ -497,6 +518,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
         toolRequests: ToolRequest[],
+        deferredToolIds: string[] | undefined,
         languageModel: LanguageModel,
         promptVariantId?: string,
         isPromptVariantCustomized?: boolean
@@ -511,6 +533,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             {
                 messages,
                 tools,
+                deferredToolIds,
                 settings,
                 reasoning: commonSettings?.reasoning,
                 agentId: this.id,
