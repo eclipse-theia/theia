@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { interfaces, Container } from 'inversify';
+import { Disposable } from './disposable';
 
 /**
  * This utility creates a factory function that accepts runtime arguments which are bound as constant
@@ -60,4 +61,17 @@ export function bindFactory<F, C>(bind: interfaces.Bind,
             return child.get(constructor);
         }
     );
+}
+
+export function disposableTrackingMiddleware(container: interfaces.Container): interfaces.Middleware {
+    return (next: interfaces.Next) => (args: interfaces.NextArgs) => {
+        if (container.isCurrentBound(args.serviceIdentifier)) {
+            container.onDeactivation(args.serviceIdentifier, instance => {
+                if (Disposable.is(instance)) {
+                    instance.dispose();
+                }
+            });
+        }
+        return next(args);
+    };
 }
