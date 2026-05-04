@@ -1831,7 +1831,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                     // Create placeholder - will be restored by ChatService
                     return new ParsedChatRequestFunctionPart(
                         partData.range,
-                        this.createPlaceholderToolRequest(partData.toolRequestId)
+                        this.createPlaceholderToolRequest(partData.toolRequestId),
+                        partData.deferred === true
                     );
                 case 'agent':
                     return new ParsedChatRequestAgentPart(
@@ -1846,8 +1847,12 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
 
         // Create placeholder tool requests map - will be via restoreToolRequests later
         const toolRequests = new Map<string, ToolRequest>();
+        const deferredToolIds = new Set<string>();
         for (const toolData of data.toolRequests) {
             toolRequests.set(toolData.id, this.createPlaceholderToolRequest(toolData.id));
+            if (toolData.deferred) {
+                deferredToolIds.add(toolData.id);
+            }
         }
 
         const variables: ResolvedAIVariable[] = data.variables.map(varData => ({
@@ -1864,6 +1869,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             request,
             parts,
             toolRequests,
+            deferredToolIds: deferredToolIds.size > 0 ? deferredToolIds : undefined,
             variables
         };
     }

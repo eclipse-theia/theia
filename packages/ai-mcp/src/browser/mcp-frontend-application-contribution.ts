@@ -31,6 +31,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 
 interface BaseMCPServerPreferenceValue {
     autostart?: boolean;
+    deferLoading?: boolean;
 }
 
 interface LocalMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
@@ -60,6 +61,7 @@ namespace MCPServersPreference {
             (!('args' in obj) || Array.isArray(obj.args) && obj.args.every(arg => typeof arg === 'string')) &&
             (!('env' in obj) || !!obj.env && typeof obj.env === 'object' && Object.values(obj.env).every(value => typeof value === 'string')) &&
             (!('autostart' in obj) || typeof obj.autostart === 'boolean') &&
+            (!('deferLoading' in obj) || typeof obj.deferLoading === 'boolean') &&
             (!('serverUrl' in obj) || typeof obj.serverUrl === 'string') &&
             (!('serverAuthToken' in obj) || typeof obj.serverAuthToken === 'string') &&
             (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string') &&
@@ -290,7 +292,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             if ('serverUrl' in description) {
                 // Create RemoteMCPServerDescription by picking only remote-specific properties
-                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, autostart } = description;
+                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, autostart, deferLoading } = description;
                 filteredDescription = {
                     name,
                     serverUrl,
@@ -298,16 +300,18 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(serverAuthTokenHeader && { serverAuthTokenHeader }),
                     ...(headers && { headers }),
                     autostart: autostart ?? true,
+                    ...(deferLoading !== undefined && { deferLoading }),
                 };
             } else {
                 // Create LocalMCPServerDescription by picking only local-specific properties
-                const { command, args, env, autostart } = description;
+                const { command, args, env, autostart, deferLoading } = description;
                 filteredDescription = {
                     name,
                     command,
                     ...(args && { args }),
                     ...(env && { env }),
                     autostart: autostart ?? true,
+                    ...(deferLoading !== undefined && { deferLoading }),
                 };
             }
 

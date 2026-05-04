@@ -90,6 +90,16 @@ export interface BaseMCPServerDescription {
     autostart?: boolean;
 
     /**
+     * If `true`, all tools provided by this server are marked as deferred in the
+     * generated prompt fragment (`mcp_<name>_tools`). Deferred tools are not
+     * loaded into the model's context upfront and may instead be discovered
+     * on-demand via the model provider's built-in tool search mechanism
+     * (Anthropic, OpenAI) when supported by the provider. Individual tools
+     * may still be referenced explicitly without the deferred marker.
+     */
+    deferLoading?: boolean;
+
+    /**
      * The current status of the server. Optional because only set by the server.
      */
     status?: MCPServerStatus;

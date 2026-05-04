@@ -60,6 +60,8 @@ export interface SerializableVariablePart extends SerializableParsedRequestPartB
 export interface SerializableFunctionPart extends SerializableParsedRequestPartBase {
     kind: 'function';
     toolRequestId: string;
+    /** True if the tool reference was marked as deferred (`~?id` / `~{?id}`). */
+    deferred?: boolean;
 }
 
 export interface SerializableAgentPart extends SerializableParsedRequestPartBase {
@@ -76,6 +78,8 @@ export type SerializableParsedRequestPart =
 
 export interface SerializableToolRequest {
     id: string;
+    /** True if this tool reference was marked as deferred. */
+    deferred?: boolean;
 }
 
 export interface SerializableResolvedVariable {

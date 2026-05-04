@@ -60,7 +60,8 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                 this.toolInvocationRegistry.registerTool(toolRequest)
             );
 
-            this.createPromptTemplate(serverName, toolRequests);
+            const description = await this.mcpServerManager.getServerDescription(serverName);
+            this.createPromptTemplate(serverName, toolRequests, description?.deferLoading === true);
         }
     }
 
@@ -68,9 +69,10 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return `mcp_${serverName}_tools`;
     }
 
-    protected createPromptTemplate(serverName: string, toolRequests: ToolRequest[]): void {
+    protected createPromptTemplate(serverName: string, toolRequests: ToolRequest[], deferLoading: boolean = false): void {
         const templateId = this.getPromptTemplateId(serverName);
-        const functionIds = toolRequests.map(tool => `~{${tool.id}}`);
+        const marker = deferLoading ? '?' : '';
+        const functionIds = toolRequests.map(tool => `~{${marker}${tool.id}}`);
         const template = functionIds.join('\n');
 
         this.promptService.addBuiltInPromptFragment({
