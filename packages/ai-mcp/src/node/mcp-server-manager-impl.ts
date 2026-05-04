@@ -13,8 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { MCPServerDescription, MCPServerManager, MCPFrontendNotificationService } from '../common/mcp-server-manager';
+import { MCPTransportProvider } from '../common/mcp-transport-provider';
+import { MCPToolFilter } from '../common/mcp-tool-filter';
+import { MCPClientFactory } from '../common/mcp-client-factory';
+import { MCPCredentialResolver } from '../common/mcp-credential-resolver';
 import { MCPServer } from './mcp-server';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
@@ -26,6 +31,18 @@ export class MCPServerManagerImpl implements MCPServerManager {
     protected clients: Array<MCPFrontendNotificationService> = [];
     protected serverListeners: Map<string, Disposable> = new Map();
     protected roots: string[] | undefined;
+
+    @inject(ContributionProvider) @named(MCPTransportProvider) @optional()
+    protected readonly transportProviderContributions?: ContributionProvider<MCPTransportProvider>;
+
+    @inject(ContributionProvider) @named(MCPToolFilter) @optional()
+    protected readonly toolFilterContributions?: ContributionProvider<MCPToolFilter>;
+
+    @inject(ContributionProvider) @named(MCPClientFactory) @optional()
+    protected readonly clientFactoryContributions?: ContributionProvider<MCPClientFactory>;
+
+    @inject(ContributionProvider) @named(MCPCredentialResolver) @optional()
+    protected readonly credentialResolverContributions?: ContributionProvider<MCPCredentialResolver>;
 
     async stopServer(serverName: string): Promise<void> {
         const server = this.servers.get(serverName);
@@ -95,7 +112,13 @@ export class MCPServerManagerImpl implements MCPServerManager {
         if (existingServer) {
             existingServer.update(description);
         } else {
-            const newServer = new MCPServer(description);
+            const newServer = new MCPServer(
+                description,
+                this.transportProviderContributions?.getContributions() ?? [],
+                this.toolFilterContributions?.getContributions() ?? [],
+                this.clientFactoryContributions?.getContributions() ?? [],
+                this.credentialResolverContributions?.getContributions() ?? [],
+            );
             newServer.setWorkspaceRoots(this.roots);
             this.servers.set(description.name, newServer);
 
