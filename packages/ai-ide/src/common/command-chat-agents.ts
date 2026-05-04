@@ -31,6 +31,8 @@ import {
     generateUuid,
     nls,
 } from '@theia/core';
+// eslint-disable-next-line @theia/runtime-import-check
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 import { commandTemplate } from './command-prompt-template';
 
@@ -58,12 +60,15 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     protected defaultLanguageModelPurpose: string = 'command';
 
     override description = nls.localize('theia/ai/ide/commandAgent/description',
-        'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. ' +
-        'Based on the user request, it can find the right command and then let the user execute it.');
+        'This agent is aware of all commands that the user can execute within {0}, the tool that the user is currently working with. ' +
+        'Based on the user request, it can find the right command and then let the user execute it.',
+        FrontendApplicationConfigProvider.get().applicationName);
     override prompts = [commandTemplate];
     override agentSpecificVariables = [{
         name: 'command-ids',
-        description: nls.localize('theia/ai/ide/commandAgent/vars/commandIds/description', 'The list of available commands in Theia.'),
+        description: nls.localize('theia/ai/ide/commandAgent/vars/commandIds/description',
+            'The list of available commands in {0}.',
+            FrontendApplicationConfigProvider.get().applicationName),
         usedInPrompt: true
     }];
 
@@ -103,7 +108,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         if (parsedCommand.type === 'theia-command') {
             const theiaCommand = this.commandRegistry.getCommand(parsedCommand.commandId);
             if (theiaCommand === undefined) {
-                console.error(`No Theia Command with id ${parsedCommand.commandId}`);
+                console.error(`No ${FrontendApplicationConfigProvider.get().applicationName} Command with id ${parsedCommand.commandId}`);
                 request.cancel();
             }
             const args = parsedCommand.arguments !== undefined &&

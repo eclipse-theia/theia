@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 export const CopilotAuthDialogMessages = Symbol('CopilotAuthDialogMessages');
 
@@ -42,7 +43,8 @@ export const DEFAULT_COPILOT_AUTH_DIALOG_MESSAGES: CopilotAuthDialogMessages = {
     get instructions(): string {
         return nls.localize(
             'theia/ai/copilot/auth/instructions',
-            'To authorize Theia to use GitHub Copilot, visit the URL below and enter the code:'
+            'To authorize {0} to use GitHub Copilot, visit the URL below and enter the code:',
+            FrontendApplicationConfigProvider.get().applicationName
         );
     },
     get privacyNotice(): string {

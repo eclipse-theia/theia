@@ -16,6 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { HoverService } from '@theia/core/lib/browser';
 import { GenericCapabilitySelections } from '@theia/ai-core';
 import { AvailableGenericCapabilities, GenericCapabilityItem, GenericCapabilityGroup } from './generic-capabilities-service';
@@ -42,7 +43,9 @@ const ROOT_DESCRIPTIONS: Record<string, () => string> = {
     skills: () => nls.localize('theia/ai/chat-ui/skillsDescription', 'Reusable skill instructions that can be added to the conversation'),
     variables: () => nls.localize('theia/ai/chat-ui/variablesDescription', 'Dynamic variables that provide context information'),
     mcpFunctions: () => nls.localize('theia/ai/chat-ui/mcpFunctionsDescription', 'Model Context Protocol (MCP) functions from connected servers'),
-    functions: () => nls.localize('theia/ai/chat-ui/functionsDescription', 'Built-in functions provided by Theia extensions'),
+    functions: () => nls.localize('theia/ai/chat-ui/functionsDescription',
+        'Built-in functions provided by {0} extensions',
+        FrontendApplicationConfigProvider.get().applicationName),
     promptFragments: () => nls.localize('theia/ai/chat-ui/promptFragmentsDescription', 'Custom prompt fragments to include in the conversation'),
     agentDelegation: () => nls.localize('theia/ai/chat-ui/agentDelegationDescription', 'Other AI agents that can be delegated to')
 };
