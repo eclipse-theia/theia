@@ -188,6 +188,26 @@ export class InstrumentedMCPClientFactory implements MCPClientFactory {
 }
 ```
 
+#### `MCPClient` event surface
+
+`MCPClient` exposes two events for push-based reactive UI — needed by status-bar indicators, sidebar lists, and telemetry pills that would otherwise be forced to poll on a multi-second tick.
+
+```ts
+export interface MCPClient {
+    readonly name: string;
+    readonly tools: ToolInformation[];
+    readonly onDidAddTools: Event<ToolInformation[]>;
+    readonly onClose: Event<Error | undefined>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+}
+```
+
+- `onDidAddTools` fires when the connected MCP server advertises new tools after the initial handshake (dynamic registration, plugin-loaded modules, server `tools/list_changed` notifications). Consumers re-read `client.tools` for the canonical list.
+- `onClose` fires once when the underlying transport closes — gracefully (`stop()` was called) or with an error (the argument).
+
+Plugin factories must wire their own emitters; the default factory exposes internal `__fireDidAddTools` / `__fireClose` hooks so the in-tree `MCPServer` orchestration can drive them. See `default-mcp-client-factory.spec.ts` for the contract.
+
 ### Migration guide
 
 If you currently ship a fork of `@theia/ai-mcp` to patch in custom transports, credential flows, or tool filtering, [doc/MIGRATION.md](./doc/MIGRATION.md) walks through the mechanical swap from fork patches to extension-point contributions.
