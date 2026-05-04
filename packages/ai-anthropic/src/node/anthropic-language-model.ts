@@ -398,21 +398,29 @@ export class AnthropicModel implements LanguageModel {
         return { stream: asyncIterator };
     }
 
-    protected createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
+    protected createTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
         if (request.tools?.length === 0) {
             return undefined;
         }
-        const tools = request.tools?.map(tool => ({
+        const deferred = new Set(request.deferredToolIds ?? []);
+        const tools: Anthropic.Messages.ToolUnion[] = (request.tools ?? []).map(tool => ({
             name: tool.name,
             description: tool.description,
-            input_schema: tool.parameters
+            input_schema: tool.parameters,
+            defer_loading: deferred.has(tool.id) ? true : undefined
         } as Anthropic.Messages.Tool));
+        if (deferred.size > 0) {
+            tools.push({
+                type: 'tool_search_tool_bm25',
+                name: 'tool_search_tool_bm25'
+            });
+        }
         if (this.useCaching) {
-            if (tools?.length) {
+            if (tools.length) {
                 tools[tools.length - 1].cache_control = { type: 'ephemeral' };
             }
         }
-        return tools;
+        return tools.length > 0 ? tools : undefined;
     }
 
     protected async handleNonStreamingRequest(

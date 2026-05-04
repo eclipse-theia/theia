@@ -33,6 +33,7 @@ import { OpenAI } from 'openai';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type {
     FunctionTool,
+    Tool,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCall,
@@ -83,7 +84,7 @@ export class OpenAiResponseApiUtils {
         }
 
         const { instructions, input } = this.processMessages(request.messages, developerMessageSettings, model);
-        const tools = this.convertToolsForResponseApi(request.tools);
+        const tools = this.convertToolsForResponseApi(request.tools, request.deferredToolIds);
 
         // If no tools are provided, use simple response handling
         if (!tools || tools.length === 0) {
@@ -134,12 +135,13 @@ export class OpenAiResponseApiUtils {
     /**
      * Converts ToolRequest objects to the format expected by the Response API.
      */
-    convertToolsForResponseApi(tools?: ToolRequest[]): FunctionTool[] | undefined {
+    convertToolsForResponseApi(tools?: ToolRequest[], deferredToolIds?: string[]): Tool[] | undefined {
         if (!tools || tools.length === 0) {
             return undefined;
         }
 
-        const converted = tools.map(tool => ({
+        const deferred = new Set(deferredToolIds ?? []);
+        const converted: Tool[] = tools.map(tool => ({
             type: 'function' as const,
             name: tool.name,
             description: tool.description || '',
@@ -147,9 +149,13 @@ export class OpenAiResponseApiUtils {
             // and additional properties must be disallowed.
             // https://platform.openai.com/docs/guides/function-calling#strict-mode
             parameters: this.recursiveStrictToolCallParameters(tool.parameters),
-            strict: true
+            strict: true,
+            defer_loading: deferred.has(tool.id) ? true : undefined
         }));
-        console.debug(`Converted ${tools.length} tools for Response API:`, converted.map(t => t.name));
+        if (deferred.size > 0) {
+            converted.push({ type: 'tool_search', execution: 'server' });
+        }
+        console.debug(`Converted ${tools.length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
         return converted;
     }
 
@@ -323,7 +329,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     protected totalOutputTokens = 0;
     protected iteration = 0;
     protected readonly maxIterations: number;
-    protected readonly tools: FunctionTool[] | undefined;
+    protected readonly tools: Tool[] | undefined;
     protected readonly instructions?: string;
     protected currentResponseText = '';
 
@@ -343,7 +349,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         const { instructions, input } = utils.processMessages(request.messages, developerMessageSettings, model);
         this.instructions = instructions;
         this.currentInput = input;
-        this.tools = utils.convertToolsForResponseApi(request.tools);
+        this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds);
         this.maxIterations = runnerOptions.maxChatCompletions || 100;
 
         // Start the first iteration
