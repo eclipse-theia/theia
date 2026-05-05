@@ -40,6 +40,36 @@ describe('BufferringStream', () => {
         expect(await waitForChunk(buffer)).deep.eq(Buffer.from([4, 5]));
     });
 
+    it('should flush with buffer bigger than maxChunkSize', () => {
+        const buffer = new BufferBufferingStream({ maxChunkSize: 2 });
+        const chunks: Buffer[] = [];
+        buffer.onData(c => chunks.push(c));
+        buffer.push(Buffer.from([0, 1, 2, 3, 4, 5]));
+        buffer.flush();
+        expect(chunks).deep.eq([Buffer.from([0, 1]), Buffer.from([2, 3]), Buffer.from([4, 5])]);
+    });
+
+    it('should flush with empty buffer', () => {
+        const buffer = new BufferBufferingStream({ maxChunkSize: 2 });
+        const chunks: Buffer[] = [];
+        buffer.onData(c => chunks.push(c));
+        buffer.flush();
+        expect(chunks).to.be.empty;
+    });
+
+    it('should not let push during a flush affect the result of flush', async () => {
+        const buffer = new BufferBufferingStream({ maxChunkSize: 2 });
+        const chunks: Buffer[] = [];
+        buffer.onData(c => {
+            chunks.push(c);
+            buffer.push(Buffer.from([99]));
+        });
+        buffer.push(Buffer.from([0, 1, 2, 3]));
+        buffer.flush();
+        expect(chunks).deep.eq([Buffer.from([0, 1]), Buffer.from([2, 3])]);
+        expect(await waitForChunk(buffer)).deep.eq(Buffer.from([99, 99]));
+    });
+
     function waitForChunk(buffer: BufferBufferingStream): Promise<Buffer> {
         return new Promise(resolve => buffer.onData(resolve));
     }
