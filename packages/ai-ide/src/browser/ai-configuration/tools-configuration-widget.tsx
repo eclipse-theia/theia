@@ -21,7 +21,11 @@ import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { nls, PreferenceService } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
-import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import {
+    DEFAULT_TOOL_CONFIRMATION_PREFERENCE,
+    TOOL_CONFIRMATION_PREFERENCE,
+    ToolConfirmationMode
+} from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '@theia/ai-terminal/lib/common/shell-command-preferences';
 import { AITableConfigurationWidget, TableColumn } from './base/ai-table-configuration-widget';
 
@@ -71,7 +75,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         this.loadData().then(() => this.update());
         this.toDispose.pushAll([
             this.preferenceService.onPreferenceChanged(async e => {
-                if (e.preferenceName === 'ai-features.chat.toolConfirmation') {
+                if (e.preferenceName === TOOL_CONFIRMATION_PREFERENCE
+                    || e.preferenceName === DEFAULT_TOOL_CONFIRMATION_PREFERENCE) {
                     this.defaultState = await this.loadDefaultConfirmation();
                     this.toolConfirmationModes = await this.loadToolConfigurationModes();
                     this.update();
@@ -119,7 +124,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         return item.name;
     }
     protected async loadDefaultConfirmation(): Promise<ToolConfirmationMode> {
-        return this.confirmationManager.getConfirmationMode('*', 'doesNotMatter');
+        return this.confirmationManager.getDefaultConfirmationMode();
     }
     protected async loadToolConfigurationModes(): Promise<Record<string, ToolConfirmationMode>> {
         return this.confirmationManager.getAllConfirmationSettings();
@@ -128,7 +133,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         await this.confirmationManager.setConfirmationMode(tool, state, toolRequest);
     }
     protected async updateDefaultConfirmation(state: ToolConfirmationMode): Promise<void> {
-        await this.confirmationManager.setConfirmationMode('*', state);
+        await this.confirmationManager.setDefaultConfirmationMode(state);
     }
 
     protected handleToolConfirmationModeChange = async (toolName: string, event: React.ChangeEvent<HTMLSelectElement>): Promise<void> => {
