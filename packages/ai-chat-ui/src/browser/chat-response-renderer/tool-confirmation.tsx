@@ -432,7 +432,7 @@ export interface ToolConfirmationProps extends Pick<ToolConfirmationCallbacks, '
     onAllow: (scope?: ConfirmationScope) => void;
     onDeny: (scope?: ConfirmationScope, reason?: string) => void;
     contextMenuRenderer: ContextMenuRenderer;
-    openerService?: OpenerService;
+    openerService: OpenerService;
 }
 
 export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, toolRequest, onAllow, onDeny, contextMenuRenderer, openerService }) => {
@@ -479,9 +479,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
                         {toolRequest.description}
                     </div>
                 )}
-                {openerService && (
-                    <ToolArgsDisplay args={response.arguments} openerService={openerService} />
-                )}
+                <ToolArgsDisplay args={response.arguments} openerService={openerService} />
             </div>
             <ToolConfirmationActions
                 toolName={response.name ?? 'unknown'}
@@ -501,20 +499,21 @@ interface ToolArgsDisplayProps {
 }
 
 const ToolArgsDisplay: React.FC<ToolArgsDisplayProps> = ({ args, openerService }) => {
-    const hasArgs = !!args && !!args.trim() && args.trim() !== '{}';
-    if (!hasArgs) {
+    const trimmedArgs = args?.trim();
+    if (!trimmedArgs || trimmedArgs === '{}') {
         // eslint-disable-next-line no-null/no-null
         return null;
     }
-    const summaryLabel = condenseArguments(args!) ?? '\u2026';
+    const summaryLabel = condenseArguments(trimmedArgs) ?? '\u2026';
     return (
         <details className="theia-tool-confirmation-args">
             <summary>
+                <span className={`${codicon('chevron-right')} theia-tool-confirmation-args-toggle`}></span>
                 <span className="label">{nls.localizeByDefault('Arguments')}:</span>
                 <span className="theia-tool-confirmation-args-summary">{summaryLabel}</span>
             </summary>
             <MarkdownRender
-                text={formatArgsForTooltip(args!)}
+                text={formatArgsForTooltip(trimmedArgs)}
                 openerService={openerService}
                 className="theia-tool-confirmation-args-content"
             />
@@ -532,6 +531,7 @@ export interface WithToolCallConfirmationProps {
     showArgsTooltip?: (response: ToolCallChatResponseContent, target: HTMLElement | undefined) => void;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService: OpenerService;
 }
 
 export function withToolCallConfirmation<P extends object>(
@@ -548,6 +548,7 @@ export function withToolCallConfirmation<P extends object>(
             showArgsTooltip,
             requestCanceled,
             contextMenuRenderer,
+            openerService,
             ...componentProps
         } = props;
 
@@ -610,6 +611,7 @@ export function withToolCallConfirmation<P extends object>(
                     onAllow={handleAllow}
                     onDeny={handleDeny}
                     contextMenuRenderer={contextMenuRenderer}
+                    openerService={openerService}
                 />
             );
         }

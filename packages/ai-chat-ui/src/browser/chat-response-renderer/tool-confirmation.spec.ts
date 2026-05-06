@@ -116,12 +116,13 @@ describe('Tool Confirmation Types', () => {
                 response: { kind: 'toolCall', id: 'test', name: 'test' } as ToolConfirmationProps['response'],
                 onAllow: () => { },
                 onDeny: () => { },
-                contextMenuRenderer: mockContextMenuRenderer
+                contextMenuRenderer: mockContextMenuRenderer,
+                openerService: mockOpenerService
             };
             expect(props.toolRequest).to.be.undefined;
         });
 
-        it('should accept an optional openerService for rendering arguments', () => {
+        it('should accept response arguments with an opener service', () => {
             const props: ToolConfirmationProps = {
                 response: { kind: 'toolCall', id: 'test', name: 'test', arguments: '{"foo":"bar"}' } as ToolConfirmationProps['response'],
                 onAllow: () => { },
@@ -129,6 +130,7 @@ describe('Tool Confirmation Types', () => {
                 contextMenuRenderer: mockContextMenuRenderer,
                 openerService: mockOpenerService
             };
+            expect(props.response.arguments).to.equal('{"foo":"bar"}');
             expect(props.openerService).to.equal(mockOpenerService);
         });
     });
