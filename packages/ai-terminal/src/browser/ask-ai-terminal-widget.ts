@@ -60,9 +60,7 @@ export class AskAITerminalOverlay implements Disposable {
         this.containerNode.className = 'ai-terminal-ask-overlay';
         terminalWidget.node.appendChild(this.containerNode);
         this.toDispose.push(Disposable.create(() => {
-            if (this.containerNode.parentNode) {
-                this.containerNode.remove();
-            }
+            this.containerNode.remove();
         }));
         this.toDispose.push(Disposable.create(onDispose));
         this.toDispose.push(this.terminalWidget.onDidDispose(() => this.dispose()));
