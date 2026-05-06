@@ -143,7 +143,15 @@ export default new ContainerModule(bind => {
         const child = container.createChild();
         child.bind(TerminalBlockOverlayOptions).toConstantValue(options);
         child.bind(TerminalBlockOverlayController).toSelf();
-        return child.get(TerminalBlockOverlayController);
+        const controller = child.get(TerminalBlockOverlayController);
+        // Release the child container when the controller is disposed to prevent
+        // the parent container from retaining a reference to it indefinitely.
+        const originalDispose = controller.dispose.bind(controller);
+        controller.dispose = () => {
+            child.unbindAll();
+            originalDispose();
+        };
+        return controller;
     });
 
 });
