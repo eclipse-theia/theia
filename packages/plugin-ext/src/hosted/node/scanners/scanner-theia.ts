@@ -73,7 +73,8 @@ import { GrammarsReader } from './grammars-reader';
 import { CharacterPair } from '../../../common/plugin-api-rpc';
 import { isENOENT } from '../../../common/errors';
 import * as jsoncparser from 'jsonc-parser';
-import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { IJSONSchema, JsonType } from '@theia/core/lib/common/json-schema';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { deepClone } from '@theia/core/lib/common/objects';
 import { PreferenceSchema, PreferenceDataProperty } from '@theia/core/lib/common/preferences/preference-schema';
 import { TaskDefinition } from '@theia/task/lib/common/task-protocol';
@@ -88,6 +89,22 @@ const iconIdPattern = `^${CSSIcon.iconNameSegment}(-${CSSIcon.iconNameSegment})+
 function getFileExtension(filePath: string): string {
     const index = filePath.lastIndexOf('.');
     return index === -1 ? '' : filePath.substring(index + 1);
+}
+
+/**
+ * Mirrors VS Code's `ConfigurationRegistry.getDefaultValue(type)`: plugins expect typed-but-defaultless properties to read as a type-based default, not `undefined`.
+ */
+function deriveDefaultForType(type: JsonType | JsonType[] | undefined): JSONValue {
+    const t = Array.isArray(type) ? type[0] : type;
+    switch (t) {
+        case 'boolean': return false;
+        case 'integer':
+        case 'number': return 0;
+        case 'string': return '';
+        case 'array': return [];
+        case 'object': return {};
+        default: return null;
+    }
 }
 
 type PluginPackageWithContributes = PluginPackage & { contributes: PluginPackageContribution };
@@ -774,7 +791,8 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 const schemaProperty: PreferenceDataProperty = {
                     ...property,
                     scope: scopeInfo.scope,
-                    overridable: scopeInfo.overridable
+                    overridable: scopeInfo.overridable,
+                    default: property.default !== undefined ? property.default : deriveDefaultForType(property.type)
                 };
 
                 schema.properties[key] = schemaProperty;
