@@ -82,6 +82,13 @@ describe('AiTerminalCommandBlockVariableContribution.resolve()', () => {
         expect(result?.value).to.equal('### Terminal Command:\necho hello world\n\n### Terminal Output:\nhello world');
     });
 
+    it('returns the last command when the input is an empty or white space only string', async () => {
+        const emptyStringResult = await contribution.resolve(createRequest(''), mockContext);
+        const whiteSpaceResult = await contribution.resolve(createRequest(''), mockContext);
+        expect(emptyStringResult?.value).to.equal('### Terminal Command:\necho hello world\n\n### Terminal Output:\nhello world');
+        expect(whiteSpaceResult?.value).to.equal('### Terminal Command:\necho hello world\n\n### Terminal Output:\nhello world');
+    });
+
     it('returns the correct command according to the argument', async () => {
         const result = await contribution.resolve(createRequest('1'), mockContext);
         expect(result?.value).to.equal('### Terminal Command:\npwd\n\n### Terminal Output:\n/home/user');
@@ -110,11 +117,6 @@ describe('AiTerminalCommandBlockVariableContribution.resolve()', () => {
 
     it('returns undefined when the input is not an integer', async () => {
         const result = await contribution.resolve(createRequest('1.5'), mockContext);
-        expect(result).to.be.undefined;
-    });
-
-    it('returns undefined when the input is an empty string', async () => {
-        const result = await contribution.resolve(createRequest(' '), mockContext);
         expect(result).to.be.undefined;
     });
 
