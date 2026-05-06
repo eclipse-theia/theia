@@ -92,7 +92,7 @@ export class MarkdownStringImpl implements MarkdownString {
     appendCodeblock(langId: string, code: string): MarkdownStringImpl {
         // Use a fence longer than any run of backticks in the code so that triple-backtick
         // sequences inside `code` cannot prematurely close the surrounding fenced block.
-        const fence = '`'.repeat(Math.max(3, MarkdownStringImpl._longestBacktickRun(code) + 1));
+        const fence = '`'.repeat(Math.max(3, MarkdownStringImpl.longestBacktickRun(code) + 1));
         this.value += '\n';
         this.value += fence;
         this.value += langId;
@@ -104,7 +104,7 @@ export class MarkdownStringImpl implements MarkdownString {
         return this;
     }
 
-    private static _longestBacktickRun(value: string): number {
+    private static longestBacktickRun(value: string): number {
         let longest = 0;
         let current = 0;
         for (let i = 0; i < value.length; i++) {
