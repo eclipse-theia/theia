@@ -53,9 +53,12 @@ export class ToolConfirmationManager {
 
     /**
      * Set the global default confirmation mode.
+     *
+     * Returns the promise produced by the underlying preference update so callers can
+     * `await` completion and react to errors (e.g. show a notification on failure).
      */
-    setDefaultConfirmationMode(mode: ToolConfirmationMode): void {
-        this.preferenceService.updateValue(DEFAULT_TOOL_CONFIRMATION_PREFERENCE, mode);
+    setDefaultConfirmationMode(mode: ToolConfirmationMode): Promise<void> {
+        return this.preferenceService.updateValue(DEFAULT_TOOL_CONFIRMATION_PREFERENCE, mode);
     }
 
     /**
@@ -95,7 +98,7 @@ export class ToolConfirmationManager {
      * @param mode - The confirmation mode to set
      * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
      */
-    setConfirmationMode(toolId: string, mode: ToolConfirmationMode, toolRequest?: ToolRequest): void {
+    setConfirmationMode(toolId: string, mode: ToolConfirmationMode, toolRequest?: ToolRequest): Promise<void> {
         const current = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
             TOOL_CONFIRMATION_PREFERENCE, {}
         ) ?? {};
@@ -103,12 +106,12 @@ export class ToolConfirmationManager {
         if (mode === effectiveDefault) {
             if (toolId in current) {
                 const { [toolId]: _, ...rest } = current;
-                this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, rest);
+                return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, rest);
             }
-        } else {
-            const updated = { ...current, [toolId]: mode };
-            this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
+            return Promise.resolve();
         }
+        const updated = { ...current, [toolId]: mode };
+        return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
     }
 
     /**
@@ -143,8 +146,8 @@ export class ToolConfirmationManager {
         ) ?? {};
     }
 
-    resetAllConfirmationModeSettings(): void {
-        this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, {});
+    resetAllConfirmationModeSettings(): Promise<void> {
+        return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, {});
     }
 
     /**

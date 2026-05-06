@@ -191,7 +191,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         });
         const shouldReset = await dialog.open();
         if (shouldReset) {
-            this.confirmationManager.resetAllConfirmationModeSettings();
+            await this.confirmationManager.resetAllConfirmationModeSettings();
         }
     }
 

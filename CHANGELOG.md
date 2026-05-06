@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.72.0 - tbd
+
+<a name="breaking_changes_1.72.0">[Breaking Changes:](#breaking_changes_1.72.0)</a>
+
+- [ai-chat] the `'*'` magic key inside `ai-features.chat.toolConfirmation` is no longer honored; migrate to the new `ai-features.chat.defaultToolConfirmation` preference [#17452](https://github.com/eclipse-theia/theia/pull/17452)
+
 ## 1.71.0 - 4/30/2026
 
 - [ai] replaced the per-model thinking-mode toggle with a provider-agnostic reasoning selector and `ReasoningSettings` abstraction; the chosen level can be persisted per agent via the chat capabilities save action [#17363](https://github.com/eclipse-theia/theia/pull/17363)
