@@ -197,11 +197,11 @@ export class CopilotLanguageModel implements LanguageModel {
 
                 const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
                 const nextContent = typeof message.content === 'string' ? message.content : undefined;
-                if (previousContent && nextContent) {
+                if (previousContent !== undefined && nextContent !== undefined) {
                     merged.content = `${previousContent}\n${nextContent}`;
-                } else if (nextContent) {
+                } else if (nextContent !== undefined) {
                     merged.content = nextContent;
-                } else if (previousContent) {
+                } else if (previousContent !== undefined) {
                     merged.content = previousContent;
                 }
 

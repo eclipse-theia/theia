@@ -120,6 +120,9 @@ export function mergeConsecutiveSameRoleMessages(messages: MessageParam[]): Mess
     const result: MessageParam[] = [];
     for (const message of messages) {
         const previous = result[result.length - 1];
+        // tool results are user messages and not tool messages and thus should be merged:
+        // assistant(tool_use_1 + tool_use_2)
+        // user(tool_result_1 + tool_result_2)
         if (previous?.role === message.role && (message.role === 'user' || message.role === 'assistant')) {
             const previousContent = Array.isArray(previous.content)
                 ? previous.content
