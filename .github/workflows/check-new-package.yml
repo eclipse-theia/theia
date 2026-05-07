@@ -38,7 +38,7 @@ jobs:
 
       - name: Post or update checklist comment
         if: steps.detect.outputs.new_package_found == 'true'
-        uses: actions/github-script@ffc2c79a5b2490bd33e0a41c1de74b877714d736 # v3.2.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -67,7 +67,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            const comments = await github.issues.listComments({
+            const comments = await github.rest.issues.listComments({
               owner,
               repo,
               issue_number
@@ -79,7 +79,7 @@ jobs:
             );
 
             if (botComment) {
-              await github.issues.updateComment({
+              await github.rest.issues.updateComment({
                 owner,
                 repo,
                 comment_id: botComment.id,
@@ -87,7 +87,7 @@ jobs:
               });
               console.log('Updated existing comment');
             } else {
-              await github.issues.createComment({
+              await github.rest.issues.createComment({
                 owner,
                 repo,
                 issue_number,
