@@ -587,7 +587,7 @@ new Path(absolutePathString).relative(pathString)
 
 <a name="use-named-loggers"></a>
 
-* [1.](#use-named-loggers) Whenever you need to log and you are within an Inversify context, inject a named loggers
+* [1.](#use-named-loggers) Whenever you need to log and you are within an Inversify context, inject a named logger
 
 ```ts
 // bad
@@ -606,7 +606,7 @@ this.logger.info(``)
 
 <a name="naming-loggers"></a>
 
-* [2.](#naming-loggers) Use the following convention when naming loggers: `<package-name>:<node|common|browser>/<file-name>`
+* [2.](#naming-loggers) Use the following convention when naming loggers: `[optional-purpose]package-name:class-name#optional-suffix`
 
 ```ts
 // bad
@@ -614,9 +614,10 @@ this.logger.info(``)
 protected readonly logger: ILogger;
 
 // good
-@inject(ILogger) @named('@theia/core:node/backend-remote-service');
+@inject(ILogger) @named('remote:BackendRemoteServiceImpl');
 ```
-> Following this convention allows to easily find the source of the logs.
+
+> Following this convention allows to conveniently configure log levels for purpose, packages and concrete classes.
 
 ## "To Do" Tags
 
