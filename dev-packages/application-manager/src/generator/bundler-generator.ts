@@ -794,7 +794,7 @@ export const nodeOptions = {
     ]
 };
 `;
-    };
+    }
 
     protected compileESBuildUserConfig(): string {
         return `/**
@@ -853,7 +853,7 @@ import { problemMatcherPlugin } from '@theia/bundle-plugin';
 import { watch, loader, minify, sourcemap } from './gen-esbuild.browser.mjs';
 
 /**
- * {@type {import('esbuild').BuildOptions}}
+ * @type {import('esbuild').BuildOptions}
  */
 export const electronOptions = {
     entryPoints: {

@@ -15,6 +15,8 @@ In addition to `webpack`, Theia is now also supporting [`ESBuild`](https://esbui
 
 In case you have added your own bundling instructions to the `webpack.config.js`, these need to be migrated to the ESBuild based bundler.
 
+Note that as a part of this change, the `@theia/native-webpack-plugin` dependency has been renamed to `@theia/bundle-plugin`.
+
 _Builtin Extension Pack_:
 
 If you are using the [`eclipse-theia.builtin-extension-pack@1.79.0`](https://open-vsx.org/extension/eclipse-theia/builtin-extension-pack) extension pack you may need to include the [`ms-vscode.js-debug`](https://open-vsx.org/extension/ms-vscode/js-debug) and [`ms-vscode.js-debug-companion`](https://open-vsx.org/extension/ms-vscode/js-debug-companion) plugins for JavaScript debug support.
