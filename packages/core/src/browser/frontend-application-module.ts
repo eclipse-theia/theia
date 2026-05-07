@@ -320,7 +320,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return quickPickService;
     });
 
-    bind(MarkdownRenderer).to(MarkdownRendererImpl).inSingletonScope();
+    bind(MarkdownRendererImpl).toSelf().inSingletonScope();
+    bind(MarkdownRenderer).toService(MarkdownRendererImpl);
     bind(MarkdownRendererFactory).toFactory(({ container }) => () => container.get(MarkdownRenderer));
 
     bindRootContributionProvider(bind, QuickAccessContribution);

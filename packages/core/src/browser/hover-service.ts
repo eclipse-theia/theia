@@ -18,7 +18,7 @@ import { inject, injectable } from 'inversify';
 import { Disposable, DisposableCollection, disposableTimeout, isOSX, PreferenceService } from '../common';
 import { MarkdownString } from '../common/markdown-rendering/markdown-string';
 import { animationFrame } from './browser';
-import { MarkdownRenderer, MarkdownRendererFactory } from './markdown-rendering/markdown-renderer';
+import { MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 
 import '../../src/browser/style/hover-service.css';
 
@@ -92,13 +92,11 @@ export class HoverService {
     protected static hostClassName = 'theia-hover';
     protected static styleSheetId = 'theia-hover-style';
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
-    @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
 
-    protected _markdownRenderer: MarkdownRenderer | undefined;
-    protected get markdownRenderer(): MarkdownRenderer {
-        this._markdownRenderer ||= this.markdownRendererFactory();
-        return this._markdownRenderer;
-    }
+    // Inject MarkdownRendererImpl directly rather than the MarkdownRenderer
+    // symbol, which is rebound by Monaco to a renderer that strips code block
+    // content from the output.
+    @inject(MarkdownRendererImpl) protected readonly markdownRenderer: MarkdownRendererImpl;
 
     protected _hoverHost: HTMLElement | undefined;
     protected get hoverHost(): HTMLElement {

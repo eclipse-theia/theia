@@ -1595,38 +1595,42 @@ details.theia-tool-confirmation-args>summary::marker {
 }
 
 /* Scrollable hover for large tool call arguments */
-.theia-hover.toolcall-args-hover div.rendered-markdown {
+.theia-hover.toolcall-args-hover>div {
   max-height: 400px;
   max-width: 600px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Code blocks inside tool call hovers: constrain and scroll.
-   Monaco renders fenced code blocks as div[data-code] > span > div.monaco-tokenized-source,
-   not as <pre> elements, so we target both structures. */
-.theia-hover.toolcall-args-hover div.rendered-markdown pre,
-.theia-hover.toolcall-args-hover div.rendered-markdown div[data-code] {
+/* Code blocks inside tool call hovers: constrain and scroll. */
+.theia-hover.toolcall-args-hover pre {
   max-height: 200px;
   overflow: auto;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
   margin: var(--theia-ui-padding) 0;
   padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
   border-radius: 3px;
   background-color: var(--theia-textCodeBlock-background);
 }
 
+/* Reset code background inside pre to avoid double semi-transparent layers
+   (.theia-hover code in hover-service.css sets the same background) */
+.theia-hover.toolcall-args-hover pre code {
+  background-color: transparent;
+}
+
 /* Inline code styling */
-.theia-hover.toolcall-args-hover div.rendered-markdown code:not(pre code) {
+.theia-hover.toolcall-args-hover code:not(pre code) {
   padding: 1px var(--theia-ui-padding);
   border-radius: 3px;
   background-color: var(--theia-textCodeBlock-background);
   word-break: break-all;
-  font-family: var(--theia-monospace-font-family);
+  font-family: var(--theia-code-font-family);
 }
 
 /* Spacing between arg sections - uses internal border like hover-service.css */
-.theia-hover.toolcall-args-hover div.rendered-markdown hr {
+.theia-hover.toolcall-args-hover hr {
   border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
   border-bottom: 0;
   margin: var(--theia-ui-padding) 0;
