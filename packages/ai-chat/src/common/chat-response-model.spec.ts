@@ -15,9 +15,27 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MutableChatResponseModel } from './chat-model';
+import { MutableChatResponseModel, ToolCallChatResponseContentImpl } from './chat-model';
 
 describe('MutableChatResponseModel', () => {
+    describe('content change propagation', () => {
+        it('should fire onDidChange when a tool call\'s clientData is updated after it was added', () => {
+            const response = new MutableChatResponseModel('req-1');
+            const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
+            response.response.addContent(toolCall);
+
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            toolCall.addClientData('uiState', 'snapshot');
+
+            // The response model must observe the change so auto-save can persist
+            // the updated clientData. Without this propagation, renderer-only
+            // mutations (e.g. user-interaction wizard state) would be lost on reload.
+            expect(fireCount).to.equal(1);
+        });
+    });
+
     describe('setTokenUsage', () => {
         it('should also add a token usage entry', () => {
             const response = new MutableChatResponseModel('req-1');

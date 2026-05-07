@@ -117,7 +117,8 @@ const STEP_SCHEMA: ToolRequestParameterProperty = {
                     label: { type: 'string', description: 'Optional label for the link or diff tab.' },
                     autoOpen: {
                         type: 'boolean',
-                        description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to true.'
+                        description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to false; '
+                            + 'set to true only when the link is essential context the user must see immediately.'
                     }
                 },
                 required: ['ref']
@@ -141,7 +142,7 @@ const TOOL_PARAMETERS: ToolRequestParameters = {
 };
 
 const TOOL_DESCRIPTION = 'Present an interactive interaction to the user. Each step has a title, a markdown message, optional option buttons, '
-    + 'and optional file/diff links that auto-open when the step is reached. '
+    + 'and optional file/diff links that the user can click. '
     + 'Single-step behavior: a single-step interaction with options waits for the user to pick one option, which immediately completes the interaction; '
     + 'a single-step interaction without options is purely informational and is auto-completed by the tool '
     + '(do not promise the user a "Finish" or "Next" button — there is none, and no comments can be entered). '
@@ -305,8 +306,7 @@ export class UserInteractionTool implements ToolProvider {
         if (ref.gitRef) {
             const repo = this.scmService.findRepository(fileUri);
             if (repo) {
-                const query = { path: fileUri['codeUri'].fsPath, ref: ref.gitRef };
-                return fileUri.withScheme(repo.provider.id).withQuery(JSON.stringify(query));
+                return repo.toUriAtRef(fileUri, ref.gitRef);
             }
             console.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
             return undefined;

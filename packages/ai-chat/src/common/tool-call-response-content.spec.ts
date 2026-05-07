@@ -145,6 +145,20 @@ describe('ToolCallChatResponseContentImpl', () => {
         });
     });
 
+    describe('addClientData', () => {
+        it('should fire onDidChange when clientData is added', () => {
+            const toolCall = new ToolCallChatResponseContentImpl('id', 'tool', '{}', false);
+            let fireCount = 0;
+            toolCall.onDidChange(() => { fireCount++; });
+
+            toolCall.addClientData('key', 'value');
+            toolCall.addClientData('key2', 'value2');
+
+            expect(fireCount).to.equal(2);
+            expect(toolCall.clientData).to.deep.equal({ key: 'value', key2: 'value2' });
+        });
+    });
+
     describe('restored tool calls', () => {
         it('should have finished=true when restored with a result', () => {
             const restoredToolCall = new ToolCallChatResponseContentImpl(

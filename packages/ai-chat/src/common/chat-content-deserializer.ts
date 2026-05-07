@@ -274,7 +274,8 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
                 data.arguments,
                 data.finished,
                 data.result,
-                data.data
+                data.data,
+                data.clientData
             )
         });
 

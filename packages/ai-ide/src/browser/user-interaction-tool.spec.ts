@@ -39,6 +39,12 @@ const singleStepArgs = (overrides: Record<string, unknown> = {}) => JSON.stringi
 
 const parseResult = (raw: unknown): UserInteractionResult => JSON.parse(raw as string);
 
+const makeMockRepo = () => ({
+    provider: { id: 'git', rootUri: 'file:///workspace' },
+    toUriAtRef: (fileUri: URI, ref: string) =>
+        fileUri.withScheme('git').withQuery(JSON.stringify({ path: fileUri.path.fsPath(), ref }))
+});
+
 describe('UserInteractionTool', () => {
     let container: Container;
     let tool: UserInteractionTool;
@@ -289,8 +295,7 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
-        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        (mockScmService.findRepository as sinon.SinonStub).returns(makeMockRepo());
 
         await tool.openLink({
             ref: { path: 'src/new-file.ts', gitRef: 'abc123' },
@@ -321,8 +326,7 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
-        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        (mockScmService.findRepository as sinon.SinonStub).returns(makeMockRepo());
 
         await tool.openLink({
             ref: { path: 'src/deleted-file.ts', gitRef: 'abc123' },
