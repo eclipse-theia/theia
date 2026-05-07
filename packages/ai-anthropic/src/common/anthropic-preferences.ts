@@ -63,10 +63,7 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             \n\
             - specify `maxRetries: <number>` to indicate the maximum number of retries when a request fails. 3 by default.\
             \n\
-            - specify `reasoningApi: "effort" | "budget"` to opt in to the reasoning selector. By default this is inferred\
-            from the `model` name (Claude 4.6+: `effort`; Claude 4.0–4.5: `budget`). Set to `null` to disable.\
-            \n\
-            - specify `supportsXHighEffort: true` for models that accept the Anthropic `xhigh` effort value.'),
+            Reasoning capabilities and the maximum output token limit are derived from the endpoint\'s `/v1/models` response.'),
             default: [],
             items: {
                 type: 'object',
@@ -102,19 +99,6 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
                         type: 'number',
                         title: nls.localize('theia/ai/anthropic/customEndpoints/maxRetries/title',
                             'Maximum number of retries when a request fails. 3 by default'),
-                    },
-                    reasoningApi: {
-                        type: ['string', 'null'],
-                        enum: ['effort', 'budget', null], // eslint-disable-line no-null/no-null
-                        title: nls.localize('theia/ai/anthropic/customEndpoints/reasoningApi/title',
-                            'Which Anthropic reasoning API shape to use: `effort` for adaptive thinking (Claude 4.6+),'
-                            + ' `budget` for legacy extended thinking (Claude 4.0–4.5), or `null` to disable.'
-                            + ' Inferred from the model name by default.'),
-                    },
-                    supportsXHighEffort: {
-                        type: 'boolean',
-                        title: nls.localize('theia/ai/anthropic/customEndpoints/supportsXHighEffort/title',
-                            'Indicates whether the model accepts the Anthropic `xhigh` effort value. Inferred from the model name by default.'),
                     }
                 }
             }
