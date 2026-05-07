@@ -42,13 +42,13 @@ jobs:
             const issuesGetMilestonesParams = context.repo
 
             // search if milestone is already defined
-            const response = await github.issues.listMilestones(issuesGetMilestonesParams)
+            const response = await github.rest.issues.listMilestones(issuesGetMilestonesParams)
             let githubMilestone = response.data.find(milestoneResponse => milestoneResponse.title === milestone)
 
             // not defined, create it
             if (!githubMilestone) {
               const issuesCreateMilestoneParams = { owner: context.repo.owner, repo:context.repo.repo, title: milestone }
-              const createMilestoneResponse = await github.issues.createMilestone(issuesCreateMilestoneParams)
+              const createMilestoneResponse = await github.rest.issues.createMilestone(issuesCreateMilestoneParams)
               githubMilestone = createMilestoneResponse.data
             }
 
@@ -57,4 +57,4 @@ jobs:
 
             // sets the milestone from the number
             const issuesUpdateParams = { owner: context.repo.owner, repo: context.repo.repo, milestone: milestoneNumber, issue_number: context.issue.number }
-            await github.issues.update(issuesUpdateParams)
+            await github.rest.issues.update(issuesUpdateParams)
