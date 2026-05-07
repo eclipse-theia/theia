@@ -35,6 +35,7 @@ import {
     UserInteractionStepResult,
     buildDiffLabel,
     isEmptyContentRef,
+    normalizeUserInteractionLink,
     parseUserInteractionArgs,
     resolveContentRef
 } from '../common/user-interaction-tool';
@@ -111,18 +112,21 @@ const STEP_SCHEMA: ToolRequestParameterProperty = {
                     },
                     rightRef: {
                         ...CONTENT_REF_SCHEMA,
-                        description: 'Optional right-side content reference for diff views. '
+                        description: 'Right-side content reference for a diff view. '
+                            + 'Only provide this when the step should show a diff; omit it entirely for a single file link. '
                             + 'Provide "path" for a real file, or "empty": true for files that no longer exist.'
                     },
                     label: { type: 'string', description: 'Optional label for the link or diff tab.' },
                     autoOpen: {
                         type: 'boolean',
-                        description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to true.'
+                        description: 'Whether to automatically open the file/diff when this step becomes active. Defaults to false; '
+                            + 'set to true only when the link is essential context the user must see immediately.'
                     }
                 },
                 required: ['ref']
             },
-            description: 'Optional links to files or diffs to show alongside this step.'
+            description: 'Optional links to files or diffs to show alongside this step. '
+                + 'Use "ref" alone for a single file link. Add "rightRef" only when the step should show a diff.'
         }
     },
     required: ['title', 'message']
@@ -134,18 +138,19 @@ const TOOL_PARAMETERS: ToolRequestParameters = {
         interactions: {
             type: 'array',
             items: STEP_SCHEMA,
-            description: 'Ordered list of wizard steps. The user walks through them sequentially without a back button.'
+            description: 'Ordered list of interaction steps. The user walks through them sequentially and can revisit previous steps.'
         }
     },
     required: ['interactions']
 };
 
-const TOOL_DESCRIPTION = 'Present an interactive interaction to the user. Each step has a title, a markdown message, optional option buttons, '
-    + 'and optional file/diff links that auto-open when the step is reached. '
-    + 'Single-step behavior: a single-step interaction with options waits for the user to pick one option, which immediately completes the interaction; '
-    + 'a single-step interaction without options is purely informational and is auto-completed by the tool '
-    + '(do not promise the user a "Finish" or "Next" button — there is none, and no comments can be entered). '
-    + 'Multi-step behavior: the user advances through steps with a "Next" button (or "Finish" on the last step), can navigate freely between steps, '
+const TOOL_DESCRIPTION = 'Present an interactive user interaction. Each step has a title, a markdown message, optional option buttons, '
+    + 'and optional file/diff links that the user can click. '
+    + 'For links, use "ref" alone to show one file; add "rightRef" only when the step should show a diff. '
+    + 'Single-step behavior: if the step has options, the tool waits for the user to pick one option and then completes the interaction; '
+    + 'if the step has no options, it is purely informational and is auto-completed by the tool '
+    + '(do not promise the user a "Finish" or "Next" button; there is none, and no comments can be entered). '
+    + 'Multi-step behavior: the user advances through steps with a "Next" button (or "Finish" on the last step), can revisit previous steps, '
     + 'and may add free-form comments on every step. '
     + 'The tool returns a JSON string with { "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. '
     + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
@@ -247,6 +252,12 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     async openLink(link: UserInteractionLink): Promise<void> {
+        const normalizedLink = normalizeUserInteractionLink(link);
+        if (!normalizedLink) {
+            return;
+        }
+        link = normalizedLink;
+
         const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
 
         if (link.rightRef !== undefined) {
@@ -305,8 +316,7 @@ export class UserInteractionTool implements ToolProvider {
         if (ref.gitRef) {
             const repo = this.scmService.findRepository(fileUri);
             if (repo) {
-                const query = { path: fileUri['codeUri'].fsPath, ref: ref.gitRef };
-                return fileUri.withScheme(repo.provider.id).withQuery(JSON.stringify(query));
+                return repo.toUriAtRef(fileUri, ref.gitRef);
             }
             console.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
             return undefined;

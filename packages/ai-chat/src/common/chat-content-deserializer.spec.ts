@@ -240,6 +240,26 @@ describe('Chat Content Serialization', () => {
             expect(deserialized.finished).to.be.true;
             expect(deserialized.result).to.equal('real-result');
         });
+
+        it('should round-trip the state attached via addClientData', async () => {
+            const original = new ToolCallChatResponseContentImpl('id', 'toolName', '{}', true, 'r');
+            original.addClientData('foo', 'bar');
+
+            const serialized = original.toSerializable?.();
+            expect(serialized!.data).to.have.property('clientData').that.deep.equals({ foo: 'bar' });
+
+            const withFallback = { ...serialized!, fallbackMessage: '' };
+            const deserialized = await registry.deserialize(withFallback) as ToolCallChatResponseContentImpl;
+            expect(deserialized.clientData).to.deep.equal({ foo: 'bar' });
+        });
+
+        it('should not include clientData in the language model message', () => {
+            const original = new ToolCallChatResponseContentImpl('id', 'toolName', '{}', true, 'r');
+            original.addClientData('uiState', 'snapshot');
+
+            const [toolUseMessage] = original.toLanguageModelMessage();
+            expect(toolUseMessage.data).to.be.undefined;
+        });
     });
 
     describe('ErrorChatResponseContentImpl', () => {

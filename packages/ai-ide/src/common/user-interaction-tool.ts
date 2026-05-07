@@ -195,10 +195,15 @@ function parseStep(raw: unknown): UserInteractionStep | undefined {
     }
     let links: UserInteractionLink[] | undefined;
     if (Array.isArray(obj.links)) {
-        const filtered = obj.links.filter(isValidLink) as UserInteractionLink[];
+        const filtered = obj.links
+            .map(normalizeUserInteractionLink)
+            .filter((link: UserInteractionLink | undefined): link is UserInteractionLink => link !== undefined);
         links = filtered.length > 0 ? filtered : undefined;
-    } else if (isValidLink(obj.link)) {
-        links = [obj.link as UserInteractionLink];
+    } else {
+        const link = normalizeUserInteractionLink(obj.link);
+        if (link) {
+            links = [link];
+        }
     }
     return {
         title: obj.title,
@@ -208,30 +213,52 @@ function parseStep(raw: unknown): UserInteractionStep | undefined {
     };
 }
 
-function isValidContentRef(ref: unknown): ref is ContentRef {
+function normalizeContentRef(ref: unknown): ContentRef | undefined {
     if (typeof ref === 'string') {
-        return ref.length > 0;
+        return ref.length > 0 ? ref : undefined;
     }
     if (ref && typeof ref === 'object') {
         const obj = ref as Record<string, unknown>;
         if (obj.empty === true) {
-            return true;
+            const empty: EmptyContentRef = { empty: true };
+            if (typeof obj.label === 'string' && obj.label.length > 0) {
+                empty.label = obj.label;
+            }
+            return empty;
         }
-        return typeof obj.path === 'string' && obj.path.length > 0;
+        if (typeof obj.path === 'string' && obj.path.length > 0) {
+            const pathRef: PathContentRef = { path: obj.path };
+            if (typeof obj.gitRef === 'string' && obj.gitRef.length > 0) {
+                pathRef.gitRef = obj.gitRef;
+            }
+            if (typeof obj.line === 'number' && Number.isFinite(obj.line) && obj.line > 0) {
+                pathRef.line = obj.line;
+            }
+            return pathRef;
+        }
     }
-    return false;
+    return undefined;
 }
 
-function isValidLink(link: unknown): link is UserInteractionLink {
+export function normalizeUserInteractionLink(link: unknown): UserInteractionLink | undefined {
     if (!link || typeof link !== 'object') {
-        return false;
+        return undefined;
     }
     const obj = link as Record<string, unknown>;
-    if (!isValidContentRef(obj.ref)) {
-        return false;
+    const ref = normalizeContentRef(obj.ref);
+    if (!ref) {
+        return undefined;
     }
-    if (obj.rightRef !== undefined && !isValidContentRef(obj.rightRef)) {
-        return false;
+    const normalized: UserInteractionLink = { ref };
+    const rightRef = normalizeContentRef(obj.rightRef);
+    if (rightRef) {
+        normalized.rightRef = rightRef;
     }
-    return true;
+    if (typeof obj.label === 'string' && obj.label.length > 0) {
+        normalized.label = obj.label;
+    }
+    if (typeof obj.autoOpen === 'boolean') {
+        normalized.autoOpen = obj.autoOpen;
+    }
+    return normalized;
 }

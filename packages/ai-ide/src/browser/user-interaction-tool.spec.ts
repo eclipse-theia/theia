@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
@@ -28,6 +32,8 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { MEMORY_TEXT, MEMORY_TEXT_READONLY, ResourceProvider } from '@theia/core/lib/common/resource';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 
+disableJSDOM();
+
 const singleStepArgs = (overrides: Record<string, unknown> = {}) => JSON.stringify({
     interactions: [{
         title: 'Choose',
@@ -39,6 +45,12 @@ const singleStepArgs = (overrides: Record<string, unknown> = {}) => JSON.stringi
 
 const parseResult = (raw: unknown): UserInteractionResult => JSON.parse(raw as string);
 
+const makeMockRepo = () => ({
+    provider: { id: 'git', rootUri: 'file:///workspace' },
+    toUriAtRef: (fileUri: URI, ref: string) =>
+        fileUri.withScheme('git').withQuery(JSON.stringify({ path: fileUri.path.fsPath(), ref }))
+});
+
 describe('UserInteractionTool', () => {
     let container: Container;
     let tool: UserInteractionTool;
@@ -48,6 +60,14 @@ describe('UserInteractionTool', () => {
     let mockScmService: Partial<ScmService>;
     let mockResourceProvider: sinon.SinonStub;
     const workspaceRoot = new URI('file:///workspace');
+
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
 
     beforeEach(() => {
         container = new Container();
@@ -256,6 +276,19 @@ describe('UserInteractionTool', () => {
         expect(openCall.args[1]).to.deep.equal({ selection: undefined });
     });
 
+    it('should open a file link when rightRef is an invalid placeholder', async () => {
+        await tool.openLink({
+            ref: { path: 'README.md', line: 1 },
+            rightRef: { path: '' }
+        });
+
+        expect((mockEditorManager.open as sinon.SinonStub).calledOnce).to.be.true;
+        expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.false;
+        const openCall = (mockEditorManager.open as sinon.SinonStub).getCall(0);
+        expect(openCall.args[0].toString()).to.equal('file:///workspace/README.md');
+        expect(openCall.args[1]).to.deep.equal({ selection: { start: { line: 0, character: 0 } } });
+    });
+
     it('should open a diff link with custom label', async () => {
         await tool.openLink({ ref: 'src/old.ts', rightRef: 'src/new.ts', label: 'My Diff' });
         expect((mockOpenerService.getOpener as sinon.SinonStub).called).to.be.true;
@@ -289,8 +322,7 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
-        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        (mockScmService.findRepository as sinon.SinonStub).returns(makeMockRepo());
 
         await tool.openLink({
             ref: { path: 'src/new-file.ts', gitRef: 'abc123' },
@@ -321,8 +353,7 @@ describe('UserInteractionTool', () => {
             };
         });
 
-        const mockRepo = { provider: { id: 'git', rootUri: 'file:///workspace' } };
-        (mockScmService.findRepository as sinon.SinonStub).returns(mockRepo);
+        (mockScmService.findRepository as sinon.SinonStub).returns(makeMockRepo());
 
         await tool.openLink({
             ref: { path: 'src/deleted-file.ts', gitRef: 'abc123' },

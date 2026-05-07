@@ -491,6 +491,7 @@ export interface ToolCallContentData {
     finished?: boolean;
     result?: ToolCallResult;
     data?: Record<string, string>;
+    clientData?: Record<string, string>;
 }
 
 export interface CommandContentData {
@@ -568,12 +569,33 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
     needsUserConfirmation: Promise<void>;
     whenFinished: Promise<void>;
+    /**
+     * Provider-specific metadata about the tool call that the language model needs back on
+     * subsequent turns (e.g. Google's `thoughtSignature`, cache pointers). The full record is
+     * passed to the model via {@link toLanguageModelMessage} as `ToolUseMessage.data`.
+     */
     data?: Record<string, string>;
+    /**
+     * Arbitrary string state that should be persisted with the tool call (so it survives
+     * chat session reloads). Typical use is renderer UI state but it is not ender-specific:
+     * any client-side consumer may stash data here.
+     */
+    clientData?: Record<string, string>;
+    /**
+     * Fires when the serialized form of this tool call changes outside of the agent's stream
+     * (e.g. after a renderer stashes UI state via {@link addClientData}). The parent
+     * {@link ChatResponse} forwards this event so chat-session auto-save picks up the change.
+     */
+    readonly onDidChange: Event<void>;
     confirm(): void;
     deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
     /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
     requestUserConfirmation(): void;
+    /**
+     * Attach a piece of arbitrary string state to this tool call's {@link clientData}.
+     */
+    addClientData(key: string, value: string): void;
     /**
      * Mark the tool call as completed with the given result.
      *
@@ -2301,6 +2323,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
     protected _data?: Record<string, string>;
+    protected _clientData?: Record<string, string>;
     protected _confirmationTimeout?: number;
     protected _needsUserConfirmation: Promise<void>;
     protected _needsUserConfirmationResolver?: () => void;
@@ -2310,13 +2333,25 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _whenFinished: Promise<void>;
     protected _finishedResolver?: () => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult, data?: Record<string, string>) {
+    protected readonly _onDidChangeEmitter = new Emitter<void>();
+    readonly onDidChange: Event<void> = this._onDidChangeEmitter.event;
+
+    constructor(
+        id?: string,
+        name?: string,
+        arg_string?: string,
+        finished?: boolean,
+        result?: ToolCallResult,
+        data?: Record<string, string>,
+        clientData?: Record<string, string>
+    ) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
         this._data = data;
+        this._clientData = clientData;
         this._confirmed = this.createConfirmationPromise();
         this._whenFinished = this.createFinishedPromise();
         this._needsUserConfirmation = new Promise<void>(resolve => {
@@ -2345,6 +2380,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
 
     get data(): Record<string, string> | undefined {
         return this._data;
+    }
+
+    get clientData(): Record<string, string> | undefined {
+        return this._clientData;
     }
 
     get confirmationTimeout(): number | undefined {
@@ -2426,6 +2465,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         }
     }
 
+    addClientData(key: string, value: string): void {
+        if (!this._clientData) {
+            this._clientData = {};
+        }
+        this._clientData[key] = value;
+        this._onDidChangeEmitter.fire();
+    }
+
     cancelConfirmation(reason?: unknown): void {
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
@@ -2436,6 +2483,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._finished = true;
         this._result = result;
         this.resolveFinished();
+        this._onDidChangeEmitter.fire();
     }
 
     protected resolveFinished(): void {
@@ -2473,6 +2521,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
                 this._arguments = args;
             }
             this._data = { ...nextChatResponseContent.data, ...this._data };
+            this._clientData = { ...nextChatResponseContent.clientData, ...this._clientData };
             if (!wasFinished && this._finished) {
                 this.resolveFinished();
             }
@@ -2523,16 +2572,20 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     toSerializable(): SerializableChatResponseContentData<ToolCallContentData> {
-        return {
-            kind: 'toolCall',
-            data: {
-                id: this._id,
-                name: this._name,
-                arguments: this._arguments,
-                finished: this._finished,
-                result: this._result
-            }
+        const data: ToolCallContentData = {
+            id: this._id,
+            name: this._name,
+            arguments: this._arguments,
+            finished: this._finished,
+            result: this._result
         };
+        if (this._data && Object.keys(this._data).length > 0) {
+            data.data = this._data;
+        }
+        if (this._clientData && Object.keys(this._clientData).length > 0) {
+            data.clientData = this._clientData;
+        }
+        return { kind: 'toolCall', data };
     }
 }
 
@@ -2793,6 +2846,10 @@ class ChatResponseImpl implements ChatResponse {
                 fittingTool.merge?.(nextContent);
             } else {
                 this._content.push(nextContent);
+                // Forward content-level change events (e.g. clientData updates from a
+                // renderer) so auto-save can persist them. Without this, mutations
+                // that don't go through addContent/merge are invisible to listeners.
+                nextContent.onDidChange(() => this._onDidChangeEmitter.fire());
             }
         } else {
             const lastElement = this._content.length > 0

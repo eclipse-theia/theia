@@ -41,6 +41,11 @@ import {
     resolveContentRef,
 } from '../common/user-interaction-tool';
 
+interface StepState {
+    value?: string;
+    comments: string[];
+}
+
 interface UserInteractionComponentProps {
     args: UserInteractionArgs;
     toolCallId: string;
@@ -54,21 +59,55 @@ interface UserInteractionComponentProps {
      */
     responseComplete: boolean;
     result: UserInteractionResult | undefined;
+    /** Step states serialized into the parent response on previous edits. */
+    persistedStepStates: string | undefined;
+    /** Persist the current step states into the parent response so they survive session reloads. */
+    onPersistStepStates: (stepStates: StepState[]) => void;
     openerService: OpenerService;
 }
 
-interface StepState {
-    value?: string;
-    comments: string[];
+const PERSISTED_STEP_STATES_KEY = 'userInteractionStepStates';
+
+function deserializePersistedStepStates(raw: string | undefined, expectedLength: number): StepState[] | undefined {
+    if (!raw) {
+        return undefined;
+    }
+    try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length !== expectedLength) {
+            return undefined;
+        }
+        return parsed.map(entry => ({
+            value: typeof entry?.value === 'string' ? entry.value : undefined,
+            comments: Array.isArray(entry?.comments)
+                ? entry.comments.filter((c: unknown): c is string => typeof c === 'string')
+                : []
+        }));
+    } catch {
+        return undefined;
+    }
 }
 
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, canceled, responseComplete, result, openerService
+    args, toolCallId, tool, finished, canceled, responseComplete, result, persistedStepStates, onPersistStepStates, openerService
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
     const [currentStep, setCurrentStep] = React.useState(0);
-    const [stepStates, setStepStates] = React.useState<StepState[]>(() => steps.map(() => ({ comments: [] })));
+    // Prefer the tool's result, fall back to the persisted snapshot, else empty.
+    const [stepStates, setStepStates] = React.useState<StepState[]>(() => {
+        if (result) {
+            return steps.map((_, i) => ({
+                value: result.steps[i]?.value,
+                comments: result.steps[i]?.comments ? [...result.steps[i].comments!] : []
+            }));
+        }
+        const restored = deserializePersistedStepStates(persistedStepStates, stepCount);
+        if (restored) {
+            return restored;
+        }
+        return steps.map(() => ({ comments: [] }));
+    });
     const [pendingComment, setPendingComment] = React.useState('');
 
     const activeStep: UserInteractionStep | undefined = steps[currentStep];
@@ -92,7 +131,7 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         visitedStepsRef.current.add(currentStep);
         const links = activeStep.links ?? [];
         for (const link of links) {
-            if (link.autoOpen !== false) {
+            if (link.autoOpen) {
                 tool.openLink(link).catch(err => console.warn('Failed to auto-open user-interaction link:', err));
             }
         }
@@ -111,9 +150,10 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             const updated = updater(prev[stepIndex]);
             next[stepIndex] = updated;
             persistStepState(stepIndex, updated);
+            onPersistStepStates(next);
             return next;
         });
-    }, [persistStepState]);
+    }, [persistStepState, onPersistStepStates]);
 
     const isSingleStep = stepCount === 1;
     const hasOptions = !!activeStep?.options && activeStep.options.length > 0;
@@ -517,6 +557,8 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 canceled={parentNode.response.isCanceled}
                 responseComplete={parentNode.response.isComplete}
                 result={parseUserInteractionResult(response.result)}
+                persistedStepStates={response.clientData?.[PERSISTED_STEP_STATES_KEY]}
+                onPersistStepStates={stepStates => response.addClientData(PERSISTED_STEP_STATES_KEY, JSON.stringify(stepStates))}
                 openerService={this.openerService}
                 toolConfirmation={{
                     response,
