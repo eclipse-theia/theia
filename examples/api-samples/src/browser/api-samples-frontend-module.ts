@@ -43,6 +43,8 @@ import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-fr
 import { SampleFrontendMCPContribution } from './mcp/sample-frontend-mcp-contribution';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ResolveMcpFrontendContribution } from './mcp/resolve-frontend-mcp-contribution';
+import { bindAITestBridgeContribution } from './test/ai-test-bridge-contribution';
+import { bindJudgeChatAgentContribution } from './chat/judge-chat-agent-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -75,4 +77,6 @@ export default new ContainerModule((
     bind(MCPFrontendContribution).to(SampleFrontendMCPContribution).inSingletonScope();
     bind(ResolveMcpFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ResolveMcpFrontendContribution);
+    bindAITestBridgeContribution(bind);
+    bindJudgeChatAgentContribution(bind);
 });
