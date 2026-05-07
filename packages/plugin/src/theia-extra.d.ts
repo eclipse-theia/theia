@@ -390,6 +390,13 @@ export module '@theia/plugin' {
     export namespace window {
         export function registerTerminalObserver(observer: TerminalObserver): Disposable;
     }
+
+    export interface Diagnostic {
+        /**
+         * A data entry field that is preserved between diagnostics and code actions.
+         */
+        data?: any;
+    }
 }
 
 /**

@@ -68,7 +68,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -89,7 +91,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -108,7 +112,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -127,7 +133,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -146,7 +154,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 

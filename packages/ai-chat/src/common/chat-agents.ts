@@ -23,6 +23,9 @@ import {
     AgentSpecificVariables,
     AIVariableContext,
     AIVariableResolutionRequest,
+    CAPABILITY_TYPE_PROMPT_MAP,
+    CapabilityAwareContext,
+    GenericCapabilitySelections,
     getTextOfResponse,
     isLanguageModelStreamResponsePart,
     isTextResponsePart,
@@ -30,6 +33,8 @@ import {
     isToolCallResponsePart,
     isUsageResponsePart,
     LanguageModel,
+    TokenUsageService,
+    UsageResponsePart,
     LanguageModelMessage,
     LanguageModelRequirement,
     LanguageModelResponse,
@@ -44,30 +49,35 @@ import {
 } from '@theia/ai-core';
 import {
     Agent,
+    isLanguageModelParsedResponse,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelRegistry,
     LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
 import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
     ChatRequestModel,
     ChatResponseContent,
+    CommonChatSessionSettings,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
     MutableChatRequestModel,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
+    ToolCallArgumentsDeltaContent,
     ErrorChatResponseContent,
     InformationalChatResponseContent,
+    ResponseTokenUsage,
+    ThinkingChatResponseContent,
 } from './chat-model';
-import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
-import { ImageContextVariable } from './image-context-variable';
+import { ImageContextVariable, ResolvedImageContextVariable } from './image-context-variable';
 
 /**
  * System message content, enriched with function descriptions.
@@ -76,17 +86,27 @@ export interface SystemMessageDescription {
     text: string;
     /** All functions references in the system message. */
     functionDescriptions?: Map<string, ToolRequest>;
+    /** The prompt variant ID used */
+    promptVariantId?: string;
+    /** Whether the prompt variant is customized */
+    isPromptVariantCustomized?: boolean;
 }
 export namespace SystemMessageDescription {
-    export function fromResolvedPromptFragment(resolvedPrompt: ResolvedPromptFragment): SystemMessageDescription {
+    export function fromResolvedPromptFragment(
+        resolvedPrompt: ResolvedPromptFragment,
+        promptVariantId?: string,
+        isPromptVariantCustomized?: boolean
+    ): SystemMessageDescription {
         return {
             text: resolvedPrompt.text,
-            functionDescriptions: resolvedPrompt.functionDescriptions
+            functionDescriptions: resolvedPrompt.functionDescriptions,
+            promptVariantId,
+            isPromptVariantCustomized
         };
     }
 }
 
-export interface ChatSessionContext extends AIVariableContext {
+export interface ChatSessionContext extends CapabilityAwareContext {
     request?: ChatRequestModel;
     model: ChatModel;
 }
@@ -132,6 +152,7 @@ export namespace ChatAgentLocation {
 export interface ChatMode {
     readonly id: string;
     readonly name: string;
+    readonly isDefault?: boolean;
 }
 
 export const ChatAgent = Symbol('ChatAgent');
@@ -143,6 +164,10 @@ export interface ChatAgent extends Agent {
     iconClass?: string;
     modes?: ChatMode[];
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
+}
+
+export function isChatAgent(agent: Agent): agent is ChatAgent {
+    return 'locations' in agent && Array.isArray((agent as ChatAgent).locations) && 'invoke' in agent;
 }
 
 @injectable()
@@ -158,6 +183,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
+
+    @inject(TokenUsageService) @optional() protected tokenUsageService: TokenUsageService | undefined;
 
     readonly abstract id: string;
     readonly abstract name: string;
@@ -191,7 +218,26 @@ export abstract class AbstractChatAgent implements ChatAgent {
             if (!languageModel) {
                 throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
-            const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
+            const context: ChatSessionContext = {
+                model: request.session,
+                request,
+                capabilityOverrides: request.request.capabilityOverrides,
+                genericCapabilitySelections: request.request.genericCapabilitySelections
+            };
+            let systemMessageDescription = await this.getSystemMessageDescription(context);
+
+            // Append generic capabilities fragment if selections exist (done here so all subclass overrides benefit)
+            if (systemMessageDescription && CapabilityAwareContext.is(context) && GenericCapabilitySelections.hasSelections(context.genericCapabilitySelections)) {
+                systemMessageDescription = await this.appendGenericCapabilities(systemMessageDescription, context);
+            }
+
+            if (systemMessageDescription?.promptVariantId) {
+                request.response.setPromptVariantInfo(
+                    systemMessageDescription.promptVariantId,
+                    systemMessageDescription.isPromptVariantCustomized ?? false
+                );
+            }
+
             const messages = await this.getMessages(request.session);
 
             if (systemMessageDescription) {
@@ -210,9 +256,17 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
-            const languageModelResponse = await this.sendLlmRequest(request, messages, tools, languageModel);
+            const languageModelResponse = await this.sendLlmRequest(
+                request,
+                messages,
+                tools,
+                languageModel,
+                systemMessageDescription?.promptVariantId,
+                systemMessageDescription?.isPromptVariantCustomized
+            );
 
             await this.addContentsToResponse(languageModelResponse, request);
+            await this.recordTokenUsageFromResponse(request, languageModel);
             await this.onResponseComplete(request);
 
         } catch (e) {
@@ -255,8 +309,74 @@ export abstract class AbstractChatAgent implements ChatAgent {
         if (this.systemPromptId === undefined) {
             return undefined;
         }
+
+        const variantInfo = this.promptService.getPromptVariantInfo(this.systemPromptId);
+
         const resolvedPrompt = await this.promptService.getResolvedPromptFragment(this.systemPromptId, undefined, context);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt) : undefined;
+        if (!resolvedPrompt) {
+            return undefined;
+        }
+
+        return SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, variantInfo?.variantId, variantInfo?.isCustomized);
+    }
+
+    /**
+     * Appends resolved generic capability prompt fragments to the system message.
+     * Only includes fragments for capability types that have selections.
+     */
+    protected async appendGenericCapabilities(
+        systemMessage: SystemMessageDescription,
+        context: CapabilityAwareContext
+    ): Promise<SystemMessageDescription> {
+        const selections = context.genericCapabilitySelections;
+        if (!selections) {
+            return systemMessage;
+        }
+
+        // Determine which prompt fragments to include based on selections
+        const fragmentIds = CAPABILITY_TYPE_PROMPT_MAP
+            .filter(({ type }) => (selections[type]?.length ?? 0) > 0)
+            .map(({ promptId }) => promptId);
+
+        if (fragmentIds.length === 0) {
+            return systemMessage;
+        }
+
+        // Resolve all selected fragments in parallel
+        const resolvedResults = await Promise.all(
+            fragmentIds.map(fragmentId => this.promptService.getResolvedPromptFragment(fragmentId, undefined, context))
+        );
+
+        const resolvedTexts: string[] = [];
+        let combinedFunctions = systemMessage.functionDescriptions;
+
+        for (const resolvedFragment of resolvedResults) {
+            if (resolvedFragment && resolvedFragment.text.trim()) {
+                resolvedTexts.push(resolvedFragment.text);
+
+                // Merge function descriptions
+                if (resolvedFragment.functionDescriptions && resolvedFragment.functionDescriptions.size > 0) {
+                    combinedFunctions = new Map(combinedFunctions ?? []);
+                    for (const [key, value] of resolvedFragment.functionDescriptions) {
+                        if (!combinedFunctions.has(key)) {
+                            combinedFunctions.set(key, value);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (resolvedTexts.length === 0) {
+            return systemMessage;
+        }
+
+        const combinedText = systemMessage.text + '\n\n' + resolvedTexts.join('\n\n');
+
+        return {
+            ...systemMessage,
+            text: combinedText,
+            functionDescriptions: combinedFunctions
+        };
     }
 
     protected async getMessages(
@@ -275,22 +395,41 @@ export abstract class AbstractChatAgent implements ChatAgent {
             const imageMessages = request.context.variables
                 .filter(variable => ImageContextVariable.isResolvedImageContext(variable))
                 .map(variable => ImageContextVariable.parseResolved(variable))
-                .filter(content => content !== undefined)
+                .filter((content): content is ResolvedImageContextVariable => content !== undefined)
                 .map(content => ({
                     actor: 'user' as const,
                     type: 'image' as const,
                     image: {
-                        base64data: content!.data,
-                        mimeType: content!.mimeType
+                        base64data: content.data,
+                        mimeType: content.mimeType
                     }
                 }));
             messages.push(...imageMessages);
+
+            const contextImageData = new Set(imageMessages.map(msg => msg.image.base64data));
+            const inlineImageMessages = ImageContextVariable.extractInlineImages(request.message.parts)
+                .filter(content => !contextImageData.has(content.data))
+                .map(content => ({
+                    actor: 'user' as const,
+                    type: 'image' as const,
+                    image: {
+                        base64data: content.data,
+                        mimeType: content.mimeType
+                    }
+                }));
+            messages.push(...inlineImageMessages);
 
             if (request.response.isComplete || includeResponseInProgress) {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content
                     .filter(c => {
                         // we do not send errors or informational content
                         if (ErrorChatResponseContent.is(c) || InformationalChatResponseContent.is(c)) {
+                            return false;
+                        }
+                        // skip incomplete thinking blocks (e.g. from a cancelled stream where the
+                        // signature_delta never arrived). Some LLMs (e.g. Anthropic) reject thinking
+                        // blocks without a signature.
+                        if (ThinkingChatResponseContent.is(c) && !c.signature) {
                             return false;
                         }
                         // content even has an own converter, definitely include it
@@ -326,9 +465,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
     /**
      * Deduplicate tools by name (falling back to id) while preserving the first occurrence and order.
      */
-    protected deduplicateTools(toolRequests: ChatToolRequest[]): ChatToolRequest[] {
+    protected deduplicateTools(toolRequests: ToolRequest[]): ToolRequest[] {
         const seen = new Set<string>();
-        const deduped: ChatToolRequest[] = [];
+        const deduped: ToolRequest[] = [];
         for (const tool of toolRequests) {
             const key = tool.name ?? tool.id;
             if (!seen.has(key)) {
@@ -339,14 +478,32 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return deduped;
     }
 
+    /**
+     * Extracts session settings from the request, separating Theia-specific common settings
+     * from arbitrary provider settings.
+     *
+     * @param request The chat request model containing session settings
+     * @returns An object with `commonSettings` (Theia-specific) and `providerSettings` (passed to LLM)
+     */
+    protected getSessionSettings(request: MutableChatRequestModel): {
+        commonSettings: CommonChatSessionSettings | undefined;
+        providerSettings: Record<string, unknown>;
+    } {
+        const { commonSettings, ...providerSettings } = request.session.settings ?? {};
+        return { commonSettings, providerSettings };
+    }
+
     protected async sendLlmRequest(
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
-        toolRequests: ChatToolRequest[],
-        languageModel: LanguageModel
+        toolRequests: ToolRequest[],
+        languageModel: LanguageModel,
+        promptVariantId?: string,
+        isPromptVariantCustomized?: boolean
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
-        const settings = { ...agentSettings, ...request.session.settings };
+        const { commonSettings, providerSettings } = this.getSessionSettings(request);
+        const settings = { ...agentSettings, ...providerSettings };
         const dedupedTools = this.deduplicateTools(toolRequests);
         const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
         return this.languageModelService.sendRequest(
@@ -355,10 +512,13 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 messages,
                 tools,
                 settings,
+                reasoning: commonSettings?.reasoning,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
-                cancellationToken: request.response.cancellationToken
+                cancellationToken: request.response.cancellationToken,
+                promptVariantId,
+                isPromptVariantCustomized
             }
         );
     }
@@ -380,6 +540,34 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return request.response.complete();
     }
 
+    protected mapUsageResponsePart(usage: UsageResponsePart): ResponseTokenUsage {
+        return {
+            inputTokens: usage.input_tokens,
+            outputTokens: usage.output_tokens,
+            cacheCreationInputTokens: usage.cache_creation_input_tokens,
+            cacheReadInputTokens: usage.cache_read_input_tokens,
+        };
+    }
+
+    protected async recordTokenUsageFromResponse(request: MutableChatRequestModel, languageModel: LanguageModel): Promise<void> {
+        if (!this.tokenUsageService) {
+            return;
+        }
+        const entries = request.response.tokenUsageEntries;
+        if (entries.length === 0) {
+            return;
+        }
+        for (const entry of entries) {
+            await this.tokenUsageService.recordTokenUsage(languageModel.id, {
+                inputTokens: entry.inputTokens,
+                outputTokens: entry.outputTokens,
+                cachedInputTokens: entry.cacheCreationInputTokens,
+                readCachedInputTokens: entry.cacheReadInputTokens,
+                requestId: request.id,
+            });
+        }
+    }
+
     protected abstract addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void>;
 }
 
@@ -391,6 +579,9 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
         const parsedCommand = await this.parseTextResponse(responseAsText);
         const content = this.createResponseContent(parsedCommand, request);
         request.response.response.addContent(content);
+        if ('usage' in languageModelResponse && languageModelResponse.usage) {
+            request.response.setTokenUsage(this.mapUsageResponsePart(languageModelResponse.usage));
+        }
     }
 
     protected abstract parseTextResponse(text: string): Promise<T>;
@@ -404,12 +595,24 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
 @injectable()
 export class ToolCallChatResponseContentFactory {
     create(toolCall: ToolCall): ChatResponseContent {
+        // Return delta content for streaming argument updates
+        if (toolCall.argumentsDelta && toolCall.id && toolCall.function?.arguments) {
+            const deltaContent: ToolCallArgumentsDeltaContent = {
+                kind: 'toolCallArgumentsDelta',
+                id: toolCall.id,
+                delta: toolCall.function.arguments
+            };
+            return deltaContent;
+        }
+
+        // Return full tool call content
         return new ToolCallChatResponseContentImpl(
             toolCall.id,
             toolCall.function?.name,
             toolCall.function?.arguments,
             toolCall.finished,
-            toolCall.result
+            toolCall.result,
+            toolCall.data
         );
     }
 }
@@ -423,6 +626,17 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         if (isLanguageModelTextResponse(languageModelResponse)) {
             const contents = this.parseContents(languageModelResponse.text, request);
             request.response.response.addContents(contents);
+            if (languageModelResponse.usage) {
+                request.response.setTokenUsage(this.mapUsageResponsePart(languageModelResponse.usage));
+            }
+            return;
+        }
+        if (isLanguageModelParsedResponse(languageModelResponse)) {
+            const contents = this.parseContents(languageModelResponse.content, request);
+            request.response.response.addContents(contents);
+            if (languageModelResponse.usage) {
+                request.response.setTokenUsage(this.mapUsageResponsePart(languageModelResponse.usage));
+            }
             return;
         }
         if (isLanguageModelStreamResponse(languageModelResponse)) {
@@ -497,6 +711,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
             return new ThinkingChatResponseContentImpl(token.thought, token.signature);
         }
         if (isUsageResponsePart(token)) {
+            request.response.setTokenUsage(this.mapUsageResponsePart(token));
             return [];
         }
         return this.defaultContentFactory.create('', request);

@@ -73,6 +73,8 @@ export class FrontendGenerator extends AbstractGenerator {
         return `\
 // @ts-check
 require('reflect-metadata');
+${this.emitStartupLogger('Frontend', 'frontend page start')}
+${this.emitStartupLog('loading modules...')}
 const { Container } = require('@theia/core/shared/inversify');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 
@@ -114,23 +116,28 @@ module.exports = (async () => {
     ${this.ifBrowserOnly(`const { messagingFrontendOnlyModule } = require('@theia/core/lib/browser-only/messaging/messaging-frontend-only-module');
     container.load(messagingFrontendOnlyModule);`)}
 
+    ${this.emitStartupLog('container created')}
+
     await preload(container);
+    ${this.emitStartupLog('preloaded')}
 
     ${this.ifMonaco(() => `
     const { MonacoInit } = require('@theia/monaco/lib/browser/monaco-init');
     `)};
 
     const { FrontendApplication } = require('@theia/core/lib/browser');
-    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');    
+    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
     const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 
     container.load(frontendApplicationModule);
     ${this.pck.ifBrowserOnly(`const { frontendOnlyApplicationModule } = require('@theia/core/lib/browser-only/frontend-only-application-module');
     container.load(frontendOnlyApplicationModule);`)}
-    
+
     container.load(loggerFrontendModule);
     ${this.ifBrowserOnly(`const { loggerFrontendOnlyModule } = require('@theia/core/lib/browser-only/logger-frontend-only-module');
     container.load(loggerFrontendOnlyModule);`)}
+
+    ${this.emitStartupLog('core modules loaded')}
 
     try {
 ${Array.from(frontendModules.values(), jsModulePath => `\
@@ -138,6 +145,7 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
         ${this.ifMonaco(() => `
         MonacoInit.init(container);
         `)};
+        ${this.emitStartupLog('modules loaded')}
         await start();
     } catch (reason) {
         console.error('Failed to start the frontend application.');
@@ -148,7 +156,10 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
 
     function start() {
         (window['theia'] = window['theia'] || {}).container = container;
-        return container.get(FrontendApplication).start();
+        ${this.emitStartupLog('resolving application')}
+        const application = container.get(FrontendApplication);
+        ${this.emitStartupLog('application resolved')}
+        return application.start();
     }
 })();
 `;

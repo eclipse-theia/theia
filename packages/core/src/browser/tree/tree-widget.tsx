@@ -306,7 +306,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }),
             this.preferenceService.onPreferenceChanged((event: PreferenceChange) => {
                 if (event.preferenceName === PREFERENCE_NAME_TREE_INDENT) {
-                    this.treeIndent = event.newValue as number;
+                    this.treeIndent = this.preferenceService.get<number>(PREFERENCE_NAME_TREE_INDENT, 8);
                     this.update();
                 }
             })
@@ -671,7 +671,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             aria-label={node.checkboxInfo.accessibilityInformation?.label}
             role={node.checkboxInfo.accessibilityInformation?.role}
             className='theia-input'
-            onClick={event => this.toggleChecked(event)} />;
+            onClick={event => this.toggleChecked(event)}
+            onDoubleClick={event => event.stopPropagation()} />;
     }
 
     protected toggleChecked(event: React.MouseEvent<HTMLElement>): void {

@@ -88,4 +88,61 @@ describe('localization-manager#translateLanguage', () => {
             key: '[{1} {0}]'
         });
     });
+
+    it('should preserve angle brackets in text', async () => {
+        const input = {
+            key: 'Use <b>bold</b> text'
+        };
+        const target = {};
+        await manager.translateLanguage(input, target, 'EN', defaultOptions);
+        assert.deepStrictEqual(target, {
+            key: '[Use <b>bold</b> text]'
+        });
+    });
+
+    it('should preserve ampersands in text', async () => {
+        const input = {
+            key: 'foo & bar'
+        };
+        const target = {};
+        await manager.translateLanguage(input, target, 'EN', defaultOptions);
+        assert.deepStrictEqual(target, {
+            key: '[foo & bar]'
+        });
+    });
+
+    it('should preserve angle brackets combined with placeholders', async () => {
+        const input = {
+            key: '{0} is <b>greater</b> than {1}'
+        };
+        const target = {};
+        await manager.translateLanguage(input, target, 'EN', defaultOptions);
+        assert.deepStrictEqual(target, {
+            key: '[{0} is <b>greater</b> than {1}]'
+        });
+    });
+
+    it('should not wrap empty braces as placeholders', async () => {
+        const input = {
+            key: 'empty {} braces'
+        };
+        const target = {};
+        await manager.translateLanguage(input, target, 'EN', defaultOptions);
+        assert.deepStrictEqual(target, {
+            key: '[empty {} braces]'
+        });
+    });
+
+    it('should pass context to the localization function', async () => {
+        let receivedContext: string | undefined;
+        const contextCapture = new LocalizationManager(async (parameters: DeeplParameters) => {
+            receivedContext = parameters.context;
+            return mockLocalization(parameters);
+        });
+        const input = { key: 'value' };
+        const target = {};
+        await contextCapture.translateLanguage(input, target, 'EN', defaultOptions);
+        assert.ok(receivedContext, 'context should be defined');
+        assert.ok(receivedContext!.includes('IDE'), 'context should mention IDE');
+    });
 });

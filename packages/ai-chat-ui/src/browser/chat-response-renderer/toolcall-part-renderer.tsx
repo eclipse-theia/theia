@@ -19,14 +19,15 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, OpenerService } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
+import { createConfirmationHandlers, ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
-import { ToolCallResult } from '@theia/ai-core';
+import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -37,6 +38,15 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     @inject(OpenerService)
     protected openerService: OpenerService;
 
+    @inject(ToolInvocationRegistry)
+    protected toolInvocationRegistry: ToolInvocationRegistry;
+
+    @inject(HoverService)
+    protected hoverService: HoverService;
+
+    @inject(ContextMenuRenderer)
+    protected contextMenuRenderer: ContextMenuRenderer;
+
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
             return 10;
@@ -44,17 +54,37 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         return -1;
     }
 
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const toolRequest = response.name ? this.toolInvocationRegistry.getFunction(response.name) : undefined;
+        const { handleAllow, handleDeny } = createConfirmationHandlers(
+            response.name, response, this.toolConfirmationManager, chatId, toolRequest
+        );
+
+        return <ToolConfirmation
+            response={response}
+            toolRequest={toolRequest}
+            onAllow={handleAllow}
+            onDeny={handleDeny}
+            contextMenuRenderer={this.contextMenuRenderer}
+        />;
+    }
+
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
         const chatId = parentNode.sessionId;
-        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name, chatId) : ToolConfirmationMode.DISABLED;
+        const toolRequest = response.name ? this.toolInvocationRegistry.getFunction(response.name) : undefined;
+        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name, chatId, toolRequest) : ToolConfirmationMode.DISABLED;
         return <ToolCallContent
             response={response}
             confirmationMode={confirmationMode}
             toolConfirmationManager={this.toolConfirmationManager}
+            toolRequest={toolRequest}
             chatId={chatId}
-            renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
+            getArgumentsLabel={this.getArgumentsLabel.bind(this)}
+            showArgsTooltip={this.showArgsTooltip.bind(this)}
             responseRenderer={this.renderResult.bind(this)}
-            requestCanceled={parentNode.response.isCanceled} />;
+            requestCanceled={parentNode.response.isCanceled}
+            contextMenuRenderer={this.contextMenuRenderer} />;
     }
 
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
@@ -62,8 +92,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         if (!result) {
             return undefined;
         }
-        if (typeof result === 'string') {
-            return <pre>{JSON.stringify(result, undefined, 2)}</pre>;
+        // eslint-disable-next-line no-null/no-null
+        if (typeof result !== 'object' || result === null) {
+            return <pre>{String(result)}</pre>;
         }
         if ('content' in result) {
             return <div className='theia-toolCall-response-content'>
@@ -102,30 +133,40 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         }
     }
 
-    protected getToolConfirmationSettings(responseId: string, chatId: string): ToolConfirmationMode {
-        return this.toolConfirmationManager.getConfirmationMode(responseId, chatId);
+    protected getToolConfirmationSettings(responseId: string, chatId: string, toolRequest?: ToolRequest): ToolConfirmationMode {
+        return this.toolConfirmationManager.getConfirmationMode(responseId, chatId, toolRequest);
     }
 
-    protected renderCollapsibleArguments(args: string | undefined): ReactNode {
+    protected getArgumentsLabel(toolName: string | undefined, args: string | undefined): string {
         if (!args || !args.trim() || args.trim() === '{}') {
-            return undefined;
+            return '';
         }
-
-        return (
-            <details className="collapsible-arguments">
-                <summary className="collapsible-arguments-summary">...</summary>
-                <span>{this.prettyPrintArgs(args)}</span>
-            </details>
-        );
+        try {
+            const toolRequest = toolName ? this.toolInvocationRegistry.getFunction(toolName) : undefined;
+            if (toolRequest?.getArgumentsShortLabel) {
+                const result = toolRequest.getArgumentsShortLabel(args);
+                if (result) {
+                    return result.hasMore ? `${result.label} \u2026` : result.label;
+                }
+            }
+        } catch {
+            // tool not found in registry, fall through to generic condensed rendering
+        }
+        return condenseArguments(args) ?? '\u2026';
     }
 
-    private prettyPrintArgs(args: string): string {
-        try {
-            return JSON.stringify(JSON.parse(args), undefined, 2);
-        } catch (e) {
-            // fall through
-            return args;
+    protected showArgsTooltip(response: ToolCallChatResponseContent, target: HTMLElement | undefined): void {
+        if (!target || !response.arguments || !response.arguments.trim() || response.arguments.trim() === '{}') {
+            return;
         }
+        const markdownString = formatArgsForTooltip(response.arguments);
+        this.hoverService.requestHover({
+            content: markdownString,
+            target,
+            position: 'right',
+            interactive: true,
+            cssClasses: ['toolcall-args-hover']
+        });
     }
 }
 
@@ -137,10 +178,13 @@ interface ToolCallContentProps {
     response: ToolCallChatResponseContent;
     confirmationMode: ToolConfirmationMode;
     toolConfirmationManager: ToolConfirmationManager;
+    toolRequest?: ToolRequest;
     chatId: string;
-    renderCollapsibleArguments: (args: string | undefined) => ReactNode;
+    getArgumentsLabel: (toolName: string | undefined, args: string | undefined) => string;
+    showArgsTooltip: (response: ToolCallChatResponseContent, target: HTMLElement | undefined) => void;
     responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
     requestCanceled: boolean;
+    contextMenuRenderer: ContextMenuRenderer;
 }
 
 /**
@@ -150,13 +194,20 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     response,
     confirmationMode,
     toolConfirmationManager,
+    toolRequest,
     chatId,
     responseRenderer,
-    renderCollapsibleArguments,
-    requestCanceled
+    getArgumentsLabel,
+    requestCanceled,
+    showArgsTooltip,
+    contextMenuRenderer
 }) => {
-    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
-    const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
+    const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
+    const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
+    const pendingRef = React.useRef<HTMLElement | undefined>(undefined);
+    const allowedRef = React.useRef<HTMLElement | undefined>(undefined);
+
+    const argsLabel = getArgumentsLabel(response.name, response.arguments);
 
     const formatReason = (reason: unknown): string => {
         if (!reason) {
@@ -175,47 +226,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
         }
     };
 
-    React.useEffect(() => {
-        if (confirmationMode === ToolConfirmationMode.ALWAYS_ALLOW) {
-            response.confirm();
-            setConfirmationState('allowed');
-            return;
-        } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
-            response.deny();
-            setConfirmationState('denied');
-            return;
-        }
-        response.confirmed
-            .then(confirmed => {
-                if (confirmed === true) {
-                    setConfirmationState('allowed');
-                } else {
-                    setConfirmationState('denied');
-                }
-            })
-            .catch(reason => {
-                setRejectionReason(reason);
-                setConfirmationState('rejected');
-            });
-    }, [response, confirmationMode]);
-
-    const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
-        if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW);
-        } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, chatId);
-        }
-        response.confirm();
-    }, [response, toolConfirmationManager, chatId]);
-
-    const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
-        if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.DISABLED);
-        } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.DISABLED, chatId);
-        }
-        response.deny();
-    }, [response, toolConfirmationManager, chatId]);
+    const { handleAllow, handleDeny } = React.useMemo(
+        () => createConfirmationHandlers(response.name, response, toolConfirmationManager, chatId, toolRequest),
+        [response, toolConfirmationManager, chatId, toolRequest]
+    );
 
     const reasonText = formatReason(rejectionReason);
 
@@ -233,32 +247,49 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
             ) : confirmationState === 'denied' ? (
                 <span className='theia-toolCall-denied'>
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                    {ToolCallChatResponseContent.isDenialResult(response.result) && response.result.reason ? <span> — {response.result.reason}</span> : undefined}
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>
-                    <summary>
+                    <summary
+                        ref={(el: HTMLElement | null) => { summaryRef.current = el ?? undefined; }}
+                        onMouseEnter={() => showArgsTooltip(response, summaryRef.current)}
+                    >
                         {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                        ({renderCollapsibleArguments(response.arguments)})
+                        (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                     </summary>
                     <div className='theia-toolCall-response-result'>
                         {responseRenderer(response)}
                     </div>
                 </details>
+            ) : confirmationState === 'pending' ? (
+                <span className='theia-toolCall-pending'
+                    ref={(el: HTMLElement | null) => { pendingRef.current = el ?? undefined; }}
+                    onMouseEnter={() => showArgsTooltip(response, pendingRef.current)}
+                >
+                    <Spinner /> {response.name}
+                    (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
+                </span>
             ) : (
                 confirmationState === 'allowed' && !requestCanceled && (
-                    <span className='theia-toolCall-allowed'>
+                    <span className='theia-toolCall-allowed'
+                        ref={(el: HTMLElement | null) => { allowedRef.current = el ?? undefined; }}
+                        onMouseEnter={() => showArgsTooltip(response, allowedRef.current)}
+                    >
                         <Spinner /> {nls.localizeByDefault('Running')} {response.name}
+                        (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                     </span>
                 )
             )}
 
-            {/* Show confirmation UI when waiting for allow */}
-            {confirmationState === 'waiting' && !requestCanceled && (
+            {confirmationState === 'waiting' && !requestCanceled && !response.finished && (
                 <span className='theia-toolCall-waiting'>
                     <ToolConfirmation
                         response={response}
+                        toolRequest={toolRequest}
                         onAllow={handleAllow}
                         onDeny={handleDeny}
+                        contextMenuRenderer={contextMenuRenderer}
                     />
                 </span>
             )}

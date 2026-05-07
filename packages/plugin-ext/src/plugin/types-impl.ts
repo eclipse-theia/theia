@@ -24,7 +24,8 @@
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { illegalArgument } from '../common/errors';
 import type * as theia from '@theia/plugin';
-import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
+import { UriComponents } from '../common/uri-components';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -33,6 +34,7 @@ import * as paths from 'path';
 import { es5ClassCompat } from '../common/types';
 import { isObject, isStringArray } from '@theia/core/lib/common';
 import { CellEditType, CellMetadataEdit, NotebookDocumentMetadataEdit } from '@theia/notebook/lib/common';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
@@ -735,7 +737,7 @@ export class ThemeIcon {
 
     static readonly Folder: ThemeIcon = new ThemeIcon('folder');
 
-    private constructor(public id: string, public color?: ThemeColor) {
+    constructor(public id: string, public color?: ThemeColor) {
     }
 
 }
@@ -814,7 +816,7 @@ export class RelativePattern {
     }
     set baseUri(baseUri: URI) {
         this._baseUri = baseUri;
-        this.base = baseUri.fsPath;
+        this._base = baseUri.fsPath;
     }
 
     constructor(base: theia.WorkspaceFolder | URI | string, public pattern: string) {
@@ -1488,6 +1490,29 @@ export class Hover {
         }
         this.range = range;
     }
+}
+
+@es5ClassCompat
+export class VerboseHover extends Hover {
+
+    public canIncreaseVerbosity: boolean | undefined;
+    public canDecreaseVerbosity: boolean | undefined;
+
+    constructor(
+        contents: theia.MarkdownString | theia.MarkedString | (theia.MarkdownString | theia.MarkedString)[],
+        range?: Range,
+        canIncreaseVerbosity?: boolean,
+        canDecreaseVerbosity?: boolean,
+    ) {
+        super(contents, range);
+        this.canIncreaseVerbosity = canIncreaseVerbosity;
+        this.canDecreaseVerbosity = canDecreaseVerbosity;
+    }
+}
+
+export enum HoverVerbosityAction {
+    Increase = 0,
+    Decrease = 1
 }
 
 @es5ClassCompat
@@ -2201,6 +2226,12 @@ export enum CommentThreadState {
 export enum CommentThreadCollapsibleState {
     Collapsed = 0,
     Expanded = 1
+}
+
+export enum QuickInputButtonLocation {
+    Title = 1,
+    Inline = 2,
+    Input = 3
 }
 
 @es5ClassCompat
@@ -3445,9 +3476,10 @@ export class TimelineItem {
     id?: string;
     iconPath?: theia.Uri | { light: theia.Uri; dark: theia.Uri } | ThemeIcon;
     description?: string;
-    detail?: string;
+    tooltip?: string | theia.MarkdownString | undefined;
     command?: theia.Command;
     contextValue?: string;
+    accessibilityInformation?: AccessibilityInformation;
     constructor(label: string, timestamp: number) {
         this.label = label;
         this.timestamp = timestamp;
@@ -3850,7 +3882,7 @@ export enum EditSessionIdentityMatch {
 // #region terminalCompletionProvider
 export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
 
-    resourceRequestConfig?: theia.TerminalResourceRequestConfig;
+    resourceOptions?: theia.TerminalCompletionResourceOptions;
 
     items: T[];
 
@@ -3858,11 +3890,26 @@ export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
      * Creates a new completion list.
      *
      * @param items The completion items.
-     * @param resourceRequestConfig Indicates which resources should be shown as completions for the cwd of the terminal.
+     * @param resourceOptions Indicates which resources should be shown as completions for the cwd of the terminal.
+     */
+    constructor(items: T[], resourceOptions?: theia.TerminalCompletionResourceOptions) {
+    }
+}
+
+export class TerminalCompletionItem {
+    label: string | theia.CompletionItemLabel;
+    replacementRange: readonly [number, number];
+    detail?: string;
+    documentation?: string | theia.MarkdownString;
+    kind?: TerminalCompletionItemKind;
+    /**
      * @stubbed
      */
-    constructor(items?: T[], resourceRequestConfig?: theia.TerminalResourceRequestConfig) {
-    }
+    constructor(
+        label: string | theia.CompletionItemLabel,
+        replacementRange: readonly [number, number],
+        kind?: TerminalCompletionItemKind
+    ) { }
 }
 
 export enum TerminalCompletionItemKind {
@@ -3876,11 +3923,11 @@ export enum TerminalCompletionItemKind {
     Flag = 7,
     SymbolicLinkFile = 8,
     SymbolicLinkFolder = 9,
-    Commit = 10,
-    Branch = 11,
-    Tag = 12,
-    Stash = 13,
-    Remote = 14,
+    ScmCommit = 10,
+    ScmBranch = 11,
+    ScmTag = 12,
+    ScmStash = 13,
+    ScmRemote = 14,
     PullRequest = 15,
     PullRequestDone = 16,
 }
@@ -4021,11 +4068,11 @@ export enum LanguageModelChatMessageRole {
  * @stubbed
  */
 export class LanguageModelChatMessage {
-    static User(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
+    static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart>, name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.User, content, name);
     }
 
-    static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
+    static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart)[], name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
     }
 
@@ -4036,12 +4083,12 @@ export class LanguageModelChatMessage {
 /**
  * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
  */
-export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
 /**
  * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
  */
-export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
 export class LanguageModelError extends Error {
 
@@ -4087,9 +4134,9 @@ export class LanguageModelToolCallPart {
  */
 export class LanguageModelToolResultPart {
     callId: string;
-    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+    content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(callId: string, content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[]) { }
+    constructor(callId: string, content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
 }
 
 /**
@@ -4104,9 +4151,9 @@ export class LanguageModelTextPart {
  * @stubbed
  */
 export class LanguageModelToolResult {
-    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+    content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart)[]) { }
+    constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
 }
 
 /**
@@ -4116,6 +4163,26 @@ export class LanguageModelPromptTsxPart {
     value: unknown;
 
     constructor(value: unknown) { }
+}
+
+/**
+ * @stubbed
+ */
+export class LanguageModelDataPart {
+    static image(data: Uint8Array, mime: string): LanguageModelDataPart {
+        return new LanguageModelDataPart(data, mime);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static json(value: any, mime: string = 'text/x-json'): LanguageModelDataPart {
+        const rawStr = JSON.stringify(value, undefined, '\t');
+        return new LanguageModelDataPart(BinaryBuffer.fromString(rawStr).buffer, mime);
+    }
+    static text(value: string, mime: string = 'text/plain'): LanguageModelDataPart {
+        return new LanguageModelDataPart(BinaryBuffer.fromString(value).buffer, mime);
+    }
+    mimeType: string;
+    data: Uint8Array;
+    constructor(data: Uint8Array, mimeType: string) { }
 }
 
 /**

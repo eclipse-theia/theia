@@ -91,7 +91,8 @@ import {
     DataTransferDTO,
     DocumentDropEditProviderMetadata,
     DebugStackFrameDTO,
-    DebugThreadDTO
+    DebugThreadDTO,
+    HoverContext
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -671,11 +672,13 @@ export interface TransferQuickPickItem {
     picked?: boolean;
     alwaysShow?: boolean;
     buttons?: readonly TransferQuickInputButton[];
+    resourceUri?: UriComponents;
 }
 
 export interface TransferQuickPickOptions<T extends TransferQuickPickItem> {
     title?: string;
     placeHolder?: string;
+    prompt?: string;
     matchOnDescription?: boolean;
     matchOnDetail?: boolean;
     matchOnLabel?: boolean;
@@ -691,6 +694,8 @@ export interface TransferQuickInputButton {
     handle?: number;
     readonly iconUrl?: string | { light: string; dark: string } | ThemeIcon;
     readonly tooltip?: string | undefined;
+    readonly location?: number;
+    readonly toggle?: { checked: boolean };
 }
 
 export type TransferQuickInput = TransferQuickPick | TransferInputBox;
@@ -708,6 +713,7 @@ export interface TransferQuickPick extends BaseTransferQuickInput {
     type?: 'quickPick';
     value?: string;
     placeholder?: string;
+    prompt?: string;
     buttons?: TransferQuickInputButton[];
     items?: TransferQuickPickItem[];
     activeItems?: ReadonlyArray<theia.QuickPickItem>;
@@ -727,6 +733,7 @@ export interface TransferInputBox extends BaseTransferQuickInput {
     buttons?: TransferQuickInputButton[];
     prompt?: string;
     validationMessage?: string;
+    severity?: Severity;
 }
 
 export interface IInputBoxOptions {
@@ -955,6 +962,17 @@ export namespace ScmCommandArg {
     }
 }
 
+export interface ScmHistoryItemCommandArg {
+    sourceControlHandle: number;
+    id: string;
+    type: 'historyItem' | 'historyItemRef';
+}
+export namespace ScmHistoryItemCommandArg {
+    export function is(arg: unknown): arg is ScmHistoryItemCommandArg {
+        return isObject(arg) && 'sourceControlHandle' in arg && 'id' in arg && 'type' in arg;
+    }
+}
+
 export interface ScmExt {
     createSourceControl(plugin: Plugin, id: string, label: string, rootUri?: theia.Uri): theia.SourceControl;
     getLastInputBox(plugin: Plugin): theia.SourceControlInputBox | undefined;
@@ -963,6 +981,11 @@ export interface ScmExt {
     $validateInput(sourceControlHandle: number, value: string, cursorPosition: number): Promise<[string, number] | undefined>;
     $setSelectedSourceControl(selectedSourceControlHandle: number | undefined): Promise<void>;
     $provideOriginalResource(sourceControlHandle: number, uri: string, token: theia.CancellationToken): Promise<UriComponents | undefined>;
+    $provideHistoryItemRefs(sourceControlHandle: number, historyItemRefs: string[] | undefined, token: theia.CancellationToken): Promise<ScmHistoryItemRefDto[] | undefined>;
+    $provideHistoryItems(sourceControlHandle: number, options: ScmHistoryOptionsDto, token: theia.CancellationToken): Promise<ScmHistoryItemDto[] | undefined>;
+    $provideHistoryItemChanges(sourceControlHandle: number, historyItemId: string, historyItemParentId: string | undefined, token: theia.CancellationToken): Promise<ScmHistoryItemChangeDto[] | undefined>;
+    $resolveHistoryItem(sourceControlHandle: number, historyItemId: string, token: theia.CancellationToken): Promise<ScmHistoryItemDto | undefined>;
+    $resolveHistoryItemRefsCommonAncestor(sourceControlHandle: number, historyItemRefs: string[], token: theia.CancellationToken): Promise<string | undefined>;
 }
 
 export namespace TimelineCommandArg {
@@ -1030,7 +1053,7 @@ export interface DecorationsMain {
 }
 
 export interface ScmMain {
-    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents): Promise<void>;
+    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents, parentHandle?: number): Promise<void>;
     $updateSourceControl(sourceControlHandle: number, features: SourceControlProviderFeatures): Promise<void>;
     $unregisterSourceControl(sourceControlHandle: number): Promise<void>;
 
@@ -1045,6 +1068,10 @@ export interface ScmMain {
     $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
     $setInputBoxVisible(sourceControlHandle: number, visible: boolean): void;
     $setInputBoxEnabled(sourceControlHandle: number, enabled: boolean): void;
+
+    $setActionButton(sourceControlHandle: number, actionButton: ScmActionButton | undefined): void;
+    $onDidChangeCurrentHistoryItemRefs(sourceControlHandle: number): void;
+    $onDidChangeHistoryItemRefs(sourceControlHandle: number, event: ScmHistoryItemRefsChangeEventDto): void;
 }
 
 export interface SourceControlProviderFeatures {
@@ -1053,6 +1080,11 @@ export interface SourceControlProviderFeatures {
     commitTemplate?: string;
     acceptInputCommand?: Command;
     statusBarCommands?: Command[];
+    contextValue?: string;
+    hasHistoryProvider?: boolean;
+    currentHistoryItemRef?: ScmHistoryItemRefDto;
+    currentHistoryItemRemoteRef?: ScmHistoryItemRefDto;
+    currentHistoryItemBaseRef?: ScmHistoryItemRefDto;
 }
 
 export interface SourceControlGroupFeatures {
@@ -1087,6 +1119,56 @@ export interface ScmRawResourceSplice {
 export interface ScmRawResourceSplices {
     handle: number,
     splices: ScmRawResourceSplice[]
+}
+
+export interface ScmHistoryItemRefDto {
+    id: string;
+    name: string;
+    description?: string;
+    revision?: string;
+    icon?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    category?: string;
+}
+
+export interface ScmHistoryItemRefsChangeEventDto {
+    added: ScmHistoryItemRefDto[];
+    removed: ScmHistoryItemRefDto[];
+    modified: ScmHistoryItemRefDto[];
+}
+
+export interface ScmHistoryItemStatisticsDto {
+    files: number;
+    insertions: number;
+    deletions: number;
+}
+
+export interface ScmHistoryItemDto {
+    id: string;
+    parentIds?: string[];
+    subject: string;
+    message?: string | MarkdownString;
+    author?: string;
+    authorEmail?: string;
+    authorIcon?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+    displayId?: string;
+    timestamp?: number;
+    tooltip?: string | MarkdownString;
+    statistics?: ScmHistoryItemStatisticsDto;
+    references?: ScmHistoryItemRefDto[];
+}
+
+export interface ScmHistoryItemChangeDto {
+    uri: UriComponents;
+    originalUri?: UriComponents;
+    modifiedUri?: UriComponents;
+    renameUri?: UriComponents;
+}
+
+export interface ScmHistoryOptionsDto {
+    skip?: number;
+    limit?: number | { id?: string };
+    historyItemRefs?: string[];
+    filterText?: string;
 }
 
 export interface SourceControlResourceState {
@@ -1138,6 +1220,13 @@ export interface SourceControlResourceDecorations {
      * The icon path for a specific source control resource state.
      */
     readonly iconPath?: string;
+}
+
+export interface ScmActionButton {
+    command: Command;
+    secondaryCommands?: Command[][];
+    enabled?: boolean;
+    description?: string;
 }
 
 export interface NotificationMain {
@@ -1232,9 +1321,22 @@ export interface TextEditorPositionData {
     [id: string]: EditorPosition;
 }
 
+export interface TextEditorDiffInformationDto {
+    readonly documentVersion: number;
+    readonly original: UriComponents | undefined;
+    readonly modified: UriComponents;
+    readonly changes: readonly {
+        readonly original: { readonly startLineNumber: number; readonly endLineNumberExclusive: number };
+        readonly modified: { readonly startLineNumber: number; readonly endLineNumberExclusive: number };
+        readonly kind: number;
+    }[];
+    readonly isStale: boolean;
+}
+
 export interface TextEditorsExt {
     $acceptEditorPropertiesChanged(id: string, props: EditorChangedPropertiesData): void;
     $acceptEditorPositionData(data: TextEditorPositionData): void;
+    $acceptEditorDiffInformation(id: string, diffInformation: TextEditorDiffInformationDto[] | undefined): void;
 }
 
 export interface SingleEditOperation {
@@ -1486,8 +1588,13 @@ export interface OutputChannelRegistryMain {
 
 export type CharacterPair = [string, string];
 
+export interface LineCommentRule {
+    comment: string;
+    noIndent?: boolean;
+}
+
 export interface CommentRule {
-    lineComment?: string;
+    lineComment?: string | LineCommentRule;
     blockComment?: CharacterPair;
 }
 
@@ -1681,6 +1788,10 @@ export interface PluginInfo {
     displayName?: string;
 }
 
+export interface HoverWithId extends Hover {
+    id: number;
+}
+
 export interface LanguageStatus {
     readonly id: string;
     readonly name: string;
@@ -1708,7 +1819,8 @@ export interface LanguagesExt {
         handle: number, resource: UriComponents, position: Position, context: SignatureHelpContext, token: CancellationToken
     ): Promise<SignatureHelp | undefined>;
     $releaseSignatureHelp(handle: number, id: number): void;
-    $provideHover(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Hover | undefined>;
+    $provideHover(handle: number, resource: UriComponents, position: Position, context: HoverContext<{ id: number }> | undefined, token: CancellationToken): Promise<HoverWithId | undefined>;
+    $releaseHover(handle: number, id: number): void;
     $provideEvaluatableExpression(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<EvaluatableExpression | undefined>;
     $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: CancellationToken): Promise<InlineValue[] | undefined>;
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;
@@ -1829,7 +1941,8 @@ export interface LanguagesMain {
     $registerDocumentSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[],
         legend: theia.SemanticTokensLegend, eventHandle: number | undefined): void;
     $emitDocumentSemanticTokensEvent(eventHandle: number): void;
-    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void;
+    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[],
+        legend: theia.SemanticTokensLegend, eventHandle: number | undefined): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerLinkedEditingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerTypeHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
@@ -1870,7 +1983,7 @@ export interface WebviewsMain {
     $disposeWebview(handle: string): void;
     $reveal(handle: string, showOptions: theia.WebviewPanelShowOptions): void;
     $setTitle(handle: string, value: string): void;
-    $setIconPath(handle: string, value: IconUrl | undefined): void;
+    $setIconPath(handle: string, value: IconUrl | ThemeIcon | undefined): void;
     $setHtml(handle: string, value: string): void;
     $setOptions(handle: string, options: theia.WebviewOptions): void;
     $postMessage(handle: string, value: any): Thenable<boolean>;
@@ -2077,6 +2190,11 @@ export interface ExtHostFileSystemEventServiceShape {
     $onFileEvent(events: FileSystemEvents): void;
     $onWillRunFileOperation(operation: files.FileOperation, target: UriComponents, source: UriComponents | undefined, timeout: number, token: CancellationToken): Promise<any>;
     $onDidRunFileOperation(operation: files.FileOperation, target: UriComponents, source: UriComponents | undefined): void;
+}
+
+export interface MainFileSystemEventServiceShape {
+    $watch(session: number, resource: UriComponents, opts: files.WatchOptions): void;
+    $unwatch(session: number): void;
 }
 
 export interface ClipboardMain {
@@ -2343,6 +2461,7 @@ export const PLUGIN_RPC_CONTEXT = {
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
     FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain'),
+    FILE_SYSTEM_EVENT_SERVICE_MAIN: createProxyIdentifier<MainFileSystemEventServiceShape>('FileSystemEventServiceMain'),
     SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
     SECRETS_MAIN: createProxyIdentifier<SecretsMain>('SecretsMain'),
     DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),

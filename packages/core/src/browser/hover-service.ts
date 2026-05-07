@@ -260,9 +260,11 @@ export class HoverService {
      * For interactive hovers, the hover remains visible to allow interaction with its elements.
      */
     protected listenForMouseClick(request: HoverRequest): void {
-        const handleMouseDown = (_e: MouseEvent) => {
-            const isInteractive = request.interactive;
-            if (!isInteractive) {
+        const handleMouseDown = (e: MouseEvent) => {
+            if (this.hoverHost.contains(e.target as Node)) {
+                return;
+            }
+            if (!request.interactive) {
                 this.cancelHover();
             }
         };

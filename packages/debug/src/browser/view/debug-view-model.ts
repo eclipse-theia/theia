@@ -28,6 +28,10 @@ import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
 import { DebugSessionOptionsBase } from '../debug-session-options';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager';
+import { DebugExceptionBreakpoint } from './debug-exception-breakpoint';
+import { DebugDataBreakpoint } from '../model/debug-data-breakpoint';
+import { DebugVariable } from '../console/debug-console-items';
 
 @injectable()
 export class DebugViewModel implements Disposable {
@@ -45,6 +49,12 @@ export class DebugViewModel implements Disposable {
         this.onDidChangeBreakpointsEmitter.fire(uri);
     }
 
+    protected readonly onDidResolveLazyVariableEmitter = new Emitter<DebugVariable>();
+    readonly onDidResolveLazyVariable: Event<DebugVariable> = this.onDidResolveLazyVariableEmitter.event;
+    protected fireDidResolveLazyVariable(variable: DebugVariable): void {
+        this.onDidResolveLazyVariableEmitter.fire(variable);
+    }
+
     protected readonly _watchExpressions = new Map<number, DebugWatchExpression>();
 
     protected readonly onDidChangeWatchExpressionsEmitter = new Emitter<void>();
@@ -56,11 +66,15 @@ export class DebugViewModel implements Disposable {
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeEmitter,
         this.onDidChangeBreakpointsEmitter,
+        this.onDidResolveLazyVariableEmitter,
         this.onDidChangeWatchExpressionsEmitter,
     );
 
     @inject(DebugSessionManager)
     protected readonly manager: DebugSessionManager;
+
+    @inject(BreakpointManager)
+    protected readonly breakpointManager: BreakpointManager;
 
     @inject(DebugWatchManager)
     protected readonly watch: DebugWatchManager;
@@ -87,13 +101,16 @@ export class DebugViewModel implements Disposable {
             this.fireDidChange();
         }));
         this.toDispose.push(this.manager.onDidChange(current => {
-            if (current === this.currentSession) {
-                this.fireDidChange();
-            }
+            // Always fire change to update views, even if session is not current
+            // This ensures threads view updates for all sessions
+            this.fireDidChange();
         }));
-        this.toDispose.push(this.manager.onDidChangeBreakpoints(({ session, uri }) => {
-            if (!session || session === this.currentSession) {
-                this.fireDidChangeBreakpoints(uri);
+        this.toDispose.push(this.breakpointManager.onDidChangeMarkers(uri => {
+            this.fireDidChangeBreakpoints(uri);
+        }));
+        this.toDispose.push(this.manager.onDidResolveLazyVariable(({ session, variable }) => {
+            if (session === this.currentSession) {
+                this.fireDidResolveLazyVariable(variable);
             }
         }));
         this.updateWatchExpressions();
@@ -105,8 +122,7 @@ export class DebugViewModel implements Disposable {
     }
 
     get currentSession(): DebugSession | undefined {
-        const { currentSession } = this.manager;
-        return currentSession;
+        return this.manager.currentSession;
     }
     set currentSession(currentSession: DebugSession | undefined) {
         this.manager.currentSession = currentSession;
@@ -125,16 +141,25 @@ export class DebugViewModel implements Disposable {
         return currentThread && currentThread.currentFrame;
     }
 
-    get breakpoints(): DebugSourceBreakpoint[] {
-        return this.manager.getBreakpoints(this.currentSession);
+    get breakpoints(): readonly DebugSourceBreakpoint[] {
+        return this.breakpointManager.getBreakpoints();
     }
 
-    get functionBreakpoints(): DebugFunctionBreakpoint[] {
-        return this.manager.getFunctionBreakpoints(this.currentSession);
+    get functionBreakpoints(): readonly DebugFunctionBreakpoint[] {
+        return this.breakpointManager.getFunctionBreakpoints();
     }
 
-    get instructionBreakpoints(): DebugInstructionBreakpoint[] {
-        return this.manager.getInstructionBreakpoints(this.currentSession);
+    get instructionBreakpoints(): readonly DebugInstructionBreakpoint[] {
+        return this.breakpointManager.getInstructionBreakpoints();
+    }
+
+    get exceptionBreakpoints(): readonly DebugExceptionBreakpoint[] {
+        return this.breakpointManager.getExceptionBreakpoints()
+            .filter(candidate => this.currentSession ? candidate.isEnabledForSession(this.currentSession.id) : candidate.isPersistentlyVisible());
+    }
+
+    get dataBreakpoints(): readonly DebugDataBreakpoint[] {
+        return this.breakpointManager.getDataBreakpoints();
     }
 
     async start(options: Partial<Pick<DebugSessionOptionsBase, 'startedByUser'>> = {}): Promise<void> {

@@ -237,6 +237,7 @@ export interface ClaudeCodeOptions {
     executableArgs?: string[];
     extraArgs?: Record<string, string | null>;
     fallbackModel?: string;
+    forkSession?: boolean;
     maxThinkingTokens?: number;
     maxTurns?: number;
     model?: string;
@@ -307,5 +308,37 @@ export namespace WriteInput {
             'file_path' in input && 'content' in input &&
             typeof (input as WriteInput).file_path === 'string' &&
             typeof (input as WriteInput).content === 'string';
+    }
+}
+
+export interface AskUserQuestionOption {
+    label: string;
+    description?: string;
+}
+
+export interface AskUserQuestionItem {
+    question: string;
+    header: string;
+    options: AskUserQuestionOption[];
+    multiSelect: boolean;
+}
+
+export interface AskUserQuestionInput {
+    questions: AskUserQuestionItem[];
+    answers?: Record<string, string>;
+}
+
+export namespace AskUserQuestionInput {
+    export function is(input: unknown): input is AskUserQuestionInput {
+        // eslint-disable-next-line no-null/no-null
+        return typeof input === 'object' && input !== null &&
+            'questions' in input &&
+            Array.isArray((input as AskUserQuestionInput).questions) &&
+            (input as AskUserQuestionInput).questions.every(q =>
+                // eslint-disable-next-line no-null/no-null
+                typeof q === 'object' && q !== null &&
+                typeof q.question === 'string' &&
+                Array.isArray(q.options)
+            );
     }
 }

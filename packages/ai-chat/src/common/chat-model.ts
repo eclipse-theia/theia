@@ -21,11 +21,15 @@
 
 import {
     AIVariableResolutionRequest,
+    GenericCapabilitySelections,
     LanguageModelMessage,
+    ReasoningSettings,
     ResolvedAIContextVariable,
+    ResolvedAIVariable,
     TextMessage,
     ThinkingMessage,
     ToolCallResult,
+    ToolRequest,
     ToolResultMessage,
     ToolUseMessage
 } from '@theia/ai-core';
@@ -42,9 +46,18 @@ import {
     SerializableHierarchy,
     SerializableHierarchyBranch,
     SerializableHierarchyBranchItem,
-    SerializableChangeSetElement
+    SerializableChangeSetElement,
+    SerializableParsedRequest,
+    SerializableParsedRequestPart
 } from './chat-model-serialization';
-import { ParsedChatRequest } from './parsed-chat-request';
+import {
+    ParsedChatRequest,
+    ParsedChatRequestTextPart,
+    ParsedChatRequestVariablePart,
+    ParsedChatRequestFunctionPart,
+    ParsedChatRequestAgentPart,
+    ParsedChatRequestPart
+} from './parsed-chat-request';
 import debounce = require('@theia/core/shared/lodash.debounce');
 export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
@@ -65,7 +78,8 @@ export type ChatChangeEvent =
     | ChatEditCancelEvent
     | ChatEditSubmitEvent
     | ChatResponseChangedEvent
-    | ChatChangeHierarchyBranchEvent;
+    | ChatChangeHierarchyBranchEvent
+    | ChatInteractionNeededEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
@@ -122,9 +136,17 @@ export interface ChatResponseChangedEvent {
     kind: 'responseChanged';
 }
 
+export interface ChatInteractionNeededEvent {
+    kind: 'interactionNeeded';
+    contentPart: InteractiveContent & ChatResponseContent;
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatUpdateChangeSetEvent {
         return event.kind === 'updateChangeSet';
+    }
+    export function isInteractionNeededEvent(event: ChatChangeEvent): event is ChatInteractionNeededEvent {
+        return event.kind === 'interactionNeeded';
     }
 }
 
@@ -198,14 +220,38 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
     readonly next?: ChatHierarchyBranch<TRequest>;
 }
 
+export interface CommonChatSessionSettings {
+    /** Reasoning configuration for this session; applied to reasoning-capable models. */
+    reasoning?: ReasoningSettings;
+    /** Per-session tool confirmation timeout in seconds. Overrides the global preference when set. */
+    confirmationTimeout?: number;
+}
+
+export interface ChatSessionSettings {
+    /**
+     * Theia-specific common settings processed by Theia.
+     * This key is excluded when passing settings to LLM providers.
+     */
+    commonSettings?: CommonChatSessionSettings;
+
+    /**
+     * Allow arbitrary provider-specific settings.
+     * These correspond to the "Advanced Settings (JSON)" in the UI
+     * and are passed directly to the LLM.
+     */
+    [key: string]: unknown;
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
     readonly location: ChatAgentLocation;
     readonly context: ChatContextManager;
     readonly suggestions: readonly ChatSuggestion[];
-    readonly settings?: { [key: string]: unknown };
+    readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
+    /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
+    rootSessionId?: string;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
@@ -254,6 +300,19 @@ export interface ChatRequest {
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
     readonly modeId?: string;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     * Only includes capabilities that differ from their default value.
+     */
+    readonly capabilityOverrides?: Record<string, boolean>;
+
+    /**
+     * Generic capability selections for this request.
+     * Contains user-selected skills, functions, MCP tools, etc.
+     * from the capabilities panel dropdowns.
+     */
+    readonly genericCapabilitySelections?: GenericCapabilitySelections;
 }
 
 export interface ChatContext {
@@ -327,6 +386,29 @@ export interface ChatProgressMessage {
     status: 'inProgress' | 'completed' | 'failed';
     show: 'untilFirstContent' | 'whileIncomplete' | 'forever';
     content: string;
+}
+
+/**
+ * Interface for ChatResponseContent parts that require user interaction.
+ * Content parts that implement this interface can be tracked by the delegation
+ * renderer without content-type-specific checks.
+ */
+export interface InteractiveContent {
+    /** Stable identifier for deduplication in pending interaction tracking. */
+    readonly interactionId: string | undefined;
+    /** Whether the interaction has been resolved (e.g., confirmed/denied, option selected). */
+    readonly isResolved: boolean;
+    /** Resolves when the interaction is resolved. Used for cleanup in delegation chains. */
+    readonly whenResolved: Promise<void>;
+}
+
+export namespace InteractiveContent {
+    export function is(content: unknown): content is InteractiveContent {
+        return typeof content === 'object' && !!content
+            && 'interactionId' in content
+            && 'isResolved' in content
+            && 'whenResolved' in content;
+    }
 }
 
 export interface ChatResponseContent {
@@ -408,6 +490,7 @@ export interface ToolCallContentData {
     arguments?: string;
     finished?: boolean;
     result?: ToolCallResult;
+    data?: Record<string, string>;
 }
 
 export interface CommandContentData {
@@ -435,8 +518,11 @@ export interface ErrorContentData {
  */
 export interface QuestionContentData {
     question: string;
-    options: { text: string; value?: string }[];
+    header?: string;
+    options: { text: string; value?: string; description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
 }
 
 export interface TextChatResponseContent
@@ -469,17 +555,36 @@ export interface HorizontalLayoutChatResponseContent extends ChatResponseContent
     content: ChatResponseContent[];
 }
 
-export interface ToolCallChatResponseContent extends Required<ChatResponseContent> {
+export interface ToolCallChatResponseContent extends Required<ChatResponseContent>, InteractiveContent {
     kind: 'toolCall';
     id?: string;
     name?: string;
     arguments?: string;
     finished: boolean;
     result?: ToolCallResult;
+    /** Timeout in seconds for confirmation dialogs. 0 means no timeout. */
+    confirmationTimeout?: number;
     confirmed: Promise<boolean>;
+    /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
+    needsUserConfirmation: Promise<void>;
+    whenFinished: Promise<void>;
+    data?: Record<string, string>;
     confirm(): void;
-    deny(): void;
+    deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
+    /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
+    requestUserConfirmation(): void;
+    /**
+     * Mark the tool call as completed with the given result.
+     *
+     * This is used to update the UI immediately when a tool finishes execution,
+     * without waiting for all parallel tool calls to complete. The language model
+     * batches tool results (via Promise.all) before yielding them to the stream,
+     * so without this early completion signal, the UI wouldn't update until all
+     * tools finish. The values set here will be overwritten by merge() when the
+     * language model eventually yields the results, but they should be identical.
+     */
+    complete(result: ToolCallResult): void;
 }
 
 export interface ThinkingChatResponseContent
@@ -607,6 +712,83 @@ export namespace ToolCallChatResponseContent {
     export function is(obj: unknown): obj is ToolCallChatResponseContent {
         return ChatResponseContent.is(obj) && obj.kind === 'toolCall';
     }
+
+    export interface DenialResult {
+        denied: true;
+        /** User-provided reason for the denial */
+        reason?: string;
+    }
+
+    export function isDenialResult(result: unknown): result is DenialResult {
+        return typeof result === 'object' && !!result &&
+            'denied' in result && (result as DenialResult).denied === true;
+    }
+
+    /**
+     * Checks if a tool call result contains an error.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function isErrorResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string }> }).content.some(item => item.type === 'error');
+        }
+        return 'error' in result && (result as { error: boolean }).error === true;
+    }
+
+    /**
+     * Extracts the error message from a tool call result.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function getErrorMessage(result: unknown): string | undefined {
+        if (!result || typeof result !== 'object') {
+            return undefined;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            const errorItem = (result as { content: Array<{ type?: string; data?: string }> }).content.find(item => item.type === 'error');
+            return errorItem?.data;
+        }
+        if ('error' in result && (result as { error: boolean }).error === true) {
+            return (result as { message?: string }).message;
+        }
+        return undefined;
+    }
+
+    /**
+     * Checks if a tool call result indicates the tool was not available.
+     * This happens when the LLM tries to call a tool that wasn't provided in the request.
+     */
+    export function isNotAvailableResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string; errorKind?: string }> }).content
+                .some(item => item.type === 'error' && item.errorKind === 'tool-not-available');
+        }
+        return false;
+    }
+}
+
+/**
+ * Represents a streaming delta update for tool call arguments.
+ * This content type is used during streaming to append argument fragments
+ * to an existing ToolCallChatResponseContent rather than replacing the full arguments.
+ */
+export interface ToolCallArgumentsDeltaContent extends ChatResponseContent {
+    kind: 'toolCallArgumentsDelta';
+    /** The tool call ID this delta belongs to */
+    id: string;
+    /** The argument fragment to append */
+    delta: string;
+}
+
+export namespace ToolCallArgumentsDeltaContent {
+    export function is(obj: unknown): obj is ToolCallArgumentsDeltaContent {
+        return ChatResponseContent.is(obj) && obj.kind === 'toolCallArgumentsDelta';
+    }
 }
 
 export namespace ErrorChatResponseContent {
@@ -646,12 +828,21 @@ export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
 
-export interface QuestionResponseContent extends ChatResponseContent {
+export type MultiSelectQuestionResponseHandler = (
+    selectedOptions: { text: string, value?: string }[],
+) => void;
+
+export interface QuestionResponseContent extends ChatResponseContent, InteractiveContent {
     kind: 'question';
     question: string;
-    options: { text: string, value?: string }[];
+    header?: string;
+    options: { text: string, value?: string, description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string, value?: string };
-    handler?: QuestionResponseHandler;
+    selectedOptions?: { text: string, value?: string }[];
+    handler?: QuestionResponseHandler | MultiSelectQuestionResponseHandler;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -682,6 +873,13 @@ export namespace QuestionResponseContent {
     }
 }
 
+export interface ResponseTokenUsage {
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly cacheCreationInputTokens?: number;
+    readonly cacheReadInputTokens?: number;
+}
+
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
     asString(): string;
@@ -696,6 +894,11 @@ export interface ChatResponseModel {
      * Use this to be notified for any change in the response model
      */
     readonly onDidChange: Event<void>;
+    /**
+     * Fires when this response requires user interaction (e.g., tool confirmation, question response).
+     * The content part that needs interaction is provided as the event payload.
+     */
+    readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent>;
     /**
      * The unique identifier of the response model
      */
@@ -741,6 +944,15 @@ export interface ChatResponseModel {
      * This can be used to store and retrieve such data.
      */
     readonly data: { [key: string]: unknown };
+    /**
+     * The ID of the prompt variant used to generate this response
+     */
+    readonly promptVariantId?: string;
+    /**
+     * Indicates whether the prompt variant was customized/edited
+     */
+    readonly isPromptVariantEdited?: boolean;
+    readonly tokenUsage?: ResponseTokenUsage;
     toSerializable(): SerializableChatResponseData;
 }
 
@@ -759,8 +971,9 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
     protected _changeSet: ChatTreeChangeSet;
-    protected _settings: { [key: string]: unknown };
+    protected _settings: ChatSessionSettings;
     protected _location: ChatAgentLocation;
+    rootSessionId?: string;
 
     get location(): ChatAgentLocation {
         return this._location;
@@ -815,8 +1028,17 @@ export class MutableChatModel implements ChatModel, Disposable {
         const requestMap = new Map<string, MutableChatRequestModel>();
         for (const reqData of data.requests) {
             const respData = data.responses.find(r => r.requestId === reqData.id);
-            const requestModel = new MutableChatRequestModel(this, reqData, respData);
+            const requestModel = new MutableChatRequestModel(
+                this,
+                reqData,
+                respData
+            );
             requestMap.set(requestModel.id, requestModel);
+            requestModel.onDidChange(event => {
+                if (!ChatChangeEvent.isChangeSetEvent(event)) {
+                    this._onDidChangeEmitter.fire(event);
+                }
+            }, this, this.toDispose);
         }
 
         // Restore the hierarchy structure with all alternatives
@@ -864,17 +1086,33 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._contextManager;
     }
 
-    get settings(): { [key: string]: unknown } {
+    get settings(): ChatSessionSettings {
         return this._settings;
     }
 
-    setSettings(settings: { [key: string]: unknown }): void {
+    setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
+    }
+
+    addChildModel(child: MutableChatModel): Disposable {
+        const disposable = new DisposableCollection();
+        disposable.push(child.onDidChange(event => {
+            if (ChatChangeEvent.isInteractionNeededEvent(event)) {
+                this._onDidChangeEmitter.fire(event);
+            }
+        }));
+        this.toDispose.push(disposable);
+        return disposable;
     }
 
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
         const add = this.getTargetForRequestAddition(parsedChatRequest);
-        const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
+        const requestModel = new MutableChatRequestModel(
+            this,
+            parsedChatRequest,
+            agentId,
+            context
+        );
         requestModel.onDidChange(event => {
             if (!ChatChangeEvent.isChangeSetEvent(event)) {
                 this._onDidChangeEmitter.fire(event);
@@ -1461,7 +1699,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
     protected _isEditing = false;
-    readonly message: ParsedChatRequest;
+    protected _message: ParsedChatRequest;
 
     protected readonly toDispose = new DisposableCollection();
     readonly editContextManager: ChatContextManagerImpl;
@@ -1487,7 +1725,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             this._agentId = agentIdOrResponseData as string | undefined;
             this._data = data;
             // Store the parsed message
-            this.message = messageOrData;
+            this._message = messageOrData;
         }
 
         this.editContextManager = new ChatContextManagerImpl(this._context);
@@ -1495,8 +1733,12 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
 
         // Wire response changes to propagate through request to session
         this._response.onDidChange(() => {
-            // Fire a generic addVariable event to propagate response changes
             this._onDidChangeEmitter.fire({ kind: 'responseChanged' });
+        }, this, this.toDispose);
+
+        // Wire interaction needed events to propagate through request to session
+        this._response.onInteractionNeeded(contentPart => {
+            this._onDidChangeEmitter.fire({ kind: 'interactionNeeded', contentPart });
         }, this, this.toDispose);
 
         this.toDispose.push(this._onDidChangeEmitter);
@@ -1517,26 +1759,31 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         respData?: SerializableChatResponseData
     ): void {
         this._id = reqData.id;
-        this._request = { text: reqData.text };
+        this._request = {
+            text: reqData.text,
+            capabilityOverrides: reqData.capabilityOverrides,
+            genericCapabilitySelections: reqData.genericCapabilitySelections
+        };
         this._agentId = reqData.agentId;
         this._data = {};
-
-        // Create minimal context
         this._context = { variables: [] };
 
-        // TODO: More sophisticated restoration?
-        // Casting required because 'message' is readonly
-        (this as { message: ParsedChatRequest }).message = {
-            request: this._request,
-            parts: [{
-                kind: 'text',
-                text: reqData.text,
-                promptText: reqData.text,
-                range: { start: 0, endExclusive: reqData.text.length }
-            }],
-            toolRequests: new Map(),
-            variables: []
-        };
+        if (reqData.parsedRequest) {
+            this._message = this.deserializeParsedRequest(
+                reqData.parsedRequest,
+                this._request
+            );
+        } else {
+            this._message = {
+                request: this._request,
+                parts: [new ParsedChatRequestTextPart(
+                    { start: 0, endExclusive: reqData.text.length },
+                    reqData.text
+                )],
+                toolRequests: new Map(),
+                variables: []
+            };
+        }
 
         // Restore response if present
         if (respData) {
@@ -1544,8 +1791,119 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         } else {
             this._response = new MutableChatResponseModel(this._id, this._agentId);
         }
+    }
 
-        // Note: ChangeSet restoration will be handled by ChatService using deserializer registry
+    /**
+     * Deserialize ParsedChatRequest from serialized data.
+     * Creates placeholder tool requests - actual tools will be restored by ChatService.
+     */
+    protected deserializeParsedRequest(
+        data: SerializableParsedRequest,
+        request: ChatRequest
+    ): ParsedChatRequest {
+        const parts: ParsedChatRequestPart[] = data.parts.map(partData => {
+            switch (partData.kind) {
+                case 'text':
+                    return new ParsedChatRequestTextPart(
+                        partData.range,
+                        partData.text
+                    );
+                case 'var': {
+                    const varPart = new ParsedChatRequestVariablePart(
+                        partData.range,
+                        partData.variableName,
+                        partData.variableArg
+                    );
+                    if (partData.variableValue !== undefined) {
+                        varPart.resolution = {
+                            variable: {
+                                id: partData.variableId,
+                                name: partData.variableName,
+                                description: partData.variableDescription
+                            },
+                            arg: partData.variableArg,
+                            value: partData.variableValue
+                        };
+                    }
+                    return varPart;
+                }
+                case 'function':
+                    // Create placeholder - will be restored by ChatService
+                    return new ParsedChatRequestFunctionPart(
+                        partData.range,
+                        this.createPlaceholderToolRequest(partData.toolRequestId)
+                    );
+                case 'agent':
+                    return new ParsedChatRequestAgentPart(
+                        partData.range,
+                        partData.agentId,
+                        partData.agentName
+                    );
+                default:
+                    throw new Error(`Unknown part kind: ${(partData as SerializableParsedRequestPart).kind}`);
+            }
+        });
+
+        // Create placeholder tool requests map - will be via restoreToolRequests later
+        const toolRequests = new Map<string, ToolRequest>();
+        for (const toolData of data.toolRequests) {
+            toolRequests.set(toolData.id, this.createPlaceholderToolRequest(toolData.id));
+        }
+
+        const variables: ResolvedAIVariable[] = data.variables.map(varData => ({
+            variable: {
+                id: varData.variableId,
+                name: varData.variableName,
+                description: varData.variableDescription
+            },
+            arg: varData.arg,
+            value: varData.value
+        }));
+
+        return {
+            request,
+            parts,
+            toolRequests,
+            variables
+        };
+    }
+
+    /**
+     * Creates a placeholder tool request that will be replaced during restoration.
+     */
+    protected createPlaceholderToolRequest(toolId: string): ToolRequest {
+        return {
+            id: toolId,
+            name: toolId,
+            parameters: { type: 'object' as const, properties: {} },
+            handler: async () => {
+                throw new Error(`Tool request '${toolId}' not yet restored. This is a placeholder.`);
+            }
+        };
+    }
+
+    /**
+     * Restores the tool requests in the parsed request by replacing placeholders with actual tools.
+     * Called after deserialization to upgrade placeholder tools to real tools from the registry.
+     */
+    restoreToolRequests(toolRequests: Map<string, ToolRequest>): void {
+        this._message.toolRequests.clear();
+        for (const [id, tool] of toolRequests) {
+            this._message.toolRequests.set(id, tool);
+        }
+
+        for (const part of this._message.parts) {
+            if (part instanceof ParsedChatRequestFunctionPart) {
+                const actualTool = toolRequests.get(part.toolRequest.id);
+                if (actualTool) {
+                    Object.assign(part, { toolRequest: actualTool });
+                }
+            }
+        }
+    }
+
+    get message(): ParsedChatRequest {
+        return this._message;
     }
 
     get changeSet(): ChangeSetImpl | undefined {
@@ -1645,7 +2003,10 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             changeSet: this._changeSet ? {
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
-            } : undefined
+            } : undefined,
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
+            capabilityOverrides: this.request.capabilityOverrides,
+            genericCapabilitySelections: this.request.genericCapabilitySelections
         };
     }
 
@@ -1706,6 +2067,9 @@ export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
     }
     asString(): string | undefined {
         return undefined;
+    }
+    asDisplayString(): string | undefined {
+        return this._error.message;
     }
     toSerializable(): SerializableChatResponseContentData<ErrorContentData> {
         return {
@@ -1929,25 +2293,35 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
     }
 }
 
-export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent {
+export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent, InteractiveContent {
     readonly kind = 'toolCall';
     protected _id?: string;
     protected _name?: string;
     protected _arguments?: string;
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
+    protected _data?: Record<string, string>;
+    protected _confirmationTimeout?: number;
+    protected _needsUserConfirmation: Promise<void>;
+    protected _needsUserConfirmationResolver?: () => void;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
+    protected _whenFinished: Promise<void>;
+    protected _finishedResolver?: () => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult) {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult, data?: Record<string, string>) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
-        // Initialize the confirmation promise immediately
+        this._data = data;
         this._confirmed = this.createConfirmationPromise();
+        this._whenFinished = this.createFinishedPromise();
+        this._needsUserConfirmation = new Promise<void>(resolve => {
+            this._needsUserConfirmationResolver = resolve;
+        });
     }
 
     get id(): string | undefined {
@@ -1969,15 +2343,43 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._result;
     }
 
+    get data(): Record<string, string> | undefined {
+        return this._data;
+    }
+
+    get confirmationTimeout(): number | undefined {
+        return this._confirmationTimeout;
+    }
+
+    set confirmationTimeout(value: number | undefined) {
+        this._confirmationTimeout = value;
+    }
+
+    get interactionId(): string | undefined {
+        return this._id;
+    }
+
+    get isResolved(): boolean {
+        return this.finished;
+    }
+
     get confirmed(): Promise<boolean> {
         return this._confirmed;
     }
 
-    /**
-     * Create a confirmation promise that can be resolved/rejected later
-     */
+    get needsUserConfirmation(): Promise<void> {
+        return this._needsUserConfirmation;
+    }
+
+    get whenFinished(): Promise<void> {
+        return this._whenFinished;
+    }
+
+    get whenResolved(): Promise<void> {
+        return this._whenFinished;
+    }
+
     createConfirmationPromise(): Promise<boolean> {
-        // The promise is always created, just ensure we have resolution handlers
         if (!this._confirmationResolver) {
             this._confirmed = new Promise<boolean>((resolve, reject) => {
                 this._confirmationResolver = resolve;
@@ -1985,6 +2387,18 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             });
         }
         return this._confirmed;
+    }
+
+    createFinishedPromise(): Promise<void> {
+        if (this._finished) {
+            return Promise.resolve();
+        }
+        if (!this._finishedResolver) {
+            this._whenFinished = new Promise<void>(resolve => {
+                this._finishedResolver = resolve;
+            });
+        }
+        return this._whenFinished;
     }
 
     /**
@@ -1996,23 +2410,38 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         }
     }
 
-    /**
-     * Deny the tool execution
-     */
-    deny(): void {
+    deny(reason?: string): void {
         if (this._confirmationResolver) {
-            this._confirmationResolver(false);
             this._finished = true;
-            this._result = 'Tool execution denied by user';
+            this._result = { denied: true, reason };
+            this._confirmationResolver(false);
+            this.resolveFinished();
         }
     }
 
-    /**
-     * Cancel the confirmation (reject the promise)
-     */
+    requestUserConfirmation(): void {
+        if (this._needsUserConfirmationResolver) {
+            this._needsUserConfirmationResolver();
+            this._needsUserConfirmationResolver = undefined;
+        }
+    }
+
     cancelConfirmation(reason?: unknown): void {
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
+        }
+    }
+
+    complete(result: ToolCallResult): void {
+        this._finished = true;
+        this._result = result;
+        this.resolveFinished();
+    }
+
+    protected resolveFinished(): void {
+        if (this._finishedResolver) {
+            this._finishedResolver();
+            this._finishedResolver = undefined;
         }
     }
 
@@ -2024,13 +2453,29 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return `Tool call: ${this._name}(${this._arguments ?? ''})`;
     }
 
-    merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
+    merge(nextChatResponseContent: ToolCallChatResponseContent | ToolCallArgumentsDeltaContent): boolean {
+        // Handle argument delta updates
+        if (ToolCallArgumentsDeltaContent.is(nextChatResponseContent)) {
+            if (nextChatResponseContent.id === this.id) {
+                this._arguments = (this._arguments ?? '') + nextChatResponseContent.delta;
+                return true;
+            }
+            return false;
+        }
+
+        // Handle full tool call updates
         if (nextChatResponseContent.id === this.id) {
+            const wasFinished = this._finished;
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
-            this._arguments = (args && args.length > 0) ? args : this._arguments;
-            // Don't merge confirmation promises - they should be managed separately
+            if (args && args.length > 0) {
+                this._arguments = args;
+            }
+            this._data = { ...nextChatResponseContent.data, ...this._data };
+            if (!wasFinished && this._finished) {
+                this.resolveFinished();
+            }
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
@@ -2043,18 +2488,36 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return true;
     }
 
+    protected parseArgumentsSafe(): object {
+        try {
+            return JSON.parse(this._arguments!);
+        } catch (error) {
+            console.warn(`Failed to parse tool call arguments for tool '${this._name}': ${error instanceof Error ? error.message : String(error)}`);
+            return {};
+        }
+    }
+
     toLanguageModelMessage(): [ToolUseMessage, ToolResultMessage] {
+        // Format denial results as a human-readable message for the LLM
+        let content = this.result;
+        if (ToolCallChatResponseContent.isDenialResult(this.result)) {
+            content = this.result.reason
+                ? `The user denied the tool with reason: ${this.result.reason}.`
+                : 'The user denied the tool.';
+        }
+
         return [{
             actor: 'ai',
             type: 'tool_use',
             id: this.id ?? '',
-            input: this.arguments && this.arguments.length !== 0 ? JSON.parse(this.arguments) : {},
-            name: this.name ?? ''
+            input: this.arguments && this.arguments.length !== 0 ? this.parseArgumentsSafe() : {},
+            name: this.name ?? '',
+            data: this.data
         }, {
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
-            content: this.result,
+            content,
             name: this.name ?? ''
         }];
     }
@@ -2154,52 +2617,130 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
 }
 
 /**
+ * Options bag for constructing a {@link QuestionResponseContentImpl}.
+ */
+export interface QuestionResponseContentOptions {
+    selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
+    multiSelect?: boolean;
+    header?: string;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
+}
+
+/**
  * Default implementation for the QuestionResponseContent.
  * Can be created with or without handler/request for read-only (restored) mode.
  */
-export class QuestionResponseContentImpl implements QuestionResponseContent {
+export class QuestionResponseContentImpl implements QuestionResponseContent, InteractiveContent {
     readonly kind = 'question';
-    protected _selectedOption: { text: string; value?: string } | undefined;
+    public multiSelect?: boolean;
+    public header?: string;
+    public onSkip?: () => void;
+    protected _selectedOptions: { text: string; value?: string }[] | undefined;
+    protected _resolvedResolver?: () => void;
+    readonly whenResolved: Promise<void>;
 
     constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: QuestionResponseHandler | undefined,
+        questionOptions?: Omit<QuestionResponseContentOptions, 'multiSelect'> & { multiSelect?: false }
+    );
+    constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: MultiSelectQuestionResponseHandler | undefined,
+        questionOptions: QuestionResponseContentOptions & { multiSelect: true }
+    );
+    constructor(
         public question: string,
-        public options: { text: string, value?: string }[],
+        public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
-        public handler: QuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string }
+        public handler: QuestionResponseHandler | MultiSelectQuestionResponseHandler | undefined,
+        questionOptions?: QuestionResponseContentOptions
     ) {
-        this._selectedOption = selectedOption;
+        this.multiSelect = questionOptions?.multiSelect;
+        this.header = questionOptions?.header;
+        this.onSkip = questionOptions?.onSkip;
+        this._selectedOptions = questionOptions?.selectedOptions ??
+            (questionOptions?.selectedOption ? [questionOptions.selectedOption] : undefined);
+        if (this._selectedOptions) {
+            this.whenResolved = Promise.resolve();
+        } else {
+            this.whenResolved = new Promise<void>(resolve => {
+                this._resolvedResolver = resolve;
+            });
+        }
+        if (!this.isReadOnly && this.request) {
+            this.request.response.fireInteractionNeeded(this);
+        }
     }
 
     get isReadOnly(): boolean {
         return !this.handler || !this.request;
     }
 
-    set selectedOption(option: { text: string; value?: string; } | undefined) {
-        this._selectedOption = option;
-        // Only trigger change notification if request is available (not in read-only mode)
+    get interactionId(): string | undefined {
+        return `question-${this.question}`;
+    }
+
+    get isResolved(): boolean {
+        return this.selectedOption !== undefined;
+    }
+
+    set selectedOption(option: { text: string; value?: string } | undefined) {
+        this._selectedOptions = option ? [option] : undefined;
+        this._resolvedResolver?.();
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
     }
-    get selectedOption(): { text: string; value?: string; } | undefined {
-        return this._selectedOption;
+    get selectedOption(): { text: string; value?: string } | undefined {
+        return this._selectedOptions?.[0];
     }
+
+    set selectedOptions(options: { text: string; value?: string }[] | undefined) {
+        this._selectedOptions = options;
+        this._resolvedResolver?.();
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
+    }
+    get selectedOptions(): { text: string; value?: string }[] | undefined {
+        return this._selectedOptions;
+    }
+
     asString?(): string | undefined {
-        return `Question: ${this.question}
-${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
+        const answer = this._selectedOptions && this._selectedOptions.length > 0
+            ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
+            : 'No answer';
+        return `Question: ${this.question}\n${answer}`;
     }
     merge?(): boolean {
         return false;
     }
     toSerializable(): SerializableChatResponseContentData<QuestionContentData> {
+        const data: QuestionContentData = {
+            question: this.question,
+            options: this.options,
+        };
+        if (this.multiSelect) {
+            data.selectedOptions = this._selectedOptions;
+        } else if (this._selectedOptions?.[0]) {
+            data.selectedOption = this._selectedOptions[0];
+        }
+        if (this.header !== undefined) {
+            data.header = this.header;
+        }
+        if (this.multiSelect !== undefined) {
+            data.multiSelect = this.multiSelect;
+        }
         return {
             kind: 'question',
-            data: {
-                question: this.question,
-                options: this.options,
-                selectedOption: this._selectedOption
-            }
+            data
         };
     }
 }
@@ -2239,7 +2780,14 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     protected doAddContent(nextContent: ChatResponseContent): void {
-        if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
+        if (ToolCallArgumentsDeltaContent.is(nextContent)) {
+            // Delta content targets an existing tool call by ID
+            const targetTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
+            if (targetTool !== undefined && ChatResponseContent.hasMerge(targetTool)) {
+                targetTool.merge(nextContent);
+            }
+            // If no matching tool call found, silently drop the delta (the tool call might not exist yet)
+        } else if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             const fittingTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
             if (fittingTool !== undefined) {
                 fittingTool.merge?.(nextContent);
@@ -2309,6 +2857,9 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
 
+    protected readonly _onInteractionNeededEmitter = new Emitter<InteractiveContent & ChatResponseContent>();
+    readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent> = this._onInteractionNeededEmitter.event;
+
     data = {};
 
     protected _id: string;
@@ -2321,6 +2872,10 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _isError: boolean;
     protected _errorObject: Error | undefined;
     protected _cancellationToken: CancellationTokenSource;
+    protected _promptVariantId?: string;
+    protected _isPromptVariantEdited?: boolean;
+    protected _tokenUsage?: ResponseTokenUsage;
+    protected _tokenUsageEntries: ResponseTokenUsage[] = [];
 
     constructor(
         requestId: string,
@@ -2362,6 +2917,9 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._isWaitingForInput = false;
         // TODO: Restore progressMessages?
         this._progressMessages = [];
+        this._promptVariantId = data.promptVariantId;
+        this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
+        this._tokenUsage = data.tokenUsage;
 
         if (data.errorMessage) {
             this._errorObject = new Error(data.errorMessage);
@@ -2433,6 +2991,38 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._agentId;
     }
 
+    get promptVariantId(): string | undefined {
+        return this._promptVariantId;
+    }
+
+    get isPromptVariantEdited(): boolean {
+        return this._isPromptVariantEdited ?? false;
+    }
+
+    get tokenUsage(): ResponseTokenUsage | undefined {
+        return this._tokenUsage;
+    }
+
+    setTokenUsage(usage: ResponseTokenUsage): void {
+        this._tokenUsage = usage;
+        this.addTokenUsageEntry(usage);
+        this._onDidChangeEmitter.fire();
+    }
+
+    addTokenUsageEntry(usage: ResponseTokenUsage): void {
+        this._tokenUsageEntries.push(usage);
+    }
+
+    get tokenUsageEntries(): readonly ResponseTokenUsage[] {
+        return this._tokenUsageEntries;
+    }
+
+    setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
+        this._promptVariantId = variantId;
+        this._isPromptVariantEdited = isEdited;
+        this._onDidChangeEmitter.fire();
+    }
+
     overrideAgentId(agentId: string): void {
         this._agentId = agentId;
     }
@@ -2477,6 +3067,14 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._onDidChangeEmitter.fire();
     }
 
+    fireInteractionNeeded(contentPart: InteractiveContent & ChatResponseContent): void {
+        this._onInteractionNeededEmitter.fire(contentPart);
+    }
+
+    notifyChanged(): void {
+        this._onDidChangeEmitter.fire();
+    }
+
     error(error: Error): void {
         this._isComplete = true;
         this._isWaitingForInput = false;
@@ -2498,6 +3096,9 @@ export class MutableChatResponseModel implements ChatResponseModel {
             isComplete: this.isComplete,
             isError: this.isError,
             errorMessage: this.errorObject?.message,
+            promptVariantId: this._promptVariantId,
+            isPromptVariantEdited: this._isPromptVariantEdited,
+            tokenUsage: this._tokenUsage,
             content: this.response.content.map(c => {
                 const serialized = c.toSerializable?.();
                 if (!serialized) {

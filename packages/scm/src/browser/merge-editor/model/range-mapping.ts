@@ -100,24 +100,20 @@ export class DocumentLineRangeMap {
 
     /**
      * @param lineNumber 0-based line number in the original text document
+     * @return the corresponding line number in the modified text document if the line is unchanged,
+     *  or the line range mapping for the affecting change otherwise
      */
-    projectLine(lineNumber: number): LineRangeMapping {
+    projectLine(lineNumber: number): number | LineRangeMapping {
         const lastBefore = ArrayUtils.findLast(this.lineRangeMappings, m => m.originalRange.startLineNumber <= lineNumber);
         if (!lastBefore) {
-            return new LineRangeMapping(
-                new LineRange(lineNumber, 1),
-                new LineRange(lineNumber, 1)
-            );
+            return lineNumber;
         }
 
         if (lastBefore.originalRange.containsLine(lineNumber)) {
             return lastBefore;
         }
 
-        return new LineRangeMapping(
-            new LineRange(lineNumber, 1),
-            new LineRange(lineNumber + lastBefore.modifiedRange.endLineNumberExclusive - lastBefore.originalRange.endLineNumberExclusive, 1)
-        );
+        return lineNumber + lastBefore.modifiedRange.endLineNumberExclusive - lastBefore.originalRange.endLineNumberExclusive;
     }
 
     reverse(): DocumentLineRangeMap {
@@ -344,8 +340,8 @@ export class DocumentRangeMap {
         if (!ArrayUtils.checkAdjacentItems(
             rangeMappings,
             (m1, m2) =>
-                RangeUtils.isBeforeOrTouching(m1.originalRange, m2.originalRange) &&
-                RangeUtils.isBeforeOrTouching(m1.modifiedRange, m2.modifiedRange)
+                RangeUtils.isBefore(m1.originalRange, m2.originalRange) &&
+                RangeUtils.isBefore(m1.modifiedRange, m2.modifiedRange)
         )) {
             throw new Error('Illegal range mappings');
         }

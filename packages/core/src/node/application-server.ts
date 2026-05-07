@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import { ApplicationServer, ExtensionInfo, ApplicationInfo } from '../common/application-protocol';
 import { ApplicationPackage } from '@theia/application-package';
 import { OS } from '../common/os';
+import { backendGlobal } from './backend-global';
 
 @injectable()
 export class ApplicationServerImpl implements ApplicationServer {
@@ -26,9 +27,7 @@ export class ApplicationServerImpl implements ApplicationServer {
     protected readonly applicationPackage: ApplicationPackage;
 
     getExtensionsInfos(): Promise<ExtensionInfo[]> {
-        // @ts-expect-error
-        const appInfo: ExtensionInfo[] = globalThis.extensionInfo;
-        return Promise.resolve(appInfo);
+        return Promise.resolve(backendGlobal.extensionInfo);
     }
 
     getApplicationInfo(): Promise<ApplicationInfo | undefined> {

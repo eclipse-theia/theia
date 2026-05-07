@@ -16,7 +16,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
-import { bindContributionProvider } from '@theia/core';
+import { bindRootContributionProvider } from '@theia/core';
 import { TextmateRegistry } from './textmate-registry';
 import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
 import { MonacoTextmateService } from './monaco-textmate-service';
@@ -39,7 +39,7 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
     bind(OnigasmProvider).toConstantValue(() => onigLib);
     bind(MonacoTextmateService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoTextmateService);
-    bindContributionProvider(bind, LanguageGrammarDefinitionContribution);
+    bindRootContributionProvider(bind, LanguageGrammarDefinitionContribution);
     bind(TextmateRegistry).toSelf().inSingletonScope();
     bind(MonacoThemeRegistry).toSelf().inSingletonScope();
     bind(TextmateRegistryFactory).toFactory(({ container }) => (theme?: ThemeMix) => {

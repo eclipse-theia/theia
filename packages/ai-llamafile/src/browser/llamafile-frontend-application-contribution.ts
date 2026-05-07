@@ -43,7 +43,8 @@ export class LlamafileFrontendApplicationContribution implements FrontendApplica
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_LLAMAFILE) {
-                    const newModels = (event.newValue as unknown[]).filter((llamafileEntry: unknown) => LlamafileEntry.is(llamafileEntry)) as LlamafileEntry[];
+                    const currentLlamafiles = this.preferenceService.get<LlamafileEntry[]>(PREFERENCE_LLAMAFILE, []);
+                    const newModels = currentLlamafiles.filter(LlamafileEntry.is);
                     this.handleLlamaFilePreferenceChange(newModels);
                 }
             });

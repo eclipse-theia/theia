@@ -22,6 +22,7 @@ import { Saveable } from '../saveable';
 import { Emitter, environment, Event, PreferenceService } from '../../common';
 import { SaveableService } from '../saveable-service';
 import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
+import { WindowFocusService } from './window-focus-service';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -52,6 +53,9 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     @inject(SaveableService)
     protected readonly saveResourceService: SaveableService;
+
+    @inject(WindowFocusService)
+    protected readonly windowFocusService: WindowFocusService;
 
     @postConstruct()
     init(): void {
@@ -106,6 +110,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             this.secondaryWindows.push(newWindow);
             this.onWindowOpenedEmitter.fire(newWindow);
             newWindow.addEventListener('DOMContentLoaded', () => {
+                const focusRegistration = this.windowFocusService.registerWindow(newWindow);
                 newWindow.addEventListener('beforeunload', evt => {
                     const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
                     for (const w of widgets) {
@@ -120,6 +125,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 }, { capture: true });
 
                 newWindow.addEventListener('unload', () => {
+                    focusRegistration.dispose();
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
                         this.onWindowClosedEmitter.fire(newWindow);

@@ -95,7 +95,7 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
 
     protected doHandleValueChange(): void {
         this.updateInspection();
-        const values = this.getValue() ?? [];
+        const values = this.getValue() ?? this.getDefaultValue();
         const newValues = new Set(...values);
         for (const [value, row] of this.existingValues.entries()) {
             if (!newValues.has(value)) {

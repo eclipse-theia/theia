@@ -37,4 +37,5 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
 
    override prompts = [{ id: 'universal-system', defaultVariant: universalTemplate, variants: [universalTemplateVariant] }];
    protected override systemPromptId: string = 'universal-system';
+   override iconClass: string = 'codicon codicon-comment';
 }

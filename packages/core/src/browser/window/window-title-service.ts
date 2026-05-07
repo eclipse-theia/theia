@@ -66,10 +66,10 @@ export class WindowTitleService {
         this.updateTitle();
         this.preferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'window.title') {
-                this.titleTemplate = e.newValue;
+                this.titleTemplate = this.preferences['window.title'];
                 this.updateTitle();
             } else if (e.preferenceName === 'window.titleSeparator') {
-                this.separator = e.newValue;
+                this.separator = this.preferences['window.titleSeparator'];
                 this.updateTitle();
             }
         });

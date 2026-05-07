@@ -16,7 +16,7 @@ The `@theia/console` extension contributes a `console` widget which is used to e
 
 ## Additional Information
 
-- [API documentation for `@theia/console`](https://eclipse-theia.github.io/theia/docs/next/modules/console.html)
+- [API documentation for `@theia/console`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_console.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

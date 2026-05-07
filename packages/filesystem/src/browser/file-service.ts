@@ -63,6 +63,7 @@ import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-l
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
+import { Minimatch } from 'minimatch';
 import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
@@ -384,6 +385,7 @@ export class FileService {
         return Disposable.create(() => {
             this.onDidChangeFileSystemProviderRegistrationsEmitter.fire({ added: false, scheme, provider });
             this.providers.delete(scheme);
+            this.recursiveWatcherIndexes.delete(provider);
 
             providerDisposables.dispose();
         });
@@ -1431,7 +1433,8 @@ export class FileService {
         return this.onDidFilesChangeEmitter.event;
     }
 
-    private activeWatchers = new Map<string, { disposable: Disposable, count: number }>();
+    private activeWatchers = new Map<string, WatcherEntry>();
+    private recursiveWatcherIndexes = new Map<FileSystemProvider, TernarySearchTree<URI, string>>();
 
     watch(resource: URI, options: WatchOptions = { recursive: false, excludes: [] }): Disposable {
         const resolvedOptions: WatchOptions = {
@@ -1460,26 +1463,290 @@ export class FileService {
         const provider = await this.withProvider(resource);
         const key = this.toWatchKey(provider, resource, options);
 
-        // Only start watching if we are the first for the given key
-        const watcher = this.activeWatchers.get(key) || { count: 0, disposable: provider.watch(resource, options) };
-        if (!this.activeWatchers.has(key)) {
-            this.activeWatchers.set(key, watcher);
+        // (A) Exact-match dedup: if the same key already exists, just increment the count
+        const existing = this.activeWatchers.get(key);
+        if (existing) {
+            existing.count++;
+            return this.createWatcherDisposable(key, existing);
         }
 
-        // Increment usage counter
-        watcher.count += 1;
+        // (B) Check if an existing recursive parent watcher already covers this path
+        const subsumingParentKey = this.findSubsumingParent(provider, resource, options);
+        if (subsumingParentKey) {
+            const parentEntry = this.activeWatchers.get(subsumingParentKey) as RecursiveWatcherEntry;
+            const entry = this.createWatcherEntry(provider, resource, options, false);
+            entry.subsumingParent = parentEntry;
+            this.activeWatchers.set(key, entry);
+            parentEntry.subsumedChildren.add(key);
+            return this.createWatcherDisposable(key, entry);
+        }
 
+        // (C) Create a real OS-level watcher
+        const entry = this.createWatcherEntry(provider, resource, options);
+        this.activeWatchers.set(key, entry);
+
+        // (D) If this is a recursive watcher, index it and subsume existing children
+        if (this.isRecursiveWatcherEntry(entry)) {
+            this.indexRecursiveWatcher(provider, resource, key);
+            this.subsumeExistingChildren(provider, resource, key, entry);
+        }
+
+        return this.createWatcherDisposable(key, entry);
+    }
+
+    private createWatcherEntry(provider: FileSystemProvider, resource: URI, options: WatchOptions, startWatching: boolean = true): WatcherEntry {
+        const realWatcher = startWatching ? provider.watch(resource, options) : undefined;
+        if (options.recursive) {
+            const recursiveEntry: RecursiveWatcherEntry = {
+                resource, options, provider,
+                count: 1,
+                realWatcher,
+                subsumingParent: undefined,
+                subsumedChildren: new Set(),
+                compiledExcludes: options.excludes.map(pattern => new Minimatch(pattern, { dot: true })),
+            };
+            return recursiveEntry;
+        }
+        return {
+            resource, options, provider,
+            count: 1,
+            realWatcher,
+            subsumingParent: undefined,
+        };
+    }
+
+    private createWatcherDisposable(key: string, entry: WatcherEntry): Disposable {
         return Disposable.create(() => {
-
-            // Unref
-            watcher.count--;
-
-            // Dispose only when last user is reached
-            if (watcher.count === 0) {
-                watcher.disposable.dispose();
-                this.activeWatchers.delete(key);
+            entry.count--;
+            if (entry.count === 0) {
+                this.disposeWatcherEntry(key, entry);
             }
         });
+    }
+
+    private disposeWatcherEntry(key: string, entry: WatcherEntry): void {
+        // Unregister from parent if subsumed
+        if (entry.subsumingParent) {
+            entry.subsumingParent.subsumedChildren.delete(key);
+            entry.subsumingParent = undefined;
+        }
+
+        // If this is a recursive watcher with subsumed children, promote them.
+        // Remove from the index first so that promoted children don't re-parent to this dying entry.
+        // Only remove from the index if this entry has a real watcher — subsumed entries
+        // are never indexed, and removing would corrupt another watcher's index at the same URI.
+        if (this.isRecursiveWatcherEntry(entry)) {
+            if (entry.realWatcher) {
+                this.removeFromRecursiveIndex(entry.provider, entry.resource);
+            }
+            this.promoteSubsumedChildren(entry);
+        }
+
+        // Dispose the real OS watcher if any
+        if (entry.realWatcher) {
+            entry.realWatcher.dispose();
+        }
+
+        this.activeWatchers.delete(key);
+    }
+
+    private promoteSubsumedChildren(parentEntry: RecursiveWatcherEntry): void {
+        for (const childKey of parentEntry.subsumedChildren) {
+            const childEntry = this.activeWatchers.get(childKey);
+            if (!childEntry || childEntry.count === 0) {
+                continue;
+            }
+
+            childEntry.subsumingParent = undefined;
+
+            // Try to find another subsuming parent
+            const newParentKey = this.findSubsumingParent(childEntry.provider, childEntry.resource, childEntry.options);
+            if (newParentKey) {
+                const newParent = this.activeWatchers.get(newParentKey) as RecursiveWatcherEntry;
+                childEntry.subsumingParent = newParent;
+                newParent.subsumedChildren.add(childKey);
+            } else {
+                // No parent available — create a real OS watcher
+                childEntry.realWatcher = childEntry.provider.watch(childEntry.resource, childEntry.options);
+                // If this promoted child is recursive, re-index it so later promoted siblings can find it
+                if (this.isRecursiveWatcherEntry(childEntry)) {
+                    this.indexRecursiveWatcher(childEntry.provider, childEntry.resource, childKey);
+                }
+            }
+        }
+        parentEntry.subsumedChildren.clear();
+    }
+
+    private findSubsumingParent(provider: FileSystemProvider, resource: URI, childOptions: WatchOptions): string | undefined {
+        const tree = this.getRecursiveWatcherIndex(provider);
+
+        const parentKey = tree.findSubstr(resource);
+        if (!parentKey) {
+            return undefined;
+        }
+
+        const parentEntry = this.activeWatchers.get(parentKey);
+        if (!parentEntry || !this.isRecursiveWatcherEntry(parentEntry)) {
+            return undefined;
+        }
+
+        // Check if the child resource is excluded by the parent's exclude patterns
+        if (this.isExcludedByParent(parentEntry, resource)) {
+            return undefined;
+        }
+
+        // A parent can only subsume a child if the parent's excludes don't filter out
+        // events the child cares about. Every exclude of the parent must also be an
+        // exclude of the child; otherwise the child would silently miss events.
+        if (!this.areExcludesCompatible(parentEntry, childOptions)) {
+            return undefined;
+        }
+
+        return parentKey;
+    }
+
+    private isExcludedByParent(parentEntry: RecursiveWatcherEntry, childResource: URI): boolean {
+        if (parentEntry.compiledExcludes.length === 0) {
+            return false;
+        }
+
+        const caseSensitive = !!(parentEntry.provider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
+        let parentUri = parentEntry.resource;
+        let childUri = childResource;
+        if (!caseSensitive) {
+            parentUri = parentUri.withPath(parentUri.path.toString().toLowerCase());
+            childUri = childUri.withPath(childUri.path.toString().toLowerCase());
+        }
+
+        const relativePath = parentUri.relative(childUri);
+        if (!relativePath) {
+            return false;
+        }
+
+        const relativeStr = relativePath.toString();
+        return parentEntry.compiledExcludes.some(pattern => this.matchesExcludePattern(pattern, relativeStr));
+    }
+
+    /**
+     * Returns true if the parent's excludes are compatible with the child, meaning
+     * the child won't silently miss events it expects. Excludes only matter when
+     * the child is recursive - a non-recursive child only watches its own directory,
+     * and `isExcludedByParent` already handles the case where the child's path itself
+     * is under an excluded directory. For recursive children, every exclude of the
+     * parent must also be an exclude of the child; otherwise the parent's OS watcher
+     * would filter out sub-paths the child cares about.
+     */
+    private areExcludesCompatible(parentEntry: RecursiveWatcherEntry, childOptions: WatchOptions): boolean {
+        if (!childOptions.recursive) {
+            return true;
+        }
+        if (parentEntry.compiledExcludes.length === 0) {
+            return true;
+        }
+        const childExcludes = new Set(childOptions.excludes);
+        return parentEntry.options.excludes.every(e => childExcludes.has(e));
+    }
+
+    private matchesExcludePattern(pattern: Minimatch, relativePath: string): boolean {
+        if (pattern.match(relativePath)) {
+            return true;
+        }
+        // Also test ancestor directories — if a directory is excluded, everything under it is excluded
+        const segments = relativePath.split('/');
+        let accumulated = '';
+        for (const segment of segments) {
+            accumulated = accumulated ? accumulated + '/' + segment : segment;
+            if (accumulated !== relativePath && pattern.match(accumulated)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private subsumeExistingChildren(provider: FileSystemProvider, parentResource: URI, parentKey: string, parentEntry: RecursiveWatcherEntry): void {
+        const caseSensitive = !!(provider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
+        for (const [childKey, childEntry] of this.activeWatchers.entries()) {
+            if (childKey === parentKey) {
+                continue;
+            }
+            if (childEntry.subsumingParent) {
+                continue;
+            }
+            if (childEntry.provider !== provider) {
+                continue;
+            }
+            if (!parentResource.isEqualOrParent(childEntry.resource, caseSensitive)) {
+                continue;
+            }
+            if (this.isExcludedByParent(parentEntry, childEntry.resource)) {
+                continue;
+            }
+            if (!this.areExcludesCompatible(parentEntry, childEntry.options)) {
+                continue;
+            }
+
+            // Subsume: dispose the child's real watcher
+            if (childEntry.realWatcher) {
+                childEntry.realWatcher.dispose();
+                childEntry.realWatcher = undefined;
+            }
+            childEntry.subsumingParent = parentEntry;
+            parentEntry.subsumedChildren.add(childKey);
+
+            // If the child was itself a recursive watcher, re-parent its grandchildren
+            if (this.isRecursiveWatcherEntry(childEntry)) {
+                for (const grandchildKey of childEntry.subsumedChildren) {
+                    const grandchild = this.activeWatchers.get(grandchildKey);
+                    if (!grandchild) {
+                        continue;
+                    }
+                    // Check if the grandchild is compatible with the new parent
+                    if (this.isExcludedByParent(parentEntry, grandchild.resource) || !this.areExcludesCompatible(parentEntry, grandchild.options)) {
+                        // Grandchild can't be subsumed by the new parent — give it a real watcher
+                        grandchild.subsumingParent = undefined;
+                        grandchild.realWatcher = grandchild.provider.watch(grandchild.resource, grandchild.options);
+                        // If the promoted grandchild is recursive, re-index it so future watchers can find it
+                        if (this.isRecursiveWatcherEntry(grandchild)) {
+                            this.indexRecursiveWatcher(grandchild.provider, grandchild.resource, grandchildKey);
+                        }
+                    } else {
+                        grandchild.subsumingParent = parentEntry;
+                        parentEntry.subsumedChildren.add(grandchildKey);
+                    }
+                }
+                childEntry.subsumedChildren.clear();
+                // Only remove the child's index entry if it has a different URI than the parent.
+                // The parent was already indexed at its URI, and removing the child's
+                // entry would delete the parent's entry if they share the same URI.
+                if (!childEntry.resource.isEqual(parentResource, caseSensitive)) {
+                    this.removeFromRecursiveIndex(provider, childEntry.resource);
+                }
+            }
+        }
+    }
+
+    private getRecursiveWatcherIndex(provider: FileSystemProvider): TernarySearchTree<URI, string> {
+        let tree = this.recursiveWatcherIndexes.get(provider);
+        if (!tree) {
+            const caseSensitive = !!(provider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
+            tree = TernarySearchTree.forUris<string>(caseSensitive);
+            this.recursiveWatcherIndexes.set(provider, tree);
+        }
+        return tree;
+    }
+
+    private indexRecursiveWatcher(provider: FileSystemProvider, resource: URI, key: string): void {
+        const tree = this.getRecursiveWatcherIndex(provider);
+        tree.set(resource, key);
+    }
+
+    private removeFromRecursiveIndex(provider: FileSystemProvider, resource: URI): void {
+        const tree = this.getRecursiveWatcherIndex(provider);
+        tree.delete(resource);
+    }
+
+    private isRecursiveWatcherEntry(entry: WatcherEntry): entry is RecursiveWatcherEntry {
+        return 'subsumedChildren' in entry;
     }
 
     private toWatchKey(provider: FileSystemProvider, resource: URI, options: WatchOptions): string {
@@ -1842,4 +2109,18 @@ export class FileService {
     protected handleFileWatchError(): void {
         this.watcherErrorHandler.handleError();
     }
+}
+
+interface WatcherEntry {
+    readonly resource: URI;
+    readonly options: WatchOptions;
+    readonly provider: FileSystemProvider;
+    count: number;
+    realWatcher: Disposable | undefined;
+    subsumingParent: RecursiveWatcherEntry | undefined;
+}
+
+interface RecursiveWatcherEntry extends WatcherEntry {
+    readonly subsumedChildren: Set<string>;
+    readonly compiledExcludes: Minimatch[];
 }

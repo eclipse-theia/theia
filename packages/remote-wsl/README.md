@@ -16,7 +16,7 @@ This package extends the @theia/remote feature with functionality to connect to 
 
 ## Additional Information
 
-- [API documentation for `@theia/remote-wsl`](https://eclipse-theia.github.io/theia/docs/next/modules/remote-wsl.html)
+- [API documentation for `@theia/remote-wsl`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_remote-wsl.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

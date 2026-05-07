@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import {
-    bindContributionProvider,
+    bindRootContributionProvider,
     CommandContribution,
     CommandRegistry,
     createPreferenceProxy,
@@ -197,7 +197,7 @@ export function bindToolbar(bind: interfaces.Bind): void {
 
     bind(ToolbarController).toSelf().inSingletonScope();
     bind(ToolbarStorageProvider).toSelf().inSingletonScope();
-    bindContributionProvider(bind, ToolbarContribution);
+    bindRootContributionProvider(bind, ToolbarContribution);
     bind(LateInjector).toFactory(
         <T>(context: interfaces.Context) => (id: interfaces.ServiceIdentifier<T>): T => lateInjector(context.container, id),
     );

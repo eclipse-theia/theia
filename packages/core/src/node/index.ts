@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 export * from './backend-application';
+export * from './backend-global';
 export * from './debug';
 export * from '../common/file-uri';
 export * from './messaging';

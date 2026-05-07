@@ -29,6 +29,7 @@ import * as React from '@theia/core/shared/react';
 import { AgentService } from '@theia/ai-core/lib/common/agent-service';
 import { Agent } from '@theia/ai-core/lib/common/agent';
 import { CustomizationSource } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
+import { isChatAgent } from '@theia/ai-chat/';
 
 /**
  * Widget for configuring AI prompt fragments and prompt variant sets.
@@ -270,8 +271,8 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                 msg: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToCustomizationDialogMsg',
                     'Are you sure you want to reset the prompt fragment "{0}" to use the {1} customization? This will remove all higher-priority customizations.',
                     customization.id, type),
-                ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetButton', 'Reset'),
-                cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
+                ok: nls.localizeByDefault('Reset'),
+                cancel: nls.localizeByDefault('Cancel')
             });
 
             const shouldReset = await dialog.open();
@@ -283,8 +284,8 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                 title: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToBuiltInDialogTitle', 'Reset to Built-in'),
                 msg: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToBuiltInDialogMsg',
                     'Are you sure you want to reset the prompt fragment "{0}" to its built-in version? This will remove all customizations.', customization.id),
-                ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetButton', 'Reset'),
-                cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
+                ok: nls.localizeByDefault('Reset'),
+                cancel: nls.localizeByDefault('Cancel')
             });
 
             const shouldReset = await dialog.open();
@@ -323,8 +324,8 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                     'Are you sure you want to remove the {0} customization for prompt fragment "{1}" ({2})?', type, customization.id, description) :
                 nls.localize('theia/ai/core/promptFragmentsConfiguration/removeCustomizationDialogMsg',
                     'Are you sure you want to remove the {0} customization for prompt fragment "{1}"?', type, customization.id),
-            ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/removeButton', 'Remove'),
-            cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
+            ok: nls.localizeByDefault('Remove'),
+            cancel: nls.localizeByDefault('Cancel')
         });
 
         const shouldDelete = await dialog.open();
@@ -342,7 +343,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             msg: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetAllCustomizationsDialogMsg',
                 'Are you sure you want to reset all prompt fragments to their built-in versions? This will remove all customizations.'),
             ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetAllButton', 'Reset All'),
-            cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
+            cancel: nls.localizeByDefault('Cancel')
         });
 
         const shouldReset = await dialog.open();
@@ -376,14 +377,14 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
 
                 <div className="prompt-variants-container">
                     <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/promptVariantsHeader', 'Prompt Variant Sets')}</h3>
-                    {Array.from(this.promptVariantsMap.entries()).map(([promptVariantSetId, variantIds]) =>
+                    {Array.from(this.promptVariantsMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([promptVariantSetId, variantIds]) =>
                         this.renderPromptVariantSet(promptVariantSetId, variantIds)
                     )}
                 </div>
 
                 {nonSystemPromptFragments.size > 0 && <div className="prompt-fragments-container">
                     <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/otherPromptFragmentsHeader', 'Other Prompt Fragments')}</h3>
-                    {Array.from(nonSystemPromptFragments.entries()).map(([promptFragmentId, fragments]) =>
+                    {Array.from(nonSystemPromptFragments.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([promptFragmentId, fragments]) =>
                         this.renderPromptFragment(promptFragmentId, fragments)
                     )}
                 </div>}
@@ -464,7 +465,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                                 <span key={agent.id} className="agent-chip"
                                     title={nls.localize('theia/ai/core/promptFragmentsConfiguration/usedByAgentTitle', 'Used by agent: {0}', agent.name)}
                                     onClick={e => e.stopPropagation()}>
-                                    <span className={codicon('copilot')}></span>
+                                    <span className={(isChatAgent(agent) && agent.iconClass) ? agent.iconClass : codicon('copilot')}></span>
                                     {agent.name}
                                 </span>
                             ))}
@@ -492,7 +493,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                                             {defaultVariantId === variantId && (
                                                 <span className="badge default-variant"
                                                     title={nls.localize('theia/ai/core/promptFragmentsConfiguration/defaultVariantTitle', 'Default variant')}>
-                                                    {nls.localize('theia/ai/core/promptFragmentsConfiguration/defaultVariantLabel', 'Default')}
+                                                    {nls.localizeByDefault('Default')}
                                                 </span>
                                             )}
                                             {selectedVariantId === variantId && (
@@ -601,7 +602,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                         {isActive && (
                             <span className="active-indicator"
                                 title={nls.localize('theia/ai/core/promptFragmentsConfiguration/activeCustomizationTitle', 'Active customization')}>
-                                {nls.localize('theia/ai/core/promptFragmentsConfiguration/activeCustomizationLabel', 'Active')}
+                                {nls.localizeByDefault('Active')}
                             </span>
                         )}
                     </div>
@@ -695,7 +696,7 @@ const CustomizationTypeBadge: React.FC<CustomizationTypeBadgeProps> = ({ promptF
                     customizationType + ' ' + nls.localize('theia/ai/core/promptFragmentsConfiguration/customization', 'customization')
                     : nls.localize('theia/ai/core/promptFragmentsConfiguration/customizationLabel', 'Customization')}`);
             } else {
-                setTypeLabel(nls.localize('theia/ai/core/promptFragmentsConfiguration/builtInLabel', 'Built-in'));
+                setTypeLabel(nls.localizeByDefault('Built-in'));
             }
         };
 

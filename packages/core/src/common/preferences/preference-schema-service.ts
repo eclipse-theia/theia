@@ -97,7 +97,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                 promises.push(contrib.initSchema(this));
             }
         });
-        Promise.all(promises).then(() => this._ready.resolve());
+        Promise.all(promises).then(() => {
+            this._ready.resolve();
+            this.logDefaultRegistrationWarnings();
+        });
     }
 
     dispose(): void {
@@ -128,6 +131,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                 console.warn(`Property with id '${key}' already exists`);
                 continue;
             }
+            this.pendingDefaultRegistrationWarnings?.delete(key);
 
             if (property.scope === undefined) {
                 property.scope = schema.scope;
@@ -210,11 +214,27 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         }
     }
 
+    protected pendingDefaultRegistrationWarnings: Set<string> | undefined = new Set();
+    protected logDefaultRegistrationWarnings(): void {
+        if (this.pendingDefaultRegistrationWarnings?.size) {
+            console.warn('Default overrides registered for these keys, but preferences not registered', Array.from(this.pendingDefaultRegistrationWarnings));
+        }
+        this.pendingDefaultRegistrationWarnings = undefined;
+    }
+
+    protected logDefaultRegistrationWarning(key: string): void {
+        if (this.pendingDefaultRegistrationWarnings) {
+            this.pendingDefaultRegistrationWarnings.add(key);
+        } else {
+            console.warn(`Trying to register default override for non-existent preference: ${key}`);
+        }
+    }
+
     registerOverride(key: string, overrideIdentifier: string | undefined, value: JSONValue): Disposable {
         const overrideId = overrideIdentifier || NO_OVERRIDE;
         const property = this.properties.get(key);
         if (!property) {
-            console.warn(`Trying to register default override for non-existent preference: ${key}`);
+            this.logDefaultRegistrationWarning(key);
         } else if (!property.overridable && overrideIdentifier) {
             console.warn(`Trying to register default override for identifier ${overrideIdentifier} for non-overridable preference: ${key}`);
         }

@@ -171,14 +171,10 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain);
 
     const fs = new FileSystemMainImpl(rpc, container);
-    const fsEventService = new MainFileSystemEventService(rpc, container);
-    const disposeFS = fs.dispose.bind(fs);
-    fs.dispose = () => {
-        fsEventService.dispose();
-        disposeFS();
-    };
-
     rpc.set(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_MAIN, fs);
+
+    const fsEventService = new MainFileSystemEventService(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.FILE_SYSTEM_EVENT_SERVICE_MAIN, fsEventService);
 
     const scmMain = new ScmMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.SCM_MAIN, scmMain);

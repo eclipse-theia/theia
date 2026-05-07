@@ -14,19 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
+import { CancellationToken } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
-import { MutableChatRequestModel } from '@theia/ai-chat';
-import { CancellationToken } from '@theia/core';
 import {
     LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
     RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
 } from '../common/workspace-functions';
+
+export interface LaunchConfigurationInfo {
+    name: string;
+    running: boolean;
+}
 
 @injectable()
 export class LaunchListProvider implements ToolProvider {
@@ -34,11 +38,16 @@ export class LaunchListProvider implements ToolProvider {
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
+    @inject(DebugSessionManager)
+    protected readonly debugSessionManager: DebugSessionManager;
+
     getTool(): ToolRequest {
         return {
             id: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
             name: LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
-            description: 'Lists available launch configurations in the workspace. Launch configurations can be filtered by name.',
+            description: 'Lists available launch configurations in the workspace. Each result includes the configuration name and whether it is currently running. ' +
+                'Optionally provide a filter substring to narrow results by name. If omitted, all configurations are returned. ' +
+                'Always call this before runLaunchConfiguration to discover exact configuration names.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -47,24 +56,29 @@ export class LaunchListProvider implements ToolProvider {
                         description: 'Filter to apply on launch configuration names (empty string to retrieve all configurations).'
                     }
                 },
-                required: ['filter']
+                required: []
             },
             handler: async (argString: string) => {
-                const filterArgs: { filter: string } = JSON.parse(argString);
+                const filterArgs: { filter?: string } = JSON.parse(argString);
                 const configurations = await this.getAvailableLaunchConfigurations(filterArgs.filter);
                 return JSON.stringify(configurations);
             }
         };
     }
 
-    private async getAvailableLaunchConfigurations(filter: string = ''): Promise<string[]> {
+    private async getAvailableLaunchConfigurations(filter: string = ''): Promise<LaunchConfigurationInfo[]> {
         await this.debugConfigurationManager.load();
-        const configurations: string[] = [];
-
+        const configurations: LaunchConfigurationInfo[] = [];
+        const runningSessions = new Set(
+            this.debugSessionManager.sessions.map(session => session.configuration.name)
+        );
         for (const options of this.debugConfigurationManager.all) {
             const name = this.getDisplayName(options);
             if (name.toLowerCase().includes(filter.toLowerCase())) {
-                configurations.push(name);
+                configurations.push({
+                    name,
+                    running: runningSessions.has(name)
+                });
             }
         }
 
@@ -94,7 +108,9 @@ export class LaunchRunnerProvider implements ToolProvider {
         return {
             id: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
-            description: 'Executes a specified launch configuration to start debugging.',
+            description: 'Starts a launch configuration and returns immediately — the application continues running in the background. ' +
+                'Use listLaunchConfigurations first to discover available configuration names and check whether one is already running. ' +
+                'The response includes the debug session ID on success. If the configuration name doesn\'t match any available configuration, returns an error.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -105,7 +121,7 @@ export class LaunchRunnerProvider implements ToolProvider {
                 },
                 required: ['configurationName']
             },
-            handler: async (argString: string, ctx: MutableChatRequestModel) => this.handleRunLaunchConfiguration(argString, ctx?.response?.cancellationToken)
+            handler: async (argString: string, ctx?: ToolInvocationContext) => this.handleRunLaunchConfiguration(argString, ctx?.cancellationToken)
         };
     }
 
@@ -176,7 +192,8 @@ export class LaunchStopProvider implements ToolProvider {
         return {
             id: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
             name: STOP_LAUNCH_CONFIGURATION_FUNCTION_ID,
-            description: 'Stops an active launch configuration or debug session.',
+            description: 'Stops an active launch configuration or debug session. If a configuration name is provided, stops the session matching that name. ' +
+                'If no name is provided, stops the currently active session. Returns an error if no matching active session is found.',
             parameters: {
                 type: 'object',
                 properties: {

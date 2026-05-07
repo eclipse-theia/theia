@@ -17,7 +17,7 @@ The `file explorer` can be used to easily view, open, and manage the files that 
 
 ## Additional Information
 
-- [API documentation for `@theia/navigator`](https://eclipse-theia.github.io/theia/docs/next/modules/navigator.html)
+- [API documentation for `@theia/navigator`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_navigator.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

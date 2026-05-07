@@ -18,62 +18,100 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     PreferenceService,
 } from '@theia/core/lib/common/preferences';
-import { ToolConfirmationMode, TOOL_CONFIRMATION_PREFERENCE, ChatToolPreferences } from '../common/chat-tool-preferences';
+import {
+    ToolConfirmationMode,
+    TOOL_CONFIRMATION_PREFERENCE,
+    DEFAULT_TOOL_CONFIRMATION_PREFERENCE
+} from '../common/chat-tool-preferences';
+import { ToolRequest } from '@theia/ai-core';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
 
 /**
  * Utility class to manage tool confirmation settings
  */
 @injectable()
 export class ToolConfirmationManager {
-    @inject(ChatToolPreferences)
-    protected readonly preferences: ChatToolPreferences;
-
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(TrustAwarePreferenceReader)
+    protected readonly trustAwareReader: TrustAwarePreferenceReader;
 
     // In-memory session overrides (not persisted), per chat
     protected sessionOverrides: Map<string, Map<string, ToolConfirmationMode>> = new Map();
 
     /**
-     * Get the confirmation mode for a specific tool, considering session overrides first (per chat)
+     * Get the global default confirmation mode (used when no tool-specific entry exists).
+     *
+     * Read through the trust-aware reader so that an untrusted workspace cannot override
+     * the default to a more permissive value.
      */
-    getConfirmationMode(toolId: string, chatId: string): ToolConfirmationMode {
+    getDefaultConfirmationMode(): ToolConfirmationMode {
+        const value = this.trustAwareReader.get<ToolConfirmationMode>(DEFAULT_TOOL_CONFIRMATION_PREFERENCE);
+        return value ?? this.getDefaultPreferenceSchemaDefault();
+    }
+
+    /**
+     * Set the global default confirmation mode.
+     *
+     * Returns the promise produced by the underlying preference update so callers can
+     * `await` completion and react to errors (e.g. show a notification on failure).
+     */
+    setDefaultConfirmationMode(mode: ToolConfirmationMode): Promise<void> {
+        return this.preferenceService.updateValue(DEFAULT_TOOL_CONFIRMATION_PREFERENCE, mode);
+    }
+
+    /**
+     * Get the confirmation mode for a specific tool, considering session overrides first (per chat).
+     *
+     * For tools with `confirmAlwaysAllow` flag:
+     * - They default to CONFIRM mode instead of inheriting ALWAYS_ALLOW from the global default.
+     * - Tool-specific preference entries are still respected (informed user consent).
+     *
+     * @param toolId - The tool identifier
+     * @param chatId - The chat session identifier
+     * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
+     */
+    getConfirmationMode(toolId: string, chatId: string, toolRequest?: ToolRequest): ToolConfirmationMode {
         const chatMap = this.sessionOverrides.get(chatId);
         if (chatMap && chatMap.has(toolId)) {
             return chatMap.get(toolId)!;
         }
-        const toolConfirmation = this.preferences[TOOL_CONFIRMATION_PREFERENCE];
-        if (toolConfirmation[toolId]) {
+        const toolConfirmation = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
+        if (toolId in toolConfirmation) {
             return toolConfirmation[toolId];
         }
-        if (toolConfirmation['*']) {
-            return toolConfirmation['*'];
+        const defaultMode = this.getDefaultConfirmationMode();
+        // For confirmAlwaysAllow tools, don't inherit a global ALWAYS_ALLOW default
+        if (toolRequest?.confirmAlwaysAllow && defaultMode === ToolConfirmationMode.ALWAYS_ALLOW) {
+            return ToolConfirmationMode.CONFIRM;
         }
-        return ToolConfirmationMode.ALWAYS_ALLOW; // Default to Always Allow
+        return defaultMode;
     }
 
     /**
      * Set the confirmation mode for a specific tool (persisted)
+     *
+     * @param toolId - The tool identifier
+     * @param mode - The confirmation mode to set
+     * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
      */
-    setConfirmationMode(toolId: string, mode: ToolConfirmationMode): void {
-        const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
-        // Determine the global default (star entry), or fallback to schema default
-        let starMode = current['*'];
-        if (starMode === undefined) {
-            starMode = ToolConfirmationMode.ALWAYS_ALLOW;
-        }
-        if (mode === starMode) {
-            // Remove the toolId entry if it exists
+    setConfirmationMode(toolId: string, mode: ToolConfirmationMode, toolRequest?: ToolRequest): Promise<void> {
+        const current = this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
+        const effectiveDefault = this.computeEffectiveDefaultForTool(toolId, toolRequest);
+        if (mode === effectiveDefault) {
             if (toolId in current) {
                 const { [toolId]: _, ...rest } = current;
-                this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, rest);
+                return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, rest);
             }
-            // else, nothing to update
-        } else {
-            // Set or update the toolId entry
-            const updated = { ...current, [toolId]: mode };
-            this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
+            return Promise.resolve();
         }
+        const updated = { ...current, [toolId]: mode };
+        return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
     }
 
     /**
@@ -103,15 +141,42 @@ export class ToolConfirmationManager {
      * Get all tool confirmation settings
      */
     getAllConfirmationSettings(): { [toolId: string]: ToolConfirmationMode } {
-        return this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
+        return this.trustAwareReader.get<Record<string, ToolConfirmationMode>>(
+            TOOL_CONFIRMATION_PREFERENCE, {}
+        ) ?? {};
     }
 
-    resetAllConfirmationModeSettings(): void {
-        const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
-        if ('*' in current) {
-            this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, { '*': current['*'] });
-        } else {
-            this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, {});
+    resetAllConfirmationModeSettings(): Promise<void> {
+        return this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, {});
+    }
+
+    /**
+     * Compute the effective default for a given tool, taking the schema-level default,
+     * any product-shipped per-tool default, and the confirmAlwaysAllow flag into account.
+     */
+    protected computeEffectiveDefaultForTool(toolId: string, toolRequest?: ToolRequest): ToolConfirmationMode {
+        const perToolDefaults = this.preferenceService.inspect(TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as
+            | { [toolId: string]: ToolConfirmationMode }
+            | undefined;
+        const perToolDefault = perToolDefaults?.[toolId];
+        if (perToolDefault) {
+            return perToolDefault;
         }
+        const globalDefault = this.getDefaultConfirmationMode();
+        if (toolRequest?.confirmAlwaysAllow && globalDefault === ToolConfirmationMode.ALWAYS_ALLOW) {
+            return ToolConfirmationMode.CONFIRM;
+        }
+        return globalDefault;
+    }
+
+    /**
+     * Read the schema-level default for the default-confirmation preference.
+     * Falls back to CONFIRM if the preference service has not registered the schema yet.
+     */
+    protected getDefaultPreferenceSchemaDefault(): ToolConfirmationMode {
+        const schemaDefault = this.preferenceService.inspect(DEFAULT_TOOL_CONFIRMATION_PREFERENCE)?.defaultValue as
+            | ToolConfirmationMode
+            | undefined;
+        return schemaDefault ?? ToolConfirmationMode.CONFIRM;
     }
 }

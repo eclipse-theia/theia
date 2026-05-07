@@ -320,8 +320,8 @@ export class ApplicationShell extends Widget {
         };
         if (corePreferences) {
             corePreferences.onPreferenceChanged(preference => {
-                if (preference.preferenceName === 'window.menuBarVisibility' && (preference.newValue === 'visible' || preference.oldValue === 'visible')) {
-                    this.handleMenuBarVisibility(preference.newValue);
+                if (preference.preferenceName === 'window.menuBarVisibility') {
+                    this.handleMenuBarVisibility(corePreferences['window.menuBarVisibility']);
                 }
             });
         }
@@ -339,7 +339,7 @@ export class ApplicationShell extends Widget {
             });
             this.corePreferences.onPreferenceChanged(preference => {
                 if (preference.preferenceName === 'window.menuBarVisibility') {
-                    this.setTopPanelVisibility(preference.newValue);
+                    this.setTopPanelVisibility(this.corePreferences['window.menuBarVisibility']);
                 }
             });
         }

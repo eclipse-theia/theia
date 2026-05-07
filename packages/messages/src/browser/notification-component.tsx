@@ -17,12 +17,14 @@
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { NotificationManager, Notification } from './notifications-manager';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { NOTIFICATION_CONTEXT_MENU } from './notifications-commands';
 
 export interface NotificationComponentProps {
     readonly manager: NotificationManager;
     readonly notification: Notification;
+    readonly contextMenuRenderer?: ContextMenuRenderer;
 }
 
 export class NotificationComponent extends React.Component<NotificationComponentProps> {
@@ -69,11 +71,24 @@ export class NotificationComponent extends React.Component<NotificationComponent
         }
     };
 
+    protected onContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+        if (this.props.contextMenuRenderer) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.props.contextMenuRenderer.render({
+                menuPath: NOTIFICATION_CONTEXT_MENU,
+                anchor: { x: event.clientX, y: event.clientY },
+                args: [this.props.notification],
+                context: event.currentTarget
+            });
+        }
+    };
+
     override render(): React.ReactNode {
         const { messageId, message, type, progress, collapsed, expandable, source, actions } = this.props.notification;
         const isProgress = type === 'progress' || typeof progress === 'number';
         const icon = type === 'progress' ? 'info' : type;
-        return (<div key={messageId} className='theia-notification-list-item-container'>
+        return (<div key={messageId} className='theia-notification-list-item-container' onContextMenu={this.onContextMenu}>
             <div className='theia-notification-list-item' tabIndex={0}>
                 <div className={`theia-notification-list-item-content ${collapsed ? 'collapsed' : ''}`}>
                     <div className='theia-notification-list-item-content-main'>

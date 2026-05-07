@@ -37,8 +37,13 @@ export class ElectronMainWindowServiceImpl implements ElectronMainWindowService 
         return undefined;
     }
 
-    openNewDefaultWindow(params?: WindowSearchParams): void {
-        this.app.openDefaultWindow(params);
+    async openNewDefaultWindow(params?: WindowSearchParams): Promise<number> {
+        const electronWindow = await this.app.openDefaultWindow(params);
+        return electronWindow.webContents.id;
+    }
+
+    closeWindow(windowId: number): void {
+        this.app.closeWindowById(windowId);
     }
 
 }

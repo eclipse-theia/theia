@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentLocation } from './chat-agents';
+import { ResponseTokenUsage } from './chat-model';
 
 export interface SerializableChangeSetElement {
     kind?: string;
@@ -37,6 +39,59 @@ export interface SerializableChangeSetFileElementData {
     }>;
 }
 
+export interface SerializableParsedRequestPartBase {
+    range: { start: number; endExclusive: number };
+}
+
+export interface SerializableTextPart extends SerializableParsedRequestPartBase {
+    kind: 'text';
+    text: string;
+}
+
+export interface SerializableVariablePart extends SerializableParsedRequestPartBase {
+    kind: 'var';
+    variableId: string;
+    variableName: string;
+    variableDescription: string;
+    variableArg?: string;
+    variableValue?: string;
+}
+
+export interface SerializableFunctionPart extends SerializableParsedRequestPartBase {
+    kind: 'function';
+    toolRequestId: string;
+}
+
+export interface SerializableAgentPart extends SerializableParsedRequestPartBase {
+    kind: 'agent';
+    agentId: string;
+    agentName: string;
+}
+
+export type SerializableParsedRequestPart =
+    | SerializableTextPart
+    | SerializableVariablePart
+    | SerializableFunctionPart
+    | SerializableAgentPart;
+
+export interface SerializableToolRequest {
+    id: string;
+}
+
+export interface SerializableResolvedVariable {
+    variableId: string;
+    variableName: string;
+    variableDescription: string;
+    arg?: string;
+    value: string;
+}
+
+export interface SerializableParsedRequest {
+    parts: SerializableParsedRequestPart[];
+    toolRequests: SerializableToolRequest[];
+    variables: SerializableResolvedVariable[];
+}
+
 export interface SerializableChatRequestData {
     id: string;
     text: string;
@@ -45,6 +100,17 @@ export interface SerializableChatRequestData {
         title: string;
         elements: SerializableChangeSetElement[];
     };
+    parsedRequest?: SerializableParsedRequest;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     */
+    capabilityOverrides?: Record<string, boolean>;
+    /**
+     * Generic capability selections for this request.
+     * Contains user-selected skills, functions, MCP tools, etc.
+     */
+    genericCapabilitySelections?: GenericCapabilitySelections;
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {
@@ -62,6 +128,9 @@ export interface SerializableChatResponseData {
     isComplete: boolean;
     isError: boolean;
     errorMessage?: string;
+    promptVariantId?: string;
+    isPromptVariantEdited?: boolean;
+    tokenUsage?: ResponseTokenUsage;
     content: SerializableChatResponseContentData[];
 }
 

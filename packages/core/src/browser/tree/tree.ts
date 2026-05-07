@@ -268,6 +268,7 @@ export class TreeImpl implements Tree {
         this.toDispose.push(this.onChangedEmitter);
         this.toDispose.push(this.onNodeRefreshedEmitter);
         this.toDispose.push(this.onDidChangeBusyEmitter);
+        this.toDispose.push(Disposable.create(() => this.toDisposeOnSetRoot.dispose()));
     }
 
     dispose(): void {

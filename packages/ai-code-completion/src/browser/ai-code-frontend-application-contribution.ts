@@ -71,14 +71,14 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                 this.toDispose.set('inlineCompletions', handler());
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY) {
-                this.debounceDelay = event.newValue as number;
+                this.debounceDelay = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY) {
-                this.completionCache.setMaxSize(event.newValue as number);
+                this.completionCache.setMaxSize(this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY, 100));
             }
         });
 
-        this.activationService.onDidChangeActiveStatus(change => {
+        this.activationService.onDidChangeCanRun(() => {
             this.toDispose.get('inlineCompletions')?.dispose();
             this.toDispose.set('inlineCompletions', handler());
         });
@@ -93,7 +93,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     }
 
     protected handleInlineCompletions(): Disposable {
-        if (!this.activationService.isActive) {
+        if (!this.activationService.canRun) {
             return Disposable.NULL;
         }
         const automatic = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, true);
@@ -144,9 +144,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                         return completionHandler();
                     }
                 },
-                freeInlineCompletions: completions => {
-                    this.inlineCodeCompletionProvider.freeInlineCompletions(completions);
-                }
+                disposeInlineCompletions: () => { /* no-op */ }
             }
         );
     }

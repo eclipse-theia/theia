@@ -18,4 +18,10 @@
  * The default supported API version the framework supports.
  * The version should be in the format `x.y.z`.
  */
-export const DEFAULT_SUPPORTED_API_VERSION = '1.105.0';
+export const DEFAULT_SUPPORTED_API_VERSION = '1.116.0';
+
+/**
+ * The default supported monaco editor version the framework supports.
+ * The version should be in the format `x.y.z`.
+ */
+export const DEFAULT_SUPPORTED_MONACO_VERSION = '1.108.201';

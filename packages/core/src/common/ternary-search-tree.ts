@@ -26,6 +26,7 @@
 import URI from './uri';
 import { CharCode } from './char-code';
 import { compareSubstringIgnoreCase, compare, compareSubstring } from './strings';
+import { KeySequence } from './keys';
 
 export interface IKeyIterator<K> {
     reset(key: K): this;
@@ -187,6 +188,35 @@ class TernarySearchTreeNode<K, V> {
     }
 }
 
+export class KeySequenceIterator implements IKeyIterator<KeySequence> {
+    private _value!: KeySequence;
+    private _index: number = 0;
+
+    reset(key: KeySequence): this {
+        this._value = key;
+        this._index = 0;
+        return this;
+    }
+
+    next(): this {
+        this._index++;
+        return this;
+    }
+
+    hasNext(): boolean {
+        return this._index < this._value.length - 1;
+    }
+
+    cmp(a: string): number {
+        const current = this._value[this._index]?.toString() ?? '';
+        return compare(a, current);
+    }
+
+    value(): string {
+        return this._value[this._index]?.toString() ?? '';
+    }
+}
+
 export class TernarySearchTree<K, V> {
 
     static forUris<E>(caseSensitive: boolean): TernarySearchTree<URI, E> {
@@ -195,6 +225,10 @@ export class TernarySearchTree<K, V> {
 
     static forPaths<E>(): TernarySearchTree<string, E> {
         return new TernarySearchTree<string, E>(new PathIterator());
+    }
+
+    static forKeySequences<E>(): TernarySearchTree<KeySequence, E> {
+        return new TernarySearchTree<KeySequence, E>(new KeySequenceIterator());
     }
 
     private _iter: IKeyIterator<K>;

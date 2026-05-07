@@ -178,7 +178,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(Disposable.create(() => { this.toDisposeOnUpdateTitle.dispose(); }));
+        this.toDispose.push(Disposable.create(() => {
+            this.toDisposeOnUpdateTitle.dispose();
+            this.toDisposeOnDragEnd.dispose();
+        }));
         this.id = this.options.id;
         this.addClass('theia-view-container');
         const layout = new PanelLayout();
@@ -239,8 +242,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected configureLayout(layout: PanelLayout): void {
         layout.addWidget(this.panel);
     }
-
-    protected readonly toDisposeOnCurrentPart = new DisposableCollection();
 
     protected updateCurrentPart(part?: ViewContainerPart): void {
         if (part && this.getParts().indexOf(part) !== -1) {

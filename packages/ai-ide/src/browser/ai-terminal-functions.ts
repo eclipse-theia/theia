@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MutableChatRequestModel } from '@theia/ai-chat';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { SUGGEST_TERMINAL_COMMAND_ID } from '../common/ai-terminal-functions';
@@ -56,8 +55,8 @@ export class SuggestTerminalCommand implements ToolProvider {
                 },
                 required: ['command']
             },
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                if (ctx?.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 // Ensure that there is a workspace

@@ -18,7 +18,7 @@ import * as chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Localization, sortLocalization } from './common';
-import { deepl, DeeplLanguage, DeeplParameters, defaultLanguages, isSupportedLanguage } from './deepl-api';
+import { deepl, DeeplLanguage, DeeplParameters, DeeplResponse, defaultLanguages, isSupportedLanguage } from './deepl-api';
 
 export interface LocalizationOptions {
     freeApi: Boolean
@@ -28,7 +28,7 @@ export interface LocalizationOptions {
     targetLanguages: string[]
 }
 
-export type LocalizationFunction = (parameters: DeeplParameters) => Promise<string[]>;
+export type LocalizationFunction = (parameters: DeeplParameters) => Promise<DeeplResponse>;
 
 export class LocalizationManager {
 
@@ -66,8 +66,11 @@ export class LocalizationManager {
                 existingTranslations.set(targetLanguage, {});
             }
         }
-        const results = await Promise.all(languages.map(language => this.translateLanguage(source, existingTranslations.get(language)!, language, options)));
-        let result = results.reduce((acc, val) => acc && val, true);
+        let result = true;
+        for (const language of languages) {
+            const success = await this.translateLanguage(source, existingTranslations.get(language)!, language, options);
+            result = result && success;
+        }
 
         for (const targetLanguage of languages) {
             const targetPath = this.translationFileName(sourceFile, targetLanguage);
@@ -99,7 +102,9 @@ export class LocalizationManager {
                     source_lang: options.sourceLanguage?.toUpperCase() as DeeplLanguage,
                     text: map.text.map(e => this.addIgnoreTags(e)),
                     tag_handling: ['xml'],
-                    ignore_tags: ['x']
+                    ignore_tags: ['x'],
+                    context: 'User interface labels and messages for an IDE (Integrated Development Environment) software application similar to Visual Studio Code. '
+                        + "Terms like 'disabled' mean 'deactivated/turned off', 'terminal' means 'command-line terminal', 'host' means 'computer/server host'."
                 });
                 translationResponse.translations.forEach(({ text }, i) => {
                     map.localize(i, this.removeIgnoreTags(text));
@@ -117,11 +122,16 @@ export class LocalizationManager {
     }
 
     protected addIgnoreTags(text: string): string {
-        return text.replace(/(\{\d*\})/g, '<x>$1</x>');
+        // Escape existing angle brackets so DeepL's XML parser doesn't treat them as tags
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Wrap placeholders like {0}, {1} in ignore tags to preserve them during translation
+        return escaped.replace(/(\{\d+\})/g, '<x>$1</x>');
     }
 
     protected removeIgnoreTags(text: string): string {
-        return text.replace(/<x>(\{\d+\})<\/x>/g, '$1');
+        const result = text.replace(/<x>(\{\d+\})<\/x>/g, '$1');
+        // Restore escaped angle brackets
+        return result.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     }
 
     protected buildLocalizationMap(source: Localization, target: Localization): LocalizationMap {

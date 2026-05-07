@@ -27,7 +27,7 @@ The `@theia/search-in-workspace` extension contributes the `Search` widget which
 
 ## Additional Information
 
-- [API documentation for `@theia/search-in-workspace`](https://eclipse-theia.github.io/theia/docs/next/modules/search_in_workspace.html)
+- [API documentation for `@theia/search-in-workspace`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_search-in-workspace.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

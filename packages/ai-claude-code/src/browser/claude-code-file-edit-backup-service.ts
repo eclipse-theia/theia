@@ -17,10 +17,11 @@
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { CLAUDE_SESSION_ID_KEY } from './claude-code-chat-agent';
+import { ILogger } from '@theia/core';
 
 export const FileEditBackupService = Symbol('FileEditBackupService');
 
@@ -80,6 +81,9 @@ export class FileEditBackupServiceImpl implements FileEditBackupService {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(ILogger) @named('claude-code')
+    protected readonly logger: ILogger;
+
     getLocation(workspaceRoot: URI): URI {
         // This path structure must match the backup hooks in claude-code-service-impl.ts
         // See ensureFileBackupHook() method which creates backups at:
@@ -107,7 +111,7 @@ export class FileEditBackupServiceImpl implements FileEditBackupService {
                 return backupContent.value.toString();
             }
         } catch (error) {
-            console.error('Error reading backup file:', error);
+            this.logger.error('Error reading backup file:', error);
         }
 
         return undefined;

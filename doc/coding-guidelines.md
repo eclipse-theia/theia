@@ -177,12 +177,23 @@ nls.localizeByDefault('Close');
 
 * [2.](#nls-utilities) Use utility functions where possible:
 
+  * `Command.toLocalizedCommand` should be used when the label requires a custom localization key (using `nls.localize` internally).
+  * `Command.toDefaultLocalizedCommand` should be used when the label and category already exist in VS Code's language packs (using `nls.localizeByDefault` internally).
+
 ```ts
 // bad
-command: Command = { label: nls.localize(key, defaultValue), originalLabel: defaultValue };
+command: Command = { label: nls.localize('theia/my-package/myCommand', 'My Custom Label'), originalLabel: 'My Custom Label' };
 
-// good
-command = Command.toLocalizedCommand({ id: key, label: defaultValue });
+// good - use toLocalizedCommand with a custom localization key
+command = Command.toLocalizedCommand(
+    { id: 'my-command-id', label: 'My Custom Label' },
+    'theia/my-package/myCommand'
+);
+
+// good - use toDefaultLocalizedCommand when the label exists in VS Code's language packs
+command = Command.toDefaultLocalizedCommand(
+    { id: 'my-command-id', label: 'Close Editor' }
+);
 ```
 
 <a name="nls-rich-content-markdown"></a>
@@ -405,6 +416,29 @@ export namespace DirtyDiffModel {
 > * If nothing is bound to an identifier, multi-inject resolves to `undefined`, not an empty array. `ContributionProvider` provides an empty array.
 > * Multi-inject does not guarantee the same instances are injected if an extender does not use `inSingletonScope`. `ContributionProvider` caches instances to ensure uniqueness.
 > * `ContributionProvider` supports filtering. See `ContributionFilterRegistry`.
+
+<a name="bind-root-contribution-provider"></a>
+
+* [6.](#bind-root-contribution-provider) Use `bindRootContributionProvider` instead of `bindContributionProvider` when binding contribution providers in the main (root) container.
+
+`bindContributionProvider` captures a reference to whichever container first resolves the provider. If that container is a child (e.g. created for a widget or a transient binding), the provider will permanently retain that child container and everything cached in it, causing a memory leak.
+
+`bindRootContributionProvider` avoids this by walking to the root container before constructing the provider, ensuring that only the long-lived root container is retained.
+
+```ts
+// bad — risks retaining a child container reference
+bindContributionProvider(bind, MyContribution);
+
+// good — always resolves against the root container
+bindRootContributionProvider(bind, MyContribution);
+```
+
+`bindContributionProvider` is still appropriate when the contributions themselves are scoped to a child container rather than the main application container, for example:
+
+* **Connection-scoped containers** created by `ConnectionContainerModule.create(...)`, where services are bound per-connection.
+* **Test containers**, where a standalone container is constructed for a unit test.
+
+See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-1107000223>
 
 ## CSS
 

@@ -170,7 +170,7 @@ const MultiEditToolComponent: React.FC<{
             {input.edits.map((edit, index) => (
                 <div key={index} className="claude-code-tool edit-preview">
                     <div className="claude-code-tool edit-preview-header">
-                        <span className="claude-code-tool edit-preview-title">{nls.localize('theia/ai/claude-code/editNumber', 'Edit {0}', index + 1)}</span>
+                        <span className="claude-code-tool edit-preview-title">{nls.localizeByDefault('Edit {0}', index + 1)}</span>
                         {edit.replace_all && (
                             <span className="claude-code-tool edit-preview-badge">
                                 {nls.localizeByDefault('Replace All')}

@@ -27,34 +27,41 @@ export namespace ZoomLevel {
     export const MAX = 9;
     // amount to increment or decrement the window zoom level.
     export const VARIATION = 0.5;
+    // Chromium's base for zoom factor calculation: zoomFactor = pow(ZOOM_BASE, zoomLevel)
+    // See https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/common/page/page_zoom.cc
+    export const ZOOM_BASE = 1.2;
 }
+
+export const PREF_WINDOW_ZOOM_LEVEL = 'window.zoomLevel';
+export const PREF_WINDOW_TITLE_BAR_STYLE = 'window.titleBarStyle';
 
 export const electronWindowPreferencesSchema: PreferenceSchema = {
     properties: {
-        'window.zoomLevel': {
-            'type': 'number',
-            'default': ZoomLevel.DEFAULT,
-            'minimum': ZoomLevel.MIN,
-            'maximum': ZoomLevel.MAX,
-            'scope': PreferenceScope.User,
-            // eslint-disable-next-line max-len
-            'description': nls.localizeByDefault("Adjust the default zoom level for all windows. Each increment above `0` (e.g. `1`) or below (e.g. `-1`) represents zooming `20%` larger or smaller. You can also enter decimals to adjust the zoom level with a finer granularity. See {0} for configuring if the 'Zoom In' and 'Zoom Out' commands apply the zoom level to all windows or only the active window.")
+        [PREF_WINDOW_ZOOM_LEVEL]: {
+            type: 'number',
+            default: ZoomLevel.DEFAULT,
+            minimum: ZoomLevel.MIN,
+            maximum: ZoomLevel.MAX,
+            scope: PreferenceScope.User,
+            markdownDescription: nls.localize('theia/core/window/zoomLevelPref',
+                'Adjust the default zoom level for all windows.\
+                Each increment of `0.5` above `0` (e.g. `0.5`) or below (e.g. `-0.5`) represents zooming approximately `10%` larger or smaller.\
+                You can also enter other decimal values to adjust the zoom level with a finer granularity.')
         },
-        'window.titleBarStyle': {
+        [PREF_WINDOW_TITLE_BAR_STYLE]: {
             type: 'string',
             enum: ['native', 'custom'],
             default: isWindows ? 'custom' : 'native',
             scope: PreferenceScope.User,
-            // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Adjust the appearance of the window title bar to be native by the OS or custom. On Linux and Windows, this setting also affects the application and context menu appearances. Changes require a full restart to apply.'),
+            description: nls.localizeByDefault('Adjust the appearance of the window title bar to be native by the OS or custom. Changes require a full restart to apply.'),
             included: !isOSX
         },
     }
 };
 
 export class ElectronWindowConfiguration {
-    'window.zoomLevel': number;
-    'window.titleBarStyle': 'native' | 'custom';
+    [PREF_WINDOW_ZOOM_LEVEL]: number;
+    [PREF_WINDOW_TITLE_BAR_STYLE]: 'native' | 'custom';
 }
 
 export const ElectronWindowPreferenceContribution = Symbol('ElectronWindowPreferenceContribution');

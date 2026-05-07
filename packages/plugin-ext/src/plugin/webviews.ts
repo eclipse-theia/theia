@@ -21,7 +21,7 @@ import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
-import { Disposable, WebviewPanelTargetArea, URI } from './types-impl';
+import { Disposable, WebviewPanelTargetArea, URI, ThemeIcon } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
 import { PluginModel, PluginPackage } from '../common';
@@ -315,7 +315,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
     private _active = true;
     private _visible = true;
     private _showOptions: theia.WebviewPanelShowOptions;
-    private _iconPath: theia.Uri | { light: theia.Uri; dark: theia.Uri } | undefined;
+    private _iconPath: theia.IconPath | undefined;
 
     readonly onDisposeEmitter = new Emitter<void>();
     public readonly onDidDispose: Event<void> = this.onDisposeEmitter.event;
@@ -367,15 +367,19 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         }
     }
 
-    get iconPath(): theia.Uri | { light: theia.Uri; dark: theia.Uri } | undefined {
+    get iconPath(): theia.IconPath | undefined {
         return this._iconPath;
     }
 
-    set iconPath(iconPath: theia.Uri | { light: theia.Uri; dark: theia.Uri } | undefined) {
+    set iconPath(iconPath: theia.IconPath | undefined) {
         this.checkIsDisposed();
         if (this._iconPath !== iconPath) {
             this._iconPath = iconPath;
-            this.proxy.$setIconPath(this.viewId, PluginIconPath.toUrl(iconPath, this._webview.plugin));
+            if (ThemeIcon.is(iconPath)) {
+                this.proxy.$setIconPath(this.viewId, ThemeIcon.get(iconPath));
+            } else {
+                this.proxy.$setIconPath(this.viewId, PluginIconPath.toUrl(iconPath, this._webview.plugin));
+            }
         }
     }
 

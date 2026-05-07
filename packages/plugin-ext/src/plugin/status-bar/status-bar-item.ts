@@ -26,7 +26,10 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     /** Map from allowed background colors to corresponding foreground colors. */
     private static BACKGROUND_COLORS = new Map<string, string>([
         ['statusBarItem.errorBackground', 'statusBarItem.errorForeground'],
-        ['statusBarItem.warningBackground', 'statusBarItem.warningForeground']
+        ['statusBarItem.warningBackground', 'statusBarItem.warningForeground'],
+        ['statusBarItem.prominentBackground', 'statusBarItem.prominentForeground'],
+        ['statusBarItem.remoteBackground', 'statusBarItem.remoteForeground'],
+        ['statusBarItem.offlineBackground', 'statusBarItem.offlineForeground']
     ]);
 
     private _id: string;

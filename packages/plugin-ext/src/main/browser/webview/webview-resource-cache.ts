@@ -79,7 +79,7 @@ export class WebviewResourceCache {
             return;
         }
         const body = await response.body();
-        await cache.put(url, new Response(body, {
+        await cache.put(url, new Response(new Uint8Array(body), {
             status: 200,
             headers: { 'ETag': response.eTag }
         }));

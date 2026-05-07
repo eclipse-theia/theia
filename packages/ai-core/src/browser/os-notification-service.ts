@@ -68,7 +68,11 @@ export class OSNotificationService {
      * @param options Optional notification configuration
      * @returns Promise resolving to the notification result
      */
-    async showNotification(title: string, options: OSNotificationOptions = {}): Promise<OSNotificationResult> {
+    async showNotification(
+        title: string,
+        options: OSNotificationOptions = {},
+        onClickCallback?: () => void,
+    ): Promise<OSNotificationResult> {
         try {
             if (!this.isNotificationSupported()) {
                 return {
@@ -85,7 +89,7 @@ export class OSNotificationService {
                 };
             }
 
-            const notification = await this.createNotification(title, options);
+            const notification = await this.createNotification(title, options, onClickCallback);
             return {
                 success: true,
                 notification
@@ -149,29 +153,34 @@ export class OSNotificationService {
      * This is a convenience method with pre-configured options for agent notifications
      *
      * @param agentName The name of the agent that completed
-     * @param taskDescription Optional description of the completed task
+     * @param sessionTitle Optional title of the chat session for identification
+     * @param onClickCallback Optional callback to invoke when the notification is clicked
      * @returns Promise resolving to the notification result
      */
-    async showAgentCompletionNotification(agentName: string, taskDescription?: string): Promise<OSNotificationResult> {
+    async showAgentCompletionNotification(
+        agentName: string,
+        sessionTitle?: string,
+        onClickCallback?: () => void,
+    ): Promise<OSNotificationResult> {
         const title = nls.localize('theia/ai-core/agentCompletionTitle', 'Agent "{0}" Task Completed', agentName);
-        const body = taskDescription
-            ? nls.localize('theia/ai-core/agentCompletionWithTask',
-                'Agent "{0}" has completed the task: {1}', agentName, taskDescription)
+        const body = sessionTitle
+            ? nls.localize('theia/ai-core/agentCompletionMessageWithSession',
+                'Agent "{0}" has completed its task in "{1}".', agentName, sessionTitle)
             : nls.localize('theia/ai-core/agentCompletionMessage',
                 'Agent "{0}" has completed its task.', agentName);
 
         return this.showNotification(title, {
             body,
             icon: this.getAgentCompletionIcon(),
-            tag: `agent-completion-${agentName}`,
+            tag: `agent-completion-${agentName}-${sessionTitle ?? 'default'}`,
             requireInteraction: false,
             data: {
                 type: 'agent-completion',
                 agentName,
-                taskDescription,
+                sessionTitle,
                 timestamp: Date.now()
             }
-        });
+        }, onClickCallback);
     }
 
     /**
@@ -198,9 +207,14 @@ export class OSNotificationService {
      *
      * @param title The notification title
      * @param options The notification options
+     * @param onClickCallback Optional callback to invoke when the notification is clicked
      * @returns Promise resolving to the created notification
      */
-    private async createNotification(title: string, options: OSNotificationOptions): Promise<Notification> {
+    private async createNotification(
+        title: string,
+        options: OSNotificationOptions,
+        onClickCallback?: () => void,
+    ): Promise<Notification> {
         return new Promise<Notification>((resolve, reject): void => {
             try {
                 const notificationOptions: NotificationOptions = {
@@ -226,6 +240,9 @@ export class OSNotificationService {
                 notification.onclick = () => {
                     console.debug('OS notification clicked:', title);
                     this.focusApplicationWindow();
+                    if (onClickCallback) {
+                        onClickCallback();
+                    }
                     notification.close();
                 };
 

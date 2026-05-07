@@ -16,7 +16,7 @@ The `@theia/plugin-dev` extension contributes functionality for the `plugin host
 
 ## Additional Information
 
-- [API documentation for `@theia/plugin-dev`](https://eclipse-theia.github.io/theia/docs/next/modules/plugin_dev.html)
+- [API documentation for `@theia/plugin-dev`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_plugin-dev.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

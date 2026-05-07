@@ -43,11 +43,11 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.showInStatusBar': {
             enum: ['never', 'always', 'onFirstSessionStart'],
             enumDescriptions: [
-                nls.localizeByDefault('Never show debug in Status bar'),
-                nls.localizeByDefault('Always show debug in Status bar'),
-                nls.localizeByDefault('Show debug in Status bar only after debug was started for the first time')
+                nls.localizeByDefault('Never show debug item in status bar'),
+                nls.localizeByDefault('Always show debug item in status bar'),
+                nls.localizeByDefault('Show debug item in status bar only after debug was started for the first time')
             ],
-            description: nls.localizeByDefault('Controls when the debug Status bar should be visible.'),
+            description: nls.localizeByDefault('Controls when the debug status bar item should be visible.'),
             default: 'onFirstSessionStart'
         },
         'debug.confirmOnExit': {
@@ -64,7 +64,27 @@ export const debugPreferencesSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Show Source Code in Disassembly View.'),
             type: 'boolean',
             default: true,
-        }
+        },
+        'debug.autoExpandLazyVariables': {
+            type: 'string',
+            enum: ['on', 'off'],
+            default: 'off',
+            enumDescriptions: [
+                nls.localizeByDefault('Always automatically expand lazy variables.'),
+                nls.localizeByDefault('Never automatically expand lazy variables.')
+            ],
+            description: nls.localizeByDefault('Controls whether variables that are lazily resolved, such as getters, are automatically resolved and expanded by the debugger.')
+        },
+        'debug.focusWindowOnBreak': {
+            type: 'boolean',
+            default: true,
+            description: nls.localizeByDefault('Controls whether the workbench window should be focused when the debugger breaks.')
+        },
+        'debug.focusEditorOnBreak': {
+            type: 'boolean',
+            default: true,
+            description: nls.localizeByDefault('Controls whether the editor should be focused when the debugger breaks.')
+        },
     }
 };
 
@@ -76,6 +96,9 @@ export class DebugConfiguration {
     'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
     'debug.confirmOnExit': 'never' | 'always';
     'debug.disassemblyView.showSourceCode': boolean;
+    'debug.autoExpandLazyVariables': 'on' | 'off';
+    'debug.focusWindowOnBreak': boolean;
+    'debug.focusEditorOnBreak': boolean;
 }
 
 export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');

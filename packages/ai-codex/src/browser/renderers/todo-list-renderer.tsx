@@ -86,7 +86,7 @@ const TodoListComponent: React.FC<{ item: TodoListItem }> = ({ item }) => {
                         <span className="codex-tool title">{nls.localize('theia/ai/codex/todoList', 'Todo List')}</span>
                         <span className={`${codicon('checklist')} codex-tool icon`} />
                         <span className="codex-tool progress-text">
-                            {nls.localize('theia/ai/codex/loading', 'Loading...')}
+                            {nls.localizeByDefault('Loading...')}
                         </span>
                     </div>
                     <div className="codex-tool header-right">

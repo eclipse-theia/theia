@@ -17,7 +17,7 @@
 import * as path from 'path';
 import * as express from '@theia/core/shared/express';
 import * as escape_html from 'escape-html';
-import { realpath } from 'fs/promises';
+import { realpath, stat } from 'fs/promises';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
@@ -50,7 +50,12 @@ export class HostedPluginReader implements BackendApplicationContribution {
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
                 const absolutePath = path.resolve(localPath, filePath);
-                res.sendFile(absolutePath, e => {
+                const resolvedFile = await this.resolveFile(absolutePath);
+                if (!resolvedFile) {
+                    res.status(404).send(`No such file found in '${escape_html(pluginId)}' plugin.`);
+                    return;
+                }
+                res.sendFile(resolvedFile, e => {
                     if (!e) {
                         // the file was found and successfully transferred
                         return;
@@ -71,6 +76,36 @@ export class HostedPluginReader implements BackendApplicationContribution {
                 await this.handleMissingResource(req, res);
             }
         });
+    }
+
+    /**
+     * Resolves a plugin file path with fallback to .js and .cjs extensions.
+     *
+     * This handles cases where plugins reference modules without extensions,
+     * which is common in Node.js/CommonJS environments.
+     *
+     */
+    protected async resolveFile(absolutePath: string): Promise<string | undefined> {
+        const candidates = [absolutePath];
+        const pathExtension = path.extname(absolutePath).toLowerCase();
+
+        if (!pathExtension) {
+            candidates.push(absolutePath + '.js');
+            candidates.push(absolutePath + '.cjs');
+        }
+
+        for (const candidate of candidates) {
+            try {
+                const stats = await stat(candidate);
+                if (stats.isFile()) {
+                    return candidate;
+                }
+            } catch {
+                // File doesn't exist or is inaccessible - try next candidate
+                // Actual 404 errors are handled by the caller
+            }
+        }
+        return undefined;
     }
 
     protected async handleMissingResource(req: express.Request, res: express.Response): Promise<void> {

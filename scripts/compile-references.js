@@ -48,9 +48,9 @@ compileTypeScriptReferences().catch(error => {
  * This script main entry point.
  */
 async function compileTypeScriptReferences() {
-    await Promise.all(Object.values(PACKAGE_LIST).map(async package => {
-        const references = await getTypescriptReferences(package);
-        await configureTypeScriptReferences(package, references);
+    await Promise.all(Object.values(PACKAGE_LIST).map(async pkg => {
+        const references = await getTypescriptReferences(pkg);
+        await configureTypeScriptReferences(pkg, references);
     }))
 }
 
@@ -61,7 +61,7 @@ async function compileTypeScriptReferences() {
 async function getTypescriptReferences(requestedPackage) {
     const dependencies = DEPENDENCIES[requestedPackage.name] || [];
     const references = await Promise.all(dependencies.map(async dependency => {
-        const depWorkspace = PACKAGE_LIST.find(package => package.name === dependency);
+        const depWorkspace = PACKAGE_LIST.find(pkg => pkg.name === dependency);
         if (!depWorkspace) {
             return undefined;
         }

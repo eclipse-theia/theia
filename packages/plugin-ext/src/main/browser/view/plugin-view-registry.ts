@@ -24,7 +24,9 @@ import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../commo
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
-import { SCM_VIEW_CONTAINER_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { EXPLORER_VIEW_CONTAINER_ID, FileNavigatorWidget, FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
@@ -183,6 +185,17 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                         'You have not yet opened a folder.\n{0}',
                         `[${nls.localizeByDefault('Open Folder')}](command:workbench.action.files.openFolder)`
                     ),
+                    order: 0
+                }));
+                disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
+            }
+            if (event.widget instanceof ScmWidget) {
+                const disposable = new DisposableCollection();
+                disposable.push(this.registerViewWelcome({
+                    view: 'scm',
+                    content: nls.localizeByDefault('None of the registered source control providers work in Restricted Mode.')
+                        + `\n[${nls.localizeByDefault('Manage Workspace Trust')}](command:workspace:manageTrust)`,
+                    when: '!isWorkspaceTrusted',
                     order: 0
                 }));
                 disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
@@ -561,6 +574,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         switch (viewId) {
             case 'explorer':
                 return this.widgetManager.getWidget<TreeViewWelcomeWidget>(FILE_NAVIGATOR_ID);
+            case 'scm': {
+                const scmWidget = await this.widgetManager.getWidget<ScmWidget>(SCM_WIDGET_FACTORY_ID);
+                return scmWidget?.resourceWidget as ScmTreeWidget | undefined;
+            }
             default:
                 return this.widgetManager.getWidget<TreeViewWelcomeWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: viewId });
         }

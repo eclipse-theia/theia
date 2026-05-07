@@ -200,10 +200,10 @@ describe('Preferences', function () {
         const results = await Promise.allSettled(promises);
         const expectedValues = { [searchPref]: searchDebounce, [channelPref]: channelHistory, [hoverPref]: hoverDelay };
         const actualValues = { [searchPref]: preferenceService.get(searchPref), [channelPref]: preferenceService.get(channelPref), [hoverPref]: preferenceService.get(hoverPref), }
-        const eventValues = event && Object.keys(event).reduce((accu, key) => { accu[key] = event[key].newValue; return accu; }, {});
+        const eventKeys = event && Object.keys(event).sort();
         toDispose.dispose();
         assert(results.every(setting => setting.status === 'fulfilled'), 'All promises should have resolved rather than rejected.');
-        assert.deepEqual(actualValues, eventValues, 'The event should reflect the current state of the service.');
+        assert.deepEqual([channelPref, searchPref, hoverPref], eventKeys, 'The event should contain the changed preference names.');
         assert.deepEqual(expectedValues, actualValues, 'The service state should reflect the most recent setting');
     });
 });

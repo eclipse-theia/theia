@@ -1,0 +1,17 @@
+labels: []
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea Description
+      description: Describe your idea for Eclipse Theia.
+      placeholder: Share your idea here...
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        💙 Eclipse Theia is community-supported. If you find it valuable, consider supporting the project: https://theia-ide.org/support/

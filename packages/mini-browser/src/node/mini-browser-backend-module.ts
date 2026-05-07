@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common';
 import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
@@ -31,7 +31,7 @@ export default new ContainerModule(bind => {
     bind(WsRequestValidatorContribution).toService(MiniBrowserWsRequestValidator);
     bind(MiniBrowserService).toService(MiniBrowserEndpoint);
     bind(ConnectionHandler).toDynamicValue(context => new RpcConnectionHandler(MiniBrowserServicePath, () => context.container.get(MiniBrowserService))).inSingletonScope();
-    bindContributionProvider(bind, MiniBrowserEndpointHandler);
+    bindRootContributionProvider(bind, MiniBrowserEndpointHandler);
     bind(MiniBrowserEndpointHandler).to(HtmlHandler).inSingletonScope();
     bind(MiniBrowserEndpointHandler).to(ImageHandler).inSingletonScope();
     bind(MiniBrowserEndpointHandler).to(PdfHandler).inSingletonScope();

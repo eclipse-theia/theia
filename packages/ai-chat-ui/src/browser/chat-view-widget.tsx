@@ -13,17 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
+import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
+import { ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
+import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia/ai-core';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
-import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
+import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
+import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
+import { AIChatNavigationService } from './ai-chat-navigation-service';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -44,9 +46,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     @inject(MessageService)
     protected messageService: MessageService;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
-
     @inject(CommandService)
     protected readonly commandService: CommandService;
 
@@ -58,6 +57,15 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(ProgressBarFactory)
     protected readonly progressBarFactory: ProgressBarFactory;
+
+    @inject(FrontendLanguageModelRegistry)
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
+
+    @inject(ContributionProvider) @named(ChatWelcomeMessageProvider)
+    protected readonly welcomeMessageProviders: ContributionProvider<ChatWelcomeMessageProvider>;
+
+    @inject(AIChatNavigationService)
+    protected readonly navigationService: AIChatNavigationService;
 
     protected chatSession: ChatSession;
 
@@ -114,15 +122,59 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
         this.initListeners();
 
-        this.inputWidget.setEnabled(this.activationService.isActive);
-        this.treeWidget.setEnabled(this.activationService.isActive);
+        this.updateInputEnabledState();
 
-        this.activationService.onDidChangeActiveStatus(change => {
+        this.activationService.onDidChangeCanRun(change => {
             this.treeWidget.setEnabled(change);
-            this.inputWidget.setEnabled(change);
+            this.updateInputEnabledState();
             this.update();
         });
+
+        this.toDispose.push(
+            this.languageModelRegistry.onChange(() => {
+                this.updateInputEnabledState();
+            })
+        );
+
+        for (const provider of this.welcomeMessageProviders.getContributions()) {
+            if (provider.onStateChanged) {
+                this.toDispose.push(provider.onStateChanged(() => {
+                    this.updateInputEnabledState();
+                    this.update();
+                }));
+            }
+        }
+
         this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'ai-chat' }));
+    }
+
+    protected async updateInputEnabledState(): Promise<void> {
+        const shouldEnable = this.activationService.canRun && await this.shouldEnableInput();
+        this.inputWidget.setEnabled(shouldEnable);
+        this.treeWidget.setEnabled(this.activationService.canRun);
+    }
+
+    /**
+     * Returns the highest-priority welcome message provider for backward-compatible property access.
+     */
+    protected get welcomeProvider(): ChatWelcomeMessageProvider | undefined {
+        return this.welcomeMessageProviders.getContributions()
+            .toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
+    }
+
+    protected async shouldEnableInput(): Promise<boolean> {
+        const provider = this.welcomeProvider;
+        if (!provider) {
+            return true;
+        }
+        const hasReadyModels = await this.hasReadyLanguageModels();
+        const modelRequirementBypassed = provider.modelRequirementBypassed ?? false;
+        return hasReadyModels || modelRequirementBypassed;
+    }
+
+    protected async hasReadyLanguageModels(): Promise<boolean> {
+        const models = await this.languageModelRegistry.getLanguageModels();
+        return models.some(model => model.status.status === 'ready');
     }
 
     protected initListeners(): void {
@@ -180,15 +232,36 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query?: string | ChatRequest, modeId?: string): Promise<void> {
+    protected async onQuery(
+        query?: string | ChatRequest,
+        modeId?: string,
+        capabilityOverrides?: Record<string, boolean>,
+        genericCapabilitySelections?: GenericCapabilitySelections
+    ): Promise<void> {
         const chatRequest: ChatRequest = !query
             ? { text: '' }
             : typeof query === 'string'
-                ? { text: query, modeId }
-                : { ...query };
+                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections }
+                : { ...query, capabilityOverrides, genericCapabilitySelections };
         if (chatRequest.text.length === 0) { return; }
 
-        const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
+        if (this.chatSession.model.isEmpty()) {
+            this.navigationService.notifyQueryFromWelcomeScreen(this.chatSession.id);
+        }
+
+        // Include all variables (context + pending image attachments) in the request
+        const allVariables = this.inputWidget.getAllVariablesForRequest();
+        const requestWithVariables: ChatRequest = allVariables.length > 0
+            ? { ...chatRequest, variables: allVariables }
+            : chatRequest;
+
+        let requestProgress;
+        try {
+            requestProgress = await this.chatService.sendRequest(this.chatSession.id, requestWithVariables);
+        } finally {
+            // Clear pending image attachments now that they're included in the request
+            this.inputWidget.clearPendingImageAttachments();
+        }
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
                 this.messageService.error(responseModel.errorObject?.message ??
@@ -249,14 +322,14 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.addContext(variable);
     }
 
-    setSettings(settings: { [key: string]: unknown }): void {
+    setSettings(settings: ChatSessionSettings): void {
         if (this.chatSession && this.chatSession.model) {
             const model = this.chatSession.model as MutableChatModel;
             model.setSettings(settings);
         }
     }
 
-    getSettings(): { [key: string]: unknown } | undefined {
+    getSettings(): ChatSessionSettings | undefined {
         return this.chatSession.model.settings;
     }
 }

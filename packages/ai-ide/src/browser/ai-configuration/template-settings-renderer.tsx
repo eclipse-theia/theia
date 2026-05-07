@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { PromptService, PromptVariantSet } from '@theia/ai-core/lib/common';
+import { isCustomizedPromptFragment, PromptService, PromptVariantSet } from '@theia/ai-core/lib/common';
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -31,6 +31,11 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
     const variantIds = promptService.getVariantIds(promptVariantSet.id);
     const defaultVariantId = promptService.getDefaultVariantId(promptVariantSet.id);
     const [selectedVariant, setSelectedVariant] = React.useState<string>(defaultVariantId!);
+
+    const isVariantCustomized = (variantId: string): boolean => {
+        const fragment = promptService.getRawPromptFragment(variantId);
+        return fragment ? isCustomizedPromptFragment(fragment) : false;
+    };
 
     React.useEffect(() => {
         const currentVariant = promptService.getSelectedVariantId(promptVariantSet.id);
@@ -63,16 +68,11 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
     };
 
     return (
-        <div className="template-renderer">
-            <div className="settings-section-title template-header">
-                <strong>{promptVariantSet.id}</strong>
-            </div>
-            <div className="template-controls">
-                {(variantIds.length > 1 || isInvalidVariant) && (
-                    <>
-                        <label htmlFor={`variant-selector-${promptVariantSet.id}`} className="template-select-label">
-                            {nls.localize('theia/ai/core/templateSettings/selectVariant', 'Select Variant:')}
-                        </label>
+        <>
+            <tr>
+                <td className="template-name-cell">{promptVariantSet.id}</td>
+                <td className="template-variant-cell">
+                    {(variantIds.length > 1 || isInvalidVariant) && (
                         <select
                             id={`variant-selector-${promptVariantSet.id}`}
                             className={`theia-select template-variant-selector ${isInvalidVariant ? 'error' : ''}`}
@@ -81,32 +81,45 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
                         >
                             {isInvalidVariant && (
                                 <option value="invalid" disabled>
-                                    {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'Selected variant not available, default will be used')}
+                                    {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'Unavailable')}
                                 </option>
                             )}
-                            {variantIds.map(variantId => (
-                                <option key={variantId} value={variantId}>
-                                    {variantId === defaultVariantId ? variantId + ' ' + nls.localizeByDefault('(default)') : variantId}
-                                </option>
-                            ))}
+                            {variantIds.map(variantId => {
+                                const isEdited = isVariantCustomized(variantId);
+                                const editedPrefix = isEdited ? `[${nls.localize('theia/ai/core/templateSettings/edited', 'edited')}] ` : '';
+                                const defaultSuffix = variantId === defaultVariantId ? ' ' + nls.localizeByDefault('(default)') : '';
+                                return (
+                                    <option key={variantId} value={variantId}>
+                                        {editedPrefix}{variantId}{defaultSuffix}
+                                    </option>
+                                );
+                            })}
                         </select>
-                    </>
-                )}
-                <button
-                    className="theia-button main"
-                    onClick={openTemplate}
-                    disabled={isInvalidVariant}
-                >
-                    {nls.localizeByDefault('Edit')}
-                </button>
-                <button
-                    className="theia-button secondary"
-                    onClick={resetTemplate}
-                    disabled={isInvalidVariant}
-                >
-                    {nls.localizeByDefault('Reset')}
-                </button>
-            </div>
-        </div>
+                    )}
+                    {variantIds.length === 1 && !isInvalidVariant && (
+                        <span>
+                            {isVariantCustomized(selectedVariant)
+                                ? `[${nls.localize('theia/ai/core/templateSettings/edited', 'edited')}] ${selectedVariant}`
+                                : selectedVariant}
+                        </span>
+                    )}
+                </td>
+                <td className="template-actions-cell">
+                    <button
+                        className="template-action-icon-button codicon codicon-edit"
+                        onClick={openTemplate}
+                        disabled={isInvalidVariant}
+                        title={nls.localizeByDefault('Edit')}
+                    />
+                    {isVariantCustomized(selectedVariant) &&
+                        (<button
+                            className="template-action-icon-button codicon codicon-discard"
+                            onClick={resetTemplate}
+                            disabled={isInvalidVariant || !isVariantCustomized(selectedVariant)}
+                            title={nls.localizeByDefault('Reset')}
+                        />)}
+                </td>
+            </tr>
+        </>
     );
 };

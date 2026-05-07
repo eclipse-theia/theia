@@ -19,7 +19,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 FrontendApplicationConfigProvider.set({});
 
-import { MutableChatRequestModel } from '@theia/ai-chat';
+import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
 import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
 import { DefaultFileChangeSetTitleProvider } from './file-changeset-functions';
@@ -42,9 +42,12 @@ describe('DefaultFileChangeSetTitleProvider', () => {
     });
 
     it('should provide the title', () => {
-        const ctx = {
-            agentId: 'test-agent',
-        } as MutableChatRequestModel;
+        const ctx: ChatToolContext = {
+            request: {
+                agentId: 'test-agent',
+            } as MutableChatRequestModel,
+            response: {} as MutableChatResponseModel
+        };
 
         const title = provider.getChangeSetTitle(ctx);
         expect(title).to.equal('Changes proposed');

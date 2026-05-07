@@ -148,7 +148,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.experimental.treeSitterTelemetry": {
         "type": "boolean",
         "default": false,
-        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `editor.experimental.preferTreeSitter` for specific languages will take precedence."),
+        "markdownDescription": nls.localizeByDefault('Controls whether tree sitter parsing should be turned on and telemetry collected. Setting `#editor.experimental.preferTreeSitter#` for specific languages will take precedence.'),
         "tags": [
             "experimental",
             "onExP"
@@ -156,21 +156,45 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "scope": PreferenceScope.Folder
 
     },
-    "editor.experimental.preferTreeSitter": {
-        "type": "array",
-        "items": {
-            "type": "string",
-            "enum": [
-                "typescript"
-            ]
-        },
-        "default": [],
-        "markdownDescription": nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
+    "editor.experimental.preferTreeSitter.css": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription":
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for css. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for css."),
         "tags": [
             "experimental"
         ],
         "scope": PreferenceScope.Folder
-
+    },
+    "editor.experimental.preferTreeSitter.typescript": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription":
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for typescript. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for typescript."),
+        "tags": [
+            "experimental"
+        ],
+        "scope": PreferenceScope.Folder
+    },
+    "editor.experimental.preferTreeSitter.ini": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription":
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for ini. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for ini."),
+        "tags": [
+            "experimental"
+        ],
+        "scope": PreferenceScope.Folder
+    },
+    "editor.experimental.preferTreeSitter.regex": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription":
+            nls.localizeByDefault("Controls whether tree sitter parsing should be turned on for regex. This will take precedence over `#editor.experimental.treeSitterTelemetry#` for regex."),
+        "tags": [
+            "experimental"
+        ],
+        "scope": PreferenceScope.Folder
     },
     "editor.language.brackets": {
         "type": [
@@ -831,7 +855,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
 
     },
     "editor.experimentalEditContextEnabled": {
-        "description": nls.localizeByDefault("Sets whether the new experimental edit context should be used instead of the text area."),
+        "description": nls.localizeByDefault('Controls whether the workbench window should be focused when the debugger breaks.'),
         "included": true,
         "type": "boolean",
         "default": false,
@@ -1327,7 +1351,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "type": "integer",
         "minimum": 0,
         "default": 300,
-        "description": nls.localizeByDefault("Controls the delay in milliseconds after which the hover is hidden. Requires `editor.hover.sticky` to be enabled."),
+        "description": nls.localizeByDefault('Controls the delay in milliseconds after which the hover is hidden. Requires `#editor.hover.sticky#` to be enabled.'),
         "scope": PreferenceScope.Folder
 
     },

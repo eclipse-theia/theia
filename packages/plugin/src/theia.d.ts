@@ -27,6 +27,7 @@ import './theia.proposed.customEditorMove';
 import './theia.proposed.debugVisualization';
 import './theia.proposed.diffCommand';
 import './theia.proposed.editSessionIdentityProvider';
+import './theia.proposed.editorHoverVerbosityLevel';
 import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
 import './theia.proposed.findTextInFiles';
@@ -2185,97 +2186,143 @@ export module '@theia/plugin' {
     export interface QuickPickItem {
 
         /**
-         * A human-readable string which is rendered prominent. Supports rendering of {@link ThemeIcon theme icons} via
-         * the `$(<name>)`-syntax.
+         * A human-readable string which is rendered prominently.
+         *
+         * Supports rendering of {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         *
+         * **Note:** When {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Default} (so a regular
+         * item instead of a separator), it supports rendering of {@link ThemeIcon theme icons} via the
+         * `$(<name>)`-syntax.
          */
         label: string;
 
         /**
-         * Defaults to {@link QuickPickItemKind.Default}. If set to {@link QUickPickItemKind.Separator}, the item will not be displayed as a row but only as a separator,
-         * and all fields other than {@link QuickPickItem.label label} will be ignored.
+         * The kind of this item that determines how it is rendered in the quick pick.
+         *
+         * When not specified, the default is {@link QuickPickItemKind.Default}.
          */
         kind?: QuickPickItemKind;
 
         /**
-         * The icon path or {@link ThemeIcon} for the QuickPickItem.
+         * The icon for the item.
          */
         iconPath?: IconPath;
 
         /**
-         * A human-readable string which is rendered less prominent in the same line. Supports rendering of
-         * {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         * A human-readable string which is rendered less prominently in the same line.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * Supports rendering of {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         *
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         description?: string;
 
         /**
-         * A human-readable string which is rendered less prominent in a separate line. Supports rendering of
-         * {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         * A human-readable string which is rendered less prominently in a separate line.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * Supports rendering of {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         *
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         detail?: string;
 
         /**
-         * Optional flag indicating if this item is picked initially. This is only honored when using
-         * the {@link window.showQuickPick()} API. To do the same thing with the {@link window.createQuickPick()} API,
-         * simply set the {@link QuickPick.selectedItems} to the items you want picked initially.
-         * (*Note:* This is only honored when the picker allows multiple selections.)
+         * A {@link Uri} representing the resource associated with this item.
+         *
+         * When set, this property is used to automatically derive several item properties if they are not explicitly provided:
+         * - **Label**: Derived from the resource's file name when {@link QuickPickItem.label label} is not provided or is empty.
+         * - **Description**: Derived from the resource's path when {@link QuickPickItem.description description} is not provided or is empty.
+         * - **Icon**: Derived from the current file icon theme when {@link QuickPickItem.iconPath iconPath} is set to
+         *   {@link ThemeIcon.File} or {@link ThemeIcon.Folder}.
+         */
+        resourceUri?: Uri;
+
+        /**
+         * Optional flag indicating if this item is initially selected.
+         *
+         * This is only honored when using the {@link window.showQuickPick showQuickPick} API. To do the same
+         * thing with the {@link window.createQuickPick createQuickPick} API, simply set the
+         * {@link QuickPick.selectedItems selectedItems} to the items you want selected initially.
+         *
+         * **Note:** This is only honored when the picker allows multiple selections.
          *
          * @see {@link QuickPickOptions.canPickMany}
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         picked?: boolean;
 
         /**
-         * Always show this item.
+         * Determines if this item is always shown, even when filtered out by the user's input.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         alwaysShow?: boolean;
 
         /**
-         * Optional buttons that will be rendered on this particular item. These buttons will trigger
-         * an {@link QuickPickItemButtonEvent} when clicked. Buttons are only rendered when using a quickpick
-         * created by the {@link window.createQuickPick()} API. Buttons are not rendered when using
-         * the {@link window.showQuickPick()} API.
+         * Optional buttons that will be rendered on this particular item.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * These buttons will trigger an {@link QuickPickItemButtonEvent} when pressed. Buttons are only rendered
+         * when using a quick pick created by the {@link window.createQuickPick createQuickPick} API. Buttons are
+         * not rendered when using the {@link window.showQuickPick showQuickPick} API.
+         *
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         buttons?: readonly QuickInputButton[];
     }
 
     /**
-     * The type of a {@link QuickPickItem quick pick item}. If `Separator` is set, all fields other than {@link QuickPickItem.label label} will be ignored.
+     * Defines the kind of {@link QuickPickItem quick pick item}.
      */
     export enum QuickPickItemKind {
+        /**
+         * A separator item that provides a visual grouping.
+         *
+         * When a {@link QuickPickItem} has a kind of {@link Separator}, the item is just a visual separator
+         * and does not represent a selectable item. The only property that applies is
+         * {@link QuickPickItem.label label}. All other properties on {@link QuickPickItem} will be ignored
+         * and have no effect.
+         */
         Separator = -1,
+        /**
+         * The default kind for an item that can be selected in the quick pick.
+         */
         Default = 0,
     }
 
     /**
-     * A concrete {@link QuickInput QuickInput} to let the user pick an item from a
-     * list of items of type T. The items can be filtered through a filter text field and
-     * there is an option {@link QuickPick.canSelectMany canSelectMany} to allow for
-     * selecting multiple items.
+     * A concrete {@link QuickInput} to let the user pick an item from a list of items of type `T`.
      *
-     * Note that in many cases the more convenient [window.showQuickPick](#window.showQuickPick)
-     * is easier to use. [window.createQuickPick](#window.createQuickPick) should be used
-     * when [window.showQuickPick](#window.showQuickPick) does not offer the required flexibility.
+     * The items can be filtered through a filter text field and there is an option
+     * {@link QuickPick.canSelectMany canSelectMany} to allow for selecting multiple items.
+     *
+     * Note that in many cases the more convenient {@link window.showQuickPick} is easier to use.
+     * {@link window.createQuickPick} should be used when {@link window.showQuickPick} does not offer
+     * the required flexibility.
      */
     export interface QuickPick<T extends QuickPickItem> extends QuickInput {
 
         /**
-         * Current value of the filter text.
+         * The current value of the filter text.
          */
         value: string;
 
         /**
-         * Optional placeholder in the filter text.
+         * Optional placeholder text displayed in the filter text box when no value has been entered.
          */
         placeholder: string | undefined;
+
+        /**
+         * Optional text that provides instructions or context to the user.
+         *
+         * The prompt is displayed below the input box and above the list of items.
+         */
+        prompt: string | undefined;
 
         /**
          * An event signaling when the value of the filter text has changed.
@@ -2290,41 +2337,45 @@ export module '@theia/plugin' {
         /**
          * Buttons for actions in the UI.
          */
-        buttons: ReadonlyArray<QuickInputButton>;
+        buttons: readonly QuickInputButton[];
 
         /**
          * An event signaling when a button was triggered.
+         *
+         * This event fires for buttons stored in the {@link QuickPick.buttons buttons} array. This event does
+         * not fire for buttons on a {@link QuickPickItem}.
          */
         readonly onDidTriggerButton: Event<QuickInputButton>;
 
         /**
          * An event signaling when a button in a particular {@link QuickPickItem} was triggered.
-         * This event does not fire for buttons in the title bar.
+         *
+         * This event does not fire for buttons in the title bar which are part of {@link QuickPick.buttons buttons}.
          */
         readonly onDidTriggerItemButton: Event<QuickPickItemButtonEvent<T>>;
 
         /**
-         * Items to pick from.
+         * Items to pick from. This can be read and updated by the extension.
          */
         items: readonly T[];
 
         /**
-         * If multiple items can be selected at the same time. Defaults to false.
+         * Determines if multiple items can be selected at the same time. Defaults to `false`.
          */
         canSelectMany: boolean;
 
         /**
-         * If the filter text should also be matched against the description of the items. Defaults to false.
+         * Determines if the filter text should also be matched against the {@link QuickPickItem.description description} of the items. Defaults to `false`.
          */
         matchOnDescription: boolean;
 
         /**
-         * If the filter text should also be matched against the detail of the items. Defaults to false.
+         * Determines if the filter text should also be matched against the {@link QuickPickItem.detail detail} of the items. Defaults to `false`.
          */
         matchOnDetail: boolean;
 
-        /*
-         * An optional flag to maintain the scroll position of the quick pick when the quick pick items are updated. Defaults to false.
+        /**
+         * Determines if the scroll position is maintained when the quick pick items are updated. Defaults to `false`.
          */
         keepScrollPosition?: boolean;
 
@@ -2350,84 +2401,104 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Options for configuration behavior of the quick pick
+     * Options to configure the behavior of the quick pick UI.
      */
     export interface QuickPickOptions {
+
         /**
-         * An optional string that represents the title of the quick pick.
+         * An optional title for the quick pick.
          */
         title?: string;
 
         /**
-         * A flag to include the description when filtering
+         * Determines if the {@link QuickPickItem.description description} should be included when filtering items. Defaults to `false`.
          */
         matchOnDescription?: boolean;
 
         /**
-         *  A flag to include the detail when filtering
+         * Determines if the {@link QuickPickItem.detail detail} should be included when filtering items. Defaults to `false`.
          */
         matchOnDetail?: boolean;
 
         /**
-         * The place holder in input box
+         * An optional string to show as placeholder in the input box to guide the user.
          */
         placeHolder?: string;
 
         /**
-         * If `true` prevent picker closing when it's loses focus
+         * Optional text that provides instructions or context to the user.
+         *
+         * The prompt is displayed below the input box and above the list of items.
+         */
+        prompt?: string;
+
+        /**
+         * Set to `true` to keep the picker open when focus moves to another part of the editor or to another window.
+         * This setting is ignored on iPad and is always `false`.
          */
         ignoreFocusOut?: boolean;
 
         /**
-         * If `true` make picker accept multiple selections.
-         * Not implemented yet
+         * Determines if the picker allows multiple selections. When `true`, the result is an array of picks.
          */
         canPickMany?: boolean;
 
         /**
-         * Function that is invoked when item selected
+         * An optional function that is invoked whenever an item is selected.
          */
         onDidSelectItem?(item: QuickPickItem | string): any;
     }
 
     /**
-     * Options to configure the behaviour of the {@link WorkspaceFolder workspace folder} pick UI.
+     * Options to configure the behavior of the {@link WorkspaceFolder workspace folder} pick UI.
      */
     export interface WorkspaceFolderPickOptions {
 
         /**
-         * An optional string to show as place holder in the input box to guide the user what to pick on.
+         * An optional string to show as placeholder in the input box to guide the user.
          */
         placeHolder?: string;
 
         /**
          * Set to `true` to keep the picker open when focus moves to another part of the editor or to another window.
+         * This setting is ignored on iPad and is always `false`.
          */
         ignoreFocusOut?: boolean;
     }
 
     /**
-     * Impacts the behavior and appearance of the validation message.
+     * Severity levels for input box validation messages.
      */
     export enum InputBoxValidationSeverity {
+        /**
+         * Indicates an informational message that does not prevent input acceptance.
+         */
         Info = 1,
+        /**
+         * Indicates a warning message that does not prevent input acceptance.
+         */
         Warning = 2,
+        /**
+         * Indicates an error message that prevents the user from accepting the input.
+         */
         Error = 3
     }
 
     /**
-     * Object to configure the behavior of the validation message.
+     * Represents a validation message for an {@link InputBox}.
      */
     export interface InputBoxValidationMessage {
         /**
-         * The validation message to display.
+         * The validation message to display to the user.
          */
         readonly message: string;
 
         /**
-         * The severity of the validation message.
-         * NOTE: When using `InputBoxValidationSeverity.Error`, the user will not be allowed to accept (hit ENTER) the input.
-         * `Info` and `Warning` will still allow the InputBox to accept the input.
+         * The severity level of the validation message.
+         *
+         * **Note:** When using {@link InputBoxValidationSeverity.Error}, the user will not be able to accept
+         * the input (e.g., by pressing Enter). {@link InputBoxValidationSeverity.Info Info} and
+         * {@link InputBoxValidationSeverity.Warning Warning} severities will still allow the input to be accepted.
          */
         readonly severity: InputBoxValidationSeverity;
     }
@@ -2773,7 +2844,7 @@ export module '@theia/plugin' {
          * @param id id of the icon. The available icons are listed in https://code.visualstudio.com/api/references/icons-in-labels#icon-listing.
          * @param color optional `ThemeColor` for the icon. The color is currently only used in {@link TreeItem}.
          */
-        private constructor(id: string, color?: ThemeColor);
+        constructor(id: string, color?: ThemeColor);
     }
 
     /**
@@ -2976,7 +3047,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Options to configure the behaviour of a file open dialog.
+     * Options to configure the behavior of a file open dialog.
      *
      * * Note 1: A dialog can select files, folders, or both. This is not true for Windows
      * which enforces to open either files or folder, but *not both*.
@@ -3180,7 +3251,7 @@ export module '@theia/plugin' {
          *
          * Note that the possible values are currently defined as any of the following:
          * 'bash', 'cmd', 'csh', 'fish', 'gitbash', 'julia', 'ksh', 'node', 'nu', 'pwsh', 'python',
-         * 'sh', 'wsl', 'zsh'.
+         * 'sh', 'wsl', 'xonsh', 'zsh'.
          */
         readonly shell: string | undefined;
     }
@@ -3203,6 +3274,8 @@ export module '@theia/plugin' {
          *
          * @param commandLine The command line to execute, this is the exact text that will be sent
          * to the terminal.
+         *
+         * @throws When run on a terminal doesn't support this API, such as task terminals.
          *
          * @example
          * // Execute a command in a terminal immediately after being created
@@ -4754,9 +4827,9 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A panel that contains a webview.
+     * A panel that contains a {@linkcode Webview}.
      */
-    interface WebviewPanel {
+    export interface WebviewPanel {
         /**
          * Identifies the type of the webview panel, such as `'markdown.preview'`.
          */
@@ -4770,10 +4843,10 @@ export module '@theia/plugin' {
         /**
          * Icon for the panel shown in UI.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri };
+        iconPath?: IconPath;
 
         /**
-         * Webview belonging to the panel.
+         * {@linkcode Webview} belonging to the panel.
          */
         readonly webview: Webview;
 
@@ -4783,14 +4856,10 @@ export module '@theia/plugin' {
         readonly options: WebviewPanelOptions;
 
         /**
-         * Settings to determine where webview panel will be reside
-         */
-        readonly showOptions?: WebviewPanelShowOptions;
-        /**
          * Editor position of the panel. This property is only set if the webview is in
          * one of the editor view columns.
          */
-        readonly viewColumn?: ViewColumn;
+        readonly viewColumn: ViewColumn | undefined;
 
         /**
          * Whether the panel is active (focused by the user).
@@ -4810,7 +4879,7 @@ export module '@theia/plugin' {
         /**
          * Fired when the panel is disposed.
          *
-         * This may be because the user closed the panel or because `.dispose()` was
+         * This may be because the user closed the panel or because {@linkcode WebviewPanel.dispose dispose} was
          * called on it.
          *
          * Trying to use the panel after it has been disposed throws an exception.
@@ -4823,7 +4892,7 @@ export module '@theia/plugin' {
          * A webview panel may only show in a single column at a time. If it is already showing, this
          * method moves it to a new column.
          *
-         * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
+         * @param viewColumn View column to show the panel in. Shows in the current {@linkcode WebviewPanel.viewColumn} if undefined.
          * @param preserveFocus When `true`, the webview will not take focus.
          */
         reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
@@ -4833,17 +4902,17 @@ export module '@theia/plugin' {
          *
          * This closes the panel if it showing and disposes of the resources owned by the webview.
          * Webview panels are also disposed when the user closes the webview panel. Both cases
-         * fire the `onDispose` event.
+         * fire the {@linkcode onDidDispose} event.
          */
         dispose(): void;
     }
 
     /**
-     * Event fired when a webview panel's view state changes.
+     * Event fired when a {@linkcode WebviewPanel webview panel's} view state changes.
      */
     export interface WebviewPanelOnDidChangeViewStateEvent {
         /**
-         * Webview panel whose view state changed.
+         * {@linkcode WebviewPanel} whose view state changed.
          */
         readonly webviewPanel: WebviewPanel;
     }
@@ -4948,7 +5017,7 @@ export module '@theia/plugin' {
      *
      * Text based custom editors use a [`TextDocument`](#TextDocument) as their data model. This considerably simplifies
      * implementing a custom editor as it allows Theia to handle many common operations such as
-     * undo and backup. The provider is responsible for synchronizing text changes between the webview and the `TextDocument`.
+     * undo and backup. The provider is responsible for synchronizing text changes between the webview and the {@linkcode TextDocument}.
      */
     export interface CustomTextEditorProvider {
 
@@ -4958,14 +5027,13 @@ export module '@theia/plugin' {
          * This is called when a user first opens a resource for a `CustomTextEditorProvider`, or if they reopen an
          * existing editor using this `CustomTextEditorProvider`.
          *
-         *
          * @param document Document for the resource to resolve.
          *
          * @param webviewPanel The webview panel used to display the editor UI for this resource.
          *
          * During resolve, the provider must fill in the initial html for the content webview panel and hook up all
-         * the event listeners on it that it is interested in. The provider can also hold onto the `WebviewPanel` to
-         * use later for example in a command. See [`WebviewPanel`](#WebviewPanel) for additional details.
+         * the event listeners on it that it is interested in. The provider can also hold onto the {@linkcode WebviewPanel} to
+         * use later for example in a command. See {@linkcode WebviewPanel} for additional details.
          *
          * @param token A cancellation token that indicates the result is no longer needed.
          *
@@ -5012,7 +5080,7 @@ export module '@theia/plugin' {
          *
          * This is invoked by Theia when the user undoes this edit. To implement `undo`, your
          * extension should restore the document and editor to the state they were in just before this
-         * edit was added to Theia's internal edit stack by `onDidChangeCustomDocument`.
+         * edit was added to Theia's internal edit stack by {@linkcode CustomEditorProvider.onDidChangeCustomDocument}.
          */
         undo(): Thenable<void> | void;
 
@@ -5021,7 +5089,7 @@ export module '@theia/plugin' {
          *
          * This is invoked by Theia when the user redoes this edit. To implement `redo`, your
          * extension should restore the document and editor to the state they were in just after this
-         * edit was added to Theia's internal edit stack by `onDidChangeCustomDocument`.
+         * edit was added to Theia's internal edit stack by {@linkcode CustomEditorProvider.onDidChangeCustomDocument}.
          */
         redo(): Thenable<void> | void;
 
@@ -5081,10 +5149,10 @@ export module '@theia/plugin' {
          * Create a new document for a given resource.
          *
          * `openCustomDocument` is called when the first time an editor for a given resource is opened. The opened
-         * document is then passed to `resolveCustomEditor` so that the editor can be shown to the user.
+         * document is then passed to {@link resolveCustomEditor} so that the editor can be shown to the user.
          *
-         * Already opened `CustomDocument` are re-used if the user opened additional editors. When all editors for a
-         * given resource are closed, the `CustomDocument` is disposed of. Opening an editor at this point will
+         * Already opened {@linkcode CustomDocument CustomDocuments} are re-used if the user opened additional editors. When all editors for a
+         * given resource are closed, the {@linkcode CustomDocument CustomDocuments} is disposed of. Opening an editor at this point will
          * trigger another call to `openCustomDocument`.
          *
          * @param uri Uri of the document to open.
@@ -5105,8 +5173,8 @@ export module '@theia/plugin' {
          * @param webviewPanel The webview panel used to display the editor UI for this resource.
          *
          * During resolve, the provider must fill in the initial html for the content webview panel and hook up all
-         * the event listeners on it that it is interested in. The provider can also hold onto the `WebviewPanel` to
-         * use later for example in a command. See [`WebviewPanel`](#WebviewPanel) for additional details.
+         * the event listeners on it that it is interested in. The provider can also hold onto the {@linkcode WebviewPanel} to
+         * use later for example in a command. See {@linkcode WebviewPanel} for additional details.
          *
          * @param token A cancellation token that indicates the result is no longer needed.
          *
@@ -5122,7 +5190,7 @@ export module '@theia/plugin' {
         /**
          * Unique identifier for the backup.
          *
-         * This id is passed back to your extension in `openCustomDocument` when opening a custom editor from a backup.
+         * This id is passed back to your extension in {@linkcode CustomReadonlyEditorProvider.openCustomDocument openCustomDocument} when opening a custom editor from a backup.
          */
         readonly id: string;
 
@@ -5170,18 +5238,18 @@ export module '@theia/plugin' {
          * anything from changing some text, to cropping an image, to reordering a list. Your extension is free to
          * define what an edit is and what data is stored on each edit.
          *
-         * Firing `onDidChange` causes Theia to mark the editors as being dirty. This is cleared when the user either
-         * saves or reverts the file.
+         * Firing {@linkcode CustomEditorProvider.onDidChangeCustomDocument onDidChangeCustomDocument} causes
+         * Theia to mark the editors as being dirty. This is cleared when the user either saves or reverts the file.
          *
-         * Editors that support undo/redo must fire a `CustomDocumentEditEvent` whenever an edit happens. This allows
+         * Editors that support undo/redo must fire a {@linkcode CustomDocumentEditEvent} whenever an edit happens. This allows
          * users to undo and redo the edit using Theia's standard Theia keyboard shortcuts. Theia will also mark
          * the editor as no longer being dirty if the user undoes all edits to the last saved state.
          *
-         * Editors that support editing but cannot use Theia's standard undo/redo mechanism must fire a `CustomDocumentContentChangeEvent`.
+         * Editors that support editing but cannot use Theia's standard undo/redo mechanism must fire a {@linkcode CustomDocumentContentChangeEvent}.
          * The only way for a user to clear the dirty state of an editor that does not support undo/redo is to either
          * `save` or `revert` the file.
          *
-         * An editor should only ever fire `CustomDocumentEditEvent` events, or only ever fire `CustomDocumentContentChangeEvent` events.
+         * An editor should only ever fire {@linkcode CustomDocumentEditEvent} events, or only ever fire {@linkcode CustomDocumentContentChangeEvent} events.
          */
         readonly onDidChangeCustomDocument: Event<CustomDocumentEditEvent<T>> | Event<CustomDocumentContentChangeEvent<T>>;
 
@@ -5191,14 +5259,14 @@ export module '@theia/plugin' {
          * This method is invoked by Theia when the user saves a custom editor. This can happen when the user
          * triggers save while the custom editor is active, by commands such as `save all`, or by auto save if enabled.
          *
-         * To implement `save`, the implementer must persist the custom editor. This usually means writing the
-         * file data for the custom document to disk. After `save` completes, any associated editor instances will
-         * no longer be marked as dirty.
+         * The implementer must persist the custom editor. This usually means writing the
+         * file data for the custom document to disk. After {@linkcode saveCustomDocument} completes, any associated
+         * editor instances will no longer be marked as dirty.
          *
          * @param document Document to save.
          * @param cancellation Token that signals the save is no longer required (for example, if another save was triggered).
          *
-         * @return Thenable signaling that saving has completed.
+         * @returns A {@linkcode Thenable} that saving has completed.
          */
         saveCustomDocument(document: T, cancellation: CancellationToken): Thenable<void>;
 
@@ -5206,7 +5274,7 @@ export module '@theia/plugin' {
          * Save a custom document to a different location.
          *
          * This method is invoked by Theia when the user triggers 'save as' on a custom editor. The implementer must
-         * persist the custom editor to `destination`.
+         * persist the custom editor to {@linkcode destination}.
          *
          * When the user accepts save as, the current editor is be replaced by an non-dirty editor for the newly saved file.
          *
@@ -5214,7 +5282,7 @@ export module '@theia/plugin' {
          * @param destination Location to save to.
          * @param cancellation Token that signals the save is no longer required.
          *
-         * @return Thenable signaling that saving has completed.
+         * @returns A {@linkcode Thenable} signaling that saving has completed.
          */
         saveCustomDocumentAs(document: T, destination: Uri, cancellation: CancellationToken): Thenable<void>;
 
@@ -5224,37 +5292,39 @@ export module '@theia/plugin' {
          * This method is invoked by Theia when the user triggers `File: Revert File` in a custom editor. (Note that
          * this is only used using Theia's `File: Revert File` command and not on a `git revert` of the file).
          *
-         * To implement `revert`, the implementer must make sure all editor instances (webviews) for `document`
+         * The implementer must make sure all editor instances (webviews) for {@linkcode document}
          * are displaying the document in the same state is saved in. This usually means reloading the file from the
          * workspace.
          *
          * @param document Document to revert.
          * @param cancellation Token that signals the revert is no longer required.
          *
-         * @return Thenable signaling that the change has completed.
+         * @returns A {@linkcode Thenable} signaling that the revert has completed.
          */
         revertCustomDocument(document: T, cancellation: CancellationToken): Thenable<void>;
 
         /**
          * Back up a dirty custom document.
          *
-         * Backups are used for hot exit and to prevent data loss. Your `backup` method should persist the resource in
+         * Backups are used for hot exit and to prevent data loss. Your {@linkcode backupCustomDocument} method should persist the resource in
          * its current state, i.e. with the edits applied. Most commonly this means saving the resource to disk in
-         * the `ExtensionContext.storagePath`. When VS Code reloads and your custom editor is opened for a resource,
+         * the `ExtensionContext.storagePath`. When the editor reloads and your custom editor is opened for a resource,
          * your extension should first check to see if any backups exist for the resource. If there is a backup, your
          * extension should load the file contents from there instead of from the resource in the workspace.
          *
-         * `backup` is triggered approximately one second after the user stops editing the document. If the user
-         * rapidly edits the document, `backup` will not be invoked until the editing stops.
+         * {@linkcode backupCustomDocument} is triggered approximately one second after the user stops editing the document. If the user
+         * rapidly edits the document, {@linkcode backupCustomDocument} will not be invoked until the editing stops.
          *
-         * `backup` is not invoked when `auto save` is enabled (since auto save already persists the resource).
+         * {@linkcode backupCustomDocument} is not invoked when `auto save` is enabled (since auto save already persists the resource).
          *
          * @param document Document to backup.
          * @param context Information that can be used to backup the document.
          * @param cancellation Token that signals the current backup since a new backup is coming in. It is up to your
          * extension to decided how to respond to cancellation. If for example your extension is backing up a large file
          * in an operation that takes time to complete, your extension may decide to finish the ongoing backup rather
-         * than cancelling it to ensure that VS Code has some valid backup.
+         * than cancelling it to ensure that the editor has some valid backup.
+         *
+         * @returns A {@linkcode Thenable} signaling that the backup has completed.
          */
         backupCustomDocument(document: T, context: CustomDocumentBackupContext, cancellation: CancellationToken): Thenable<CustomDocumentBackup>;
 
@@ -5328,7 +5398,7 @@ export module '@theia/plugin' {
         show(preserveFocus?: boolean): void;
     }
     /**
-     * Provider for creating `WebviewView` elements.
+     * Provider for creating {@linkcode WebviewView} elements.
      */
     export interface WebviewViewProvider {
         /**
@@ -5544,7 +5614,7 @@ export module '@theia/plugin' {
          * @param items An array of strings, or a promise that resolves to an array of strings.
          * @param options Configures the behavior of the selection list.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to the selection or `undefined`.
+         * @returns A thenable that resolves to the selected items or `undefined`.
          */
         export function showQuickPick(items: readonly string[] | Thenable<readonly string[]>, options?: QuickPickOptions, token?: CancellationToken): Thenable<string | undefined>;
 
@@ -5554,7 +5624,7 @@ export module '@theia/plugin' {
          * @param items An array of strings, or a promise that resolves to an array of strings.
          * @param options Configures the behavior of the selection list.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to the selected items or `undefined`.
+         * @returns A thenable that resolves to the selected string or `undefined`.
          */
         export function showQuickPick(items: readonly string[] | Thenable<readonly string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<string[] | undefined>;
 
@@ -5564,7 +5634,7 @@ export module '@theia/plugin' {
          * @param items An array of items, or a promise that resolves to an array of items.
          * @param options Configures the behavior of the selection list.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to the selected item or `undefined`.
+         * @returns A thenable that resolves to the selected item or `undefined`.
          */
         export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options?: QuickPickOptions, token?: CancellationToken): Thenable<T | undefined>;
 
@@ -5579,14 +5649,13 @@ export module '@theia/plugin' {
         export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<T[] | undefined>;
 
         /**
-         * Creates a {@link QuickPick QuickPick} to let the user pick an item from a list
-         * of items of type T.
+         * Creates a {@link QuickPick} to let the user pick an item from a list of items of type `T`.
          *
-         * Note that in many cases the more convenient [window.showQuickPick](#window.showQuickPick)
-         * is easier to use. [window.createQuickPick](#window.createQuickPick) should be used
-         * when [window.showQuickPick](#window.showQuickPick) does not offer the required flexibility.
+         * Note that in many cases the more convenient {@link window.showQuickPick} is easier to use.
+         * {@link window.createQuickPick} should be used when {@link window.showQuickPick} does not offer
+         * the required flexibility.
          *
-         * @return A new {@link QuickPick QuickPick}.
+         * @returns A new {@link QuickPick}.
          */
         export function createQuickPick<T extends QuickPickItem>(): QuickPick<T>;
 
@@ -5716,13 +5785,13 @@ export module '@theia/plugin' {
         /**
          * Opens an input box to ask the user for input.
          *
-         * The returned value will be `undefined` if the input box was canceled (e.g. pressing ESC). Otherwise the
+         * The returned value will be `undefined` if the input box was canceled (e.g., pressing ESC). Otherwise the
          * returned value will be the string typed by the user or an empty string if the user did not type
          * anything but dismissed the input box with OK.
          *
          * @param options Configures the behavior of the input box.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to a string the user provided or to `undefined` in case of dismissal.
+         * @returns A thenable that resolves to a string the user provided or to `undefined` in case of dismissal.
          */
         export function showInputBox(options?: InputBoxOptions, token?: CancellationToken): Thenable<string | undefined>;
 
@@ -6067,13 +6136,13 @@ export module '@theia/plugin' {
         export function withProgress<R>(options: ProgressOptions, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => Thenable<R>): Thenable<R>;
 
         /**
-         * Creates a {@link InputBox InputBox} to let the user enter some text input.
+         * Creates a {@link InputBox} to let the user enter some text input.
          *
-         * Note that in many cases the more convenient [window.showInputBox](#window.showInputBox)
-         * is easier to use. [window.createInputBox](#window.createInputBox) should be used
-         * when [window.showInputBox](#window.showInputBox) does not offer the required flexibility.
+         * Note that in many cases the more convenient {@link window.showInputBox} is easier to use.
+         * {@link window.createInputBox} should be used when {@link window.showInputBox} does not offer
+         * the required flexibility.
          *
-         * @return A new {@link InputBox InputBox}.
+         * @returns A new {@link InputBox}.
          */
         export function createInputBox(): InputBox;
 
@@ -6131,15 +6200,14 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Predefined buttons for {@link QuickPick QuickPick} and {@link InputBox InputBox}.
+     * Predefined buttons for {@link QuickPick} and {@link InputBox}.
      */
     export class QuickInputButtons {
-
         /**
-         * A back button for {@link QuickPick QuickPick} and {@link InputBox InputBox}.
+         * A predefined back button for {@link QuickPick} and {@link InputBox}.
          *
-         * When a navigation 'back' button is needed this one should be used for consistency.
-         * It comes with a predefined icon, tooltip and location.
+         * This button should be used for consistency when a navigation back button is needed. It comes
+         * with a predefined icon, tooltip, and location.
          */
         static readonly Back: QuickInputButton;
 
@@ -6150,12 +6218,11 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An event signaling when a button in a particular {@link QuickPickItem} was triggered.
-     * This event does not fire for buttons in the title bar.
+     * An event describing a button that was pressed on a {@link QuickPickItem}.
      */
     export interface QuickPickItemButtonEvent<T extends QuickPickItem> {
         /**
-         * The button that was clicked.
+         * The button that was pressed.
          */
         readonly button: QuickInputButton;
         /**
@@ -6165,39 +6232,40 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A concrete {@link QuickInput QuickInput} to let the user input a text value.
+     * A concrete {@link QuickInput} to let the user input a text value.
      *
-     * Note that in many cases the more convenient [window.showInputBox](#window.showInputBox)
-     * is easier to use. [window.createInputBox](#window.createInputBox) should be used
-     * when [window.showInputBox](#window.showInputBox) does not offer the required flexibility.
+     * Note that in many cases the more convenient {@link window.showInputBox} is easier to use.
+     * {@link window.createInputBox} should be used when {@link window.showInputBox} does not offer
+     * the required flexibility.
      */
     export interface InputBox extends QuickInput {
 
         /**
-         * Current input value.
+         * The current input value.
          */
         value: string;
 
         /**
-         * Optional placeholder in the filter text.
+         * Selection range in the input value.
+         *
+         * Defined as tuple of two numbers where the first is the inclusive start index and the second the
+         * exclusive end index. When `undefined` the whole pre-filled value will be selected, when empty
+         * (start equals end) only the cursor will be set, otherwise the defined range will be selected.
+         *
+         * This property does not get updated when the user types or makes a selection, but it can be updated
+         * by the extension.
+         */
+        valueSelection: readonly [number, number] | undefined;
+
+        /**
+         * Optional placeholder text shown when no value has been input.
          */
         placeholder: string | undefined;
 
         /**
-         * If the input value should be hidden. Defaults to false.
+         * Determines if the input value should be hidden. Defaults to `false`.
          */
         password: boolean;
-
-        /**
-         * Selection range in the input value. Defined as tuple of two number where the
-         * first is the inclusive start index and the second the exclusive end index. When `undefined` the whole
-         * pre-filled value will be selected, when empty (start equals end) only the cursor will be set,
-         * otherwise the defined range will be selected.
-         *
-         * This property does not get updated when the user types or makes a selection,
-         * but it can be updated by the extension.
-         */
-        valueSelection: readonly [number, number] | undefined;
 
         /**
          * An event signaling when the value has changed.
@@ -6226,116 +6294,157 @@ export module '@theia/plugin' {
 
         /**
          * An optional validation message indicating a problem with the current input value.
-         * By returning a string, the InputBox will use a default {@link InputBoxValidationSeverity} of Error.
-         * Returning undefined clears the validation message.
+         *
+         * By setting a string, the InputBox will use a default {@link InputBoxValidationSeverity} of Error.
+         * Returning `undefined` clears the validation message.
          */
         validationMessage: string | InputBoxValidationMessage | undefined;
     }
 
     /**
-     * A light-weight user input UI that is initially not visible. After
-     * configuring it through its properties the extension can make it
-     * visible by calling [QuickInput.show](#QuickInput.show).
+     * The base interface for all quick input types.
      *
-     * There are several reasons why this UI might have to be hidden and
-     * the extension will be notified through [QuickInput.onDidHide](#QuickInput.onDidHide).
-     * (Examples include: an explicit call to [QuickInput.hide](#QuickInput.hide),
-     * the user pressing Esc, some other input UI opening, etc.)
+     * Quick input provides a unified way for extensions to interact with users through simple UI elements.
+     * A quick input UI is initially not visible. After configuring it through its properties the extension
+     * can make it visible by calling {@link QuickInput.show show}.
      *
-     * A user pressing Enter or some other gesture implying acceptance
-     * of the current state does not automatically hide this UI component.
-     * It is up to the extension to decide whether to accept the user's input
-     * and if the UI should indeed be hidden through a call to [QuickInput.hide](#QuickInput.hide).
+     * There are several reasons why this UI might have to be hidden and the extension will be notified
+     * through {@link QuickInput.onDidHide onDidHide}. Examples include: an explicit call to
+     * {@link QuickInput.hide hide}, the user pressing Esc, some other input UI opening, etc.
      *
-     * When the extension no longer needs this input UI, it should
-     * [QuickInput.dispose](#QuickInput.dispose) it to allow for freeing up
-     * any resources associated with it.
+     * A user pressing Enter or some other gesture implying acceptance of the current state does not
+     * automatically hide this UI component. It is up to the extension to decide whether to accept the
+     * user's input and if the UI should indeed be hidden through a call to {@link QuickInput.hide hide}.
      *
-     * See {@link QuickPick QuickPick} and {@link InputBox InputBox} for concrete UIs.
+     * When the extension no longer needs this input UI, it should {@link QuickInput.dispose dispose} it
+     * to allow for freeing up any resources associated with it.
+     *
+     * See {@link QuickPick} and {@link InputBox} for concrete UIs.
      */
     export interface QuickInput {
 
         /**
-         * An optional title.
+         * An optional title for the input UI.
          */
         title: string | undefined;
 
         /**
-         * An optional current step count.
+         * An optional current step count for multi-step input flows.
          */
         step: number | undefined;
 
         /**
-         * An optional total step count.
+         * An optional total step count for multi-step input flows.
          */
         totalSteps: number | undefined;
 
         /**
-         * If the UI should allow for user input. Defaults to true.
+         * Determines if the UI should allow for user input. Defaults to `true`.
          *
-         * Change this to false, e.g., while validating user input or
-         * loading data for the next step in user input.
+         * Change this to `false`, for example, while validating user input or loading data for the next
+         * step in user input.
          */
         enabled: boolean;
 
         /**
-         * If the UI should show a progress indicator. Defaults to false.
+         * Determines if the UI should show a progress indicator. Defaults to `false`.
          *
-         * Change this to true, e.g., while loading more data or validating
-         * user input.
+         * Change this to `true`, for example, while loading more data or validating user input.
          */
         busy: boolean;
 
         /**
-         * If the UI should stay open even when loosing UI focus. Defaults to false.
+         * Determines if the UI should stay open even when losing UI focus. Defaults to `false`.
+         * This setting is ignored on iPad and is always `false`.
          */
         ignoreFocusOut: boolean;
 
         /**
-         * Makes the input UI visible in its current configuration. Any other input
-         * UI will first fire an [QuickInput.onDidHide](#QuickInput.onDidHide) event.
+         * Makes the input UI visible in its current configuration.
+         *
+         * Any other input UI will first fire an {@link QuickInput.onDidHide onDidHide} event.
          */
         show(): void;
 
         /**
-         * Hides this input UI. This will also fire an [QuickInput.onDidHide](#QuickInput.onDidHide)
-         * event.
+         * Hides this input UI.
+         *
+         * This will also fire an {@link QuickInput.onDidHide onDidHide} event.
          */
         hide(): void;
 
         /**
          * An event signaling when this input UI is hidden.
          *
-         * There are several reasons why this UI might have to be hidden and
-         * the extension will be notified through [QuickInput.onDidHide](#QuickInput.onDidHide).
-         * (Examples include: an explicit call to [QuickInput.hide](#QuickInput.hide),
-         * the user pressing Esc, some other input UI opening, etc.)
+         * There are several reasons why this UI might have to be hidden and the extension will be notified
+         * through {@link QuickInput.onDidHide onDidHide}. Examples include: an explicit call to
+         * {@link QuickInput.hide hide}, the user pressing Esc, some other input UI opening, etc.
          */
         readonly onDidHide: Event<void>;
 
         /**
-         * Dispose of this input UI and any associated resources. If it is still
-         * visible, it is first hidden. After this call the input UI is no longer
-         * functional and no additional methods or properties on it should be
-         * accessed. Instead a new input UI should be created.
+         * Dispose of this input UI and any associated resources.
+         *
+         * If it is still visible, it is first hidden. After this call the input UI is no longer functional
+         * and no additional methods or properties on it should be accessed. Instead a new input UI should
+         * be created.
          */
         dispose(): void;
     }
 
     /**
-     * Button for an action in a {@link QuickPick QuickPick} or {@link InputBox InputBox}.
+     * Specifies the location where a {@link QuickInputButton} should be rendered.
      */
-    export interface QuickInputButton {
+    export enum QuickInputButtonLocation {
+        /**
+         * The button is rendered in the title bar.
+         */
+        Title = 1,
 
         /**
-         * Icon for the button.
+         * The button is rendered inline to the right of the input box.
+         */
+        Inline = 2,
+
+        /**
+         * The button is rendered at the far end inside the input box.
+         */
+        Input = 3
+    }
+
+    /**
+     * A button for an action in a {@link QuickPick} or {@link InputBox}.
+     */
+    export interface QuickInputButton {
+        /**
+         * The icon for the button.
          */
         readonly iconPath: IconPath;
 
         /**
-         * An optional tooltip.
+         * An optional tooltip displayed when hovering over the button.
          */
         readonly tooltip?: string | undefined;
+
+        /**
+         * The location where the button should be rendered.
+         *
+         * Defaults to {@link QuickInputButtonLocation.Title}.
+         *
+         * **Note:** This property is ignored if the button was added to a {@link QuickPickItem}.
+         */
+        location?: QuickInputButtonLocation;
+
+        /**
+         * When present, indicates that the button is a toggle button that can be checked or unchecked.
+         */
+        readonly toggle?: {
+            /**
+             * Indicates whether the toggle button is currently checked.
+             * This property will be updated when the button is toggled.
+             */
+            checked: boolean;
+        };
     }
     /**
      * Value-object describing where and how progress should show.
@@ -6953,10 +7062,13 @@ export module '@theia/plugin' {
         description?: string | boolean;
 
         /**
-         * The {@link Uri uri} of the resource representing this item.
+         * A {@link Uri} representing the resource associated with this item.
          *
-         * Will be used to derive the {@link TreeItem.label label}, when it is not provided.
-         * Will be used to derive the icon from current icon theme, when {@link TreeItem.iconPath iconPath} has {@link ThemeIcon ThemeIcon} value.
+         * When set, this property is used to automatically derive several item properties if they are not explicitly provided:
+         * - **Label**: Derived from the resource's file name when {@link TreeItem.label label} is not provided.
+         * - **Description**: Derived from the resource's path when {@link TreeItem.description description} is set to `true`.
+         * - **Icon**: Derived from the current file icon theme when {@link TreeItem.iconPath iconPath} is set to
+         *   {@link ThemeIcon.File} or {@link ThemeIcon.Folder}.
          */
         resourceUri?: Uri;
 
@@ -8070,10 +8182,8 @@ export module '@theia/plugin' {
          * A glob pattern that filters the file events on their absolute path must be provided. Optionally,
          * flags to ignore certain kinds of events can be provided. To stop listening to events the watcher must be disposed.
          *
-         * *Note* that only files within the current {@link workspace.workspaceFolders workspace folders} can be watched.
-         *
          * @param globPattern A {@link GlobPattern glob pattern} that is applied to the absolute paths of created, changed,
-         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain {@link WorkspaceFolder workspace folder}.
+         * and deleted files. Use a {@link RelativePattern relative pattern} to limit events to a certain folder.
          * @param ignoreCreateEvents Ignore when files have been created.
          * @param ignoreChangeEvents Ignore when files have been changed.
          * @param ignoreDeleteEvents Ignore when files have been deleted.
@@ -8254,6 +8364,11 @@ export module '@theia/plugin' {
          * Event that fires when the current workspace has been trusted.
          */
         export const onDidGrantWorkspaceTrust: Event<void>;
+
+        /**
+         * Event that fires when the workspace trust state changes.
+         */
+        export const onDidChangeWorkspaceTrust: Event<boolean>;
 
         /**
          * Decodes the content from a `Uint8Array` to a `string`. You MUST
@@ -8448,6 +8563,16 @@ export module '@theia/plugin' {
          * `true` if within the first day of installation otherwise `false`.
          */
         export const isNewAppInstall: boolean;
+
+        /**
+         * Indicates whether the application is running in portable mode.
+         *
+         * Portable mode is enabled when the application is run from a folder that contains
+         * a `data` directory, allowing for self-contained installations.
+         *
+         * Learn more about [Portable Mode](https://code.visualstudio.com/docs/editor/portable).
+         */
+        export const isAppPortable: boolean;
 
         /**
          * Indicates whether the users has telemetry enabled.
@@ -8680,6 +8805,21 @@ export module '@theia/plugin' {
     export type CharacterPair = [string, string];
 
     /**
+     * Configuration for line comments.
+     */
+    export interface LineCommentRule {
+        /**
+         * The line comment token, like `//`
+         */
+        comment: string;
+        /**
+         * Whether the comment token should not be indented and placed at the first column.
+         * Defaults to false.
+         */
+        noIndent?: boolean;
+    }
+
+    /**
      * Describes how comments for a language work.
      */
     export interface CommentRule {
@@ -8687,7 +8827,7 @@ export module '@theia/plugin' {
         /**
          * The line comment token, like `// this is a comment`
          */
-        lineComment?: string;
+        lineComment?: string | LineCommentRule;
 
         /**
          * The block comment character pair, like `/* block comment *&#47;`
@@ -11479,6 +11619,10 @@ export module '@theia/plugin' {
      */
     export interface DocumentRangeSemanticTokensProvider {
         /**
+         * An optional event to signal that the semantic tokens from this provider have changed.
+         */
+        onDidChangeSemanticTokens?: Event<void>;
+        /**
          * @see {@link DocumentSemanticTokensProvider.provideDocumentSemanticTokens provideDocumentSemanticTokens}.
          */
         provideDocumentRangeSemanticTokens(document: TextDocument, range: Range, token: CancellationToken): ProviderResult<SemanticTokens>;
@@ -12544,6 +12688,93 @@ export module '@theia/plugin' {
         dispose(): void;
     }
 
+    export interface ScmActionButton {
+        /**
+         * The primary command for this action button.
+         */
+        readonly command: Command;
+
+        /**
+         * Secondary commands that appear in a dropdown menu.
+         * Each inner array represents a group of commands (separated by dividers).
+         */
+        readonly secondaryCommands?: Command[][];
+
+        /**
+         * Whether this action button is enabled.
+         */
+        readonly enabled: boolean;
+
+        /**
+         * Optional description shown next to the button.
+         */
+        readonly description?: string;
+    }
+
+    export interface SourceControlHistoryItemRef {
+        readonly id: string;
+        readonly name: string;
+        readonly description?: string;
+        readonly revision?: string;
+        readonly icon?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly category?: string;
+    }
+
+    export interface SourceControlHistoryItemRefsChangeEvent {
+        readonly added: readonly SourceControlHistoryItemRef[];
+        readonly removed: readonly SourceControlHistoryItemRef[];
+        readonly modified: readonly SourceControlHistoryItemRef[];
+    }
+
+    export interface SourceControlHistoryOptions {
+        readonly skip?: number;
+        readonly limit?: number | { id?: string };
+        readonly historyItemRefs?: readonly string[];
+        readonly filterText?: string;
+    }
+
+    export interface SourceControlHistoryItemStatistics {
+        readonly files: number;
+        readonly insertions: number;
+        readonly deletions: number;
+    }
+
+    export interface SourceControlHistoryItem {
+        readonly id: string;
+        readonly parentIds?: readonly string[];
+        readonly subject: string;
+        readonly message?: string | MarkdownString;
+        readonly author?: string;
+        readonly authorEmail?: string;
+        readonly authorIcon?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+        readonly displayId?: string;
+        readonly timestamp?: number;
+        readonly statistics?: SourceControlHistoryItemStatistics;
+        readonly references?: readonly SourceControlHistoryItemRef[];
+        readonly tooltip?: string | MarkdownString;
+    }
+
+    export interface SourceControlHistoryItemChange {
+        readonly uri: Uri;
+        readonly originalUri?: Uri;
+        readonly modifiedUri?: Uri;
+        readonly renameUri?: Uri;
+    }
+
+    export interface SourceControlHistoryProvider {
+        readonly currentHistoryItemRef?: SourceControlHistoryItemRef;
+        readonly currentHistoryItemRemoteRef?: SourceControlHistoryItemRef;
+        readonly currentHistoryItemBaseRef?: SourceControlHistoryItemRef;
+        readonly onDidChangeCurrentHistoryItemRefs: Event<void>;
+        readonly onDidChangeHistoryItemRefs: Event<SourceControlHistoryItemRefsChangeEvent>;
+
+        provideHistoryItemRefs(historyItemRefs: string[] | undefined, token: CancellationToken): ProviderResult<SourceControlHistoryItemRef[]>;
+        provideHistoryItems(options: SourceControlHistoryOptions, token: CancellationToken): ProviderResult<SourceControlHistoryItem[]>;
+        provideHistoryItemChanges(historyItemId: string, historyItemParentId: string | undefined, token: CancellationToken): ProviderResult<SourceControlHistoryItemChange[]>;
+        resolveHistoryItem(historyItemId: string, token: CancellationToken): ProviderResult<SourceControlHistoryItem>;
+        resolveHistoryItemRefsCommonAncestor(historyItemRefs: string[], token: CancellationToken): ProviderResult<string>;
+    }
+
     /**
      * An source control is able to provide {@link SourceControlResourceState resource states}
      * to the editor and interact with the editor in several source control related ways.
@@ -12611,6 +12842,16 @@ export module '@theia/plugin' {
          * Create a new {@link SourceControlResourceGroup resource group}.
          */
         createResourceGroup(id: string, label: string): SourceControlResourceGroup;
+
+        /**
+         * Optional action button displayed under the source control's input box.
+         */
+        actionButton?: ScmActionButton;
+
+        /**
+         * Optional history provider.
+         */
+        historyProvider?: SourceControlHistoryProvider;
 
         /**
          * Dispose this source control.
@@ -15028,9 +15269,16 @@ export module '@theia/plugin' {
         readonly id: string;
 
         /**
-         * The access token.
+         * The access token. This token should be used to authenticate requests to a service. Popularized by OAuth.
+         * @reference https://oauth.net/2/access-tokens/
          */
         readonly accessToken: string;
+
+        /**
+         * The ID token. This token contains identity information about the user. Popularized by OpenID Connect.
+         * @reference https://openid.net/specs/openid-connect-core-1_0.html#IDToken
+         */
+        readonly idToken?: string;
 
         /**
          * The account associated with the session.
@@ -15397,7 +15645,7 @@ export module '@theia/plugin' {
          * @returns localized string with injected arguments.
          * @example `l10n.t('Hello {name}', { name: 'Erich' });`
          */
-        export function t(message: string, args: Record<string, any>): string;
+        export function t(message: string, args: Record<string, string | number | boolean>): string;
         /**
          * Marks a string for localization. If a localized bundle is available for the language specified by
          * {@link env.language} and the bundle has a localized value for this message, then that localized
@@ -15407,18 +15655,18 @@ export module '@theia/plugin' {
          */
         export function t(options: {
             /**
-             * The message to localize. If {@link args} is an array, this message supports index templating where strings like
-             * `{0}` and `{1}` are replaced by the item at that index in the {@link args} array. If `args` is a `Record<string, any>`,
+             * The message to localize. If {@link options.args args} is an array, this message supports index templating where strings like
+             * `{0}` and `{1}` are replaced by the item at that index in the {@link options.args args} array. If `args` is a `Record`,
              * this supports named templating where strings like `{foo}` and `{bar}` are replaced by the value in
              * the Record for that key (foo, bar, etc).
              */
             message: string;
             /**
              * The arguments to be used in the localized string. As an array, the index of the argument is used to
-             * match the template placeholder in the localized string. As a Record, the key is used to match the template
+             * match the template placeholder in the localized string. As a `Record`, the key is used to match the template
              * placeholder in the localized string.
              */
-            args?: Array<string | number | boolean> | Record<string, any>;
+            args?: Array<string | number | boolean> | Record<string, string | number | boolean>;
             /**
              * A comment to help translators understand the context of the message.
              */
@@ -18629,7 +18877,7 @@ export module '@theia/plugin' {
          * @param name The optional name of a user for the message.
          * @stubbed
          */
-        static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart>, name?: string): LanguageModelChatMessage;
+        static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart>, name?: string): LanguageModelChatMessage;
 
         /**
          * Utility to create a new assistant message.
@@ -18638,7 +18886,7 @@ export module '@theia/plugin' {
          * @param name The optional name of a user for the message.
          * @stubbed
          */
-        static Assistant(content: string | Array<(LanguageModelTextPart | LanguageModelToolCallPart)>, name?: string): LanguageModelChatMessage;
+        static Assistant(content: string | Array<LanguageModelTextPart | LanguageModelToolCallPart | LanguageModelDataPart>, name?: string): LanguageModelChatMessage;
 
         /**
          * The role of this message.
@@ -18674,13 +18922,13 @@ export module '@theia/plugin' {
      * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
      * @stubbed
      */
-    export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+    export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
     /**
      * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
      * @stubbed
      */
-    export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+    export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
     /**
      * Represents a language model response.
@@ -18722,7 +18970,7 @@ export module '@theia/plugin' {
          * ```
          * @stubbed
          */
-        stream: AsyncIterable<LanguageModelTextPart | LanguageModelToolCallPart | unknown>;
+        stream: AsyncIterable<LanguageModelTextPart | LanguageModelToolCallPart | LanguageModelDataPart | unknown>;
 
         /**
          * This is equivalent to filtering everything except for text parts from a {@link LanguageModelChatResponse.stream}.
@@ -19512,14 +19760,14 @@ export module '@theia/plugin' {
          * The value of the tool result.
          * @stubbed
          */
-        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | unknown>;
+        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
         /**
          * @param callId The ID of the tool call.
          * @param content The content of the tool result.
          * @stubbed
          */
-        constructor(callId: string, content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>);
+        constructor(callId: string, content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>);
     }
 
     /**
@@ -19572,14 +19820,71 @@ export module '@theia/plugin' {
          * @see {@link lm.invokeTool}.
          * @stubbed
          */
-        content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>;
+        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
         /**
          * Create a LanguageModelToolResult
          * @param content A list of tool result content parts
          * @stubbed
          */
-        constructor(content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart)>);
+        constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>);
+    }
+
+    /**
+     * A language model response part containing arbitrary data. Can be used in {@link LanguageModelChatResponse responses},
+     * {@link LanguageModelChatMessage chat messages}, {@link LanguageModelToolResult tool results}, and other language model interactions.
+     * @stubbed
+     */
+    export class LanguageModelDataPart {
+        /**
+         * Create a new {@linkcode LanguageModelDataPart} for an image.
+         * @param data Binary image data
+         * @param mime The MIME type of the image. Common values are `image/png` and `image/jpeg`.
+         * @stubbed
+         */
+        static image(data: Uint8Array, mime: string): LanguageModelDataPart;
+
+        /**
+         * Create a new {@linkcode LanguageModelDataPart} for a json.
+         *
+         * *Note* that this function is not expecting "stringified JSON" but
+         * an object that can be stringified. This function will throw an error
+         * when the passed value cannot be JSON-stringified.
+         * @param value  A JSON-stringifyable value.
+         * @param mime Optional MIME type, defaults to `application/json`
+         * @stubbed
+         */
+        static json(value: any, mime?: string): LanguageModelDataPart;
+
+        /**
+         * Create a new {@linkcode LanguageModelDataPart} for text.
+         *
+         * *Note* that an UTF-8 encoder is used to create bytes for the string.
+         * @param value Text data
+         * @param mime The MIME type if any. Common values are `text/plain` and `text/markdown`.
+         * @stubbed
+         */
+        static text(value: string, mime?: string): LanguageModelDataPart;
+
+        /**
+         * The mime type which determines how the data property is interpreted.
+         * @stubbed
+         */
+        mimeType: string;
+
+        /**
+         * The byte data for this part.
+         * @stubbed
+         */
+        data: Uint8Array;
+
+        /**
+         * Construct a generic data part with the given content.
+         * @param data The byte data for this part.
+         * @param mimeType The mime type of the data.
+         * @stubbed
+         */
+        constructor(data: Uint8Array, mimeType: string);
     }
 
     /**

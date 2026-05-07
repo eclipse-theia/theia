@@ -6,9 +6,10 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 
 1. [Pre-Release Steps](#1-pre-release-steps)
    - [1.1 Announce Release](#11-announce-release)
-   - [1.2 Localization](#12-localization)
-   - [1.3 Prepare Release Branch](#13-prepare-release-branch)
-   - [1.4 Update Changelog](#14-update-changelog)
+   - [1.2 Check for release preparation tickets](#12-check-for-release-preparation-tickets)
+   - [1.3 Localization](#13-localization)
+   - [1.4 Prepare Release Branch](#14-prepare-release-branch)
+   - [1.5 Update Changelog](#15-update-changelog)
 2. [Release Process](#2-release-process)
    - [2.1 Performing a Release](#21-performing-a-release)
    - [2.2 Community Releases](#22-community-releases)
@@ -100,16 +101,24 @@ This guide details the steps for maintainers to release Eclipse Theia, including
   We'll post an update once the release is finished.
   ```
 
-### 1.2 Localization
+### 1.2. Check for release preparation tickets
+<!-- release: both -->
+
+Check for tickets that need to be addressed when preparing the release:
+
+- Prepare/resolve all tickets that are located in: <https://github.com/eclipse-theia/theia/labels/toDoWithRelease>
+  - e.g. initial publish to npm for newly added packages.
+
+### 1.3 Localization
 <!-- release: minor -->
 
 - Perform `nls` updates before a release ([example](https://github.com/eclipse-theia/theia/pull/14373)).
 - Trigger the automatic translation workflow via GitHub Actions ([workflow link](https://github.com/eclipse-theia/theia/actions/workflows/translation.yml)).
 - Force-push the branch created by the bot to properly trigger CI.
 - Once the PR is approved, use `Squash and merge` to finalize it.
-- DO NOT delete the bot's branch `bot/translation-update`
+- Restore the branch `bot/translation-update`.
 
-### 1.3 Prepare Release Branch
+### 1.4 Prepare Release Branch
 <!-- release: minor -->
 
 - Checkout `master` with the latest changes:
@@ -130,12 +139,16 @@ This guide details the steps for maintainers to release Eclipse Theia, including
   release/{{majorMinor}}.x
   ```
 
-### 1.4 Update Changelog
+### 1.5 Update Changelog
 <!-- release: minor -->
 
 Add entries for non-breaking changes since the last release. Breaking changes should be added by the PR, not during the release.
 
-Commit the changelog changes with the message: `docs: update changelog for {version}`.
+Commit the changelog changes to the release branch with the message:
+
+```bash
+docs: update changelog for {{version}}
+```
 
 Format:
 
@@ -155,6 +168,8 @@ Format:
 ### 2.1 Performing a Release
 <!-- release: both -->
 
+- Make sure the prepared Release Branch is pushed.
+
 ### 2.1.1 GH Discussion announcement
 <!-- release: minor -->
 
@@ -162,13 +177,56 @@ Format:
   - Announce that the release is starting as a comment in the [Release discussion](#111-minor-release-1x0): <https://github.com/eclipse-theia/theia/discussions/{{discussionNumber}}>
 
     ```md
-    The release will start now. We’ll post an update once it has completed.
+    The release will start now. We'll post an update once it has completed.
+    Please avoid merging pull requests until we confirm the release is complete.
     ```
 
-### 2.1.2 OPTION 1: Perform the release LOCALLY
+### 2.1.2 Newly added Theia packages - publish initially to NPM
 <!-- release: both -->
 
-### 2.1.2.1 Prepare the release locally
+_NOTE:_ New `@theia` packages must be published once manually by a Theia committer before the publish workflow can publish them.
+This is due to recent changes requiring trusted workflows for npm publishing.
+
+It is recommend to first publish a next version of the new package, then we can publish the release properly via the recommended publish workflow.
+- To publish locally, you need to:
+  - Ensure you are logged in to NPM (`npm login`; NPM will prompt you for an OTP (one-time password) or security key).
+  - Have your 2FA ready, as you will need an OTP for the publishing process to complete.
+- Run `npm run publish:next`
+  - Optional: If you remove the `--yes` parameter from the publish script, the publishing process will ask you to confirm each step before proceeding.
+
+Once it is published to NPM, please update the settings of this package as follows:
+- Have your security key or 2FA ready
+- Go to `https://www.npmjs.com/package/@theia/<new-package>/access`
+- Trusted `Publisher` > Select `GitHub Actions publisher` > Enter the required fields to our publish workflow (`publish-ci.yml`)
+- Set `Publishing access` to `Require two-factor authentication and disallow tokens (recommended)`
+
+Optional: Trigger the publish workflow for the `next` version once to verify the workflow can publish the new package as expected.
+
+### 2.1.3 OPTION 1 (preferred): Perform the release via GH WORKFLOW
+<!-- release: both -->
+
+_NOTE:_ This publishing option is preferred, as the packages are built and signed on GitHub Actions with provenance using the trusted workflow for NPM publishing.
+
+- Run the [_Publish packages to NPM_](https://github.com/eclipse-theia/theia/actions/workflows/publish-ci.yml) workflow
+- Choose the release branch (i.e., `release/{{majorMinor}}.x`)
+- Choose the respective release type and check the input option in case it is a patch for a previous version.
+
+_NOTE:_ In case the automatic publishing fails (e.g., some packages are not published if step 2.1.2 was missed) you can go to Option 2, performing the release locally.
+Already published packages of the version will be skipped and the missing ones will be published then.
+
+### 2.1.3.1 Check Package update PR
+<!-- release: both -->
+
+- The workflow automatically creates a PR to update the package versions for the release branch, see [example here](https://github.com/eclipse-theia/theia/pull/16438)
+- Follow the instructions in the PR, to ensure all package versions are updated and change the author of the commits to you.
+- Wait for the checks to succeed, then merge using `Rebase and Merge`.
+
+### 2.1.4 OPTION 2: Perform the release LOCALLY
+<!-- release: both -->
+
+_NOTE:_ Performing the release locally will publish unsigned packages to NPM.
+
+### 2.1.4.1 Prepare the release locally
 <!-- release: both -->
 
 - Ensure the release branch is checked out (i.e., `release/{{majorMinor}}.x`).
@@ -187,25 +245,41 @@ Format:
 
 - Confirm the changes are built (ensure `@theia` extensions have their `lib/` folders).
 
-### 2.1.2.2 Publish the release locally
+### 2.1.4.2 Publish the release locally
 <!-- release: both -->
 
-- Create a short-lived granular npm auth token ([instructions](https://docs.npmjs.com/creating-and-viewing-access-tokens#creating-granular-access-tokens-on-the-website)):
-  - Expiration: `7 days`.
-  - Under Packages and scopes:
-    - Permissions: `Read and write`.
-    - Select `Only select packages and scopes`
-    - Select packages and scopes: `@theia`.
-
-- Set the token:
+- The settings for publishing access were changed to the recommended: 'Require two-factor authentication and disallow tokens (recommended)'.
+- To publish locally, you need to:
+  - Ensure you are logged in to NPM (`npm login`; NPM will prompt you for an OTP (one-time password) or security key).
+  - Have your 2FA ready, as you will need an OTP for the publishing process to complete.
+- Optional: If you remove the `--yes` parameter from the publish scripts, the publishing process will ask you to confirm each step before proceeding..
+- For example, a sample publishing run could look like this:
 
   ```bash
-   npm set "//registry.npmjs.org/:_authToken=${TOKEN}"
+  npm run publish:next
+  lerna notice
+  ...
+  lerna info
+
+  Found 1 package to publish:
+  - @theia/some-package => x.y.z
+
+  ✔ Are you sure you want to publish these packages? Yes
+  lerna info publish Publishing packages to npm...
+  ✔ This operation requires a one-time password: <enter your OTP>
+  lerna success published @theia/some-package x.y.z
+  lerna notice 
+  lerna notice 📦  @theia/some-package@x.y.z
+  lerna notice === Tarball Contents === 
+  ...
+  lerna notice 
+  Successfully published:
+  - @theia/some-package@x.y.z
+  lerna success published 1 package
+  Done in ...s.
   ```
 
-  _Note:_ Add a whitespace in front of this command to ensure it is not added to the shell's history (might not work for all shells).
-
-### 2.1.2.2.1 Minor Release 1.x.0
+### 2.1.4.2.1 Minor Release 1.x.0
 <!-- release: minor -->
 
 - Perform the release:
@@ -224,7 +298,7 @@ Format:
   npm logout
   ```
 
-### 2.1.2.2.2 Patch Release 1.x.z
+### 2.1.4.2.2 Patch Release 1.x.z
 <!-- release: patch -->
 
   _NOTE:_ For a patch release on an earlier version (e.g., 1.55.1 when 1.56.0 exists), use:
@@ -247,7 +321,7 @@ Format:
   npm logout
   ```
 
-### 2.1.2.3 Prepare the release branch
+### 2.1.4.3 Prepare the release branch
 <!-- release: both -->
 
 - Ensure the release branch is still checked out (i.e., `release/{{majorMinor}}.x`).
@@ -271,21 +345,7 @@ Format:
 
 - Push the branch.
 
-### 2.1.3 OPTION 2: Perform the release via GH WORKFLOW
-<!-- release: both -->
-
-- Run the [_Publish Release_](https://github.com/eclipse-theia/theia/actions/workflows/publish-release.yml)
-- Choose the release branch (i.e., `release/{{majorMinor}}.x`)
-- Choose the respective release type and check the input option in case it is a patch for a previous version.
-
-### 2.1.3.1 Check Package update PR
-<!-- release: both -->
-
-- The workflow automatically creates a PR to update the package versions for the release branch, see [example here](https://github.com/eclipse-theia/theia/pull/16438)
-- Follow the instructions in the PR, to ensure all package versions are updated and change the author of the commits to you.
-- Wait for the checks to succeed, then merge using `Rebase and Merge`.
-
-### 2.1.4 Native dependencies
+### 2.1.5 Native dependencies
 <!-- release: both -->
 
 - Once the release branch has been updated (package updates):
@@ -295,7 +355,7 @@ Format:
     - Extract the downloaded folders.
     - Leave the dependencies for now, you will need them later.
 
-### 2.1.5 Create the release PR against main
+### 2.1.6 Create the release PR against main
 <!-- release: minor -->
 
 - Create a PR against main (not needed for patch releases): <https://github.com/eclipse-theia/theia/compare>
@@ -308,10 +368,11 @@ Format:
 
   - Wait for approval.
   - Merge using `Rebase and Merge` (**DO NOT `Squash and Merge`**).
+  - Restore the release branch.
 
 - See for example: <https://github.com/eclipse-theia/theia/pull/16333>
 
-### 2.1.6 Create the annotated Git Tag
+### 2.1.7 Create the annotated Git Tag
 <!-- release: both -->
 
 - Tag the publishing commit after merging (for patch releases, tag directly on the release branch):
@@ -332,7 +393,7 @@ Format:
   git push origin v{{version}}
   ```
 
-### 2.1.7 Create the GH Release - Minor Release 1.x.0
+### 2.1.8 Create the GH Release - Minor Release 1.x.0
 <!-- release: minor -->
 
 - Create a GitHub release:
@@ -342,6 +403,7 @@ Format:
   - Reference the `changelog` and breaking changes.
   - Attach _Native Dependencies_ artifacts (the extracted zips).
     - native-dependencies-darwin-arm64.zip
+    - native-dependencies-darwin-x64.zip
     - native-dependencies-linux-x64.zip
     - native-dependencies-win32-x64.zip
   - Mark the release as `latest`
@@ -354,7 +416,7 @@ Release Title:
 Eclipse Theia v{{version}}
 ```
 
-### 2.1.8 Create the GH Release - Patch Release 1.x.z
+### 2.1.9 Create the GH Release - Patch Release 1.x.z
 <!-- release: patch -->
 
 - Create a GitHub release:
@@ -364,6 +426,7 @@ Eclipse Theia v{{version}}
   - Use `Generate release notes` for the changelog link.
   - Attach _Native Dependencies_ artifacts (the extracted zips).
     - native-dependencies-darwin-arm64.zip
+    - native-dependencies-darwin-x64.zip
     - native-dependencies-linux-x64.zip
     - native-dependencies-win32-x64.zip
   - Optional: Mark the release as `latest` (_Uncheck for a patch on an OLDER version!!_).
@@ -425,6 +488,25 @@ Community releases follow the same procedure as the regular releases. Please fol
 
 - Unpin discussion from the Release Announcement Category
 
+- Also send an email to [the `theia-dev` mailing List](mailto:theia-dev@eclipse.org):
+
+    Subject:
+
+    ```md
+    Eclipse Theia v{{version}} release
+    ```
+
+    Body:
+
+    ```md
+    Hi everyone,
+
+    The Eclipse Theia v{{version}} release has been published!
+    See the release on GitHub for more information: https://github.com/eclipse-theia/theia/releases/tag/v{{version}}
+
+    Thank you to everyone that participated and contributed!
+    ```
+
 ### 3.2.2 Patch Release 1.x.z
 <!-- release: patch -->
 
@@ -453,6 +535,8 @@ Community releases follow the same procedure as the regular releases. Please fol
 
     The Eclipse Theia v{{version}} patch release has been published!
     See the release on GitHub for more information: https://github.com/eclipse-theia/theia/releases/tag/v{{version}}
+
+    Thank you to everyone that participated and contributed!
     ```
 
 ### 3.3 Update Future Milestones
@@ -520,6 +604,7 @@ To perform the upgrade:
 
 - Run `npm upgrade` at the root of the repository.
 - Fix any compilation errors, typing errors, and failing tests.
+- Align dependency version ranges in all `package.json` files (root and sub-packages) to match the resolved versions in package-lock.json, especially if the upgrade required code changes. This ensures that adopters with existing lockfiles are forced to pull at least the minimum compatible version, rather than staying on an older locked version that may be incompatible with the updated code.
 - Open a PR with the changes ([example](https://github.com/eclipse-theia/theia/pull/15688)).
 - Run the license check review locally
 - Wait for the "IP Check" to complete ([example](https://gitlab.eclipse.org/eclipsefdn/emo-team/iplab/-/issues/9377)).

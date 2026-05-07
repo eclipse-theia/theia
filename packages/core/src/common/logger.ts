@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, optional, postConstruct } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
 import { ILoggerServer, LogLevel, ConsoleLogger, rootLoggerName } from './logger-protocol';
+import { LoggerSanitizer } from './logger-sanitizer';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -239,6 +240,7 @@ export class Logger implements ILogger {
     @inject(LoggerWatcher) protected readonly loggerWatcher: LoggerWatcher;
     @inject(LoggerFactory) protected readonly factory: LoggerFactory;
     @inject(LoggerName) protected name: string;
+    @inject(LoggerSanitizer) @optional() protected readonly sanitizer: LoggerSanitizer | undefined;
 
     protected cache = new Map<string, ILogger>();
 
@@ -319,10 +321,36 @@ export class Logger implements ILogger {
         );
     }
     protected format(value: any): any {
-        if (value instanceof Error) {
-            return value.stack || value.toString();
+        switch (typeof value) {
+            case 'object':
+                if (value instanceof Error) {
+                    return this.sanitize(value.stack || value.toString());
+                } else if (!value) {
+                    return value;
+                } else if (Array.isArray(value)) {
+                    return value.map(item => this.format(item));
+                } else {
+                    try {
+                        const stringified = JSON.stringify(value);
+                        const sanitized = this.sanitize(stringified);
+                        try {
+                            return JSON.parse(sanitized);
+                        } catch {
+                            return sanitized;
+                        }
+                    } catch {
+                        return value;
+                    }
+                }
+            case 'string':
+                return this.sanitize(value);
+            default:
+                return value;
         }
-        return value;
+    }
+
+    protected sanitize(message: string): string {
+        return this.sanitizer?.sanitize(message) ?? message;
     }
 
     isTrace(): Promise<boolean> {

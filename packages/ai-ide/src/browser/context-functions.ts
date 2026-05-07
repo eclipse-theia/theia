@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MutableChatRequestModel } from '@theia/ai-chat';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { assertChatContext } from '@theia/ai-chat';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { LIST_CHAT_CONTEXT_FUNCTION_ID, RESOLVE_CHAT_CONTEXT_FUNCTION_ID, UPDATE_CONTEXT_FILES_FUNCTION_ID } from '../common/context-functions';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
@@ -30,11 +30,12 @@ export class ListChatContext implements ToolProvider {
             id: ListChatContext.ID,
             name: ListChatContext.ID,
             description: 'Returns the list of context elements (such as files) specified by the user manually as part of the chat request.',
-            handler: async (_: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (_: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
-                const result = ctx.context.variables.map(contextElement => ({
+                const result = ctx.request.context.variables.map(contextElement => ({
                     id: contextElement.variable.id + contextElement.arg,
                     type: contextElement.variable.name
                 }));
@@ -67,13 +68,14 @@ export class ResolveChatContext implements ToolProvider {
                 },
                 required: ['contextElementId']
             },
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
 
                 const { contextElementId } = JSON.parse(args) as { contextElementId: string };
-                const variable = ctx.context.variables.find(contextElement => contextElement.variable.id + contextElement.arg === contextElementId);
+                const variable = ctx.request.context.variables.find(contextElement => contextElement.variable.id + contextElement.arg === contextElementId);
                 if (variable) {
                     const result = {
                         type: variable.variable.name,
@@ -104,18 +106,22 @@ export class AddFileToChatContext implements ToolProvider {
                 properties: {
                     filesToAdd: {
                         type: 'array',
-                        description: 'The absolute paths of files to add to the context of the current chat.',
+                        description: 'Array of relative file paths to bookmark (e.g., ["src/index.ts", "package.json"]). Paths are relative to the workspace root.',
                         items: { type: 'string' }
                     }
                 },
                 required: ['filesToAdd']
             },
-            description: 'Adds one or more files to the context of the current chat session. ' +
+            description: 'Adds one or more files to the context of the current chat session for future reference. ' +
+                'Use this to bookmark important files that you\'ll need to reference multiple times during the conversation - ' +
+                'this is more efficient than re-reading files repeatedly. ' +
                 'Only files that exist within the workspace boundaries will be added. ' +
                 'Files outside the workspace or non-existent files will be rejected. ' +
-                'Returns a detailed status for each file, including which were successfully added and which were rejected with reasons.',
-            handler: async (arg: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                'Returns a detailed status for each file, including which were successfully added and which were rejected with reasons. ' +
+                'Note: Adding a file to context does NOT read its contents - use getFileContent to read the actual content.',
+            handler: async (arg: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
 
@@ -129,7 +135,7 @@ export class AddFileToChatContext implements ToolProvider {
                         const validationResult = await this.validationService.validateFile(file);
 
                         if (validationResult.state === FileValidationState.VALID) {
-                            ctx.session.context.addVariables({ arg: file, variable: FILE_VARIABLE });
+                            ctx.request.session.context.addVariables({ arg: file, variable: FILE_VARIABLE });
                             added.push(file);
                         } else {
                             rejected.push({
@@ -139,7 +145,7 @@ export class AddFileToChatContext implements ToolProvider {
                             });
                         }
                     } else {
-                        ctx.session.context.addVariables({ arg: file, variable: FILE_VARIABLE });
+                        ctx.request.session.context.addVariables({ arg: file, variable: FILE_VARIABLE });
                         added.push(file);
                     }
                 }

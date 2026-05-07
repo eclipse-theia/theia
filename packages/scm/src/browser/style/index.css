@@ -14,15 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+@import './scm-history-graph.css';
+
 .theia-scm-commit {
   overflow: hidden;
   font-size: var(--theia-ui-font-size1);
   max-height: calc(100% - var(--theia-border-width));
   position: relative;
-  padding: var(--theia-ui-padding)
-           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
-           var(--theia-ui-padding)
-           calc(var(--theia-ui-padding) * 3);
+  padding: var(--theia-ui-padding) max(var(--theia-ui-padding), var(--theia-scrollbar-width)) var(--theia-ui-padding) calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-scm {
@@ -141,9 +140,9 @@
 .theia-scm-validation-message-info {
   background-color: var(--theia-inputValidation-infoBackground) !important;
   color: var(--theia-inputValidation-infoForeground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-infoBorder);
-  border-top: none; /* remove top border since the input declares it already */
+  border: var(--theia-border-width) solid var(--theia-inputValidation-infoBorder);
+  border-top: none;
+  /* remove top border since the input declares it already */
 }
 
 .theia-scm-validation-message-success {
@@ -155,17 +154,64 @@
 .theia-scm-validation-message-warning {
   background-color: var(--theia-inputValidation-warningBackground) !important;
   color: var(--theia-inputValidation-warningForeground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-warningBorder);
-  border-top: none; /* remove top border since the input declares it already */
+  border: var(--theia-border-width) solid var(--theia-inputValidation-warningBorder);
+  border-top: none;
+  /* remove top border since the input declares it already */
 }
 
 .theia-scm-validation-message-error {
   background-color: var(--theia-inputValidation-errorBackground) !important;
   color: var(--theia-inputValidation-errorForeground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-errorBorder);
-  border-top: none; /* remove top border since the input declares it already */
+  border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+  border-top: none;
+  /* remove top border since the input declares it already */
+}
+
+.theia-scm-action-button-container {
+  width: 100%;
+  display: flex;
+  background-color: var(--theia-button-background);
+}
+
+.theia-scm-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  width: 100%;
+  height: 28px;
+  gap: 4px;
+  border: 1px solid var(--theia-button-border);
+  cursor: pointer;
+}
+
+.theia-scm-action-button:hover {
+  background-color: var(--theia-button-hoverBackground);
+}
+
+.theia-scm-action-button:disabled {
+  background-color: var(--theia-button-disabledBackground);
+  color: var(--theia-button-disabledForeground);
+  cursor: default;
+}
+
+.theia-scm-action-button .codicon {
+  vertical-align: middle;
+}
+
+.theia-scm-action-button-secondary {
+  width: 28px;
+}
+
+.theia-scm-action-button-divider {
+  width: 1px;
+  background-color: var(--theia-button-foreground);
+  margin: 4px 0;
+}
+
+.theia-scm-action-button-divider-disabled {
+  background-color: var(--theia-button-disabledForeground);
 }
 
 .no-select:focus {
@@ -263,4 +309,140 @@
 
 .theia-scm-panel {
   overflow: visible;
+}
+
+.theia-scm-repositories-container {
+  width: 100%;
+}
+
+.theia-scm-repository-item {
+  display: flex;
+  align-items: center;
+  height: var(--theia-content-line-height);
+  padding: 0 calc(var(--theia-ui-padding) * 2) 0 calc(var(--theia-ui-padding) * 2);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  gap: 4px;
+}
+
+.theia-scm-repository-item:hover {
+  background: var(--theia-list-hoverBackground);
+}
+
+.theia-scm-repository-item.selected {
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-scm-repository-item.child {
+  padding-left: calc(var(--theia-ui-padding) * 2 + 8px);
+}
+
+.theia-scm-repository-collapse-toggle {
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  width: 16px;
+  text-align: center;
+}
+
+.theia-scm-repository-child-indent {
+  display: inline-block;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.theia-scm-repository-icon {
+  flex-shrink: 0;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-scm-repository-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.theia-scm-repository-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theia-scm-repository-description {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--theia-ui-font-size0);
+  opacity: 0.7;
+}
+
+.theia-scm-repository-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.theia-scm-repository-status-commands {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.theia-scm-repository-status-command {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: inherit;
+  white-space: nowrap;
+  font-size: var(--theia-ui-font-size0);
+  line-height: var(--theia-content-line-height);
+  text-decoration: none;
+}
+
+.theia-scm-repository-status-command:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-scm-repository-status-command.selected {
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-scm-repository-status-command .codicon {
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-scm-repository-more-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0;
+}
+
+.theia-scm-repository-item:hover .theia-scm-repository-more-button,
+.theia-scm-repository-item.selected .theia-scm-repository-more-button {
+  opacity: 1;
+}
+
+.theia-scm-repository-more-button:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-scm-repository-more-button.selected {
+  color: var(--theia-list-activeSelectionForeground);
 }

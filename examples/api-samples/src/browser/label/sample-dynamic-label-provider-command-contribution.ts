@@ -20,10 +20,10 @@ import { FrontendApplicationContribution, LabelProviderContribution } from '@the
 import { SampleDynamicLabelProviderContribution } from './sample-dynamic-label-provider-contribution';
 
 export namespace ExampleLabelProviderCommands {
-    const EXAMPLE_CATEGORY = 'Examples';
+    const API_SAMPLES_CATEGORY = 'API Samples';
     export const TOGGLE_SAMPLE: Command = {
         id: 'example_label_provider.toggle',
-        category: EXAMPLE_CATEGORY,
+        category: API_SAMPLES_CATEGORY,
         label: 'Toggle Dynamically-Changing Labels'
     };
 }

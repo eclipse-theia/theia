@@ -20,15 +20,20 @@ import { interfaces } from '@theia/core/shared/inversify';
 import {
     NOTIFICATION_TYPES,
     NOTIFICATION_TYPE_OFF,
+    NOTIFICATION_TYPE_LABELS,
+    NOTIFICATION_TYPE_DESCRIPTIONS,
     NotificationType
 } from './notification-types';
+import { ReasoningSettings } from './language-model';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
-export const AI_CORE_PREFERENCES_TITLE = '✨ ' + nls.localize('theia/ai/core/prefs/title', 'AI Features [Beta]');
+export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences/title', 'AI Features');
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
+export const PREFERENCE_NAME_REASONING = 'ai-features.reasoning.defaults';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
 export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
+export const PREFERENCE_NAME_SKILL_DIRECTORIES = 'ai-features.skills.skillDirectories';
 
 export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
 
@@ -44,7 +49,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             typeDetails: {
                 isFilepath: true,
                 selectionProps: {
-                    openLabel: nls.localize('theia/ai/core/promptTemplates/openLabel', 'Select Folder'),
+                    openLabel: nls.localizeByDefault('Select Folder'),
                     canSelectFiles: false,
                     canSelectFolders: true,
                     canSelectMany: false
@@ -128,14 +133,75 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: {
             title: nls.localize('theia/ai/core/defaultNotification/title', 'Default Notification Type'),
             markdownDescription: nls.localize('theia/ai/core/defaultNotification/mdDescription',
-                'The default notification method used when an AI agent completes a task. Individual agents can override this setting.\n\
-                - `os-notification`: Show OS/system notifications\n\
-                - `message`: Show notifications in the status bar/message area\n\
-                - `blink`: Blink or highlight the UI\n\
-                - `off`: Disable all notifications'),
+                'The default notification method used when an AI agent completes a task. Individual agents can override this setting.'),
             type: 'string',
             enum: [...NOTIFICATION_TYPES],
+            enumItemLabels: NOTIFICATION_TYPES.map(type => NOTIFICATION_TYPE_LABELS[type]),
+            enumDescriptions: NOTIFICATION_TYPES.map(type => NOTIFICATION_TYPE_DESCRIPTIONS[type]),
             default: NOTIFICATION_TYPE_OFF
+        },
+        [PREFERENCE_NAME_SKILL_DIRECTORIES]: {
+            description: nls.localize('theia/ai/core/skillDirectories/description',
+                'Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. ' +
+                'The .prompts/skills directory in your workspace and the skills directory in your product\'s configuration folder are always included.'),
+            type: 'array',
+            items: {
+                type: 'string'
+            },
+            default: []
+        },
+        [PREFERENCE_NAME_REASONING]: {
+            title: nls.localize('theia/ai/core/reasoning/title', 'Reasoning Defaults'),
+            markdownDescription: nls.localize('theia/ai/core/reasoning/mdDescription',
+                'Default value for the chat input\'s reasoning selector, applied to models that support reasoning.\n\n'
+                + 'This is a UI-level setting: the chosen level is translated to the provider\'s native API parameters'
+                + ' at request time (e.g. Anthropic `thinking` / `output_config.effort`, OpenAI `reasoning.effort`,'
+                + ' Gemini `thinkingConfig`) and takes precedence over any raw values supplied via'
+                + ' `#ai-features.modelSettings.requestSettings#` for the same fields.\n\n'
+                + 'Each entry consists of:\n'
+                + '- `scope`: Defines when the setting applies (`modelId`, `providerId`, `agentId`).\n'
+                + '- `reasoning.level`: One of `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\n'
+                + 'Precedence at runtime (highest first): session override via the selector → this preference →'
+                + ' the model\'s declared default. Whichever the selector displays is what gets sent. To override'
+                + ' a provider\'s reasoning field manually via `#ai-features.modelSettings.requestSettings#`, set'
+                + ' `reasoning.level` to `off` here so the level-based translation is disabled.\n\n'
+                + 'Entries are matched based on scope specificity (agent: 100, model: 10, provider: 1 points).\n\n'
+                + 'Example:\n'
+                + '```json\n'
+                + '[\n'
+                + '  { "scope": { "providerId": "anthropic" }, "reasoning": { "level": "medium" } },\n'
+                + '  { "scope": { "modelId": "openai/gpt-5" }, "reasoning": { "level": "high" } },\n'
+                + '  { "scope": { "agentId": "Coder" }, "reasoning": { "level": "off" } }\n'
+                + ']\n'
+                + '```'),
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    scope: {
+                        type: 'object',
+                        properties: {
+                            modelId: { type: 'string' },
+                            providerId: { type: 'string' },
+                            agentId: { type: 'string' }
+                        }
+                    },
+                    reasoning: {
+                        type: 'object',
+                        additionalProperties: false,
+                        properties: {
+                            level: {
+                                type: 'string',
+                                enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+                                default: 'auto'
+                            }
+                        },
+                        required: ['level']
+                    }
+                },
+                additionalProperties: false
+            },
+            default: []
         },
         [LANGUAGE_MODEL_ALIASES_PREFERENCE]: {
             title: nls.localize('theia/ai/core/preference/languageModelAliases/title', 'Language Model Aliases'),
@@ -167,8 +233,10 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
 export interface AICoreConfiguration {
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
+    [PREFERENCE_NAME_REASONING]: Array<ReasoningPreferenceEntry> | undefined;
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
     [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
+    [PREFERENCE_NAME_SKILL_DIRECTORIES]: string[] | undefined;
 }
 
 export interface RequestSetting {
@@ -181,6 +249,11 @@ export interface Scope {
     modelId?: string;
     providerId?: string;
     agentId?: string;
+}
+
+export interface ReasoningPreferenceEntry {
+    scope?: Scope;
+    reasoning?: ReasoningSettings;
 }
 
 export const AICorePreferences = Symbol('AICorePreferences');

@@ -26,6 +26,7 @@ Currently not all of the configuration file properties are implemented. The foll
 - forwardPorts
 - mounts
 - containerEnv
+- remoteEnv
 - remoteUser
 - shutdownAction
 - postCreateCommand
@@ -38,6 +39,7 @@ Usage: `"composeUpArgs": ["--force-recreate"]`
 
 ## Additional Information
 
+- [API documentation for `@theia/dev-container`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_dev-container.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

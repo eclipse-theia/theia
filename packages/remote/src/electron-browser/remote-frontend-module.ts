@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContributionProvider, CommandContribution } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindViewContribution, FrontendApplicationContribution, isRemote, WidgetFactory } from '@theia/core/lib/browser';
 import { RemoteSSHContribution } from './remote-ssh-contribution';
@@ -35,15 +35,18 @@ import '../../src/electron-browser/style/port-forwarding-widget.css';
 import { UserStorageContribution } from '@theia/userstorage/lib/browser/user-storage-contribution';
 import { RemoteUserStorageContribution } from './remote-user-storage-provider';
 import { remoteFileSystemPath, RemoteFileSystemProxyFactory, RemoteFileSystemServer } from '@theia/filesystem/lib/common/remote-file-system-provider';
-import { LocalEnvVariablesServer, LocalRemoteFileSystemProvider, LocalRemoteFileSytemServer } from './local-backend-services';
+import { LocalEnvVariablesServer, LocalRemoteFileSystemContribution, LocalRemoteFileSystemProvider, LocalRemoteFileSytemServer } from './local-backend-services';
 import { envVariablesPath, EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { WorkspaceHandlingContribution, WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser';
+import { RemoteLocalWorkspaceContribution } from './remote-local-workspace-contribution';
+import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(RemoteFrontendContribution);
     bind(CommandContribution).toService(RemoteFrontendContribution);
 
-    bindContributionProvider(bind, RemoteRegistryContribution);
+    bindRootContributionProvider(bind, RemoteRegistryContribution);
     bind(RemoteSSHContribution).toSelf().inSingletonScope();
     bind(RemoteRegistryContribution).toService(RemoteSSHContribution);
 
@@ -81,5 +84,12 @@ export default new ContainerModule((bind, _, __, rebind) => {
     bind(LocalRemoteFileSystemProvider).toSelf().inSingletonScope();
     rebind(UserStorageContribution).to(RemoteUserStorageContribution);
 
-});
+    if (isRemote) {
+        bind(RemoteLocalWorkspaceContribution).toSelf().inSingletonScope();
+        bind(WorkspaceOpenHandlerContribution).toService(RemoteLocalWorkspaceContribution);
+        bind(WorkspaceHandlingContribution).toService(RemoteLocalWorkspaceContribution);
+        bind(LocalRemoteFileSystemContribution).toSelf().inSingletonScope();
+        bind(FileServiceContribution).toService(LocalRemoteFileSystemContribution);
+    }
 
+});

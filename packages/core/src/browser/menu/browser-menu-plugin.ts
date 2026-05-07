@@ -71,7 +71,7 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         const disposable = new DisposableCollection(
             this.corePreferences.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    this.showMenuBar(menuBar, change.newValue);
+                    this.showMenuBar(menuBar, this.corePreferences['window.menuBarVisibility']);
                 }
             }),
             this.keybindingRegistry.onKeybindingsChanged(() => {
@@ -143,7 +143,14 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
     protected previousFocusedElement: HTMLElement | undefined;
 
     constructor() {
-        super();
+        // Disable Lumino's overflow menu feature. The feature has a bug where
+        // `onUpdateRequest` consumes a stale `_overflowIndex` (only recomputed at the
+        // end of the method), which causes a RangeError when the menu bar is rendered
+        // at zero width. Additionally, Theia's CSS does not constrain the menu bar's
+        // offsetWidth to the available space, so the overflow detection never triggers.
+        // See https://github.com/eclipse-theia/theia/issues/17352
+        // See https://github.com/jupyterlab/lumino/issues/811
+        super({ overflowMenuOptions: { isVisible: false } });
         // HACK we need to hook in on private method _openChildMenu. Don't do this at home!
         DynamicMenuBarWidget.prototype['_openChildMenu'] = () => {
             if (this.activeMenu instanceof DynamicMenuWidget) {
@@ -345,7 +352,15 @@ export class DynamicMenuWidget extends MenuWidget {
                     const enabled = node.isEnabled(nodePath, ...(this.args || []));
                     const toggled = node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false;
                     phCommandRegistry.addCommand(id, {
-                        execute: () => { node.run(nodePath, ...(this.args || [])); },
+                        execute: () => {
+                            // Restore focus to the previously focused element before executing
+                            // the command so that focus-dependent commands like clipboard
+                            // operations target the correct element instead of the menu.
+                            if (this.previousFocusedElement) {
+                                this.previousFocusedElement.focus({ preventScroll: true });
+                            }
+                            node.run(nodePath, ...(this.args || []));
+                        },
                         isEnabled: () => enabled,
                         isToggled: () => toggled,
                         isVisible: () => true,
@@ -442,7 +457,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
             });
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    menu.setHidden(['compact', 'hidden'].includes(change.newValue as string));
+                    menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
                 }
             });
         }

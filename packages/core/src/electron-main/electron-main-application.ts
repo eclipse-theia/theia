@@ -30,6 +30,7 @@ import URI from '../common/uri';
 import { FileUri } from '../common/file-uri';
 import { Deferred, timeout } from '../common/promise-util';
 import { MaybePromise } from '../common/types';
+import { Stopwatch } from '../common/performance';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
@@ -43,10 +44,13 @@ import { TheiaRendererAPI } from './electron-api-main';
 import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
 import { ThemeMode } from '../common/theme';
+import { backendGlobal } from '../node/backend-global';
 
 export { ElectronMainApplicationGlobals };
 
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
+
+const ELECTRON_TIMER_WARNING_THRESHOLD = 50;
 
 /**
  * Options passed to the main/default command handler.
@@ -170,6 +174,9 @@ export class ElectronMainApplication {
     @inject(TheiaElectronWindowFactory)
     protected readonly windowFactory: TheiaElectronWindowFactory;
 
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
+
     protected isPortable = this.makePortable();
 
     protected readonly electronStore = new Storage<{
@@ -228,15 +235,19 @@ export class ElectronMainApplication {
                         await fs.mkdir(args.electronUserData, { recursive: true });
                         app.setPath('userData', args.electronUserData);
                     }
+                    const startupMeasurement = this.stopwatch.start('electron-main-startup');
                     this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
                     this._config = config;
                     this.hookApplicationEvents();
                     this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
-                    const port = await this.startBackend();
+                    const port = await this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend());
                     this._backendPort.resolve(port);
                     await app.whenReady();
-                    await this.attachElectronSecurityToken(port);
-                    await this.startContributions();
+                    await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
+                        () => this.attachElectronSecurityToken(port));
+                    await this.stopwatch.startAsync('electron-main-start-contributions', 'Starting contributions',
+                        () => this.startContributions());
+                    startupMeasurement.info('Startup sequence completed');
 
                     this.handleMainCommand({
                         file: args.file,
@@ -501,6 +512,13 @@ export class ElectronMainApplication {
         };
     }
 
+    closeWindowById(webContentsId: number): void {
+        const window = this.windows.get(webContentsId);
+        if (window) {
+            window.close(StopReason.Close);
+        }
+    }
+
     async openDefaultWindow(params?: WindowSearchParams): Promise<BrowserWindow> {
         const options = this.getDefaultTheiaWindowOptions();
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(params), this.reuseOrCreateWindow(options)]);
@@ -590,11 +608,9 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultTheiaWindowBounds(): TheiaBrowserWindowOptions {
-        // The `screen` API must be required when the application is ready.
-        // See: https://electronjs.org/docs/api/screen#screen
+        const { bounds } = this.getDisplayForNewWindow();
         // We must center by hand because `browserWindow.center()` fails on multi-screen setups
         // See: https://github.com/electron/electron/issues/3490
-        const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
         const height = Math.round(bounds.height * (2 / 3));
         const width = Math.round(bounds.width * (2 / 3));
         const y = Math.round(bounds.y + (bounds.height - height) / 2);
@@ -605,6 +621,52 @@ export class ElectronMainApplication {
             x,
             y
         };
+    }
+
+    /**
+     * Returns the display where a new window should be opened.
+     * Attempts to use the display nearest to the cursor position for multi-monitor setups.
+     * Falls back to the primary display if cursor position cannot be determined
+     * (e.g., on Wayland before any window is opened).
+     * See: https://github.com/eclipse-theia/theia/issues/16582
+     */
+    protected getDisplayForNewWindow(): Electron.Display {
+        // On Wayland, screen.getCursorScreenPoint() causes a native crash (SIGSEGV)
+        // before any window is opened. Detect Wayland and use primary display instead.
+        if (this.isWaylandSession()) {
+            console.debug('Running under Wayland, using primary display for new window.');
+            return screen.getPrimaryDisplay();
+        }
+        try {
+            return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+        } catch (error) {
+            console.warn('Failed to get cursor screen point, falling back to primary display.', error);
+            return screen.getPrimaryDisplay();
+        }
+    }
+
+    /**
+     * Detects if the current session is running natively under Wayland
+     * (i.e., not using X11 fallback/XWayland).
+     */
+    protected isWaylandSession(): boolean {
+        if (process.platform !== 'linux') {
+            return false;
+        }
+
+        // Primary check: WAYLAND_DISPLAY is set when a Wayland compositor is running
+        const hasWaylandDisplay = !!process.env.WAYLAND_DISPLAY;
+
+        // Secondary check: XDG_SESSION_TYPE explicitly set to 'wayland'
+        const isWaylandSession = process.env.XDG_SESSION_TYPE === 'wayland';
+
+        // Check whether X11 fallback is in use
+        const usingX11Fallback =
+            process.env.GDK_BACKEND?.includes('x11') ||
+            process.env.ELECTRON_OZONE_PLATFORM_HINT === 'x11' ||
+            process.argv.includes('--ozone-platform=x11');
+
+        return (hasWaylandDisplay || isWaylandSession) && !usingX11Fallback;
     }
 
     /**
@@ -675,10 +737,12 @@ export class ElectronMainApplication {
         process.env.THEIA_ELECTRON_VERSION = process.versions.electron;
         if (noBackendFork) {
             process.env[ElectronSecurityToken] = JSON.stringify(this.electronSecurityToken);
-            // The backend server main file is supposed to export a promise resolving with the port used by the http(s) server.
+            // The backend server main file is supposed put a promise resolving with the port used by the http(s) server into the global object.
             dynamicRequire(this.globals.THEIA_BACKEND_MAIN_PATH);
-            // @ts-expect-error
-            const address: AddressInfo = await globalThis.serverAddress;
+            const address = await backendGlobal.serverAddress;
+            if (!address) {
+                throw new Error('The backend server did not start correctly.');
+            }
             return address.port;
         } else {
             const backendProcess = fork(
@@ -866,8 +930,14 @@ export class ElectronMainApplication {
     protected async startContributions(): Promise<void> {
         const promises = [];
         for (const contribution of this.contributions.getContributions()) {
-            if (contribution.onStart) {
-                promises.push(contribution.onStart(this));
+            const onStart = contribution.onStart;
+            if (onStart) {
+                promises.push(this.stopwatch.startAsync(
+                    `${contribution.constructor.name}.onStart`,
+                    `${contribution.constructor.name}.onStart`,
+                    () => onStart.call(contribution, this),
+                    { thresholdMillis: ELECTRON_TIMER_WARNING_THRESHOLD }
+                ));
             }
         }
         await Promise.all(promises);

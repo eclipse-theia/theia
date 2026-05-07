@@ -59,14 +59,14 @@ export class MergeRangeActions {
         const sideTitle = side === 1 ? side1Title : side2Title;
         const state = model.getMergeRangeResultState(mergeRange);
 
-        if (state !== 'Unrecognized' && !state.includes('Side' + side)) {
-            if (state !== 'Base' || mergeRange.getChanges(side).length) {
-                result.push({
-                    text: nls.localizeByDefault('Accept {0}', sideTitle),
-                    tooltip: nls.localizeByDefault('Accept {0} in the result document.', sideTitle),
-                    run: () => this.applyMergeRangeAcceptedState(mergeRange, MergeRangeAcceptedState.addSide(state, side))
-                });
-            }
+        if (state !== 'Unrecognized' && !state.includes('Side' + side) && mergeRange.getChanges(side).length &&
+            (state === 'Base' || !(mergeRange.isEqualChange || mergeRange.getModifiedRange(side).isEmpty))
+        ) {
+            result.push({
+                text: nls.localizeByDefault('Accept {0}', sideTitle),
+                tooltip: nls.localizeByDefault('Accept {0} in the result document.', sideTitle),
+                run: () => this.applyMergeRangeAcceptedState(mergeRange, MergeRangeAcceptedState.addSide(state, side))
+            });
 
             if (mergeRange.canBeSmartCombined(side)) {
                 result.push({
@@ -111,9 +111,18 @@ export class MergeRangeActions {
             if (!model.isMergeRangeHandled(mergeRange)) {
                 result.push({
                     text: nls.localizeByDefault('Mark as Handled'),
-                    run: () => this.applyMergeRangeAcceptedState(mergeRange, state)
+                    run: () => this.markMergeRangeAsHandled(mergeRange)
                 });
             }
+        } else if (mergeRange.isEqualChange) {
+            result.push({
+                text: side1Title + ' = ' + side2Title
+            });
+            result.push({
+                text: nls.localizeByDefault('Reset to base'),
+                tooltip: nls.localizeByDefault('Reset this conflict to the common ancestor of both the right and left changes.'),
+                run: () => this.applyMergeRangeAcceptedState(mergeRange, 'Base')
+            });
         } else {
             const labels: string[] = [];
             const stateToggles: MergeRangeAction[] = [];
@@ -155,5 +164,33 @@ export class MergeRangeActions {
         model.applyMergeRangeAcceptedState(mergeRange, state);
         await ObservableUtils.waitForState(model.isUpToDateObservable);
         resultPane.goToMergeRange(mergeRange, { reveal: false }); // set the resulting cursor state
+    }
+
+    protected async markMergeRangeAsHandled(mergeRange: MergeRange): Promise<void> {
+        const { model, resultPane } = this.mergeEditor;
+        resultPane.activate();
+        await ObservableUtils.waitForState(model.isUpToDateObservable);
+        resultPane.goToMergeRange(mergeRange, { reveal: false });
+        const { cursor } = resultPane.editor;
+        const editorRef = new WeakRef(resultPane.editor);
+        const revealMergeRange = () => {
+            const editor = editorRef.deref();
+            if (editor && !editor.isDisposed()) {
+                editor.cursor = cursor;
+                editor.revealPosition(cursor, { vertical: 'auto' });
+            }
+        };
+        model.markMergeRangeAsHandled(mergeRange, {
+            undoRedo: {
+                callback: {
+                    didUndo(): void {
+                        revealMergeRange();
+                    },
+                    didRedo(): void {
+                        revealMergeRange();
+                    }
+                }
+            }
+        });
     }
 }

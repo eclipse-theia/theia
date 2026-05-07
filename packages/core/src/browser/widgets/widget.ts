@@ -109,6 +109,7 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     protected readonly toDispose = new DisposableCollection(
         this.onDidDisposeEmitter,
         Disposable.create(() => this.onDidDisposeEmitter.fire()),
+        Disposable.create(() => this.toDisposeOnDetach.dispose()),
         this.onScrollYReachEndEmitter,
         this.onScrollUpEmitter,
         this.onDidChangeVisibilityEmitter
@@ -119,6 +120,12 @@ export class BaseWidget extends Widget implements PreviewableWidget {
 
     constructor(@unmanaged() options?: Widget.IOptions) {
         super(options);
+    }
+
+    override get isVisible(): boolean {
+        // Reverted to @lumino/widgets pre-2.7.0 behavior using the IsVisible flag instead of the recursive parent check.
+        // Theia relies on this flag-based implementation and we need to transition to the new behavior in a follow-up (GH-16585)
+        return this.testFlag(Widget.Flag.IsVisible);
     }
 
     override dispose(): void {

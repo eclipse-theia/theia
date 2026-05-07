@@ -23,6 +23,7 @@ export const PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF = 'ai-features.promptTem
 export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTemplates.TemplateExtensions';
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 export const TASK_CONTEXT_STORAGE_DIRECTORY_PREF = 'ai-features.promptTemplates.taskContextStorageDirectory';
+export const FILE_CONTENT_MAX_SIZE_KB_PREF = 'ai-features.workspaceFunctions.fileContentMaxSizeKB';
 
 const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files \
 (highest) > workspace directories > global directories (lowest).';
@@ -91,6 +92,16 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
                 ' If set to empty value, generated task contexts will be stored in memory rather than on disk.'
             ),
             default: '.prompts/task-contexts'
+        },
+        [FILE_CONTENT_MAX_SIZE_KB_PREF]: {
+            type: 'number',
+            title: nls.localize('theia/ai/workspace/fileContentMaxSizeKB/title', 'File Content Max Size (KB)'),
+            description: nls.localize('theia/ai/workspace/fileContentMaxSizeKB/description',
+                'Maximum size in kilobytes of the content returned by the getFileContent tool. ' +
+                'When reading a full file (no offset/limit), files exceeding this limit return an error. ' +
+                'When using offset and limit, only the requested range is checked against this limit.'),
+            default: 256,
+            minimum: 1
         }
     }
 };

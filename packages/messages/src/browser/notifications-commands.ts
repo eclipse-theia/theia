@@ -47,4 +47,12 @@ export namespace NotificationsCommands {
         iconClass: codicon('clear-all'),
         label: 'Clear All Notifications'
     });
+
+    export const COPY_MESSAGE = Command.toDefaultLocalizedCommand({
+        id: 'notifications.commands.copyMessage',
+        category: NOTIFICATIONS_CATEGORY,
+        label: 'Copy Message'
+    });
 }
+
+export const NOTIFICATION_CONTEXT_MENU: string[] = ['notification-context-menu'];

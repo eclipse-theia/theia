@@ -20,30 +20,58 @@ const chalk = require('chalk').default;
 const cp = require('child_process');
 const fs = require('fs');
 
-checkPublish().catch(error => {
+const distTag = process.argv[2];
+
+checkPublish(distTag).catch(error => {
     console.error(error);
     process.exitCode = 1;
 });
 
-async function checkPublish() {
+async function checkPublish(distTag) {
     const workspaces = JSON.parse(cp.execSync('npx lerna ls --json --loglevel=silent').toString());
+    const lernaPath = path.resolve('lerna.json');
+    const newVersion = JSON.parse(await fs.promises.readFile(lernaPath, 'utf8')).version;
+
     await Promise.all(workspaces.map(async workspace => {
         const packagePath = path.resolve(workspace.location, 'package.json');
         const pck = JSON.parse(await fs.promises.readFile(packagePath, 'utf8'));
+
         if (!pck.private) {
-            const pckName = `${pck.name}@${pck.version}`;
-            const npmViewOutput = await new Promise(
-                resolve => cp.exec(`npm view ${pckName} version --json`,
-                    (error, stdout, stderr) => {
-                        if (error) {
-                            console.error(error);
-                            resolve('');
-                        } else {
-                            resolve(stdout.trim());
+            let pckName;
+            let npmViewOutput;
+
+            if (distTag === 'next') {
+                pckName = `${pck.name}@next`;
+                npmViewOutput = await new Promise(
+                    resolve => cp.exec(`npm view ${pckName} version`,
+                        (error, stdout, stderr) => {
+                            if (error) {
+                                console.error(error);
+                                resolve('');
+                            } else {
+                                // update pckName print to the actual next version below
+                                pckName = `${pck.name}@${stdout.trim()}`;
+                                resolve(pckName);
+                            }
                         }
-                    }
-                )
-            );
+                    )
+                );
+            } else {
+                pckName = `${pck.name}@${newVersion}`
+                npmViewOutput = await new Promise(
+                    resolve => cp.exec(`npm view ${pckName} version`,
+                        (error, stdout, stderr) => {
+                            if (error) {
+                                console.error(error);
+                                resolve('');
+                            } else {
+                                resolve(stdout.trim());
+                            }
+                        }
+                    )
+                );
+            }
+
             if (npmViewOutput) {
                 console.info(`${pckName}: published`);
             } else {

@@ -16,11 +16,32 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from '../common/google-preferences';
 import { PreferenceService } from '@theia/core';
 
 const GOOGLE_PROVIDER_ID = 'google';
+
+/** Gemini 3 uses `thinkingConfig.thinkingLevel`. */
+const EFFORT_REASONING = /^gemini-3(?:\.|-)/i;
+/** Gemini 2.5 uses `thinkingConfig.thinkingBudget` (integer; `-1` dynamic, `0` off). */
+const BUDGET_REASONING = /^gemini-2\.5(?:-|$)/i;
+
+const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
+function reasoningApiFor(modelId: string): ReasoningApi | undefined {
+    if (EFFORT_REASONING.test(modelId)) {
+        return 'effort';
+    }
+    if (BUDGET_REASONING.test(modelId)) {
+        return 'budget';
+    }
+    return undefined;
+}
 
 @injectable()
 export class GoogleFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -48,16 +69,17 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue as string);
-                    this.handleKeyChange(event.newValue as string);
+                    const newApiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+                    this.manager.setApiKey(newApiKey);
+                    this.handleKeyChange(newApiKey);
                 } else if (event.preferenceName === MAX_RETRIES) {
-                    this.manager.setMaxRetriesOnErrors(event.newValue as number);
+                    this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
                 } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
-                    this.manager.setRetryDelayOnRateLimitError(event.newValue as number);
+                    this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
                 } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
-                    this.manager.setRetryDelayOnOtherErrors(event.newValue as number);
+                    this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(event.newValue as string[]);
+                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 }
             });
         });
@@ -86,12 +108,15 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
 
     protected createGeminiModelDescription(modelId: string): GoogleModelDescription {
         const id = `${GOOGLE_PROVIDER_ID}/${modelId}`;
+        const reasoningApi = reasoningApiFor(modelId);
 
         const description: GoogleModelDescription = {
             id: id,
             model: modelId,
             apiKey: true,
-            enableStreaming: true
+            enableStreaming: true,
+            reasoningSupport: reasoningApi ? GEMINI_REASONING_SUPPORT : undefined,
+            reasoningApi
         };
 
         return description;

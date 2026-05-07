@@ -1,0 +1,17 @@
+labels: []
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know about Eclipse Theia?
+      placeholder: Ask your question here...
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        💙 Eclipse Theia is community-supported. If you find it valuable, consider supporting the project: https://theia-ide.org/support/

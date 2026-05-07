@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
@@ -27,9 +28,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
-
-    @inject(TokenUsageService)
-    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -47,19 +45,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 }
                 return undefined;
             };
-            const proxyUrlProvider = () => {
-                // first check if the proxy url is provided via Theia settings
-                if (this._proxyUrl) {
-                    return this._proxyUrl;
-                }
+            const proxyUrl = getProxyUrl(modelDescription.url ?? 'https://api.anthropic.com', this._proxyUrl);
 
-                // if not fall back to the environment variables
-                return process.env['https_proxy'];
-            };
-
-            // Determine status based on API key presence
-            const effectiveApiKey = apiKeyProvider();
-            const status = this.getStatusForApiKey(effectiveApiKey);
+            // Determine status based on API key and custom url presence
+            const status = this.calculateStatus(modelDescription, apiKeyProvider());
 
             if (model) {
                 if (!(model instanceof AnthropicModel)) {
@@ -69,10 +58,16 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 await this.languageModelRegistry.patchLanguageModel<AnthropicModel>(modelDescription.id, {
                     model: modelDescription.model,
                     enableStreaming: modelDescription.enableStreaming,
+                    url: modelDescription.url,
+                    useCaching: modelDescription.useCaching,
                     apiKey: apiKeyProvider,
                     status,
                     maxTokens: modelDescription.maxTokens !== undefined ? modelDescription.maxTokens : DEFAULT_MAX_TOKENS,
-                    maxRetries: modelDescription.maxRetries
+                    maxRetries: modelDescription.maxRetries,
+                    proxy: proxyUrl,
+                    reasoningSupport: modelDescription.reasoningSupport,
+                    reasoningApi: modelDescription.reasoningApi,
+                    supportsXHighEffort: modelDescription.supportsXHighEffort
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -83,10 +78,13 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.enableStreaming,
                         modelDescription.useCaching,
                         apiKeyProvider,
+                        modelDescription.url,
                         modelDescription.maxTokens,
                         modelDescription.maxRetries,
-                        this.tokenUsageService,
-                        proxyUrlProvider()
+                        proxyUrl,
+                        modelDescription.reasoningSupport,
+                        modelDescription.reasoningApi,
+                        modelDescription.supportsXHighEffort
                     )
                 ]);
             }
@@ -114,12 +112,15 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     }
 
     /**
-     * Returns the status for a language model based on the presence of an API key.
+     * Returns the status for a language model based on the presence of an API key or custom url.
      */
-    protected getStatusForApiKey(effectiveApiKey: string | undefined): LanguageModelStatus {
+    protected calculateStatus(modelDescription: AnthropicModelDescription, effectiveApiKey: string | undefined): LanguageModelStatus {
+        // Always mark custom models (models with url) as ready for now as we do not know about API Key requirements
+        if (modelDescription.url) {
+            return { status: 'ready' };
+        }
         return effectiveApiKey
             ? { status: 'ready' }
-            : { status: 'unavailable', message: 'No API key set' };
+            : { status: 'unavailable', message: 'No Anthropic API key set' };
     }
 }
-

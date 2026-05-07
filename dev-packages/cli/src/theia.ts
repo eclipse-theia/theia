@@ -432,7 +432,13 @@ async function theiaCli(): Promise<void> {
                 if (!client) {
                     client = new OVSXHttpClient(apiUrl, requestService, rateLimiter);
                 }
-                await downloadPlugins(client, rateLimiter, requestService, options);
+                try {
+                    await downloadPlugins(client, rateLimiter, requestService, options);
+                } catch (error) {
+                    console.error(error);
+                    process.exit(1);
+                }
+                process.exit(0);
             },
         })
         .command<{

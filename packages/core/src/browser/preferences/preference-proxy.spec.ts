@@ -201,11 +201,7 @@ describe('Preference Proxy', () => {
 
                 await getProvider(PreferenceScope.User).setPreference('my.pref', 'bar');
 
-                expect(theChange!.newValue).to.equal('bar');
-                expect(theChange!.oldValue).to.equal(undefined);
                 expect(theChange!.preferenceName).to.equal('my.pref');
-                expect(theSecondChange!.newValue).to.equal('bar');
-                expect(theSecondChange!.oldValue).to.equal(undefined);
                 expect(theSecondChange!.preferenceName).to.equal('my.pref');
             });
 

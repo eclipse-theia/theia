@@ -40,11 +40,11 @@ export class PreferenceStringInputRenderer extends PreferenceLeafNodeRenderer<st
     protected doHandleValueChange(): void {
         const currentValue = this.interactable.value;
         this.updateInspection();
-        const newValue = this.getValue() ?? '';
-        this.updateModificationStatus(newValue);
+        const newValue = this.getValue();
+        this.updateModificationStatus();
         if (newValue !== currentValue) {
             if (document.activeElement !== this.interactable) {
-                this.interactable.value = newValue;
+                this.interactable.value = newValue ?? this.getDefaultValue();
             } else {
                 this.handleUserInteraction(); // give priority to the value of the input if it is focused.
             }

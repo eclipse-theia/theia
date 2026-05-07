@@ -1,6 +1,6 @@
 {
   "$schema": "vscode://schemas/color-theme",
-  "name": "Light+ (default light)",
+  "name": "Light+",
   "include": "./light_vs.json",
   "tokenColors": [
     {
@@ -19,7 +19,6 @@
     {
       "name": "Types declaration and references",
       "scope": [
-        "meta.return-type",
         "support.class",
         "support.type",
         "entity.name.type",
@@ -65,7 +64,8 @@
         "support.constant.math",
         "support.constant.dom",
         "support.constant.json",
-        "entity.other.inherited-class"
+        "entity.other.inherited-class",
+        "punctuation.separator.namespace.ruby"
       ],
       "settings": {
         "foreground": "#267f99"
@@ -78,6 +78,7 @@
         "source.cpp keyword.operator.new",
         "source.cpp keyword.operator.delete",
         "keyword.other.using",
+        "keyword.other.directive.using",
         "keyword.other.operator",
         "entity.name.operator"
       ],
@@ -174,7 +175,10 @@
       }
     },
     {
-      "scope": "constant.character",
+      "scope": [
+        "constant.character",
+        "constant.other.option"
+      ],
       "settings": {
         "foreground": "#0000ff"
       }

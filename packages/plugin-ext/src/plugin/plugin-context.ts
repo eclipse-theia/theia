@@ -80,6 +80,8 @@ import {
     SignatureHelp,
     SignatureHelpTriggerKind,
     Hover,
+    VerboseHover,
+    HoverVerbosityAction,
     EvaluatableExpression,
     InlineValueEvaluatableExpression,
     InlineValueText,
@@ -138,6 +140,7 @@ import {
     FileSystemError,
     CommentThreadState,
     CommentThreadCollapsibleState,
+    QuickInputButtonLocation,
     QuickInputButtons,
     QuickPickItemKind,
     CommentMode,
@@ -227,6 +230,7 @@ import {
     LanguageModelChatMessage,
     LanguageModelChatMessageRole,
     LanguageModelChatToolMode,
+    LanguageModelDataPart,
     LanguageModelError,
     LanguageModelPromptTsxPart,
     LanguageModelTextPart,
@@ -237,6 +241,7 @@ import {
     PortAttributes,
     DebugVisualization,
     TerminalShellExecutionCommandLineConfidence,
+    TerminalCompletionItem,
     TerminalCompletionItemKind,
     TerminalCompletionList,
     McpHttpServerDefinition,
@@ -252,7 +257,7 @@ import { DocumentsExtImpl } from './documents';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { OutputChannelRegistryExtImpl } from './output-channel-registry';
-import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext';
+import { TerminalServiceExtImpl } from './terminal-ext';
 import { LanguagesExtImpl } from './languages';
 import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
@@ -343,7 +348,7 @@ export function createAPIFactory(
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionImpl(rpc.getProxy(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN)));
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry, fileSystemExt));
-    const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt));
+    const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt, workspaceExt));
     const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
@@ -457,7 +462,7 @@ export function createAPIFactory(
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
 
-            get activeTerminal(): TerminalExtImpl | undefined {
+            get activeTerminal(): theia.Terminal | undefined {
                 return terminalExt.activeTerminal;
             },
             get activeTextEditor(): TextEditorExt | undefined {
@@ -466,7 +471,7 @@ export function createAPIFactory(
             get visibleTextEditors(): theia.TextEditor[] {
                 return editors.getVisibleTextEditors();
             },
-            get terminals(): TerminalExtImpl[] {
+            get terminals(): theia.Terminal[] {
                 return terminalExt.terminals;
             },
             onDidChangeActiveTerminal,
@@ -628,7 +633,7 @@ export function createAPIFactory(
             createTerminal(nameOrOptions: theia.TerminalOptions | theia.ExtensionTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
                 shellPath?: string,
                 shellArgs?: string[] | string): theia.Terminal {
-                return createAPIObject(terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs));
+                return terminalExt.createTerminal(plugin, nameOrOptions, shellPath, shellArgs, createAPIObject);
             },
             onDidChangeTerminalState,
             onDidCloseTerminal,
@@ -686,7 +691,7 @@ export function createAPIFactory(
             },
             /** @stubbed TerminalCompletionProvider */
             registerTerminalCompletionProvider<T extends theia.TerminalCompletionItem>(
-                id: string, provider: theia.TerminalCompletionProvider<T>, ...triggerCharacters: string[]): theia.Disposable {
+                provider: theia.TerminalCompletionProvider<T>, ...triggerCharacters: string[]): Disposable {
                 return Disposable.NULL;
             },
             /** @stubbed TerminalQuickFixProvider */
@@ -892,6 +897,9 @@ export function createAPIFactory(
             get onDidGrantWorkspaceTrust(): theia.Event<void> {
                 return workspaceExt.onDidGrantWorkspaceTrust;
             },
+            get onDidChangeWorkspaceTrust(): theia.Event<boolean> {
+                return workspaceExt.onDidChangeWorkspaceTrust;
+            },
             registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider) {
                 return workspaceExt.$registerEditSessionIdentityProvider(scheme, provider);
             },
@@ -922,6 +930,7 @@ export function createAPIFactory(
             get appHost(): string { return envExt.appHost; },
             get language(): string { return envExt.language; },
             get isNewAppInstall(): boolean { return envExt.isNewAppInstall; },
+            get isAppPortable(): boolean { return envExt.isAppPortable; },
             get isTelemetryEnabled(): boolean { return telemetryExt.isTelemetryEnabled; },
             get onDidChangeTelemetryEnabled(): theia.Event<boolean> {
                 return telemetryExt.onDidChangeTelemetryEnabled;
@@ -1277,8 +1286,8 @@ export function createAPIFactory(
                     throw new Error('Input box not found!');
                 }
             },
-            createSourceControl(id: string, label: string, rootUri?: URI): theia.SourceControl {
-                return createAPIObject(scmExt.createSourceControl(plugin, id, label, rootUri));
+            createSourceControl(id: string, label: string, rootUri?: URI, iconPath?: theia.IconPath, isHidden?: boolean, parent?: theia.SourceControl): theia.SourceControl {
+                return scmExt.createSourceControl(plugin, id, label, rootUri, iconPath, isHidden, parent);
             }
         };
 
@@ -1459,6 +1468,8 @@ export function createAPIFactory(
             SignatureHelp,
             SignatureHelpTriggerKind,
             Hover,
+            VerboseHover,
+            HoverVerbosityAction,
             EvaluatableExpression,
             InlineValueEvaluatableExpression,
             InlineValueText,
@@ -1521,6 +1532,7 @@ export function createAPIFactory(
             FileSystemError,
             CommentThreadState,
             CommentThreadCollapsibleState,
+            QuickInputButtonLocation,
             QuickInputButtons,
             CommentMode,
             CallHierarchyItem,
@@ -1607,6 +1619,7 @@ export function createAPIFactory(
             ChatResultFeedbackKind,
             LanguageModelChatMessage,
             LanguageModelChatMessageRole,
+            LanguageModelDataPart,
             LanguageModelError,
             LanguageModelChatToolMode,
             LanguageModelPromptTsxPart,
@@ -1618,6 +1631,7 @@ export function createAPIFactory(
             PortAttributes,
             DebugVisualization,
             TerminalShellExecutionCommandLineConfidence,
+            TerminalCompletionItem,
             TerminalCompletionItemKind,
             TerminalCompletionList,
             McpHttpServerDefinition,

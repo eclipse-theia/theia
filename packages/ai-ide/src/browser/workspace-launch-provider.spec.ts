@@ -144,20 +144,24 @@ describe('Launch Management Tool Providers', () => {
             expect(tool.description).to.contain(
                 'Lists available launch configurations'
             );
-            expect(tool.parameters.required).to.deep.equal(['filter']);
+            expect(tool.parameters.required).to.deep.equal([]);
         });
 
-        it('should list all configurations without filter', async () => {
+        it('should list all configurations when filter is omitted', async () => {
             const tool = launchListProvider.getTool();
-            const result = await tool.handler('{"filter":""}');
+            const result = await tool.handler('{}');
             expect(result).to.be.a('string');
             const configurations = JSON.parse(result as string);
 
             expect(configurations).to.be.an('array');
             expect(configurations).to.have.lengthOf(3);
-            expect(configurations).to.include('Node.js Debug');
-            expect(configurations).to.include('Python Debug');
-            expect(configurations).to.include('Launch All');
+            expect(configurations.map((c: { name: string }) => c.name)).to.include('Node.js Debug');
+            expect(configurations.map((c: { name: string }) => c.name)).to.include('Python Debug');
+            expect(configurations.map((c: { name: string }) => c.name)).to.include('Launch All');
+            // All configurations should show running: false since no sessions are active
+            configurations.forEach((config: { name: string; running: boolean }) => {
+                expect(config.running).to.equal(false);
+            });
         });
 
         it('should filter configurations by name', async () => {
@@ -168,7 +172,8 @@ describe('Launch Management Tool Providers', () => {
 
             expect(configurations).to.be.an('array');
             expect(configurations).to.have.lengthOf(1);
-            expect(configurations).to.include('Node.js Debug');
+            expect(configurations[0].name).to.equal('Node.js Debug');
+            expect(configurations[0].running).to.equal(false);
         });
 
         it('should handle case-insensitive filtering', async () => {
@@ -179,7 +184,8 @@ describe('Launch Management Tool Providers', () => {
 
             expect(configurations).to.be.an('array');
             expect(configurations).to.have.lengthOf(1);
-            expect(configurations).to.include('Python Debug');
+            expect(configurations[0].name).to.equal('Python Debug');
+            expect(configurations[0].running).to.equal(false);
         });
     });
 
@@ -189,7 +195,7 @@ describe('Launch Management Tool Providers', () => {
             expect(tool.id).to.equal('runLaunchConfiguration');
             expect(tool.name).to.equal('runLaunchConfiguration');
             expect(tool.description).to.contain(
-                'Executes a specified launch configuration'
+                'Starts a launch configuration'
             );
             expect(tool.parameters.required).to.deep.equal([
                 'configurationName',

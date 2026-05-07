@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, codicon } from '@theia/core/lib/browser';
+import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, OnWillStopAction, codicon } from '@theia/core/lib/browser';
 import { MessageService, PreferenceChange, PreferenceServiceImpl } from '@theia/core/lib/common';
 import { CommandRegistry } from '@theia/core/shared/@lumino/commands';
 import { Menu } from '@theia/core/shared/@lumino/widgets';
@@ -70,6 +70,23 @@ export class HostedPluginController implements FrontendApplicationContribution {
     // used only for displaying Running instead of Watching in status bar if run of watcher fails
     private watcherSuccess: boolean;
     private entry: StatusBarEntry | undefined;
+
+    onWillStop(): OnWillStopAction | undefined {
+        if (this.pluginState === HostedInstanceState.RUNNING || this.pluginState === HostedInstanceState.STARTING) {
+            return {
+                reason: 'Hosted plugin instance is still running',
+                action: async () => {
+                    try {
+                        await this.hostedPluginManagerClient.stop(false);
+                    } catch {
+                        // Best effort — don't block shutdown if termination fails
+                    }
+                    return true;
+                }
+            };
+        }
+        return undefined;
+    }
 
     public initialize(): void {
         this.hostedPluginServer.getHostedPlugin().then(pluginMetadata => {
@@ -195,7 +212,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
             if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
                 const pluginLocation = await this.hostedPluginServer.getHostedPluginURI();
                 const isWatchCompilationRunning = await this.hostedPluginServer.isWatchCompilationRunning(pluginLocation);
-                if (preference.newValue === true) {
+                if (this.hostedPluginPreferences['hosted-plugin.watchMode']) {
                     if (!isWatchCompilationRunning) {
                         await this.runWatchCompilation(pluginLocation.toString());
                     }

@@ -22,7 +22,7 @@ import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import { inject, named, injectable, postConstruct } from 'inversify';
-import { ContributionProvider, MaybePromise, Stopwatch } from '../common';
+import { ContributionProvider, LogLevel, MaybePromise, MeasurementContext, Stopwatch } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
@@ -164,6 +164,8 @@ export class BackendApplication {
 
     private _configured: Promise<void>;
 
+    private settlementContext?: MeasurementContext<BackendApplicationContribution>;
+
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
@@ -195,9 +197,8 @@ export class BackendApplication {
         await Promise.all(this.contributionsProvider.getContributions().map(async contribution => {
             if (contribution.initialize) {
                 try {
-                    await this.measure(contribution.constructor.name + '.initialize',
-                        () => contribution.initialize!()
-                    );
+                    await this.measureContribution(contribution, 'initialize',
+                        () => contribution.initialize!());
                 } catch (error) {
                     console.error('Could not initialize contribution', error);
                 }
@@ -211,6 +212,7 @@ export class BackendApplication {
 
     @postConstruct()
     protected init(): void {
+        this.settlementContext = new MeasurementContext(this.stopwatch, 'Backend', TIMER_WARNING_THRESHOLD);
         this._configured = this.configure();
     }
 
@@ -232,7 +234,8 @@ export class BackendApplication {
         await Promise.all(this.contributionsProvider.getContributions().map(async contribution => {
             if (contribution.configure) {
                 try {
-                    await contribution.configure!(this.app);
+                    await this.measureContribution(contribution, 'configure',
+                        () => contribution.configure!(this.app));
                 } catch (error) {
                     console.error('Could not configure contribution', error);
                 }
@@ -246,6 +249,8 @@ export class BackendApplication {
     }
 
     async start(port?: number, hostname?: string): Promise<http.Server | https.Server> {
+        const startupMeasurement = this.stopwatch.start('backend-startup');
+
         hostname ??= this.cliParams.hostname;
         port ??= this.cliParams.port;
 
@@ -307,15 +312,17 @@ export class BackendApplication {
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.onStart) {
                 try {
-                    await this.measure(contribution.constructor.name + '.onStart',
-                        () => contribution.onStart!(server)
-                    );
+                    await this.measureContribution(contribution, 'onStart',
+                        () => contribution.onStart!(server));
                 } catch (error) {
                     console.error('Could not start contribution', error);
                 }
             }
         }
-        return this.stopwatch.startAsync('server', 'Finished starting backend application', () => deferred.promise);
+        await deferred.promise;
+        startupMeasurement.info('Backend application startup sequence completed (async work may still be pending)');
+        this.settlementContext?.armAllSettled();
+        return server;
     }
 
     protected getHttpUrl({ address, port, family }: AddressInfo, ssl?: boolean): string {
@@ -358,8 +365,18 @@ export class BackendApplication {
         next();
     }
 
+    protected async measureContribution<T>(contribution: BackendApplicationContribution, hook: string, fn: () => MaybePromise<T>): Promise<T> {
+        let innerResult: MaybePromise<T>;
+        this.settlementContext?.ensureEntry(contribution);
+        const result = await this.measure(contribution.constructor.name + '.' + hook,
+            () => (innerResult = fn())
+        );
+        this.settlementContext?.trackSettlement(contribution, innerResult!);
+        return result;
+    }
+
     protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
-        return this.stopwatch.startAsync(name, `Backend ${name}`, fn, { thresholdMillis: TIMER_WARNING_THRESHOLD });
+        return this.stopwatch.startAsync(name, `Backend ${name}`, fn, { thresholdMillis: TIMER_WARNING_THRESHOLD, defaultLogLevel: LogLevel.DEBUG });
     }
 
     protected handleUncaughtError(error: Error): void {

@@ -1,0 +1,90 @@
+/********************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Base styles for all AI configuration widgets */
+
+.ai-configuration-widget-content {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+/* Empty state styling */
+.ai-configuration-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--theia-ui-padding);
+}
+
+.ai-empty-state-message {
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+/* Configuration section styling */
+.ai-configuration-section {
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+}
+
+.ai-configuration-section:last-child {
+  margin-bottom: 0;
+}
+
+.ai-configuration-section-content {
+  padding: var(--theia-ui-padding) 0;
+}
+
+.ai-configuration-section-content ul,
+.ai-configuration-section-content ol {
+  padding-left: calc(var(--theia-ui-padding) * 2);
+  margin: 0 var(--theia-ui-padding) 0;
+}
+
+/* Expandable section styling */
+.ai-expandable-section {
+  margin-bottom: var(--theia-ui-padding);
+}
+
+.ai-expandable-section-header {
+  display: flex;
+  align-items: center;
+  padding: calc(var(--theia-ui-padding) / 2) 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ai-expandable-section-header:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-expandable-section-icon {
+  display: flex;
+  align-items: center;
+  margin-right: calc(var(--theia-ui-padding) / 2);
+  color: var(--theia-icon-foreground);
+}
+
+.ai-expandable-section-title {
+  flex: 1;
+  font-weight: 500;
+}
+
+.ai-expandable-section-content {
+  padding-left: calc(var(--theia-ui-padding) * 2);
+  padding-top: calc(var(--theia-ui-padding) / 2);
+}

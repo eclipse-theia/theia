@@ -36,11 +36,11 @@ export const OPEN_CONTAINING_FOLDER = Command.toDefaultLocalizedCommand({
         /* linux */ 'Open Containing Folder'
 });
 
-export const OPEN_WITH_SYSTEM_APP = Command.toDefaultLocalizedCommand({
+export const OPEN_WITH_SYSTEM_APP = Command.toLocalizedCommand({
     id: 'openWithSystemApp',
     category: CommonCommands.FILE_CATEGORY,
     label: 'Open With System Editor'
-});
+}, 'theia/navigator/openWithSystemEditor');
 
 @injectable()
 export class ElectronNavigatorMenuContribution implements MenuContribution, CommandContribution, KeybindingContribution {

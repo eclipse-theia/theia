@@ -28,7 +28,6 @@ import { generateUuid, ILogger, nls } from '@theia/core';
 import { terminalPrompts } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
-import zodToJsonSchema from 'zod-to-json-schema';
 
 const Commands = z.object({
     commands: z.array(z.string()),
@@ -116,6 +115,8 @@ export class AiTerminalAgent implements Agent {
             return [];
         }
 
+        const variantInfo = this.promptService.getPromptVariantInfo('terminal-system');
+
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
@@ -137,12 +138,14 @@ export class AiTerminalAgent implements Agent {
                 json_schema: {
                     name: 'terminal-commands',
                     description: 'Suggested terminal commands based on the user request',
-                    schema: zodToJsonSchema(Commands)
+                    schema: Commands.toJSONSchema()
                 }
             },
             agentId: this.id,
             requestId,
-            sessionId
+            sessionId,
+            promptVariantId: variantInfo?.variantId,
+            isPromptVariantCustomized: variantInfo?.isCustomized
         };
 
         try {

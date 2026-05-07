@@ -178,7 +178,8 @@ export enum CompletionItemKind {
     TypeParameter = 24,
     User = 25,
     Issue = 26,
-    Snippet = 27
+    Tool = 27,
+    Snippet = 28
 }
 
 export class IdObject {
@@ -210,6 +211,8 @@ export interface MarkerData {
     endColumn: number;
     relatedInformation?: RelatedInformation[];
     tags?: MarkerTag[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any;
 }
 
 export interface RelatedInformation {
@@ -261,10 +264,26 @@ export interface SignatureHelpContext {
 export interface Hover {
     contents: MarkdownStringDTO[];
     range?: Range;
+    canIncreaseVerbosity?: boolean;
+    canDecreaseVerbosity?: boolean;
 }
 
 export interface HoverProvider {
     provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
+}
+
+export interface HoverContext<THover = Hover> {
+    verbosityRequest?: HoverVerbosityRequest<THover>;
+}
+
+export interface HoverVerbosityRequest<THover = Hover> {
+    verbosityDelta: number;
+    previousHover: THover;
+}
+
+export enum HoverVerbosityAction {
+    Increase,
+    Decrease
 }
 
 export interface EvaluatableExpression {
@@ -836,6 +855,14 @@ export interface InlineCompletionContext {
     readonly triggerKind: InlineCompletionTriggerKind;
 
     readonly selectedSuggestionInfo: SelectedSuggestionInfo | undefined;
+
+    readonly includeInlineEdits: boolean;
+
+    readonly includeInlineCompletions: boolean;
+
+    readonly requestIssuedDateTime: number;
+
+    readonly earliestShownDateTime: number;
 }
 
 export interface SelectedSuggestionInfo {

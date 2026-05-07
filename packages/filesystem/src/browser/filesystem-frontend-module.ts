@@ -25,7 +25,7 @@ import { FileSystemFrontendContribution } from './filesystem-frontend-contributi
 import { FileTreeDecoratorAdapter, FileTreeLabelProvider } from './file-tree';
 import { FileService, FileServiceContribution } from './file-service';
 import { RemoteFileSystemProvider, RemoteFileSystemServer, remoteFileSystemPath, RemoteFileSystemProxyFactory } from '../common/remote-file-system-provider';
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { RemoteFileServiceContribution } from './remote-file-service-contribution';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FilepathBreadcrumbsContribution } from './breadcrumbs/filepath-breadcrumbs-contribution';
@@ -39,7 +39,7 @@ import { FileUploadServiceImpl } from './upload/file-upload-service-impl';
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindFileSystemPreferences(bind);
 
-    bindContributionProvider(bind, FileServiceContribution);
+    bindRootContributionProvider(bind, FileServiceContribution);
     bind(FileService).toSelf().inSingletonScope();
 
     bind(RemoteFileSystemServer).toDynamicValue(ctx =>

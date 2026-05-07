@@ -641,7 +641,7 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
                         return JSON.parse(this.text());
                     },
                     blob(): Blob {
-                        return new Blob([this.data()], { type: this.mime });
+                        return new Blob([new Uint8Array(this.data())], { type: this.mime });
                     },
 
                 }));

@@ -131,7 +131,7 @@ Where `root` is the name of the logger and `INFO` is the log level. These are op
 
 ## Additional Information
 
-- [API documentation for `@theia/core`](https://eclipse-theia.github.io/theia/docs/next/modules/core.html)
+- [API documentation for `@theia/core`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_core.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

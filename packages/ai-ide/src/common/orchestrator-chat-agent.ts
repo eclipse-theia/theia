@@ -41,7 +41,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     override description = nls.localize('theia/ai/chat/orchestrator/description',
         'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
     (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.');
-    override iconClass: string = 'codicon codicon-symbol-boolean';
+    override iconClass: string = 'codicon codicon-milestone';
     override agentSpecificVariables = [{
         name: 'availableChatAgents',
         description: nls.localize('theia/ai/chat/orchestrator/vars/availableChatAgents/description',
@@ -68,13 +68,15 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         const availableAgents = this.getAvailableAgentsForDelegation(excludedAgents);
         const availableChatAgentsValue = availableAgents.map(agent => prettyPrintAgentInMd(agent)).join('\n');
 
+        const variantInfo = this.promptService.getPromptVariantInfo(this.systemPromptId);
+
         const resolvedPrompt = await this.promptService.getResolvedPromptFragment(
             this.systemPromptId,
             { availableChatAgents: availableChatAgentsValue },
             context
         );
 
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt) : undefined;
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, variantInfo?.variantId, variantInfo?.isCustomized) : undefined;
     }
 
     protected getAvailableAgentsForDelegation(excludedAgents: string[]): Array<{ id: string; name: string; description: string }> {
@@ -104,10 +106,13 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
         toolRequests: ChatToolRequest[],
-        languageModel: LanguageModel
+        languageModel: LanguageModel,
+        promptVariantId?: string,
+        isPromptVariantCustomized?: boolean
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
-        const settings = { ...agentSettings, ...request.session.settings };
+        const { commonSettings, providerSettings } = this.getSessionSettings(request);
+        const settings = { ...agentSettings, ...providerSettings };
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
         const subRequestId = request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id;
         request.removeData(OrchestratorRequestIdKey);
@@ -117,11 +122,14 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
                 messages,
                 tools,
                 settings,
+                reasoning: commonSettings?.reasoning,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
                 subRequestId: subRequestId,
-                cancellationToken: request.response.cancellationToken
+                cancellationToken: request.response.cancellationToken,
+                promptVariantId,
+                isPromptVariantCustomized
             }
         );
     }

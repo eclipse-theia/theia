@@ -60,7 +60,7 @@ Example of a workspace file below:
 
 ## Additional Information
 
-- [API documentation for `@theia/preferences`](https://eclipse-theia.github.io/theia/docs/next/modules/preferences.html)
+- [API documentation for `@theia/preferences`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_preferences.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

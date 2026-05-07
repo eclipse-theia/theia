@@ -63,17 +63,17 @@ export class PortForwardingWidget extends ReactWidget {
                 <thead>
                     <tr>
                         <th className='port-table-header'>{nls.localizeByDefault('Port')}</th>
+                        <th className='port-table-header'>{nls.localizeByDefault('Label')}</th>
                         <th className='port-table-header'>{nls.localizeByDefault('Address')}</th>
-                        <th className='port-table-header'>{nls.localizeByDefault('Running Process')}</th>
                         <th className='port-table-header'>{nls.localizeByDefault('Origin')}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {this.portForwardingService.forwardedPorts.map(port => (
-                        <tr key={`${port.address}:${port.localPort}` ?? 'editing'}>
+                        <tr key={port.address && port.localPort ? `${port.address}:${port.localPort}` : 'editing'}>
                             {this.renderPortColumn(port)}
+                            <td>{port.label ?? ''}</td>
                             {this.renderAddressColumn(port)}
-                            <td></td>
                             <td>{port.origin ? nls.localizeByDefault(port.origin) : ''}</td>
                         </tr>
                     ))}

@@ -98,7 +98,8 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
                 nls.localizeByDefault('Menu is always hidden.'),
                 environment.electron.is()
-                    ? nls.localizeByDefault('Menu is displayed as a compact button in the side bar. This value is ignored when {0} is {1}.', '`#window.titleBarStyle#`', '`native`')
+                    // we do not support the window.menuStyle setting yet, so we do not use the default string in this case yet
+                    ? nls.localize('theia/core/window.menuBarVisibility', 'Menu is displayed as a compact button in the side bar. This value is ignored when {0} is {1}.', '`#window.titleBarStyle#`', '`native`')
                     : nls.localizeByDefault('Menu is displayed as a compact button in the side bar.')
             ],
             default: 'classic',

@@ -45,7 +45,7 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
         this.registerCodeActionProvider();
 
         // Listen to AI activation changes and re-register the provider
-        this.activationService.onDidChangeActiveStatus(() => {
+        this.activationService.onDidChangeCanRun(() => {
             this.toDispose.dispose();
             this.registerCodeActionProvider();
         });
@@ -56,7 +56,7 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
     }
 
     protected registerCodeActionProvider(): void {
-        if (!this.activationService.isActive) {
+        if (!this.activationService.canRun) {
             // AI is disabled, don't register the provider
             return;
         }
@@ -64,7 +64,7 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
         const disposable = monaco.languages.registerCodeActionProvider('*', {
             provideCodeActions: (model, range, context, token) => {
                 // Double-check activation status in the provider
-                if (!this.activationService.isActive) {
+                if (!this.activationService.canRun) {
                     return { actions: [], dispose: () => { } };
                 }
 
@@ -81,13 +81,13 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
                 // Create code actions for each error marker: Fix with AI and Explain with AI
                 errorMarkers.forEach(marker => {
                     actions.push({
-                        title: nls.localize('theia/ai/editor/fixWithAI/title', 'Fix with AI'),
+                        title: nls.localizeByDefault('Fix with AI'),
                         diagnostics: [marker],
                         isAI: true,
                         kind: 'quickfix',
                         command: {
                             id: AI_EDITOR_SEND_TO_CHAT.id,
-                            title: nls.localize('theia/ai/editor/fixWithAI/title', 'Fix with AI'),
+                            title: nls.localizeByDefault('Fix with AI'),
                             arguments: [{
                                 prompt: `@Coder ${nls.localize('theia/ai/editor/fixWithAI/prompt', 'Help to fix this error')}: "${marker.message}"`
                             }]

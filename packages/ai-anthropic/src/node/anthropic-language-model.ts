@@ -15,25 +15,28 @@
 // *****************************************************************************
 
 import {
+    createToolCallError,
+    ImageContent,
+    ImageMimeType,
     LanguageModel,
-    LanguageModelRequest,
     LanguageModelMessage,
+    LanguageModelRequest,
     LanguageModelResponse,
+    LanguageModelStatus,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageService,
-    TokenUsageParams,
-    UserRequest,
-    ImageContent,
+    ReasoningApi,
+    ReasoningSupport,
     ToolCallResult,
-    ImageMimeType,
-    LanguageModelStatus
+    ToolInvocationContext,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
-import * as undici from 'undici';
+import { createProxyFetch } from '@theia/ai-core/lib/node';
+import { anthropicReasoningFor } from './anthropic-reasoning';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -190,7 +193,8 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
 }
 
 /**
- * Implements the Anthropic language model integration for Theia
+ * Implements the Anthropic language model integration for Theia. Reasoning-level
+ * translation lives in {@link anthropicReasoningFor}.
  */
 export class AnthropicModel implements LanguageModel {
 
@@ -201,14 +205,20 @@ export class AnthropicModel implements LanguageModel {
         public enableStreaming: boolean,
         public useCaching: boolean,
         public apiKey: () => string | undefined,
+        public url: string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService,
-        protected proxy?: string
+        public proxy?: string,
+        public reasoningSupport?: ReasoningSupport,
+        public reasoningApi?: ReasoningApi,
+        public supportsXHighEffort?: boolean
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        return request.settings ?? {};
+        return {
+            ...request.settings,
+            ...anthropicReasoningFor(request.reasoning?.level, this.reasoningApi, this.supportsXHighEffort)
+        };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -268,75 +278,88 @@ export class AnthropicModel implements LanguageModel {
                 let toolCall: ToolCallback | undefined;
                 const currentMessages: Message[] = [];
                 let currentMessage: Message | undefined = undefined;
+                let currentOutputTokens: number = 0;
+                let usageYielded = false;
 
-                for await (const event of stream) {
-                    if (event.type === 'content_block_start') {
-                        const contentBlock = event.content_block;
+                try {
+                    for await (const event of stream) {
+                        if (event.type === 'content_block_start') {
+                            const contentBlock = event.content_block;
 
-                        if (contentBlock.type === 'thinking') {
-                            yield { thought: contentBlock.thinking, signature: contentBlock.signature ?? '' };
-                        }
-                        if (contentBlock.type === 'text') {
-                            yield { content: contentBlock.text };
-                        }
-                        if (contentBlock.type === 'tool_use') {
-                            toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
-                            yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
-                        }
-                    } else if (event.type === 'content_block_delta') {
-                        const delta = event.delta;
-                        if (delta.type === 'thinking_delta') {
-                            yield { thought: delta.thinking, signature: '' };
-                        }
-                        if (delta.type === 'signature_delta') {
-                            yield { thought: '', signature: delta.signature };
-                        }
-                        if (delta.type === 'text_delta') {
-                            yield { content: delta.text };
-                        }
-                        if (toolCall && delta.type === 'input_json_delta') {
-                            toolCall.args += delta.partial_json;
-                            yield { tool_calls: [{ function: { arguments: delta.partial_json } }] };
-                        }
-                    } else if (event.type === 'content_block_stop') {
-                        if (toolCall && toolCall.index === event.index) {
-                            toolCalls.push(toolCall);
-                            toolCall = undefined;
-                        }
-                    } else if (event.type === 'message_delta') {
-                        if (event.delta.stop_reason === 'max_tokens') {
-                            if (toolCall) {
-                                yield { tool_calls: [{ finished: true, id: toolCall.id }] };
+                            if (contentBlock.type === 'thinking') {
+                                yield { thought: contentBlock.thinking, signature: contentBlock.signature ?? '' };
                             }
-                            throw new Error(`The response was stopped because it exceeded the max token limit of ${event.usage.output_tokens}.`);
-                        }
-                    } else if (event.type === 'message_start') {
-                        currentMessages.push(event.message);
-                        currentMessage = event.message;
-                    } else if (event.type === 'message_stop') {
-                        if (currentMessage) {
-                            yield { input_tokens: currentMessage.usage.input_tokens, output_tokens: currentMessage.usage.output_tokens };
-                            // Record token usage if token usage service is available
-                            if (that.tokenUsageService && currentMessage.usage) {
-                                const tokenUsageParams: TokenUsageParams = {
-                                    inputTokens: currentMessage.usage.input_tokens,
-                                    outputTokens: currentMessage.usage.output_tokens,
-                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens || undefined,
-                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens || undefined,
-                                    requestId: request.requestId
+                            if (contentBlock.type === 'text') {
+                                yield { content: contentBlock.text };
+                            }
+                            if (contentBlock.type === 'tool_use') {
+                                toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
+                                yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
+                            }
+                        } else if (event.type === 'content_block_delta') {
+                            const delta = event.delta;
+                            if (delta.type === 'thinking_delta') {
+                                yield { thought: delta.thinking, signature: '' };
+                            }
+                            if (delta.type === 'signature_delta') {
+                                yield { thought: '', signature: delta.signature };
+                            }
+                            if (delta.type === 'text_delta') {
+                                yield { content: delta.text };
+                            }
+                            if (toolCall && delta.type === 'input_json_delta') {
+                                toolCall.args += delta.partial_json;
+                                yield { tool_calls: [{ function: { arguments: delta.partial_json } }] };
+                            }
+                        } else if (event.type === 'content_block_stop') {
+                            if (toolCall && toolCall.index === event.index) {
+                                toolCalls.push(toolCall);
+                                toolCall = undefined;
+                            }
+                        } else if (event.type === 'message_delta') {
+                            currentOutputTokens = event.usage.output_tokens;
+                            if (event.delta.stop_reason === 'max_tokens') {
+                                if (toolCall) {
+                                    yield { tool_calls: [{ finished: true, id: toolCall.id }] };
+                                }
+                                throw new Error(`The response was stopped because it exceeded the max token limit of ${event.usage.output_tokens}.`);
+                            }
+                        } else if (event.type === 'message_start') {
+                            currentMessages.push(event.message);
+                            currentMessage = event.message;
+                            currentOutputTokens = 0;
+                        } else if (event.type === 'message_stop') {
+                            if (currentMessage) {
+                                usageYielded = true;
+                                yield {
+                                    input_tokens: currentMessage.usage.input_tokens,
+                                    output_tokens: currentOutputTokens,
+                                    cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens || undefined,
+                                    cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens || undefined,
                                 };
-                                await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
                             }
                         }
-
+                    }
+                } finally {
+                    // Yield partial usage data when stream is aborted before message_stop
+                    if (!usageYielded && currentMessage) {
+                        yield {
+                            input_tokens: currentMessage.usage.input_tokens,
+                            output_tokens: currentOutputTokens,
+                            cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens || undefined,
+                            cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens || undefined,
+                        };
                     }
                 }
                 if (toolCalls.length > 0) {
                     const toolResult = await Promise.all(toolCalls.map(async tc => {
                         const tool = request.tools?.find(t => t.name === tc.name);
                         const argsObject = tc.args.length === 0 ? '{}' : tc.args;
+                        const handlerResult = tool
+                            ? await tool.handler(argsObject, ToolInvocationContext.create(tc.id))
+                            : createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
 
-                        return { name: tc.name, result: (await tool?.handler(argsObject)), id: tc.id, arguments: argsObject };
+                        return { name: tc.name, result: handlerResult, id: tc.id, arguments: argsObject };
 
                     }));
 
@@ -359,7 +382,8 @@ export class AnthropicModel implements LanguageModel {
                             ...(toolMessages ?? []),
                             ...currentMessages.map(m => ({ role: m.role, content: m.content })),
                             toolResponseMessage
-                        ]);
+                        ]
+                    );
                     for await (const nestedEvent of result.stream) {
                         yield nestedEvent;
                     }
@@ -410,21 +434,18 @@ export class AnthropicModel implements LanguageModel {
             const response = await anthropic.messages.create(params);
             const textContent = response.content[0];
 
-            // Record token usage if token usage service is available
-            if (this.tokenUsageService && response.usage) {
-                const tokenUsageParams: TokenUsageParams = {
-                    inputTokens: response.usage.input_tokens,
-                    outputTokens: response.usage.output_tokens,
-                    requestId: request.requestId
-                };
-                await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
-            }
+            const usage = response.usage ? {
+                input_tokens: response.usage.input_tokens,
+                output_tokens: response.usage.output_tokens,
+                cache_creation_input_tokens: response.usage.cache_creation_input_tokens || undefined,
+                cache_read_input_tokens: response.usage.cache_read_input_tokens || undefined,
+            } : undefined;
 
             if (textContent?.type === 'text') {
-                return { text: textContent.text };
+                return { text: textContent.text, usage };
             }
 
-            return { text: '' };
+            return { text: '', usage };
         } catch (error) {
             throw new Error(`Failed to get response from Anthropic API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -432,18 +453,13 @@ export class AnthropicModel implements LanguageModel {
 
     protected initializeAnthropic(): Anthropic {
         const apiKey = this.apiKey();
-        if (!apiKey) {
+        if (!apiKey && !(this.url)) {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
 
-        let fo;
-        if (this.proxy) {
-            const proxyAgent = new undici.ProxyAgent(this.proxy);
-            fo = {
-                dispatcher: proxyAgent,
-            };
-        }
+        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
+        const key = apiKey ?? 'no-key';
 
-        return new Anthropic({ apiKey, fetchOptions: fo });
+        return new Anthropic({ apiKey: key, baseURL: this.url, fetch: createProxyFetch(this.proxy) });
     }
 }

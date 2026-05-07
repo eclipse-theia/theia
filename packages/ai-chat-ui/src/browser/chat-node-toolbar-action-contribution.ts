@@ -92,13 +92,13 @@ export class DefaultChatNodeToolbarActionContribution implements ChatNodeToolbar
                 return [{
                     commandId: ChatNodeToolbarCommands.CANCEL.id,
                     icon: codicon('close'),
-                    tooltip: nls.localize('theia/ai/chat-ui/node/toolbar/cancel', 'Cancel'),
+                    tooltip: nls.localizeByDefault('Cancel'),
                 }];
             }
             return [{
                 commandId: ChatNodeToolbarCommands.EDIT.id,
                 icon: codicon('edit'),
-                tooltip: nls.localize('theia/ai/chat-ui/node/toolbar/edit', 'Edit'),
+                tooltip: nls.localizeByDefault('Edit'),
             }];
         } else {
             const shouldShowRetry = node.response.isError || node.response.isCanceled;
@@ -106,7 +106,7 @@ export class DefaultChatNodeToolbarActionContribution implements ChatNodeToolbar
                 return [{
                     commandId: ChatNodeToolbarCommands.RETRY.id,
                     icon: codicon('refresh'),
-                    tooltip: nls.localize('theia/ai/chat-ui/node/toolbar/retry', 'Retry'),
+                    tooltip: nls.localizeByDefault('Retry'),
                     priority: -1 // Higher priority to show it first
                 }];
             }

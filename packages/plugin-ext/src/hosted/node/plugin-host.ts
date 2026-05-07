@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import '@theia/core/shared/reflect-metadata';
+import { suppressNodeNavigator } from './plugin-host-navigator-override';
 import { Container } from '@theia/core/shared/inversify';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import { MsgPackExtensionManager } from '@theia/core/lib/common/message-rpc/msg-pack-extension-manager';
@@ -22,6 +23,9 @@ import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plug
 import { PluginHostRPC } from './plugin-host-rpc';
 import pluginHostModule from './plugin-host-module';
 import { URI } from '../../plugin/types-impl';
+
+// Undefine globalThis.navigator unless opted in, see https://github.com/eclipse-theia/theia/issues/16233
+suppressNodeNavigator();
 
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { nls, PreferenceSchema } from '@theia/core';
+import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.huggingFace.apiKey';
 export const MODELS_PREF = 'ai-features.huggingFace.models';
@@ -26,17 +26,21 @@ export const HuggingFacePreferencesSchema: PreferenceSchema = {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/huggingFace/apiKey/mdDescription',
                 'Enter an API Key for your Hugging Face Account. **Please note:** By using this preference the Hugging Face API key will be stored in clear text\
-            on the machine running Theia. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely.'),
+            on the machine running Theia. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
+            tags: ['experimental']
         },
         [MODELS_PREF]: {
             type: 'array',
-            description: nls.localize('theia/ai/huggingFace/models/description', 'Hugging Face models to use'),
+            markdownDescription: nls.localize('theia/ai/huggingFace/models/mdDescription',
+                'Hugging Face models to use. **Please note:** Only models supporting the chat completion API are supported \
+            (instruction-tuned models like `*-Instruct`) currently. Some models may require accepting license terms on the Hugging Face website.'),
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['bigcode/starcoder'],
+            default: ['meta-llama/Llama-3.2-3B-Instruct', 'meta-llama/Llama-3.1-8B-Instruct'],
             items: {
                 type: 'string'
-            }
+            },
+            tags: ['experimental']
         }
     }
 };

@@ -46,9 +46,16 @@ export interface ChatSessionStore {
      */
     clearAllSessions(): Promise<void>;
     /**
-     * Get index of all stored sessions
+     * Get index of all stored sessions.
+     * Note: This may trigger storage initialization if not already initialized.
      */
     getSessionIndex(): Promise<ChatSessionIndex>;
+    /**
+     * Check if there are persisted sessions available
+     * This has the benefit of not initializing the storage on disk if it does not
+     * already exist.
+     */
+    hasPersistedSessions(): Promise<boolean>;
 }
 
 export interface ChatSessionIndex {

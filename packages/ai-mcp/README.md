@@ -1,17 +1,29 @@
-# Model Context Server (MCP) Integration
+<div align='center'>
+
+<br />
+
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>ECLIPSE THEIA - AI MCP EXTENSION</h2>
+
+<hr />
+
+</div>
+
+## Description
 
 The AI MCP package provides an integration that allows users to start and use MCP servers to provide additional tool functions to LLMs, e.g. search or file access (outside of the workspace).
 
-## Features
+### Features
 
 - Offers the framework to add/remove and start/stop MCP servers
 - Use tool functions provided by MCP servers in prompt templates
 
-## Commands
+### Commands
 
 - Include `@theia/ai-mcp-ui` to gain access to the start and stop MCP sever commands.
 
-## Configuration
+### Configuration
 
 To configure MCP servers, include `@theia/mcp-ui` or `bind` the included `mcp-preferences`.
 
@@ -83,8 +95,24 @@ Example User query
 Search the internet for XYZ
 ```
 
-## More Information
+### More Information
 
 [Theia AI MCP UI README](https://github.com/eclipse-theia/theia/tree/master/packages/ai-mcp-ui)
 [User documentation on MCP in the Theia IDE](https://theia-ide.org/docs/user_ai/#mcp-integration)
 [List of available MCP servers](https://github.com/modelcontextprotocol/servers)
+
+## Additional Information
+
+- [API documentation for `@theia/mcp`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-mcp.html)
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
+
+## License
+
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+
+"Theia" is a trademark of the Eclipse Foundation
+<https://www.eclipse.org/theia>

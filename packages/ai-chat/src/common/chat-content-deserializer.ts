@@ -273,7 +273,8 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
                 data.name,
                 data.arguments,
                 data.finished,
-                data.result
+                data.result,
+                data.data
             )
         });
 
@@ -313,14 +314,21 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
 
         registry.register({
             kind: 'question',
-            deserialize: (data: QuestionContentData) =>
-                // Restore in read-only mode (no handler/request)
-                new QuestionResponseContentImpl(
+            // Restore in read-only mode (no handler/request)
+            deserialize: (data: QuestionContentData) => data.multiSelect
+                ? new QuestionResponseContentImpl(
                     data.question,
                     data.options,
                     undefined,
                     undefined,
-                    data.selectedOption
+                    { multiSelect: true, header: data.header, selectedOptions: data.selectedOptions }
+                )
+                : new QuestionResponseContentImpl(
+                    data.question,
+                    data.options,
+                    undefined,
+                    undefined,
+                    { header: data.header, selectedOption: data.selectedOption }
                 )
         });
     }

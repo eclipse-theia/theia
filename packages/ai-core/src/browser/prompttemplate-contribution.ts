@@ -236,20 +236,23 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS, {
-            isVisible: (widget: Widget) => this.isPromptTemplateWidget(widget),
-            isEnabled: (widget: EditorWidget) => this.canDiscard(widget),
+            isVisible: (widget: Widget | undefined) => this.isPromptTemplateWidget(widget),
+            isEnabled: (widget: Widget | undefined) => this.canDiscard(widget),
             execute: (widget: EditorWidget) => this.discard(widget)
         });
     }
 
-    protected isPromptTemplateWidget(widget: Widget): boolean {
+    protected isPromptTemplateWidget(widget: Widget | undefined): boolean {
         if (widget instanceof EditorWidget) {
             return PROMPT_TEMPLATE_LANGUAGE_ID === widget.editor.document.languageId;
         }
         return false;
     }
 
-    protected canDiscard(widget: EditorWidget): boolean {
+    protected canDiscard(widget: Widget | undefined): boolean {
+        if (!(widget instanceof EditorWidget)) {
+            return false;
+        }
         const resourceUri = widget.editor.uri;
         const id = this.promptService.getTemplateIDFromResource(resourceUri);
         if (id === undefined) {

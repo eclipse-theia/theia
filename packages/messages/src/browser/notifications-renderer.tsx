@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { NotificationManager } from './notifications-manager';
 import { NotificationCenterComponent } from './notification-center-component';
 import { NotificationToastsComponent } from './notification-toasts-component';
@@ -34,6 +34,10 @@ export class NotificationsRenderer {
 
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
+
     protected containerRoot: Root;
 
     @postConstruct()
@@ -54,8 +58,8 @@ export class NotificationsRenderer {
 
     protected render(): void {
         this.containerRoot.render(<div>
-            <NotificationToastsComponent manager={this.manager} corePreferences={this.corePreferences} />
-            <NotificationCenterComponent manager={this.manager} />
+            <NotificationToastsComponent manager={this.manager} corePreferences={this.corePreferences} contextMenuRenderer={this.contextMenuRenderer} />
+            <NotificationCenterComponent manager={this.manager} contextMenuRenderer={this.contextMenuRenderer} />
         </div>);
     }
 

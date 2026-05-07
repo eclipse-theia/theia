@@ -164,7 +164,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         }
     }
 
-    protected readonly _frames = new Map<number, DebugStackFrame>();
+    protected readonly _frames = new Map<string, DebugStackFrame>();
     get frames(): IterableIterator<DebugStackFrame> {
         return this._frames.values();
     }
@@ -189,7 +189,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
                 if (cancel.isCancellationRequested) {
                     return [];
                 }
-                return this.doUpdateFrames(frames);
+                return this.doUpdateFrames(start, frames);
             } catch (e) {
                 console.error('fetchFrames failed:', e);
                 return [];
@@ -219,15 +219,19 @@ export class DebugThread extends DebugThreadData implements TreeElement {
             return [];
         }
     }
-    protected doUpdateFrames(frames: DebugProtocol.StackFrame[]): DebugStackFrame[] {
+    protected doUpdateFrames(startFrame: number, frames: DebugProtocol.StackFrame[]): DebugStackFrame[] {
         const result = new Set<DebugStackFrame>();
-        for (const raw of frames) {
-            const id = raw.id;
-            const frame = this._frames.get(id) || new DebugStackFrame(this, this.session);
+        frames.forEach((raw, index) => {
+            // Similarly to VS Code, we no longer use `raw.frameId` in computation of the DebugStackFrame id.
+            // The `raw.frameId` was changing in every step and was not allowing us to correlate stack frames between step events.
+            // Refs: https://github.com/microsoft/vscode/commit/18fc2bcf718e22265b5e09bb7fd0e9c090264cd2, https://github.com/microsoft/vscode/issues/93230#issuecomment-642558395
+            const source = raw.source && this.session.getSource(raw.source);
+            const id = `${this.id}:${startFrame + index}:${source?.name}`;
+            const frame = this._frames.get(id) || new DebugStackFrame(this, this.session, id);
             this._frames.set(id, frame);
             frame.update({ raw });
             result.add(frame);
-        }
+        });
         this.updateCurrentFrame();
         return [...result.values()];
     }
@@ -247,9 +251,9 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     }
     protected updateCurrentFrame(): void {
         const { currentFrame } = this;
-        const frameId = currentFrame && currentFrame.raw.id;
-        this.currentFrame = typeof frameId === 'number' &&
-            this._frames.get(frameId) ||
+        const id = currentFrame && currentFrame.id;
+        this.currentFrame = typeof id === 'string' &&
+            this._frames.get(id) ||
             this._frames.values().next().value;
     }
 

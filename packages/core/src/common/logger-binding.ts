@@ -17,6 +17,7 @@
 import { interfaces } from 'inversify';
 import { ILogger, Logger, LoggerName, rootLoggerName } from './logger';
 import { LoggerWatcher } from './logger-watcher';
+import { DefaultLoggerSanitizer, LoggerSanitizer } from './logger-sanitizer';
 
 export function bindCommonLogger(bind: interfaces.Bind): void {
     bind(LoggerName).toConstantValue(rootLoggerName);
@@ -26,6 +27,7 @@ export function bindCommonLogger(bind: interfaces.Bind): void {
         return logger.child(getName(ctx.currentRequest)!);
     }).when(request => getName(request) !== undefined);
     bind(LoggerWatcher).toSelf().inSingletonScope();
+    bind(LoggerSanitizer).to(DefaultLoggerSanitizer).inSingletonScope();
 }
 
 function getName(request: interfaces.Request): string | undefined {

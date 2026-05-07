@@ -248,8 +248,9 @@ export abstract class AbstractDialog<T> extends BaseWidget {
      * Please note that this may also include other popups such as the suggestion overlay, the notification center or quick picks.
      * @returns a disposable that will restore the previous tabbing behavior
      */
-    protected preventTabbingOutsideDialog(elements = Array.from(this.node.ownerDocument.body.children)): Disposable {
-        const nonInertElements = elements.filter(child => child !== this.node && !(child.hasAttribute('inert')));
+    protected preventTabbingOutsideDialog(elements = Array.from(this.node.ownerDocument.body.children)): Disposable { //
+        const inertBlacklist = ['select-component-container']; // IDs of elements that should remain interactive
+        const nonInertElements = elements.filter(child => child !== this.node && !(child.hasAttribute('inert')) && !inertBlacklist.includes(child.id));
         nonInertElements.forEach(child => child.setAttribute('inert', ''));
         return Disposable.create(() => nonInertElements.forEach(child => child.removeAttribute('inert')));
     }

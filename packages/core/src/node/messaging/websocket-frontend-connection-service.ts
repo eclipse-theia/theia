@@ -15,9 +15,9 @@
 
 import { Channel, WriteBuffer } from '../../common/message-rpc';
 import { MessagingService } from './messaging-service';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, interfaces } from 'inversify';
 import { Socket } from 'socket.io';
-import { ConnectionHandlers } from './default-messaging-service';
+import { ConnectionHandlers, MessagingContainer } from './default-messaging-service';
 import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
 import { FrontendConnectionService } from './frontend-connection-service';
 import { AbstractChannel } from '../../common/message-rpc/channel';
@@ -32,6 +32,9 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     @inject(WebsocketEndpoint)
     protected readonly websocketServer: WebsocketEndpoint;
+
+    @inject(MessagingContainer)
+    protected readonly container: interfaces.Container;
 
     protected readonly wsHandlers = new ConnectionHandlers();
     protected readonly connectionsByFrontend = new Map<string, ReconnectableSocketChannel>();
@@ -89,12 +92,13 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
         this.closeTimeouts.delete(frontEndId);
 
         connection.onCloseEmitter.fire({ reason });
+        connection.drainBuffer();
         connection.close();
     }
 
     protected createConnection(socket: Socket, frontEndId: string): ReconnectableSocketChannel {
         console.info(`creating connection for ${frontEndId}`);
-        const channel = new ReconnectableSocketChannel();
+        const channel = this.container.get(ReconnectableSocketChannel);
         channel.connect(socket);
 
         this.connectionsByFrontend.set(frontEndId, channel);
@@ -136,12 +140,17 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
     }
 }
 
-class ReconnectableSocketChannel extends AbstractChannel {
-    private socket: Socket | undefined;
-    private socketBuffer = new SocketWriteBuffer();
-    private disposables = new DisposableCollection();
+@injectable()
+export class ReconnectableSocketChannel extends AbstractChannel {
+    protected socket: Socket | undefined;
+
+    @inject(SocketWriteBuffer)
+    protected socketBuffer: SocketWriteBuffer;
+
+    protected disposables = new DisposableCollection();
 
     connect(socket: Socket): void {
+        this.disposables.dispose();
         this.disposables = new DisposableCollection();
         this.socket = socket;
         const errorHandler = (err: Error) => {
@@ -169,6 +178,10 @@ class ReconnectableSocketChannel extends AbstractChannel {
     disconnect(): void {
         this.disposables.dispose();
         this.socket = undefined;
+    }
+
+    drainBuffer(): void {
+        this.socketBuffer.drain();
     }
 
     override getWriteBuffer(): WriteBuffer {

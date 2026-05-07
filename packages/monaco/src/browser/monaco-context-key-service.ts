@@ -20,7 +20,7 @@ import {
     ScopedValueStore, ContextMatcher, ContextKeyValue, Context
 } from '@theia/core/lib/browser/context-key-service';
 import { Emitter, Event } from '@theia/core';
-import { AbstractContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { AbstractContextKeyService, Context as MonacoContext } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import { ContextKeyExpr, ContextKeyExpression, IContext, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
@@ -147,10 +147,23 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         this.contextKeyService.setContext(key, value);
     }
 
+    getLocalContextKeys(element: HTMLElement): Set<string> {
+        const context = this.contextKeyService.getContext(element);
+        // Get local values
+        if (context && context instanceof MonacoContext) {
+            const localValues = context.value;
+            // Filter out the internal '_contextId' key
+            const res = new Set(Object.keys(localValues));
+            res.delete('_contextId');
+            return res;
+        }
+        // For other IContext implementations (like NullContext), return empty set
+        return new Set<string>();
+    }
+
     dispose(): void {
         this.activeContext = undefined;
         this.onDidChangeEmitter.dispose();
         this.contextKeyService.dispose();
     }
 }
-

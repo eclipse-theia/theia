@@ -25,6 +25,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     protected servers: Map<string, MCPServer> = new Map();
     protected clients: Array<MCPFrontendNotificationService> = [];
     protected serverListeners: Map<string, Disposable> = new Map();
+    protected roots: string[] | undefined;
 
     async stopServer(serverName: string): Promise<void> {
         const server = this.servers.get(serverName);
@@ -39,7 +40,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     async getRunningServers(): Promise<string[]> {
         const runningServers: string[] = [];
         for (const [name, server] of this.servers.entries()) {
-            if (server.isRunnning()) {
+            if (server.isRunning()) {
                 runningServers.push(name);
             }
         }
@@ -95,6 +96,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
             existingServer.update(description);
         } else {
             const newServer = new MCPServer(description);
+            newServer.setWorkspaceRoots(this.roots);
             this.servers.set(description.name, newServer);
 
             // Subscribe to status updates from the new server
@@ -158,5 +160,12 @@ export class MCPServerManagerImpl implements MCPServerManager {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
         return server.getResources();
+    }
+
+    setWorkspaceRoots(roots: string[] | undefined): void {
+        this.roots = roots;
+        this.servers.forEach(server => {
+            server.setWorkspaceRoots(roots);
+        });
     }
 }

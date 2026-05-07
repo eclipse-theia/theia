@@ -27,7 +27,6 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 
 ## Additional Information
 
-- [API documentation for `@theia/electron`](https://eclipse-theia.github.io/theia/docs/next/modules/electron.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

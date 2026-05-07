@@ -16,7 +16,7 @@ The `@theia/file-search` extension adds the command and ability to quickly open 
 
 ## Additional Information
 
-- [API documentation for `@theia/file-search`](https://eclipse-theia.github.io/theia/docs/next/modules/file_search.html)
+- [API documentation for `@theia/file-search`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_file-search.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

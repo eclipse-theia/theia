@@ -93,11 +93,13 @@ export class AgentServiceImpl implements AgentService {
                     this.disabledAgents.add(agentId);
                 }
             });
+            this.onDidChangeAgentsEmitter.fire();
         });
     }
 
     registerAgent(agent: Agent): void {
         this._agents.push(agent);
+        this._agents.sort((a, b) => a.name.localeCompare(b.name));
         agent.prompts.forEach(
             prompt => {
                 this.promptService.addBuiltInPromptFragment(prompt.defaultVariant, prompt.id, true);
@@ -134,11 +136,13 @@ export class AgentServiceImpl implements AgentService {
     async enableAgent(agentId: string): Promise<void> {
         this.disabledAgents.delete(agentId);
         await this.aiSettingsService?.updateAgentSettings(agentId, { enable: true });
+        this.onDidChangeAgentsEmitter.fire();
     }
 
     async disableAgent(agentId: string): Promise<void> {
         this.disabledAgents.add(agentId);
         await this.aiSettingsService?.updateAgentSettings(agentId, { enable: false });
+        this.onDidChangeAgentsEmitter.fire();
     }
 
     isEnabled(agentId: string): boolean {

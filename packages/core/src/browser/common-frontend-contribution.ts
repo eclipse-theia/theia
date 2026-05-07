@@ -159,7 +159,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected readonly undoRedoHandlerService: UndoRedoHandlerService;
 
     protected pinnedKey: ContextKey<boolean>;
-    protected inputFocus: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
         // FIXME: This request blocks valuable startup time (~200ms).
@@ -174,9 +173,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
-        this.inputFocus = this.contextKeyService.createKey<boolean>('inputFocus', false);
-        this.updateInputFocus();
-        browser.onDomEvent(document, 'focusin', () => this.updateInputFocus());
+        // Note: the 'inputFocus' context key is tracked by Monaco's ContextKeyService
+        // which sets it for <input>, <textarea>, and elements with EditContext (Monaco editors).
+        // We no longer track it separately to avoid race conditions between two focusin listeners.
 
         this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
         this.updatePinnedKey();
@@ -234,15 +233,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }
     }
 
-    protected updateInputFocus(): void {
-        const activeElement = document.activeElement;
-        if (activeElement) {
-            const isInput = activeElement.tagName?.toLowerCase() === 'input'
-                || activeElement.tagName?.toLowerCase() === 'textarea';
-            this.inputFocus.set(isInput);
-        }
-    }
-
     protected updatePinnedKey(): void {
         const activeTab = this.shell.findTabBar();
         const pinningTarget = activeTab && this.shell.findTitle(activeTab);
@@ -257,9 +247,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 break;
             }
             case 'window.menuBarVisibility': {
-                const { newValue } = e;
+                const menuBarVisibility = this.preferences['window.menuBarVisibility'];
                 const mainMenuId = 'main-menu';
-                if (newValue === 'compact') {
+                if (menuBarVisibility === 'compact') {
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
                         iconClass: `theia-compact-menu ${codicon('menu')}`,
@@ -291,8 +281,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     onStart(): void {
+        this.setupHtmlLanguageAttributes(document.documentElement);
         this.storageService.getData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent: [] })
             .then(tasks => this.commandRegistry.recent = tasks.recent);
+    }
+
+    protected setupHtmlLanguageAttributes(element: HTMLElement): void {
+        nls.setHtmlLang(element);
+        nls.setHtmlNoTranslate(element);
     }
 
     onStop(): void {
@@ -492,7 +488,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.CUT, {
             execute: () => {
                 if (supportCut) {
-                    document.execCommand('cut');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const start = active.selectionStart ?? 0;
+                        const end = active.selectionEnd ?? 0;
+                        const selectedText = active.value.substring(start, end);
+                        if (selectedText) {
+                            this.clipboardService.writeText(selectedText);
+                            document.execCommand('insertText', false, '');
+                        }
+                    } else {
+                        document.execCommand('cut');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/cutWarn', "Please use the browser's cut command or shortcut."));
                 }
@@ -501,16 +508,34 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.COPY, {
             execute: () => {
                 if (supportCopy) {
-                    document.execCommand('copy');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const start = active.selectionStart ?? 0;
+                        const end = active.selectionEnd ?? 0;
+                        const selectedText = active.value.substring(start, end);
+                        if (selectedText) {
+                            this.clipboardService.writeText(selectedText);
+                        }
+                    } else {
+                        document.execCommand('copy');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/copyWarn', "Please use the browser's copy command or shortcut."));
                 }
             }
         });
         commandRegistry.registerCommand(CommonCommands.PASTE, {
-            execute: () => {
+            execute: async () => {
                 if (supportPaste) {
-                    document.execCommand('paste');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const text = await this.clipboardService.readText();
+                        if (text) {
+                            document.execCommand('insertText', false, text);
+                        }
+                    } else {
+                        document.execCommand('paste');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/pasteWarn', "Please use the browser's paste command or shortcut."));
                 }
@@ -693,8 +718,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: title => title?.owner && this.shell.toggleMaximized(title?.owner),
         }));
         commandRegistry.registerCommand(CommonCommands.SHOW_MENU_BAR, {
-            isEnabled: () => !isOSX,
-            isVisible: () => !isOSX,
+            isEnabled: () => !this.isElectron() || !isOSX,
+            isVisible: () => !this.isElectron() || !isOSX,
             execute: () => {
                 const menuBarVisibility = 'window.menuBarVisibility';
                 const visibility = this.preferences[menuBarVisibility];
@@ -1286,12 +1311,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 description: 'The color used for the border of the window when it is inactive.'
             },
 
-            // Buttons should be aligned with https://code.visualstudio.com/api/references/theme-color#button-control
-            // if not yet contributed by Monaco, check runtime css variables to learn
-            { id: 'button.foreground', defaults: { dark: Color.white, light: Color.white, hcDark: Color.white, hcLight: Color.white }, description: 'Button foreground color.' },
-            { id: 'button.background', defaults: { dark: '#0E639C', light: '#007ACC', hcDark: undefined, hcLight: '#0F4A85' }, description: 'Button background color.' },
-            { id: 'button.hoverBackground', defaults: { dark: Color.lighten('button.background', 0.2), light: Color.darken('button.background', 0.2) }, description: 'Button background color when hovering.' },
-
             // Activity Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#activity-bar
             {
                 id: 'activityBar.background', defaults: {
@@ -1571,8 +1590,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
 
             // Status bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#status-bar-colors
-            // Not yet supported:
-            // statusBarItem.prominentForeground, statusBarItem.prominentBackground, statusBarItem.prominentHoverBackground
             {
                 id: 'statusBar.foreground', defaults: {
                     dark: '#FFFFFF',
@@ -1632,6 +1649,30 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Status bar item background color when hovering. The status bar is shown in the bottom of the window.'
             },
             {
+                id: 'statusBarItem.hoverForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar item foreground color when hovering. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.compactHoverBackground', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.20),
+                    light: Color.rgba(255, 255, 255, 0.20),
+                    hcDark: Color.rgba(255, 255, 255, 0.20),
+                    hcLight: Color.rgba(0, 0, 0, 0.20)
+                }, description: 'Status bar item background color when hovering an item that contains two hovers. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.focusBorder', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar item border color when focused on keyboard navigation. The status bar is shown in the bottom of the window.'
+            },
+            {
                 id: 'statusBarItem.errorBackground', defaults: {
                     dark: Color.darken('errorBackground', 0.4),
                     light: Color.darken('errorBackground', 0.4),
@@ -1648,6 +1689,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Status bar error items foreground color. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
             },
             {
+                id: 'statusBarItem.errorHoverBackground', defaults: {
+                    dark: Color.lighten('statusBarItem.errorBackground', 0.2),
+                    light: Color.lighten('statusBarItem.errorBackground', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
+                }, description: 'Status bar error items background color when hovering. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.errorHoverForeground', defaults: {
+                    dark: 'statusBarItem.errorForeground',
+                    light: 'statusBarItem.errorForeground',
+                    hcDark: 'statusBarItem.errorForeground',
+                    hcLight: 'statusBarItem.errorForeground'
+                }, description: 'Status bar error items foreground color when hovering. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
                 id: 'statusBarItem.warningBackground', defaults: {
                     dark: Color.darken('warningBackground', 0.4),
                     light: Color.darken('warningBackground', 0.4),
@@ -1662,6 +1719,54 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcDark: Color.white,
                     hcLight: Color.white
                 }, description: 'Status bar warning items foreground color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningHoverBackground', defaults: {
+                    dark: Color.lighten('statusBarItem.warningBackground', 0.2),
+                    light: Color.lighten('statusBarItem.warningBackground', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
+                }, description: 'Status bar warning items background color when hovering. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningHoverForeground', defaults: {
+                    dark: 'statusBarItem.warningForeground',
+                    light: 'statusBarItem.warningForeground',
+                    hcDark: 'statusBarItem.warningForeground',
+                    hcLight: 'statusBarItem.warningForeground'
+                }, description: 'Status bar warning items foreground color when hovering. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar prominent items foreground color. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentBackground', defaults: {
+                    dark: Color.rgba(0, 0, 0, .5),
+                    light: Color.rgba(0, 0, 0, .5),
+                    hcDark: Color.rgba(0, 0, 0, .5),
+                    hcLight: Color.rgba(0, 0, 0, .5),
+                }, description: 'Status bar prominent items background color. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentHoverForeground', defaults: {
+                    dark: 'statusBarItem.hoverForeground',
+                    light: 'statusBarItem.hoverForeground',
+                    hcDark: 'statusBarItem.hoverForeground',
+                    hcLight: 'statusBarItem.hoverForeground'
+                }, description: 'Status bar prominent items foreground color when hovering. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentHoverBackground', defaults: {
+                    dark: 'statusBarItem.hoverBackground',
+                    light: 'statusBarItem.hoverBackground',
+                    hcDark: 'statusBarItem.hoverBackground',
+                    hcLight: 'statusBarItem.hoverBackground'
+                }, description: 'Status bar prominent items background color when hovering. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
             },
 
             // editor find
@@ -2277,14 +2382,83 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcLight: 'activityBarBadge.foreground'
                 }, description: 'Foreground color for the remote indicator on the status bar.'
             },
+            {
+                id: 'statusBarItem.remoteHoverBackground',
+                defaults: {
+                    dark: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    light: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    hcDark: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    hcLight: Color.lighten('statusBarItem.remoteBackground', 0.2)
+                }, description: 'Background color for the remote indicator on the status bar when hovering.'
+            },
+            {
+                id: 'statusBarItem.remoteHoverForeground',
+                defaults: {
+                    dark: 'statusBarItem.remoteForeground',
+                    light: 'statusBarItem.remoteForeground',
+                    hcDark: 'statusBarItem.remoteForeground',
+                    hcLight: 'statusBarItem.remoteForeground'
+                }, description: 'Foreground color for the remote indicator on the status bar when hovering.'
+            },
             // Buttons
+            // https://github.com/microsoft/vscode/blob/release/1.108/src/vs/platform/theme/common/colors/inputColors.ts#L112
+            {
+                id: 'button.foreground',
+                defaults: Color.white,
+                description: 'Button foreground color.'
+            },
+            {
+                id: 'button.disabledForeground',
+                defaults: {
+                    dark: Color.transparent('button.foreground', 0.5),
+                    light: Color.transparent('button.foreground', 0.5),
+                    hcDark: Color.transparent('button.foreground', 0.5)
+                }, description: 'Foreground color of disabled buttons.'
+            },
+            {
+                id: 'button.separator',
+                defaults: Color.transparent('button.foreground', .4),
+                description: 'Button separator color.'
+            },
+            {
+                id: 'button.background',
+                defaults: {
+                    dark: '#0E639C',
+                    light: '#007ACC',
+                    hcDark: Color.black,
+                    hcLight: '#0F4A85'
+                },
+                description: 'Button background color.'
+            },
+            {
+                id: 'button.disabledBackground',
+                defaults: {
+                    dark: Color.transparent('button.background', 0.5),
+                    light: Color.transparent('button.background', 0.5)
+                }, description: 'Background color of disabled buttons.'
+            },
+            {
+                id: 'button.hoverBackground',
+                defaults: {
+                    dark: Color.lighten('button.background', 0.2),
+                    light: Color.darken('button.background', 0.2),
+                    hcDark: 'button.background',
+                    hcLight: 'button.background'
+                },
+                description: 'Button background color when hovering.'
+            },
+            {
+                id: 'button.border',
+                defaults: 'contrastBorder',
+                description: 'Button border color.'
+            },
             {
                 id: 'secondaryButton.foreground',
                 defaults: {
-                    dark: 'dropdown.foreground',
-                    light: 'dropdown.foreground',
-                    hcDark: 'dropdown.foreground',
-                    hcLight: 'dropdown.foreground'
+                    dark: Color.white,
+                    light: Color.white,
+                    hcDark: Color.white,
+                    hcLight: 'foreground'
                 }, description: 'Foreground color of secondary buttons.'
             },
             {
@@ -2294,20 +2468,24 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: Color.transparent('secondaryButton.foreground', 0.5),
                     hcDark: Color.transparent('secondaryButton.foreground', 0.5),
                     hcLight: Color.transparent('secondaryButton.foreground', 0.5),
-                }, description: 'Foreground color of secondary buttons.'
+                }, description: 'Foreground color of disabled secondary buttons.'
             },
             {
                 id: 'secondaryButton.background',
                 defaults: {
-                    dark: Color.lighten('dropdown.background', 0.5),
-                    light: Color.lighten('dropdown.background', 0.5)
+                    dark: '#3A3D41',
+                    light: '#5F6A79',
+                    hcDark: undefined,
+                    hcLight: Color.white
                 }, description: 'Background color of secondary buttons.'
             },
             {
                 id: 'secondaryButton.hoverBackground',
                 defaults: {
                     dark: Color.lighten('secondaryButton.background', 0.2),
-                    light: Color.lighten('secondaryButton.background', 0.2)
+                    light: Color.lighten('secondaryButton.background', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
                 }, description: 'Background color when hovering secondary buttons.'
             },
             {
@@ -2315,22 +2493,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 defaults: {
                     dark: Color.transparent('secondaryButton.background', 0.6),
                     light: Color.transparent('secondaryButton.background', 0.6)
-                }, description: 'Background color when hovering secondary buttons.'
-            },
-            {
-                id: 'button.disabledForeground',
-                defaults: {
-                    dark: Color.transparent('button.foreground', 0.5),
-                    light: Color.transparent('button.foreground', 0.5),
-                    hcDark: Color.transparent('button.foreground', 0.5)
-                }, description: 'Foreground color of secondary buttons.'
-            },
-            {
-                id: 'button.disabledBackground',
-                defaults: {
-                    dark: Color.transparent('button.background', 0.5),
-                    light: Color.transparent('button.background', 0.5)
-                }, description: 'Background color of secondary buttons.'
+                }, description: 'Background color of disabled secondary buttons.'
             },
             {
                 id: 'editorGutter.commentRangeForeground',

@@ -19,12 +19,11 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
-import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
-import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ChatAgentService } from './chat-agent-service';
+import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
     ChangeSetElement,
@@ -44,8 +43,11 @@ import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-req
 import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
 import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
 import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
-import { SerializableChangeSetElement, SerializedChatModel } from './chat-model-serialization';
+import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization';
 import debounce = require('@theia/core/shared/lodash.debounce');
+
+// Re-export for backward compatibility
+export { DefaultChatAgentId, FallbackChatAgentId };
 
 export interface ChatRequestInvocation {
     /**
@@ -69,6 +71,8 @@ export interface ChatSession {
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
+    /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
+    rootSessionId?: string;
 }
 
 export interface ActiveSessionChangedEvent {
@@ -102,24 +106,13 @@ export function isSessionDeletedEvent(obj: unknown): obj is SessionDeletedEvent 
     return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'deleted';
 }
 
+export interface SessionRenamedEvent {
+    type: 'renamed';
+    sessionId: string;
+}
+
 export interface SessionOptions {
     focus?: boolean;
-}
-
-/**
- * The default chat agent to invoke
- */
-export const DefaultChatAgentId = Symbol('DefaultChatAgentId');
-export interface DefaultChatAgentId {
-    id: string;
-}
-
-/**
- * In case no fitting chat agent is available, this one will be used (if it is itself available)
- */
-export const FallbackChatAgentId = Symbol('FallbackChatAgentId');
-export interface FallbackChatAgentId {
-    id: string;
 }
 
 export const PinChatAgent = Symbol('PinChatAgent');
@@ -128,12 +121,13 @@ export type PinChatAgent = boolean;
 export const ChatService = Symbol('ChatService');
 export const ChatServiceFactory = Symbol('ChatServiceFactory');
 export interface ChatService {
-    onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
+    onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent | SessionRenamedEvent>
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
     createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession;
     deleteSession(sessionId: string): Promise<void>;
+    renameSession(sessionId: string, title: string): Promise<void>;
     getActiveSession(): ChatSession | undefined;
     setActiveSession(sessionId: string, options?: SessionOptions): void;
 
@@ -154,9 +148,14 @@ export interface ChatService {
      */
     getOrRestoreSession(sessionId: string): Promise<ChatSession | undefined>;
     /**
-     * Get all persisted session metadata
+     * Get all persisted session metadata.
+     * Note: This may trigger storage initialization if not already initialized.
      */
     getPersistedSessions(): Promise<ChatSessionIndex>;
+    /**
+     * Check if there are persisted sessions available.
+     */
+    hasPersistedSessions(): Promise<boolean>;
 }
 
 interface ChatSessionInternal extends ChatSession {
@@ -165,17 +164,11 @@ interface ChatSessionInternal extends ChatSession {
 
 @injectable()
 export class ChatServiceImpl implements ChatService {
-    protected readonly onSessionEventEmitter = new Emitter<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>();
+    protected readonly onSessionEventEmitter = new Emitter<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent | SessionRenamedEvent>();
     onSessionEvent = this.onSessionEventEmitter.event;
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
-
-    @inject(DefaultChatAgentId) @optional()
-    protected defaultChatAgentId: DefaultChatAgentId | undefined;
-
-    @inject(FallbackChatAgentId) @optional()
-    protected fallbackChatAgentId: FallbackChatAgentId | undefined;
 
     @inject(ChatSessionNamingService) @optional()
     protected chatSessionNamingService: ChatSessionNamingService | undefined;
@@ -200,6 +193,9 @@ export class ChatServiceImpl implements ChatService {
 
     @inject(ChangeSetElementDeserializerRegistry)
     protected changeSetElementDeserializerRegistry: ChangeSetElementDeserializerRegistry;
+
+    @inject(ToolInvocationRegistry)
+    protected toolInvocationRegistry: ToolInvocationRegistry;
 
     protected _sessions: ChatSessionInternal[] = [];
 
@@ -239,10 +235,10 @@ export class ChatServiceImpl implements ChatService {
             }
             session.model.dispose();
             this._sessions.splice(sessionIndex, 1);
-            this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
         }
 
-        // Always delete from persistent storage
+        // Always delete from persistent storage first, then fire the event so that
+        // listeners (e.g. the welcome screen) read an already-updated session index.
         if (this.sessionStore) {
             try {
                 await this.sessionStore.deleteSession(sessionId);
@@ -250,6 +246,22 @@ export class ChatServiceImpl implements ChatService {
                 this.logger.error('Failed to delete session from storage', { sessionId, error });
             }
         }
+
+        this.onSessionEventEmitter.fire({ type: 'deleted', sessionId });
+    }
+
+    async renameSession(sessionId: string, title: string): Promise<void> {
+        let session: ChatSession | undefined = this.getSession(sessionId);
+        if (!session) {
+            session = await this.getOrRestoreSession(sessionId);
+        }
+        if (!session) {
+            this.logger.warn('Session not found for rename', { sessionId });
+            return;
+        }
+        session.title = title;
+        await this.saveSession(sessionId);
+        this.onSessionEventEmitter.fire({ type: 'renamed', sessionId });
     }
 
     getActiveSession(): ChatSession | undefined {
@@ -276,14 +288,20 @@ export class ChatServiceImpl implements ChatService {
 
         this.cancelIncompleteRequests(session);
 
-        const resolutionContext: ChatSessionContext = { model: session.model };
+        const resolutionContext: ChatSessionContext = {
+            model: session.model,
+            capabilityOverrides: request.capabilityOverrides,
+            genericCapabilitySelections: request.genericCapabilitySelections
+        };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
         session.pinnedAgent = agent;
 
         if (agent === undefined) {
-            const error = 'No ChatAgents available to handle request!';
+            const error = 'No agent was found to handle this request. ' +
+                'Please ensure you have configured a default agent in the preferences and that the agent is enabled in the AI Configuration view. ' +
+                'Alternatively, mention a specific agent with @AgentName.';
             this.logger.error(error);
             const chatResponseModel = new ErrorChatResponseModel(generateUuid(), new Error(error));
             return {
@@ -403,22 +421,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
-        const agentPart = this.getMentionedAgent(parsedRequest);
-        if (agentPart) {
-            return this.chatAgentService.getAgent(agentPart.agentId);
-        }
-        let chatAgent = undefined;
-        if (this.defaultChatAgentId) {
-            chatAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
-        }
-        if (!chatAgent && this.fallbackChatAgentId) {
-            chatAgent = this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
-        }
-        if (chatAgent) {
-            return chatAgent;
-        }
-        this.logger.warn('Neither the default chat agent nor the fallback chat agent are configured or available. Falling back to the first registered agent');
-        return this.chatAgentService.getAgents()[0] ?? undefined;
+        return this.chatAgentService.resolveAgent(parsedRequest);
     }
 
     protected getMentionedAgent(parsedRequest: ParsedChatRequest): ParsedChatRequestAgentPart | undefined {
@@ -434,26 +437,26 @@ export class ChatServiceImpl implements ChatService {
         this.getSession(sessionId)?.model.changeSet.removeElements(uri);
     }
 
-    protected saveSession(sessionId: string): void {
+    protected saveSession(sessionId: string): Promise<void> {
         if (!this.sessionStore) {
             this.logger.debug('Session store not available, skipping save');
-            return;
+            return Promise.resolve();
         }
 
         const session = this.getSession(sessionId);
         if (!session) {
             this.logger.debug('Session not found, skipping save', { sessionId });
-            return;
+            return Promise.resolve();
         }
 
         // Don't save empty sessions
         if (session.model.isEmpty()) {
             this.logger.debug('Session is empty, skipping save', { sessionId });
-            return;
+            return Promise.resolve();
         }
 
         // Store session with title and pinned agent info
-        this.sessionStore.storeSessions(
+        return this.sessionStore.storeSessions(
             { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id }
         ).catch(error => {
             this.logger.error('Failed to store chat sessions', error);
@@ -530,6 +533,13 @@ export class ChatServiceImpl implements ChatService {
         return this.sessionStore.getSessionIndex();
     }
 
+    async hasPersistedSessions(): Promise<boolean> {
+        if (!this.sessionStore) {
+            return false;
+        }
+        return this.sessionStore.hasPersistedSessions();
+    }
+
     /**
      * Deserialize response content and restore changesets.
      * Called after basic chat model structure was created.
@@ -542,6 +552,14 @@ export class ChatServiceImpl implements ChatService {
         const requests = model.getAllRequests();
         for (let i = 0; i < requests.length; i++) {
             const requestModel = requests[i];
+
+            this.logger.debug('Restore request content', { requestId: requestModel.id, index: i });
+            const reqData = data.requests.find(r => r.id === requestModel.id);
+            if (reqData?.parsedRequest) {
+                const toolRequests = this.restoreToolRequests(reqData.parsedRequest);
+                requestModel.restoreToolRequests(toolRequests);
+                this.logger.debug('Restored tool requests', { requestId: requestModel.id, toolRequests: Array.from(toolRequests.keys()) });
+            }
 
             this.logger.debug('Restore response content', { requestId: requestModel.id, index: i });
 
@@ -580,6 +598,37 @@ export class ChatServiceImpl implements ChatService {
         }
 
         this.logger.debug('Restoring dynamic session data complete', { sessionId: data.sessionId });
+    }
+
+    /**
+     * Extracts and resolves tool requests from serialized data.
+     * Looks up actual ToolRequest objects from the registry, or creates fallbacks if not found.
+     */
+    protected restoreToolRequests(data: SerializableParsedRequest): Map<string, ToolRequest> {
+        const toolRequests = new Map<string, ToolRequest>();
+        for (const toolData of data.toolRequests) {
+            toolRequests.set(toolData.id, this.loadToolRequestOrFallback(toolData.id));
+        }
+        return toolRequests;
+    }
+
+    /**
+     * Loads a tool request from the registry or creates a fallback if not found.
+     */
+    protected loadToolRequestOrFallback(toolId: string): ToolRequest {
+        const actualTool = this.toolInvocationRegistry.getFunction(toolId);
+        if (actualTool) {
+            return actualTool;
+        }
+        this.logger.warn(`Could not restore tool request with id '${toolId}' because it was not found in the registry.`);
+        return {
+            id: toolId,
+            name: toolId,
+            parameters: { type: 'object' as const, properties: {} },
+            handler: async () => {
+                throw new Error('Tool request handler not available because tool could not be found.');
+            }
+        };
     }
 
     protected async restoreChangeSetElements(

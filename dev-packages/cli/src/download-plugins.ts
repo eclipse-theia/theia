@@ -102,7 +102,7 @@ export default async function downloadPlugins(
 
     // Downloader wrapper
     const downloadPlugin = async (plugin: PluginDownload): Promise<void> => {
-        await downloadPluginAsync(requestService, rateLimiter, failures, plugin.id, plugin.downloadUrl, pluginsDir, packed, plugin.version);
+        await downloadPluginAsync(requestService, rateLimiter, failures, plugin.id, plugin.downloadUrl, pluginsDir, packed, excludedIds, plugin.version);
     };
 
     const downloader = async (plugins: PluginDownload[]) => {
@@ -204,6 +204,7 @@ async function downloadPluginAsync(
     pluginUrl: string,
     pluginsDir: string,
     packed: boolean,
+    excludedIds: Set<string>,
     version?: string
 ): Promise<void> {
     if (!plugin) {
@@ -268,17 +269,73 @@ async function downloadPluginAsync(
         return;
     }
 
-    if ((fileExt === '.vsix' || fileExt === '.theia') && packed === true) {
-        // Download .vsix without decompressing.
-        await fs.writeFile(targetPath, response.buffer);
-    } else {
-        await fs.mkdir(targetPath, { recursive: true });
+    if ((fileExt === '.vsix' || fileExt === '.theia')) {
+        if (packed) {
+            // Download .vsix without decompressing.
+            await fs.writeFile(targetPath, response.buffer);
+        } else {
+            await decompressVsix(targetPath, response.buffer);
+        }
+        console.warn(chalk.green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
+    } else if (fileExt === '.tar.gz') {
+        // Write the downloaded tar.gz to a temporary file for decompression.
         const tempFile = temp.path('theia-plugin-download');
         await fs.writeFile(tempFile, response.buffer);
-        await decompress(tempFile, targetPath);
-    }
+        // Decompress to inspect archive contents and determine handling strategy.
+        const files = await decompress(tempFile);
+        // Check if the archive is a bundle containing only .vsix files.
+        const allVsix = files.length > 0 && files.every(file => file.path.endsWith('.vsix'));
 
-    console.warn(chalk.green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
+        if (allVsix) {
+            // Handle pure vsix bundle: process each vsix individually.
+            for (const file of files) {
+                const vsixName = path.basename(file.path);
+                const pluginId = vsixName.replace(/\.vsix$/, '');
+                if (excludedIds.has(pluginId)) {
+                    console.log(chalk.yellow(`'${pluginId}' referred to by '${plugin}' (tar.gz) is excluded because of 'theiaPluginsExcludeIds'`));
+                    continue;
+                }
+                const vsixTargetPath = packed
+                    ? path.join(pluginsDir, vsixName)
+                    : path.join(pluginsDir, pluginId);
+                if (await isDownloaded(vsixTargetPath)) {
+                    console.warn('- ' + pluginId + ': already downloaded - skipping');
+                    continue;
+                }
+                if (packed) {
+                    // Download .vsix without decompressing.
+                    await fs.writeFile(vsixTargetPath, file.data);
+                } else {
+                    await decompressVsix(vsixTargetPath, file.data);
+                }
+
+                console.warn(chalk.green(`+ ${pluginId}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
+            }
+        } else {
+            // Handle regular tar.gz: decompress directly to target directory.
+            await fs.mkdir(targetPath, { recursive: true });
+            await decompress(tempFile, targetPath);
+            console.warn(chalk.green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
+        }
+        await fs.unlink(tempFile);
+    }
+}
+
+/**
+ * Decompresses a VSIX plugin archive to a target directory.
+ *
+ * Creates the target directory if it doesn't exist, writes the buffer content
+ * to a temporary file, and then extracts the archive contents to the target path.
+ *
+ * @param targetPath the directory path where the VSIX contents will be extracted.
+ * @param buffer the VSIX file content as a binary buffer or string.
+ */
+async function decompressVsix(targetPath: string, buffer: Uint8Array | string): Promise<void> {
+    await fs.mkdir(targetPath, { recursive: true });
+    const tempFile = temp.path('theia-plugin-download');
+    await fs.writeFile(tempFile, buffer);
+    await decompress(tempFile, targetPath);
+    await fs.unlink(tempFile);
 }
 
 /**

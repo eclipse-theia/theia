@@ -46,7 +46,7 @@ Although these backend services live on a different remote system, the frontend 
 
 ## Additional Information
 
-- [API documentation for `@theia/remote`](https://eclipse-theia.github.io/theia/docs/next/modules/remote.html)
+- [API documentation for `@theia/remote`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_remote.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

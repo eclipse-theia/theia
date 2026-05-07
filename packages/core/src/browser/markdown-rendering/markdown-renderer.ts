@@ -54,7 +54,7 @@ export interface MarkdownRenderOptions extends FormattedTextRenderOptions {
 /** Use this directly if you aren't worried about circular dependencies in the Shell */
 export const MarkdownRenderer = Symbol('MarkdownRenderer');
 export interface MarkdownRenderer {
-    render(markdown: MarkdownString | undefined, options?: MarkdownRenderOptions): MarkdownRenderResult;
+    render(markdown: MarkdownString, options?: MarkdownRenderOptions, outElement?: HTMLElement): MarkdownRenderResult;
 }
 
 /** Use this to avoid circular dependencies in the Shell */

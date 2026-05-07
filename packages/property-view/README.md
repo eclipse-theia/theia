@@ -27,7 +27,7 @@ To contribute a specific property view, it is necessary to implement a `Property
 
 ## Additional Information
 
-- [API documentation for `@theia/property-view`](https://eclipse-theia.github.io/theia/docs/next/modules/property_view.html)
+- [API documentation for `@theia/property-view`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_property-view.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 
@@ -40,8 +40,3 @@ To contribute a specific property view, it is necessary to implement a `Property
 
 "Theia" is a trademark of the Eclipse Foundation
 <https://www.eclipse.org/theia>
-
-## License
-
-- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
-- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)

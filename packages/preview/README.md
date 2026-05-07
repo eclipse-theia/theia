@@ -31,7 +31,7 @@ bind(PreviewHandler).toService(MyPreviewHandler);
 
 ## Additional Information
 
-- [API documentation for `@theia/preview`](https://eclipse-theia.github.io/theia/docs/next/modules/preview.html)
+- [API documentation for `@theia/preview`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_preview.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

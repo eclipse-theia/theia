@@ -36,7 +36,11 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
             const preferences: string[] = args.setPreference instanceof Array ? args.setPreference : [args.setPreference];
             for (const preference of preferences) {
                 const firstEqualIndex = preference.indexOf('=');
-                this.preferences.push([preference.substring(0, firstEqualIndex), JSON.parse(preference.substring(firstEqualIndex + 1))]);
+                let rawValue = preference.substring(firstEqualIndex + 1);
+                if (rawValue.startsWith('base64:')) {
+                    rawValue = Buffer.from(rawValue.substring('base64:'.length), 'base64').toString('utf-8');
+                }
+                this.preferences.push([preference.substring(0, firstEqualIndex), JSON.parse(rawValue)]);
             }
         }
     }

@@ -27,6 +27,10 @@ export interface PreferenceProviderDataChange {
     readonly preferenceName: string;
     /**
      * The new value of the changed preference.
+     * Can be `undefined` for multiple reasons:
+     * - The preference has been reset to its default value.
+     * - The preference has been reset and has no value explicitly stored.
+     * If `undefined`, use the preference service to determine the effective new value if needed.
      */
     readonly newValue?: JSONValue;
     /**

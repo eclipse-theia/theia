@@ -71,3 +71,16 @@
 .plugins-tab-icon::before {
   content: "\f0fe";
 }
+
+.theia-plugins .pluginHeaderContainer.pluginDisabledByTrust {
+  opacity: 0.6;
+}
+
+.theia-plugins .pluginRestrictedBadge {
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-statusBarItem-prominentForeground);
+  background-color: var(--theia-statusBarItem-prominentBackground);
+  border-radius: 2px;
+  padding: calc(var(--theia-ui-padding) / 3 * 2);
+  white-space: nowrap;
+}

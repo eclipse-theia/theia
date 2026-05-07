@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
+import { ChatAgent, ChatAgentRecommendationService } from '@theia/ai-chat/lib/common';
 import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
@@ -50,18 +50,19 @@ import {
     GetProposedFileState,
     ReplaceContentInFileFunctionHelper,
     SuggestFileReplacements,
+    SuggestFileReplacements_Simple,
     SimpleSuggestFileReplacements,
     SuggestFileContent,
     WriteFileContent,
     WriteFileReplacements,
+    WriteFileReplacements_Simple,
     SimpleWriteFileReplacements,
     FileChangeSetTitleProvider,
     DefaultFileChangeSetTitleProvider,
-    ReplaceContentInFileFunctionHelperV2,
-    SuggestFileReplacements_Next
+    ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
-import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
-import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
+import { OrchestratorChatAgent } from '../common/orchestrator-chat-agent';
+import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { AppTesterChatAgent } from './app-tester-chat-agent';
 import { GitHubChatAgent } from './github-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
@@ -78,34 +79,66 @@ import { TemplatePreferenceContribution } from './template-preference-contributi
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
+import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
+import { ChatSessionCardActionContribution, DefaultChatSessionCardActionContribution } from './chat-session-card-action-contribution';
+import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
+import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { CommandContribution, PreferenceContribution } from '@theia/core';
+import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { GetSkillFileContent } from './skill-file-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
-import { TaskContextAgent } from './task-context-agent';
+import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { AIWorkspaceRestrictionContribution } from './ai-workspace-restriction-contribution';
+
 import { ProjectInfoAgent } from './project-info-agent';
+import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
+import { TodoWriteTool } from './todo-tool';
+import { TodoToolRenderer } from './todo-tool-renderer';
+import { UserInteractionTool } from './user-interaction-tool';
+import { UserInteractionToolRenderer } from './user-interaction-tool-renderer';
+import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
+import { RememberCommandContribution } from './remember-command-contribution';
+import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunction, ListTaskContextsFunction, RewriteTaskContextFunction } from './task-context-functions';
+import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
+import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
+import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
+import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
+import { GitHubCapabilityContribution } from './github-capability-contribution';
+import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
+import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
+import { ExploreAgent } from './explore-agent';
+import { CodeReviewerAgent } from './code-reviewer-agent';
+import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
+import { PRReviewAgent } from './review/pr-review-agent';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
 
+    bind(AgentModeConfirmationServiceImpl).toSelf().inSingletonScope();
+    bind(AgentModeConfirmationService).toService(AgentModeConfirmationServiceImpl);
+
     bind(AIIdeActivationServiceImpl).toSelf().inSingletonScope();
     // rebinds the default implementation of '@theia/ai-core'
     rebind(AIActivationService).toService(AIIdeActivationServiceImpl);
+
+    bind(AIWorkspaceRestrictionContribution).toSelf().inSingletonScope();
+    bind(WorkspaceRestrictionContribution).toService(AIWorkspaceRestrictionContribution);
 
     bind(ArchitectAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ArchitectAgent);
@@ -115,11 +148,13 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CoderAgent);
     bind(ChatAgent).toService(CoderAgent);
 
-    bind(TaskContextAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(TaskContextAgent);
     bind(ProjectInfoAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ProjectInfoAgent);
     bind(ChatAgent).toService(ProjectInfoAgent);
+
+    bind(CreateSkillAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CreateSkillAgent);
+    bind(ChatAgent).toService(CreateSkillAgent);
 
     bind(OrchestratorChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(OrchestratorChatAgent);
@@ -145,16 +180,31 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CommandChatAgent);
     bind(ChatAgent).toService(CommandChatAgent);
 
-    bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
-    bind(FallbackChatAgentId).toConstantValue({ id: UniversalChatAgentId });
+    bind(ExploreAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(ExploreAgent);
+    bind(ChatAgent).toService(ExploreAgent);
 
-    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider);
+    bind(CodeReviewerAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CodeReviewerAgent);
+    bind(ChatAgent).toService(CodeReviewerAgent);
+
+    bind(PRReviewAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(PRReviewAgent);
+    bind(ChatAgent).toService(PRReviewAgent);
+
+    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
+    bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
+    bindContributionProvider(bind, ChatSessionCardActionContribution);
+    bind(DefaultChatSessionCardActionContribution).toSelf().inSingletonScope();
+    bind(ChatSessionCardActionContribution).toService(DefaultChatSessionCardActionContribution);
+    bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();
 
     bindToolProvider(GetWorkspaceFileList, bind);
     bindToolProvider(FileContentFunction, bind);
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagnosticProvider, bind);
     bindToolProvider(FindFilesByPattern, bind);
+    bindToolProvider(GetSkillFileContent, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
@@ -167,10 +217,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(LaunchStopProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
-    bindToolProvider(SuggestFileReplacements, bind);
-    bindToolProvider(WriteFileReplacements, bind);
     bind(ReplaceContentInFileFunctionHelperV2).toSelf().inSingletonScope();
-    bindToolProvider(SuggestFileReplacements_Next, bind);
+    bindToolProvider(SuggestFileReplacements, bind);
+    bindToolProvider(SuggestFileReplacements_Simple, bind);
+    bindToolProvider(WriteFileReplacements, bind);
+    bindToolProvider(WriteFileReplacements_Simple, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
@@ -228,6 +279,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         }))
         .inSingletonScope();
 
+    bind(AISkillsConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AISkillsConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AISkillsConfigurationWidget)
+        }))
+        .inSingletonScope();
+
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
@@ -273,6 +332,27 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bindToolProvider(SuggestTerminalCommand, bind);
 
+    // Task context functions for Architect planning mode
+    bindToolProvider(CreateTaskContextFunction, bind);
+    bindToolProvider(GetTaskContextFunction, bind);
+    bindToolProvider(EditTaskContextFunction, bind);
+    bindToolProvider(ListTaskContextsFunction, bind);
+    bindToolProvider(RewriteTaskContextFunction, bind);
+    bindToolProvider(TodoWriteTool, bind);
+    bindToolProvider(UserInteractionTool, bind);
+    bind(ChatResponsePartRenderer).to(TodoToolRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(UserInteractionToolRenderer).inSingletonScope();
+
     bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
+
+    bind(FrontendApplicationContribution).to(RememberCommandContribution);
+    bind(FrontendApplicationContribution).to(FixGitHubTicketCommandContribution);
+    bind(FrontendApplicationContribution).to(AddressGhReviewCommandContribution);
+    bind(FrontendApplicationContribution).to(AnalyzesGhTicketCommandContribution);
+    bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
+    bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
+    bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
+
+    bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
 });

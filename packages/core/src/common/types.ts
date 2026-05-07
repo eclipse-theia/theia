@@ -30,6 +30,12 @@ export type RecursivePartial<T> = {
     ? RecursivePartial<I>[]
     : RecursivePartial<T[P]>;
 };
+export type RecursiveReadonly<T> = {
+    readonly [P in keyof T]: T[P] extends Array<infer I>
+    ? RecursiveReadonly<I>[]
+    : T[P] extends object ? RecursiveReadonly<T[P]>
+    : T[P];
+};
 
 export function isBoolean(value: unknown): value is boolean {
     return value === true || value === false;
@@ -137,4 +143,15 @@ export function isDefined<T>(arg: T | null | undefined): arg is T {
 export function isUndefinedOrNull(obj: unknown): obj is undefined | null {
     // eslint-disable-next-line no-null/no-null
     return (isUndefined(obj) || obj === null);
+}
+
+export namespace MapUtils {
+    export function addOrInsertWith<K, V>(container: Map<K, V[]>, key: K, ...values: V[]): void {
+        const existing = container.get(key);
+        if (existing) {
+            existing.push(...values);
+        } else {
+            container.set(key, values);
+        }
+    }
 }

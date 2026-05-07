@@ -53,8 +53,13 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         return undefined;
     }
 
-    openNewDefaultWindow(): void {
+    async openNewDefaultWindow(): Promise<number> {
         this.openNewWindow(`#${DEFAULT_WINDOW_HASH}`);
+        return -1;
+    }
+
+    closeWindow(windowId: number): void {
+        // No-op in browser-only mode
     }
 
     focus(): void {

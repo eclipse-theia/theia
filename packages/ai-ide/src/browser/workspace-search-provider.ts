@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MutableChatRequestModel } from '@theia/ai-chat';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -46,12 +45,16 @@ export class WorkspaceSearchProvider implements ToolProvider {
         return {
             id: SEARCH_IN_WORKSPACE_FUNCTION_ID,
             name: SEARCH_IN_WORKSPACE_FUNCTION_ID,
-            description: 'Searches the content of files within the workspace for lines matching the given search term (`query`). \
-            The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). \
-            It returns a list of matching files, including the file path (URI), the line number, and the full text content of each matching line. \
-            Multi-word patterns must match exactly (including spaces, case-insensitively). \
-            For best results, use specific search terms and consider filtering by file extensions or limiting to specific subdirectories to avoid overwhelming results. \
-            For complex searches, prefer multiple simpler queries over one complex query or regular expression.',
+            description: 'Searches file contents within the workspace for lines matching the given search term. ' +
+            'Returns up to 30 matching results by default (configurable via preferences). If results are truncated, ' +
+            'refine your search with fileExtensions or subDirectoryPath filters. ' +
+            'The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). ' +
+            'Returns a list of matches including: file path, line number, and the matching line content. ' +
+            'Multi-word patterns must match exactly (including spaces, case-insensitively). ' +
+            'For best results, use specific search terms and filter by file extensions or subdirectories. ' +
+            'For complex searches, prefer multiple simpler queries over one complex regex. ' +
+            'Use this for finding code patterns, function usages, or text across the codebase. ' +
+            'Do NOT use this for finding files by name - use findFilesByPattern instead.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -78,7 +81,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
                 },
                 required: ['query', 'useRegExp']
             },
-            handler: (argString, ctx: MutableChatRequestModel) => this.handleSearch(argString, ctx?.response?.cancellationToken)
+            handler: (argString, ctx?: ToolInvocationContext) => this.handleSearch(argString, ctx?.cancellationToken)
         };
     }
 

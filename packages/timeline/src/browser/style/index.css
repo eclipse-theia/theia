@@ -28,22 +28,15 @@
 }
 
 .theia-timeline .timeline-item {
-  font-size: var(--theia-ui-font-size1);
   display: flex;
-  overflow: hidden;
   align-items: center;
-  justify-content: space-between;
-  height: var(--theia-content-line-height);
-  line-height: var(--theia-content-line-height);
-  padding: 0px calc(var(--theia-ui-padding) / 2);
 }
 
-.theia-timeline .timeline-item:hover {
-  cursor: pointer;
+.theia-timeline .timeline-item-icon,
+.theia-timeline .timeline-item-label {
+  margin-right: 6px;
 }
 
-.theia-timeline .timeline-item .label {
+.theia-timeline .timeline-item-description {
   font-size: var(--theia-ui-font-size0);
-  margin-left: var(--theia-ui-padding);
-  opacity: 0.7;
 }
