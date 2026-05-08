@@ -26,6 +26,8 @@ export interface ChatModelWithMetadata {
     pinnedAgentId?: string;
     /** Timestamp (ms since epoch) of the last user interaction. Used as the display date for session cards. */
     lastInteraction?: number;
+    /** Whether the last request ended with an error. */
+    hasError?: boolean;
 }
 
 export interface ChatSessionStore {
@@ -69,4 +71,8 @@ export interface ChatSessionMetadata {
     title: string;
     saveDate: number;
     location: ChatAgentLocation;
+    /** ID of the agent pinned to the session (used for icon and display name on cards). */
+    pinnedAgentId?: string;
+    /** Whether the last request ended with an error. */
+    hasError?: boolean;
 }
