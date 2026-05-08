@@ -36,6 +36,7 @@
 - [vsx-registry] `VSXExtensionsContribution` no longer injects `OVSXClientProvider` or `OVSXApiFilterProvider`. It now uses `VSXRegistryService`. Extensions that subclass `VSXExtensionsContribution` and relied on `clientProvider` or `vsxApiFilter` must migrate to `vsxRegistryService`.
 - [vsx-registry] `VSXLanguageQuickPickService` no longer injects `RequestService` or `OVSXClientProvider`. It now uses `VSXRegistryService`.
 - [vsx-registry] The `OVSXClientProvider` binding from `vsx-registry-common-module` is still available but no longer used on the frontend by any Theia code. On the frontend, `OVSXHttpClient` uses the browser `RequestService`, which falls back to `BackendRequestFacade` for CORS bypass — these requests will be rejected by the URL allowlist unless a `BackendRequestAllowedContribution` is registered. Frontend code that depends on `OVSXClientProvider` should migrate to `VSXRegistryService` or register an appropriate allowlist contribution.
+- [core] WebSocket connections now enforce same-origin validation by default when `THEIA_HOSTS` is not set, and require a `SameSite=Strict` connection token cookie. The internal `fix-origin` header mechanism has been removed. Custom deployments that relied on `fix-origin` to pass origin validation must update accordingly. [#17701](https://github.com/eclipse-theia/theia/pull/17701)
 
 ## 1.72.0 - 5/28/2026
 

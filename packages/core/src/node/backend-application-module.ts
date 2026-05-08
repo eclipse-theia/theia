@@ -36,7 +36,7 @@ import {
 } from '../common';
 import {
     BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution,
-    BackendApplicationServer, BackendApplicationPath, RootContainer
+    BackendApplicationServer, BackendApplicationPath, EarlyExpressMiddleware, RootContainer
 } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { IPCConnectionProvider } from './messaging';
@@ -89,6 +89,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(BackendApplicationCliContribution);
 
+    bind(EarlyExpressMiddleware).toSelf().inSingletonScope();
     bind(BackendApplication).toSelf().inSingletonScope();
     bind(RootContainer).toDynamicValue(({ container }) => {
         let root = container;
