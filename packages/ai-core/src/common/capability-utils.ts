@@ -40,8 +40,6 @@ export interface GenericCapabilityItem {
     id: string;
     /** Display name for the capability */
     name: string;
-    /** Optional group name for grouping related items */
-    group?: string;
     /** Optional description */
     description?: string;
 }

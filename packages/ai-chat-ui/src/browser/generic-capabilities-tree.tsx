@@ -204,7 +204,7 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             buildFlatRootNode('skills', nls.localizeByDefault('Skills'), 'skills', availableCapabilities.skills),
             buildGroupedRootNode('mcp', nls.localizeByDefault('MCP'), 'mcpFunctions', availableCapabilities.mcpFunctions),
             buildFlatRootNode('agents', nls.localizeByDefault('Agents'), 'agentDelegation', availableCapabilities.agentDelegation),
-            buildGroupedRootNode('functions', nls.localize('theia/ai/chat-ui/functions', 'Functions'), 'functions', availableCapabilities.functions),
+            buildFlatRootNode('functions', nls.localize('theia/ai/chat-ui/functions', 'Functions'), 'functions', availableCapabilities.functions),
             buildFlatRootNode('prompts', nls.localizeByDefault('Prompts'), 'promptFragments', availableCapabilities.promptFragments),
             buildFlatRootNode('variables', nls.localizeByDefault('Variables'), 'variables', availableCapabilities.variables),
         ].filter((node): node is TreeNodeData => node !== undefined);
@@ -420,7 +420,7 @@ export const GenericCapabilitiesTree: React.FunctionComponent<GenericCapabilitie
             case 'skills': return getItems(availableCapabilities.skills);
             case 'variables': return getItems(availableCapabilities.variables);
             case 'mcpFunctions': return getGroupItems(availableCapabilities.mcpFunctions, groupName);
-            case 'functions': return getGroupItems(availableCapabilities.functions, groupName);
+            case 'functions': return getItems(availableCapabilities.functions);
             case 'promptFragments': return getItems(availableCapabilities.promptFragments);
             case 'agentDelegation': return getItems(availableCapabilities.agentDelegation);
             default: return [];
