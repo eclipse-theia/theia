@@ -72,7 +72,9 @@ export class OllamaModel implements LanguageModel {
             model: this.model,
             ...this.DEFAULT_REQUEST_SETTINGS,
             ...settings,
-            messages: request.messages.map(m => this.toOllamaMessage(m)).filter(m => m !== undefined) as Message[],
+            messages: this.mergeConsecutiveAssistantMessages(
+                request.messages.map(m => this.toOllamaMessage(m)).filter((m): m is Message => m !== undefined)
+            ),
             tools: request.tools?.map(t => this.toOllamaTool(t)),
             stream
         };
@@ -454,6 +456,46 @@ export class OllamaModel implements LanguageModel {
             return undefined;
         }
 
+        return result;
+    }
+
+    protected mergeConsecutiveAssistantMessages(messages: Message[]): Message[] {
+        const result: Message[] = [];
+        for (const message of messages) {
+            const previous = result[result.length - 1];
+            if (previous?.role === 'assistant' && message.role === 'assistant') {
+                const merged: Message = { ...previous, role: 'assistant' };
+
+                const previousContent = previous.content;
+                const nextContent = message.content;
+                if (previousContent && nextContent) {
+                    merged.content = `${previousContent}\n${nextContent}`;
+                } else if (nextContent) {
+                    merged.content = nextContent;
+                } else if (previousContent) {
+                    merged.content = previousContent;
+                }
+
+                const previousThinking = previous.thinking;
+                const nextThinking = message.thinking;
+                if (previousThinking && nextThinking) {
+                    merged.thinking = `${previousThinking}\n${nextThinking}`;
+                } else if (nextThinking) {
+                    merged.thinking = nextThinking;
+                } else if (previousThinking) {
+                    merged.thinking = previousThinking;
+                }
+
+                const toolCalls = [...(previous.tool_calls ?? []), ...(message.tool_calls ?? [])];
+                if (toolCalls.length > 0) {
+                    merged.tool_calls = toolCalls;
+                }
+
+                result[result.length - 1] = merged;
+            } else {
+                result.push(message);
+            }
+        }
         return result;
     }
 

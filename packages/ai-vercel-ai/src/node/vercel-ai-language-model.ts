@@ -377,7 +377,7 @@ export class VercelAiModel implements LanguageModel {
     }
 
     protected processMessages(messages: LanguageModelMessage[]): Array<CoreMessage> {
-        return messages.map(message => {
+        const converted = messages.map(message => {
             const content = LanguageModelMessage.isTextMessage(message) ? message.text : '';
             let role: 'user' | 'assistant' | 'system';
             switch (message.actor) {
@@ -398,5 +398,31 @@ export class VercelAiModel implements LanguageModel {
                 content,
             };
         });
+        return this.mergeConsecutiveAssistantMessages(converted);
+    }
+
+    protected mergeConsecutiveAssistantMessages(messages: Array<CoreMessage>): Array<CoreMessage> {
+        const result: Array<CoreMessage> = [];
+        for (const message of messages) {
+            const previous = result[result.length - 1];
+            if (previous?.role === 'assistant' && message.role === 'assistant') {
+                const merged: CoreMessage = { ...previous, role: 'assistant' };
+
+                const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
+                const nextContent = typeof message.content === 'string' ? message.content : undefined;
+                if (previousContent && nextContent) {
+                    merged.content = `${previousContent}\n${nextContent}`;
+                } else if (nextContent) {
+                    merged.content = nextContent;
+                } else if (previousContent) {
+                    merged.content = previousContent;
+                }
+
+                result[result.length - 1] = merged;
+            } else {
+                result.push(message);
+            }
+        }
+        return result;
     }
 }
