@@ -38,9 +38,9 @@
     "@theia/localization-manager": "1.71.0",
     "@theia/ovsx-client": "1.71.0",
     "@theia/request": "1.71.0",
-    "@types/chai": "^4.2.7",
-    "@types/mocha": "^10.0.0",
-    "@types/node-fetch": "^2.5.7",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node-fetch": "^2.6.13",
     "chai": "^4.3.10",
     "chalk": "4.0.0",
     "decompress": "^4.2.1",
@@ -55,14 +55,14 @@
     "puppeteer-core": "23.1.0",
     "puppeteer-to-istanbul": "1.4.0",
     "temp": "^0.9.4",
-    "tslib": "^2.6.2",
-    "yargs": "^15.3.1"
+    "tslib": "^2.8.1",
+    "yargs": "^15.4.1"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.7",
-    "@types/mocha": "^10.0.0",
-    "@types/node-fetch": "^2.5.7",
-    "@types/proxy-from-env": "^1.0.1"
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node-fetch": "^2.6.13",
+    "@types/proxy-from-env": "^1.0.4"
   },
   "gitHead": "21358137e41342742707f660b8e222f940a27652"
 }

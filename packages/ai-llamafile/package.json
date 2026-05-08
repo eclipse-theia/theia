@@ -6,7 +6,7 @@
     "@theia/ai-core": "1.71.0",
     "@theia/core": "1.71.0",
     "@theia/output": "1.71.0",
-    "tslib": "^2.6.2"
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"

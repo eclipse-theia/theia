@@ -32,17 +32,17 @@
     "src"
   ],
   "dependencies": {
-    "@playwright/test": "^1.59.0",
+    "@playwright/test": "^1.59.1",
     "fs-extra": "^9.1.0",
-    "tslib": "^2.6.2"
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@theia/cli": "1.71.0",
-    "@types/fs-extra": "^9.0.8",
-    "allure-commandline": "^2.23.1",
-    "allure-playwright": "^2.5.0",
+    "@types/fs-extra": "^9.0.13",
+    "allure-commandline": "^2.38.1",
+    "allure-playwright": "^2.15.1",
     "cross-env": "^7.0.3",
-    "rimraf": "^5.0.0",
+    "rimraf": "^5.0.10",
     "typescript": "~5.9.3"
   },
   "publishConfig": {

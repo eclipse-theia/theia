@@ -12,7 +12,7 @@
     "@vscode/ripgrep": "^1.17.1",
     "minimatch": "^10.2.5",
     "react-textarea-autosize": "^8.5.9",
-    "tslib": "^2.6.2"
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"
