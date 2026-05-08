@@ -735,15 +735,17 @@ export class GetWorkspaceFileList implements ToolProvider {
                         type: 'string',
                         description: 'Path to a directory within the workspace ' +
                             '(e.g., "my-project/src", "backend/src/components"). ' +
-                            'Use "" or "." to list the top-level workspace roots. ' +
+                            'Use "" or "." to list the workspace top-level directories. ' +
                             'Paths outside the workspace will result in an error.'
                     }
                 },
                 required: ['path']
             },
             description: 'Lists files and directories within a specified workspace directory. ' +
-                'Returns an array of names where directories are suffixed with "/" (e.g., ["src/", "package.json", "README.md"]). ' +
-                'When called with empty path or ".", returns the list of workspace root names (e.g., ["frontend/", "backend/"]). ' +
+                'Returns a JSON object mapping each immediate child name to its type ("directory" or "file"), ' +
+                'e.g., {"src": "directory", "package.json": "file", "README.md": "file"}. ' +
+                'Each key is a sibling of every other key; none are nested under another. ' +
+                'Use "" or "." to list the workspace top-level directories. ' +
                 'Use this to explore directory structure step by step. ' +
                 'For finding specific files by pattern, use findFilesByPattern instead. ' +
                 'For searching file contents, use searchInWorkspace instead.',
@@ -760,7 +762,7 @@ export class GetWorkspaceFileList implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected workspaceScope: WorkspaceFunctionScope;
 
-    async getProjectFileList(path?: string, cancellationToken?: CancellationToken): Promise<string | string[]> {
+    async getProjectFileList(path?: string, cancellationToken?: CancellationToken): Promise<string> {
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
@@ -772,11 +774,19 @@ export class GetWorkspaceFileList implements ToolProvider {
             }
 
             if (!path || path === '.' || path === '') {
-                const rootNames = Array.from(rootMapping.keys()).map(name => `${name}/`);
-                return rootNames;
+                const roots: Record<string, 'directory'> = {};
+                for (const name of rootMapping.keys()) {
+                    roots[name] = 'directory';
+                }
+                return JSON.stringify(roots);
             }
 
-            const targetUri = await this.workspaceScope.resolveRelativePath(path);
+            let targetUri: URI;
+            try {
+                targetUri = await this.workspaceScope.resolveRelativePath(path);
+            } catch (error) {
+                return JSON.stringify({ error: error.message });
+            }
             const containingRoot = this.workspaceScope.getContainingRoot(targetUri);
             if (!containingRoot) {
                 return JSON.stringify({ error: 'Access outside of the workspace is not allowed' });
@@ -797,17 +807,17 @@ export class GetWorkspaceFileList implements ToolProvider {
         }
     }
 
-    private async listFilesDirectly(uri: URI, cancellationToken?: CancellationToken): Promise<string | string[]> {
+    private async listFilesDirectly(uri: URI, cancellationToken?: CancellationToken): Promise<string> {
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
 
         const stat = await this.fileService.resolve(uri);
-        const result: string[] = [];
+        const result: Record<string, 'directory' | 'file'> = {};
 
         if (stat && stat.isDirectory) {
             if (await this.workspaceScope.shouldExclude(stat)) {
-                return result;
+                return JSON.stringify(result);
             }
             const children = await this.fileService.resolve(uri);
             if (children.children) {
@@ -819,13 +829,12 @@ export class GetWorkspaceFileList implements ToolProvider {
                     if (await this.workspaceScope.shouldExclude(child)) {
                         continue;
                     }
-                    const itemName = child.resource.path.base;
-                    result.push(child.isDirectory ? `${itemName}/` : itemName);
+                    result[child.resource.path.base] = child.isDirectory ? 'directory' : 'file';
                 }
             }
         }
 
-        return result;
+        return JSON.stringify(result);
     }
 }
 
