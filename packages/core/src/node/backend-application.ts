@@ -21,7 +21,7 @@ import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
-import { inject, named, injectable, postConstruct } from 'inversify';
+import { inject, named, injectable, type interfaces, postConstruct } from 'inversify';
 import { ContributionProvider, LogLevel, MaybePromise, MeasurementContext, Stopwatch } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
@@ -35,11 +35,18 @@ import { ProcessUtils } from './process-utils';
  */
 export const BackendApplicationPath = process.env.THEIA_APP_PROJECT_PATH || process.cwd();
 
+/**
+ * Private injection token for the backend's root Inversify {@link Container}.
+ */
+export const RootContainer = Symbol('RootContainer');
+
 export type DnsResultOrder = 'ipv4first' | 'verbatim' | 'nodeDefault';
 
 const APP_PROJECT_PATH = 'app-project-path';
 
 const TIMER_WARNING_THRESHOLD = 50;
+
+const SHUTDOWN_TIMEOUT_MS = 5000;
 
 const DEFAULT_PORT = environment.electron.is() ? 0 : 3000;
 const DEFAULT_HOST = 'localhost';
@@ -162,7 +169,12 @@ export class BackendApplication {
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
 
+    @inject(RootContainer)
+    protected readonly rootContainer: interfaces.Container;
+
     private _configured: Promise<void>;
+
+    private shuttingDown = false;
 
     private settlementContext?: MeasurementContext<BackendApplicationContribution>;
 
@@ -179,18 +191,15 @@ export class BackendApplication {
         process.on('SIGPIPE', () => {
             console.error(new Error('Unexpected SIGPIPE'));
         });
-        /**
-         * Kill the current process tree on exit.
-         */
-        function signalHandler(signal: NodeJS.Signals): never {
-            process.exit(1);
-        }
+
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
-        // Handles `Ctrl+C`.
-        process.on('SIGINT', signalHandler);
-        // Handles `kill pid`.
-        process.on('SIGTERM', signalHandler);
+
+        // Handles `Ctrl+C` and `kill pid`. Delegates to gracefulShutdown so that
+        // root-scoped singletons get their @preDestroy hooks invoked before exit.
+        const onSignal = () => { this.gracefulShutdown().catch(err => console.error(err)); };
+        process.on('SIGINT', onSignal);
+        process.on('SIGTERM', onSignal);
     }
 
     protected async initialize(): Promise<void> {
@@ -330,6 +339,47 @@ export class BackendApplication {
         return family.toLowerCase() === 'ipv6'
             ? `${scheme}://[${address}]:${port}`
             : `${scheme}://${address}:${port}`;
+    }
+
+    /**
+     * Performs an asynchronous shutdown of the backend by unbinding all services in
+     * the root Inversify container so that their `@preDestroy` hooks may run.
+     * Limited to `SHUTDOWN_TIMEOUT_MS` to avoid hanging on a misbehaving destroy hook.
+     *
+     * Idempotent: a second invocation is a no-op. Exits the process with code 1
+     * so that the `process.on('exit')` handler invokes `onStop()` on all
+     * `BackendApplicationContribution`s. Note that this does mean that by the time
+     * those contributions' `onStop()` call-backs are invoked, any injected dependencies
+     * that have clean-up to perform will have done so and so may no longer provide the
+     * expected services.
+     */
+    protected async gracefulShutdown(): Promise<void> {
+        if (this.shuttingDown) {
+            return;
+        }
+        this.shuttingDown = true;
+
+        let timer: NodeJS.Timeout | undefined;
+        const timeout = new Promise<never>((_, reject) => {
+            timer = setTimeout(
+                () => reject(new Error(`Container unbind timed out after ${SHUTDOWN_TIMEOUT_MS}ms`)),
+                SHUTDOWN_TIMEOUT_MS
+            );
+            timer.unref();
+        });
+
+        try {
+            await Promise.race([this.rootContainer.unbindAllAsync(), timeout]);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.warn(`Backend root container cleanup failed: ${message}`);
+        } finally {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        }
+
+        process.exit(1);
     }
 
     protected onStop(): void {
