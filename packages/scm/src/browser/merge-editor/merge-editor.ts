@@ -239,8 +239,7 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
                 this.applyLayoutMode(layoutMode);
 
                 const pane = currentPane?.isVisible ? currentPane : this.resultPane;
-                this.currentPaneObservable.set(pane);
-                pane.activate();
+                pane.editor.focus();
 
                 this.scrollSync.restoreScrollState(scrollState);
 
@@ -272,8 +271,7 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
                         storedState = undefined;
 
                         const pane = currentPane ?? this.resultPane;
-                        this.currentPaneObservable.set(pane);
-                        pane.activate();
+                        pane.editor.focus();
                     }
                     this.scrollSync.restoreScrollState(scrollState);
                 });
@@ -623,9 +621,9 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
         super.onActivateRequest(msg);
         const { currentPane } = this;
         if (currentPane) {
-            currentPane.activate();
+            currentPane.editor.focus();
         } else {
-            this.resultPane.activate();
+            this.resultPane.editor.focus();
         }
     }
 }

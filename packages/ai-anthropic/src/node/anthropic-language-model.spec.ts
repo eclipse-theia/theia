@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage } from './anthropic-language-model';
+import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages } from './anthropic-language-model';
 import { isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
+import type { MessageParam } from '@anthropic-ai/sdk/resources';
 
 const REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -125,6 +126,91 @@ describe('AnthropicModel', () => {
             );
 
             expect(model.url).to.equal('custom-url');
+        });
+    });
+
+    describe('mergeConsecutiveSameRoleMessages', () => {
+        it('should merge an assistant text message followed by an assistant tool_use into a single message', () => {
+            const messages: MessageParam[] = [
+                { role: 'user', content: [{ type: 'text', text: 'do something' }] },
+                { role: 'assistant', content: [{ type: 'text', text: 'let me call a tool' }] },
+                { role: 'assistant', content: [{ type: 'tool_use', id: 'call_1', name: 'foo', input: { x: 1 } }] }
+            ];
+            const result = mergeConsecutiveSameRoleMessages(messages);
+            expect(result).to.deep.equal([
+                { role: 'user', content: [{ type: 'text', text: 'do something' }] },
+                {
+                    role: 'assistant',
+                    content: [
+                        { type: 'text', text: 'let me call a tool' },
+                        { type: 'tool_use', id: 'call_1', name: 'foo', input: { x: 1 } }
+                    ]
+                }
+            ]);
+        });
+
+        it('should merge consecutive user messages with parallel tool_results into a single user message', () => {
+            const messages: MessageParam[] = [
+                { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'call_1', content: 'r1' }] },
+                { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'call_2', content: 'r2' }] }
+            ];
+            const result = mergeConsecutiveSameRoleMessages(messages);
+            expect(result).to.deep.equal([
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'tool_result', tool_use_id: 'call_1', content: 'r1' },
+                        { type: 'tool_result', tool_use_id: 'call_2', content: 'r2' }
+                    ]
+                }
+            ]);
+        });
+
+        it('should reproduce the bug scenario from issue #17104 (text+tool_use after a tool_result round-trip)', () => {
+            const messages: MessageParam[] = [
+                { role: 'user', content: [{ type: 'text', text: 'first request' }] },
+                { role: 'assistant', content: [{ type: 'tool_use', id: 'call_1', name: 'foo', input: {} }] },
+                { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'call_1', content: 'r1' }] },
+                { role: 'assistant', content: [{ type: 'text', text: 'follow-up reasoning' }] },
+                { role: 'assistant', content: [{ type: 'tool_use', id: 'call_2', name: 'bar', input: {} }] }
+            ];
+            const result = mergeConsecutiveSameRoleMessages(messages);
+            // Sanity check: roles must strictly alternate after merging.
+            for (let i = 1; i < result.length; i++) {
+                expect(result[i - 1].role).to.not.equal(result[i].role);
+            }
+            expect(result).to.have.lengthOf(4);
+            expect(result[3].content).to.deep.equal([
+                { type: 'text', text: 'follow-up reasoning' },
+                { type: 'tool_use', id: 'call_2', name: 'bar', input: {} }
+            ]);
+        });
+
+        it('should leave alternating messages unchanged', () => {
+            const messages: MessageParam[] = [
+                { role: 'user', content: [{ type: 'text', text: 'a' }] },
+                { role: 'assistant', content: [{ type: 'text', text: 'b' }] },
+                { role: 'user', content: [{ type: 'text', text: 'c' }] }
+            ];
+            const result = mergeConsecutiveSameRoleMessages(messages);
+            expect(result).to.deep.equal(messages);
+        });
+
+        it('should normalize string content to a text block when merging', () => {
+            const messages: MessageParam[] = [
+                { role: 'assistant', content: 'hello' },
+                { role: 'assistant', content: [{ type: 'text', text: 'world' }] }
+            ];
+            const result = mergeConsecutiveSameRoleMessages(messages);
+            expect(result).to.deep.equal([
+                {
+                    role: 'assistant',
+                    content: [
+                        { type: 'text', text: 'hello' },
+                        { type: 'text', text: 'world' }
+                    ]
+                }
+            ]);
         });
     });
 

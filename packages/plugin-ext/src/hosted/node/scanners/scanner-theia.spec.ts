@@ -20,8 +20,9 @@ import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { AbstractPluginScanner } from './scanner-theia';
+import { AbstractPluginScanner, TheiaPluginScanner } from './scanner-theia';
 import { PluginPackage, PluginEntryPoint } from '../../../common/plugin-protocol';
+import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import URI from '@theia/core/lib/common/uri';
 
 class TestPluginScanner extends AbstractPluginScanner {
@@ -108,5 +109,100 @@ describe('AbstractPluginScanner', () => {
 
         const model = scanner.getModel(pkg);
         expect(model.untrustedWorkspacesSupport).to.equal(undefined);
+    });
+});
+
+describe('TheiaPluginScanner configuration default derivation', () => {
+    let scanner: TheiaPluginScanner;
+    let tmpDir: string;
+
+    before(() => {
+        scanner = new TheiaPluginScanner();
+        (scanner as any).pluginUriFactory = {
+            createUri: (_pkg: PluginPackage, _relativePath?: string) => new URI('file:///dummy')
+        };
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scanner-config-test-'));
+    });
+
+    after(() => {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    async function readProperties(properties: Record<string, any>): Promise<PreferenceSchema['properties']> {
+        const pkg: PluginPackage = {
+            name: 'test-plugin',
+            publisher: 'test-publisher',
+            version: '1.0.0',
+            engines: { theiaPlugin: '1.0.0' },
+            displayName: 'Test Plugin',
+            description: 'A test plugin',
+            packagePath: tmpDir,
+            contributes: {
+                configuration: { title: 'Test', properties }
+            }
+        } as PluginPackage;
+        const contribution = await scanner.getContribution(pkg);
+        expect(contribution?.configuration).to.have.lengthOf(1);
+        return contribution!.configuration![0].properties;
+    }
+
+    it('derives "" for typed-but-defaultless string property (VS Code parity)', async () => {
+        const props = await readProperties({ 'vue.server.path': { type: 'string' } });
+        expect(props['vue.server.path'].default).to.equal('');
+    });
+
+    it('derives false for boolean type', async () => {
+        const props = await readProperties({ 'ext.flag': { type: 'boolean' } });
+        expect(props['ext.flag'].default).to.equal(false);
+    });
+
+    it('derives 0 for number and integer types', async () => {
+        const props = await readProperties({
+            'ext.size': { type: 'number' },
+            'ext.count': { type: 'integer' }
+        });
+        expect(props['ext.size'].default).to.equal(0);
+        expect(props['ext.count'].default).to.equal(0);
+    });
+
+    it('derives [] for array type', async () => {
+        const props = await readProperties({ 'ext.list': { type: 'array' } });
+        expect(props['ext.list'].default).to.deep.equal([]);
+    });
+
+    it('derives {} for object type', async () => {
+        const props = await readProperties({ 'ext.map': { type: 'object' } });
+        expect(props['ext.map'].default).to.deep.equal({});
+    });
+
+    it('derives null for properties without a type (e.g. enum-only)', async () => {
+        const props = await readProperties({ 'ext.choice': { enum: ['a', 'b'] } });
+        expect(props['ext.choice'].default).to.equal(null);
+    });
+
+    it('uses the first entry of a type array', async () => {
+        const props = await readProperties({ 'ext.either': { type: ['string', 'null'] } });
+        expect(props['ext.either'].default).to.equal('');
+    });
+
+    it('preserves an explicit default even when a type would derive a different value', async () => {
+        const props = await readProperties({ 'ext.named': { type: 'string', default: 'foo' } });
+        expect(props['ext.named'].default).to.equal('foo');
+    });
+
+    it('preserves an explicit falsy default such as false, 0, or empty string', async () => {
+        const props = await readProperties({
+            'ext.zero': { type: 'number', default: 0 },
+            'ext.off': { type: 'boolean', default: false },
+            'ext.blank': { type: 'string', default: '' }
+        });
+        expect(props['ext.zero'].default).to.equal(0);
+        expect(props['ext.off'].default).to.equal(false);
+        expect(props['ext.blank'].default).to.equal('');
+    });
+
+    it('preserves an explicit null default', async () => {
+        const props = await readProperties({ 'ext.nullable': { type: 'string', default: null } });
+        expect(props['ext.nullable'].default).to.equal(null);
     });
 });

@@ -54,25 +54,45 @@ export enum ToolConfirmationMode {
 }
 
 export const TOOL_CONFIRMATION_PREFERENCE = 'ai-features.chat.toolConfirmation';
+export const DEFAULT_TOOL_CONFIRMATION_PREFERENCE = 'ai-features.chat.defaultToolConfirmation';
 export const TOOL_CONFIRMATION_TIMEOUT_PREFERENCE = 'ai-features.chat.toolConfirmationTimeout';
+
+const TOOL_CONFIRMATION_MODE_VALUES = [
+    ToolConfirmationMode.ALWAYS_ALLOW,
+    ToolConfirmationMode.CONFIRM,
+    ToolConfirmationMode.DISABLED
+];
+
+const TOOL_CONFIRMATION_MODE_DESCRIPTIONS = [
+    nls.localize('theia/ai/chat/toolConfirmation/alwaysAllow/description', 'Execute tools automatically without confirmation'),
+    nls.localize('theia/ai/chat/toolConfirmation/confirm/description', 'Ask for confirmation before executing tools'),
+    nls.localize('theia/ai/chat/toolConfirmation/disabled/description', 'Disable tool execution')
+];
 
 export const chatToolPreferences: PreferenceSchema = {
     properties: {
+        [DEFAULT_TOOL_CONFIRMATION_PREFERENCE]: {
+            type: 'string',
+            enum: TOOL_CONFIRMATION_MODE_VALUES,
+            enumDescriptions: TOOL_CONFIRMATION_MODE_DESCRIPTIONS,
+            default: ToolConfirmationMode.CONFIRM,
+            description: nls.localize('theia/ai/chat/defaultToolConfirmation/description',
+                'Default confirmation behavior used for tools that do not have a tool-specific entry under ' +
+                '"ai-features.chat.toolConfirmation". Tools that explicitly require confirmation before being auto-approved ' +
+                'always default to "confirm" regardless of this setting.'),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
         [TOOL_CONFIRMATION_PREFERENCE]: {
             type: 'object',
             additionalProperties: {
                 type: 'string',
-                enum: [ToolConfirmationMode.ALWAYS_ALLOW, ToolConfirmationMode.CONFIRM, ToolConfirmationMode.DISABLED],
-                enumDescriptions: [
-                    nls.localize('theia/ai/chat/toolConfirmation/yolo/description', 'Execute tools automatically without confirmation'),
-                    nls.localize('theia/ai/chat/toolConfirmation/confirm/description', 'Ask for confirmation before executing tools'),
-                    nls.localize('theia/ai/chat/toolConfirmation/disabled/description', 'Disable tool execution')
-                ]
+                enum: TOOL_CONFIRMATION_MODE_VALUES,
+                enumDescriptions: TOOL_CONFIRMATION_MODE_DESCRIPTIONS
             },
             default: {},
             description: nls.localize('theia/ai/chat/toolConfirmation/description',
-                'Configure confirmation behavior for different tools. Key is the tool ID, value is the confirmation mode. ' +
-                'Use "*" as the key to set a global default for all tools.'),
+                'Configure confirmation behavior for individual tools. Key is the tool ID, value is the confirmation mode. ' +
+                'To change the default for all tools, use "ai-features.chat.defaultToolConfirmation".'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [TOOL_CONFIRMATION_TIMEOUT_PREFERENCE]: {
@@ -89,5 +109,6 @@ export const chatToolPreferences: PreferenceSchema = {
 
 export interface ChatToolConfiguration {
     [TOOL_CONFIRMATION_PREFERENCE]: { [toolId: string]: ToolConfirmationMode };
+    [DEFAULT_TOOL_CONFIRMATION_PREFERENCE]: ToolConfirmationMode;
     [TOOL_CONFIRMATION_TIMEOUT_PREFERENCE]: number;
 }

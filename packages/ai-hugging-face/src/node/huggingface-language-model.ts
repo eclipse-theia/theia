@@ -43,13 +43,42 @@ function toRole(actor: MessageActor): 'user' | 'assistant' | 'system' {
     }
 }
 
-function toChatMessages(messages: LanguageModelMessage[]): Array<{ role: 'user' | 'assistant' | 'system'; content: string }> {
-    return messages
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type HuggingFaceChatMessage = { role: 'user' | 'assistant' | 'system'; content: string };
+
+function toChatMessages(messages: LanguageModelMessage[]): HuggingFaceChatMessage[] {
+    const chatMessages = messages
         .filter(LanguageModelMessage.isTextMessage)
         .map(message => ({
             role: toRole(message.actor),
             content: message.text
         }));
+    return mergeConsecutiveAssistantMessages(chatMessages);
+}
+
+function mergeConsecutiveAssistantMessages(messages: HuggingFaceChatMessage[]): HuggingFaceChatMessage[] {
+    const result: HuggingFaceChatMessage[] = [];
+    for (const message of messages) {
+        const previous = result[result.length - 1];
+        if (previous?.role === 'assistant' && message.role === 'assistant') {
+            const merged: HuggingFaceChatMessage = { ...previous, role: 'assistant' };
+
+            const previousContent = previous.content;
+            const nextContent = message.content;
+            if (previousContent && nextContent) {
+                merged.content = `${previousContent}\n${nextContent}`;
+            } else if (nextContent) {
+                merged.content = nextContent;
+            } else if (previousContent) {
+                merged.content = previousContent;
+            }
+
+            result[result.length - 1] = merged;
+        } else {
+            result.push(message);
+        }
+    }
+    return result;
 }
 
 export class HuggingFaceModel implements LanguageModel {

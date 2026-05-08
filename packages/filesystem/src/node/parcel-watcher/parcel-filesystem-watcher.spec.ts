@@ -58,10 +58,12 @@ describe('parcel-filesystem-watcher', function (): void {
 
     it('Should receive file changes events from in the workspace by default.', async function (): Promise<void> {
         const actualUris = new Set<string>();
+        const changeListeners: Array<() => void> = [];
 
         const watcherClient = {
             onDidFilesChanged(event: DidFilesChangedParams): void {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
+                changeListeners.forEach(l => l());
             },
             onError(): void {
             }
@@ -76,15 +78,15 @@ describe('parcel-filesystem-watcher', function (): void {
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await waitForChange(actualUris, changeListeners, expectedUris[0]);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
-        await sleep(2000);
+        await waitForChange(actualUris, changeListeners, expectedUris[1]);
 
         fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
-        await sleep(2000);
+        await waitForChange(actualUris, changeListeners, expectedUris[2]);
 
         assert.deepStrictEqual([...actualUris], expectedUris);
     });
@@ -166,6 +168,41 @@ describe('parcel-filesystem-watcher', function (): void {
 
     function sleep(time: number): Promise<unknown> {
         return new Promise(resolve => setTimeout(resolve, time));
+    }
+
+    /**
+     * Wait for a specific URI to appear in the change set, driven by watcher events.
+     * Resolves immediately if the URI is already present.
+     */
+    function waitForChange(
+        receivedUris: Set<string>,
+        listeners: Array<() => void>,
+        expectedUri: string,
+        timeoutMs = 10000
+    ): Promise<void> {
+        if (receivedUris.has(expectedUri)) {
+            return Promise.resolve();
+        }
+        return new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(() => {
+                const idx = listeners.indexOf(check);
+                if (idx >= 0) {
+                    listeners.splice(idx, 1);
+                }
+                reject(new Error(`Timed out after ${timeoutMs}ms waiting for change event: ${expectedUri}`));
+            }, timeoutMs);
+            function check(): void {
+                if (receivedUris.has(expectedUri)) {
+                    clearTimeout(timer);
+                    const idx = listeners.indexOf(check);
+                    if (idx >= 0) {
+                        listeners.splice(idx, 1);
+                    }
+                    resolve();
+                }
+            }
+            listeners.push(check);
+        });
     }
 
 });
