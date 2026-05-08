@@ -24,6 +24,8 @@ export interface ChatModelWithMetadata {
     model: ChatModel;
     title?: string;
     pinnedAgentId?: string;
+    /** Timestamp (ms since epoch) of the last user interaction. Used as the display date for session cards. */
+    lastInteraction?: number;
 }
 
 export interface ChatSessionStore {

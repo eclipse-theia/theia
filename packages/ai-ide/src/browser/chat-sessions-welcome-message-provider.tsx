@@ -16,7 +16,10 @@
 
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
-import { ChatAgentService, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
+import {
+    ChatAgentService, ChatRequestModel, ChatResponseContent, ChatService, ChatSession, ChatSessionMetadata,
+    ThinkingChatResponseContent
+} from '@theia/ai-chat';
 import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { ChatSessionCardActionContribution } from './chat-session-card-action-contribution';
@@ -29,6 +32,20 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 import * as React from '@theia/core/shared/react';
 
 const TOOLTIP_SNIPPET_MAX_LENGTH = 1000;
+
+/** Collect display text from response content, excluding thinking parts. */
+function responseToTooltipString(content: ChatResponseContent[]): string {
+    return content
+        .filter(c => !ThinkingChatResponseContent.is(c))
+        .map(c => {
+            if (ChatResponseContent.hasAsString(c)) {
+                return c.asString();
+            }
+            return undefined;
+        })
+        .filter((text): text is string => text !== undefined && text !== '')
+        .join('\n\n');
+}
 
 /** Minimal view of the unread state that React components can subscribe to. */
 interface UnreadStateProvider {
@@ -259,15 +276,17 @@ function buildSessionTooltip(
         let messageText: string | undefined;
 
         if (lastResponse.isComplete && !lastResponse.isError) {
-            // Show the agent's response text (already markdown)
-            messageText = lastResponse.response.asString() || undefined;
+            // Show the agent's response text, excluding thinking content
+            messageText = responseToTooltipString(lastResponse.response.content) || undefined;
         } else if (!lastResponse.isComplete) {
             // Request is still pending / no response yet — show the user's request text
             messageText = lastRequest.request.text || undefined;
         } else {
             // Failure response — find the most recent successful exchange
             const lastSuccessfulRequest = requests.findLast(r => r.response.isComplete && !r.response.isError);
-            messageText = lastSuccessfulRequest?.response.response.asString() || undefined;
+            messageText = lastSuccessfulRequest
+                ? (responseToTooltipString(lastSuccessfulRequest.response.response.content) || undefined)
+                : undefined;
         }
 
         if (messageText) {
@@ -474,7 +493,13 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         session.model.onDidChange(() => {
             const current = session.model.getRequests();
             if (current.length > state.seenRequests || this.countCompleted(current) > state.seenCompleted) {
-                if (!state.unread) {
+                // If the session is currently being viewed, silently update the
+                // seen counts so it stays read instead of flashing the unread badge.
+                const activeSession = this.chatService.getActiveSession();
+                if (activeSession && activeSession.id === session.id) {
+                    state.seenRequests = current.length;
+                    state.seenCompleted = this.countCompleted(current);
+                } else if (!state.unread) {
                     state.unread = true;
                     this.onUnreadChangedEmitter.fire(session.id);
                 }
