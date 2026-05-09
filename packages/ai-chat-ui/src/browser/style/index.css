@@ -984,6 +984,7 @@ div:last-child>.theia-ChatNode {
   border-radius: 4px;
   background-color: var(--theia-editorWidget-background);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14);
+  cursor: default;
 }
 
 .theia-tool-confirmation-header {
@@ -1014,36 +1015,23 @@ div:last-child>.theia-ChatNode {
   margin: 6px 0 8px 0;
   color: var(--theia-descriptionForeground);
   font-weight: normal;
+  max-height: 200px;
+  overflow: auto;
 }
 
+details.theia-tool-confirmation-name>summary,
 details.theia-tool-confirmation-args>summary {
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
   user-select: none;
 }
 
-details.theia-tool-confirmation-args>summary::marker,
-details.theia-tool-confirmation-args>summary::-webkit-details-marker {
-  display: none;
-}
-
-.theia-tool-confirmation-args-toggle {
-  font-size: var(--theia-ui-font-size0);
-}
-
-details.theia-tool-confirmation-args[open] .theia-tool-confirmation-args-toggle {
-  transform: rotate(90deg);
+details.theia-tool-confirmation-name>summary::marker,
+details.theia-tool-confirmation-args>summary::marker {
+  color: var(--theia-button-background);
 }
 
 .theia-tool-confirmation-args-summary {
   color: var(--theia-descriptionForeground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  flex: 1;
 }
 
 .theia-tool-confirmation-args-content {

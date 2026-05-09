@@ -464,20 +464,28 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
         );
     }
 
+    const toolNameContent = (
+        <>
+            <span className="label">{nls.localizeByDefault('Tool')}:</span>
+            <span className="value">{response.name}</span>
+        </>
+    );
+
     return (
         <div className="theia-tool-confirmation">
             <div className="theia-tool-confirmation-header">
                 <span className={codicon('shield')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
             </div>
             <div className="theia-tool-confirmation-info">
-                <div className="theia-tool-confirmation-name">
-                    <span className="label">{nls.localizeByDefault('Tool')}:</span>
-                    <span className="value">{response.name}</span>
-                </div>
-                {toolRequest?.description && (
-                    <div className="theia-tool-confirmation-description">
-                        {toolRequest.description}
-                    </div>
+                {toolRequest?.description ? (
+                    <details className="theia-tool-confirmation-name">
+                        <summary>{toolNameContent}</summary>
+                        <div className="theia-tool-confirmation-description">
+                            {toolRequest.description}
+                        </div>
+                    </details>
+                ) : (
+                    <div className="theia-tool-confirmation-name">{toolNameContent}</div>
                 )}
                 <ToolArgsDisplay args={response.arguments} openerService={openerService} />
             </div>
@@ -508,7 +516,6 @@ const ToolArgsDisplay: React.FC<ToolArgsDisplayProps> = ({ args, openerService }
     return (
         <details className="theia-tool-confirmation-args">
             <summary>
-                <span className={`${codicon('chevron-right')} theia-tool-confirmation-args-toggle`}></span>
                 <span className="label">{nls.localizeByDefault('Arguments')}:</span>
                 <span className="theia-tool-confirmation-args-summary">{summaryLabel}</span>
             </summary>
