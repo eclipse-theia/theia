@@ -84,7 +84,7 @@ describe('AiTerminalCommandBlockVariableContribution.resolve()', () => {
 
     it('returns the last command when the input is an empty or white space only string', async () => {
         const emptyStringResult = await contribution.resolve(createRequest(''), mockContext);
-        const whiteSpaceResult = await contribution.resolve(createRequest(''), mockContext);
+        const whiteSpaceResult = await contribution.resolve(createRequest('   '), mockContext);
         expect(emptyStringResult?.value).to.equal('### Terminal Command:\necho hello world\n\n### Terminal Output:\nhello world');
         expect(whiteSpaceResult?.value).to.equal('### Terminal Command:\necho hello world\n\n### Terminal Output:\nhello world');
     });
