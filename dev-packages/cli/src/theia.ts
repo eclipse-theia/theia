@@ -123,6 +123,9 @@ async function theiaCli(): Promise<void> {
             // Disable this command's `--help` option so that it is forwarded to Theia's CLI
             builder: cli => cli.help(false) as yargs.Argv,
             handler: async ({ theiaArgs }) => {
+                if (!manager.pck.isElectron()) {
+                    await manager.refreshFrontendStaticFiles({ mode: 'development' });
+                }
                 manager.start(toStringArray(theiaArgs));
             }
         })

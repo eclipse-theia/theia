@@ -16,6 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
@@ -50,7 +52,8 @@ export namespace OutlineViewCommands {
 }
 
 @injectable()
-export class OutlineViewContribution extends AbstractViewContribution<OutlineViewWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
+export class OutlineViewContribution extends AbstractViewContribution<OutlineViewWidget>
+    implements FrontendApplicationContribution, TabBarToolbarContribution, ShellLayoutTransformer {
 
     constructor() {
         super({
@@ -67,7 +70,41 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
         });
     }
 
+    /**
+     * Same breakpoint as `menus.css` / mobile workbench: do not open the Outline side panel by default.
+     */
+    protected isNarrowMobileWorkbench(): boolean {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return false;
+        }
+        return window.matchMedia('(max-width: 767px)').matches;
+    }
+
+    transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {
+        if (!this.isNarrowMobileWorkbench()) {
+            return;
+        }
+        const right = layoutData.rightPanel;
+        if (!right?.items?.length) {
+            return;
+        }
+        const toRemove = right.items.filter(item => item.widget?.id === OUTLINE_WIDGET_FACTORY_ID);
+        if (!toRemove.length) {
+            return;
+        }
+        right.items = right.items.filter(item => item.widget?.id !== OUTLINE_WIDGET_FACTORY_ID);
+        for (const item of toRemove) {
+            const w = item.widget;
+            if (w && !w.isDisposed && !w.isAttached) {
+                w.close();
+            }
+        }
+    }
+
     async initializeLayout(app: FrontendApplication): Promise<void> {
+        if (this.isNarrowMobileWorkbench()) {
+            return;
+        }
         await this.openView();
     }
 

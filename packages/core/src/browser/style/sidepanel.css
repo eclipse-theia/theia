@@ -26,55 +26,137 @@
   --theia-private-sidebar-scrollbar-rail-width: 7px;
   --theia-private-sidebar-scrollbar-width: 5px;
   --theia-private-sidebar-icon-size: 24px;
+  /* Height of the horizontal activity row (top of side panel) */
+  --theia-horizontal-toolbar-height: 28px;
+}
+
+/*
+ * Lumino horizontal split can give the left panel 0 effective width when mis-sized.
+ * When the panel is visible (expanded), keep a sensible minimum; when fully hidden (collapsed), allow 0 width.
+ */
+#theia-left-content-panel:not(.lm-mod-hidden) {
+  min-width: var(--theia-private-sidebar-tab-width);
 }
 
 /*-----------------------------------------------------------------------------
-| SideBars (left and right)
+| SideBars — activity strip on top of sidebar (Cursor-like)
 |----------------------------------------------------------------------------*/
 
-.lm-TabBar.theia-app-sides {
-  display: block;
+/* Compact horizontal activity row (Cursor / VS Code style: top hairline, even gaps, pill selection). */
+.theia-app-activity-bar-row {
+  min-height: var(--theia-horizontal-toolbar-height, 28px);
+  background: var(--theia-activityBar-background);
+  border-top: var(--theia-panel-border-width) solid var(--theia-sideBar-border);
+  border-bottom: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
+  --theia-private-sidebar-tab-height: 24px;
+  --theia-private-sidebar-icon-size: 14px;
+  --theia-private-sidebar-tab-padding-top-and-bottom: 4px;
+  --theia-private-sidebar-tab-padding-left-and-right: 6px;
+  --theia-private-sidebar-scrollbar-rail-width: 6px;
+  --theia-private-sidebar-scrollbar-width: 4px;
+}
+
+/* Pin overflow chevron to the trailing edge of the row (before bottom/account menus). */
+.theia-app-activity-bar-left .theia-additional-views-menu {
+  margin-left: auto;
+}
+
+.theia-app-activity-bar-right .theia-additional-views-menu {
+  margin-right: auto;
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   color: var(--theia-activityBar-inactiveForeground);
-  font-size: var(--theia-ui-font-size1);
-  min-width: var(--theia-private-sidebar-tab-width);
-  max-width: var(--theia-private-sidebar-tab-width);
+  font-size: var(--theia-ui-font-size0);
+  min-width: 0;
+  max-width: none;
   overflow: hidden;
+  min-height: var(--theia-horizontal-toolbar-height, 28px);
+  background: var(--theia-activityBar-background);
 }
 
 .lm-TabBar-content {
   gap: 4px 0px;
 }
 
-.lm-TabBar.theia-app-sides .lm-TabBar-content {
-  z-index: 1;
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .theia-tabBar-tab-row {
+  flex: 1 1 auto;
+  min-height: var(--theia-horizontal-toolbar-height, 28px);
 }
 
-.lm-TabBar.theia-app-sides .lm-TabBar-tab {
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content {
+  z-index: 1;
+  gap: 2px 6px;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: min-content;
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container {
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 6px;
+}
+
+/* Native overflow-x: better touch inertia than PerfectScrollbar touch; keep PS for wheel + custom rail. */
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  touch-action: pan-x !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps.theia-activity-strip-scrollable:not(.theia-activity-strip-dragging) {
+  cursor: grab;
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps.theia-activity-strip-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-tab {
+  scroll-snap-align: center;
+  scroll-snap-stop: normal;
   position: relative;
-  flex-direction: column;
+  flex-shrink: 0;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
+  min-width: calc(var(--theia-private-sidebar-tab-height) + 2px);
   min-height: var(--theia-private-sidebar-tab-height);
+  height: var(--theia-private-sidebar-tab-height);
+  max-height: var(--theia-private-sidebar-tab-height);
+  padding: 0 2px;
+  margin: 2px 0;
+  box-sizing: border-box;
+  border-radius: 6px;
   cursor: pointer;
 }
 
-.lm-TabBar.theia-app-sides .lm-TabBar-tab.lm-mod-current,
-.lm-TabBar.theia-app-sides .lm-TabBar-tab:hover {
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-tab.lm-mod-current,
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-tab:hover {
   color: var(--theia-activityBar-foreground);
   background-color: var(--theia-activityBar-activeBackground);
-  min-height: var(--theia-private-sidebar-tab-height);
-  height: var(--theia-private-sidebar-tab-height);
   border-top: none;
 }
 
-.lm-TabBar.theia-app-left .lm-TabBar-tab.lm-mod-current {
-  border-top-color: transparent;
-  box-shadow: 2px 0 0 var(--theia-activityBar-activeBorder) inset;
-}
-
-.lm-TabBar.theia-app-right .lm-TabBar-tab.lm-mod-current {
-  border-top-color: transparent;
-  box-shadow: -2px 0 0 var(--theia-activityBar-activeBorder) inset;
+.lm-TabBar.theia-app-left[data-orientation="horizontal"] .lm-TabBar-tab.lm-mod-current,
+.lm-TabBar.theia-app-right[data-orientation="horizontal"] .lm-TabBar-tab.lm-mod-current {
+  box-shadow: none;
 }
 
 .lm-TabBar.theia-app-sides .lm-TabBar-tabLabel,
@@ -82,18 +164,15 @@
   display: none;
 }
 
-/* inactive common icons */
-.lm-TabBar.theia-app-sides .lm-TabBar-tabIcon {
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-tabIcon {
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--theia-private-sidebar-icon-size);
   text-align: center;
   color: inherit;
-
-  /* svg */
-  width: var(--theia-private-sidebar-tab-width);
-  height: var(--theia-private-sidebar-tab-width);
+  width: var(--theia-private-sidebar-tab-height);
+  height: var(--theia-private-sidebar-tab-height);
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
   mask-size: var(--theia-private-sidebar-icon-size);
@@ -102,40 +181,65 @@
   -webkit-mask-position: 50% 50%;
 }
 
-/* inactive legacy/plugin icons */
+/* Chevron overflow control — same size and rhythm as activity tabs */
+.theia-app-activity-bar-row .theia-additional-views-menu {
+  display: flex;
+  align-items: center;
+}
+
+.theia-app-activity-bar-row .theia-additional-views-menu .theia-sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(var(--theia-private-sidebar-tab-height) + 2px);
+  min-height: var(--theia-private-sidebar-tab-height);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.theia-app-activity-bar-row .theia-additional-views-menu .theia-sidebar-menu-item i {
+  font-size: var(--theia-private-sidebar-icon-size);
+  line-height: 1;
+  padding: 0;
+  width: var(--theia-private-sidebar-tab-height);
+  height: var(--theia-private-sidebar-tab-height);
+}
+
+.theia-app-activity-bar-row .theia-additional-views-menu .theia-sidebar-menu-item:hover {
+  background-color: var(--theia-activityBar-activeBackground);
+}
+
 .lm-TabBar.theia-app-sides .lm-TabBar-tabIcon:not(.codicon) {
   background: var(--theia-activityBar-inactiveForeground);
 }
 
-/* inactive file icons */
 .lm-TabBar.theia-app-sides .file-icon.lm-TabBar-tabIcon {
   background: inherit !important;
 }
 
-/* inactive font-awesome icons */
 .lm-TabBar.theia-app-sides .fa.lm-TabBar-tabIcon {
   background: none !important;
 }
 
-/* active icons */
 .lm-TabBar.theia-app-sides .lm-TabBar-tabIcon:hover,
 .lm-TabBar.theia-app-sides .lm-mod-current .lm-TabBar-tabIcon {
   color: var(--theia-activityBar-foreground);
 }
 
-/* active legacy/plugin icons */
 .lm-TabBar.theia-app-sides .lm-TabBar-tabIcon:not(.codicon):hover,
 .lm-TabBar.theia-app-sides .lm-mod-current .lm-TabBar-tabIcon:not(.codicon) {
   background-color: var(--theia-activityBar-foreground);
 }
 
-.lm-TabBar.theia-app-left .lm-TabBar-tabLabel {
+.lm-TabBar.theia-app-sides[data-orientation="vertical"] .lm-TabBar-tabLabel {
   transform-origin: top left 0;
+}
+
+.lm-TabBar.theia-app-left[data-orientation="vertical"] .lm-TabBar-tabLabel {
   transform: rotate(-90deg) translateX(-100%);
 }
 
-.lm-TabBar.theia-app-right .lm-TabBar-tabLabel {
-  transform-origin: top left 0;
+.lm-TabBar.theia-app-right[data-orientation="vertical"] .lm-TabBar-tabLabel {
   transform: rotate(90deg) translateY(-50%);
 }
 
@@ -144,12 +248,39 @@
   max-width: var(--theia-private-sidebar-tab-width);
 }
 
-#theia-left-content-panel.theia-mod-collapsed .theia-app-sidebar-container {
+/*-----------------------------------------------------------------------------
+| Mobile: hide collapsed right panel strip (reclaim width; same breakpoint as menus.css).
+| When a right view is expanded, `.theia-mod-collapsed` is absent and the panel shows normally.
+|-----------------------------------------------------------------------------*/
+@media (max-width: 767px) {
+  #theia-right-content-panel.theia-mod-collapsed {
+    min-width: 0 !important;
+    max-width: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    opacity: 0;
+    pointer-events: none;
+    border: none !important;
+  }
+}
+
+#theia-left-content-panel.theia-mod-collapsed .theia-app-activity-bar-row {
   border-right: none;
 }
 
-#theia-right-content-panel.theia-mod-collapsed .theia-app-sidebar-container {
+#theia-right-content-panel.theia-mod-collapsed .theia-app-activity-bar-row {
   border-left: none;
+}
+
+#theia-left-content-panel.theia-mod-collapsed
+  .lm-TabBar.theia-app-sides[data-orientation="horizontal"]
+  .lm-TabBar-content,
+#theia-right-content-panel.theia-mod-collapsed
+  .lm-TabBar.theia-app-sides[data-orientation="horizontal"]
+  .lm-TabBar-content {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: var(--theia-private-sidebar-tab-width);
 }
 
 #theia-left-content-panel > .lm-Panel {
@@ -171,19 +302,7 @@
   color: var(--theia-sideBar-foreground);
 }
 
-.theia-app-sidebar-container {
-  min-width: var(--theia-private-sidebar-tab-width);
-  max-width: var(--theia-private-sidebar-tab-width);
-  background: var(--theia-activityBar-background);
-  display: flex;
-  flex-direction: column;
-}
-
-.theia-app-sidebar-container .theia-app-sides {
-  flex-grow: 1;
-}
-
-.theia-app-sidebar-container .theia-sidebar-menu {
+.theia-app-activity-bar-row .theia-sidebar-menu {
   flex-shrink: 0;
 }
 
@@ -191,6 +310,17 @@
   background-color: var(--theia-activityBar-background);
   display: flex;
   flex-direction: column-reverse;
+}
+
+.theia-app-activity-bar-row .lm-Widget.theia-sidebar-menu {
+  flex-direction: row;
+}
+
+/* Let margin-left/right:auto work on the chevron menu (Lumino horizontal BoxLayout uses flex). */
+.theia-app-activity-bar-row.lm-BoxPanel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 .lm-Widget .theia-sidebar-menu-item {
@@ -216,20 +346,98 @@
   font-size: 16px;
 }
 
+.theia-app-activity-bar-row .theia-sidebar-menu i.theia-compact-menu {
+  font-size: var(--theia-private-sidebar-icon-size);
+}
+
+/*-----------------------------------------------------------------------------
+| Activity strip carousel (prev / next beside scrollable tabs)
+|----------------------------------------------------------------------------*/
+
+.theia-app-activity-bar-row .theia-activity-carousel-nav {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  min-width: 18px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--theia-activityBar-inactiveForeground);
+  cursor: pointer;
+  opacity: 0.88;
+}
+
+.theia-app-activity-bar-row .theia-activity-carousel-nav:hover:not(:disabled) {
+  color: var(--theia-activityBar-foreground);
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-app-activity-bar-row .theia-activity-carousel-nav:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.theia-app-activity-bar-row .theia-activity-carousel-nav.theia-mod-hidden {
+  display: none;
+}
+
+.theia-app-activity-bar-row .theia-activity-carousel-nav .codicon {
+  font-size: var(--theia-private-sidebar-icon-size);
+}
+
 .lm-SplitPanel-handle.sash-hidden {
   visibility: hidden;
 }
 
 /*-----------------------------------------------------------------------------
-| Perfect scrollbar
+| Perfect scrollbar (side activity tab strip)
 |----------------------------------------------------------------------------*/
 
-.lm-TabBar.theia-app-sides > .ps__rail-y {
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] > .ps__rail-x {
+  height: var(--theia-private-sidebar-scrollbar-rail-width);
+  z-index: 1000;
+}
+
+#theia-app-shell
+  .lm-TabBar.theia-app-sides[data-orientation="horizontal"]
+  > .ps__rail-x
+  > .ps__thumb-x {
+  height: var(--theia-private-sidebar-scrollbar-width);
+  bottom: calc(
+    (
+        var(--theia-private-sidebar-scrollbar-rail-width) -
+          var(--theia-private-sidebar-scrollbar-width)
+      ) / 2
+  );
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] > .ps__rail-x:hover,
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] > .ps__rail-x:focus {
+  height: var(--theia-private-sidebar-scrollbar-rail-width);
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] > .ps__rail-x:hover > .ps__thumb-x,
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] > .ps__rail-x:focus > .ps__thumb-x {
+  height: var(--theia-private-sidebar-scrollbar-width);
+  bottom: calc(
+    (
+        var(--theia-private-sidebar-scrollbar-rail-width) -
+          var(--theia-private-sidebar-scrollbar-width)
+      ) / 2
+  );
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="vertical"] > .ps__rail-y {
   width: var(--theia-private-sidebar-scrollbar-rail-width);
   z-index: 1000;
 }
 
-#theia-app-shell .lm-TabBar.theia-app-sides > .ps__rail-y > .ps__thumb-y {
+#theia-app-shell .lm-TabBar.theia-app-sides[data-orientation="vertical"] > .ps__rail-y > .ps__thumb-y {
   width: var(--theia-private-sidebar-scrollbar-width);
   right: calc(
     (
@@ -239,13 +447,13 @@
   );
 }
 
-.lm-TabBar.theia-app-sides > .ps__rail-y:hover,
-.lm-TabBar.theia-app-sides > .ps__rail-y:focus {
+.lm-TabBar.theia-app-sides[data-orientation="vertical"] > .ps__rail-y:hover,
+.lm-TabBar.theia-app-sides[data-orientation="vertical"] > .ps__rail-y:focus {
   width: var(--theia-private-sidebar-scrollbar-rail-width);
 }
 
-.lm-TabBar.theia-app-sides > .ps__rail-y:hover > .ps__thumb-y,
-.lm-TabBar.theia-app-sides > .ps__rail-y:focus > .ps__thumb-y {
+.lm-TabBar.theia-app-sides[data-orientation="vertical"] > .ps__rail-y:hover > .ps__thumb-y,
+.lm-TabBar.theia-app-sides[data-orientation="vertical"] > .ps__rail-y:focus > .ps__thumb-y {
   width: var(--theia-private-sidebar-scrollbar-width);
   right: calc(
     (

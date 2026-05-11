@@ -18,6 +18,8 @@ import { AbstractViewContribution, FrontendApplicationContribution, Widget } fro
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
 import { Color } from '@theia/core/lib/common/color';
@@ -48,7 +50,8 @@ const ONE_HALF_OPACITY = 0.5;
 export class DebugFrontendContribution extends AbstractViewContribution<MemoryLayoutWidget>
     implements FrontendApplicationContribution,
     TabBarToolbarContribution,
-    ColorContribution {
+    ColorContribution,
+    ShellLayoutTransformer {
     @inject(DebugFrontendApplicationContribution) protected readonly debugContribution: DebugFrontendApplicationContribution;
     @inject(MemoryWidgetManager) protected readonly memoryWidgetManager: MemoryWidgetManager;
     @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
@@ -65,6 +68,37 @@ export class DebugFrontendContribution extends AbstractViewContribution<MemoryLa
         });
     }
 
+    /**
+     * Same breakpoint as `menus.css` / mobile workbench (`#theia-right-content-panel`).
+     */
+    protected isNarrowMobileWorkbench(): boolean {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return false;
+        }
+        return window.matchMedia('(max-width: 767px)').matches;
+    }
+
+    transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {
+        if (!this.isNarrowMobileWorkbench()) {
+            return;
+        }
+        const right = layoutData.rightPanel;
+        if (!right?.items?.length) {
+            return;
+        }
+        const toRemove = right.items.filter(item => item.widget?.id === MemoryLayoutWidget.ID);
+        if (!toRemove.length) {
+            return;
+        }
+        right.items = right.items.filter(item => item.widget?.id !== MemoryLayoutWidget.ID);
+        for (const item of toRemove) {
+            const w = item.widget;
+            if (w && !w.isDisposed && !w.isAttached) {
+                w.close();
+            }
+        }
+    }
+
     @postConstruct()
     init(): void {
         this.stateService.reachedState('initialized_layout').then(() => {
@@ -78,6 +112,9 @@ export class DebugFrontendContribution extends AbstractViewContribution<MemoryLa
     }
 
     async initializeLayout(): Promise<void> {
+        if (this.isNarrowMobileWorkbench()) {
+            return;
+        }
         await this.openView({ activate: false });
     }
 

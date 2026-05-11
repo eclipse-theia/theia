@@ -20,6 +20,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { ApplicationPackage } from './application-package';
 import { ApplicationProps } from './application-props';
+import { IDE_APPLICATION_ICON_ENV } from './local-env-file';
 import * as sinon from 'sinon';
 
 const track = temp.track();
@@ -52,6 +53,26 @@ describe('application-package', function (): void {
         const root = createProjectWithTarget(pckTarget);
         const applicationPackage = new ApplicationPackage({ projectPath: root, appTarget: optTarget });
         assert.deepStrictEqual(applicationPackage.target, optTarget);
+    });
+
+    it('should override application name from .env IDE_APPLICATION_NAME', function (): void {
+        const root = track.mkdirSync('env-app');
+        fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+            theia: { frontend: { config: { applicationName: 'Pkg Name' } } }
+        }));
+        fs.writeFileSync(path.join(root, '.env'), 'IDE_APPLICATION_NAME=From Env\n');
+        const applicationPackage = new ApplicationPackage({ projectPath: root });
+        assert.strictEqual(applicationPackage.props.frontend.config.applicationName, 'From Env');
+    });
+
+    it('should override application icon from .env IDE_APPLICATION_ICON', function (): void {
+        const root = track.mkdirSync('env-app-icon');
+        fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+            theia: { frontend: { config: { applicationIcon: './pkg-icon.png' } } }
+        }));
+        fs.writeFileSync(path.join(root, '.env'), `${IDE_APPLICATION_ICON_ENV}=https://example.com/icon.png\n`);
+        const applicationPackage = new ApplicationPackage({ projectPath: root });
+        assert.strictEqual(applicationPackage.props.frontend.config.applicationIcon, 'https://example.com/icon.png');
     });
 
     function createProjectWithTarget(target: string): string {

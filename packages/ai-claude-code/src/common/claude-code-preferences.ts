@@ -34,7 +34,7 @@ export const ClaudeCodePreferencesSchema: PreferenceSchema = {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/claude-code/apiKey/description',
                 'Enter an API Key for Claude Code. **Please note:** By using this preference the API key will be stored in clear text ' +
-                'on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
+                'on the machine running this application. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
     }

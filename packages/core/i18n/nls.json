@@ -68,7 +68,7 @@
       },
       "anthropic": {
         "apiKey": {
-          "description": "Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+          "description": "Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text            on the machine running this application. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
         },
         "customEndpoints": {
           "apiKey": {
@@ -381,7 +381,7 @@
         "agentDescription": "Anthropic's coding agent",
         "allowSession": "Allow for this session",
         "apiKey": {
-          "description": "Enter an API Key for Claude Code. **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+          "description": "Enter an API Key for Claude Code. **Please note:** By using this preference the API key will be stored in clear text on the machine running this application. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
         },
         "askBeforeEdit": "Ask before edit",
         "changeSetTitle": "Changes by Claude Code",
@@ -884,7 +884,7 @@
       },
       "google": {
         "apiKey": {
-          "description": "Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text            on the machine running Theia. Use the environment variable `GOOGLE_API_KEY` to set the key securely."
+          "description": "Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text            on the machine running this application. Use the environment variable `GOOGLE_API_KEY` to set the key securely."
         },
         "maxRetriesOnErrors": {
           "description": "Maximum number of retries in case of errors. If smaller than 1, then the retry logic is disabled"
@@ -942,7 +942,7 @@
       },
       "huggingFace": {
         "apiKey": {
-          "mdDescription": "Enter an API Key for your Hugging Face Account. **Please note:** By using this preference the Hugging Face API key will be stored in clear text            on the machine running Theia. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely."
+          "mdDescription": "Enter an API Key for your Hugging Face Account. **Please note:** By using this preference the Hugging Face API key will be stored in clear text            on the machine running this application. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely."
         },
         "models": {
           "mdDescription": "Hugging Face models to use. **Please note:** Only models supporting the chat completion API are supported             (instruction-tuned models like `*-Instruct`) currently. Some models may require accepting license terms on the Hugging Face website."
@@ -1315,7 +1315,7 @@
       },
       "openai": {
         "apiKey": {
-          "mdDescription": "Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
+          "mdDescription": "Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text on the machine running this application. Use the environment variable `OPENAI_API_KEY` to set the key securely."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1456,7 +1456,7 @@
       },
       "vercelai": {
         "anthropicApiKey": {
-          "mdDescription": "Enter an API Key for Anthropic models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+          "mdDescription": "Enter an API Key for Anthropic models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running this application. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1489,7 +1489,7 @@
           }
         },
         "openaiApiKey": {
-          "mdDescription": "Enter an API Key for OpenAI models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
+          "mdDescription": "Enter an API Key for OpenAI models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running this application. Use the environment variable `OPENAI_API_KEY` to set the key securely."
         }
       },
       "workspace": {
@@ -1755,8 +1755,8 @@
       "secondaryWindow": {
         "alwaysOnTop": "When enabled, the secondary window stays above all other windows, including those of different applications.",
         "description": "Sets the initial position and size of the extracted secondary window.",
-        "fullSize": "The position and size of the extracted widget will be the same as the running Theia application.",
-        "halfWidth": "The position and size of the extracted widget will be half the width of the running Theia application.",
+        "fullSize": "The position and size of the extracted widget will be the same as the running application window.",
+        "halfWidth": "The position and size of the extracted widget will be half the width of the running application window.",
         "originalSize": "The position and size of the extracted widget will be the same as the original widget."
       },
       "severity": {
@@ -1773,6 +1773,13 @@
           "end": "Place the close icon at the end of the label. In left-to-right languages, this is the right side of the tab.",
           "start": "Place the close icon at the start of the label. In left-to-right languages, this is the left side of the tab."
         }
+      },
+      "workbenchBar": {
+        "hideAiChat": "Hide AI Chat",
+        "hideTerminal": "Hide Terminal",
+        "openAiChat": "Open AI Chat",
+        "showTerminal": "Show Terminal",
+        "toggleTerminal": "Toggle Terminal"
       },
       "window.menuBarVisibility": "Menu is displayed as a compact button in the side bar. This value is ignored when {0} is {1}."
     },
@@ -1923,7 +1930,7 @@
     },
     "getting-started": {
       "ai": {
-        "header": "AI Support in the Theia IDE is available!",
+        "header": "AI Support in {0} is available!",
         "openAIChatView": "Open the AI Chat View now to learn how to start!"
       },
       "apiComparator": "{0} API Compatibility",

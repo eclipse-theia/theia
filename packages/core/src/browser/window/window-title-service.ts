@@ -26,22 +26,24 @@ export interface WindowTitleContribution {
     enhanceTitle(title: string, parts: Map<string, string | undefined>): string;
 }
 
-export const InitialWindowTitleParts = {
-    activeEditorShort: undefined,
-    activeEditorMedium: undefined,
-    activeEditorLong: undefined,
-    activeFolderShort: undefined,
-    activeFolderMedium: undefined,
-    activeFolderLong: undefined,
-    folderName: undefined,
-    folderPath: undefined,
-    rootName: undefined,
-    rootPath: undefined,
-    appName: FrontendApplicationConfigProvider.get().applicationName,
-    remoteName: undefined,
-    dirty: undefined,
-    developmentHost: undefined
-};
+export function createInitialWindowTitleParts(): Record<string, string | undefined> {
+    return {
+        activeEditorShort: undefined,
+        activeEditorMedium: undefined,
+        activeEditorLong: undefined,
+        activeFolderShort: undefined,
+        activeFolderMedium: undefined,
+        activeFolderLong: undefined,
+        folderName: undefined,
+        folderPath: undefined,
+        rootName: undefined,
+        rootPath: undefined,
+        appName: FrontendApplicationConfigProvider.get().applicationName,
+        remoteName: undefined,
+        dirty: undefined,
+        developmentHost: undefined
+    };
+}
 
 @injectable()
 export class WindowTitleService {
@@ -56,11 +58,12 @@ export class WindowTitleService {
     protected titleTemplate?: string;
 
     protected onDidChangeTitleEmitter = new Emitter<string>();
-    protected titleParts = new Map<string, string | undefined>(Object.entries(InitialWindowTitleParts));
+    protected titleParts = new Map<string, string | undefined>();
     protected separator = ' - ';
 
     @postConstruct()
     protected init(): void {
+        this.titleParts = new Map<string, string | undefined>(Object.entries(createInitialWindowTitleParts()));
         this.titleTemplate = this.preferences['window.title'];
         this.separator = this.preferences['window.titleSeparator'];
         this.updateTitle();

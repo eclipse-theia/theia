@@ -16,8 +16,9 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { ConfirmDialog, FrontendApplicationContribution, Widget } from '@theia/core/lib/browser';
+import { ConfirmDialog, FrontendApplication, FrontendApplicationContribution, Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
     AI_CHAT_SHOW_CHATS_COMMAND,
@@ -27,7 +28,9 @@ import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
+import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -42,9 +45,14 @@ import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferen
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
+/** When set on `document.body`, the main workbench split hides left/center so the AI chat uses the full viewport width (mobile). */
+export const MOBILE_AI_CHAT_FULLWIDTH_BODY_CLASS = 'theia-mod-mobile-ai-chat-fullwidth';
+
 @injectable()
 export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
-    implements FrontendApplicationContribution, TabBarToolbarContribution {
+    implements FrontendApplicationContribution, TabBarToolbarContribution, ShellLayoutTransformer {
+
+    protected readonly mobileFullWidthLayoutDisposables = new DisposableCollection();
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
@@ -118,14 +126,139 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
 
         this.checkPersistedSessions();
+
+        this.mobileFullWidthLayoutDisposables.push(
+            this.shell.onDidChangeCurrentWidget(() => this.scheduleMobileAiChatFullWidthUpdate())
+        );
+        const onRightTabChanged = (): void => this.scheduleMobileAiChatFullWidthUpdate();
+        this.shell.rightPanelHandler.tabBar.currentChanged.connect(onRightTabChanged);
+        this.mobileFullWidthLayoutDisposables.push(Disposable.create(() => {
+            this.shell.rightPanelHandler.tabBar.currentChanged.disconnect(onRightTabChanged);
+        }));
+        window.addEventListener('resize', this.onWindowResizeForMobileChatLayout);
+    }
+
+    onStop(_app: FrontendApplication): void {
+        window.removeEventListener('resize', this.onWindowResizeForMobileChatLayout);
+        this.mobileFullWidthLayoutDisposables.dispose();
+        if (typeof document !== 'undefined') {
+            document.body.classList.remove(MOBILE_AI_CHAT_FULLWIDTH_BODY_CLASS);
+        }
+    }
+
+    protected readonly onWindowResizeForMobileChatLayout = (): void => {
+        this.scheduleMobileAiChatFullWidthUpdate();
+    };
+
+    /**
+     * Body class + layout need a frame after the shell updates split sizes.
+     */
+    protected scheduleMobileAiChatFullWidthUpdate(): void {
+        this.updateMobileAiChatFullWidthBodyClass();
+        window.requestAnimationFrame(() => this.updateMobileAiChatFullWidthBodyClass());
+    }
+
+    protected updateMobileAiChatFullWidthBodyClass(): void {
+        if (typeof document === 'undefined' || !document.body) {
+            return;
+        }
+        if (!this.isNarrowMobileWorkbench()) {
+            document.body.classList.remove(MOBILE_AI_CHAT_FULLWIDTH_BODY_CLASS);
+            return;
+        }
+        const widget = this.tryGetWidget();
+        let fullWidth = false;
+        if (widget?.isAttached && this.shell.isExpanded('right')) {
+            const tabBar = this.shell.getTabBarFor(widget);
+            fullWidth = tabBar?.currentTitle?.owner === widget;
+        }
+        document.body.classList.toggle(MOBILE_AI_CHAT_FULLWIDTH_BODY_CLASS, fullWidth);
+    }
+
+    override async openView(args: Partial<OpenViewArguments> = {}): Promise<ChatViewWidget> {
+        const result = await super.openView(args);
+        this.scheduleMobileAiChatFullWidthUpdate();
+        return result;
+    }
+
+    override async closeView(): Promise<ChatViewWidget | undefined> {
+        const result = await super.closeView();
+        this.updateMobileAiChatFullWidthBodyClass();
+        return result;
+    }
+
+    /**
+     * Matches `menus.css` mobile breakpoint: narrow viewports where the horizontal menu is hidden.
+     * On these screens the AI chat view is not part of the default layout so the right strip does not consume width.
+     */
+    protected isNarrowMobileWorkbench(): boolean {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return false;
+        }
+        return window.matchMedia('(max-width: 767px)').matches;
+    }
+
+    transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {
+        if (!this.isNarrowMobileWorkbench()) {
+            return;
+        }
+        const right = layoutData.rightPanel;
+        if (!right?.items?.length) {
+            return;
+        }
+        const toRemove = right.items.filter(item => item.widget?.id === ChatViewWidget.ID);
+        if (!toRemove.length) {
+            return;
+        }
+        right.items = right.items.filter(item => item.widget?.id !== ChatViewWidget.ID);
+        for (const item of toRemove) {
+            const w = item.widget;
+            if (w && !w.isDisposed && !w.isAttached) {
+                w.close();
+            }
+        }
     }
 
     async initializeLayout(): Promise<void> {
+        if (this.isNarrowMobileWorkbench()) {
+            return;
+        }
         try {
             await this.openView({ activate: false });
         } catch (error) {
             console.error('Failed to initialize AI Chat view in default layout', error);
         }
+    }
+
+    /**
+     * On narrow mobile layouts, closing the chat removes the view from the shell (no persistent right tab strip).
+     * Opening still uses the top workbench control next to the terminal toggle.
+     */
+    override async toggleView(): Promise<ChatViewWidget> {
+        let result: ChatViewWidget;
+        if (!this.isNarrowMobileWorkbench()) {
+            result = await super.toggleView();
+        } else {
+            const widget = this.tryGetWidget();
+            if (!widget?.isAttached) {
+                result = await this.openView({ activate: true });
+            } else {
+                const tabBar = this.shell.getTabBarFor(widget);
+                const isChatCurrent = tabBar?.currentTitle?.owner === widget;
+                if (this.shell.isExpanded('right') && isChatCurrent) {
+                    const closed = await this.closeView();
+                    if (closed) {
+                        result = closed;
+                    } else {
+                        result = await this.openView({ activate: true });
+                    }
+                } else {
+                    result = await this.openView({ activate: true, reveal: true });
+                }
+            }
+        }
+        this.scheduleMobileAiChatFullWidthUpdate();
+        return result;
     }
 
     protected async checkPersistedSessions(): Promise<void> {

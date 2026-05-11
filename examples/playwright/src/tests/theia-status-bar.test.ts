@@ -20,8 +20,6 @@ import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaNotificationIndicator } from '../theia-notification-indicator';
 import { TheiaProblemIndicator } from '../theia-problem-indicator';
 import { TheiaStatusBar } from '../theia-status-bar';
-import { TheiaToggleBottomIndicator } from '../theia-toggle-bottom-indicator';
-
 test.describe('Theia Status Bar', () => {
 
     let app: TheiaApp;
@@ -43,10 +41,8 @@ test.describe('Theia Status Bar', () => {
     test('should contain status bar elements', async () => {
         const problemIndicator = await statusBar.statusIndicator(TheiaProblemIndicator);
         const notificationIndicator = await statusBar.statusIndicator(TheiaNotificationIndicator);
-        const toggleBottomIndicator = await statusBar.statusIndicator(TheiaToggleBottomIndicator);
         expect(await problemIndicator.isVisible()).toBe(true);
         expect(await notificationIndicator.isVisible()).toBe(true);
-        expect(await toggleBottomIndicator.isVisible()).toBe(true);
     });
 
 });

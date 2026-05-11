@@ -491,7 +491,8 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultOptions(): TheiaBrowserWindowOptions {
-        return {
+        const windowOpts = this.config.electron?.windowOptions || {};
+        const options: TheiaBrowserWindowOptions = {
             show: false,
             title: this.config.applicationName,
             backgroundColor: DefaultTheme.defaultBackgroundColor(this.config.electron.windowOptions?.darkTheme || nativeTheme.shouldUseDarkColors),
@@ -508,8 +509,28 @@ export class ElectronMainApplication {
                 backgroundThrottling: false,
                 enableDeprecatedPaste: true
             },
-            ...this.config.electron?.windowOptions || {},
+            ...windowOpts,
         };
+        if (!options.icon) {
+            const resolvedIcon = this.resolveApplicationIconForWindow();
+            if (resolvedIcon) {
+                options.icon = resolvedIcon;
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Resolves `FrontendApplicationConfig.applicationIcon` to a local file path for Electron `BrowserWindow.icon`.
+     * HTTP(S) URLs are skipped (the browser frontend uses `<link rel="icon">` instead).
+     */
+    protected resolveApplicationIconForWindow(): string | undefined {
+        const ref = this.config.applicationIcon?.trim();
+        if (!ref || ref.startsWith('http://') || ref.startsWith('https://')) {
+            return undefined;
+        }
+        const candidate = path.isAbsolute(ref) ? ref : path.join(app.getAppPath(), ref.replace(/^\.\//, ''));
+        return existsSync(candidate) ? candidate : undefined;
     }
 
     closeWindowById(webContentsId: number): void {

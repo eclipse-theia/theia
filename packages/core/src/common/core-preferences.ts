@@ -138,8 +138,8 @@ export const corePreferenceSchema: PreferenceSchema = {
             enum: ['originalSize', 'halfWidth', 'fullSize'],
             enumDescriptions: [
                 nls.localize('theia/core/secondaryWindow/originalSize', 'The position and size of the extracted widget will be the same as the original widget.'),
-                nls.localize('theia/core/secondaryWindow/halfWidth', 'The position and size of the extracted widget will be half the width of the running Theia application.'),
-                nls.localize('theia/core/secondaryWindow/fullSize', 'The position and size of the extracted widget will be the same as the running Theia application.'),
+                nls.localize('theia/core/secondaryWindow/halfWidth', 'The position and size of the extracted widget will be half the width of the running application window.'),
+                nls.localize('theia/core/secondaryWindow/fullSize', 'The position and size of the extracted widget will be the same as the running application window.'),
             ],
             default: 'originalSize',
             description: nls.localize('theia/core/secondaryWindow/description', 'Sets the initial position and size of the extracted secondary window.'),
@@ -228,14 +228,18 @@ export const corePreferenceSchema: PreferenceSchema = {
         'workbench.colorTheme': {
             type: 'string',
             enum: ['dark', 'light', 'hc-theia'],
-            enumItemLabels: ['Dark (Theia)', 'Light (Theia)', 'High Contrast (Theia)'],
+            enumItemLabels: [
+                nls.localize('theia/core/workbenchColorTheme/dark', 'Dark'),
+                nls.localize('theia/core/workbenchColorTheme/light', 'Light'),
+                nls.localize('theia/core/workbenchColorTheme/highContrast', 'High Contrast')
+            ],
             default: 'light',
             description: nls.localizeByDefault('Specifies the color theme used in the workbench when {0} is not enabled.', '`#window.autoDetectColorScheme#`')
         },
         'workbench.iconTheme': {
             type: ['string'],
             enum: ['none', 'theia-file-icons'],
-            enumItemLabels: [nls.localizeByDefault('None'), 'File Icons (Theia)'],
+            enumItemLabels: [nls.localizeByDefault('None'), nls.localize('theia/core/workbenchIconTheme/fileIcons', 'File Icons (built-in)')],
             default: 'none',
             description: nls.localizeByDefault("Specifies the file icon theme used in the workbench or 'null' to not show any file icons.")
         },

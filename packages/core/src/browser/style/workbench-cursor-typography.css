@@ -1,0 +1,87 @@
+/********************************************************************************
+ * Copyright (C) 2025 STMicroelectronics and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Workbench typography aligned with Cursor / compact VS Code–like UI density
+| (Inter first; ~12px UI, tighter icon grid.) Loads after os.css.
+|----------------------------------------------------------------------------*/
+
+.mac {
+  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.mac:lang(zh-Hans) {
+  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, PingFang SC, Hiragino Sans GB, sans-serif;
+}
+
+.mac:lang(zh-Hant) {
+  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, PingFang TC, sans-serif;
+}
+
+.mac:lang(ja) {
+  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, Hiragino Kaku Gothic Pro, sans-serif;
+}
+
+.mac:lang(ko) {
+  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, Nanum Gothic, Apple SD Gothic Neo, AppleGothic, sans-serif;
+}
+
+.windows {
+  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, sans-serif;
+}
+
+.windows:lang(zh-Hans) {
+  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Microsoft YaHei, sans-serif;
+}
+
+.windows:lang(zh-Hant) {
+  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Microsoft Jhenghei, sans-serif;
+}
+
+.windows:lang(ja) {
+  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Yu Gothic UI, Meiryo UI, sans-serif;
+}
+
+.windows:lang(ko) {
+  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Malgun Gothic, Dotom, sans-serif;
+}
+
+.linux {
+  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, sans-serif;
+}
+
+.linux:lang(zh-Hans) {
+  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans SC, Source Han Sans CN, Source Han Sans, sans-serif;
+}
+
+.linux:lang(zh-Hant) {
+  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans TC, Source Han Sans TW, Source Han Sans, sans-serif;
+}
+
+.linux:lang(ja) {
+  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans J, Source Han Sans JP, Source Han Sans, sans-serif;
+}
+
+.linux:lang(ko) {
+  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans K, Source Han Sans JR, Source Han Sans, UnDotum, FBaekmuk Gulim, sans-serif;
+}
+
+.mac,
+.windows,
+.linux {
+  --theia-ui-font-size1: 12px;
+  --theia-icon-size: 14px;
+  --theia-ui-icon-font-size: 14px;
+  --theia-statusBar-font-size: 11px;
+  --theia-code-font-size: 12px;
+  --theia-code-line-height: 17px;
+  --theia-border-width: 1px;
+  --theia-panel-border-width: 1px;
+}

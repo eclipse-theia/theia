@@ -18,7 +18,7 @@ import { ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browse
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 import {
-    Command, CommandContribution, CommandMenu, CommandRegistry, ContextExpressionMatcher, MAIN_MENU_BAR,
+    Command, CommandContribution, CommandMenu, CommandRegistry, ContextExpressionMatcher,
     MenuContribution, MenuModelRegistry, MenuPath, MessageService
 } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -264,37 +264,8 @@ export class SampleCommandContribution implements CommandContribution {
 @injectable()
 export class SampleMenuContribution implements MenuContribution {
     registerMenus(menus: MenuModelRegistry): void {
-        setTimeout(() => {
-            const subMenuPath = [...MAIN_MENU_BAR, 'sample-menu'];
-            menus.registerSubmenu(subMenuPath, 'Sample Menu', { sortString: '2' }); // that should put the menu right next to the File menu
-
-            menus.registerMenuAction(subMenuPath, {
-                commandId: SampleCommand.id,
-                order: '0'
-            });
-            menus.registerMenuAction(subMenuPath, {
-                commandId: SampleCommand2.id,
-                order: '2'
-            });
-            const subSubMenuPath = [...subMenuPath, 'sample-sub-menu'];
-            menus.registerSubmenu(subSubMenuPath, 'Sample sub menu', { sortString: '2' });
-            menus.registerMenuAction(subSubMenuPath, {
-                commandId: SampleCommand.id,
-                order: '1'
-            });
-            menus.registerMenuAction(subSubMenuPath, {
-                commandId: SampleCommand2.id,
-                order: '3'
-            });
-            const placeholder = new PlaceholderMenuNode([...subSubMenuPath, 'placeholder'].join('-'), 'Placeholder', '0');
-            menus.registerCommandMenu(subSubMenuPath, placeholder);
-
-            /**
-             * Register an action menu with an invalid command (un-registered and without a label) in order
-             * to determine that menus and the layout does not break on startup.
-             */
-            menus.registerMenuAction(subMenuPath, { commandId: 'invalid-command' });
-        }, 10000);
+        // Intentionally left empty: we do not contribute the "Sample Menu"
+        // top-level entry to the main menu bar anymore.
     }
 }
 

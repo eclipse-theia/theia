@@ -31,7 +31,7 @@ export const VercelAiPreferencesSchema: PreferenceSchema = {
             markdownDescription: nls.localize('theia/ai/vercelai/openaiApiKey/mdDescription',
                 'Enter an API Key for OpenAI models used by the Vercel AI SDK. \
                 **Please note:** By using this preference the API key will be stored in clear text \
-        on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
+        on the machine running this application. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
             tags: ['experimental']
         },
@@ -40,7 +40,7 @@ export const VercelAiPreferencesSchema: PreferenceSchema = {
             markdownDescription: nls.localize('theia/ai/vercelai/anthropicApiKey/mdDescription',
                 'Enter an API Key for Anthropic models used by the Vercel AI SDK. \
                 **Please note:** By using this preference the API key will be stored in clear text \
-        on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
+        on the machine running this application. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
             tags: ['experimental']
         },

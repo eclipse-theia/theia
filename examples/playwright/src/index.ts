@@ -42,7 +42,6 @@ export * from './theia-status-bar';
 export * from './theia-status-indicator';
 export * from './theia-terminal';
 export * from './theia-text-editor';
-export * from './theia-toggle-bottom-indicator';
 export * from './theia-toolbar';
 export * from './theia-toolbar-item';
 export * from './theia-tree-node';

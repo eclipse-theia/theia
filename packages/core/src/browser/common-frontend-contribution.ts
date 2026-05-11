@@ -681,6 +681,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_BOTTOM_PANEL, {
             isEnabled: () => this.shell.getWidgets('bottom').length > 0,
+            isToggled: () => this.shell.isExpanded('bottom'),
             execute: () => {
                 if (this.shell.isExpanded('bottom')) {
                     this.shell.collapsePanel('bottom');
@@ -1592,16 +1593,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // Status bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#status-bar-colors
             {
                 id: 'statusBar.foreground', defaults: {
-                    dark: '#FFFFFF',
-                    light: '#FFFFFF',
+                    dark: '#CCCCCC',
+                    light: '#333333',
                     hcDark: '#FFFFFF',
                     hcLight: 'editor.foreground'
                 }, description: 'Status bar foreground color when a workspace is opened. The status bar is shown in the bottom of the window.'
             },
             {
                 id: 'statusBar.background', defaults: {
-                    dark: '#007ACC',
-                    light: '#007ACC'
+                    dark: '#181818',
+                    light: '#FFFFFF',
+                    hcDark: '#181818',
+                    hcLight: '#FFFFFF'
                 }, description: 'Status bar background color when a workspace is opened. The status bar is shown in the bottom of the window.'
             },
             {
@@ -1614,12 +1617,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'statusBar.noFolderBackground', defaults: {
-                    dark: '#68217A',
-                    light: '#68217A'
+                    dark: '#181818',
+                    light: '#FFFFFF',
+                    hcDark: '#181818',
+                    hcLight: '#FFFFFF'
                 }, description: 'Status bar background color when no folder is opened. The status bar is shown in the bottom of the window.'
             },
             {
                 id: 'statusBar.border', defaults: {
+                    dark: '#303031',
+                    light: '#E5E5E5',
                     hcDark: 'contrastBorder',
                     hcLight: 'contrastBorder'
                 }, description: 'Status bar border color separating to the sidebar and editor. The status bar is shown in the bottom of the window.'
@@ -1635,7 +1642,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'statusBarItem.activeBackground', defaults: {
                     dark: Color.rgba(255, 255, 255, 0.18),
-                    light: Color.rgba(255, 255, 255, 0.18),
+                    light: Color.rgba(0, 0, 0, 0.12),
                     hcDark: Color.rgba(255, 255, 255, 0.18),
                     hcLight: Color.rgba(0, 0, 0, 0.18)
                 }, description: 'Status bar item background color when clicking. The status bar is shown in the bottom of the window.'
@@ -1643,7 +1650,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'statusBarItem.hoverBackground', defaults: {
                     dark: Color.rgba(255, 255, 255, 0.12),
-                    light: Color.rgba(255, 255, 255, 0.12),
+                    light: Color.rgba(0, 0, 0, 0.08),
                     hcDark: Color.rgba(255, 255, 255, 0.12),
                     hcLight: Color.rgba(0, 0, 0, 0.12)
                 }, description: 'Status bar item background color when hovering. The status bar is shown in the bottom of the window.'
@@ -1659,7 +1666,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'statusBarItem.compactHoverBackground', defaults: {
                     dark: Color.rgba(255, 255, 255, 0.20),
-                    light: Color.rgba(255, 255, 255, 0.20),
+                    light: Color.rgba(0, 0, 0, 0.10),
                     hcDark: Color.rgba(255, 255, 255, 0.20),
                     hcLight: Color.rgba(0, 0, 0, 0.20)
                 }, description: 'Status bar item background color when hovering an item that contains two hovers. The status bar is shown in the bottom of the window.'

@@ -111,6 +111,25 @@ export class ApplicationPackageManager {
     async copy(): Promise<void> {
         await fs.ensureDir(this.pck.lib('frontend'));
         await fs.copy(this.pck.frontend('index.html'), this.pck.lib('frontend', 'index.html'));
+        const secondaryHtml = this.pck.frontend('secondary-window.html');
+        if (await fs.pathExists(secondaryHtml)) {
+            await fs.copy(secondaryHtml, this.pck.lib('frontend', 'secondary-window.html'));
+        }
+        const appMedia = this.pck.path('media');
+        if (await fs.pathExists(appMedia)) {
+            await fs.copy(appMedia, this.pck.lib('frontend', 'media'));
+        }
+    }
+
+    /**
+     * Regenerate static frontend files (HTML/entry) from the current application props (including `.env`)
+     * and copy them into `lib/frontend`. Does not run webpack. After one full `build`, each `start` refreshes
+     * HTML (and meta) so `IDE_APPLICATION_NAME` / `IDE_APPLICATION_ICON` apply without rebundling; optional
+     * `media/` next to `package.json` is synced to `lib/frontend/media` for paths like `./media/icon.png`.
+     */
+    async refreshFrontendStaticFiles(options: GeneratorOptions = {}): Promise<void> {
+        await new FrontendGenerator(this.pck, options).generate();
+        await this.copy();
     }
 
     async build(args: string[] = [], options: GeneratorOptions = {}): Promise<void> {

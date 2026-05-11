@@ -19,6 +19,8 @@ import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
 import { WindowService } from './window/window-service';
 import { environment } from '@theia/application-package/lib/environment';
+import { nls } from '../common/nls';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 export const StorageService = Symbol('IStorageService');
 /**
@@ -94,10 +96,14 @@ export class LocalStorageService implements StorageService {
     private async showDiskQuotaExceededMessage(): Promise<void> {
         const READ_INSTRUCTIONS_ACTION = 'Read Instructions';
         const CLEAR_STORAGE_ACTION = 'Clear Local Storage';
-        const ERROR_MESSAGE = `Your preferred browser's local storage is almost full.
-        To be able to save your current workspace layout or data, you may need to free up some space.
-        You can refer to Theia's documentation page for instructions on how to manually clean
-        your browser's local storage or choose to clear all.`;
+        const ERROR_MESSAGE = nls.localize(
+            'theia/core/storage/localStorageQuota',
+            'Your preferred browser\'s local storage is almost full.\n' +
+                'To be able to save your current workspace layout or data, you may need to free up some space.\n' +
+                'You can refer to {0}\'s documentation page for instructions on how to manually clean\n' +
+                'your browser\'s local storage or choose to clear all.',
+            FrontendApplicationConfigProvider.get().applicationName
+        );
         this.messageService.warn(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION, CLEAR_STORAGE_ACTION).then(async selected => {
             if (READ_INSTRUCTIONS_ACTION === selected) {
                 this.windowService.openNewWindow('https://github.com/eclipse-theia/theia/wiki/Cleaning-Local-Storage', { external: true });

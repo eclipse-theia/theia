@@ -1077,6 +1077,8 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
 export class SideTabBar extends ScrollableTabBar {
 
     protected static readonly DRAG_THRESHOLD = 5;
+    /** Pixels of horizontal movement before mouse-drag scroll activates (avoids stealing tab clicks). */
+    protected static readonly STRIP_DRAG_THRESHOLD_PX = 8;
 
     /**
      * Emitted when a tab is added to the tab bar.
@@ -1102,6 +1104,16 @@ export class SideTabBar extends ScrollableTabBar {
     protected tabsOverflowData?: {
         titles: Title<Widget>[],
         startIndex: number
+    };
+
+    /** Horizontal activity strip: prev/next carousel controls (DOM on `topRow`). */
+    protected carouselNavInstalled = false;
+    protected carouselPrevButton?: HTMLButtonElement;
+    protected carouselNextButton?: HTMLButtonElement;
+    protected onCarouselScrollBound?: () => void;
+
+    protected readonly onActivityStripPointerDownBound = (e: PointerEvent): void => {
+        this.onActivityStripPointerDown(e);
     };
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
@@ -1134,11 +1146,18 @@ export class SideTabBar extends ScrollableTabBar {
     }
 
     protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.ensureCarouselNavButtons();
         this.updateTabs();
         this.node.addEventListener('lm-dragenter', this);
         this.node.addEventListener('lm-dragover', this);
         this.node.addEventListener('lm-dragleave', this);
         document.addEventListener('lm-drop', this);
+    }
+
+    protected override onBeforeDetach(msg: Message): void {
+        this.disposeCarouselNav();
+        super.onBeforeDetach(msg);
     }
 
     protected override onAfterDetach(msg: Message): void {
@@ -1149,12 +1168,190 @@ export class SideTabBar extends ScrollableTabBar {
         document.removeEventListener('lm-drop', this);
     }
 
+    protected ensureCarouselNavButtons(): void {
+        if (this.orientation !== 'horizontal' || this.carouselNavInstalled) {
+            return;
+        }
+        this.carouselNavInstalled = true;
+        const prev = document.createElement('button');
+        prev.type = 'button';
+        prev.className = 'theia-activity-carousel-nav theia-activity-carousel-prev';
+        prev.setAttribute('aria-label', nls.localizeByDefault('Scroll activity views left'));
+        prev.tabIndex = -1;
+        prev.innerHTML = '<span class="codicon codicon-chevron-left"></span>';
+        prev.addEventListener('click', e => {
+            e.stopPropagation();
+            this.scrollActivityCarousel(-1);
+        });
+        const next = document.createElement('button');
+        next.type = 'button';
+        next.className = 'theia-activity-carousel-nav theia-activity-carousel-next';
+        next.setAttribute('aria-label', nls.localizeByDefault('Scroll activity views right'));
+        next.tabIndex = -1;
+        next.innerHTML = '<span class="codicon codicon-chevron-right"></span>';
+        next.addEventListener('click', e => {
+            e.stopPropagation();
+            this.scrollActivityCarousel(1);
+        });
+        this.topRow.insertBefore(prev, this.contentContainer);
+        this.topRow.insertBefore(next, this.openTabsContainer);
+        this.carouselPrevButton = prev;
+        this.carouselNextButton = next;
+        this.onCarouselScrollBound = () => this.refreshActivityCarouselNav();
+        this.contentContainer.addEventListener('scroll', this.onCarouselScrollBound);
+        this.contentContainer.addEventListener('pointerdown', this.onActivityStripPointerDownBound, { passive: true });
+        this.refreshActivityCarouselNav();
+    }
+
+    protected disposeCarouselNav(): void {
+        if (!this.carouselNavInstalled) {
+            return;
+        }
+        this.carouselNavInstalled = false;
+        this.contentContainer.removeEventListener('pointerdown', this.onActivityStripPointerDownBound);
+        if (this.onCarouselScrollBound) {
+            this.contentContainer.removeEventListener('scroll', this.onCarouselScrollBound);
+            this.onCarouselScrollBound = undefined;
+        }
+        this.carouselPrevButton?.remove();
+        this.carouselNextButton?.remove();
+        this.carouselPrevButton = undefined;
+        this.carouselNextButton = undefined;
+    }
+
+    /** Scroll the horizontal activity strip by roughly one “page” (CSS scroll-snap aligns to tabs). */
+    protected scrollActivityCarousel(direction: -1 | 1): void {
+        if (this.orientation !== 'horizontal') {
+            return;
+        }
+        const host = this.contentContainer;
+        const step = Math.max(56, Math.floor(host.clientWidth * 0.55)) * direction;
+        host.scrollBy({ left: step, behavior: 'smooth' });
+        const bump = (): void => {
+            this.scrollBar?.update();
+            this.refreshActivityCarouselNav();
+        };
+        window.setTimeout(bump, 320);
+    }
+
+    protected refreshActivityCarouselNav(): void {
+        const host = this.contentContainer;
+        const overflow = host.scrollWidth > host.clientWidth + 1;
+        host.classList.toggle('theia-activity-strip-scrollable', overflow);
+        if (!this.carouselPrevButton || !this.carouselNextButton) {
+            return;
+        }
+        if (!overflow) {
+            this.carouselPrevButton.classList.add('theia-mod-hidden');
+            this.carouselNextButton.classList.add('theia-mod-hidden');
+            return;
+        }
+        this.carouselPrevButton.classList.remove('theia-mod-hidden');
+        this.carouselNextButton.classList.remove('theia-mod-hidden');
+        const atStart = host.scrollLeft <= 1;
+        const atEnd = host.scrollLeft >= host.scrollWidth - host.clientWidth - 1;
+        this.carouselPrevButton.disabled = atStart;
+        this.carouselNextButton.disabled = atEnd;
+    }
+
+    /**
+     * Mouse / pen: drag horizontally to scroll the strip (touch uses native pan — see sidepanel.css).
+     */
+    protected onActivityStripPointerDown(e: PointerEvent): void {
+        if (this.orientation !== 'horizontal' || e.button !== 0) {
+            return;
+        }
+        if (e.pointerType === 'touch') {
+            return;
+        }
+        const host = this.contentContainer;
+        if (host.scrollWidth <= host.clientWidth + 1) {
+            return;
+        }
+        const target = e.target as HTMLElement | undefined;
+        if (!target || !host.contains(target)) {
+            return;
+        }
+        const onTab = !!target.closest('.lm-TabBar-tab');
+        const onChrome = target === this.contentNode || target === host;
+        if (!onTab && !onChrome) {
+            return;
+        }
+        const pointerId = e.pointerId;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startScroll = host.scrollLeft;
+        let dragging = false;
+
+        const onUp = (ev: PointerEvent): void => {
+            if (ev.pointerId !== pointerId) {
+                return;
+            }
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            document.removeEventListener('pointercancel', onUp);
+            if (dragging) {
+                try {
+                    host.releasePointerCapture(pointerId);
+                } catch {
+                    /* no capture */
+                }
+                host.classList.remove('theia-activity-strip-dragging');
+                const suppressClick = (ce: Event): void => {
+                    if (host.contains(ce.target as Node)) {
+                        ce.preventDefault();
+                        ce.stopPropagation();
+                    }
+                    window.removeEventListener('click', suppressClick, true);
+                };
+                window.addEventListener('click', suppressClick, true);
+                this.scrollBar?.update();
+                this.refreshActivityCarouselNav();
+            }
+        };
+
+        const onMove = (ev: PointerEvent): void => {
+            if (ev.pointerId !== pointerId) {
+                return;
+            }
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
+            if (!dragging) {
+                if (Math.abs(dx) < SideTabBar.STRIP_DRAG_THRESHOLD_PX) {
+                    return;
+                }
+                if (Math.abs(dx) <= Math.abs(dy)) {
+                    document.removeEventListener('pointermove', onMove);
+                    return;
+                }
+                dragging = true;
+                host.classList.add('theia-activity-strip-dragging');
+                host.setPointerCapture(pointerId);
+            }
+            ev.preventDefault();
+            host.scrollLeft = startScroll - dx;
+            this.scrollBar?.update();
+            this.refreshActivityCarouselNav();
+        };
+
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onUp);
+    }
+
     protected override onUpdateRequest(msg: Message): void {
         this.updateTabs();
     }
 
     protected override onResize(msg: Widget.ResizeMessage): void {
         // Tabs need to be updated if there are already overflowing tabs or the current tabs don't fit
+        if (this.orientation === 'horizontal') {
+            if (this.tabsOverflowData || this.contentContainer.clientWidth < this.contentNode.scrollWidth) {
+                this.updateTabs();
+            }
+            this.refreshActivityCarouselNav();
+            return;
+        }
         if (this.tabsOverflowData || this.node.clientHeight < this.contentNode.clientHeight) {
             this.updateTabs();
         }
@@ -1165,6 +1362,9 @@ export class SideTabBar extends ScrollableTabBar {
      * if necessary.
      */
     override revealTab(index: number): Promise<void> {
+        if (this.orientation === 'horizontal') {
+            return super.revealTab(index);
+        }
         if (this.pendingReveal) {
             // A reveal has already been scheduled
             return this.pendingReveal;
@@ -1192,6 +1392,16 @@ export class SideTabBar extends ScrollableTabBar {
      * then gather size information for labels and render it again in the proper content node.
      */
     protected override updateTabs(): void {
+        if (this.orientation === 'horizontal') {
+            if (this.isAttached) {
+                VirtualDOM.render([], this.hiddenContentNode);
+                this.renderTabs(this.contentNode);
+                this.scrollBar?.update();
+                this.refreshActivityCarouselNav();
+                window.requestAnimationFrame(() => this.computeOverflowingTabsData());
+            }
+            return;
+        }
         if (this.isAttached) {
             // Render into the invisible node
             this.renderTabs(this.hiddenContentNode);
@@ -1239,21 +1449,20 @@ export class SideTabBar extends ScrollableTabBar {
                     this.tabsOverflowData = undefined;
                     this.tabsOverflowChanged.emit({ titles: [], startIndex });
                 }
-                return;
-            }
-            const newOverflowingTabs = this.titles.slice(startIndex);
+            } else {
+                const newOverflowingTabs = this.titles.slice(startIndex);
 
-            if (!this.tabsOverflowData) {
-                this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
-                this.tabsOverflowChanged.emit(this.tabsOverflowData);
-                return;
+                if (!this.tabsOverflowData) {
+                    this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
+                    this.tabsOverflowChanged.emit(this.tabsOverflowData);
+                } else if ((newOverflowingTabs.length !== (this.tabsOverflowData?.titles.length ?? 0)) ||
+                    newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined) {
+                    this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
+                    this.tabsOverflowChanged.emit(this.tabsOverflowData);
+                }
             }
-
-            if ((newOverflowingTabs.length !== (this.tabsOverflowData?.titles.length ?? 0)) ||
-                newOverflowingTabs.find((newTitle, i) => newTitle !== this.tabsOverflowData?.titles[i]) !== undefined) {
-                this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
-                this.tabsOverflowChanged.emit(this.tabsOverflowData);
-            }
+            this.scrollBar?.update();
+            this.refreshActivityCarouselNav();
         });
     }
 
@@ -1261,10 +1470,16 @@ export class SideTabBar extends ScrollableTabBar {
      * Hide overflowing tabs and return the index of the first hidden tab.
      */
     protected hideOverflowingTabs(): number {
-        const availableHeight = this.node.clientHeight;
         const invisibleClass = 'lm-mod-invisible';
         let startIndex = -1;
         const n = this.contentNode.children.length;
+        if (this.orientation === 'horizontal') {
+            for (let i = 0; i < n; i++) {
+                (this.contentNode.children[i] as HTMLLIElement).classList.remove(invisibleClass);
+            }
+            return -1;
+        }
+        const availableHeight = this.node.clientHeight;
         for (let i = 0; i < n; i++) {
             const tab = this.contentNode.children[i] as HTMLLIElement;
             if (tab.offsetTop + tab.offsetHeight >= availableHeight) {
@@ -1363,6 +1578,10 @@ export class SideTabBar extends ScrollableTabBar {
     protected onMouseDown(event: MouseEvent): void {
         // Check for left mouse button and current mouse status
         if (event.button !== 0 || this.mouseData) {
+            return;
+        }
+        // Horizontal activity strip: collapse only from the top bar toggle, not by re-clicking the active view tab.
+        if (this.orientation === 'horizontal') {
             return;
         }
 

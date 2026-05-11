@@ -43,6 +43,7 @@
 @import "./split-widget.css";
 @import "./symbol-icon.css";
 @import "./card.css";
+@import "./workbench-cursor-typography.css";
 
 
 /*-----------------------------------------------------------------------------
@@ -72,8 +73,8 @@
   --theia-ui-font-size3: calc(
     var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor)
   );
-  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
-    --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --theia-ui-icon-font-size: 16px; /* Codicon / toolbar grid (VS Code / Cursor workbench) */
+    --theia-ui-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
 
     /* Content fonts: Family, size and color (bright to dark)
      Content font variables are used for typography of user-generated content.
@@ -83,7 +84,7 @@
     --theia-content-line-height: 22px;
 
     --theia-code-font-size: 13px;
-    --theia-code-line-height: 17px;
+    --theia-code-line-height: 18px;
     --theia-code-padding: 5px;
     --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono",
         "Courier New", monospace, "Droid Sans Fallback";
@@ -198,8 +199,10 @@ blockquote {
     right: 0;
     bottom: 0;
     z-index: 50000;
-    background: var(--theia-editor-background);
-    background-size: 60px 60px;
+    background-color: var(--theia-editor-background);
+    /* Optional branding: `FrontendGenerator` sets `--theia-preload-logo-url` when `applicationIcon` is configured. */
+    background-image: var(--theia-preload-logo-url, none);
+    background-size: min(35vmin, 220px) min(35vmin, 220px);
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
@@ -210,10 +213,9 @@ blockquote {
 }
 
 .theia-preload::after {
-    animation: 1s theia-preload-rotate infinite;
-  color: #777; /* color works on both light and dark themes */
-  content: "\eb19"; /* codicon-load */
-    font: normal normal normal 72px/1 codicon;
+    /* Desactivado: no mostrar ningún spinner ni icono por defecto en el splash. */
+    content: none;
+    display: none;
 }
 
 @keyframes theia-preload-rotate {
@@ -227,6 +229,20 @@ blockquote {
 
 .theia-preload.theia-hidden {
     opacity: 0;
+}
+
+/*-----------------------------------------------------------------------------
+| Empty editor area (Monaco / VS Code workbench): replace default letterpress
+| with `IDE_APPLICATION_ICON` when `html.theia-splash-branded` is set (see
+| `FrontendGenerator.compileSplashBrandingScript` and `--theia-workbench-brand-logo-url`).
+|-----------------------------------------------------------------------------*/
+
+html.theia-splash-branded .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .letterpress,
+html.theia-splash-branded .monaco-workbench .editor-group-watermark .letterpress {
+    background-image: var(--theia-workbench-brand-logo-url) !important;
+    background-size: min(40vmin, 256px) min(40vmin, 256px);
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .theia-icon {

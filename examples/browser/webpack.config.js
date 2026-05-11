@@ -3,6 +3,8 @@
  * To reset delete this file and rerun theia build again.
  */
 // @ts-check
+const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const configs = require('./gen-webpack.config.js');
 const nodeConfig = require('./gen-webpack.node.config.js');
 
@@ -15,6 +17,11 @@ configs[0].module.rules.push({
     test: /\.js$/,
     loader: require.resolve('@theia/application-manager/lib/expose-loader')
 });
+
+/** Brand assets (e.g. `IDE_APPLICATION_ICON=./media/ide-icon.png` in `.env`). */
+configs[0].plugins.push(new CopyWebpackPlugin({
+    patterns: [{ from: path.join(__dirname, 'media'), to: 'media', noErrorOnMissing: true }]
+}));
 
 
 module.exports = [

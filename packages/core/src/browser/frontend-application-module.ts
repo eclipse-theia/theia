@@ -62,6 +62,7 @@ import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
 import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store';
@@ -373,7 +374,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     }).inSingletonScope();
 
     bind(AboutDialog).toSelf().inSingletonScope();
-    bind(AboutDialogProps).toConstantValue({ title: 'Theia' });
+    bind(AboutDialogProps).toDynamicValue(() => ({ title: FrontendApplicationConfigProvider.get().applicationName })).inSingletonScope();
 
     bind(EnvVariablesServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);

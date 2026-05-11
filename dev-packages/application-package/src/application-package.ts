@@ -20,6 +20,7 @@ import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm
 import { Extension, ExtensionPackage, ExtensionPackageOptions, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
+import { applyLocalEnvFile, IDE_APPLICATION_ICON_ENV, IDE_APPLICATION_NAME_ENV } from './local-env-file';
 import deepmerge = require('deepmerge');
 import resolvePackagePath = require('resolve-package-path');
 
@@ -63,9 +64,14 @@ export class ApplicationPackage {
     }
 
     protected _props: ApplicationProps | undefined;
+    protected _localEnvApplied = false;
     get props(): ApplicationProps {
         if (this._props) {
             return this._props;
+        }
+        if (!this._localEnvApplied) {
+            this._localEnvApplied = true;
+            applyLocalEnvFile(this.projectPath);
         }
         const theia = this.pck.theia || {};
 
@@ -79,7 +85,23 @@ export class ApplicationPackage {
             theia.target = defaultTarget;
         }
 
-        return this._props = deepmerge(ApplicationProps.DEFAULT, theia);
+        let merged = deepmerge(ApplicationProps.DEFAULT, theia) as ApplicationProps;
+        const nameFromEnv = process.env[IDE_APPLICATION_NAME_ENV]?.trim();
+        const iconFromEnv = process.env[IDE_APPLICATION_ICON_ENV]?.trim();
+        if (nameFromEnv || iconFromEnv) {
+            merged = {
+                ...merged,
+                frontend: {
+                    ...merged.frontend,
+                    config: {
+                        ...merged.frontend.config,
+                        ...(nameFromEnv ? { applicationName: nameFromEnv } : {}),
+                        ...(iconFromEnv ? { applicationIcon: iconFromEnv } : {}),
+                    }
+                }
+            };
+        }
+        return this._props = merged;
     }
 
     protected _pck: NodePackage | undefined;

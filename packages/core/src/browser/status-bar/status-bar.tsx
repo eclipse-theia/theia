@@ -103,10 +103,13 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         const leftEntries = Array.from(this.viewModel.getLeft(), entry => this.renderElement(entry));
         const rightEntries = Array.from(this.viewModel.getRight(), entry => this.renderElement(entry));
 
-        return <React.Fragment>
-            <div className='area left'>{leftEntries}</div>
-            <div className='area right'>{rightEntries}</div>
-        </React.Fragment>;
+        return (
+            <div className='theia-statusBar-track'>
+                <div className='area left'>{leftEntries}</div>
+                <div className='theia-statusBar-center-spacer' aria-hidden={true} />
+                <div className='area right'>{rightEntries}</div>
+            </div>
+        );
     }
 
     protected triggerCommand(entry: StatusBarEntry): () => void {

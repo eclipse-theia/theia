@@ -123,6 +123,7 @@ export type FrontendApplicationConfig = RequiredRecursive<FrontendApplicationCon
 export namespace FrontendApplicationConfig {
     export const DEFAULT: FrontendApplicationConfig = {
         applicationName: 'Eclipse Theia',
+        applicationIcon: '',
         defaultTheme: { light: 'light', dark: 'dark' },
         defaultIconTheme: 'theia-file-icons',
         electron: ElectronFrontendApplicationConfig.DEFAULT,
@@ -153,6 +154,13 @@ export namespace FrontendApplicationConfig {
          * Defaults to `Eclipse Theia`.
          */
         readonly applicationName?: string;
+
+        /**
+         * URL or path for the application branding icon (favicon, menu bar logo, optional Electron window icon).
+         * Use a same-origin URL, e.g. `./media/logo.png` or `https://example.com/icon.png`.
+         * When empty, the default Theia branding is used where applicable.
+         */
+        readonly applicationIcon?: string;
 
         /**
          * Electron specific configuration.

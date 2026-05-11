@@ -28,6 +28,22 @@
   background-size: 15%;
 }
 
+/*
+ * When `IDE_APPLICATION_ICON` is set, `index.html` branding script adds `html.theia-splash-branded` and
+ * `--theia-workbench-brand-logo-url` (same URL as splash/favicon). Use it here instead of the sample Theia PNG.
+ */
+html.theia-splash-branded .theia-icon {
+  background-image: var(--theia-workbench-brand-logo-url);
+}
+
+html.theia-splash-branded #theia-main-content-panel {
+  background-color: var(--theia-editor-background);
+  background-image: var(--theia-workbench-brand-logo-url);
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: 15%;
+}
+
 .unclosable-window-icon {
   -webkit-mask: url("window-icon.svg");
   mask: url("window-icon.svg");

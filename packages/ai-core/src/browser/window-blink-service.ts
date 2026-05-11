@@ -16,6 +16,7 @@
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { environment, nls } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 
@@ -102,9 +103,10 @@ export class WindowBlinkService {
         }
 
         const originalTitle = this.windowTitleService?.title ?? document.title;
+        const app = FrontendApplicationConfigProvider.get().applicationName;
         const alertTitle = '🔔 ' + (agentName
-            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', 'Theia - Agent "{0}" Completed', agentName)
-            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', 'Theia - Agent Completed'));
+            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', '{0} - Agent "{1}" Completed', app, agentName)
+            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', '{0} - Agent Completed', app));
 
         // Save original titles of secondary windows
         this.originalSecondaryTitles.clear();

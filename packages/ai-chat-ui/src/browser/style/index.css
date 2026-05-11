@@ -2125,3 +2125,37 @@ div:last-child>.theia-ChatNode {
   border-radius: 50%;
   background: var(--theia-editor-background);
 }
+
+/*-----------------------------------------------------------------------------
+| Mobile: AI chat uses full viewport width (body.theia-mod-mobile-ai-chat-fullwidth).
+| Set from AIChatContribution when the chat tab is active in the expanded right panel.
+|-----------------------------------------------------------------------------*/
+@media (max-width: 767px) {
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > #theia-left-content-panel,
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > #theia-bottom-split-panel {
+    flex-basis: 0 !important;
+    flex-grow: 0 !important;
+    min-width: 0 !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+    border: none !important;
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > .lm-SplitPanel-handle {
+    display: none !important;
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel > #theia-right-content-panel {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-right-content-panel .theia-side-panel,
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-right-content-panel .lm-DockPanel-widget {
+    max-width: none !important;
+  }
+}

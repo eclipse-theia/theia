@@ -66,6 +66,22 @@ export abstract class AbstractGenerator {
         return JSON.stringify(object, undefined, 4);
     }
 
+    /** Escape text for use in an HTML attribute value. */
+    protected escapeHtmlAttribute(value: string): string {
+        return value
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/'/g, '&#39;');
+    }
+
+    /** Escape a URL or path for safe use inside a CSS `url("…")` value. */
+    protected escapeCssUrlFragment(value: string): string {
+        return value
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"');
+    }
+
     protected emitStartupLogger(component: string, epochLabel: string, options?: { requirePerformance?: boolean }): string {
         const perfImport = options?.requirePerformance ? 'const { performance } = require(\'perf_hooks\');\n' : '';
         return `${perfImport}const startupLog = (milestone) => console.debug(\`${component}: \${milestone} [\${(performance.now() / 1000).toFixed(3)} s since ${epochLabel}]\`);`;

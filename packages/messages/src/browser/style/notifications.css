@@ -22,9 +22,17 @@
 
 .theia-notifications-container {
   position: absolute;
-  bottom: 36px;
-  right: 16px;
-  width: 500px;
+  bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  width: min(
+    500px,
+    calc(
+      100vw - 32px - env(safe-area-inset-left, 0px) -
+        env(safe-area-inset-right, 0px)
+    )
+  );
+  max-width: 100%;
+  box-sizing: border-box;
   user-select: none;
   z-index: 1111;
 }
@@ -137,6 +145,8 @@
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: space-between;
+  align-items: flex-start;
+  min-width: 0;
   padding: 5px 4px 7px 4px;
 }
 
@@ -148,6 +158,7 @@
   flex-basis: 0%;
   flex-grow: 1;
   flex-shrink: 1;
+  min-width: 0;
   display: block;
   overflow: hidden;
   user-select: text;
@@ -234,10 +245,34 @@
 
 .theia-notification-buttons > button {
   margin: 4px;
-  max-width: 160px;
+  max-width: min(160px, 100%);
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+
+@media (max-width: 500px) {
+  .theia-notification-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .theia-notification-buttons > button {
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .theia-notification-list-item-content-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .theia-notification-source {
+    width: 100%;
+  }
 }
 
 .theia-notification-item-progress {

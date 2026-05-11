@@ -24,6 +24,7 @@ import { Theme, ThemeChangeEvent } from '../common/theme';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import debounce = require('lodash.debounce');
 import { PreferenceService } from '../common/preferences';
+import { nls } from '../common/nls';
 
 const COLOR_THEME_PREFERENCE_KEY = 'workbench.colorTheme';
 const NO_THEME = { id: 'no-theme', label: 'Not a real theme.', type: 'dark' } as const;
@@ -47,7 +48,7 @@ export class ThemeService {
 
     @postConstruct()
     protected init(): void {
-        this.register(...BuiltinThemeProvider.themes);
+        this.register(...BuiltinThemeProvider.builtinThemes());
         this.loadUserTheme();
         this.preferences.ready.then(() => {
             this.validateActiveTheme();
@@ -170,38 +171,33 @@ export class ThemeService {
 
 export class BuiltinThemeProvider {
 
-    static readonly darkTheme: Theme = {
-        id: 'dark',
-        type: 'dark',
-        label: 'Dark (Theia)',
-        editorTheme: 'dark-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-    };
-
-    static readonly lightTheme: Theme = {
-        id: 'light',
-        type: 'light',
-        label: 'Light (Theia)',
-        editorTheme: 'light-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-    };
-
-    static readonly hcTheme: Theme = {
-        id: 'hc-theia',
-        type: 'hc',
-        label: 'High Contrast (Theia)',
-        editorTheme: 'hc-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-    };
-
-    static readonly hcLightTheme: Theme = {
-        id: 'hc-theia-light',
-        type: 'hcLight',
-        label: 'High Contrast Light (Theia)',
-        editorTheme: 'hc-theia-light' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-    };
-
-    static readonly themes = [
-        BuiltinThemeProvider.darkTheme,
-        BuiltinThemeProvider.lightTheme,
-        BuiltinThemeProvider.hcTheme,
-        BuiltinThemeProvider.hcLightTheme
-    ];
+    static builtinThemes(): Theme[] {
+        const app = FrontendApplicationConfigProvider.get().applicationName;
+        return [
+            {
+                id: 'dark',
+                type: 'dark',
+                label: nls.localize('theia/core/builtinTheme/dark', 'Dark ({0})', app),
+                editorTheme: 'dark-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+            },
+            {
+                id: 'light',
+                type: 'light',
+                label: nls.localize('theia/core/builtinTheme/light', 'Light ({0})', app),
+                editorTheme: 'light-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+            },
+            {
+                id: 'hc-theia',
+                type: 'hc',
+                label: nls.localize('theia/core/builtinTheme/highContrast', 'High Contrast ({0})', app),
+                editorTheme: 'hc-theia' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+            },
+            {
+                id: 'hc-theia-light',
+                type: 'hcLight',
+                label: nls.localize('theia/core/builtinTheme/highContrastLight', 'High Contrast Light ({0})', app),
+                editorTheme: 'hc-theia-light' // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+            }
+        ];
+    }
 }

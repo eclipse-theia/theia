@@ -48,8 +48,10 @@ export class FrontendGenerator extends AbstractGenerator {
     }
 
     protected async compileIndexHtml(frontendModules: Map<string, string>): Promise<string> {
+        const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
+        const htmlSplashClass = appIcon ? ' class="theia-splash-branded"' : '';
         return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en"${htmlSplashClass}>
 
 <head>${await this.compileIndexHead(frontendModules)}
 </head>
@@ -64,12 +66,48 @@ export class FrontendGenerator extends AbstractGenerator {
 
     protected async compileIndexHead(frontendModules: Map<string, string>): Promise<string> {
         const preferEsbuild = await new BundlerGenerator(this.pck, this.options).preferESBuild();
+        const appName = this.pck.props.frontend.config.applicationName;
+        const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
+        const iconLines = appIcon
+            ? `
+  <meta name="application-icon" content="${this.escapeHtmlAttribute(appIcon)}">
+  <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">`
+            : '';
+        const splashBranding = appIcon ? this.compileSplashBrandingScript() : '';
         return `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="${this.escapeHtmlAttribute(appName)}">${iconLines}${splashBranding}
   ${preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : ''}
-  <title>${this.pck.props.frontend.config.applicationName}</title>`;
+  <title>${this.escapeHtmlAttribute(appName)}</title>`;
+    }
+
+    /**
+     * Resolves `meta[name="application-icon"]` against `document.baseURI`, then sets `--theia-preload-logo-url`,
+     * `--theia-workbench-brand-logo-url` (empty editor watermark), and the favicon link. Relative paths in `url()`
+     * inside `bundle.css` would otherwise resolve against the stylesheet URL and can fail for `./media/...`;
+     * an absolute URL avoids that.
+     */
+    protected compileSplashBrandingScript(): string {
+        const js = [
+            '(function(){try{',
+            'var m=document.querySelector(\'meta[name="application-icon"]\');',
+            'var r=m&&m.getAttribute(\'content\');',
+            'if(!r)return;',
+            'var h=r.trim();',
+            'if(!h)return;',
+            'var u=(/^https?:\\/\\//i.test(h)||h.startsWith(\'data:\')||h.startsWith(\'/\'))?h:new URL(h,document.baseURI).href;',
+            'document.documentElement.classList.add(\'theia-splash-branded\');',
+            'document.documentElement.style.setProperty(\'--theia-preload-spinner-content\',\'none\');',
+            'document.documentElement.style.setProperty(\'--theia-preload-spinner-animation\',\'none\');',
+            'document.documentElement.style.setProperty(\'--theia-preload-logo-url\',\'url(\' + JSON.stringify(u) + \')\');',
+            'document.documentElement.style.setProperty(\'--theia-workbench-brand-logo-url\',\'url(\' + JSON.stringify(u) + \')\');',
+            'var l=document.querySelector(\'link[rel="icon"]\');',
+            'if(l){l.setAttribute(\'href\',u);}',
+            '}catch(_){}})();'
+        ].join('');
+        return `\n  <script type="text/javascript">${js}</script>`;
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>, frontendPreloadModules: Map<string, string>): string {
@@ -81,7 +119,32 @@ ${this.emitStartupLog('loading modules...')}
 const { Container } = require('@theia/core/shared/inversify');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 
-FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.frontend.config)});
+function applyApplicationNameFromMeta(cfg) {
+    try {
+        const meta = typeof document !== 'undefined' && document.querySelector('meta[name="application-name"]');
+        const fromMeta = meta && meta.getAttribute('content');
+        if (fromMeta && fromMeta.trim()) {
+            cfg.applicationName = fromMeta.trim();
+        }
+    } catch {
+        /* ignore: meta may be unavailable in non-browser contexts */
+    }
+}
+function applyApplicationIconFromMeta(cfg) {
+    try {
+        const meta = typeof document !== 'undefined' && document.querySelector('meta[name="application-icon"]');
+        const fromMeta = meta && meta.getAttribute('content');
+        if (fromMeta && fromMeta.trim()) {
+            cfg.applicationIcon = fromMeta.trim();
+        }
+    } catch {
+        /* ignore: meta may be unavailable in non-browser contexts */
+    }
+}
+const __theiaFrontendConfig = ${this.prettyStringify(this.pck.props.frontend.config)};
+applyApplicationNameFromMeta(__theiaFrontendConfig);
+applyApplicationIconFromMeta(__theiaFrontendConfig);
+FrontendApplicationConfigProvider.set(__theiaFrontendConfig);
 
 ${this.ifMonaco(() => `
 self.MonacoEnvironment = {
@@ -174,12 +237,19 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
 
     /** HTML for secondary windows that contain an extracted widget. */
     protected compileSecondaryWindowHtml(): string {
+        const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
+        const iconLines = appIcon
+            ? `
+    <meta name="application-icon" content="${this.escapeHtmlAttribute(appIcon)}">
+    <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">${this.compileSplashBrandingScript()}`
+            : '';
         return `<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Theia — Secondary Window</title>
+    <meta name="application-name" content="${this.escapeHtmlAttribute(this.pck.props.frontend.config.applicationName)}">${iconLines}
+    <title>${this.pck.props.frontend.config.applicationName} — Secondary Window</title>
     <style>
     html, body {
         overflow: hidden;
