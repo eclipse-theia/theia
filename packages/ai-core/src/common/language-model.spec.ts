@@ -20,6 +20,7 @@ import {
     isLanguageModelStreamResponsePart,
     isModelMatching,
     isToolCallContent,
+    isToolCallHtmlAppResult,
     LanguageModel,
     LanguageModelSelector,
     resolveCompactionDefault,
@@ -205,5 +206,32 @@ describe('compaction contract', () => {
         // explicit per-session setting wins over the model default (which already folds in the per-provider override)
         expect(resolveServerSideCompaction(true, false, { enabled: true })).to.equal(true);
         expect(resolveServerSideCompaction(true, true, { enabled: false })).to.equal(false);
+    });
+});
+
+describe('isToolCallHtmlAppResult', () => {
+    it('returns true for valid html app result', () => {
+        expect(isToolCallHtmlAppResult({ type: 'html', html: '<div>Hello</div>' })).to.be.true;
+    });
+
+    it('returns true with optional title', () => {
+        expect(isToolCallHtmlAppResult({ type: 'html', html: '<p>App</p>', title: 'My App' })).to.be.true;
+    });
+
+    it('returns false for text result', () => {
+        expect(isToolCallHtmlAppResult({ type: 'text', text: 'hello' })).to.be.false;
+    });
+
+    it('returns false for missing html field', () => {
+        expect(isToolCallHtmlAppResult({ type: 'html' })).to.be.false;
+    });
+
+    it('returns false for null', () => {
+        // eslint-disable-next-line no-null/no-null
+        expect(isToolCallHtmlAppResult(null)).to.be.false;
+    });
+
+    it('returns false for undefined', () => {
+        expect(isToolCallHtmlAppResult(undefined)).to.be.false;
     });
 });

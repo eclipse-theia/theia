@@ -515,12 +515,16 @@ export const isCompactionResponsePart = (part: unknown): part is CompactionRespo
 export interface ToolCallTextResult { type: 'text', text: string; };
 export interface ToolCallImageResult extends Base64ImageContent { type: 'image' };
 export interface ToolCallAudioResult { type: 'audio', data: string; mimeType: string };
+export interface ToolCallHtmlAppResult { type: 'html'; html: string; title?: string };
 export type ToolCallErrorKind = 'tool-not-available';
 export interface ToolCallErrorResult { type: 'error', data: string; errorKind?: ToolCallErrorKind; };
-export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallErrorResult;
+export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallHtmlAppResult | ToolCallErrorResult;
 export interface ToolCallContent {
     content: ToolCallContentResult[];
 }
+
+export const isToolCallHtmlAppResult = (item: unknown): item is ToolCallHtmlAppResult =>
+    !!(item && typeof item === 'object' && 'type' in item && (item as ToolCallHtmlAppResult).type === 'html' && 'html' in item);
 
 export const isToolCallContent = (result: unknown): result is ToolCallContent =>
     !!(result && typeof result === 'object' && 'content' in result && Array.isArray((result as ToolCallContent).content));
