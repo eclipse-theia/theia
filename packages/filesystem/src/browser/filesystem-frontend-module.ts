@@ -44,7 +44,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(RemoteFileSystemServer).toDynamicValue(ctx =>
         WebSocketConnectionProvider.createProxy(ctx.container, remoteFileSystemPath, new RemoteFileSystemProxyFactory())
-    );
+    ).inSingletonScope();
     bind(RemoteFileSystemProvider).toSelf().inSingletonScope();
     bind(RemoteFileServiceContribution).toSelf().inSingletonScope();
     bind(FileServiceContribution).toService(RemoteFileServiceContribution);
