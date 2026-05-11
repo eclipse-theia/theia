@@ -142,6 +142,9 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                                 return { type: 'text', text: JSON.stringify(callContent.resource) };
                             }
                             default: {
+                                if ('html' in callContent && typeof (callContent as { html: unknown }).html === 'string') {
+                                    return { type: 'html', html: (callContent as { html: string }).html, title: (callContent as { title?: string }).title };
+                                }
                                 return { type: 'text', text: JSON.stringify(callContent) };
                             }
                         }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isModelMatching, LanguageModel, LanguageModelSelector } from './language-model';
+import { isModelMatching, LanguageModel, LanguageModelSelector, isToolCallHtmlAppResult } from './language-model';
 import { expect } from 'chai';
 
 describe('isModelMatching', () => {
@@ -82,5 +82,31 @@ describe('isModelMatching', () => {
                 }
             )
         ).eql(true);
+    });
+});
+
+describe('isToolCallHtmlAppResult', () => {
+    it('returns true for valid html app result', () => {
+        expect(isToolCallHtmlAppResult({ type: 'html', html: '<div>Hello</div>' })).to.be.true;
+    });
+
+    it('returns true with optional title', () => {
+        expect(isToolCallHtmlAppResult({ type: 'html', html: '<p>App</p>', title: 'My App' })).to.be.true;
+    });
+
+    it('returns false for text result', () => {
+        expect(isToolCallHtmlAppResult({ type: 'text', text: 'hello' })).to.be.false;
+    });
+
+    it('returns false for missing html field', () => {
+        expect(isToolCallHtmlAppResult({ type: 'html' })).to.be.false;
+    });
+
+    it('returns false for null', () => {
+        expect(isToolCallHtmlAppResult(null)).to.be.false;
+    });
+
+    it('returns false for undefined', () => {
+        expect(isToolCallHtmlAppResult(undefined)).to.be.false;
     });
 });
