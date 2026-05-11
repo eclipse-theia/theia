@@ -99,9 +99,10 @@ export class NativeWebpackPlugin {
     }
 
     protected async copyRipgrep(issuer: string, compiler: Compiler): Promise<void> {
-        const suffix = process.platform === 'win32' ? '.exe' : '';
-        const sourceFile = require.resolve(`@vscode/ripgrep/bin/rg${suffix}`, { paths: [issuer] });
-        const targetFile = path.join(compiler.outputPath, this.options.out, `rg${suffix}`);
+        const fileName = process.platform === 'win32' ? 'rg.exe' : 'rg';
+        const platformPkg = `@vscode/ripgrep-${process.platform}-${process.arch}`;
+        const sourceFile = require.resolve(`${platformPkg}/bin/${fileName}`, { paths: [issuer] });
+        const targetFile = path.join(compiler.outputPath, this.options.out, fileName);
         await this.copyExecutable(sourceFile, targetFile);
     }
 
@@ -188,9 +189,7 @@ async function buildFile(root: string, name: string, content: string): Promise<s
 }
 
 const ripgrepReplacement = (nativePath: string = '.'): string => `
-const path = require('path');
-
-exports.rgPath = path.join(__dirname, \`./${nativePath}/rg\${process.platform === 'win32' ? '.exe' : ''}\`);
+export const rgPath = require('path').join(__dirname, \`./${nativePath}/rg\${process.platform === 'win32' ? '.exe' : ''}\`);
 `;
 
 const bindingsReplacement = (issuer: string, entries: [string, string][]): string => {
