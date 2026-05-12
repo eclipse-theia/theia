@@ -638,7 +638,7 @@ export function join(...parts) {
     return path.join(...parts).replace(/\\\\/g, '/');
 }
 
-const { mode, watch } = yargs.option('mode', {
+const { mode, watch } = yargs().option('mode', {
     description: "Mode to use",
     choices: ["development", "production"],
     default: "production"
