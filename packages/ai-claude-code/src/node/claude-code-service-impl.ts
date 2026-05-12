@@ -18,7 +18,6 @@ import { ILogger, generateUuid, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { execSync } from 'child_process';
 import { existsSync, realpathSync } from 'fs';
-import * as fs from 'fs/promises';
 import * as path from 'path';
 import {
     ClaudeCodeBackendRequest,
@@ -27,6 +26,7 @@ import {
     ToolApprovalRequestMessage,
     ToolApprovalResponseMessage
 } from '../common/claude-code-service';
+import { ClaudeCodeHookServiceImpl } from './claude-code-hook-service-impl';
 
 interface ToolApprovalResult {
     behavior: 'allow' | 'deny';
@@ -39,6 +39,9 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
 
     @inject(ILogger) @named('ClaudeCode')
     private logger: ILogger;
+
+    @inject(ClaudeCodeHookServiceImpl)
+    private hookService: ClaudeCodeHookServiceImpl;
 
     private client: ClaudeCodeClient;
     private abortControllers = new Map<string, AbortController>();
@@ -108,9 +111,7 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
 
         try {
             const cwd = request.options?.cwd || process.cwd();
-            await this.ensureFileBackupHook(cwd);
-            await this.ensureStopHook(cwd);
-            await this.ensureClaudeSettings(cwd);
+            await this.hookService.installHooks(cwd);
 
             let done = (_?: unknown) => { };
             const receivedResult = new Promise(resolve => {
@@ -300,233 +301,4 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
         return result;
     }
 
-    protected async ensureStopHook(cwd: string): Promise<void> {
-        const hookPath = path.join(cwd, '.claude', 'hooks', 'session-cleanup-hook.js');
-
-        try {
-            await fs.access(hookPath);
-            return;
-        } catch {
-            // Hook doesn't exist, create it
-        }
-
-        await fs.mkdir(path.dirname(hookPath), { recursive: true });
-
-        const hookContent = `#!/usr/bin/env node
-
-const fs = require('fs').promises;
-const path = require('path');
-
-async function main() {
-    try {
-        const input = await new Promise((resolve, reject) => {
-            let data = '';
-            process.stdin.on('data', chunk => data += chunk);
-            process.stdin.on('end', () => resolve(data));
-            process.stdin.on('error', reject);
-        });
-
-        const hookData = JSON.parse(input);
-
-        // Delete backup directory for this session
-        const backupDir = path.join(hookData.cwd, '.claude', '.edit-baks', hookData.session_id);
-
-        try {
-            await fs.rm(backupDir, { recursive: true, force: true });
-            console.log(\`Cleaned up session backups: \${hookData.session_id}\`);
-        } catch (error) {
-            // Directory might not exist, which is fine
-            console.log(\`No backups to clean for session: \${hookData.session_id}\`);
-        }
-
-    } catch (error) {
-        console.error(\`Cleanup failed: \${error.message}\`, process.stderr);
-        process.exit(1);
-    }
-}
-
-main();
-`;
-
-        await fs.writeFile(hookPath, hookContent, { mode: 0o755 });
-    }
-
-    protected async ensureFileBackupHook(cwd: string): Promise<void> {
-        const hookPath = path.join(cwd, '.claude', 'hooks', 'file-backup-hook.js');
-
-        try {
-            await fs.access(hookPath);
-            // Hook already exists, no need to create it
-            return;
-        } catch {
-            // Hook doesn't exist, create it
-        }
-
-        // Ensure the hooks directory exists
-        await fs.mkdir(path.dirname(hookPath), { recursive: true });
-
-        const hookContent = `#!/usr/bin/env node
-
-const fs = require('fs').promises;
-const path = require('path');
-
-async function main() {
-    try {
-        // Read input from stdin
-        const input = await new Promise((resolve, reject) => {
-            let data = '';
-            process.stdin.on('data', chunk => data += chunk);
-            process.stdin.on('end', () => resolve(data));
-            process.stdin.on('error', reject);
-        });
-
-        const hookData = JSON.parse(input);
-
-        // Only backup for file modification tools
-        const fileModifyingTools = ['Write', 'Edit', 'MultiEdit'];
-        if (!fileModifyingTools.includes(hookData.tool_name)) {
-            process.exit(0);
-        }
-
-        // Extract file path from tool input
-        let filePath;
-        if (hookData.tool_name === 'Write' || hookData.tool_name === 'Edit') {
-            filePath = hookData.tool_input?.file_path;
-        } else if (hookData.tool_name === 'MultiEdit') {
-            // MultiEdit has multiple files - we'll handle the first one for now
-            // You might want to extend this to handle all files
-            filePath = hookData.tool_input?.files?.[0]?.file_path;
-        }
-
-        if (!filePath) {
-            process.exit(0);
-        }
-
-        // Resolve absolute path
-        const absoluteFilePath = path.resolve(hookData.cwd, filePath);
-
-        // Check if file exists (can't backup what doesn't exist)
-        try {
-            await fs.access(absoluteFilePath);
-        } catch {
-            // File doesn't exist, nothing to backup
-            process.exit(0);
-        }
-
-        // Create backup directory structure
-        const backupDir = path.join(hookData.cwd, '.claude', '.edit-baks', hookData.session_id);
-        await fs.mkdir(backupDir, { recursive: true });
-
-        // Create backup file path (maintain relative structure)
-        const relativePath = path.relative(hookData.cwd, absoluteFilePath);
-        const backupFilePath = path.join(backupDir, relativePath);
-
-        // Ensure backup subdirectories exist
-        await fs.mkdir(path.dirname(backupFilePath), { recursive: true });
-
-        // Only create backup if it doesn't already exist for this session
-        try {
-            await fs.access(backupFilePath);
-            // Backup already exists for this session, don't overwrite
-            process.exit(0);
-        } catch {
-            // Backup doesn't exist, create it
-        }
-
-        // Copy the file
-        await fs.copyFile(absoluteFilePath, backupFilePath);
-
-        // Optional: Log the backup (visible in transcript mode with Ctrl-R)
-        console.log(\`Backed up: \${relativePath}\`);
-
-    } catch (error) {
-        console.error(\`Backup failed: \${error.message}\`, process.stderr);
-        process.exit(1); // Non-blocking error
-    }
-}
-
-main();
-`;
-
-        await fs.writeFile(hookPath, hookContent, { mode: 0o755 });
-    }
-
-    private async ensureClaudeSettings(cwd: string): Promise<void> {
-        const settingsPath = path.join(cwd, '.claude', 'settings.local.json');
-
-        const hookConfig = {
-            hooks: {
-                PreToolUse: [
-                    {
-                        matcher: 'Write|Edit|MultiEdit',
-                        hooks: [
-                            {
-                                type: 'command',
-                                command: 'node $CLAUDE_PROJECT_DIR/.claude/hooks/file-backup-hook.js',
-                                timeout: 10
-                            }
-                        ]
-                    }
-                ],
-                Stop: [
-                    {
-                        matcher: '',
-                        hooks: [
-                            {
-                                type: 'command',
-                                command: 'node $CLAUDE_PROJECT_DIR/.claude/hooks/session-cleanup-hook.js'
-                            }
-                        ]
-                    }
-                ]
-            }
-        };
-
-        try {
-            // Try to read existing settings
-            const existingContent = await fs.readFile(settingsPath, 'utf8');
-            const existingSettings = JSON.parse(existingContent);
-
-            // Check if hooks already exist and are properly configured
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const hasPreHook = existingSettings.hooks?.PreToolUse?.some((hook: any) =>
-                hook.matcher === 'Write|Edit|MultiEdit' &&
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                hook.hooks?.some((h: any) => h.command?.includes('file-backup-hook.js'))
-            );
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const hasStopHook = existingSettings.hooks?.Stop?.some((hook: any) =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                hook.hooks?.some((h: any) => h.command?.includes('session-cleanup-hook.js'))
-            );
-
-            if (hasPreHook && hasStopHook) {
-                // Hooks already configured, no need to modify
-                return;
-            }
-
-            // Merge with existing settings
-            const mergedSettings = {
-                ...existingSettings,
-                hooks: {
-                    ...existingSettings.hooks,
-                    PreToolUse: [
-                        ...(existingSettings.hooks?.PreToolUse || []),
-                        ...(hasPreHook ? [] : hookConfig.hooks.PreToolUse)
-                    ],
-                    Stop: [
-                        ...(existingSettings.hooks?.Stop || []),
-                        ...(hasStopHook ? [] : hookConfig.hooks.Stop)
-                    ]
-                }
-            };
-
-            await fs.writeFile(settingsPath, JSON.stringify(mergedSettings, undefined, 2));
-        } catch {
-            // File doesn't exist or is invalid JSON, create new one
-            await fs.mkdir(path.dirname(settingsPath), { recursive: true });
-            await fs.writeFile(settingsPath, JSON.stringify(hookConfig, undefined, 2));
-        }
-    }
 }

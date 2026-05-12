@@ -43,10 +43,12 @@ import { WebFetchToolRenderer } from './renderers/web-fetch-tool-renderer';
 import { WriteToolRenderer } from './renderers/write-tool-renderer';
 import { ClaudeCodeSlashCommandsContribution } from './claude-code-slash-commands-contribution';
 import { ClaudeCodeCommandContribution } from './claude-code-command-contribution';
+import { ClaudeCodeHookFrontendContribution } from './claude-code-hook-frontend-contribution';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: ClaudeCodePreferencesSchema });
     bind(FrontendApplicationContribution).to(ClaudeCodeSlashCommandsContribution).inSingletonScope();
+    bind(FrontendApplicationContribution).to(ClaudeCodeHookFrontendContribution).inSingletonScope();
     bind(CommandContribution).to(ClaudeCodeCommandContribution).inSingletonScope();
 
     bind(ClaudeCodeFrontendService).toSelf().inSingletonScope();

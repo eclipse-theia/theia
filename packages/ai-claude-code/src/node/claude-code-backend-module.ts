@@ -17,12 +17,14 @@
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { AgentSessionHookProvider } from '@theia/ai-core';
 import {
     CLAUDE_CODE_SERVICE_PATH,
     ClaudeCodeClient,
     ClaudeCodeService
 } from '../common/claude-code-service';
 import { ClaudeCodeServiceImpl } from './claude-code-service-impl';
+import { ClaudeCodeHookServiceImpl } from './claude-code-hook-service-impl';
 
 const claudeCodeConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(ClaudeCodeServiceImpl).toSelf().inSingletonScope();
@@ -39,4 +41,7 @@ const claudeCodeConnectionModule = ConnectionContainerModule.create(({ bind }) =
 
 export default new ContainerModule(bind => {
     bind(ConnectionContainerModule).toConstantValue(claudeCodeConnectionModule);
+
+    bind(ClaudeCodeHookServiceImpl).toSelf().inSingletonScope();
+    bind(AgentSessionHookProvider).toService(ClaudeCodeHookServiceImpl);
 });
