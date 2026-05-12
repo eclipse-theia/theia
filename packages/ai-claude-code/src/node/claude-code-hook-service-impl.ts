@@ -200,6 +200,30 @@ main().catch(() => {});
                     matcher: 'Write|Edit|MultiEdit',
                     hooks: [{ type: 'command', command: cb('PostToolUse') }]
                 }],
+                PostToolUseFailure: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('PostToolUseFailure') }]
+                }],
+                PostToolBatch: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('PostToolBatch') }]
+                }],
+                UserPromptSubmit: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('UserPromptSubmit') }]
+                }],
+                PermissionRequest: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('PermissionRequest') }]
+                }],
+                InstructionsLoaded: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('InstructionsLoaded') }]
+                }],
+                ConfigChange: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('ConfigChange') }]
+                }],
                 Notification: [{
                     matcher: '',
                     hooks: [{ type: 'command', command: cb('Notification') }]

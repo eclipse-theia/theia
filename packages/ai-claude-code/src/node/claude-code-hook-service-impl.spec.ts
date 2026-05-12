@@ -88,6 +88,12 @@ describe('ClaudeCodeHookServiceImpl', () => {
         const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
         expect(settings.hooks).to.have.property('PreToolUse');
         expect(settings.hooks).to.have.property('PostToolUse');
+        expect(settings.hooks).to.have.property('PostToolUseFailure');
+        expect(settings.hooks).to.have.property('PostToolBatch');
+        expect(settings.hooks).to.have.property('UserPromptSubmit');
+        expect(settings.hooks).to.have.property('PermissionRequest');
+        expect(settings.hooks).to.have.property('InstructionsLoaded');
+        expect(settings.hooks).to.have.property('ConfigChange');
         expect(settings.hooks).to.have.property('Notification');
         expect(settings.hooks).to.have.property('SessionStart');
         expect(settings.hooks).to.have.property('SessionEnd');

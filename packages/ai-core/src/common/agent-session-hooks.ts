@@ -26,6 +26,11 @@ export type AgentSessionHookEvent =
     | 'PreToolUse'
     | 'PostToolUse'
     | 'PostToolUseFailure'
+    | 'PostToolBatch'
+    | 'UserPromptSubmit'
+    | 'PermissionRequest'
+    | 'InstructionsLoaded'
+    | 'ConfigChange'
     | 'Notification'
     | 'Stop';
 
