@@ -262,6 +262,8 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
                 return { type: 'text', text: content.text };
             } else if (content.type === 'image') {
                 return { type: 'image', source: { type: 'base64', data: content.base64data, media_type: mimeTypeToMediaType(content.mimeType) } };
+            } else if (content.type === 'html') {
+                return { type: 'text', text: content.html };
             } else {
                 return { type: 'text', text: content.data };
             }
