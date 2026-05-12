@@ -28,15 +28,30 @@ import {
     ToolRequestParameterProperty,
     ToolRequestParametersProperties,
     ImageContent,
+    isToolCallContent,
     LanguageModelRequest,
     LanguageModelStatus,
     LanguageModelTextResponse,
+    ToolCallResult,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { ollamaThinkParamFor } from './ollama-reasoning';
+
+function formatToolCallContent(result: ToolCallResult): string {
+    if (isToolCallContent(result)) {
+        return result.content.map(c => {
+            if (c.type === 'text') { return c.text; }
+            if (c.type === 'html') { return c.html; }
+            if (c.type === 'error') { return c.data; }
+            return JSON.stringify(c);
+        }).join('\n');
+    }
+    if (typeof result === 'string') { return result; }
+    return JSON.stringify(result);
+}
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
@@ -456,7 +471,7 @@ export class OllamaModel implements LanguageModel {
         } else if (LanguageModelMessage.isToolUseMessage(message)) {
             result.tool_calls = [{ function: { name: message.name, arguments: message.input as Record<string, unknown> } }];
         } else if (LanguageModelMessage.isToolResultMessage(message)) {
-            result.content = `Tool call ${message.name} returned: ${message.content}`;
+            result.content = `Tool call ${message.name} returned: ${formatToolCallContent(message.content)}`;
         } else if (LanguageModelMessage.isThinkingMessage(message)) {
             result.thinking = message.thinking;
         } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
