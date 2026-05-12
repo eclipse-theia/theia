@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
-import { CancellationToken, Disposable, PreferenceService, URI, Path } from '@theia/core';
+import { CancellationToken, Disposable, OS, PreferenceService, URI, Path } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -72,7 +72,9 @@ export class WorkspaceFunctionScope {
     }
 
     ensureWithinWorkspace(targetUri: URI, workspaceRootUri: URI): void {
-        if (!targetUri.toString().startsWith(workspaceRootUri.toString())) {
+        const normalized = targetUri.normalizePath();
+        if (workspaceRootUri.scheme !== normalized.scheme
+            || !workspaceRootUri.isEqualOrParent(normalized, WorkspaceFunctionScope.pathCaseSensitive)) {
             throw new Error('Access outside of the workspace is not allowed');
         }
     }
@@ -84,22 +86,28 @@ export class WorkspaceFunctionScope {
      * preference. Workspace-scoped overrides of that preference are dropped when
      * the workspace is not trusted.
      *
+     * The target URI is normalized before the check so that literal `..`
+     * segments and percent-encoded equivalents (e.g. `%2e%2e`) are resolved
+     * away — otherwise the path-prefix comparison would admit traversals.
+     *
      * Note: symlinks within allow-listed directories are NOT canonicalized
      * before the check. Only allow-list directories whose contents you trust.
      */
     async ensureAccessible(targetUri: URI): Promise<void> {
+        const normalized = targetUri.normalizePath();
+        const caseSensitive = WorkspaceFunctionScope.pathCaseSensitive;
         const roots = (await this.workspaceService.roots) ?? [];
         for (const root of roots) {
-            if (root.resource.scheme === targetUri.scheme && root.resource.isEqualOrParent(targetUri)) {
+            if (root.resource.scheme === normalized.scheme && root.resource.isEqualOrParent(normalized, caseSensitive)) {
                 return;
             }
         }
         const allowed = await this.getAllowedExternalUris();
-        if (allowed.some(allowedUri => allowedUri.isEqualOrParent(targetUri))) {
+        if (allowed.some(allowedUri => allowedUri.scheme === normalized.scheme && allowedUri.isEqualOrParent(normalized, caseSensitive))) {
             return;
         }
         throw new Error(
-            `Access to '${targetUri.path.toString()}' is not allowed. ` +
+            `Access to '${normalized.path.toString()}' is not allowed. ` +
             `Path is outside the workspace and not covered by the '${ALLOWED_EXTERNAL_PATHS_PREF}' preference.`
         );
     }
@@ -107,10 +115,13 @@ export class WorkspaceFunctionScope {
     /**
      * Resolves the configured external allow-list to URIs. Reads via the
      * trust-aware preference reader so workspace-scoped overrides are dropped
-     * when the workspace is untrusted. Invalid entries (empty strings, paths
-     * containing `..`) are filtered out.
+     * when the workspace is untrusted. Awaits the reader's `ready` promise so
+     * that the trust state is resolved before the first preference read.
+     * Non-string entries, blanks, and entries that don't parse to a `file://`
+     * URI are filtered out; URIs are returned in normalized form.
      */
     async getAllowedExternalUris(resourceUri?: string): Promise<URI[]> {
+        await this.trustAwarePreferences.ready;
         const raw = this.trustAwarePreferences.get<string[]>(ALLOWED_EXTERNAL_PATHS_PREF, [], resourceUri) ?? [];
         const result: URI[] = [];
         for (const entry of raw) {
@@ -118,15 +129,24 @@ export class WorkspaceFunctionScope {
                 continue;
             }
             const trimmed = entry.trim();
-            if (!trimmed || trimmed.includes('..')) {
+            if (!trimmed) {
                 continue;
             }
             const uri = await this.toExternalUri(trimmed);
-            if (uri) {
-                result.push(uri);
+            if (uri && uri.scheme === 'file') {
+                result.push(uri.normalizePath());
             }
         }
         return result;
+    }
+
+    /**
+     * Whether path comparisons should be case-sensitive on the current
+     * backend. Windows file systems are case-insensitive; everything else is
+     * treated as case-sensitive (matches the rest of Theia's path handling).
+     */
+    static get pathCaseSensitive(): boolean {
+        return !OS.backend.isWindows;
     }
 
     /**
@@ -242,7 +262,11 @@ export class WorkspaceFunctionScope {
 
         const normalizedPath = Path.normalizePathSeparator(pathOrUri);
 
-        if (normalizedPath.includes('..')) {
+        // Reject `..` only when it appears as a path SEGMENT. A filename like
+        // `my..file.json` is a legitimate name. `ensureAccessible` normalizes
+        // URI-form inputs separately as defense-in-depth (e.g. against
+        // percent-encoded `%2e%2e` that bypasses the string-form check).
+        if (WorkspaceFunctionScope.hasParentSegment(normalizedPath)) {
             return undefined;
         }
 
@@ -251,6 +275,14 @@ export class WorkspaceFunctionScope {
         }
 
         return this.resolveRelativePath(normalizedPath);
+    }
+
+    /**
+     * Whether the already-separator-normalized path contains `..` as a path
+     * segment (not merely as a substring of a filename like `my..file.json`).
+     */
+    static hasParentSegment(normalizedPath: string): boolean {
+        return normalizedPath.split('/').some(segment => segment === '..');
     }
 
     private async initializeGitignoreWatcher(workspaceRoot: URI): Promise<void> {

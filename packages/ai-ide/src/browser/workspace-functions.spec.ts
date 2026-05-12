@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource, PreferenceService } from '@theia/core';
+import { CancellationTokenSource, OS, PreferenceService } from '@theia/core';
 import {
     GetWorkspaceDirectoryStructure,
     FileContentFunction,
@@ -1101,5 +1101,180 @@ describe('FindFilesByPattern with searchRoot', () => {
         });
         const parsed = JSON.parse(result);
         expect(parsed.files).to.deep.equal(['/external/configs/myapp.json']);
+    });
+});
+
+describe('WorkspaceFunctionScope path-traversal hardening', () => {
+    let container: Container;
+    let fileContentFunction: FileContentFunction;
+    let allowedPaths: string[];
+    let trustReady: Promise<void>;
+    let trustAwareGet: <T>(name: string, fallback?: T) => T | undefined;
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+        trustReady = Promise.resolve();
+        trustAwareGet = <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T;
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace/project') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => ({
+                isFile: true,
+                isDirectory: false,
+                size: 1024,
+                resource: uri
+            }),
+            read: async (uri: URI) => ({ value: `content-of-${uri.path.toString()}` }),
+            readStream: async () => { throw new Error('not used'); }
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const mockMonacoWorkspace = {
+            getTextDocument: () => undefined
+        } as unknown as MonacoWorkspace;
+
+        const trustAwareReader = {
+            get: <T>(name: string, fallback?: T) => trustAwareGet<T>(name, fallback),
+            get ready(): Promise<void> { return trustReady; },
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer('file:///home/test'));
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+        container.bind(FileDiagnosticProvider).toSelf();
+        const mockProblemManager = {
+            findMarkers: () => [],
+            onDidChangeMarkers: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as ProblemManager;
+        container.bind(ProblemManager).toConstantValue(mockProblemManager);
+        const mockMonacoTextModelService = {
+            createModelReference: async () => ({
+                object: { lineCount: 10, getText: () => '' },
+                dispose: () => { /* noop */ }
+            })
+        } as unknown as MonacoTextModelService;
+        container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
+
+        fileContentFunction = container.get(FileContentFunction);
+    });
+
+    const callContent = (file: string) =>
+        fileContentFunction.getTool().handler(JSON.stringify({ file }), undefined) as Promise<string>;
+
+    // Item 1 — URL-encoded and literal `..` in file:// URIs must be normalized
+    // before the allow-list check; otherwise the path-component prefix admits
+    // the traversal.
+    it('rejects file:// URI with literal .. traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('file:///external/configs/../secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('rejects file:// URI with percent-encoded %2e%2e traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('file:///external/configs/%2e%2e/secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('rejects file:// URI with upper-case percent-encoded traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('file:///external/configs/%2E%2E/secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    // Item 4 — A filename that contains `..` as a substring but is not a
+    // traversal segment must be accepted.
+    it('accepts a valid filename whose name contains ".." as a substring', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('/external/configs/my..file.json');
+        expect(result).to.equal('content-of-/external/configs/my..file.json');
+    });
+
+    // Item 3 — Non-file allow-list entries are documented as unsupported.
+    it('rejects http:// allow-list entry even if target path appears to match', async () => {
+        allowedPaths = ['http://example.com/external/configs'];
+        const result = await callContent('/external/configs/myapp.json');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    // Item 7 — getAllowedExternalUris must await TrustAwarePreferenceReader.ready
+    // so that preference reads see the resolved trust state.
+    it('awaits TrustAwarePreferenceReader.ready before reading the allow-list', async () => {
+        let preferenceVisible = false;
+        let resolveReady: () => void = () => { /* noop */ };
+        trustReady = new Promise<void>(r => { resolveReady = r; });
+        trustAwareGet = <T>(_name: string, _fallback?: T) =>
+            (preferenceVisible ? ['/external/configs'] : []) as unknown as T;
+
+        const promise = callContent('/external/configs/myapp.json');
+
+        // Simulate trust state becoming available after a microtask: the
+        // allow-list is only readable once `ready` resolves.
+        await Promise.resolve();
+        preferenceVisible = true;
+        resolveReady();
+
+        const result = await promise;
+        expect(result).to.equal('content-of-/external/configs/myapp.json');
+    });
+
+    // Item 2 — On case-insensitive filesystems (Windows) the allow-list match
+    // must be case-insensitive. The check ran against `OS.backend.isWindows`,
+    // so flip that flag for the test and restore it afterwards.
+    describe('case-insensitive match on Windows', () => {
+        let originalIsWindows: boolean;
+        beforeEach(() => {
+            originalIsWindows = OS.backend.isWindows;
+            OS.backend.isWindows = true;
+        });
+        afterEach(() => {
+            OS.backend.isWindows = originalIsWindows;
+        });
+
+        it('admits a case-mismatched target when allow-list entry is mixed-case', async () => {
+            allowedPaths = ['C:\\External\\Configs'];
+            const result = await callContent('c:/external/configs/myapp.json');
+            // The mock returns the URI's path; both forms canonicalize to the
+            // same file:///c:/... URI (drive letter is lowercased by URI.fromFilePath),
+            // but the path segments differ in case.
+            expect(result).to.match(/^content-of-/);
+            expect(result.toLowerCase()).to.include('external/configs/myapp.json');
+        });
+    });
+
+    // Item 6 — `ensureWithinWorkspace` is the gate used by getFileDiagnostics
+    // for relative path inputs. A sibling that merely shares the workspace
+    // root's string prefix must not pass.
+    it('FileDiagnosticProvider rejects sibling-prefix path outside the workspace', async () => {
+        const diag = container.get(FileDiagnosticProvider);
+        const handler = diag.getTool().handler;
+        // Workspace root is file:///workspace/project. With a raw string-prefix
+        // check the resolved URI file:///workspace/project-other/file.txt
+        // would be (incorrectly) admitted.
+        const result = await handler(JSON.stringify({ file: '../project-other/file.txt' }), undefined);
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('outside of the workspace');
     });
 });
