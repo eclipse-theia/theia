@@ -21,7 +21,7 @@ import { CopyButton, MetaRow, OutputBox, formatDuration } from '@theia/ai-chat-u
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
-import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { isToolCallContent, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { CommandRegistry, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
@@ -264,6 +264,19 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
             }
         } catch (err) {
             console.debug('Failed to parse shell execution result:', err);
+        }
+        if (!result && !canceledResult) {
+            if (typeof response.result === 'string') {
+                result = { success: false, exitCode: undefined, output: response.result, duration: 0 };
+            } else if (isToolCallContent(response.result)) {
+                const errorMessage = response.result.content
+                    .filter(item => item.type === 'error')
+                    .map(item => item.data)
+                    .join('\n');
+                if (errorMessage) {
+                    result = { success: false, exitCode: undefined, output: errorMessage, duration: 0 };
+                }
+            }
         }
     }
 
