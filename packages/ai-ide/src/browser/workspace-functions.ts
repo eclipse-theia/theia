@@ -142,11 +142,14 @@ export class WorkspaceFunctionScope {
 
     /**
      * Whether path comparisons should be case-sensitive on the current
-     * backend. Windows file systems are case-insensitive; everything else is
-     * treated as case-sensitive (matches the rest of Theia's path handling).
+     * backend. Windows and macOS default to case-insensitive file systems
+     * (NTFS, HFS+, APFS); Linux is treated as case-sensitive. This is a
+     * heuristic — a case-sensitive APFS volume on macOS or a case-insensitive
+     * volume mounted on Linux will be misclassified, but querying the actual
+     * file system would require a backend round-trip.
      */
     static get pathCaseSensitive(): boolean {
-        return !OS.backend.isWindows;
+        return !OS.backend.isWindows && !OS.backend.isOSX;
     }
 
     /**

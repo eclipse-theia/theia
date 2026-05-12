@@ -1240,20 +1240,24 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
         expect(result).to.equal('content-of-/external/configs/myapp.json');
     });
 
-    // Item 2 — On case-insensitive filesystems (Windows) the allow-list match
-    // must be case-insensitive. The check ran against `OS.backend.isWindows`,
-    // so flip that flag for the test and restore it afterwards.
-    describe('case-insensitive match on Windows', () => {
+    // Item 2 — On case-insensitive filesystems (Windows, macOS by default)
+    // the allow-list match must be case-insensitive. Stub OS.backend flags
+    // for the test and restore them afterwards.
+    describe('case-insensitive match on case-insensitive filesystems', () => {
         let originalIsWindows: boolean;
+        let originalIsOSX: boolean;
         beforeEach(() => {
             originalIsWindows = OS.backend.isWindows;
-            OS.backend.isWindows = true;
+            originalIsOSX = OS.backend.isOSX;
         });
         afterEach(() => {
             OS.backend.isWindows = originalIsWindows;
+            OS.backend.isOSX = originalIsOSX;
         });
 
-        it('admits a case-mismatched target when allow-list entry is mixed-case', async () => {
+        it('admits a case-mismatched Windows target when allow-list entry is mixed-case', async () => {
+            OS.backend.isWindows = true;
+            OS.backend.isOSX = false;
             allowedPaths = ['C:\\External\\Configs'];
             const result = await callContent('c:/external/configs/myapp.json');
             // The mock returns the URI's path; both forms canonicalize to the
@@ -1261,6 +1265,24 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
             // but the path segments differ in case.
             expect(result).to.match(/^content-of-/);
             expect(result.toLowerCase()).to.include('external/configs/myapp.json');
+        });
+
+        it('admits a case-mismatched macOS target when allow-list entry is mixed-case', async () => {
+            OS.backend.isWindows = false;
+            OS.backend.isOSX = true;
+            allowedPaths = ['/Users/safi/External/Configs'];
+            const result = await callContent('/users/safi/external/configs/myapp.json');
+            expect(result).to.match(/^content-of-/);
+            expect(result.toLowerCase()).to.include('/users/safi/external/configs/myapp.json');
+        });
+
+        it('keeps Linux case-sensitive: rejects a case-mismatched target', async () => {
+            OS.backend.isWindows = false;
+            OS.backend.isOSX = false;
+            allowedPaths = ['/home/safi/External/Configs'];
+            const result = await callContent('/home/safi/external/configs/myapp.json');
+            const parsed = JSON.parse(result);
+            expect(parsed.error).to.include('not allowed');
         });
     });
 
