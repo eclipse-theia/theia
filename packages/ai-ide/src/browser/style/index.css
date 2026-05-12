@@ -1153,6 +1153,15 @@
   margin-bottom: calc(var(--theia-ui-padding) * 0.5);
 }
 
+.theia-chat-session-tooltip-error {
+  color: var(--theia-errorForeground);
+  word-break: break-word;
+}
+
+.theia-chat-session-tooltip-error-prefix {
+  font-weight: 600;
+}
+
 .theia-chat-session-tooltip-snippet h1,
 .theia-chat-session-tooltip-snippet h2,
 .theia-chat-session-tooltip-snippet h3,
