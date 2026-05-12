@@ -102,6 +102,15 @@ describe('ClaudeCodeHookServiceImpl', () => {
         expect(settings.hooks).to.have.property('TaskCreated');
         expect(settings.hooks).to.have.property('TaskCompleted');
         expect(settings.hooks).to.have.property('TeammateIdle');
+        expect(settings.hooks).to.have.property('UserPromptExpansion');
+        expect(settings.hooks).to.have.property('CwdChanged');
+        expect(settings.hooks).to.have.property('FileChanged');
+        expect(settings.hooks).to.have.property('WorktreeCreate');
+        expect(settings.hooks).to.have.property('WorktreeRemove');
+        expect(settings.hooks).to.have.property('PreCompact');
+        expect(settings.hooks).to.have.property('PostCompact');
+        expect(settings.hooks).to.have.property('Elicitation');
+        expect(settings.hooks).to.have.property('ElicitationResult');
         expect(settings.hooks).to.have.property('Notification');
         expect(settings.hooks).to.have.property('SessionStart');
         expect(settings.hooks).to.have.property('SessionEnd');

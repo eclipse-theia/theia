@@ -256,6 +256,42 @@ main().catch(() => {});
                     matcher: '',
                     hooks: [{ type: 'command', command: cb('TeammateIdle') }]
                 }],
+                UserPromptExpansion: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('UserPromptExpansion') }]
+                }],
+                CwdChanged: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('CwdChanged') }]
+                }],
+                FileChanged: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('FileChanged') }]
+                }],
+                WorktreeCreate: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('WorktreeCreate') }]
+                }],
+                WorktreeRemove: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('WorktreeRemove') }]
+                }],
+                PreCompact: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('PreCompact') }]
+                }],
+                PostCompact: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('PostCompact') }]
+                }],
+                Elicitation: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('Elicitation') }]
+                }],
+                ElicitationResult: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('ElicitationResult') }]
+                }],
                 Notification: [{
                     matcher: '',
                     hooks: [{ type: 'command', command: cb('Notification') }]

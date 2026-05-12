@@ -88,6 +88,15 @@ export class ClaudeCodeHookFrontendContribution implements FrontendApplicationCo
             case 'TaskCreated':
             case 'TaskCompleted':
             case 'TeammateIdle':
+            case 'UserPromptExpansion':
+            case 'CwdChanged':
+            case 'FileChanged':
+            case 'WorktreeCreate':
+            case 'WorktreeRemove':
+            case 'PreCompact':
+            case 'PostCompact':
+            case 'Elicitation':
+            case 'ElicitationResult':
                 this.handleGenericHookEvent(event);
                 break;
         }

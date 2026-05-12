@@ -121,10 +121,12 @@ describe('AgentSessionHookRegistryImpl', () => {
         const allEvents: AgentSessionHookData['event'][] = [
             'SessionStart', 'SessionEnd', 'PreToolUse', 'PostToolUse',
             'PostToolUseFailure', 'PostToolBatch', 'UserPromptSubmit',
-            'PermissionRequest', 'PermissionDenied', 'InstructionsLoaded',
-            'ConfigChange', 'Notification', 'Stop', 'StopFailure',
-            'Setup', 'SubagentStart', 'SubagentStop',
-            'TaskCreated', 'TaskCompleted', 'TeammateIdle'
+            'UserPromptExpansion', 'PermissionRequest', 'PermissionDenied',
+            'InstructionsLoaded', 'ConfigChange', 'Notification', 'Stop',
+            'StopFailure', 'Setup', 'SubagentStart', 'SubagentStop',
+            'TaskCreated', 'TaskCompleted', 'TeammateIdle',
+            'CwdChanged', 'FileChanged', 'WorktreeCreate', 'WorktreeRemove',
+            'PreCompact', 'PostCompact', 'Elicitation', 'ElicitationResult'
         ];
 
         for (const event of allEvents) {
