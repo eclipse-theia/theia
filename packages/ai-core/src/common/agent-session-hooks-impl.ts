@@ -33,4 +33,8 @@ export class AgentSessionHookRegistryImpl implements AgentSessionHookRegistry {
             provider.onHookEvent(event => this.emitter.fire(event));
         }
     }
+
+    fireEvent(data: AgentSessionHookData): void {
+        this.emitter.fire(data);
+    }
 }

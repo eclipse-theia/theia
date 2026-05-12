@@ -86,4 +86,6 @@ export const AgentSessionHookRegistry = Symbol('AgentSessionHookRegistry');
 export interface AgentSessionHookRegistry {
     /** Unified event stream from all registered providers */
     readonly onHookEvent: Event<AgentSessionHookData>;
+    /** Fire an event directly (for core components like tool invocation) */
+    fireEvent(data: AgentSessionHookData): void;
 }
