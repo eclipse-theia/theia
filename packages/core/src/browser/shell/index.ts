@@ -22,3 +22,4 @@ export * from './split-panels';
 export * from './tab-bars';
 export * from './view-contribution';
 export * from './theia-split-panel';
+export * from './mobile-one-column-shell-contribution';

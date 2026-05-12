@@ -52,19 +52,6 @@
   line-height: var(--theia-private-mini-browser-height);
   margin-left: 4px;
   margin-right: 4px;
-  cursor: pointer;
-  background: var(--theia-input-background);
-  border: none;
-  text-decoration: underline;
-  outline: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--theia-input-foreground);
-}
-
-.theia-mini-browser-toolbar-read-only .theia-input:hover {
-  color: var(--theia-button-hoverBackground);
 }
 
 .theia-mini-browser-button {

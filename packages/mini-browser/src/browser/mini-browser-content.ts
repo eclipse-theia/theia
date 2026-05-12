@@ -40,7 +40,9 @@ import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/f
 export class MiniBrowserProps {
 
     /**
-     * `show` if the toolbar should be visible. If `read-only`, the toolbar is visible but the address cannot be changed and it acts as a link instead.\
+     * `show` if the toolbar should be visible. If `read-only`, the toolbar is visible with a link-styled
+     * address; clicking the address bar lets the user edit it inline (Enter navigates), while the dedicated
+     * "Open In A New Window" button is used to open the page externally.\
      * `hide` if the toolbar should be hidden. `show` by default. If the `startPage` is not defined, this property is always `show`.
      */
     readonly toolbar?: 'show' | 'hide' | 'read-only';
@@ -273,7 +275,6 @@ export class MiniBrowserContent extends BaseWidget {
         this.createNext(toolbar);
         this.createRefresh(toolbar);
         const input = this.createInput(toolbar);
-        input.readOnly = this.getToolbarProps() === 'read-only';
         this.createOpen(toolbar);
         if (this.getToolbarProps() === 'hide') {
             toolbar.style.display = 'none';
@@ -454,12 +455,8 @@ export class MiniBrowserContent extends BaseWidget {
         this.toDispose.pushAll([
             addEventListener(input, 'keydown', this.handleInputChange.bind(this)),
             addEventListener(input, 'click', () => {
-                if (this.getToolbarProps() === 'read-only') {
-                    this.handleOpen();
-                } else {
-                    if (input.value) {
-                        input.select();
-                    }
+                if (input.value) {
+                    input.select();
                 }
             })
         ]);
@@ -469,7 +466,7 @@ export class MiniBrowserContent extends BaseWidget {
 
     protected handleInputChange(e: KeyboardEvent): void {
         const { key } = KeyCode.createKeyCode(e);
-        if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() === 'show') {
+        if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() !== 'hide') {
             const { target } = e;
             if (target instanceof HTMLInputElement) {
                 this.mapLocation(target.value).then(location => this.submitInputEmitter.fire(location));
@@ -571,9 +568,6 @@ export class MiniBrowserContent extends BaseWidget {
                 this.toDisposeOnGo.dispose();
                 const url = await this.mapLocation(location);
                 this.setInput(url);
-                if (this.getToolbarProps() === 'read-only') {
-                    this.input.title = `Open ${url} In A New Window`;
-                }
                 clearTimeout(this.frameLoadTimeout);
                 this.frameLoadTimeout = window.setTimeout(this.onFrameTimeout.bind(this), 4000);
                 if (showLoadIndicator) {

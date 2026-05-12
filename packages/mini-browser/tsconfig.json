@@ -1,19 +1,19 @@
 {
-  "extends": "../../configs/base.tsconfig",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "lib"
-  },
-  "include": [
-    "src"
-  ],
-  "references": [
-    {
-      "path": "../core"
+    "extends": "../../configs/base.tsconfig",
+    "compilerOptions": {
+        "composite": true,
+        "rootDir": "src",
+        "outDir": "lib"
     },
-    {
-      "path": "../filesystem"
-    }
-  ]
+    "include": [
+        "src"
+    ],
+    "references": [
+        {
+            "path": "../core"
+        },
+        {
+            "path": "../filesystem"
+        }
+    ]
 }

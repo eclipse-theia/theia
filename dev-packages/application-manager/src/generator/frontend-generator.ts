@@ -76,7 +76,7 @@ export class FrontendGenerator extends AbstractGenerator {
         const splashBranding = appIcon ? this.compileSplashBrandingScript() : '';
         return `
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="application-name" content="${this.escapeHtmlAttribute(appName)}">${iconLines}${splashBranding}
   ${preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : ''}

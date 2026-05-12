@@ -299,14 +299,28 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         return {
             name: nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY),
             startPage,
-            toolbar: 'read-only',
+            // Use the editable toolbar so the address bar can be modified inline (Enter navigates to
+            // the new URL). The dedicated "Open In A New Window" button still handles opening the
+            // current page externally, making the read-only click-to-open behaviour redundant.
+            toolbar: 'show',
+            // On mobile (one-column shell, `theia-mod-mobile-one-column`), the right-side panel is shown
+            // as a sheet and is not the right place for a fullscreen browser preview. Open the preview
+            // in the main editor area instead so it inherits the full device width.
             widgetOptions: {
-                area: 'right'
+                area: this.isMobileOneColumn() ? 'main' : 'right'
             },
             resetBackground,
             iconClass: codicon('preview'),
             openFor: 'preview'
         };
+    }
+
+    protected isMobileOneColumn(): boolean {
+        if (typeof document === 'undefined') {
+            return false;
+        }
+        const shellNode = document.getElementById('theia-app-shell');
+        return !!shellNode?.classList.contains('theia-mod-mobile-one-column');
     }
 
 }

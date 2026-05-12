@@ -18,7 +18,11 @@ import * as monaco from '@theia/monaco-editor-core';
 import { IStandaloneTheme } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { IOnigLib, IRawTheme, Registry } from 'vscode-textmate';
 
-export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
+export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData {
+    /** From VS Code theme JSON; required for editor colors to match VS Code defaults. */
+    semanticHighlighting?: boolean;
+    semanticTokenColors?: Record<string, unknown>;
+}
 export interface MixStandaloneTheme extends IStandaloneTheme {
     themeData: ThemeMix
 }

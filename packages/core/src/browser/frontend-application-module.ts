@@ -51,7 +51,8 @@ import {
     SidePanelHandler, SidePanelHandlerFactory,
     SidebarMenuWidget, SidebarTopMenuWidgetFactory,
     SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError, SidebarBottomMenuWidgetFactory,
-    ShellLayoutTransformer
+    ShellLayoutTransformer,
+    MobileOneColumnShellContribution
 } from './shell';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
@@ -187,6 +188,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return childContainer.resolve(AdditionalViewsMenuWidget);
     });
     bind(SplitPositionHandler).toSelf().inSingletonScope();
+    bind(MobileOneColumnShellContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MobileOneColumnShellContribution);
 
     bindRootContributionProvider(bind, TabBarToolbarContribution);
     bind(TabBarToolbarRegistry).toSelf().inSingletonScope();

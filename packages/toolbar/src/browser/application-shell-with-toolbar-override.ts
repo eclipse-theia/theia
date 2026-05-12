@@ -82,6 +82,7 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
         );
         const panelForSideAreas = new TheiaSplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
+        this.leftRightSplitPanel = panelForSideAreas;
         return this.createBoxLayout(
             [this.topPanel, this.toolbar, panelForSideAreas, this.statusBar],
             [0, 0, 1, 0],
