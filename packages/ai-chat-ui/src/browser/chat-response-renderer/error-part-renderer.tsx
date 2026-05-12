@@ -16,7 +16,8 @@
 
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { injectable } from '@theia/core/shared/inversify';
-import { ChatResponseContent, ErrorChatResponseContent } from '@theia/ai-chat/lib/common';
+import { ChatResponseContent, ErrorChatResponseContent, formatProviderError } from '@theia/ai-chat/lib/common';
+import { nls } from '@theia/core/lib/common/nls';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 
@@ -29,7 +30,24 @@ export class ErrorPartRenderer implements ChatResponsePartRenderer<ErrorChatResp
         return -1;
     }
     render(response: ErrorChatResponseContent): ReactNode {
-        return <div className='theia-ChatPart-Error'><span className='codicon codicon-error' /><span>{response.error.message}</span></div>;
+        const formatted = formatProviderError(response.error.message);
+        const prefix = formatted.status
+            ? `${nls.localizeByDefault('Error')} ${formatted.status}:`
+            : `${nls.localizeByDefault('Error')}:`;
+        return (
+            <div className='theia-ChatPart-Error'>
+                <div className='theia-ChatPart-Error-headline'>
+                    <span className='theia-ChatPart-Error-prefix'>{prefix}</span>
+                    {' '}{formatted.headline}
+                </div>
+                {formatted.details && (
+                    <details>
+                        <summary>{nls.localizeByDefault('Details')}</summary>
+                        <pre>{formatted.details}</pre>
+                    </details>
+                )}
+            </div>
+        );
     }
 
 }

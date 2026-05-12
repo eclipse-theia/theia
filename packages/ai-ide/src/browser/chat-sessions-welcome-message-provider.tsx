@@ -18,7 +18,7 @@ import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-t
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import {
     ChatAgentService, ChatRequestModel, ChatResponseContent, ChatService, ChatSession, ChatSessionMetadata,
-    ThinkingChatResponseContent
+    ErrorChatResponseContent, FormattedProviderError, formatProviderError, ThinkingChatResponseContent
 } from '@theia/ai-chat';
 import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
@@ -32,20 +32,6 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 import * as React from '@theia/core/shared/react';
 
 const TOOLTIP_SNIPPET_MAX_LENGTH = 1000;
-
-/** Collect display text from response content, excluding thinking parts. */
-function responseToTooltipString(content: ChatResponseContent[]): string {
-    return content
-        .filter(c => !ThinkingChatResponseContent.is(c))
-        .map(c => {
-            if (ChatResponseContent.hasAsString(c)) {
-                return c.asString();
-            }
-            return undefined;
-        })
-        .filter((text): text is string => text !== undefined && text !== '')
-        .join('\n\n');
-}
 
 /** Minimal view of the unread state that React components can subscribe to. */
 interface UnreadStateProvider {
@@ -152,6 +138,50 @@ function useTimeAgo(date: number): string {
     }, [date]);
 
     return formatTimeAgo(date);
+}
+
+/** Read an error message from a completed-with-error response, if any. */
+function getResponseErrorMessage(response: ChatRequestModel['response']): string | undefined {
+    if (response.errorObject?.message) {
+        return response.errorObject.message;
+    }
+    const errorPart = response.response.content.find(ErrorChatResponseContent.is);
+    return errorPart?.asDisplayString?.();
+}
+
+/**
+ * Build a DOM fragment that renders a {@link FormattedProviderError} for the tooltip.
+ * Details are intentionally omitted — the hover popup is not interactive, so a
+ * <details> expander wouldn't work. The full payload is available in the chat output.
+ */
+function renderFormattedProviderError(error: FormattedProviderError): HTMLElement {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'theia-chat-session-tooltip-error';
+    const prefix = document.createElement('span');
+    prefix.className = 'theia-chat-session-tooltip-error-prefix';
+    prefix.textContent = error.status
+        ? `${nls.localizeByDefault('Error')} ${error.status}:`
+        : `${nls.localizeByDefault('Error')}:`;
+    wrapper.appendChild(prefix);
+    const headline = error.headline.length > TOOLTIP_SNIPPET_MAX_LENGTH
+        ? error.headline.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
+        : error.headline;
+    wrapper.appendChild(document.createTextNode(' ' + headline));
+    return wrapper;
+}
+
+/** Collect display text from response content, excluding thinking parts. */
+function responseToTooltipString(content: ChatResponseContent[]): string {
+    return content
+        .filter(c => !ThinkingChatResponseContent.is(c))
+        .map(c => {
+            if (ChatResponseContent.hasAsString(c)) {
+                return c.asString();
+            }
+            return undefined;
+        })
+        .filter((text): text is string => text !== undefined && text !== '')
+        .join('\n\n');
 }
 
 interface ChatSessionCardProps {
@@ -307,26 +337,39 @@ function buildSessionTooltip(
 
     if (lastRequest) {
         const lastResponse = lastRequest.response;
-        const messageText = lastResponse.isComplete
-            ? (responseToTooltipString(lastResponse.response.content) || undefined)
-            : (lastRequest.request.text || undefined);
+        const errorText = hasError ? getResponseErrorMessage(lastResponse) : undefined;
 
-        if (messageText) {
-            const snippet = messageText.length > TOOLTIP_SNIPPET_MAX_LENGTH
-                ? messageText.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
-                : messageText;
+        if (errorText) {
             const label = document.createElement('div');
             label.className = 'theia-chat-session-tooltip-label';
-            label.textContent = nls.localize('theia/ai/ide/tooltip/lastMessage', 'Last message');
+            label.textContent = nls.localize('theia/ai/ide/tooltip/errorMessage', 'Error message');
             container.appendChild(label);
-
-            const snippetEl = document.createElement('div');
-            snippetEl.className = 'theia-chat-session-tooltip-snippet';
-            snippetEl.appendChild(markdownRenderer.render({ value: snippet }).element);
-            container.appendChild(snippetEl);
+            container.appendChild(renderFormattedProviderError(formatProviderError(errorText)));
 
             const hr = document.createElement('hr');
             container.appendChild(hr);
+        } else {
+            const messageText = lastResponse.isComplete
+                ? (responseToTooltipString(lastResponse.response.content) || undefined)
+                : (lastRequest.request.text || undefined);
+
+            if (messageText) {
+                const snippet = messageText.length > TOOLTIP_SNIPPET_MAX_LENGTH
+                    ? messageText.substring(0, TOOLTIP_SNIPPET_MAX_LENGTH) + '\u2026'
+                    : messageText;
+                const label = document.createElement('div');
+                label.className = 'theia-chat-session-tooltip-label';
+                label.textContent = nls.localize('theia/ai/ide/tooltip/lastMessage', 'Last message');
+                container.appendChild(label);
+
+                const snippetEl = document.createElement('div');
+                snippetEl.className = 'theia-chat-session-tooltip-snippet';
+                snippetEl.appendChild(markdownRenderer.render({ value: snippet }).element);
+                container.appendChild(snippetEl);
+
+                const hr = document.createElement('hr');
+                container.appendChild(hr);
+            }
         }
     }
 
