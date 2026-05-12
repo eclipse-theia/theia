@@ -240,10 +240,12 @@
 .theia-debug-console-variable .watch-error {
   font-style: italic;
   color: var(--theia-debugConsole-errorForeground);
+  margin-left: 6px;
 }
 
 .theia-debug-console-variable .watch-not-available {
   font-style: italic;
+  margin-left: 6px;
 }
 
 .theia-debug-watch-expression {
