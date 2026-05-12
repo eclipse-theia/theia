@@ -94,6 +94,14 @@ describe('ClaudeCodeHookServiceImpl', () => {
         expect(settings.hooks).to.have.property('PermissionRequest');
         expect(settings.hooks).to.have.property('InstructionsLoaded');
         expect(settings.hooks).to.have.property('ConfigChange');
+        expect(settings.hooks).to.have.property('PermissionDenied');
+        expect(settings.hooks).to.have.property('StopFailure');
+        expect(settings.hooks).to.have.property('Setup');
+        expect(settings.hooks).to.have.property('SubagentStart');
+        expect(settings.hooks).to.have.property('SubagentStop');
+        expect(settings.hooks).to.have.property('TaskCreated');
+        expect(settings.hooks).to.have.property('TaskCompleted');
+        expect(settings.hooks).to.have.property('TeammateIdle');
         expect(settings.hooks).to.have.property('Notification');
         expect(settings.hooks).to.have.property('SessionStart');
         expect(settings.hooks).to.have.property('SessionEnd');

@@ -224,6 +224,38 @@ main().catch(() => {});
                     matcher: '',
                     hooks: [{ type: 'command', command: cb('ConfigChange') }]
                 }],
+                PermissionDenied: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('PermissionDenied') }]
+                }],
+                StopFailure: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('StopFailure') }]
+                }],
+                Setup: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('Setup') }]
+                }],
+                SubagentStart: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('SubagentStart') }]
+                }],
+                SubagentStop: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('SubagentStop') }]
+                }],
+                TaskCreated: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('TaskCreated') }]
+                }],
+                TaskCompleted: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('TaskCompleted') }]
+                }],
+                TeammateIdle: [{
+                    matcher: '',
+                    hooks: [{ type: 'command', command: cb('TeammateIdle') }]
+                }],
                 Notification: [{
                     matcher: '',
                     hooks: [{ type: 'command', command: cb('Notification') }]

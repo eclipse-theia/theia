@@ -29,10 +29,18 @@ export type AgentSessionHookEvent =
     | 'PostToolBatch'
     | 'UserPromptSubmit'
     | 'PermissionRequest'
+    | 'PermissionDenied'
     | 'InstructionsLoaded'
     | 'ConfigChange'
     | 'Notification'
-    | 'Stop';
+    | 'Stop'
+    | 'StopFailure'
+    | 'Setup'
+    | 'SubagentStart'
+    | 'SubagentStop'
+    | 'TaskCreated'
+    | 'TaskCompleted'
+    | 'TeammateIdle';
 
 export interface AgentSessionHookData {
     /** Which lifecycle event fired */

@@ -80,6 +80,16 @@ export class ClaudeCodeHookFrontendContribution implements FrontendApplicationCo
             case 'ConfigChange':
                 this.handleConfigChange(event);
                 break;
+            case 'PermissionDenied':
+            case 'StopFailure':
+            case 'Setup':
+            case 'SubagentStart':
+            case 'SubagentStop':
+            case 'TaskCreated':
+            case 'TaskCompleted':
+            case 'TeammateIdle':
+                this.handleGenericHookEvent(event);
+                break;
         }
     }
 
@@ -126,6 +136,11 @@ export class ClaudeCodeHookFrontendContribution implements FrontendApplicationCo
     protected handleConfigChange(event: AgentSessionHookData): void {
         const source = event.payload?.source as string || 'unknown';
         this.getHookOutputChannel().appendLine(`[ConfigChange] Source: ${source}`);
+    }
+
+    protected handleGenericHookEvent(event: AgentSessionHookData): void {
+        const detail = event.toolName || event.payload?.reason || event.payload?.agent_type || '';
+        this.getHookOutputChannel().appendLine(`[${event.event}]${detail ? ' ' + detail : ''}`);
     }
 
     protected handleNotification(event: AgentSessionHookData): void {
