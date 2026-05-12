@@ -78,4 +78,60 @@ describe('AgentSessionHookRegistryImpl', () => {
         expect(received[0].toolName).to.equal('Write');
         expect(received[0].toolInput).to.deep.equal({ file_path: 'src/index.ts' });
     });
+
+    it('should handle provider with no events fired', () => {
+        const provider = createProvider('silent');
+        const registry = new AgentSessionHookRegistryImpl();
+        (registry as any).providers = { getContributions: () => [provider] };
+        registry['init']();
+
+        const received: AgentSessionHookData[] = [];
+        registry.onHookEvent(e => received.push(e));
+
+        expect(received).to.have.length(0);
+    });
+
+    it('should pass payload through', () => {
+        const provider = createProvider('test');
+        const registry = new AgentSessionHookRegistryImpl();
+        (registry as any).providers = { getContributions: () => [provider] };
+        registry['init']();
+
+        const received: AgentSessionHookData[] = [];
+        registry.onHookEvent(e => received.push(e));
+
+        provider.fire({
+            event: 'Notification',
+            sessionId: 's1',
+            payload: { message: 'Task complete', type: 'info' }
+        });
+
+        expect(received[0].payload).to.deep.equal({ message: 'Task complete', type: 'info' });
+    });
+
+    it('should support all P1-P3 event types', () => {
+        const provider = createProvider('test');
+        const registry = new AgentSessionHookRegistryImpl();
+        (registry as any).providers = { getContributions: () => [provider] };
+        registry['init']();
+
+        const received: AgentSessionHookData[] = [];
+        registry.onHookEvent(e => received.push(e));
+
+        const allEvents: AgentSessionHookData['event'][] = [
+            'SessionStart', 'SessionEnd', 'PreToolUse', 'PostToolUse',
+            'PostToolUseFailure', 'PostToolBatch', 'UserPromptSubmit',
+            'PermissionRequest', 'PermissionDenied', 'InstructionsLoaded',
+            'ConfigChange', 'Notification', 'Stop', 'StopFailure',
+            'Setup', 'SubagentStart', 'SubagentStop',
+            'TaskCreated', 'TaskCompleted', 'TeammateIdle'
+        ];
+
+        for (const event of allEvents) {
+            provider.fire({ event, sessionId: 's1' });
+        }
+
+        expect(received).to.have.length(allEvents.length);
+        expect(received.map(e => e.event)).to.deep.equal(allEvents);
+    });
 });

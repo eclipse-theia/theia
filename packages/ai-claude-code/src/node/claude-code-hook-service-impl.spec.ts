@@ -119,6 +119,105 @@ describe('ClaudeCodeHookServiceImpl', () => {
         expect(settings.customSetting).to.equal(true);
         expect(settings.hooks).to.have.property('PreToolUse');
     });
+
+    it('should return 400 for malformed JSON', async () => {
+        const status = await postToCallback(service.getCallbackPort(), 'not json{{{');
+        expect(status).to.equal(400);
+    });
+
+    it('should handle multiple rapid events in order', async () => {
+        const received: AgentSessionHookData[] = [];
+        service.onHookEvent(e => received.push(e));
+
+        const events = ['SessionStart', 'PreToolUse', 'PostToolUse', 'Stop', 'SessionEnd'];
+        for (const hookEvent of events) {
+            const body = JSON.stringify({ hookEvent, payload: { session_id: 's1' } });
+            await postToCallback(service.getCallbackPort(), body);
+        }
+
+        expect(received).to.have.length(5);
+        expect(received.map(e => e.event)).to.deep.equal(events);
+    });
+
+    it('should overwrite theia-callback-hook.js on each install (port may change)', async () => {
+        await service.installHooks(tmpDir);
+        const hookPath = path.join(tmpDir, '.claude', 'hooks', 'theia-callback-hook.js');
+        const content1 = await fs.readFile(hookPath, 'utf8');
+        expect(content1).to.include(String(service.getCallbackPort()));
+
+        // Simulate port change by modifying the file and reinstalling
+        await fs.writeFile(hookPath, 'old content');
+        await service.installHooks(tmpDir);
+        const content2 = await fs.readFile(hookPath, 'utf8');
+        expect(content2).to.include(String(service.getCallbackPort()));
+        expect(content2).to.not.equal('old content');
+    });
+
+    it('should not overwrite file-backup-hook.js if it already exists', async () => {
+        const hooksDir = path.join(tmpDir, '.claude', 'hooks');
+        await fs.mkdir(hooksDir, { recursive: true });
+        const hookPath = path.join(hooksDir, 'file-backup-hook.js');
+        await fs.writeFile(hookPath, 'custom backup logic');
+
+        await service.installHooks(tmpDir);
+
+        const content = await fs.readFile(hookPath, 'utf8');
+        expect(content).to.equal('custom backup logic');
+    });
+
+    it('should configure PreToolUse with Write|Edit|MultiEdit matcher', async () => {
+        await service.installHooks(tmpDir);
+        const settingsPath = path.join(tmpDir, '.claude', 'settings.local.json');
+        const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+
+        const preToolUse = settings.hooks.PreToolUse[0];
+        expect(preToolUse.matcher).to.equal('Write|Edit|MultiEdit');
+        expect(preToolUse.hooks[0].command).to.include('file-backup-hook.js');
+        expect(preToolUse.hooks[0].timeout).to.equal(10);
+    });
+
+    it('should configure callback hooks with THEIA_HOOK_EVENT env var', async () => {
+        await service.installHooks(tmpDir);
+        const settingsPath = path.join(tmpDir, '.claude', 'settings.local.json');
+        const settings = JSON.parse(await fs.readFile(settingsPath, 'utf8'));
+
+        const notification = settings.hooks.Notification[0];
+        expect(notification.hooks[0].command).to.include('THEIA_HOOK_EVENT=Notification');
+        expect(notification.hooks[0].command).to.include('theia-callback-hook.js');
+    });
+
+    it('should map payload fields to AgentSessionHookData correctly', async () => {
+        const received: AgentSessionHookData[] = [];
+        service.onHookEvent(e => received.push(e));
+
+        await postToCallback(service.getCallbackPort(), JSON.stringify({
+            hookEvent: 'PreToolUse',
+            payload: {
+                session_id: 'sess-123',
+                tool_name: 'Bash',
+                tool_input: { command: 'npm test' },
+                cwd: '/home/user/project'
+            }
+        }));
+
+        expect(received[0].sessionId).to.equal('sess-123');
+        expect(received[0].toolName).to.equal('Bash');
+        expect(received[0].toolInput).to.deep.equal({ command: 'npm test' });
+        expect(received[0].payload?.cwd).to.equal('/home/user/project');
+    });
+
+    it('should handle missing session_id gracefully', async () => {
+        const received: AgentSessionHookData[] = [];
+        service.onHookEvent(e => received.push(e));
+
+        await postToCallback(service.getCallbackPort(), JSON.stringify({
+            hookEvent: 'Notification',
+            payload: { message: 'hello' }
+        }));
+
+        expect(received[0].sessionId).to.equal('');
+        expect(received[0].payload?.message).to.equal('hello');
+    });
 });
 
 function postToCallback(port: number, body: string): Promise<number> {
