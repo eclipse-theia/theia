@@ -120,14 +120,16 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
         return (
             <TodoListWithConfirmation
                 todos={todos}
-                response={response}
-                confirmationMode={confirmationMode}
-                toolConfirmationManager={this.toolConfirmationManager}
-                toolRequest={toolRequest}
-                chatId={chatId}
-                requestCanceled={parentNode.response.isCanceled}
-                contextMenuRenderer={this.contextMenuRenderer}
-                openerService={this.openerService}
+                toolConfirmation={{
+                    response,
+                    confirmationMode,
+                    toolConfirmationManager: this.toolConfirmationManager,
+                    toolRequest,
+                    chatId,
+                    requestCanceled: parentNode.response.isCanceled,
+                    contextMenuRenderer: this.contextMenuRenderer,
+                    openerService: this.openerService
+                }}
             />
         );
     }

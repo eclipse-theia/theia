@@ -103,13 +103,16 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
             subChatWidgetFactory={this.subChatWidgetFactory}
             contextMenuRenderer={this.contextMenuRenderer}
             chatResponsePartRenderers={this.chatResponsePartRenderers}
-            response={response}
-            confirmationMode={confirmationMode}
-            toolConfirmationManager={this.toolConfirmationManager}
-            toolRequest={toolRequest}
-            chatId={chatId}
-            requestCanceled={parentNode.response.isCanceled}
-            openerService={this.openerService}
+            toolConfirmation={{
+                response,
+                confirmationMode,
+                toolConfirmationManager: this.toolConfirmationManager,
+                toolRequest,
+                chatId,
+                requestCanceled: parentNode.response.isCanceled,
+                contextMenuRenderer: this.contextMenuRenderer,
+                openerService: this.openerService
+            }}
         />;
     }
 }

@@ -543,8 +543,12 @@ export interface WithToolCallConfirmationProps {
 
 export function withToolCallConfirmation<P extends object>(
     WrappedComponent: React.ComponentType<P>
-): React.FC<P & WithToolCallConfirmationProps> {
-    const WithConfirmation: React.FC<P & WithToolCallConfirmationProps> = props => {
+): React.FC<P & { toolConfirmation: WithToolCallConfirmationProps }> {
+    const WithConfirmation: React.FC<P & { toolConfirmation: WithToolCallConfirmationProps }> = props => {
+        const {
+            toolConfirmation,
+            ...componentProps
+        } = props;
         const {
             response,
             confirmationMode,
@@ -555,9 +559,8 @@ export function withToolCallConfirmation<P extends object>(
             showArgsTooltip,
             requestCanceled,
             contextMenuRenderer,
-            openerService,
-            ...componentProps
-        } = props;
+            openerService
+        } = toolConfirmation;
 
         const { confirmationState } = useToolConfirmationState(response, confirmationMode);
         const pendingRef = React.useRef<HTMLElement | undefined>(undefined);

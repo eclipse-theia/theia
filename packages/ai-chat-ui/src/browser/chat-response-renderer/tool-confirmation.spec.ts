@@ -14,13 +14,31 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
 import { expect } from 'chai';
 import { ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
-import { ConfirmationScope, CountdownTimerProps, ToolConfirmationCallbacks, ToolConfirmationActionsProps, ToolConfirmationProps } from './tool-confirmation';
+import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { flushSync } from '@theia/core/shared/react-dom';
+import { createRoot } from '@theia/core/shared/react-dom/client';
+import * as React from '@theia/core/shared/react';
+import {
+    ConfirmationScope,
+    CountdownTimerProps,
+    ToolConfirmationCallbacks,
+    ToolConfirmationActionsProps,
+    ToolConfirmationProps,
+    withToolCallConfirmation
+} from './tool-confirmation';
 
 const mockContextMenuRenderer = {} as ContextMenuRenderer;
 const mockOpenerService = {} as OpenerService;
+
+disableJSDOM();
 
 describe('Tool Confirmation Types', () => {
     describe('ConfirmationScope', () => {
@@ -107,6 +125,50 @@ describe('Tool Confirmation Types', () => {
             const response = { kind: 'toolCall' } as ToolCallChatResponseContent;
             const props: CountdownTimerProps = { response };
             expect(props.response.confirmationTimeout).to.be.undefined;
+        });
+    });
+
+    describe('withToolCallConfirmation', () => {
+        before(() => {
+            disableJSDOM = enableJSDOM();
+        });
+
+        after(() => {
+            disableJSDOM();
+        });
+
+        it('should pass opener service through to the wrapped component', () => {
+            const Wrapped: React.FC<{ openerService: OpenerService }> = ({ openerService }) =>
+                React.createElement('span', undefined, openerService === mockOpenerService ? 'passed' : 'missing');
+            const WrappedWithConfirmation = withToolCallConfirmation(Wrapped);
+            const container = document.createElement('div');
+            const root = createRoot(container);
+            const response = {
+                kind: 'toolCall',
+                id: 'test',
+                name: 'test',
+                finished: true,
+                confirmed: Promise.resolve(true),
+                needsUserConfirmation: Promise.resolve(),
+                confirm: () => { },
+                deny: () => { }
+            } as ToolCallChatResponseContent;
+
+            flushSync(() => root.render(React.createElement(WrappedWithConfirmation, {
+                openerService: mockOpenerService,
+                toolConfirmation: {
+                    response,
+                    confirmationMode: ToolConfirmationPreferenceMode.CONFIRM,
+                    toolConfirmationManager: {} as ToolConfirmationManager,
+                    chatId: 'test-chat',
+                    requestCanceled: false,
+                    contextMenuRenderer: mockContextMenuRenderer,
+                    openerService: mockOpenerService
+                }
+            })));
+
+            expect(container.textContent).to.equal('passed');
+            root.unmount();
         });
     });
 

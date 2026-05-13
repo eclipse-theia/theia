@@ -1138,13 +1138,13 @@ details.theia-tool-confirmation-args>summary::marker {
 }
 
 .theia-tool-confirmation-status.allowed {
-  background-color: var(--theia-successBackground);
-  color: var(--theia-successForeground);
+  border-color: var(--theia-successBackground);
+  color: var(--theia-successBackground);
 }
 
 .theia-tool-confirmation-status.denied {
-  background-color: var(--theia-errorBackground);
-  color: var(--theia-errorForeground);
+  border-color: var(--theia-errorBackground);
+  color: var(--theia-errorBackground);
 }
 
 .theia-toolCall-denied,
