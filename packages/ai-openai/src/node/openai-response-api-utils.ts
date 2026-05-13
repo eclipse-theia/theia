@@ -319,8 +319,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     // Current iteration state
     protected currentInput: ResponseInputItem[];
     protected currentToolCalls = new Map<string, ToolCall>();
-    protected totalInputTokens = 0;
-    protected totalOutputTokens = 0;
     protected iteration = 0;
     protected readonly maxIterations: number;
     protected readonly tools: FunctionTool[] | undefined;
@@ -446,8 +444,10 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
         // Record token usage
         if (response.usage) {
-            this.totalInputTokens += response.usage.input_tokens;
-            this.totalOutputTokens += response.usage.output_tokens;
+            this.handleIncoming({
+                input_tokens: response.usage.input_tokens,
+                output_tokens: response.usage.output_tokens,
+            });
         }
 
         // First, yield any text content from the response
@@ -516,8 +516,10 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
             case 'response.completed':
                 if (event.response?.usage) {
-                    this.totalInputTokens += event.response.usage.input_tokens;
-                    this.totalOutputTokens += event.response.usage.output_tokens;
+                    this.handleIncoming({
+                        input_tokens: event.response.usage.input_tokens,
+                        output_tokens: event.response.usage.output_tokens,
+                    });
                 }
                 break;
 
@@ -732,14 +734,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
     protected async finalize(): Promise<void> {
         this.done = true;
-
-        // Yield final token usage as UsageResponsePart
-        if (this.totalInputTokens > 0 || this.totalOutputTokens > 0) {
-            this.handleIncoming({
-                input_tokens: this.totalInputTokens,
-                output_tokens: this.totalOutputTokens,
-            });
-        }
 
         // Resolve any outstanding requests
         if (this.terminalError) {
