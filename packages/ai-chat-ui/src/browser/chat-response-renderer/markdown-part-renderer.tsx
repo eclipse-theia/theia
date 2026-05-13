@@ -29,6 +29,13 @@ import * as DOMPurify from '@theia/core/shared/dompurify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { OpenerService, open } from '@theia/core/lib/browser';
 import { URI } from '@theia/core';
+import {
+    blockExternalResources,
+    BLOCKED_RESOURCE_ALLOW_CLASS,
+    BLOCKED_RESOURCE_CLASS,
+    BLOCKED_RESOURCE_WRAPPER_CLASS,
+    restoreBlockedResource
+} from './block-external-resources';
 
 export interface MarkdownRenderProps {
     text: string | MarkdownString;
@@ -102,17 +109,22 @@ export const useMarkdownRendering = (
     const ref = useRef<HTMLDivElement | null>(null);
     const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
     useEffect(() => {
-        const markdownIt = markdownit().use(markdownitemoji.full);
+        const markdownIt = markdownit({ html: true }).use(markdownitemoji.full);
         const host = document.createElement('div');
+        const template = document.createElement('template');
 
         // markdownIt always puts the content in a paragraph element, so we remove it if we don't want that
         const html = skipSurroundingParagraph ? markdownIt.render(markdownString).replace(/^<p>|<\/p>|<p><\/p>$/g, '') : markdownIt.render(markdownString);
 
-        host.innerHTML = DOMPurify.sanitize(html, {
+        template.innerHTML = DOMPurify.sanitize(html, {
             // DOMPurify usually strips non http(s) links from hrefs
             // but we want to allow them (see handleClick via OpenerService below)
-            ALLOW_UNKNOWN_PROTOCOLS: true
+            ALLOW_UNKNOWN_PROTOCOLS: true,
+            ADD_TAGS: ['iframe', 'frame'],
+            ADD_ATTR: ['src', 'srcset', 'srcdoc', 'poster', 'href', 'xlink:href', 'data']
         });
+        blockExternalResources(template.content);
+        host.appendChild(template.content);
         while (ref?.current?.firstChild) {
             ref.current.removeChild(ref.current.firstChild);
         }
@@ -120,10 +132,28 @@ export const useMarkdownRendering = (
 
         // intercept link clicks to use the Theia OpenerService instead of the default browser behavior
         const handleClick = (event: MouseEvent) => {
+            let target = event.target instanceof HTMLElement ? event.target : event.target instanceof Node ? event.target.parentElement : undefined;
+            const allowButton = target?.closest(`.${BLOCKED_RESOURCE_ALLOW_CLASS}`);
+            if (allowButton) {
+                const placeholder = allowButton.closest(`.${BLOCKED_RESOURCE_CLASS}`);
+                const restored = placeholder ? restoreBlockedResource(placeholder) : undefined;
+                if (placeholder && restored) {
+                    const wrapper = placeholder.parentElement?.classList.contains(BLOCKED_RESOURCE_WRAPPER_CLASS)
+                        ? placeholder.parentElement
+                        : undefined;
+                    if (wrapper) {
+                        wrapper.replaceWith(restored);
+                    } else {
+                        placeholder.replaceWith(restored);
+                    }
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
             if ((eventHandler?.handleEvent(event) as unknown) === true) { return; }
-            let target = event.target as HTMLElement;
             while (target && target.tagName !== 'A') {
-                target = target.parentElement as HTMLElement;
+                target = target.parentElement ?? undefined;
             }
             if (target && target.tagName === 'A') {
                 const href = target.getAttribute('href');
