@@ -40,7 +40,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     protected _apiKey: string | undefined;
     protected _proxyUrl: string | undefined;
-    /** Cached `/v1/models` lookups keyed by `${baseURL}::${model}`. Failed lookups are evicted so the next call retries. */
+    // Cached `/v1/models` lookups keyed by `${baseURL}::${model}`. Successful lookups are kept for the process lifetime;
+    // failed lookups are evicted so the next call retries.
     protected readonly modelInfoCache = new Map<string, Promise<ModelInfo>>();
 
     @inject(LanguageModelRegistry)

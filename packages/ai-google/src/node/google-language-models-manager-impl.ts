@@ -59,7 +59,8 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
         retryDelayOnRateLimitError: 60,
         retryDelayOnOtherErrors: -1
     };
-    /** Cached `/v1beta/models` lookups keyed by model id. Failed lookups are evicted so the next call retries. */
+    // Cached `/v1beta/models` lookups keyed by model id. Successful lookups are kept for the process lifetime;
+    // failed lookups are evicted so the next call retries.
     protected readonly modelInfoCache = new Map<string, Promise<Model>>();
 
     @inject(LanguageModelRegistry)

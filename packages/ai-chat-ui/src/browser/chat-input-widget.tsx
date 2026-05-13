@@ -345,14 +345,14 @@ export class AIChatInputWidget extends ReactWidget {
                         if (!model) {
                             continue;
                         }
-                        // The token usage indicator scales to the first resolved model's context window,
-                        // independent of which model carries the reasoning support.
-                        if (maxInputTokens === undefined) {
+                        if (maxInputTokens === undefined && model.maxInputTokens !== undefined) {
                             maxInputTokens = model.maxInputTokens;
                         }
-                        if (model.reasoningSupport) {
+                        if (!support && model.reasoningSupport) {
                             support = model.reasoningSupport;
                             modelId = model.id;
+                        }
+                        if (support && maxInputTokens !== undefined) {
                             break;
                         }
                     } catch (error) {
