@@ -218,8 +218,8 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                     // from a "waiting" state and is treated as canceled.
                     const status: 'completed' | 'canceled' | 'waiting' =
                         result?.completed === true ? 'completed' :
-                        result?.completed === false || canceled || restoredWithoutResult ? 'canceled' :
-                        'waiting';
+                            result?.completed === false || canceled || restoredWithoutResult ? 'canceled' :
+                                'waiting';
                     if (status === 'completed') {
                         return (
                             <span className='user-interaction-tool status completed'>
@@ -518,13 +518,16 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 responseComplete={parentNode.response.isComplete}
                 result={parseUserInteractionResult(response.result)}
                 openerService={this.openerService}
-                response={response}
-                confirmationMode={confirmationMode}
-                toolConfirmationManager={this.toolConfirmationManager}
-                toolRequest={toolRequest}
-                chatId={chatId}
-                requestCanceled={parentNode.response.isCanceled}
-                contextMenuRenderer={this.contextMenuRenderer}
+                toolConfirmation={{
+                    response,
+                    confirmationMode,
+                    toolConfirmationManager: this.toolConfirmationManager,
+                    toolRequest,
+                    chatId,
+                    requestCanceled: parentNode.response.isCanceled,
+                    contextMenuRenderer: this.contextMenuRenderer,
+                    openerService: this.openerService
+                }}
             />
         );
     }
