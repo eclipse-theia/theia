@@ -12,6 +12,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { ElementInspectorWidget } from './element-inspector-widget';
 
 export const ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID = 'theia-mini-browser.element-inspector.toggle';
+export const ELEMENT_INSPECTOR_REVEAL_COMMAND_ID = 'theia-mini-browser.element-inspector.reveal';
 
 export namespace ElementInspectorCommands {
     export const TOGGLE: Command = {
@@ -19,6 +20,11 @@ export namespace ElementInspectorCommands {
         category: nls.localize('theia/mini-browser/category', 'Mini Browser'),
         label: nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
         iconClass: codicon('layout-sidebar-right')
+    };
+    export const REVEAL: Command = {
+        id: ELEMENT_INSPECTOR_REVEAL_COMMAND_ID,
+        category: nls.localize('theia/mini-browser/category', 'Mini Browser'),
+        label: nls.localize('theia/mini-browser/revealElementInspector', 'Reveal Element Inspector')
     };
 }
 
@@ -39,5 +45,8 @@ export class ElementInspectorContribution extends AbstractViewContribution<Eleme
 
     override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
+        registry.registerCommand(ElementInspectorCommands.REVEAL, {
+            execute: () => this.openView({ activate: true, reveal: true })
+        });
     }
 }

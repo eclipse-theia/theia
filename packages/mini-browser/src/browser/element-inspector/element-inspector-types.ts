@@ -9,6 +9,8 @@
  * Designed to be JSON-serialisable so it can travel through `window.postMessage`.
  */
 export interface PickedElement {
+    /** Stable id stamped onto the picked node so we can mutate it later (set by the iframe bridge). */
+    readonly pickedId: string;
     readonly tagName: string;
     readonly id?: string;
     readonly classes: ReadonlyArray<string>;
@@ -17,29 +19,27 @@ export interface PickedElement {
     readonly outerHTML: string;
     readonly domPath: string;
     readonly position: { top: number; left: number; width: number; height: number };
+    /** Full `getComputedStyle` map (all longhands/shorthands the engine exposes). */
     readonly computedStyles: Readonly<Record<string, string>>;
     readonly ancestors: ReadonlyArray<{ tagName: string; id?: string; classes: ReadonlyArray<string> }>;
     readonly pageUrl: string;
 }
 
-/** Message type emitted from inside the iframe through `postMessage`. */
+/** Iframe → parent: a new element has been picked. */
 export const ELEMENT_PICKER_MESSAGE_TYPE = 'theia-mini-browser:element-picker';
+/** Iframe → parent: the picker was cancelled by the user. */
 export const ELEMENT_PICKER_CANCEL_TYPE = 'theia-mini-browser:element-picker-cancel';
+/** Parent → iframe: apply a CSS declaration to the previously picked element. */
+export const ELEMENT_UPDATE_STYLE_TYPE = 'theia-mini-browser:element-update-style';
+/** Parent → iframe: replace `textContent` for the previously picked element. */
+export const ELEMENT_UPDATE_TEXT_TYPE = 'theia-mini-browser:element-update-text';
+/** Parent → iframe: request a fresh snapshot for the previously picked element. */
+export const ELEMENT_REFRESH_REQUEST_TYPE = 'theia-mini-browser:element-refresh-request';
+/** Iframe → parent: fresh snapshot after a refresh request or after a mutation. */
+export const ELEMENT_REFRESH_RESPONSE_TYPE = 'theia-mini-browser:element-refresh-response';
 
-/** Subset of computed CSS properties surfaced in the inspector "Design" tab. */
-export const TRACKED_COMPUTED_STYLES: ReadonlyArray<string> = [
-    'display', 'position', 'top', 'right', 'bottom', 'left', 'z-index',
-    'width', 'height', 'min-width', 'min-height', 'max-width', 'max-height',
-    'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
-    'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
-    'flex-direction', 'justify-content', 'align-items', 'gap', 'flex',
-    'grid-template-columns', 'grid-template-rows',
-    'background-color', 'color', 'opacity',
-    'border-radius', 'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width',
-    'border-color', 'border-style',
-    'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-align',
-    'box-shadow'
-];
+/** Stamp set on every DOM node we hand back to the parent so we can locate it again later. */
+export const PICKED_ATTRIBUTE = 'data-theia-mini-browser-picked';
 
 export interface ElementInspectorState {
     readonly picked?: PickedElement;

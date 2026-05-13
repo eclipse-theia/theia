@@ -4,8 +4,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ELEMENT_PICKER_MESSAGE_TYPE, ELEMENT_PICKER_CANCEL_TYPE, TRACKED_COMPUTED_STYLES } from './element-inspector-types';
+import {
+    ELEMENT_PICKER_MESSAGE_TYPE,
+    ELEMENT_PICKER_CANCEL_TYPE,
+    ELEMENT_UPDATE_STYLE_TYPE,
+    ELEMENT_UPDATE_TEXT_TYPE,
+    ELEMENT_REFRESH_REQUEST_TYPE,
+    ELEMENT_REFRESH_RESPONSE_TYPE,
+    PICKED_ATTRIBUTE
+} from './element-inspector-types';
 
+const BRIDGE_GLOBAL = '__theiaMiniBrowserBridge__';
 const PICKER_GLOBAL = '__theiaMiniBrowserElementPicker__';
 const OVERLAY_ID = 'theia-mini-browser-picker-overlay';
 const LABEL_ID = 'theia-mini-browser-picker-label';
@@ -13,20 +22,168 @@ const STYLE_ID = 'theia-mini-browser-picker-style';
 const TOOLBAR_ID = 'theia-mini-browser-picker-toolbar';
 
 /**
- * Renders the JS source that runs *inside* the iframe to highlight DOM nodes on hover
- * and reports the picked element back to the parent via `postMessage`.
+ * Resident bridge injected once per loaded page. It tracks picked nodes by id
+ * and responds to style / text mutations and refresh requests coming from the parent.
  *
- * The script is self-contained: it can be injected multiple times safely (re-entry guarded
- * via {@link PICKER_GLOBAL}) and is only enabled while a session is active.
+ * Idempotent: re-injecting the script is safe; the second call is a no-op.
+ */
+export function buildElementBridgeScript(): string {
+    return `(() => {
+    if (window.${BRIDGE_GLOBAL}) return;
+    const PICKED_ATTR = ${JSON.stringify(PICKED_ATTRIBUTE)};
+    const UPDATE_STYLE = ${JSON.stringify(ELEMENT_UPDATE_STYLE_TYPE)};
+    const UPDATE_TEXT = ${JSON.stringify(ELEMENT_UPDATE_TEXT_TYPE)};
+    const REFRESH_REQ = ${JSON.stringify(ELEMENT_REFRESH_REQUEST_TYPE)};
+    const REFRESH_RES = ${JSON.stringify(ELEMENT_REFRESH_RESPONSE_TYPE)};
+
+    const truncate = (s, max) => s.length > max ? s.slice(0, max - 1) + '\u2026' : s;
+
+    const computeDomPath = (el) => {
+        const parts = [];
+        let node = el;
+        while (node && node.nodeType === 1 && node !== document.documentElement) {
+            let part = node.tagName.toLowerCase();
+            if (node.id) {
+                part += '#' + node.id;
+                parts.unshift(part);
+                break;
+            }
+            if (node.classList && node.classList.length) {
+                part += '.' + Array.from(node.classList).slice(0, 3).join('.');
+            }
+            const parent = node.parentElement;
+            if (parent) {
+                const sameTagSiblings = Array.from(parent.children).filter(c => c.tagName === node.tagName);
+                if (sameTagSiblings.length > 1) {
+                    part += '[' + sameTagSiblings.indexOf(node) + ']';
+                }
+            }
+            parts.unshift(part);
+            node = node.parentElement;
+        }
+        return 'html > ' + parts.join(' > ');
+    };
+
+    const serialize = (el, pickedId) => {
+        const rect = el.getBoundingClientRect();
+        const cs = window.getComputedStyle(el);
+        const styles = {};
+        for (let i = 0; i < cs.length; i++) {
+            const name = cs.item(i);
+            if (name) styles[name] = cs.getPropertyValue(name).trim();
+        }
+        const ancestors = [];
+        let a = el.parentElement;
+        while (a && ancestors.length < 6) {
+            ancestors.push({
+                tagName: a.tagName.toLowerCase(),
+                id: a.id || undefined,
+                classes: Array.from(a.classList || [])
+            });
+            a = a.parentElement;
+        }
+        return {
+            pickedId,
+            tagName: el.tagName.toLowerCase(),
+            id: el.id || undefined,
+            classes: Array.from(el.classList || []),
+            attributes: Array.from(el.attributes || []).map(attr => ({ name: attr.name, value: attr.value })),
+            textPreview: truncate((el.textContent || '').replace(/\\s+/g, ' ').trim(), 160),
+            outerHTML: truncate(el.outerHTML || '', 2000),
+            domPath: computeDomPath(el),
+            position: { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) },
+            computedStyles: styles,
+            ancestors,
+            pageUrl: location.href
+        };
+    };
+
+    const nextId = (() => {
+        let counter = 0;
+        return () => 'tmb-' + Date.now().toString(36) + '-' + (++counter).toString(36);
+    })();
+
+    const bridge = {
+        nodes: new Map(),
+        register(el) {
+            let id = el.getAttribute(PICKED_ATTR);
+            if (!id) {
+                id = nextId();
+                el.setAttribute(PICKED_ATTR, id);
+            }
+            this.nodes.set(id, el);
+            return id;
+        },
+        findById(id) {
+            const cached = this.nodes.get(id);
+            if (cached && cached.isConnected) return cached;
+            const fresh = document.querySelector('[' + PICKED_ATTR + '="' + id + '"]');
+            if (fresh) this.nodes.set(id, fresh);
+            return fresh || undefined;
+        },
+        applyStyle(id, prop, value, important) {
+            const el = this.findById(id);
+            if (!el || !el.style) return false;
+            try {
+                el.style.setProperty(prop, value, important ? 'important' : '');
+                return true;
+            } catch (e) {
+                return false;
+            }
+        },
+        applyText(id, text) {
+            const el = this.findById(id);
+            if (!el) return false;
+            el.textContent = text;
+            return true;
+        },
+        refresh(id) {
+            const el = this.findById(id);
+            if (!el) return undefined;
+            return serialize(el, id);
+        },
+        serialize
+    };
+
+    window.${BRIDGE_GLOBAL} = bridge;
+
+    window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (!data || typeof data !== 'object') return;
+        if (data.type === UPDATE_STYLE && typeof data.id === 'string' && typeof data.prop === 'string') {
+            const ok = bridge.applyStyle(data.id, data.prop, String(data.value ?? ''), !!data.important);
+            const fresh = ok ? bridge.refresh(data.id) : undefined;
+            if (fresh && event.source) {
+                event.source.postMessage({ type: REFRESH_RES, payload: fresh }, '*');
+            }
+        } else if (data.type === UPDATE_TEXT && typeof data.id === 'string') {
+            bridge.applyText(data.id, String(data.text ?? ''));
+            const fresh = bridge.refresh(data.id);
+            if (fresh && event.source) {
+                event.source.postMessage({ type: REFRESH_RES, payload: fresh }, '*');
+            }
+        } else if (data.type === REFRESH_REQ && typeof data.id === 'string') {
+            const fresh = bridge.refresh(data.id);
+            if (fresh && event.source) {
+                event.source.postMessage({ type: REFRESH_RES, payload: fresh }, '*');
+            }
+        }
+    });
+})();`;
+}
+
+/**
+ * Builds the one-shot picker overlay. Requires the bridge to be installed first
+ * (see {@link buildElementBridgeScript}). Toggles itself off on click or `Escape`.
  */
 export function buildElementPickerScript(): string {
-    const trackedStyles = JSON.stringify(TRACKED_COMPUTED_STYLES);
     return `(() => {
     if (window.${PICKER_GLOBAL} && window.${PICKER_GLOBAL}.active) {
         window.${PICKER_GLOBAL}.deactivate();
         return;
     }
-    const TRACKED = ${trackedStyles};
+    if (!window.${BRIDGE_GLOBAL}) return;
+    const bridge = window.${BRIDGE_GLOBAL};
     const MESSAGE_TYPE = ${JSON.stringify(ELEMENT_PICKER_MESSAGE_TYPE)};
     const CANCEL_TYPE = ${JSON.stringify(ELEMENT_PICKER_CANCEL_TYPE)};
 
@@ -85,6 +242,17 @@ export function buildElementPickerScript(): string {
         return label;
     };
 
+    const ensureToolbar = () => {
+        let bar = document.getElementById(${JSON.stringify(TOOLBAR_ID)});
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = ${JSON.stringify(TOOLBAR_ID)};
+            bar.innerHTML = '<span>Pick an element</span><span style="opacity:.65">\u2014 click to capture, <kbd>Esc</kbd> to cancel</span>';
+            document.documentElement.appendChild(bar);
+        }
+        return bar;
+    };
+
     const escapeHtml = (s) => String(s)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -98,7 +266,7 @@ export function buildElementPickerScript(): string {
         const clsPart = classList.length
             ? '<span class="theia-picker-label-cls">.' + classList.map(escapeHtml).join('.') + '</span>'
             : '';
-        const dim = '<span class="theia-picker-label-dim">' + Math.round(rect.width) + ' × ' + Math.round(rect.height) + '</span>';
+        const dim = '<span class="theia-picker-label-dim">' + Math.round(rect.width) + ' \u00d7 ' + Math.round(rect.height) + '</span>';
         return '<span class="theia-picker-label-tag">' + escapeHtml(tag) + '</span>' + idPart + clsPart + dim;
     };
 
@@ -120,75 +288,6 @@ export function buildElementPickerScript(): string {
         label.style.top = Math.round(top) + 'px';
         label.style.left = Math.round(left) + 'px';
         label.style.display = 'block';
-    };
-
-    const ensureToolbar = () => {
-        let bar = document.getElementById(${JSON.stringify(TOOLBAR_ID)});
-        if (!bar) {
-            bar = document.createElement('div');
-            bar.id = ${JSON.stringify(TOOLBAR_ID)};
-            bar.innerHTML = '<span>Pick an element</span><span style="opacity:.65">— click to capture, <kbd>Esc</kbd> to cancel</span>';
-            document.documentElement.appendChild(bar);
-        }
-        return bar;
-    };
-
-    const computeDomPath = (el) => {
-        const parts = [];
-        let node = el;
-        while (node && node.nodeType === 1 && node !== document.documentElement) {
-            let part = node.tagName.toLowerCase();
-            if (node.id) {
-                part += '#' + node.id;
-                parts.unshift(part);
-                break;
-            }
-            if (node.classList && node.classList.length) {
-                part += '.' + Array.from(node.classList).slice(0, 3).join('.');
-            }
-            const parent = node.parentElement;
-            if (parent) {
-                const sameTagSiblings = Array.from(parent.children).filter(c => c.tagName === node.tagName);
-                if (sameTagSiblings.length > 1) {
-                    part += '[' + sameTagSiblings.indexOf(node) + ']';
-                }
-            }
-            parts.unshift(part);
-            node = node.parentElement;
-        }
-        return 'html > ' + parts.join(' > ');
-    };
-
-    const truncate = (s, max) => s.length > max ? s.slice(0, max - 1) + '…' : s;
-
-    const serialize = (el) => {
-        const rect = el.getBoundingClientRect();
-        const cs = window.getComputedStyle(el);
-        const styles = {};
-        for (const key of TRACKED) styles[key] = cs.getPropertyValue(key).trim();
-        const ancestors = [];
-        let a = el.parentElement;
-        while (a && ancestors.length < 6) {
-            ancestors.push({
-                tagName: a.tagName.toLowerCase(),
-                id: a.id || undefined,
-                classes: Array.from(a.classList || [])
-            });
-            a = a.parentElement;
-        }
-        return {
-            tagName: el.tagName.toLowerCase(),
-            id: el.id || undefined,
-            classes: Array.from(el.classList || []),
-            attributes: Array.from(el.attributes || []).map(attr => ({ name: attr.name, value: attr.value })),
-            textPreview: truncate((el.textContent || '').replace(/\\s+/g, ' ').trim(), 160),
-            outerHTML: truncate(el.outerHTML || '', 2000),
-            domPath: computeDomPath(el),
-            position: { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) },
-            computedStyles: styles,
-            ancestors,
-            pageUrl: location.href
-        };
     };
 
     const positionOverlay = (el) => {
@@ -221,7 +320,8 @@ export function buildElementPickerScript(): string {
         const target = state.current || e.target;
         if (target && target.nodeType === 1) {
             try {
-                const payload = serialize(target);
+                const pickedId = bridge.register(target);
+                const payload = bridge.serialize(target, pickedId);
                 window.parent.postMessage({ type: MESSAGE_TYPE, payload }, '*');
             } catch (err) {
                 window.parent.postMessage({ type: MESSAGE_TYPE, error: String(err) }, '*');

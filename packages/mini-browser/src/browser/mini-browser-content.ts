@@ -37,11 +37,14 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { ElementInspectorService } from './element-inspector/element-inspector-service';
-import { ELEMENT_PICKER_MESSAGE_TYPE, ELEMENT_PICKER_CANCEL_TYPE, PickedElement } from './element-inspector/element-inspector-types';
-import { buildElementPickerScript } from './element-inspector/element-picker-script';
-import { ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from './element-inspector/element-inspector-contribution';
-
-const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
+import {
+    ELEMENT_PICKER_MESSAGE_TYPE,
+    ELEMENT_PICKER_CANCEL_TYPE,
+    ELEMENT_REFRESH_RESPONSE_TYPE,
+    PickedElement
+} from './element-inspector/element-inspector-types';
+import { buildElementBridgeScript, buildElementPickerScript } from './element-inspector/element-picker-script';
+import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from './element-inspector/element-inspector-contribution';
 
 /**
  * Initializer properties for the embedded browser widget.
@@ -378,6 +381,24 @@ export class MiniBrowserContent extends BaseWidget {
         this.maybeResetBackground();
         this.hideLoadIndicator();
         this.hideErrorBar();
+        this.injectInspectorBridge();
+    }
+
+    /**
+     * Installs the resident inspector bridge inside the iframe so the inspector panel can
+     * mutate styles after a pick. No-op when the iframe is cross-origin.
+     */
+    protected injectInspectorBridge(): void {
+        try {
+            const doc = this.frame?.contentDocument;
+            if (!doc) return;
+            const script = doc.createElement('script');
+            script.textContent = buildElementBridgeScript();
+            doc.documentElement.appendChild(script);
+            script.remove();
+        } catch {
+            // cross-origin iframe — silently skip; the picker will warn at use time.
+        }
     }
 
     protected onFrameError(): void {
@@ -543,6 +564,8 @@ export class MiniBrowserContent extends BaseWidget {
                 this.notifyPickerUnavailable();
                 return;
             }
+            // The bridge is normally injected at load; make sure it is in place before the picker.
+            this.injectInspectorBridge();
             const script = doc.createElement('script');
             script.textContent = buildElementPickerScript();
             doc.documentElement.appendChild(script);
@@ -570,6 +593,8 @@ export class MiniBrowserContent extends BaseWidget {
             const data = event.data as { type?: string; payload?: PickedElement; error?: string };
             if (data.type === ELEMENT_PICKER_MESSAGE_TYPE && data.payload) {
                 void this.handlePickedElement(data.payload);
+            } else if (data.type === ELEMENT_REFRESH_RESPONSE_TYPE && data.payload) {
+                this.inspectorService.refreshed(data.payload);
             } else if (data.type === ELEMENT_PICKER_CANCEL_TYPE) {
                 // no-op: the in-frame script tears itself down
             }
@@ -579,6 +604,7 @@ export class MiniBrowserContent extends BaseWidget {
     }
 
     protected async handlePickedElement(element: PickedElement): Promise<void> {
+        this.inspectorService.bind(this.frame?.contentWindow ?? undefined);
         this.inspectorService.pick(element);
         const summary = this.formatElementForChat(element);
         try {
@@ -586,23 +612,23 @@ export class MiniBrowserContent extends BaseWidget {
         } catch {
             // clipboard may be denied in some sandboxes; the inspector panel still has the data
         }
+        await this.revealInspector();
+        this.messageService.info(nls.localize(
+            'theia/mini-browser/elementCaptured',
+            'Captured {0}. Details opened in the Element Inspector and copied to the clipboard.',
+            element.tagName + (element.id ? '#' + element.id : '') + (element.classes.length ? '.' + element.classes.slice(0, 2).join('.') : '')
+        ));
+    }
+
+    protected async revealInspector(): Promise<void> {
+        if (!this.commands.getCommand(ELEMENT_INSPECTOR_REVEAL_COMMAND_ID)) {
+            return;
+        }
         try {
-            await this.commands.executeCommand(ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID);
+            await this.commands.executeCommand(ELEMENT_INSPECTOR_REVEAL_COMMAND_ID);
         } catch {
             // inspector contribution might not be available; ignore
         }
-        if (this.commands.getCommand(AI_CHAT_TOGGLE_COMMAND_ID)) {
-            try {
-                await this.commands.executeCommand(AI_CHAT_TOGGLE_COMMAND_ID);
-            } catch {
-                // chat command may fail silently
-            }
-        }
-        this.messageService.info(nls.localize(
-            'theia/mini-browser/elementCaptured',
-            'Captured {0}. Copied to clipboard and opened in the Element Inspector — paste it into the chat to share with the agent.',
-            element.tagName + (element.id ? '#' + element.id : '') + (element.classes.length ? '.' + element.classes.slice(0, 2).join('.') : '')
-        ));
     }
 
     protected formatElementForChat(element: PickedElement): string {
