@@ -433,6 +433,7 @@ const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
 const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 /** Matches `@theia/ai-chat-ui` ChatViewWidget.ID; used without depending on that package. */
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
+const WORKBENCH_MOBILE_MEDIA = '(max-width: 767px)';
 
 /**
  * VS Code–style controls in the menu bar: primary sidebar toggle, Go Back, Go Forward (replaces the branding logo slot).
@@ -570,7 +571,10 @@ class WorkbenchRightControlsWidget extends Widget {
             this.runIfEnabled(WORKBENCH_TOGGLE_TERMINAL);
         }
     };
-    protected readonly onAiChatClick = (): void => this.runIfEnabled(WORKBENCH_AI_CHAT_TOGGLE);
+    protected readonly onAiChatClick = (): void => {
+        this.dismissLeftSheetBeforeAiChat();
+        this.runIfEnabled(WORKBENCH_AI_CHAT_TOGGLE);
+    };
     protected readonly onSettingsClick = (): void => this.runIfEnabled(CommonCommands.OPEN_PREFERENCES.id);
 
     protected override onAfterAttach(msg: Message): void {
@@ -594,6 +598,18 @@ class WorkbenchRightControlsWidget extends Widget {
             return;
         }
         void this.commands.executeCommand(commandId).catch(() => undefined);
+    }
+
+    protected dismissLeftSheetBeforeAiChat(): void {
+        if (this.isNarrowMobileWorkbench() && this.shell.isExpanded('left')) {
+            void this.shell.collapsePanel('left');
+        }
+    }
+
+    protected isNarrowMobileWorkbench(): boolean {
+        return typeof window !== 'undefined'
+            && typeof window.matchMedia === 'function'
+            && window.matchMedia(WORKBENCH_MOBILE_MEDIA).matches;
     }
 
     protected updateEnabledStates(): void {

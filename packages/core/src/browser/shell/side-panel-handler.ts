@@ -20,6 +20,7 @@ import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPane
 import { MimeData } from '@lumino/coreutils';
 import { Drag } from '@lumino/dragdrop';
 import { AttachedProperty } from '@lumino/properties';
+import { MessageLoop } from '@lumino/messaging';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
 import { SidebarMenuWidget, SidebarMenu, SidebarBottomMenuWidgetFactory, SidebarTopMenuWidgetFactory } from './sidebar-menu-widget';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
@@ -121,6 +122,10 @@ export class SidePanelHandler {
      * Options that control the behavior of the side panel.
      */
     protected options: SidePanel.Options;
+    protected containerResizeObserver: ResizeObserver | undefined;
+    protected resizeRelayoutFrame: number | undefined;
+    protected lastObservedWidth = -1;
+    protected lastObservedHeight = -1;
 
     @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
     @inject(TabBarToolbarFactory) protected tabBarToolBarFactory: () => TabBarToolbar;
@@ -148,6 +153,7 @@ export class SidePanelHandler {
         this.toolBar = this.createToolbar();
         this.dockPanel = this.createSidePanel();
         this.container = this.createContainer();
+        this.observeContainerResize();
 
         this.refresh();
     }
@@ -281,6 +287,62 @@ export class SidePanelHandler {
         const boxPanel = new BoxPanel({ layout: outerLayout });
         boxPanel.id = 'theia-' + this.side + '-content-panel';
         return boxPanel;
+    }
+
+    protected observeContainerResize(): void {
+        if (typeof ResizeObserver === 'undefined') {
+            return;
+        }
+        this.containerResizeObserver?.disconnect();
+        this.containerResizeObserver = new ResizeObserver(entries => {
+            const entry = entries[0];
+            if (!entry) {
+                return;
+            }
+            const width = Math.round(entry.contentRect.width);
+            const height = Math.round(entry.contentRect.height);
+            if (width === this.lastObservedWidth && height === this.lastObservedHeight) {
+                return;
+            }
+            this.lastObservedWidth = width;
+            this.lastObservedHeight = height;
+            if (width <= 0 || height <= 0 || this.container.isHidden) {
+                return;
+            }
+            this.scheduleContentRelayout();
+        });
+        this.containerResizeObserver.observe(this.container.node);
+    }
+
+    protected scheduleContentRelayout(): void {
+        if (this.resizeRelayoutFrame !== undefined) {
+            return;
+        }
+        this.resizeRelayoutFrame = requestAnimationFrame(() => {
+            this.resizeRelayoutFrame = undefined;
+            this.relayoutContent();
+        });
+    }
+
+    protected relayoutContent(): void {
+        if (this.container.isHidden || this.dockPanel.isHidden) {
+            return;
+        }
+        this.relayoutWidget(this.container);
+        this.relayoutWidget(this.tabBar);
+        this.relayoutWidget(this.additionalViewsMenu);
+        this.relayoutWidget(this.toolBar);
+        this.relayoutWidget(this.dockPanel);
+        const currentWidget = this.tabBar.currentTitle?.owner;
+        if (currentWidget) {
+            this.relayoutWidget(currentWidget);
+        }
+    }
+
+    protected relayoutWidget(widget: Widget): void {
+        MessageLoop.sendMessage(widget, Widget.ResizeMessage.UnknownSize);
+        MessageLoop.postMessage(widget, Widget.Msg.FitRequest);
+        MessageLoop.postMessage(widget, Widget.Msg.UpdateRequest);
     }
 
     /**
@@ -621,6 +683,7 @@ export class SidePanelHandler {
             // Resolve the resulting promise in any case, regardless of whether resizing was successful
             promise.then(() => resolve(), () => resolve());
         });
+        void result.then(() => this.scheduleContentRelayout());
         this.state.pendingUpdate = this.state.pendingUpdate.then(() => result);
         return result;
     }

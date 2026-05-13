@@ -543,7 +543,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         // would visually cover the resulting widget (e.g. the mini-browser preview). Collapse them
         // first so the new widget is unobstructed. Actions that explicitly open a side panel via
         // the side activity bar bypass this contribution.
-        if (this.shouldDismissSheetsForButton(def.id)) {
+        if (def.id === 'agent') {
+            this.dismissLeftSheet();
+        } else if (this.shouldDismissSheetsForButton(def.id)) {
             this.dismissSheets();
         }
         const commandId = def.commandId;
@@ -558,6 +560,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         // target the main editor area, the bottom panel, or a global prompt; the side sheets must
         // be closed so the result is visible.
         return id !== 'agent';
+    }
+
+    protected dismissLeftSheet(): void {
+        if (this.shell.isExpanded('left')) {
+            void this.shell.collapsePanel('left');
+        }
     }
 
     protected dismissSheets(): void {
