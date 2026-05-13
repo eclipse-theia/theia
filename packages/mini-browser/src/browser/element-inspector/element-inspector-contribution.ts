@@ -19,7 +19,7 @@ export namespace ElementInspectorCommands {
         id: ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID,
         category: nls.localize('theia/mini-browser/category', 'Mini Browser'),
         label: nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
-        iconClass: codicon('layout-sidebar-right')
+        iconClass: codicon('inspect')
     };
     export const REVEAL: Command = {
         id: ELEMENT_INSPECTOR_REVEAL_COMMAND_ID,
@@ -36,8 +36,9 @@ export class ElementInspectorContribution extends AbstractViewContribution<Eleme
             widgetId: ElementInspectorWidget.ID,
             widgetName: ElementInspectorWidget.LABEL,
             defaultWidgetOptions: {
-                area: 'right',
-                rank: 400
+                /** Full editor tab (Cursor-style), not the right side panel. */
+                area: 'main',
+                mode: 'tab-after'
             },
             toggleCommandId: ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID
         });

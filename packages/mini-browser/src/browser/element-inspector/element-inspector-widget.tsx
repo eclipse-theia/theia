@@ -26,7 +26,7 @@ export class ElementInspectorWidget extends ReactWidget {
         this.id = ElementInspectorWidget.ID;
         this.title.label = ElementInspectorWidget.LABEL;
         this.title.caption = ElementInspectorWidget.LABEL;
-        this.title.iconClass = codicon('layout-sidebar-right');
+        this.title.iconClass = codicon('inspect');
         this.title.closable = true;
         this.addClass('theia-mini-browser-inspector');
         this.toDispose.push(this.service.onDidChangeState(() => this.update()));

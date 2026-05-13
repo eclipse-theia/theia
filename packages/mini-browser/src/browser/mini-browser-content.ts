@@ -488,7 +488,7 @@ export class MiniBrowserContent extends BaseWidget {
     protected handleOpen(): void {
         const location = this.frameSrc() || this.input.value;
         if (location) {
-            this.windowService.openNewWindow(location);
+            this.windowService.openNewWindow(location, { external: true });
         }
     }
 
@@ -535,12 +535,13 @@ export class MiniBrowserContent extends BaseWidget {
         const controls = document.createElement('div');
         controls.classList.add(MiniBrowserContentStyle.WORKBENCH_CONTROLS);
         parent.appendChild(controls);
+        this.createOpen(controls);
         this.createInspectButton(controls);
         this.createCommandButton(
             controls,
             ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID,
             nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
-            'layout-sidebar-right'
+            'layout-panel'
         );
         return controls;
     }
@@ -664,7 +665,11 @@ export class MiniBrowserContent extends BaseWidget {
     }
 
     protected createOpen(parent: HTMLElement): HTMLElement {
-        const button = this.createWorkbenchButton(parent, 'Open In A New Window', 'link-external');
+        const button = this.createWorkbenchButton(
+            parent,
+            nls.localize('theia/mini-browser/openInNewBrowserTab', 'Open in New Browser Tab'),
+            'link-external'
+        );
         button.classList.add(MiniBrowserContentStyle.OPEN);
         this.toDispose.push(addEventListener(button, 'click', () => this.openEmitter.fire(undefined)));
         return button;
