@@ -16,6 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as path from 'path';
+import { pathToFileURL } from 'node:url';
 import { dynamicRequire, removeFromCache } from '@theia/core/lib/node/dynamic-require';
 import { ContainerModule, inject, injectable, postConstruct, unmanaged } from '@theia/core/shared/inversify';
 import { AbstractPluginManagerExtImpl, PluginHost, PluginManagerExtImpl } from '../../plugin/plugin-manager';
@@ -158,6 +160,20 @@ export abstract class AbstractPluginHostRPC<PM extends AbstractPluginManagerExtI
     }
 
     /**
+     * Determine whether a plugin should be loaded as an ESM module.
+     * A plugin is ESM if its package.json declares `"type": "module"` AND the
+     * entry point file does not use an explicit `.cjs` extension (which opts
+     * out of ESM even in a `"type": "module"` package).
+     */
+    protected isESMPlugin(plugin: Plugin): boolean {
+        if (plugin.rawModel.type !== 'module') {
+            return false;
+        }
+        const ext = path.extname(plugin.pluginPath || '').toLowerCase();
+        return ext !== '.cjs';
+    }
+
+    /**
      * Create the {@link PluginHost} that is required by my plugin manager ext interface to delegate
      * critical behaviour such as loading and initializing plugins to me.
      */
@@ -173,6 +189,17 @@ export abstract class AbstractPluginHostRPC<PM extends AbstractPluginManagerExtI
                 // https://github.com/nodejs/node/issues/8443
                 removeFromCache(mod => mod.id.startsWith(plugin.pluginFolder));
                 if (plugin.pluginPath) {
+                    if (self.isESMPlugin(plugin)) {
+                        // ESM plugins must be loaded via dynamic import().
+                        // Set a global so the CJS module._load override in plugin-vscode-init.ts
+                        // can identify which plugin is requesting the 'vscode' API.
+                        (global as any).__theia_esm_plugin_folder = plugin.pluginFolder;
+                        // Use Function to prevent TypeScript from compiling import() into require()
+                        // when targeting CommonJS modules.
+                        const dynamicImport = new Function('url', 'return import(url)') as (url: string) => Promise<any>;
+                        return dynamicImport(pathToFileURL(plugin.pluginPath).href)
+                            .finally(() => { (global as any).__theia_esm_plugin_folder = undefined; });
+                    }
                     return dynamicRequire(plugin.pluginPath);
                 }
             },

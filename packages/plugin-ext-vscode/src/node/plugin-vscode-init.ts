@@ -16,6 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as path from 'path';
+import { register } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
@@ -60,7 +63,10 @@ function overrideInternalLoad(): void {
             return internalLoad.apply(this, arguments);
         }
 
-        const plugin = findPlugin(parent.filename);
+        // For ESM plugins, require('vscode') comes from the CJS shim (vscode-esm-shim.cjs),
+        // so parent.filename won't match any plugin folder. Fall back to the global
+        // tracking variable set by the plugin host before loading ESM plugins.
+        const plugin = findPlugin(parent.filename) ?? findPluginByESMGlobal();
         if (plugin) {
             const apiImpl = pluginsApiImpl.get(plugin.model.id);
             return apiImpl;
@@ -73,8 +79,27 @@ function overrideInternalLoad(): void {
 
         return defaultApi;
     };
+
+    // Register an ESM loader hook so that `import 'vscode'` in ESM plugins
+    // is resolved via the same CJS `module._load` override above.
+    const esmLoaderPath = path.join(__dirname, 'vscode-esm-loader.mjs');
+    register(pathToFileURL(esmLoaderPath).href);
 }
 
 function findPlugin(filePath: string): Plugin | undefined {
     return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+}
+
+/**
+ * Fallback for ESM plugins: the plugin host sets `global.__theia_esm_plugin_folder`
+ * before calling `import()` on an ESM plugin. The CJS shim's `require('vscode')`
+ * triggers `module._load`, but its `parent.filename` points to the shim, not the plugin.
+ * This function uses the global to identify the correct plugin.
+ */
+function findPluginByESMGlobal(): Plugin | undefined {
+    const folder = (global as any).__theia_esm_plugin_folder as string | undefined;
+    if (folder) {
+        return plugins.find(plugin => plugin.pluginFolder === folder || folder.startsWith(plugin.pluginFolder));
+    }
+    return undefined;
 }

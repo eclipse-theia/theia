@@ -48,9 +48,9 @@
     "src"
   ],
   "scripts": {
-    "build": "theiaext build",
+    "build": "theiaext build && cp src/node/vscode-esm-loader.mjs src/node/vscode-esm-shim.cjs lib/node/",
     "clean": "theiaext clean",
-    "compile": "theiaext compile",
+    "compile": "theiaext compile && cp src/node/vscode-esm-loader.mjs src/node/vscode-esm-shim.cjs lib/node/",
     "lint": "theiaext lint",
     "test": "theiaext test",
     "watch": "theiaext watch"
