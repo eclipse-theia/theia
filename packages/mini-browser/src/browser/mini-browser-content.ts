@@ -20,6 +20,7 @@ import { Message } from '@theia/core/shared/@lumino/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Emitter } from '@theia/core/lib/common/event';
+import { CommandRegistry } from '@theia/core/lib/common/command';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
@@ -32,6 +33,15 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { MiniBrowserContentStyle } from './mini-browser-content-style';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { nls } from '@theia/core/lib/common/nls';
+import { ElementInspectorService } from './element-inspector/element-inspector-service';
+import { ELEMENT_PICKER_MESSAGE_TYPE, ELEMENT_PICKER_CANCEL_TYPE, PickedElement } from './element-inspector/element-inspector-types';
+import { buildElementPickerScript } from './element-inspector/element-picker-script';
+import { ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from './element-inspector/element-inspector-contribution';
+
+const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
 /**
  * Initializer properties for the embedded browser widget.
@@ -176,11 +186,25 @@ export class MiniBrowserContent extends BaseWidget {
     @inject(KeybindingRegistry)
     protected readonly keybindings: KeybindingRegistry;
 
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
+
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
 
     @inject(FileService)
     protected readonly fileService: FileService;
+
+    @inject(ClipboardService)
+    protected readonly clipboard: ClipboardService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(ElementInspectorService)
+    protected readonly inspectorService: ElementInspectorService;
+
+    protected pickerListenerInstalled = false;
 
     protected readonly submitInputEmitter = new Emitter<string>();
     protected readonly navigateBackEmitter = new Emitter<void>();
@@ -275,7 +299,7 @@ export class MiniBrowserContent extends BaseWidget {
         this.createNext(toolbar);
         this.createRefresh(toolbar);
         const input = this.createInput(toolbar);
-        this.createOpen(toolbar);
+        this.createWorkbenchControls(toolbar);
         if (this.getToolbarProps() === 'hide') {
             toolbar.style.display = 'none';
         }
@@ -486,8 +510,137 @@ export class MiniBrowserContent extends BaseWidget {
         return this.onClick(this.createButton(parent, 'Reload This Page', MiniBrowserContentStyle.REFRESH), this.refreshEmitter);
     }
 
+    protected createWorkbenchControls(parent: HTMLElement): HTMLElement {
+        const controls = document.createElement('div');
+        controls.classList.add(MiniBrowserContentStyle.WORKBENCH_CONTROLS);
+        parent.appendChild(controls);
+        this.createInspectButton(controls);
+        this.createCommandButton(
+            controls,
+            ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID,
+            nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
+            'layout-sidebar-right'
+        );
+        return controls;
+    }
+
+    protected createInspectButton(parent: HTMLElement): HTMLElement {
+        const button = this.createWorkbenchButton(
+            parent,
+            nls.localize('theia/mini-browser/pickElement', 'Pick an element to send to chat'),
+            'inspect'
+        );
+        this.toDispose.push(addEventListener(button, 'click', () => this.handleInspect()));
+        return button;
+    }
+
+    protected handleInspect(): void {
+        this.installPickerListener();
+        try {
+            const doc = this.frame?.contentDocument;
+            const win = this.frame?.contentWindow;
+            if (!doc || !win) {
+                this.notifyPickerUnavailable();
+                return;
+            }
+            const script = doc.createElement('script');
+            script.textContent = buildElementPickerScript();
+            doc.documentElement.appendChild(script);
+            script.remove();
+        } catch {
+            this.notifyPickerUnavailable();
+        }
+    }
+
+    protected notifyPickerUnavailable(): void {
+        this.messageService.warn(nls.localize(
+            'theia/mini-browser/pickerUnavailable',
+            'The element picker cannot run on this page because the preview is cross-origin. Open a same-origin preview to use it.'
+        ));
+    }
+
+    protected installPickerListener(): void {
+        if (this.pickerListenerInstalled) {
+            return;
+        }
+        this.pickerListenerInstalled = true;
+        const handler = (event: MessageEvent) => {
+            if (!event.data || typeof event.data !== 'object') return;
+            if (this.frame && event.source && event.source !== this.frame.contentWindow) return;
+            const data = event.data as { type?: string; payload?: PickedElement; error?: string };
+            if (data.type === ELEMENT_PICKER_MESSAGE_TYPE && data.payload) {
+                void this.handlePickedElement(data.payload);
+            } else if (data.type === ELEMENT_PICKER_CANCEL_TYPE) {
+                // no-op: the in-frame script tears itself down
+            }
+        };
+        window.addEventListener('message', handler);
+        this.toDispose.push(Disposable.create(() => window.removeEventListener('message', handler)));
+    }
+
+    protected async handlePickedElement(element: PickedElement): Promise<void> {
+        this.inspectorService.pick(element);
+        const summary = this.formatElementForChat(element);
+        try {
+            await this.clipboard.writeText(summary);
+        } catch {
+            // clipboard may be denied in some sandboxes; the inspector panel still has the data
+        }
+        try {
+            await this.commands.executeCommand(ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID);
+        } catch {
+            // inspector contribution might not be available; ignore
+        }
+        if (this.commands.getCommand(AI_CHAT_TOGGLE_COMMAND_ID)) {
+            try {
+                await this.commands.executeCommand(AI_CHAT_TOGGLE_COMMAND_ID);
+            } catch {
+                // chat command may fail silently
+            }
+        }
+        this.messageService.info(nls.localize(
+            'theia/mini-browser/elementCaptured',
+            'Captured {0}. Copied to clipboard and opened in the Element Inspector — paste it into the chat to share with the agent.',
+            element.tagName + (element.id ? '#' + element.id : '') + (element.classes.length ? '.' + element.classes.slice(0, 2).join('.') : '')
+        ));
+    }
+
+    protected formatElementForChat(element: PickedElement): string {
+        const lines: string[] = [];
+        lines.push('Selected DOM element from preview ' + element.pageUrl);
+        lines.push('DOM Path: ' + element.domPath);
+        const { top, left, width, height } = element.position;
+        lines.push(`Position: top=${top}px, left=${left}px, width=${width}px, height=${height}px`);
+        lines.push('HTML Element: ' + element.outerHTML);
+        if (element.textPreview) {
+            lines.push('Text: ' + element.textPreview);
+        }
+        return lines.join('\n');
+    }
+
+    protected createCommandButton(parent: HTMLElement, commandId: string, title: string, icon: string): HTMLElement {
+        const button = this.createWorkbenchButton(parent, title, icon);
+        this.toDispose.push(addEventListener(button, 'click', () => {
+            if (this.commands.isEnabled(commandId)) {
+                void this.commands.executeCommand(commandId).catch(() => undefined);
+            }
+        }));
+        return button;
+    }
+
+    protected createWorkbenchButton(parent: HTMLElement, title: string, icon: string): HTMLButtonElement {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.title = title;
+        button.classList.add(MiniBrowserContentStyle.WORKBENCH_BUTTON, ...codiconArray(icon));
+        parent.appendChild(button);
+        return button;
+    }
+
     protected createOpen(parent: HTMLElement): HTMLElement {
-        const button = this.onClick(this.createButton(parent, 'Open In A New Window', MiniBrowserContentStyle.OPEN), this.openEmitter);
+        const button = this.createWorkbenchButton(parent, 'Open In A New Window', 'link-external');
+        button.classList.add(MiniBrowserContentStyle.OPEN);
+        this.toDispose.push(addEventListener(button, 'click', () => this.openEmitter.fire(undefined)));
         return button;
     }
 

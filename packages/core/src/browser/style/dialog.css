@@ -146,6 +146,7 @@
 
 @media (max-width: 767px) {
   .lm-Widget.dialogOverlay {
+    z-index: 10100;
     padding: 0;
     padding-top: env(safe-area-inset-top, 0px);
     padding-right: env(safe-area-inset-right, 0px);

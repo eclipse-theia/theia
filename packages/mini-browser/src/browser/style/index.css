@@ -72,6 +72,41 @@
   opacity: var(--theia-mod-disabled-opacity);
 }
 
+.theia-mini-browser-workbench-controls {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+  margin: 0 2px 0 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--theia-widget-border, var(--theia-panel-border));
+}
+
+.theia-mini-browser-workbench-button {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+}
+
+.theia-mini-browser-workbench-button::before {
+  font-size: 18px;
+}
+
+.theia-mini-browser-workbench-button:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
 .theia-mini-browser-previous::before {
   content: "\f053";
 }
@@ -82,10 +117,6 @@
 
 .theia-mini-browser-refresh::before {
   content: "\f021";
-}
-
-.theia-mini-browser-open::before {
-  content: "\f08e";
 }
 
 .theia-mini-browser-content-area {
@@ -141,4 +172,230 @@
   border: none;
   margin: 0;
   padding: 0;
+}
+
+/* ===========================================================================
+ * Element Inspector widget (right panel) — Components / Design / CSS
+ * =========================================================================*/
+
+.theia-mini-browser-inspector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--theia-foreground);
+  background: var(--theia-editor-background);
+  font-size: var(--theia-ui-font-size1);
+  overflow: hidden;
+}
+
+.theia-mini-browser-inspector__root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.theia-mini-browser-inspector__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mini-browser-inspector__empty-icon {
+  font-size: 32px;
+  opacity: 0.6;
+}
+
+.theia-mini-browser-inspector__empty h3 {
+  margin: 0;
+  font-size: var(--theia-ui-font-size2);
+  color: var(--theia-foreground);
+}
+
+.theia-mini-browser-inspector__empty p {
+  margin: 0;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.theia-mini-browser-inspector__section {
+  border-bottom: 1px solid var(--theia-panel-border);
+  flex: 0 0 auto;
+  max-height: 30%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.theia-mini-browser-inspector__section-title {
+  padding: 6px 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  color: var(--theia-descriptionForeground);
+  background: var(--theia-sideBar-background);
+}
+
+.theia-mini-browser-inspector__tree {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.theia-mini-browser-inspector__tree-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding-right: 8px;
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-mini-browser-inspector__tree-item:hover {
+  background: var(--theia-list-hoverBackground);
+}
+
+.theia-mini-browser-inspector__tree-item--current {
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-mini-browser-inspector__tree-chevron {
+  font-size: 12px;
+  opacity: 0.55;
+}
+
+.theia-mini-browser-inspector__tree-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-mini-browser-inspector__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--theia-panel-border);
+  background: var(--theia-sideBar-background);
+  flex: 0 0 auto;
+}
+
+.theia-mini-browser-inspector__tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--theia-descriptionForeground);
+  padding: 8px 16px;
+  cursor: pointer;
+  font: inherit;
+  border-bottom: 2px solid transparent;
+}
+
+.theia-mini-browser-inspector__tab:hover {
+  color: var(--theia-foreground);
+}
+
+.theia-mini-browser-inspector__tab--active {
+  color: var(--theia-foreground);
+  border-bottom-color: var(--theia-focusBorder);
+}
+
+.theia-mini-browser-inspector__body {
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 0;
+}
+
+.theia-mini-browser-inspector__design {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.theia-mini-browser-inspector__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--theia-panel-border);
+  border-radius: 6px;
+  background: var(--theia-editorWidget-background);
+}
+
+.theia-mini-browser-inspector__group-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mini-browser-inspector__grid {
+  display: grid;
+  grid-template-columns: minmax(72px, max-content) 1fr;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+.theia-mini-browser-inspector__grid-key {
+  color: var(--theia-descriptionForeground);
+  font-family: var(--theia-monospace-font-family);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.theia-mini-browser-inspector__grid-value {
+  font-family: var(--theia-monospace-font-family);
+  font-size: 11px;
+  word-break: break-word;
+}
+
+.theia-mini-browser-inspector__pos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+
+.theia-mini-browser-inspector__pos label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mini-browser-inspector__pos label span {
+  width: 14px;
+}
+
+.theia-mini-browser-inspector__pos input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--theia-input-background);
+  color: var(--theia-input-foreground);
+  border: 1px solid var(--theia-input-border, transparent);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--theia-monospace-font-family);
+  font-size: 11px;
+}
+
+.theia-mini-browser-inspector__css {
+  margin: 0;
+  padding: 12px;
+  font-family: var(--theia-monospace-font-family);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
