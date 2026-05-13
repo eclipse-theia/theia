@@ -107,3 +107,61 @@ body {
   display: flex;
   align-items: center;
 }
+
+/*-----------------------------------------------------------------------------
+| Mobile / narrow viewport layout.
+|
+| Desktop renders the welcome page using `.flex-grid` (row) columns; at 360 px
+| those wrap awkwardly. Below 768 px we collapse everything to a single column
+| and grow tap targets so the page is usable in portrait without zooming.
+|-----------------------------------------------------------------------------*/
+
+@media (max-width: 767px) {
+  .flex-grid {
+    flex-direction: column;
+  }
+
+  .col {
+    flex: 0 0 auto;
+    align-items: stretch;
+  }
+
+  .gs-content-container {
+    padding: 16px 16px 24px;
+  }
+
+  .gs-header h1 {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+
+  .gs-sub-header {
+    display: block;
+    margin-top: 2px;
+  }
+
+  .gs-section .gs-action-container {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    line-height: 22px;
+  }
+
+  .gs-section .gs-action-container a {
+    flex: 1;
+    padding: 10px 0;
+    font-size: var(--theia-ui-font-size1, 15px);
+  }
+
+  .gs-section-header {
+    font-size: var(--theia-ui-font-size2, 17px);
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .gs-content-container {
+    padding: 14px 12px 20px;
+  }
+}

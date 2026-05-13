@@ -10,6 +10,16 @@
 }
 
 /*
+ * Monaco virtualizes quick pick rows using heights from QuickInputItemDelegate; do not
+ * inflate row min-heights (breaks scrollRange vs content). Ensure vertical pan reaches the
+ * scrollable surface on touch browsers.
+ */
+#quick-input-container .quick-input-list .monaco-scrollable-element {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+/*
  * set z-index to 0, so tabs are not above overlay widgets
  */
 .lm-TabBar.theia-app-centers {
@@ -155,7 +165,15 @@
     font-family: var(--theia-ui-font-family);
     font-size: calc(var(--theia-ui-font-size1) * 0.9) !important;
     color: var(--theia-foreground) !important;
-    white-space: inherit;
+    /*
+     * Monaco's QuickInputItemDelegate reports height 22px when there is no `detail`,
+     * even if `description` is shown. Wrapping would make rows taller than the virtual
+     * list expects and breaks scrolling / clips items — keep a single line + ellipsis.
+     */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .quick-input-list-rows
@@ -248,6 +266,45 @@
 
 .quick-input-widget input {
   background-color: var(--theia-input-background) !important;
+}
+
+/*-----------------------------------------------------------------------------
+|| Mobile / narrow viewport: render QuickInput / Command Palette as a top sheet
+|| spanning the full viewport width, instead of the desktop centered popup.
+|| Mirrors the breakpoint used by `mobile-workbench.css` so it's consistent
+|| with the rest of the mobile shell.
+||-----------------------------------------------------------------------------*/
+@media (max-width: 767px) {
+  /*
+   * The container is positioned via inline styles by Monaco's `QuickInputController`
+   * (top/left/width). Override with `!important` so we can lay out the widget as
+   * a top sheet across the full viewport, respecting iOS safe areas.
+   */
+  #quick-input-container {
+    top: env(safe-area-inset-top, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 0 max(8px, env(safe-area-inset-right, 0px)) 0
+      max(8px, env(safe-area-inset-left, 0px));
+    box-sizing: border-box;
+  }
+
+  .quick-input-widget {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 0 8px 8px !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  /* Larger touch targets for the input box. */
+  .quick-input-widget .quick-input-box .monaco-inputbox > .ibwrapper > .input,
+  .quick-input-widget .quick-input-and-message input {
+    min-height: 44px !important;
+    font-size: var(--theia-ui-font-size1) !important;
+  }
 }
 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused>.contents>.main .monaco-highlighted-label .highlight {

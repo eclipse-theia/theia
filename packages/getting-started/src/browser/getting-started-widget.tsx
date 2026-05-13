@@ -123,6 +123,10 @@ export class GettingStartedWidget extends ReactWidget {
 
     /**
      * Render the content of the widget.
+     *
+     * On narrow viewports (`@media (max-width: 767px)` in `index.css`) the layout collapses to a
+     * single vertical column with larger touch targets; the desktop two-column flex grid is left
+     * untouched on wider viewports.
      */
     protected render(): React.ReactNode {
         return <div className='gs-container'>

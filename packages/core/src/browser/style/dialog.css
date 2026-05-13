@@ -131,3 +131,117 @@
   align-content: center;
   margin-right: calc(var(--theia-ui-padding) * 1.5);
 }
+
+/*-----------------------------------------------------------------------------
+| Mobile / narrow viewport (max-width: 767px).
+|
+| The default dialog enforces `min-width: 400px` and a 70vh content area, which
+| overflows portrait phones (360–414 px). On mobile we let the dialog block
+| occupy the available width inside the viewport (minus OS safe-area insets and
+| the live virtual-keyboard inset, both already tracked by the shell), bump the
+| close button and primary buttons to 44 px touch targets, and let the control
+| panel wrap so Cancel/Open stack as full-bleed buttons when the viewport is
+| too narrow for a row.
+|-----------------------------------------------------------------------------*/
+
+@media (max-width: 767px) {
+  .lm-Widget.dialogOverlay {
+    padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: calc(
+      env(safe-area-inset-bottom, 0px) + var(--theia-mobile-keyboard-inset, 0px)
+    );
+    padding-left: env(safe-area-inset-left, 0px);
+    height: 100dvh;
+  }
+
+  .lm-Widget.dialogOverlay .dialogBlock {
+    min-width: 0;
+    width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+    max-width: 100%;
+    max-height: 100%;
+    margin: 8px;
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+
+  .lm-Widget.dialogOverlay .dialogTitle {
+    min-height: 44px;
+    padding-left: calc(var(--theia-ui-padding) * 1.5);
+    padding-right: calc(var(--theia-ui-padding) * 0.5);
+    font-size: var(--theia-ui-font-size1);
+  }
+
+  .lm-Widget.dialogOverlay .dialogTitle i.closeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 18px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .lm-Widget.dialogOverlay .dialogContent {
+    flex: 1 1 auto;
+    max-height: none;
+    padding: calc(var(--theia-ui-padding) * 1.25);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lm-Widget.dialogOverlay .dialogControl {
+    flex-wrap: wrap;
+    /* Buttons are appended in DOM order Cancel → Open (secondary then primary).
+       Row-reverse keeps the primary "Open" button on the trailing (right) edge
+       when both fit on one line — matching Android / web button conventions —
+       while still wrapping to a vertical stack with the primary action on top
+       (closer to the thumb on a phone) when the line is too narrow. */
+    flex-direction: row-reverse;
+    gap: 8px;
+    padding: calc(var(--theia-ui-padding) * 1.25);
+    min-height: auto;
+  }
+
+  /* The error node has an inline `style="flex: 2"` written by `AbstractDialog`
+     (see `dialogs.ts`) which beats any non-`!important` rule. On desktop that
+     flex grow pushes the buttons to the trailing edge; on mobile we want a
+     full-width banner instead, and a fully collapsed slot when there is no
+     validation text so the action row stays tight. */
+  .lm-Widget.dialogOverlay .dialogControl .error {
+    flex: 0 0 100% !important;
+    order: -1;
+    margin: 0;
+    min-height: 0;
+  }
+
+  .lm-Widget.dialogOverlay .dialogControl .error:empty {
+    display: none;
+  }
+
+  /* `.theia-button` ships a global `margin-left` of `var(--theia-ui-padding)*2`.
+     Inside the flex `.dialogControl` we manage spacing with `gap` instead, so
+     reset the margin to keep the gap consistent on every wrap. */
+  .lm-Widget.dialogOverlay .dialogControl .theia-button {
+    flex: 1 1 calc(50% - 4px);
+    margin: 0;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: var(--theia-ui-font-size1);
+  }
+}
+
+/* Coarse pointer (real touch devices): enforce a full 48 px target for both
+   the close glyph and the action buttons. Narrow desktop windows with a mouse
+   keep the 36/44 px targets above. */
+@media (max-width: 767px) and (pointer: coarse) {
+  .lm-Widget.dialogOverlay .dialogTitle i.closeButton {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .lm-Widget.dialogOverlay .dialogControl .theia-button {
+    min-height: 48px;
+  }
+}

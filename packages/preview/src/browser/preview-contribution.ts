@@ -39,7 +39,7 @@ export namespace PreviewCommands {
     export const OPEN = Command.toLocalizedCommand({
         id: 'preview:open',
         label: 'Open Preview',
-        iconClass: codicon('open-preview')
+        iconClass: codicon('play')
     }, 'vscode.markdown-language-features/package/markdown.preview.title');
     export const OPEN_SOURCE: Command = {
         id: 'preview.open.source',

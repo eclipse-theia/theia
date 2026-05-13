@@ -275,6 +275,107 @@
   }
 }
 
+/*-----------------------------------------------------------------------------
+|| Mobile / narrow viewport: lift notifications above the mobile bottom bar,
+|| status bar, safe area, and keyboard inset (`MobileKeyboardHelper` sets
+|| `--theia-mobile-keyboard-inset` on `document.documentElement`).
+||
+|| `--theia-mobile-bottom-bar-height` is defined on `:root` in
+|| `mobile-workbench.css` at this breakpoint so body-level overlays inherit it
+|| (it is not enough to define it only on `#theia-app-shell`).
+||
+|| Higher z-index keeps notifications above shell content / bottom bar paint order.
+||-----------------------------------------------------------------------------*/
+@media (max-width: 767px) {
+  /*
+   * Above Lumino/shell layers (sheets use ~9600) and edge swipe zones (9650),
+   * below onboarding (10000). Notification *center* (full message stream)
+   * stays anchored to the bottom — that surface is opened from the bell icon
+   * and benefits from being thumb-reachable.
+   */
+  .theia-notifications-container.theia-notification-center {
+    z-index: 9800;
+    bottom: calc(
+      var(--theia-mobile-bottom-bar-height, 56px) +
+        var(--theia-statusBar-height, 34px) + 8px +
+        env(safe-area-inset-bottom, 0px) +
+        var(--theia-mobile-keyboard-inset, 0px)
+    );
+    right: max(8px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-width: none;
+  }
+
+  /*
+   * Toasts (transient pop-ups) anchor to the bottom above the mobile bottom
+   * bar, status bar, safe area, and keyboard inset — same as the notification
+   * center — so they remain thumb-reachable and don't collide with the top
+   * menu / safe-area inset.
+   */
+  .theia-notifications-container.theia-notification-toasts {
+    z-index: 9800;
+    bottom: calc(
+      var(--theia-mobile-bottom-bar-height, 56px) +
+        var(--theia-statusBar-height, 34px) + 8px +
+        env(safe-area-inset-bottom, 0px) +
+        var(--theia-mobile-keyboard-inset, 0px)
+    );
+    top: auto;
+    right: max(8px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-width: none;
+  }
+
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-list-item-container {
+    margin-top: 6px;
+    margin-bottom: 0;
+  }
+
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-list-item {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-list-item-content {
+    margin: 8px 10px;
+  }
+
+  /* Lock toast messages to a couple of lines; the user can open the full
+     notification center to see overflow. */
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-message {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  @media (max-width: 767px) {
+    .theia-notifications-container.theia-notification-toasts
+      .theia-notification-list-item {
+      background: color-mix(
+        in srgb,
+        var(--theia-notifications-background) 78%,
+        transparent
+      );
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      backdrop-filter: blur(16px) saturate(140%);
+    }
+  }
+}
+
 .theia-notification-item-progress {
   display: block;
 }

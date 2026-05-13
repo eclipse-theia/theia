@@ -23,11 +23,19 @@ import { BundlerGenerator } from './bundler-generator';
 
 export class FrontendGenerator extends AbstractGenerator {
 
+    /** Browser/OS chrome color when `prefers-color-scheme: dark` (VS Code editor background). */
+    protected static readonly PWA_THEME_COLOR_DARK = '#1e1e1e';
+    /** Browser/OS chrome color when `prefers-color-scheme: light`. */
+    protected static readonly PWA_THEME_COLOR_LIGHT = '#ffffff';
+
     async generate(options?: GeneratorOptions): Promise<void> {
         await this.write(this.pck.frontend('index.html'), await this.compileIndexHtml(this.pck.targetFrontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(this.pck.targetFrontendModules, this.pck.targetFrontendPreloadModules));
         await this.write(this.pck.frontend('secondary-window.html'), this.compileSecondaryWindowHtml());
         await this.write(this.pck.frontend('secondary-index.js'), this.compileSecondaryIndexJs(this.pck.secondaryWindowModules));
+        if (this.pck.isBrowser() || this.pck.isBrowserOnly()) {
+            await this.write(this.pck.frontend('manifest.webmanifest'), this.compileWebAppManifest());
+        }
         if (this.pck.isElectron()) {
             await this.write(this.pck.frontend('preload.js'), this.compilePreloadJs());
         }
@@ -68,19 +76,94 @@ export class FrontendGenerator extends AbstractGenerator {
         const preferEsbuild = await new BundlerGenerator(this.pck, this.options).preferESBuild();
         const appName = this.pck.props.frontend.config.applicationName;
         const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
+        const isWebTarget = this.pck.isBrowser() || this.pck.isBrowserOnly();
         const iconLines = appIcon
             ? `
   <meta name="application-icon" content="${this.escapeHtmlAttribute(appIcon)}">
-  <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">`
+  <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">
+  <link rel="apple-touch-icon" href="${this.escapeHtmlAttribute(appIcon)}">`
             : '';
         const splashBranding = appIcon ? this.compileSplashBrandingScript() : '';
+        const pwaHead = isWebTarget ? this.compilePwaHeadFragment() : '';
         return `
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">${pwaHead}
   <meta name="application-name" content="${this.escapeHtmlAttribute(appName)}">${iconLines}${splashBranding}
   ${preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : ''}
   <title>${this.escapeHtmlAttribute(appName)}</title>`;
+    }
+
+    /**
+     * Web App Manifest for installable PWA (browser targets only). Icons reuse `applicationIcon`.
+     */
+    protected compileWebAppManifest(): string {
+        const appName = this.pck.props.frontend.config.applicationName;
+        const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
+        const shortName = appName.length > 12 ? appName.slice(0, 12).trimEnd() : appName;
+        const manifest: Record<string, unknown> = {
+            name: appName,
+            short_name: shortName,
+            display: 'standalone',
+            start_url: './',
+            scope: './',
+            theme_color: FrontendGenerator.PWA_THEME_COLOR_DARK,
+            background_color: FrontendGenerator.PWA_THEME_COLOR_DARK
+        };
+        if (appIcon) {
+            const mime = this.inferImageMimeType(appIcon);
+            const iconEntry: { src: string; sizes: string; type?: string; purpose: string } = {
+                src: appIcon,
+                sizes: '192x192 512x512',
+                purpose: 'any maskable'
+            };
+            if (mime !== undefined) {
+                iconEntry.type = mime;
+            }
+            manifest.icons = [iconEntry];
+        }
+        return JSON.stringify(manifest, undefined, 4) + '\n';
+    }
+
+    protected inferImageMimeType(iconPath: string): string | undefined {
+        const lower = iconPath.split('?')[0].toLowerCase();
+        if (lower.endsWith('.svg')) {
+            return 'image/svg+xml';
+        }
+        if (lower.endsWith('.png')) {
+            return 'image/png';
+        }
+        if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+            return 'image/jpeg';
+        }
+        if (lower.endsWith('.webp')) {
+            return 'image/webp';
+        }
+        if (lower.endsWith('.ico')) {
+            return 'image/x-icon';
+        }
+        return undefined;
+    }
+
+    protected compilePwaHeadFragment(): string {
+        const light = FrontendGenerator.PWA_THEME_COLOR_LIGHT;
+        const js = [
+            '(function(){',
+            `function syncPwaChrome(){var d=window.matchMedia('(prefers-color-scheme: dark)').matches;`,
+            `var tc=d?${JSON.stringify(FrontendGenerator.PWA_THEME_COLOR_DARK)}:${JSON.stringify(light)};`,
+            `var sb=d?'black-translucent':'default';`,
+            'var m=document.querySelector(\'meta[name="theme-color"]\');if(m){m.setAttribute(\'content\',tc);}',
+            'm=document.querySelector(\'meta[name="apple-mobile-web-app-status-bar-style"]\');if(m){m.setAttribute(\'content\',sb);}',
+            '}',
+            'syncPwaChrome();',
+            'try{window.matchMedia(\'(prefers-color-scheme: dark)\').addEventListener(\'change\',syncPwaChrome);}catch(_){}',
+            '})();'
+        ].join('');
+        return `
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="${light}">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <script type="text/javascript">${js}</script>`;
     }
 
     /**

@@ -31,7 +31,10 @@
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-right: env(safe-area-inset-right, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* `--theia-mobile-keyboard-inset` is set by MobileKeyboardHelper from
+       window.visualViewport so the bottom activity bar stays visible above the
+       virtual keyboard on iOS / Android. Defaults to 0 when the keyboard is closed. */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--theia-mobile-keyboard-inset, 0px));
     padding-left: env(safe-area-inset-left, 0px);
   }
 
@@ -40,6 +43,10 @@
   .mac,
   .windows,
   .linux {
+    /* Same height as `#theia-app-shell.theia-mod-mobile-one-column` bottom strip.
+       Defined here so `document.body` descendants (e.g. `.theia-notifications-overlay`)
+       inherit it — shell-only variables do not apply outside `#theia-app-shell`. */
+    --theia-mobile-bottom-bar-height: 56px;
     --theia-ui-font-size1: 15px;
     --theia-content-font-size: 15px;
     --theia-content-line-height: 24px;
@@ -191,16 +198,29 @@
   display: none !important;
 }
 
-/* Full-width editor stack; side panels overlay as full-bleed sheets when expanded.
-   `!important` is required to override the inline `position/width/top/left/height` Lumino sets on layout children. */
-#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden),
-#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden) {
+/* Full-width editor stack; side panels overlay as full-bleed sheets.
+   The panels are always `position: fixed` in mobile mode so the slide-in/out transform animation
+   can run on collapse/expand. `!important` is required because Lumino's BoxLayout writes inline
+   `position/top/left/width/height` to layout children on every fit.
+
+   Sheets render with a rounded top edge + soft drop-shadow + (when supported) a backdrop-blur
+   so the user perceives them as a layered "bottom-sheet" surface, in line with current iOS /
+   Material 3 conventions. Browsers without `backdrop-filter` fall back to a fully opaque
+   sideBar background (declared on the base rule below), so legibility is preserved everywhere. */
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel {
   position: fixed !important;
   z-index: 9600;
   top: calc(env(safe-area-inset-top, 0px) + var(--theia-private-menubar-height, 40px)) !important;
+  /* The sheet runs all the way to the bottom of the viewport, overlaying both
+     `#theia-mobile-bottom-bar` and `#theia-statusBar`. While a sheet is open
+     the user reaches the bottom-bar actions by dismissing it (backdrop tap,
+     drag-handle swipe, back gesture). Only the OS safe-area inset and the
+     virtual-keyboard inset (`--theia-mobile-keyboard-inset`, set by
+     `MobileKeyboardHelper`) are reserved so the panel content remains visible
+     above the on-screen keyboard. */
   bottom: calc(
-    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-statusBar-height, 34px) +
-      env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-bottom, 0px) + var(--theia-mobile-keyboard-inset, 0px)
   ) !important;
   left: 0 !important;
   right: 0 !important;
@@ -208,7 +228,207 @@
   max-width: 100% !important;
   height: auto !important;
   box-sizing: border-box;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.35);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  overflow: hidden;
+  overflow: clip;
+  clip-path: inset(0);
+  -webkit-clip-path: inset(0);
+  isolation: isolate;
+  box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.45);
+  background: var(--theia-sideBar-background, var(--theia-editor-background));
+  transition:
+    transform 220ms cubic-bezier(.2, .8, .2, 1),
+    visibility 220ms linear;
+  will-change: transform;
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  #theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel,
+  #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel {
+    background: color-mix(
+      in srgb,
+      var(--theia-sideBar-background, var(--theia-editor-background)) 78%,
+      transparent
+    );
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+}
+
+/* Keep the sheet chrome flush; the sheet panel itself owns the rounded top edge. */
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .lm-TabBar,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .lm-TabBar,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .lm-TabBar-content-container,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .lm-TabBar-content-container,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .lm-TabBar-content,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .lm-TabBar-content,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .lm-TabBar-tab,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .lm-TabBar-tab,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .theia-app-activity-bar-row,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .theia-app-activity-bar-row,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .theia-sidepanel-toolbar,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .theia-sidepanel-toolbar,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .theia-sidebar-menu,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .theia-sidebar-menu {
+  border-radius: 0 !important;
+}
+
+/* Hide the side panel's inner Lumino `DockPanel` TabBar entirely on mobile.
+   The dock panel is created in `single-document` mode and the activity strip already lets the
+   user switch between views; this TabBar would duplicate the same tabs (Explorer / Search /
+   SCM / Debug / Extensions / Testing / plugin views) as closable tiles right under the activity
+   strip, doubling vertical chrome. */
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel
+  .lm-DockPanel-tabBar,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel
+  .lm-DockPanel-tabBar {
+  display: none !important;
+}
+
+/* Override Lumino's `.lm-mod-hidden { display: none }` so the slide-out animation can run.
+   The panel stays in the DOM but is translated off-screen with no pointer events. */
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel.lm-mod-hidden,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel.lm-mod-hidden {
+  display: block !important;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel.theia-mod-collapsed,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel.lm-mod-hidden {
+  transform: translate3d(-100%, 0, 0);
+  visibility: hidden;
+  pointer-events: none;
+  /* Reclaim the override from the global collapsed rule so animation is visible. */
+  width: 100vw !important;
+  max-width: 100% !important;
+  opacity: 1;
+  overflow: visible !important;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel.theia-mod-collapsed,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel.lm-mod-hidden {
+  transform: translate3d(100%, 0, 0);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden),
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden) {
+  transform: translate3d(0, 0, 0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Floating close button (one shared instance, appended to `document.body`). Visible whenever a
+   side sheet is expanded. Sits in the menubar / safe-area strip above the sheet so it never
+   overlaps the activity strip icons inside the sheet. Horizontally centered on the viewport.
+
+   Rendered as a bare X glyph — no background, border, or shadow. The button element itself is
+   kept at 36 × 36 px so the tappable area remains large (well above the 44 px-with-margin iOS
+   minimum) even though only the icon is visible. */
+.theia-mobile-sheet-close-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--theia-foreground, rgba(255, 255, 255, 0.95));
+  cursor: pointer;
+  z-index: 9750;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 200ms ease,
+    transform 200ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.theia-mobile-sheet-close-btn.theia-mod-visible {
+  display: inline-flex;
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Bare glyph styled like an embossed control: layered `text-shadow` plus a `drop-shadow` filter
+   make the X readable on any background that can show through (status bar wallpaper, light
+   editor chrome, glass sheet, etc.). The stacked shadows create a soft 1 px outline + a longer
+   drop-cast for depth, mimicking how iOS / macOS render unframed glyphs over translucent
+   surfaces. `filter: drop-shadow` complements `text-shadow` because some browsers anti-alias
+   shadows differently for filter vs. text — combined they hold up across Safari and Chrome. */
+.theia-mobile-sheet-close-btn-icon {
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 600;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.55),
+    0 1px 1px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.45);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+  transition: transform 160ms cubic-bezier(.2, .8, .2, 1), color 160ms ease;
+}
+
+.theia-mobile-sheet-close-btn:hover .theia-mobile-sheet-close-btn-icon,
+.theia-mobile-sheet-close-btn:focus-visible .theia-mobile-sheet-close-btn-icon {
+  color: #ffffff;
+  transform: scale(1.06);
+}
+
+.theia-mobile-sheet-close-btn:active {
+  transform: translateX(-50%) scale(0.9);
+}
+
+.theia-mobile-sheet-close-btn:active .theia-mobile-sheet-close-btn-icon {
+  transform: scale(0.94);
+}
+
+.theia-mobile-sheet-close-btn:focus {
+  outline: none;
+}
+
+.theia-mobile-sheet-close-btn:focus-visible {
+  outline: 2px solid var(--theia-focusBorder, rgba(120, 200, 255, 0.95));
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* Light-theme override — flip the shadow palette so the X reads against bright sheet headers /
+   wallpapers. We swap to a white halo (so the glyph appears to "punch out") combined with a soft
+   black drop for definition. */
+.theia-light .theia-mobile-sheet-close-btn,
+body.theia-light .theia-mobile-sheet-close-btn {
+  color: rgba(20, 20, 24, 0.92);
+}
+.theia-light .theia-mobile-sheet-close-btn-icon,
+body.theia-light .theia-mobile-sheet-close-btn-icon {
+  text-shadow:
+    0 0 2px rgba(255, 255, 255, 0.85),
+    0 1px 1px rgba(255, 255, 255, 0.7),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
 }
 
 /* “Recents” style: only the active editor tab in the main tab bar */
@@ -220,23 +440,38 @@
   max-width: 100%;
 }
 
-/* Dimmed overlay behind sheets (node appended to document.body) */
+/* Dimmed overlay behind sheets (appended to `document.body`). Opacity-based fade is required so
+   the timing matches the sheet's transform animation. A subtle backdrop-blur (where supported)
+   produces the modern "frosted glass" sheet effect without affecting the sheet's own opacity. */
 .theia-mobile-sheet-backdrop {
   position: fixed;
   inset: 0;
   z-index: 9500;
   background: rgba(0, 0, 0, 0.42);
-  display: none;
+  opacity: 0;
   pointer-events: none;
+  transition: opacity 220ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
+  .theia-mobile-sheet-backdrop {
+    background: rgba(0, 0, 0, 0.28);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
 }
 
 .theia-mobile-sheet-backdrop.theia-mod-visible {
-  display: block;
+  opacity: 1;
   pointer-events: auto;
 }
 
 /* Agent-first bottom bar (Lumino widget inserted into the shell box layout right above #theia-statusBar).
-   Visually fused with the status bar below: shares its background/foreground tokens. */
+   Visually fused with the status bar below: shares its background/foreground tokens. When the
+   browser supports `backdrop-filter`, we replace the opaque background with a translucent token
+   + blur so the bar feels like a floating glass surface above the editor — matching the same
+   frosted look applied to side sheets. */
 .theia-mobile-bottom-activity-bar {
   display: flex;
   flex-direction: row;
@@ -256,6 +491,18 @@
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .theia-mobile-bottom-activity-bar {
+    background: color-mix(
+      in srgb,
+      var(--theia-statusBar-background) 72%,
+      transparent
+    );
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+  }
 }
 
 .theia-mobile-bottom-activity-bar::-webkit-scrollbar {
@@ -338,11 +585,15 @@
   cursor: default;
 }
 
-/* Edge swipe targets (body children) */
+/* Edge swipe targets (body children).
+   Bottom is lifted by `--theia-mobile-keyboard-inset` so the touch zone never sits behind the virtual keyboard. */
 .theia-mobile-edgeSwipeZone {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + var(--theia-private-menubar-height, 40px));
-  bottom: calc(var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-statusBar-height, 34px) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-statusBar-height, 34px) +
+      env(safe-area-inset-bottom, 0px) + var(--theia-mobile-keyboard-inset, 0px)
+  );
   width: 20px;
   z-index: 9650;
   touch-action: none;
@@ -354,4 +605,298 @@
 
 .theia-mobile-edgeSwipeZone-right {
   right: 0;
+}
+
+/*-----------------------------------------------------------------------------
+| Mobile first-launch onboarding overlay (see
+| `mobile-onboarding-tutorial-contribution.ts`).
+|
+| The overlay covers the viewport at a higher z-index than the side sheets
+| (9600) but its backdrop & spotlight have `pointer-events: none` so the
+| underlying gesture (left-edge swipe, tap on Agent, …) being taught can still
+| be performed. The tooltip and its buttons opt back in to pointer events.
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  font-family: var(--theia-ui-font-family);
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-onboarding-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  animation: theia-mobile-onboarding-fade-in 180ms ease-out both;
+}
+
+.theia-mobile-onboarding-spotlight {
+  position: absolute;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--theia-focusBorder, rgba(120, 200, 255, 0.95)),
+    0 0 0 9999px rgba(0, 0, 0, 0.55),
+    0 12px 32px rgba(0, 0, 0, 0.35);
+  transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease;
+  pointer-events: none;
+}
+
+/* The spotlight uses a giant ring shadow that visually replaces the backdrop;
+   hide the backdrop element while a spotlight is shown so the two don't compound. */
+.theia-mobile-onboarding-spotlight[style*="display: block"] ~ .theia-mobile-onboarding-backdrop,
+.theia-mobile-onboarding-overlay:has(.theia-mobile-onboarding-spotlight[style*="display: block"]) .theia-mobile-onboarding-backdrop {
+  display: none;
+}
+
+.theia-mobile-onboarding-demo {
+  position: absolute;
+  pointer-events: none;
+}
+
+.theia-mobile-onboarding-demo.theia-mod-swipe-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theia-editorWidget-foreground, var(--theia-foreground));
+}
+
+.theia-mobile-onboarding-finger {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25), 0 6px 18px rgba(0, 0, 0, 0.35);
+  flex: 0 0 32px;
+  animation: theia-mobile-onboarding-swipe 1600ms ease-in-out infinite;
+}
+
+.theia-mobile-onboarding-demo .theia-mobile-onboarding-arrow {
+  font-size: 22px;
+  opacity: 0.85;
+  animation: theia-mobile-onboarding-arrow-fade 1600ms ease-in-out infinite;
+}
+
+.theia-mobile-onboarding-demo.theia-mod-tap .theia-mobile-onboarding-pulse {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.85);
+  animation: theia-mobile-onboarding-tap 1400ms ease-out infinite;
+}
+
+@keyframes theia-mobile-onboarding-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes theia-mobile-onboarding-swipe {
+  0%   { transform: translateX(0);     opacity: 0.0; }
+  15%  {                                opacity: 1.0; }
+  85%  { transform: translateX(160px); opacity: 1.0; }
+  100% { transform: translateX(160px); opacity: 0.0; }
+}
+
+@keyframes theia-mobile-onboarding-arrow-fade {
+  0%, 20% { opacity: 0; transform: translateX(-4px); }
+  60%     { opacity: 1; transform: translateX(0); }
+  100%    { opacity: 0; transform: translateX(6px); }
+}
+
+@keyframes theia-mobile-onboarding-tap {
+  0%   { transform: scale(0.6);  box-shadow: 0 0 0 0   rgba(255, 255, 255, 0.55); }
+  70%  { transform: scale(1.15); box-shadow: 0 0 0 18px rgba(255, 255, 255, 0); }
+  100% { transform: scale(0.6);  box-shadow: 0 0 0 0   rgba(255, 255, 255, 0); }
+}
+
+.theia-mobile-onboarding-tooltip {
+  position: absolute;
+  pointer-events: auto;
+  max-width: min(360px, calc(100vw - 24px));
+  width: calc(100vw - 24px);
+  background: var(--theia-editorWidget-background, var(--theia-sideBar-background, #2b2b2b));
+  color: var(--theia-editorWidget-foreground, var(--theia-foreground));
+  border: 1px solid var(--theia-editorWidget-border, var(--theia-panel-border, transparent));
+  border-radius: 14px;
+  padding: 16px 16px 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  animation: theia-mobile-onboarding-fade-in 220ms ease-out both;
+  box-sizing: border-box;
+}
+
+.theia-mobile-onboarding-tooltip.theia-mod-place-top { /* tooltip above target */ }
+.theia-mobile-onboarding-tooltip.theia-mod-place-bottom { /* tooltip below target */ }
+.theia-mobile-onboarding-tooltip.theia-mod-place-center { /* centered, no anchor */ }
+
+.theia-mobile-onboarding-progress {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--theia-descriptionForeground);
+  margin-bottom: 4px;
+}
+
+.theia-mobile-onboarding-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  line-height: 1.25;
+}
+
+.theia-mobile-onboarding-body {
+  font-size: 14px;
+  line-height: 20px;
+  margin: 0 0 14px 0;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.theia-mobile-onboarding-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.theia-mobile-onboarding-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--theia-foreground);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.theia-mobile-onboarding-btn.theia-mod-skip {
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-onboarding-btn.theia-mod-back {
+  border-color: var(--theia-panel-border, transparent);
+  background: var(--theia-button-secondaryBackground, transparent);
+  color: var(--theia-button-secondaryForeground, var(--theia-foreground));
+}
+
+.theia-mobile-onboarding-btn.theia-mod-next {
+  background: var(--theia-button-background, #0e639c);
+  color: var(--theia-button-foreground, #fff);
+}
+
+.theia-mobile-onboarding-btn:hover,
+.theia-mobile-onboarding-btn:focus-visible {
+  filter: brightness(1.08);
+  outline: none;
+}
+
+.theia-mobile-onboarding-btn:active {
+  filter: brightness(0.95);
+}
+
+/* Wider screens that still match the mobile media query (e.g. 600 px tablets in portrait)
+   shrink the tooltip to a card width centered in the viewport. */
+@media (min-width: 480px) and (max-width: 767px) {
+  .theia-mobile-onboarding-tooltip {
+    width: min(420px, calc(100vw - 48px));
+  }
+}
+
+/*-----------------------------------------------------------------------------
+| Code keyboard accessory bar.
+| Floating row with Tab / Esc / arrows / brackets shown above the virtual
+| keyboard while a Monaco editor textarea is focused. Built by
+| MobileKeyboardHelper; appended to document.body and positioned with `bottom`
+| set to the live keyboard inset.
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-keyboard-accessory {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9700;
+  display: none;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 40px;
+  padding: 4px 6px;
+  gap: 4px;
+  background: var(--theia-editorWidget-background, var(--theia-statusBar-background));
+  color: var(--theia-editorWidget-foreground, var(--theia-statusBar-foreground));
+  border-top: 1px solid var(--theia-editorWidget-border, var(--theia-statusBar-border, transparent));
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  /* iOS treats taps inside a fixed bar that the keyboard "owns" as scroll attempts;
+     opting out keeps key buttons immediately tappable. */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.theia-mobile-keyboard-accessory.theia-mod-visible {
+  display: flex;
+}
+
+.theia-mobile-keyboard-accessory::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.theia-mobile-keyboard-accessory-btn {
+  flex: 0 0 auto;
+  min-width: 40px;
+  min-height: 36px;
+  padding: 0 12px;
+  margin: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--theia-button-secondaryBackground, rgba(255, 255, 255, 0.08));
+  color: inherit;
+  font-family: var(--theia-monospace-font-family, monospace);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 100ms ease;
+}
+
+.theia-mobile-keyboard-accessory-btn:active {
+  background: var(--theia-button-secondaryHoverBackground, rgba(255, 255, 255, 0.16));
+}
+
+/*-----------------------------------------------------------------------------
+| iOS Safari triggers a viewport zoom whenever a focused input has a font size
+| smaller than 16px. The mobile breakpoint above sets `.theia-input` to 15px
+| (matching --theia-ui-font-size1) which is otherwise good for density. Bump
+| inputs to 16px on iOS only via `-webkit-touch-callout` (a property only
+| implemented in iOS WebKit) so other platforms keep the tighter sizing.
+|-----------------------------------------------------------------------------*/
+
+@media (max-width: 767px) {
+  @supports (-webkit-touch-callout: none) {
+    .theia-input,
+    input.theia-input,
+    select.theia-input,
+    textarea.theia-input {
+      font-size: 16px;
+    }
+  }
 }

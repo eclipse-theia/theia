@@ -20,6 +20,7 @@ import { ContextMenuRenderer } from '../context-menu-renderer';
 import { BrowserMenuBarContribution, BrowserMainMenuFactory } from './browser-menu-plugin';
 import { BrowserContextMenuRenderer } from './browser-context-menu-renderer';
 import { BrowserMenuNodeFactory } from './browser-menu-node-factory';
+import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MenuNodeFactory } from '../../common';
 
 export default new ContainerModule(bind => {
@@ -29,4 +30,6 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(BrowserMenuBarContribution);
     bind(BrowserMenuNodeFactory).toSelf().inSingletonScope();
     bind(MenuNodeFactory).toService(BrowserMenuNodeFactory);
+    bind(LongPressContextMenuContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(LongPressContextMenuContribution);
 });

@@ -41,7 +41,7 @@ export namespace MiniBrowserCommands {
     export const PREVIEW = Command.toLocalizedCommand({
         id: 'mini-browser.preview',
         label: 'Open Preview',
-        iconClass: codicon('open-preview')
+        iconClass: codicon('play')
     }, 'vscode.markdown-language-features/package/markdown.preview.title');
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source',

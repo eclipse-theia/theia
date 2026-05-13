@@ -111,6 +111,10 @@ export class ApplicationPackageManager {
     async copy(): Promise<void> {
         await fs.ensureDir(this.pck.lib('frontend'));
         await fs.copy(this.pck.frontend('index.html'), this.pck.lib('frontend', 'index.html'));
+        const webManifest = this.pck.frontend('manifest.webmanifest');
+        if (await fs.pathExists(webManifest)) {
+            await fs.copy(webManifest, this.pck.lib('frontend', 'manifest.webmanifest'));
+        }
         const secondaryHtml = this.pck.frontend('secondary-window.html');
         if (await fs.pathExists(secondaryHtml)) {
             await fs.copy(secondaryHtml, this.pck.lib('frontend', 'secondary-window.html'));
@@ -126,6 +130,7 @@ export class ApplicationPackageManager {
      * and copy them into `lib/frontend`. Does not run webpack. After one full `build`, each `start` refreshes
      * HTML (and meta) so `IDE_APPLICATION_NAME` / `IDE_APPLICATION_ICON` apply without rebundling; optional
      * `media/` next to `package.json` is synced to `lib/frontend/media` for paths like `./media/icon.png`.
+     * Browser targets also refresh `manifest.webmanifest` for the PWA.
      */
     async refreshFrontendStaticFiles(options: GeneratorOptions = {}): Promise<void> {
         await new FrontendGenerator(this.pck, options).generate();

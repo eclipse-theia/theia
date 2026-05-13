@@ -24,6 +24,8 @@ import { nls } from '../../common/nls';
 import { FrontendApplication } from '../frontend-application';
 import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { ApplicationShell } from './application-shell';
+import { MobileHaptics } from './mobile-haptics';
+import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -81,13 +83,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected get bottomBar(): HTMLElement | undefined { return this.bottomBarWidget?.node; }
     protected leftEdge: HTMLElement | undefined;
     protected rightEdge: HTMLElement | undefined;
+    protected closeButton: HTMLButtonElement | undefined;
+    protected keyboardHelper: MobileKeyboardHelper | undefined;
     protected savedSplitSizes: number[] | undefined;
     protected mobileActive = false;
     protected snapRaf = 0;
     protected shellHooked = false;
 
-    protected leftSwipeDownStartY = 0;
-    protected rightSwipeDownStartY = 0;
     protected leftEdgeTouchStartX = 0;
     protected rightEdgeTouchStartX = 0;
 
@@ -195,12 +197,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.rightEdge.parentElement.removeChild(this.rightEdge);
         }
         this.rightEdge = undefined;
-        const leftNode = this.shell.leftPanelHandler.container.node;
-        const rightNode = this.shell.rightPanelHandler.container.node;
-        leftNode.removeEventListener('touchstart', this.onLeftPanelTouchStart);
-        leftNode.removeEventListener('touchend', this.onLeftPanelTouchEnd);
-        rightNode.removeEventListener('touchstart', this.onRightPanelTouchStart);
-        rightNode.removeEventListener('touchend', this.onRightPanelTouchEnd);
+        this.removeCloseButton();
+        this.keyboardHelper?.dispose();
+        this.keyboardHelper = undefined;
     }
 
     protected ensureOverlayElements(): void {
@@ -236,12 +235,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.rightEdge.addEventListener('touchend', this.onRightEdgeTouchEnd, { passive: true });
             document.body.appendChild(this.rightEdge);
         }
-        const leftNode = this.shell.leftPanelHandler.container.node;
-        const rightNode = this.shell.rightPanelHandler.container.node;
-        leftNode.addEventListener('touchstart', this.onLeftPanelTouchStart, { passive: true });
-        leftNode.addEventListener('touchend', this.onLeftPanelTouchEnd, { passive: true });
-        rightNode.addEventListener('touchstart', this.onRightPanelTouchStart, { passive: true });
-        rightNode.addEventListener('touchend', this.onRightPanelTouchEnd, { passive: true });
+        this.ensureCloseButton();
+        if (!this.keyboardHelper) {
+            this.keyboardHelper = new MobileKeyboardHelper(this.shell.node);
+            this.keyboardHelper.install();
+        }
         this.refreshBottomBar();
         this.updateBackdropVisibility();
     }
@@ -283,6 +281,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected readonly onBackdropClick = (): void => {
+        MobileHaptics.fire(MobileHaptics.LIGHT);
         void this.shell.collapsePanel('left');
         void this.shell.collapsePanel('right');
     };
@@ -294,6 +293,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected readonly onLeftEdgeTouchEnd = (e: TouchEvent): void => {
         const x = e.changedTouches[0]?.clientX ?? 0;
         if (x - this.leftEdgeTouchStartX > 40) {
+            MobileHaptics.fire(MobileHaptics.MEDIUM);
             void this.shell.leftPanelHandler.expand();
         }
     };
@@ -305,34 +305,61 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected readonly onRightEdgeTouchEnd = (e: TouchEvent): void => {
         const x = e.changedTouches[0]?.clientX ?? 0;
         if (this.rightEdgeTouchStartX - x > 40) {
+            MobileHaptics.fire(MobileHaptics.MEDIUM);
             void this.shell.rightPanelHandler.expand();
         }
     };
 
-    protected readonly onLeftPanelTouchStart = (e: TouchEvent): void => {
-        this.leftSwipeDownStartY = e.changedTouches[0]?.clientY ?? 0;
-    };
-
-    protected readonly onLeftPanelTouchEnd = (e: TouchEvent): void => {
-        if (!this.shell.isExpanded('left')) {
+    /**
+     * Floating close button rendered into `document.body` and visible whenever any side sheet is
+     * expanded. Sits in the safe-area/menubar strip above the sheet so it does not overlap the
+     * activity strip icons; horizontally centered. A single instance handles both sides — tapping
+     * collapses whichever sheet is currently open (left, right, or both).
+     */
+    protected ensureCloseButton(): void {
+        if (this.closeButton?.isConnected) {
+            this.updateCloseButtonVisibility();
             return;
         }
-        const y = e.changedTouches[0]?.clientY ?? 0;
-        if (y - this.leftSwipeDownStartY > 72) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'theia-mobile-sheet-close-btn';
+        button.setAttribute('aria-label', nls.localize('theia/core/mobileSheetClose', 'Close panel'));
+        const icon = document.createElement('span');
+        icon.className = 'theia-mobile-sheet-close-btn-icon codicon codicon-close';
+        icon.setAttribute('aria-hidden', 'true');
+        button.appendChild(icon);
+        button.addEventListener('click', this.onCloseButtonClick);
+        document.body.appendChild(button);
+        this.closeButton = button;
+        this.updateCloseButtonVisibility();
+    }
+
+    protected removeCloseButton(): void {
+        if (this.closeButton) {
+            this.closeButton.removeEventListener('click', this.onCloseButtonClick);
+            this.closeButton.parentElement?.removeChild(this.closeButton);
+            this.closeButton = undefined;
+        }
+    }
+
+    protected updateCloseButtonVisibility(): void {
+        if (!this.closeButton) {
+            return;
+        }
+        const anySide = this.shell.isExpanded('left') || this.shell.isExpanded('right');
+        this.closeButton.classList.toggle('theia-mod-visible', anySide);
+        this.closeButton.setAttribute('aria-hidden', anySide ? 'false' : 'true');
+        // Tab-focus only when visible so the button doesn't end up in the focus order while hidden.
+        this.closeButton.tabIndex = anySide ? 0 : -1;
+    }
+
+    protected readonly onCloseButtonClick = (): void => {
+        MobileHaptics.fire(MobileHaptics.MEDIUM);
+        if (this.shell.isExpanded('left')) {
             void this.shell.collapsePanel('left');
         }
-    };
-
-    protected readonly onRightPanelTouchStart = (e: TouchEvent): void => {
-        this.rightSwipeDownStartY = e.changedTouches[0]?.clientY ?? 0;
-    };
-
-    protected readonly onRightPanelTouchEnd = (e: TouchEvent): void => {
-        if (!this.shell.isExpanded('right')) {
-            return;
-        }
-        const y = e.changedTouches[0]?.clientY ?? 0;
-        if (y - this.rightSwipeDownStartY > 72) {
+        if (this.shell.isExpanded('right')) {
             void this.shell.collapsePanel('right');
         }
     };
@@ -350,11 +377,35 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.snapCenterFullWidth();
                 this.refreshBottomBar();
                 this.updateBackdropVisibility();
+                this.resetSheetScroll('left');
+                this.resetSheetScroll('right');
             };
             void Promise.all([
                 this.shell.leftPanelHandler.state.pendingUpdate,
                 this.shell.rightPanelHandler.state.pendingUpdate,
             ]).then(snap, snap);
+        });
+    }
+
+    /**
+     * Reset the scroll position of any virtualised list inside the side panel container so the user
+     * always lands on the top of the view when they re-open a sheet or switch tabs. Targets:
+     * `react-virtuoso` scrollers (file tree, search results, SCM, etc.) plus generic `.ps`
+     * (perfect-scrollbar) containers used by Theia views.
+     */
+    protected resetSheetScroll(side: 'left' | 'right'): void {
+        if (!this.shell.isExpanded(side)) {
+            return;
+        }
+        const container = side === 'left' ? this.shell.leftPanelHandler.container : this.shell.rightPanelHandler.container;
+        const root = container.node;
+        const scrollers = root.querySelectorAll<HTMLElement>(
+            '[data-virtuoso-scroller="true"], .body.ps, .ps[tabindex]'
+        );
+        scrollers.forEach(el => {
+            if (el.scrollTop > 0) {
+                el.scrollTop = 0;
+            }
         });
     }
 
@@ -407,13 +458,14 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         const anySide = this.shell.isExpanded('left') || this.shell.isExpanded('right');
         this.backdrop.classList.toggle('theia-mod-visible', anySide);
         this.backdrop.setAttribute('aria-hidden', anySide ? 'false' : 'true');
+        this.updateCloseButtonVisibility();
     }
 
     /** Fixed agent-first actions for the mobile bottom bar. Mirrors the prototype in the design spec. */
     protected getMobileBottomButtons(): MobileBottomButton[] {
         return [
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
-            { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-preview', commandId: MINI_BROWSER_OPEN_URL },
+            { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
             { id: 'plan', label: nls.localize('theia/core/mobileBottomBar/plan', 'Plan'), icon: 'codicon-checklist' },
             { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
             { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
@@ -485,6 +537,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected onMobileBottomButtonClick(def: MobileBottomButton): void {
+        MobileHaptics.fire(MobileHaptics.LIGHT);
         // The side panels render as full-bleed sheets on mobile (`position: fixed; width: 100vw`).
         // If one is open when the user picks an action that targets the main editor area, the sheet
         // would visually cover the resulting widget (e.g. the mini-browser preview). Collapse them
