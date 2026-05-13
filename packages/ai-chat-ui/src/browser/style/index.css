@@ -7,6 +7,57 @@
   flex: 1;
 }
 
+.theia-AIChatTabs {
+  align-items: center;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 4px 6px 0;
+}
+
+.theia-AIChatTab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--theia-foreground);
+  cursor: pointer;
+  display: flex;
+  flex: 0 1 auto;
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 6px 4px 8px;
+  white-space: nowrap;
+}
+
+.theia-AIChatTab:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-AIChatTab-active {
+  border-bottom-color: var(--theia-focusBorder);
+  font-weight: 600;
+}
+
+.theia-AIChatTabLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-AIChatTabClose {
+  border-radius: 3px;
+  flex: 0 0 auto;
+  padding: 1px;
+}
+
+.theia-AIChatTabClose:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
 .chat-input-widget>.ps__rail-x,
 .chat-input-widget>.ps__rail-y {
   display: none !important;

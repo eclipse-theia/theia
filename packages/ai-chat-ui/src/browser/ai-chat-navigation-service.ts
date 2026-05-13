@@ -41,7 +41,7 @@ export class AIChatNavigationService {
                 this.handleSessionDeleted(event.sessionId);
                 return;
             }
-            if (this.isNavigating) { return; }
+            if (this.isNavigating || (isActiveSessionChangedEvent(event) && event.skipNavigation)) { return; }
             if (isActiveSessionChangedEvent(event)) {
                 this.handleActiveChange(event.sessionId);
             }

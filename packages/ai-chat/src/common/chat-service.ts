@@ -71,6 +71,7 @@ export interface ChatSession {
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
+    isUserVisible?: boolean;
     /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
     rootSessionId?: string;
 }
@@ -79,6 +80,7 @@ export interface ActiveSessionChangedEvent {
     type: 'activeChange';
     sessionId: string | undefined;
     focus?: boolean;
+    skipNavigation?: boolean;
 }
 
 export function isActiveSessionChangedEvent(obj: unknown): obj is ActiveSessionChangedEvent {
@@ -113,6 +115,8 @@ export interface SessionRenamedEvent {
 
 export interface SessionOptions {
     focus?: boolean;
+    isUserVisible?: boolean;
+    skipNavigation?: boolean;
 }
 
 export const PinChatAgent = Symbol('PinChatAgent');
@@ -214,7 +218,8 @@ export class ChatServiceImpl implements ChatService {
             lastInteraction: new Date(),
             model,
             isActive: true,
-            pinnedAgent
+            pinnedAgent,
+            isUserVisible: options?.isUserVisible ?? true
         };
         this._sessions.push(session);
         this.setupAutoSaveForSession(session);
@@ -515,7 +520,8 @@ export class ChatServiceImpl implements ChatService {
             lastInteraction: new Date(serialized.saveDate),
             model,
             isActive: false,
-            pinnedAgent
+            pinnedAgent,
+            isUserVisible: true
         };
         this._sessions.push(session);
         this.setupAutoSaveForSession(session);

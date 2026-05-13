@@ -118,8 +118,6 @@ export class AgentDelegationTool implements ToolProvider {
             let newSession;
             let childModelDisposable: Disposable | undefined;
             try {
-                // FIXME: this creates a new conversation visible in the UI (Panel), which we don't want
-                // It is not possible to start a session without specifying a location (default=Panel)
                 const chatService = this.getChatService();
 
                 // Store the current active session to restore it after delegation
@@ -127,7 +125,7 @@ export class AgentDelegationTool implements ToolProvider {
 
                 newSession = chatService.createSession(
                     undefined,
-                    { focus: false },
+                    { focus: false, isUserVisible: false },
                     agent
                 );
 

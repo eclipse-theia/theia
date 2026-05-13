@@ -721,6 +721,20 @@ export class AIChatInputWidget extends ReactWidget {
         this._initialValue = value;
     }
 
+    getInputValue(): string {
+        if (this.editorRef && !this.editorRef.document.isDisposed()) {
+            return this.editorRef.document.textEditorModel.getValue();
+        }
+        return this._initialValue ?? '';
+    }
+
+    setInputValue(value: string): void {
+        this._initialValue = value;
+        if (this.editorRef && !this.editorRef.document.isDisposed()) {
+            this.editorRef.document.textEditorModel.setValue(value);
+        }
+    }
+
     protected onDisposeForChatModel = new DisposableCollection();
     protected _chatModel: ChatModel;
 
