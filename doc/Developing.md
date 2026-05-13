@@ -126,7 +126,7 @@ git clone https://github.com/eclipse-theia/theia \
     && npm install \
     && npm run download:plugins \
     && npm run build:browser \
-    && npm run start:browser --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
+    && npm run start:browser -- -- --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
 ```
 
 Start your browser on <https://localhost:3000>.
