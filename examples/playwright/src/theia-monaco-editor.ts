@@ -54,10 +54,8 @@ export class TheiaMonacoEditor extends TheiaPageObject {
 
     async waitForVisible(): Promise<void> {
         await this.locator.waitFor({ state: 'visible' });
-        // wait until lines are created
-        await this.locator.evaluate(editor =>
-            editor.querySelectorAll(this.LINES_SELECTOR).length > 0
-        );
+        // wait until at least one line is rendered
+        await this.locator.locator(this.LINES_SELECTOR).first().waitFor({ state: 'visible' });
     }
 
     /**
@@ -108,21 +106,14 @@ export class TheiaMonacoEditor extends TheiaPageObject {
 
         // Line not in viewport, scroll to reveal it
         await this.locator.click();
-        await this.page.keyboard.press('Control+Home');
-        await this.locator.locator(this.LINES_SELECTOR).first().waitFor({ state: 'visible' });
-
-        index = await this.findLineIndex(lineNumber);
-        if (index >= 0) {
-            return this.locator.locator(this.LINES_SELECTOR).nth(index);
-        }
-
-        // Line might be near the end, try scrolling there
-        await this.page.keyboard.press('Control+End');
-        await this.locator.locator(this.LINES_SELECTOR).first().waitFor({ state: 'visible' });
-
-        index = await this.findLineIndex(lineNumber);
-        if (index >= 0) {
-            return this.locator.locator(this.LINES_SELECTOR).nth(index);
+        for (const key of ['Control+Home', 'Control+End']) {
+            await this.page.keyboard.press(key);
+            // Allow Monaco to re-render after scrolling
+            await this.page.waitForTimeout(200);
+            index = await this.findLineIndex(lineNumber);
+            if (index >= 0) {
+                return this.locator.locator(this.LINES_SELECTOR).nth(index);
+            }
         }
 
         throw new Error(`Could not find line number ${lineNumber}`);

@@ -20,7 +20,7 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
-import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
 import { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from '../common/todo-tool';
 import { withToolCallConfirmation } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
@@ -89,6 +89,9 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
 
+    @inject(OpenerService)
+    protected openerService: OpenerService;
+
     @inject(ToolInvocationRegistry)
     protected toolInvocationRegistry: ToolInvocationRegistry;
 
@@ -117,13 +120,16 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
         return (
             <TodoListWithConfirmation
                 todos={todos}
-                response={response}
-                confirmationMode={confirmationMode}
-                toolConfirmationManager={this.toolConfirmationManager}
-                toolRequest={toolRequest}
-                chatId={chatId}
-                requestCanceled={parentNode.response.isCanceled}
-                contextMenuRenderer={this.contextMenuRenderer}
+                toolConfirmation={{
+                    response,
+                    confirmationMode,
+                    toolConfirmationManager: this.toolConfirmationManager,
+                    toolRequest,
+                    chatId,
+                    requestCanceled: parentNode.response.isCanceled,
+                    contextMenuRenderer: this.contextMenuRenderer,
+                    openerService: this.openerService
+                }}
             />
         );
     }

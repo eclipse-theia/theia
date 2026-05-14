@@ -209,7 +209,7 @@ class PluginImpl implements Plugin {
             loader: 'js'
         }));
         build.onLoad({ filter: /@vscode[\\\/]ripgrep[\\\/]lib[\\\/]index\.js$/ }, async () => ({
-            contents: 'exports.rgPath = require("path").join(__dirname, `./native/rg${process.platform === "win32" ? ".exe" : ""}`);',
+            contents: 'export const rgPath = require("path").join(__dirname, `./native/rg${process.platform === "win32" ? ".exe" : ""}`);',
             loader: 'js'
         }));
         build.onLoad({ filter: /node_modules[/\\]node-pty[/\\]lib[/\\]utils\.js$/ }, async args => {
@@ -273,7 +273,8 @@ class PluginImpl implements Plugin {
 
 async function copyRipgrep(outdir: string): Promise<void> {
     const fileName = process.platform === 'win32' ? 'rg.exe' : 'rg';
-    const sourceFile = join(resolveModulePath('@vscode/ripgrep'), 'bin', fileName);
+    const platformPkg = `@vscode/ripgrep-${process.platform}-${process.arch}`;
+    const sourceFile = join(resolveModulePath(platformPkg), 'bin', fileName);
     const targetFile = path.join(outdir, 'native', fileName);
     await copyExecutable(sourceFile, targetFile);
 }

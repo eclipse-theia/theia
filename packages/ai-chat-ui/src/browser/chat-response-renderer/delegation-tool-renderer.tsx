@@ -26,7 +26,7 @@ import { ResponseNode } from '../chat-tree-view';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
 import { withToolCallConfirmation } from './tool-confirmation';
 import { extractJsonStringField } from './toolcall-utils';
-import { CompositeTreeNode, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { CompositeTreeNode, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ContributionProvider, DisposableCollection, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 
@@ -50,6 +50,9 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
 
     @inject(ContextMenuRenderer)
     protected contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(OpenerService)
+    protected openerService: OpenerService;
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
     protected chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
@@ -100,12 +103,16 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
             subChatWidgetFactory={this.subChatWidgetFactory}
             contextMenuRenderer={this.contextMenuRenderer}
             chatResponsePartRenderers={this.chatResponsePartRenderers}
-            response={response}
-            confirmationMode={confirmationMode}
-            toolConfirmationManager={this.toolConfirmationManager}
-            toolRequest={toolRequest}
-            chatId={chatId}
-            requestCanceled={parentNode.response.isCanceled}
+            toolConfirmation={{
+                response,
+                confirmationMode,
+                toolConfirmationManager: this.toolConfirmationManager,
+                toolRequest,
+                chatId,
+                requestCanceled: parentNode.response.isCanceled,
+                contextMenuRenderer: this.contextMenuRenderer,
+                openerService: this.openerService
+            }}
         />;
     }
 }

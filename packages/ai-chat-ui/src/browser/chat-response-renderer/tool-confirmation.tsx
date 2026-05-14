@@ -16,13 +16,15 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolRequest } from '@theia/ai-core';
 import { CommandMenu, ContextExpressionMatcher, MenuPath } from '@theia/core/lib/common/menu';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { MarkdownRender } from './markdown-part-renderer';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 export interface CountdownTimerProps {
     response: ToolCallChatResponseContent;
@@ -430,9 +432,10 @@ export interface ToolConfirmationProps extends Pick<ToolConfirmationCallbacks, '
     onAllow: (scope?: ConfirmationScope) => void;
     onDeny: (scope?: ConfirmationScope, reason?: string) => void;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService: OpenerService;
 }
 
-export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, toolRequest, onAllow, onDeny, contextMenuRenderer }) => {
+export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, toolRequest, onAllow, onDeny, contextMenuRenderer, openerService }) => {
     const [state, setState] = React.useState<ToolConfirmationState>('waiting');
 
     const handleAllow = React.useCallback((scope: ConfirmationScope) => {
@@ -461,16 +464,30 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
         );
     }
 
+    const toolNameContent = (
+        <>
+            <span className="label">{nls.localizeByDefault('Tool')}:</span>
+            <span className="value">{response.name}</span>
+        </>
+    );
+
     return (
         <div className="theia-tool-confirmation">
             <div className="theia-tool-confirmation-header">
                 <span className={codicon('shield')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
             </div>
             <div className="theia-tool-confirmation-info">
-                <div className="theia-tool-confirmation-name">
-                    <span className="label">{nls.localizeByDefault('Tool')}:</span>
-                    <span className="value">{response.name}</span>
-                </div>
+                {toolRequest?.description ? (
+                    <details className="theia-tool-confirmation-name">
+                        <summary>{toolNameContent}</summary>
+                        <div className="theia-tool-confirmation-description">
+                            {toolRequest.description}
+                        </div>
+                    </details>
+                ) : (
+                    <div className="theia-tool-confirmation-name">{toolNameContent}</div>
+                )}
+                <ToolArgsDisplay args={response.arguments} openerService={openerService} />
             </div>
             <ToolConfirmationActions
                 toolName={response.name ?? 'unknown'}
@@ -484,6 +501,33 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, to
     );
 };
 
+interface ToolArgsDisplayProps {
+    args: string | undefined;
+    openerService: OpenerService;
+}
+
+const ToolArgsDisplay: React.FC<ToolArgsDisplayProps> = ({ args, openerService }) => {
+    const trimmedArgs = args?.trim();
+    if (!trimmedArgs || trimmedArgs === '{}') {
+        // eslint-disable-next-line no-null/no-null
+        return null;
+    }
+    const summaryLabel = condenseArguments(trimmedArgs) ?? '\u2026';
+    return (
+        <details className="theia-tool-confirmation-args">
+            <summary>
+                <span className="label">{nls.localizeByDefault('Arguments')}:</span>
+                <span className="theia-tool-confirmation-args-summary">{summaryLabel}</span>
+            </summary>
+            <MarkdownRender
+                text={formatArgsForTooltip(trimmedArgs)}
+                openerService={openerService}
+                className="theia-tool-confirmation-args-content"
+            />
+        </details>
+    );
+};
+
 export interface WithToolCallConfirmationProps {
     response: ToolCallChatResponseContent;
     confirmationMode: ToolConfirmationPreferenceMode;
@@ -494,12 +538,17 @@ export interface WithToolCallConfirmationProps {
     showArgsTooltip?: (response: ToolCallChatResponseContent, target: HTMLElement | undefined) => void;
     requestCanceled: boolean;
     contextMenuRenderer: ContextMenuRenderer;
+    openerService: OpenerService;
 }
 
 export function withToolCallConfirmation<P extends object>(
     WrappedComponent: React.ComponentType<P>
-): React.FC<P & WithToolCallConfirmationProps> {
-    const WithConfirmation: React.FC<P & WithToolCallConfirmationProps> = props => {
+): React.FC<P & { toolConfirmation: WithToolCallConfirmationProps }> {
+    const WithConfirmation: React.FC<P & { toolConfirmation: WithToolCallConfirmationProps }> = props => {
+        const {
+            toolConfirmation,
+            ...componentProps
+        } = props;
         const {
             response,
             confirmationMode,
@@ -510,8 +559,8 @@ export function withToolCallConfirmation<P extends object>(
             showArgsTooltip,
             requestCanceled,
             contextMenuRenderer,
-            ...componentProps
-        } = props;
+            openerService
+        } = toolConfirmation;
 
         const { confirmationState } = useToolConfirmationState(response, confirmationMode);
         const pendingRef = React.useRef<HTMLElement | undefined>(undefined);
@@ -572,6 +621,7 @@ export function withToolCallConfirmation<P extends object>(
                     onAllow={handleAllow}
                     onDeny={handleDeny}
                     contextMenuRenderer={contextMenuRenderer}
+                    openerService={openerService}
                 />
             );
         }
