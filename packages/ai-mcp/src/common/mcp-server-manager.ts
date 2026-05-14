@@ -185,6 +185,22 @@ export interface RemoteMCPServerDescription extends BaseMCPServerDescription {
      * Optional additional headers to include in requests to the server.
      */
     headers?: Record<string, string>;
+
+    /**
+     * Optional shell command that emits credential JSON to stdout — same
+     * shape as `git credential-helper` / `kubectl exec-credential`. When
+     * a `serverAuthToken` or any `headers` value is the sentinel
+     * `${helper}` (or `${helper:fieldName}`), the
+     * `HeadersHelperCredentialResolver` invokes this command with
+     * `MCP_SERVER_NAME` and `MCP_SERVER_URL` in env, parses the JSON,
+     * and uses the `field` (or explicit `fieldName`) as the lookup key.
+     *
+     * Hard-gated on workspace trust: the helper only runs when the
+     * frontend has pushed `workspaceTrustLevel: 'trusted'` to the
+     * backend. Untrusted / unknown workspaces fall through silently so
+     * an attacker-supplied project config can't run arbitrary code.
+     */
+    headersHelper?: string;
 }
 
 export type MCPServerDescription = LocalMCPServerDescription | RemoteMCPServerDescription;

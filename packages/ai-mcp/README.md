@@ -151,11 +151,18 @@ Bind as a service: `bind(MCPTransportProvider).toService(WebSocketTransportProvi
 
 ### `MCPCredentialResolver`
 
-Resolve credential-shaped values (`${env:NAME}`, `${mcp:credential}`, or any custom sentinel) by returning the real value or `undefined` to defer to the next resolver in priority order. Typical contributions:
+Resolve credential-shaped values (`${env:NAME}`, `${env:NAME:-default}`, `${helper}`, `${mcp:credential}`, or any custom sentinel) by returning the real value or `undefined` to defer to the next resolver in priority order.
+
+Built-in resolvers:
+
+- `PreferenceCredentialResolver` (priority 0) — fallback that reads literal values from preferences.
+- `EnvCredentialResolver` (priority 50) — `${env:VAR}` and `${env:VAR:-default}` (POSIX-shell-style fallback when the env var is unset or empty).
+- `HeadersHelperCredentialResolver` (priority 75) — runs a shell command from the server description's `headersHelper` field, parses its JSON output, and returns the requested key. Modeled on `git credential-helper` and `kubectl exec-credential`. **Hard-gated on workspace trust**: refuses to spawn unless the frontend has pushed `workspaceTrustLevel: 'trusted'` to the backend.
+
+Typical plugin contributions:
 
 - OAuth flow launching a browser and persisting tokens in the OS keychain.
 - Reading from HashiCorp Vault, 1Password CLI, AWS Secrets Manager.
-- Environment variable interpolation (shipped as `EnvCredentialResolver`, priority 50).
 
 ```ts
 @injectable()
@@ -172,6 +179,22 @@ export class VaultCredentialResolver implements MCPCredentialResolver {
     }
 }
 ```
+
+Server-config example using the headers helper:
+
+```jsonc
+{
+  "mcp.servers": {
+    "internal-gateway": {
+      "serverUrl": "https://gw.internal/mcp",
+      "serverAuthToken": "${helper}",
+      "headersHelper": "/usr/local/bin/get-mcp-token --server $MCP_SERVER_NAME"
+    }
+  }
+}
+```
+
+The helper is invoked with `MCP_SERVER_NAME` and `MCP_SERVER_URL` in env, must write a JSON object to stdout, and must exit 0. The resolver looks up `request.field` (here `serverAuthToken`) as the key in that JSON object — or you can override the lookup key with `${helper:keyName}`.
 
 ### `MCPToolFilter`
 

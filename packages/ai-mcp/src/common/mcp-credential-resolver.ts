@@ -14,6 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { MCPServerDescription } from './mcp-server-manager';
+import { MCPWorkspaceTrustLevel } from './mcp-tool-filter';
+
 /**
  * A request for a single credential, issued by the MCP server manager when
  * starting or (re-)authenticating a server. Resolvers can use the `kind`
@@ -25,6 +28,16 @@ export interface MCPCredentialRequest {
 
     /** The remote server URL for HTTP/SSE servers; `undefined` for local stdio. */
     serverUrl?: string;
+
+    /**
+     * The full server description. Optional for back-compat with plugins
+     * that construct {@link MCPCredentialRequest}s directly; the in-tree
+     * `MCPServer.resolveCredential` always populates it. Resolvers that
+     * need fields beyond `serverName` / `serverUrl` (e.g. the
+     * `headersHelper` shell command on a remote description) read them
+     * from here.
+     */
+    serverDescription?: MCPServerDescription;
 
     /**
      * Symbolic field identifier. For the built-in resolver this matches the
@@ -47,6 +60,20 @@ export interface MCPCredentialRequest {
      * resolve purely from external sources can leave this unread.
      */
     literal?: string;
+
+    /**
+     * Workspace trust level at the moment the resolver is consulted, as
+     * pushed down by the frontend (see
+     * `MCPServerManager.setWorkspaceTrustLevel`). Optional for back-compat;
+     * the in-tree `MCPServer.resolveCredential` always populates it.
+     *
+     * Resolvers that execute external commands or hit external services
+     * with credentials sourced from project-scoped configuration (e.g.
+     * the headers-helper shell command) MUST refuse to act on values
+     * other than `'trusted'` — otherwise an untrusted workspace can run
+     * arbitrary code via its server config.
+     */
+    workspaceTrustLevel?: MCPWorkspaceTrustLevel;
 }
 
 export const MCPCredentialResolver = Symbol('MCPCredentialResolver');

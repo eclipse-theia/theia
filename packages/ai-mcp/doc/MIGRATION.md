@@ -95,8 +95,33 @@ credential shape as a sentinel in the server description:
 ```
 
 The built-in `EnvCredentialResolver` (priority 50) rewrites this at
-startup via `process.env.JIRA_TOKEN`. For enterprise vaults, register your
-own resolver that matches `${vault:...}` at a higher priority.
+startup via `process.env.JIRA_TOKEN`. POSIX-shell-style fallbacks are
+also supported — `${env:JIRA_BASE_URL:-https://jira.example.com}` uses
+the env var when set and non-empty, otherwise the literal default.
+For enterprise vaults, register your own resolver that matches
+`${vault:...}` at a higher priority.
+
+For dynamic credentials (short-lived tokens, vault round-trips,
+helper-script integrations), use the built-in
+`HeadersHelperCredentialResolver` (priority 75) by configuring a shell
+command on the server description:
+
+```jsonc
+{
+  "internal-gateway": {
+    "serverUrl": "https://gw.internal/mcp",
+    "serverAuthToken": "${helper}",
+    "headersHelper": "/usr/local/bin/get-mcp-token --server $MCP_SERVER_NAME"
+  }
+}
+```
+
+The helper is invoked with `MCP_SERVER_NAME` and `MCP_SERVER_URL` in
+env, must write a JSON object to stdout, and must exit `0`. The
+resolver looks up `request.field` (here `serverAuthToken`) as the
+JSON key — override with `${helper:explicitKey}` if the JSON shape
+differs. The helper is **only run when the workspace is trusted**
+(see "Headers helper trust gating" below).
 
 ### 5. Delete the fork
 
@@ -207,6 +232,33 @@ Resolver chains run **priority-descending**. If your resolver returns
 this to compose resolvers — e.g. an OAuth resolver that only handles
 `${oauth:...}` at priority 100, with `EnvCredentialResolver` (priority 50)
 handling `${env:...}` and the preference fallback at priority 0.
+
+### Headers helper trust gating
+
+`HeadersHelperCredentialResolver` runs an arbitrary shell command from
+the server description. Because that description can come from
+project-scoped settings (workspace `.theia/settings.json`, multi-root
+workspace files), an attacker-supplied project could otherwise execute
+arbitrary code by configuring a malicious `headersHelper`.
+
+The resolver hard-refuses unless `request.workspaceTrustLevel ===
+'trusted'`. Trust state is sourced from
+`@theia/workspace`'s frontend-only `WorkspaceTrustService` and pushed
+to the backend via `MCPServerManager.setWorkspaceTrustLevel`. When no
+frontend has pushed a value (RPC-only consumers, headless deployments,
+race on startup before trust resolves) the level is `'unknown'` and
+the resolver behaves as if `'restricted'` — fail closed.
+
+Plugin-supplied resolvers that execute external commands or hit
+external services with credentials sourced from project-scoped config
+should mirror this guard. The `workspaceTrustLevel` field is part of
+`MCPCredentialRequest` for exactly this reason.
+
+Plugin-supplied resolvers that read from operator-scoped sources
+(env vars, OS keychain, vault tokens injected by the operator's
+sidecar) generally do **not** need the gate, because the credential
+material is already operator-owned rather than workspace-supplied —
+the threat model is different.
 
 ### Connection-scoped container
 

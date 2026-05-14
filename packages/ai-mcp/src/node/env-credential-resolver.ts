@@ -21,22 +21,30 @@ import {
 } from '../common/mcp-credential-resolver';
 
 /**
- * Pattern matching `${env:NAME}` — the NAME capture group is the
- * environment variable to look up via `process.env`.
+ * Pattern matching `${env:NAME}` and `${env:NAME:-default}`. Capture
+ * groups: 1 = env var name, 2 = default value (only present when the
+ * `:-default` suffix is given). The default segment greedily consumes
+ * any non-`}` character; embedded `}` are not supported because the
+ * sentinel is parsed as a whole-string token.
+ *
+ * Default-value syntax mirrors POSIX shell (`${VAR:-default}`) so
+ * operators familiar with bash / sh expansion get a familiar shape.
  */
-const ENV_SENTINEL_RE = /^\$\{env:([A-Za-z_][A-Za-z0-9_]*)\}$/;
+const ENV_SENTINEL_RE = /^\$\{env:([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}$/;
 
 /**
- * Resolves credentials written as `${env:VAR_NAME}` in the server
- * description by looking up `process.env[VAR_NAME]`. Runs at the middle
- * of the resolver chain (priority 50) so plugin resolvers with higher
- * priority can still win, and the lowest-priority preference resolver
- * remains a fallback.
+ * Resolves credentials written as `${env:VAR_NAME}` (or
+ * `${env:VAR_NAME:-default}`) in the server description by looking up
+ * `process.env[VAR_NAME]`. Runs at the middle of the resolver chain
+ * (priority 50) so plugin resolvers with higher priority can still win,
+ * and the lowest-priority preference resolver remains a fallback.
  *
  * Intended use cases:
  *   - Keeping API keys out of settings.json by pointing at an env var
  *     the operator exports from their shell or systemd unit.
  *   - CI/CD where credentials are already in the environment.
+ *   - Optional values with a sensible fallback
+ *     (`${env:GITHUB_BASE_URL:-https://api.github.com}`).
  *
  * The resolver matches on the **value** of the request's `field`: the
  * server manager reads `description.serverAuthToken` (or whatever other
@@ -60,13 +68,17 @@ export class EnvCredentialResolver implements MCPCredentialResolver {
             return undefined;
         }
         const value = process.env[match[1]];
-        if (!value || value.length === 0) {
-            console.warn(
-                `[@theia/ai-mcp] EnvCredentialResolver: server "${request.serverName}" ` +
-                `asked for env var "${match[1]}" but it is not set.`,
-            );
-            return undefined;
+        if (value && value.length > 0) {
+            return value;
         }
-        return value;
+        const fallback = match[2];
+        if (fallback !== undefined) {
+            return fallback;
+        }
+        console.warn(
+            `[@theia/ai-mcp] EnvCredentialResolver: server "${request.serverName}" ` +
+            `asked for env var "${match[1]}" but it is not set.`,
+        );
+        return undefined;
     }
 }

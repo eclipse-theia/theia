@@ -192,8 +192,10 @@ export class MCPServer {
                 const resolved = await resolver.resolve({
                     serverName: description.name,
                     serverUrl,
+                    serverDescription: description,
                     field,
                     literal,
+                    workspaceTrustLevel: this.workspaceTrustLevel,
                 });
                 if (resolved !== undefined) {
                     return resolved;

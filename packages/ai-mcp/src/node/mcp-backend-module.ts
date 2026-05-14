@@ -34,6 +34,7 @@ import { PassthroughToolFilter } from './passthrough-tool-filter';
 import { DefaultMCPClientFactory } from './default-mcp-client-factory';
 import { PreferenceCredentialResolver } from './preference-credential-resolver';
 import { EnvCredentialResolver } from './env-credential-resolver';
+import { HeadersHelperCredentialResolver } from './headers-helper-credential-resolver';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { McpServersPreferenceSchema } from '../common/mcp-preferences';
 import { MCPServerManagerServerImpl } from './mcp-server-manager-server';
@@ -77,6 +78,8 @@ const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBacken
     bind(MCPCredentialResolver).toService(PreferenceCredentialResolver);
     bind(EnvCredentialResolver).toSelf().inSingletonScope();
     bind(MCPCredentialResolver).toService(EnvCredentialResolver);
+    bind(HeadersHelperCredentialResolver).toSelf().inSingletonScope();
+    bind(MCPCredentialResolver).toService(HeadersHelperCredentialResolver);
 
     bind(PassthroughToolFilter).toSelf().inSingletonScope();
     bind(MCPToolFilter).toService(PassthroughToolFilter);

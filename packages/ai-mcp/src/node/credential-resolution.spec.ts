@@ -52,6 +52,31 @@ describe('@theia/ai-mcp credential resolution (RFC phase C)', () => {
             expect(value).to.be.undefined;
         });
 
+        it('returns the default when the env var is unset and `:-default` is given', async () => {
+            const value = await resolver.resolve({
+                serverName: 'x', field: 'serverAuthToken',
+                literal: '${env:__MCP_NEVER_SET:-fallback-token}',
+            });
+            expect(value).to.equal('fallback-token');
+        });
+
+        it('prefers the env var over the default when both are present', async () => {
+            process.env.__MCP_TEST_VAR = 'real';
+            const value = await resolver.resolve({
+                serverName: 'x', field: 'serverAuthToken',
+                literal: '${env:__MCP_TEST_VAR:-fallback}',
+            });
+            expect(value).to.equal('real');
+        });
+
+        it('returns an empty default when the env var is unset and `:-` is given with no value', async () => {
+            const value = await resolver.resolve({
+                serverName: 'x', field: 'serverAuthToken',
+                literal: '${env:__MCP_NEVER_SET:-}',
+            });
+            expect(value).to.equal('');
+        });
+
         it('does not match plain values', async () => {
             const value = await resolver.resolve({
                 serverName: 'x', field: 'serverAuthToken',
