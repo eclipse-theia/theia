@@ -105,6 +105,27 @@ Search the internet for XYZ
 
 Four contribution points let plugins customise MCP transport, credentials, tool registration, and client instantiation without forking this package. The contribution shape mirrors Theia's standard `ContributionProvider<T>` pattern. Default implementations ship with `priority: 0` and reproduce today's behaviour bit-for-bit, so deployments without any plugin bindings see zero change.
 
+### Responsibility flow
+
+The four extension points compose into a one-direction pipeline. Reading them in order makes it easier to reason about what each plugin is allowed to see and decide:
+
+1. **Transport** — `MCPTransportProvider` opens the connection boundary to the MCP server (stdio, Streamable HTTP, in-process, plugin-defined WebSocket / gRPC, etc.). Operates on raw bytes and the `MCPServerDescription`.
+2. **Credentials** — `MCPCredentialResolver` supplies identity (token, OAuth bearer, signed header) **at the transport layer**. The chain returns a string that the transport injects into outbound headers. Resolved credentials never enter the LLM prompt context — they exist only as transport headers, by construction.
+3. **Tool filter** — `MCPToolFilter` decides which tools advertised by the now-connected server are registered into Theia's `ToolInvocationRegistry`. Suppress, rename, rewrite description, or stamp provenance — but the tool's input schema and runtime behaviour are not the filter's concern.
+4. **Runtime hooks** — `MCPClient`'s event surface (`onDidAddTools`, `onClose`, …) lets consumers observe inventory + connection state. Plugin-supplied `MCPClientFactory` implementations can wrap the SDK client to add cross-cutting concerns (metrics, distributed tracing, structured logging) without re-implementing transport / credentials / filtering.
+
+The strict left-to-right separation matters for the security story: a plugin that wants to gate "which tools may run when workspace trust is restricted" goes through the **filter** layer, not by intercepting credentials or rewriting messages on the transport. A plugin that wants to inject a per-tenant header goes through the **credential** layer, not by rewriting the description.
+
+### Gateway-aware deployments
+
+In production deployments where Theia talks to an MCP gateway (e.g. [agentgateway](https://github.com/agentgateway/agentgateway) — a Linux Foundation proxy that fronts MCP, A2A, and LLM providers), the gateway typically:
+
+- Federates many upstream MCP servers into a single Theia-visible endpoint.
+- Resolves per-tenant credentials internally (the credential the Theia-side resolver returns is "talk to the gateway", not per-server).
+- Applies its own server-side tool filtering / RBAC policies.
+
+The four contribution points still apply, but their responsibilities shift. Theia's `MCPCredentialResolver` returns the gateway credential; the gateway resolves the actual upstream creds. Theia's `MCPToolFilter` becomes a **defense-in-depth fallback** — it sees the federated tool inventory the gateway exposes and can suppress / rename / annotate further. The takeaway: the four-layer model holds for both direct-to-server and gateway-fronted topologies, with the same plugin contracts.
+
 ### `MCPTransportProvider`
 
 Plug in a transport implementation keyed on `MCPServerDescription`. Built-in providers handle stdio and Streamable HTTP; plugins can register WebSocket, in-process, gRPC, or daemon-proxied transports at a higher priority.
