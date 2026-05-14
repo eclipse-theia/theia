@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --ignore-scripts",
+  "buildCommand": "npm run vercel:bootstrap && npm run compile && npm run build:browser",
+  "outputDirectory": "examples/browser/lib/frontend"
+}
