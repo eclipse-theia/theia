@@ -138,6 +138,23 @@ so that `MCPServer` can unwrap the underlying SDK `Transport`. Widening
 `MCPTransport` so fully-custom transports are first-class is tracked as a
 follow-up.
 
+### In-process MCP servers
+
+For plugin-bundled MCP servers that live in the same Node.js process as
+Theia's backend, prefer the `InProcessMCPServerDescription` variant
+(`{ name, kind: 'in-process' }`) plus `createInProcessTransportPair`
+over a subprocess + stdio. The helper returns two linked SDK transports;
+wrap one in your plugin's own `MCPTransportProvider` (returning the
+client side as the `MCPTransport`) and pass the other to
+`@modelcontextprotocol/sdk/server`'s `Server.connect()`. See the README
+section "In-process MCP servers" for a worked example.
+
+If you register an `InProcessMCPServerDescription` but no
+`MCPTransportProvider` matches, `MCPServer.start()` throws a
+descriptive error rather than failing with `transport is undefined`
+deeper in the SDK — the contribution wiring is a configuration error
+and should surface immediately.
+
 ### Client factory consumption
 
 Phase B wires the `MCPClientFactory` contribution point, but `MCPServer`

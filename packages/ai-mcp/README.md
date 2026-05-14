@@ -149,6 +149,38 @@ export class WebSocketTransportProvider implements MCPTransportProvider {
 
 Bind as a service: `bind(MCPTransportProvider).toService(WebSocketTransportProvider);`
 
+#### In-process MCP servers
+
+For plugin-bundled MCP servers that live in the same Node.js process as Theia's backend, use `createInProcessTransportPair` instead of spawning a subprocess. The helper returns two linked endpoints — one wrapped as an `MCPTransport` for Theia, the other as a raw SDK `Transport` ready for `@modelcontextprotocol/sdk/server`'s `Server.connect()`. Closes the gap where stdio is overkill (extra process, serialization round-trip) and HTTP is wrong (the server is right there).
+
+Server descriptions for in-process servers use the `InProcessMCPServerDescription` variant — `{ name, kind: 'in-process' }` — and are usually registered programmatically via `MCPServerManager.addOrUpdateServer` from a `BackendApplicationContribution.onStart` rather than written into user preferences.
+
+```ts
+import { createInProcessTransportPair } from '@theia/ai-mcp/lib/node/in-process-transport';
+import { Server } from '@modelcontextprotocol/sdk/server';
+import { isInProcessMCPServerDescription } from '@theia/ai-mcp';
+
+@injectable()
+export class GitMCPTransportProvider implements MCPTransportProvider {
+    readonly id = 'git-in-process';
+    readonly priority = 10;
+
+    matches(description: MCPServerDescription): boolean {
+        return isInProcessMCPServerDescription(description) && description.name === 'git';
+    }
+
+    async create(description: MCPServerDescription): Promise<MCPTransport> {
+        const { client, server } = createInProcessTransportPair();
+        const sdkServer = new Server({ name: 'git', version: '1.0.0' }, { capabilities: { tools: {} } });
+        registerGitTools(sdkServer);  // your plugin's tool registrations
+        await sdkServer.connect(server);
+        return client;
+    }
+}
+```
+
+There is intentionally no built-in `InProcessTransportProvider` or "in-process server registry" contribution point: a plugin's own `MCPTransportProvider` already has the right scope for owning its server's lifecycle, and adding a fifth contribution point would expand the public surface for marginal ergonomic gain.
+
 ### `MCPCredentialResolver`
 
 Resolve credential-shaped values (`${env:NAME}`, `${env:NAME:-default}`, `${helper}`, `${mcp:credential}`, or any custom sentinel) by returning the real value or `undefined` to defer to the next resolver in priority order.

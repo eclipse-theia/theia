@@ -18,7 +18,7 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import {
-    isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription,
+    isInProcessMCPServerDescription, isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription,
     MCPServerStatus, ToolInformation,
     MCPTransportProvider, MCPToolFilter, MCPToolFilterContext, MCPToolFilterOutcome, MCPWorkspaceTrustLevel,
     MCPClientFactory, MCPCredentialResolver,
@@ -432,6 +432,19 @@ export class MCPServer {
                     this.transport = new SSEClientTransport(new URL(this.description.serverUrl));
                 }
             }
+        } else if (isInProcessMCPServerDescription(this.description)) {
+            // In-process descriptions have no command and no serverUrl —
+            // they MUST be served by a plugin-contributed MCPTransportProvider
+            // (typically wrapping `createInProcessTransportPair`). If we
+            // reach this branch, no provider matched: fail loudly so the
+            // configuration error surfaces immediately rather than as a
+            // mysterious "transport is undefined" downstream.
+            throw new Error(
+                `No MCPTransportProvider matched in-process MCP server "${this.description.name}". `
+                + 'A plugin must contribute an MCPTransportProvider that handles in-process descriptions, '
+                + 'typically wrapping `createInProcessTransportPair` to bridge to a server-side `Server` from '
+                + '`@modelcontextprotocol/sdk/server`.',
+            );
         }
 
         this.transport.onerror = error => {

@@ -203,13 +203,40 @@ export interface RemoteMCPServerDescription extends BaseMCPServerDescription {
     headersHelper?: string;
 }
 
-export type MCPServerDescription = LocalMCPServerDescription | RemoteMCPServerDescription;
+export interface InProcessMCPServerDescription extends BaseMCPServerDescription {
+    /**
+     * Marker discriminating this variant from local (subprocess) and
+     * remote (HTTP/SSE) servers. The MCP server lives in the same
+     * Node.js process as Theia's backend; transport is a linked-pair
+     * memory channel created by `createInProcessTransportPair`.
+     *
+     * In-process servers have no `command` and no `serverUrl` because
+     * their lifecycle is owned by the contributing plugin, not by a
+     * subprocess or remote endpoint. The plugin writes its own
+     * `MCPTransportProvider` to wire the linked pair into a
+     * server-side `Server` from `@modelcontextprotocol/sdk/server`.
+     *
+     * Typically registered programmatically by a plugin's
+     * `BackendApplicationContribution.onStart` rather than via user
+     * preferences — these descriptions identify a plugin-bundled
+     * capability surface rather than an operator-managed connection.
+     */
+    kind: 'in-process';
+}
+
+export type MCPServerDescription =
+    | LocalMCPServerDescription
+    | RemoteMCPServerDescription
+    | InProcessMCPServerDescription;
 
 export function isLocalMCPServerDescription(description: MCPServerDescription): description is LocalMCPServerDescription {
     return (description as LocalMCPServerDescription).command !== undefined;
 }
 export function isRemoteMCPServerDescription(description: MCPServerDescription): description is RemoteMCPServerDescription {
     return (description as RemoteMCPServerDescription).serverUrl !== undefined;
+}
+export function isInProcessMCPServerDescription(description: MCPServerDescription): description is InProcessMCPServerDescription {
+    return (description as InProcessMCPServerDescription).kind === 'in-process';
 }
 
 export const MCPServerManager = Symbol('MCPServerManager');
