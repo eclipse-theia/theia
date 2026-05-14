@@ -110,6 +110,10 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return this.mcpServerManager.addOrUpdateServer(description);
     }
 
+    async setWorkspaceTrustLevel(level: 'trusted' | 'restricted' | 'unknown'): Promise<void> {
+        this.mcpServerManager.setWorkspaceTrustLevel(level);
+    }
+
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {
         const id = `mcp_${serverName}_${tool.name}`;
         return {

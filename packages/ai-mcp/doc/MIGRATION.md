@@ -121,6 +121,38 @@ the SDK client today must continue to replace `MCPServerManagerImpl`
 until a follow-up widens `MCPClient`'s public surface. Track progress in
 the RFC discussion on `eclipse-theia/theia`.
 
+### Tool filter context
+
+`MCPToolFilter.filter` receives a single `MCPToolFilterContext` argument
+rather than the earlier `(serverName, tool)` pair. Forks that patched
+`MCPServer` with custom `(serverName, tool, ...extra)` signatures can
+move the extra signals onto the context object as the contribution
+point grows; the current shape is:
+
+```ts
+interface MCPToolFilterContext {
+    readonly serverName: string;
+    readonly serverDescription: MCPServerDescription;
+    readonly tool: ToolInformation;
+    readonly workspaceTrustLevel: 'trusted' | 'restricted' | 'unknown';
+}
+```
+
+`workspaceTrustLevel` is sourced from Theia's `WorkspaceTrustService` (a
+browser-only module) and pushed to the backend by the frontend
+application contribution. Filters that key off it should treat
+`'unknown'` as untrusted — that value appears when no frontend has
+pushed a value yet (RPC consumers, headless deployments, race on
+startup before trust resolves).
+
+Filters that *rename* a tool should preserve the upstream name on
+`ToolInformation.originalName` so downstream filters and any
+introspection / consent UI built on top of the registry can attribute
+the tool back to its source. The optional `provenance` field is the
+sibling slot for federated topologies — set it to the upstream server
+name (or `"<gateway>:<upstream>"`) when one Theia-side connection
+fronts multiple physical MCP servers.
+
 ### `MCPClient` event surface
 
 `MCPClient` exposes four events covering both **inventory** and

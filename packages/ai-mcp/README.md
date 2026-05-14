@@ -177,13 +177,30 @@ export class VaultCredentialResolver implements MCPCredentialResolver {
 
 Rewrite, suppress, or stamp tools advertised by MCP servers before they are registered into Theia's `ToolInvocationRegistry`. Return a replacement `ToolInformation`, `undefined` to suppress, or `'passthrough'` to defer to the next filter.
 
+The filter receives an `MCPToolFilterContext` carrying:
+
+- `serverName` — the connection's local identity;
+- `serverDescription` — the full `MCPServerDescription` (command / URL / autostart / etc.) so filters can policy off the server's actual configuration;
+- `tool` — the tool as seen by *this* filter (each filter sees the previous filter's output via `tool`);
+- `workspaceTrustLevel` — `'trusted' | 'restricted' | 'unknown'`, sourced from Theia's `WorkspaceTrustService` and pushed down by the frontend. The default `MCPFrontendApplicationContribution` already hard-blocks autostart in restricted workspaces; this signal lets filters apply *softer* policy (e.g. hide write-capable tools without blocking the whole server) for servers that are started manually.
+
+`ToolInformation` has two optional slots filters should populate when rewriting:
+
+- `originalName` — preserve the upstream name when renaming, so downstream filters and consent UIs can attribute back to the source.
+- `provenance` — free-form upstream identifier (e.g. `"github-mcp-server"`, `"agentgateway:jira"`) for federated / gateway-fronted topologies where one connection fronts many upstream servers.
+
 ```ts
 @injectable()
 export class HideDangerousToolsFilter implements MCPToolFilter {
     readonly id = 'hide-dangerous';
     readonly priority = 100;
 
-    filter(serverName: string, tool: ToolInformation): MCPToolFilterOutcome {
+    filter(context: MCPToolFilterContext): MCPToolFilterOutcome {
+        const { tool, serverName, workspaceTrustLevel } = context;
+        // Soften in restricted workspaces: drop shell-style tools.
+        if (workspaceTrustLevel !== 'trusted' && tool.name === 'execute_shell') {
+            return undefined;
+        }
         if (tool.name === 'execute_shell' && serverName === 'untrusted-server') {
             return undefined;
         }

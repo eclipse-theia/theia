@@ -30,6 +30,15 @@ export interface MCPFrontendService {
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     getTools(serverName: string): Promise<ListToolsResult | undefined>;
     getPromptTemplateId(serverName: string): string;
+    /**
+     * Push the current workspace trust level down to the backend so that
+     * `MCPToolFilter`s see a meaningful `workspaceTrustLevel` in their
+     * context. Called by the frontend application contribution on init
+     * and on `WorkspaceTrustService.onDidChangeWorkspaceTrust`. The
+     * backend-side `WorkspaceTrustService` does not exist (it is a
+     * browser module), so the value must be pushed.
+     */
+    setWorkspaceTrustLevel(level: 'trusted' | 'restricted' | 'unknown'): Promise<void>;
 }
 
 export const MCPFrontendNotificationService = Symbol('MCPFrontendNotificationService');
@@ -61,11 +70,34 @@ export interface MCPServerManager {
     readResource(serverName: string, resourceId: string): Promise<ReadResourceResult>;
     getResources(serverName: string): Promise<ListResourcesResult>;
     setWorkspaceRoots(roots: string[] | undefined): void;
+    /**
+     * See {@link MCPFrontendService.setWorkspaceTrustLevel}. The backend
+     * caches the value and exposes it to {@link MCPToolFilter}s through
+     * the filter context.
+     */
+    setWorkspaceTrustLevel(level: 'trusted' | 'restricted' | 'unknown'): void;
 }
 
 export interface ToolInformation {
     name: string;
     description?: string;
+    /**
+     * The tool's name as advertised by the upstream MCP server, before
+     * any rewrites by the {@link MCPToolFilter} chain. Filters that
+     * rename a tool MUST preserve this if not already set, so downstream
+     * filters and consent UIs can attribute the tool back to its origin.
+     */
+    originalName?: string;
+    /**
+     * Free-form provenance tag identifying the tool's upstream origin.
+     * Useful in federated / gateway-fronted topologies (e.g. an MCP
+     * gateway that fronts multiple upstream servers under one connection)
+     * where `serverName` alone doesn't tell consumers which physical
+     * server backed the tool. Conventional values: the upstream server
+     * name (`"github-mcp-server"`), or `"<gateway>:<upstream>"`
+     * (`"agentgateway:jira"`).
+     */
+    provenance?: string;
 }
 
 export enum MCPServerStatus {

@@ -31,6 +31,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
     protected clients: Array<MCPFrontendNotificationService> = [];
     protected serverListeners: Map<string, Disposable> = new Map();
     protected roots: string[] | undefined;
+    protected workspaceTrustLevel: 'trusted' | 'restricted' | 'unknown' = 'unknown';
 
     @inject(ContributionProvider) @named(MCPTransportProvider) @optional()
     protected readonly transportProviderContributions?: ContributionProvider<MCPTransportProvider>;
@@ -120,6 +121,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
                 this.credentialResolverContributions?.getContributions() ?? [],
             );
             newServer.setWorkspaceRoots(this.roots);
+            newServer.setWorkspaceTrustLevel(this.workspaceTrustLevel);
             this.servers.set(description.name, newServer);
 
             // Subscribe to status updates from the new server
@@ -189,6 +191,13 @@ export class MCPServerManagerImpl implements MCPServerManager {
         this.roots = roots;
         this.servers.forEach(server => {
             server.setWorkspaceRoots(roots);
+        });
+    }
+
+    setWorkspaceTrustLevel(level: 'trusted' | 'restricted' | 'unknown'): void {
+        this.workspaceTrustLevel = level;
+        this.servers.forEach(server => {
+            server.setWorkspaceTrustLevel(level);
         });
     }
 }

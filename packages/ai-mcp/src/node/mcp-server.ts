@@ -20,7 +20,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import {
     isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription,
     MCPServerStatus, ToolInformation,
-    MCPTransportProvider, MCPToolFilter, MCPToolFilterOutcome,
+    MCPTransportProvider, MCPToolFilter, MCPToolFilterContext, MCPToolFilterOutcome, MCPWorkspaceTrustLevel,
     MCPClientFactory, MCPCredentialResolver,
 } from '../common';
 import { Emitter } from '@theia/core/lib/common/event.js';
@@ -35,6 +35,7 @@ export class MCPServer {
     private error?: string;
     private status: MCPServerStatus;
     private workspaceRoots: string[] | undefined;
+    private workspaceTrustLevel: MCPWorkspaceTrustLevel = 'unknown';
 
     private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
     readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
@@ -91,6 +92,10 @@ export class MCPServer {
         }
     }
 
+    setWorkspaceTrustLevel(level: MCPWorkspaceTrustLevel): void {
+        this.workspaceTrustLevel = level;
+    }
+
     async getDescription(): Promise<MCPServerDescription> {
         let toReturnTools: ToolInformation[] | undefined = undefined;
         if (this.isRunning()) {
@@ -119,7 +124,11 @@ export class MCPServer {
     /**
      * Run the tool-filter chain (priority-descending) against a single tool.
      * Returns `undefined` when any filter suppresses the tool; returns the
-     * (possibly rewritten) tool otherwise.
+     * (possibly rewritten) tool otherwise. Each filter sees the
+     * possibly-rewritten output of the previous filter via
+     * {@link MCPToolFilterContext.tool}; the other context fields
+     * (`serverName`, `serverDescription`, `workspaceTrustLevel`) are
+     * stable across the chain.
      */
     protected applyToolFilters(tool: ToolInformation): ToolInformation | undefined {
         if (this.toolFilters.length === 0) {
@@ -128,7 +137,13 @@ export class MCPServer {
         const ordered = [...this.toolFilters].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
         let current: ToolInformation = tool;
         for (const filter of ordered) {
-            const outcome: MCPToolFilterOutcome = filter.filter(this.description.name, current);
+            const context: MCPToolFilterContext = {
+                serverName: this.description.name,
+                serverDescription: this.description,
+                tool: current,
+                workspaceTrustLevel: this.workspaceTrustLevel,
+            };
+            const outcome: MCPToolFilterOutcome = filter.filter(context);
             if (outcome === 'passthrough') {
                 continue;
             }

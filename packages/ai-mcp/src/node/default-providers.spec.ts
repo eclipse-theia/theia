@@ -138,7 +138,7 @@ describe('@theia/ai-mcp default providers', () => {
         it('applyToolFilters chain: rewrite → passthrough → suppress', () => {
             const rename: MCPToolFilter = {
                 id: 'rename', priority: 100,
-                filter: (_s, tool) => ({ ...tool, name: tool.name + '-renamed' }),
+                filter: ctx => ({ ...ctx.tool, name: ctx.tool.name + '-renamed' }),
             };
             const noop: MCPToolFilter = {
                 id: 'noop', priority: 50,
@@ -146,7 +146,7 @@ describe('@theia/ai-mcp default providers', () => {
             };
             const killDoomed: MCPToolFilter = {
                 id: 'kill-doomed', priority: 10,
-                filter: (_s, tool) => tool.name.startsWith('doomed-') ? undefined : tool,
+                filter: ctx => ctx.tool.name.startsWith('doomed-') ? undefined : ctx.tool,
             };
             const server = new MCPServer(localDesc, [], [rename, noop, killDoomed], []);
             type ApplyFn = (t: ToolInformation) => ToolInformation | undefined;
