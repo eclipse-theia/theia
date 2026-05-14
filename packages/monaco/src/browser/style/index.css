@@ -291,21 +291,6 @@
     box-sizing: border-box;
   }
 
-  /*
-   * `QuickInputController#updateLayout` runs in `show()` *after* `onShow` and assigns pixel
-   * `top` / `left` / `width` to `.quick-input-widget` for the desktop centered picker. That keeps
-   * the sheet vertically aligned with the editor body so it sits under the main-area tab row
-   * when a document is open. Reset geometry so the widget is a normal flow child of the outer
-   * fixed `#quick-input-container` (full-width top sheet).
-   */
-  #quick-input-container .quick-input-widget {
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    right: auto !important;
-    transform: none !important;
-  }
-
   .quick-input-widget {
     width: 100% !important;
     max-width: 100% !important;
