@@ -121,22 +121,52 @@ the SDK client today must continue to replace `MCPServerManagerImpl`
 until a follow-up widens `MCPClient`'s public surface. Track progress in
 the RFC discussion on `eclipse-theia/theia`.
 
-### `MCPClient` event surface (RFC Q3)
+### `MCPClient` event surface
 
-`MCPClient` exposes `onDidAddTools` and `onClose` events so reactive
-status-bar / sidebar / telemetry consumers don't have to poll. The
-default factory wires internal `__fireDidAddTools` / `__fireClose`
-helpers that the in-tree `MCPServer` orchestration calls when tools
-arrive or the transport closes. Plugin factories must wire their own
-emitters — the contract is just the two `Event` getters on `MCPClient`.
+`MCPClient` exposes four events covering both **inventory** and
+**invocation** semantics so reactive UI, telemetry, and policy
+consumers don't have to poll or replace the entire client factory.
 
-This was promoted from a "later RFC" item to the public surface based on
-downstream consumer demand: a reference implementation
+Inventory events (originally RFC Q3):
+
+- `onDidAddTools`: fires when the connected MCP server advertises new
+  tools after the initial handshake.
+- `onClose`: fires once when the transport closes (graceful or with
+  an error).
+
+Invocation events (added in a follow-up commit):
+
+- `onWillInvokeTool`: fires immediately before each tool invocation
+  with `{ toolName, argsJSON }`. Right place to start an OpenTelemetry
+  span, write a structured-log entry, run a runtime RBAC check.
+- `onDidInvokeTool`: fires after each invocation with
+  `{ toolName, durationMs, ok, error? }`. Right place to close the
+  span and emit duration metrics. The `error` payload is shaped as
+  `{ name, message }` rather than a thrown `Error` so it survives
+  JSON-roundtripping for cross-process consumers (status bars in a
+  separate worker, telemetry exporters in a sidecar, etc.).
+
+The default factory wires internal `__fireDidAddTools` / `__fireClose`
+/ `__fireWillInvokeTool` / `__fireDidInvokeTool` helpers that the
+in-tree `MCPServer` orchestration calls. Plugin factories must wire
+their own emitters — the contract is just the four `Event` getters on
+`MCPClient`.
+
+The inventory events were promoted from a "later RFC" item to the
+public surface based on downstream consumer demand: a reference
+implementation
 ([`Sutra IDE`](https://github.com/dwbimstr/theia-sutra-ide), commit
 [`ff374f0`](https://github.com/dwbimstr/theia-sutra-ide/commit/ff374f0))
 needed `onDidChange`-equivalent push semantics to drop status-bar
 refresh latency from ~4s to ~50ms. Polling-only would force every
-consumer to reinvent reactive state on top of a stale tick.
+consumer to reinvent reactive state on top of a stale tick. The
+invocation events are the call-site equivalent: production deployments
+that front MCP through a proxy
+([agentgateway](https://github.com/agentgateway/agentgateway) is the
+canonical example) instrument every tool call for OpenTelemetry; the
+existing `MCPClientFactory` lets plugins do this by wrapping the whole
+client, but invocation events let consumers attach observability
+without taking on the full client-replacement burden.
 
 ### Resolver ordering
 

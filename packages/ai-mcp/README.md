@@ -211,7 +211,7 @@ export class InstrumentedMCPClientFactory implements MCPClientFactory {
 
 #### `MCPClient` event surface
 
-`MCPClient` exposes two events for push-based reactive UI — needed by status-bar indicators, sidebar lists, and telemetry pills that would otherwise be forced to poll on a multi-second tick.
+`MCPClient` exposes four events covering both **inventory** (what's connected, what tools are available) and **invocation** (what's running) — needed by status-bar indicators, sidebar lists, telemetry pills, OpenTelemetry instrumentation, structured-logging adapters, and runtime RBAC checks that would otherwise be forced to poll or replace the entire client factory.
 
 ```ts
 export interface MCPClient {
@@ -219,15 +219,24 @@ export interface MCPClient {
     readonly tools: ToolInformation[];
     readonly onDidAddTools: Event<ToolInformation[]>;
     readonly onClose: Event<Error | undefined>;
+    readonly onWillInvokeTool: Event<MCPToolInvocationStart>;
+    readonly onDidInvokeTool: Event<MCPToolInvocationEnd>;
     start(): Promise<void>;
     stop(): Promise<void>;
 }
 ```
 
+**Inventory events**
+
 - `onDidAddTools` fires when the connected MCP server advertises new tools after the initial handshake (dynamic registration, plugin-loaded modules, server `tools/list_changed` notifications). Consumers re-read `client.tools` for the canonical list.
 - `onClose` fires once when the underlying transport closes — gracefully (`stop()` was called) or with an error (the argument).
 
-Plugin factories must wire their own emitters; the default factory exposes internal `__fireDidAddTools` / `__fireClose` hooks so the in-tree `MCPServer` orchestration can drive them. See `default-mcp-client-factory.spec.ts` for the contract.
+**Invocation events**
+
+- `onWillInvokeTool` fires immediately before each tool invocation, with `{ toolName, argsJSON }`. `argsJSON` is a string (not a parsed object) so the event can cross worker / IPC boundaries without losing fidelity, and so consumers choose whether to parse. Right place to start an OpenTelemetry span, write a structured-log entry, run a runtime RBAC check.
+- `onDidInvokeTool` fires after each tool invocation completes, with `{ toolName, durationMs, ok, error? }`. `error` (when `ok === false`) is shaped as `{ name, message }` rather than a thrown `Error` so it survives JSON-roundtripping. Right place to close the span and emit the duration metric.
+
+Plugin factories must wire their own emitters; the default factory exposes internal `__fireDidAddTools` / `__fireClose` / `__fireWillInvokeTool` / `__fireDidInvokeTool` hooks so the in-tree `MCPServer` orchestration can drive them. See `default-mcp-client-factory.spec.ts` for the contract.
 
 ### Migration guide
 

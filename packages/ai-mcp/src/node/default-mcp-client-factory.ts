@@ -18,7 +18,13 @@ import { injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { MCPServerDescription, ToolInformation } from '../common/mcp-server-manager';
-import { MCPClient, MCPClientFactory, MCPClientFactoryContext } from '../common/mcp-client-factory';
+import {
+    MCPClient,
+    MCPClientFactory,
+    MCPClientFactoryContext,
+    MCPToolInvocationEnd,
+    MCPToolInvocationStart,
+} from '../common/mcp-client-factory';
 import { MCPTransport } from '../common/mcp-transport-provider';
 
 /**
@@ -55,16 +61,18 @@ export class DefaultMCPClientFactory implements MCPClientFactory {
         // directly on the `sdk` property.
         const tools: ToolInformation[] = [];
 
-        // Event surface (RFC Q3 — promoted to public per downstream
-        // demand for push-based reactive UIs). Wired here so plugin
+        // Event surface — both inventory events (RFC Q3, commit 6deb0fe)
+        // and invocation events (this commit). Wired here so plugin
         // factories that wrap us inherit the contract; today's
-        // {@link MCPServer} drives the SDK transport directly so these
-        // emitters fire only when {@link MCPServer.update} pushes new
-        // tools through, plus once on `stop()`. A follow-up commit will
-        // hook them into the SDK's `tools/list_changed` notification and
-        // transport-close once that wiring is centralised.
+        // {@link MCPServer} drives the SDK transport directly, so the
+        // inventory emitters fire when {@link MCPServer.update} pushes
+        // new tools through plus once on stop(), and the invocation
+        // emitters fire when {@link MCPServer} or downstream tool runners
+        // call the helpers below around `client.callTool`.
         const onDidAddToolsEmitter = new Emitter<ToolInformation[]>();
         const onCloseEmitter = new Emitter<Error | undefined>();
+        const onWillInvokeToolEmitter = new Emitter<MCPToolInvocationStart>();
+        const onDidInvokeToolEmitter = new Emitter<MCPToolInvocationEnd>();
 
         const client: MCPClient & { readonly sdk: Client } = {
             sdk,
@@ -72,6 +80,8 @@ export class DefaultMCPClientFactory implements MCPClientFactory {
             tools,
             onDidAddTools: onDidAddToolsEmitter.event,
             onClose: onCloseEmitter.event,
+            onWillInvokeTool: onWillInvokeToolEmitter.event,
+            onDidInvokeTool: onDidInvokeToolEmitter.event,
             async start(): Promise<void> {
                 // Connection is driven by MCPServer today so that SSE fallback
                 // and error plumbing stay in one place. We expose `start()` for
@@ -84,6 +94,8 @@ export class DefaultMCPClientFactory implements MCPClientFactory {
                     onCloseEmitter.fire(undefined);
                     onCloseEmitter.dispose();
                     onDidAddToolsEmitter.dispose();
+                    onWillInvokeToolEmitter.dispose();
+                    onDidInvokeToolEmitter.dispose();
                 }
             },
         };
@@ -91,13 +103,21 @@ export class DefaultMCPClientFactory implements MCPClientFactory {
         // through (cast away from the public interface; callers see only
         // the `Event` getters). Plugin factories that DON'T extend us
         // can wire their own emitters however they want — the contract
-        // is just the two `onDidAddTools` / `onClose` event getters.
+        // is just the four event getters on {@link MCPClient}.
         Object.defineProperty(client, '__fireDidAddTools', {
             value: (added: ToolInformation[]) => onDidAddToolsEmitter.fire(added),
             enumerable: false,
         });
         Object.defineProperty(client, '__fireClose', {
             value: (err: Error | undefined) => onCloseEmitter.fire(err),
+            enumerable: false,
+        });
+        Object.defineProperty(client, '__fireWillInvokeTool', {
+            value: (start: MCPToolInvocationStart) => onWillInvokeToolEmitter.fire(start),
+            enumerable: false,
+        });
+        Object.defineProperty(client, '__fireDidInvokeTool', {
+            value: (end: MCPToolInvocationEnd) => onDidInvokeToolEmitter.fire(end),
             enumerable: false,
         });
         return client;
@@ -127,6 +147,35 @@ export function fireDefaultClientClose(client: MCPClient, err: Error | undefined
     const fn = (client as unknown as { __fireClose?: (e: Error | undefined) => void }).__fireClose;
     if (typeof fn === 'function') {
         fn(err);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Internal hook so {@link MCPServer} (or any in-tree caller wrapping a
+ * tool invocation) can drive the default client's
+ * {@link MCPClient.onWillInvokeTool} event without exposing the emitter
+ * on the public interface. Returns `false` for plugin-built clients —
+ * those own their own emitter wiring around their `callTool` proxy.
+ */
+export function fireDefaultClientWillInvokeTool(client: MCPClient, start: MCPToolInvocationStart): boolean {
+    const fn = (client as unknown as { __fireWillInvokeTool?: (s: MCPToolInvocationStart) => void }).__fireWillInvokeTool;
+    if (typeof fn === 'function') {
+        fn(start);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Internal hook — sibling to {@link fireDefaultClientWillInvokeTool}.
+ * Fires {@link MCPClient.onDidInvokeTool}.
+ */
+export function fireDefaultClientDidInvokeTool(client: MCPClient, end: MCPToolInvocationEnd): boolean {
+    const fn = (client as unknown as { __fireDidInvokeTool?: (e: MCPToolInvocationEnd) => void }).__fireDidInvokeTool;
+    if (typeof fn === 'function') {
+        fn(end);
         return true;
     }
     return false;

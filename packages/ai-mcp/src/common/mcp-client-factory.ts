@@ -20,6 +20,30 @@ import { MCPCredentialRequest } from './mcp-credential-resolver';
 import { MCPTransport } from './mcp-transport-provider';
 
 /**
+ * Payload of {@link MCPClient.onWillInvokeTool}. Serialisable so
+ * consumers can forward it across worker / IPC boundaries (frontend
+ * status bars, telemetry workers, etc.) without losing fidelity.
+ */
+export interface MCPToolInvocationStart {
+    readonly toolName: string;
+    /** JSON-encoded arguments. Consumers parse if they need fields. */
+    readonly argsJSON: string;
+}
+
+/**
+ * Payload of {@link MCPClient.onDidInvokeTool}. `ok === false` ↔
+ * `error !== undefined`. Error is shaped as `{name, message}` rather
+ * than a thrown `Error` so it survives JSON-roundtripping for
+ * cross-process consumers (status bars, telemetry workers).
+ */
+export interface MCPToolInvocationEnd {
+    readonly toolName: string;
+    readonly durationMs: number;
+    readonly ok: boolean;
+    readonly error?: { readonly name: string; readonly message: string };
+}
+
+/**
  * Public surface of the MCP client the server manager consumes. Narrower
  * than the `@modelcontextprotocol/sdk` `Client` so plugins can wrap / replace
  * it without depending on the SDK internals.
@@ -54,6 +78,36 @@ export interface MCPClient {
      * for a graceful close.
      */
     readonly onClose: Event<Error | undefined>;
+    /**
+     * Fires immediately before each tool invocation, with the tool name
+     * and a JSON-serialised view of the arguments. Consumers wire this
+     * to OpenTelemetry span starts, structured-logging entries, audit
+     * trails, or runtime RBAC checks that need to see the call before
+     * it happens.
+     *
+     * The `argsJSON` is a string (not a parsed object) so the event
+     * can fire safely across worker / IPC boundaries without losing
+     * fidelity on non-JSON-roundtrip values, and so consumers can choose
+     * whether to parse.
+     *
+     * Plugin-supplied {@link MCPClient} implementations are expected to
+     * fire this event around every {@link ToolRequest.handler} call they
+     * proxy. The default factory wires it through the in-tree
+     * orchestration; see {@link DefaultMCPClientFactory}.
+     */
+    readonly onWillInvokeTool: Event<MCPToolInvocationStart>;
+    /**
+     * Fires after each tool invocation completes, with the elapsed
+     * duration and a `ok: boolean` flag distinguishing success from
+     * thrown / rejected calls. Consumers close OpenTelemetry spans here
+     * and emit duration metrics.
+     *
+     * `error` is populated only when `ok === false`; the structured
+     * `{name, message}` shape lets the event cross worker boundaries
+     * without losing the error type — full `Error` instances don't
+     * serialise consistently across all transports.
+     */
+    readonly onDidInvokeTool: Event<MCPToolInvocationEnd>;
     start(): Promise<void>;
     stop(): Promise<void>;
 }
