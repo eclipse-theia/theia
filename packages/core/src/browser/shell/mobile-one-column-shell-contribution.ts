@@ -61,7 +61,7 @@ interface MobileBottomButton {
 
 /**
  * Narrow-viewport workbench: full-width editor, side panels as sheets, bottom activity strip,
- * edge swipes and backdrop; compact main tabs (current only) plus “all editors” when available.
+ * edge swipes and backdrop; main editor tabs in a horizontally scrollable tab row.
  */
 @injectable()
 export class MobileOneColumnShellContribution implements FrontendApplicationContribution {

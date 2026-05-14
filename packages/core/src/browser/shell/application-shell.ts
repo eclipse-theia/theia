@@ -130,8 +130,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
                 renderer
             },
             {
-                // Scroll bar options
-                handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
+                // Omit `touch`: native overflow pan (see mobile-workbench.css) gives the same touch
+                // momentum as the bottom activity bar; PerfectScrollbar keeps wheel, keyboard, thumb.
+                handlers: ['drag-thumb', 'keyboard', 'wheel'],
                 useBothWheelAxes: true,
                 scrollXMarginOffset: 4,
                 suppressScrollY: true

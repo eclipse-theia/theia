@@ -260,10 +260,10 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
             },
             {
                 id: 'editor-tabs',
-                title: nls.localize('theia/core/mobile/onboarding/tabs/title', 'Just the current tab'),
+                title: nls.localize('theia/core/mobile/onboarding/tabs/title', 'Scroll the tab bar'),
                 body: nls.localize(
                     'theia/core/mobile/onboarding/tabs/body',
-                    'To save space the tab bar only shows the editor you are viewing. Use the Agent or Explorer to switch between recent files.'
+                    'With several editors open, swipe sideways on the tab titles to see every open editor, then tap one to switch.'
                 ),
                 target: () => document.querySelector<HTMLElement>(
                     '#theia-main-content-panel .lm-TabBar.theia-app-centers'

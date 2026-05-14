@@ -720,7 +720,21 @@ export interface TabBarPrivateMethods {
  */
 export class ScrollableTabBar extends TabBar<Widget> {
 
+    /**
+     * When set on {@link contentContainer}, CSS applies native `overflow-x: auto` without requiring
+     * PerfectScrollbar's `.ps` class (PS is omitted on narrow viewports — see {@link syncPerfectScrollbarWithViewport}).
+     */
+    static readonly NATIVE_SCROLL_X_CLASS = 'theia-tabbar-native-scroll-x';
+
     protected scrollBar: PerfectScrollbar | undefined;
+
+    /** Matches `mobile-workbench.css` breakpoint; horizontal tabs use native overflow (like the bottom nav). */
+    protected readonly narrowViewportMq: MediaQueryList | undefined =
+        typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)') : undefined;
+
+    protected readonly handleNarrowViewportMqChange = (): void => {
+        this.syncPerfectScrollbarWithViewport();
+    };
 
     protected pendingReveal?: Promise<void>;
     protected isMouseOver = false;
@@ -755,6 +769,13 @@ export class ScrollableTabBar extends TabBar<Widget> {
         this.openTabsContainer.classList.add('theia-tabBar-open-tabs');
         this.openTabsRoot = createRoot(this.openTabsContainer);
         this.topRow.appendChild(this.openTabsContainer);
+
+        if (this.narrowViewportMq) {
+            this.narrowViewportMq.addEventListener('change', this.handleNarrowViewportMqChange);
+            this.toDispose.push(Disposable.create(() => {
+                this.narrowViewportMq?.removeEventListener('change', this.handleNarrowViewportMqChange);
+            }));
+        }
     }
 
     set dynamicTabOptions(options: ScrollableTabBar.Options | undefined) {
@@ -801,12 +822,38 @@ export class ScrollableTabBar extends TabBar<Widget> {
         });
 
         super.onAfterAttach(msg);
-        this.scrollBar = new PerfectScrollbar(this.contentContainer, this.scrollbarOptions);
+        this.syncPerfectScrollbarWithViewport();
+    }
+
+    /**
+     * On narrow widths, skip PerfectScrollbar for horizontal strips so the browser owns touch pan
+     * and momentum (same as `#theia-mobile-bottom-bar`). PS `updateGeometry` can reset `scrollLeft`
+     * when it mis-detects overflow under flex layout.
+     */
+    protected syncPerfectScrollbarWithViewport(): void {
+        const useNativeHorizontal = this.orientation === 'horizontal' && !!this.narrowViewportMq?.matches;
+        if (useNativeHorizontal) {
+            if (this.scrollBar) {
+                this.scrollBar.destroy();
+                this.scrollBar = undefined;
+            }
+            this.contentContainer.classList.add(ScrollableTabBar.NATIVE_SCROLL_X_CLASS);
+        } else {
+            this.contentContainer.classList.remove(ScrollableTabBar.NATIVE_SCROLL_X_CLASS);
+            if (!this.scrollBar && this.isAttached) {
+                this.scrollBar = new PerfectScrollbar(this.contentContainer, this.scrollbarOptions);
+            }
+            this.scrollBar?.update();
+        }
+        if (this.currentIndex >= 0) {
+            void this.revealTab(this.currentIndex);
+        }
     }
 
     protected override onBeforeDetach(msg: Message): void {
-        super.onBeforeDetach(msg);
         this.scrollBar?.destroy();
+        this.scrollBar = undefined;
+        super.onBeforeDetach(msg);
     }
 
     protected override onUpdateRequest(msg: Message): void {
@@ -873,12 +920,10 @@ export class ScrollableTabBar extends TabBar<Widget> {
         if (this.dynamicTabOptions) {
             this.updateTabs();
         }
-        if (this.scrollBar) {
-            if (this.currentIndex >= 0) {
-                this.revealTab(this.currentIndex);
-            }
-            this.scrollBar.update();
+        if (this.currentIndex >= 0) {
+            void this.revealTab(this.currentIndex);
         }
+        this.scrollBar?.update();
     }
 
     /**

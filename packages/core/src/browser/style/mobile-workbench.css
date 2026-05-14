@@ -113,19 +113,65 @@
     padding-bottom: 6px;
   }
 
-  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab {
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab {
     min-width: 44px;
     padding: 0 12px;
     scroll-snap-align: start;
   }
 
-  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container.ps {
+  /* Flex child of `.theia-tabBar-tab-row` must shrink below tab min-content so overflow-x applies here. */
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container {
+    min-width: 0;
+  }
+
+  /* Same idea as `.theia-mobile-bottom-activity-bar`: row must not shrink so `scrollWidth` exceeds
+     the viewport and horizontal pan scrolls the strip with native inertia. */
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content {
+    flex-shrink: 0;
+    min-width: min-content;
+    flex-wrap: nowrap;
+  }
+
+  /* Horizontal pan only; hide scrollbars so the tab row keeps a single compact height (no rail
+     under the tabs). Native overflow scrolling stays available for touch / trackpad.
+     Selectors omit `.ps` because on narrow viewports PerfectScrollbar is not used (see ScrollableTabBar). */
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container {
     touch-action: pan-x;
     overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container::-webkit-scrollbar,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container > .ps__rail-x,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container > .ps__rail-x {
+    display: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
+    #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container {
+      scroll-snap-type: none;
+    }
+
+    #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab,
+    #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab {
+      scroll-snap-align: none;
+    }
   }
 
   .theia-sidepanel-toolbar {
@@ -443,14 +489,9 @@ body.theia-light .theia-mobile-sheet-close-btn-icon {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
 }
 
-/* “Recents” style: only the active editor tab in the main tab bar */
-#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .lm-TabBar.theia-app-centers .lm-TabBar-tab:not(.lm-mod-current) {
-  display: none !important;
-}
-
-#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-current {
-  max-width: 100%;
-}
+/* Editor tabs: show every open tab; the narrow-viewport rules above (max-width: 767px) make the
+   main tab row horizontally scrollable with touch pan, proximity scroll snap, and scrollbars
+   hidden so the strip does not grow vertically for a scrollbar rail. */
 
 /* Dimmed overlay behind sheets (appended to `document.body`). Opacity-based fade is required so
    the timing matches the sheet's transform animation. A subtle backdrop-blur (where supported)

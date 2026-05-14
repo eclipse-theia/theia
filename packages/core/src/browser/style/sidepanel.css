@@ -103,8 +103,9 @@
   scroll-padding-inline: 6px;
 }
 
-/* Native overflow-x: better touch inertia than PerfectScrollbar touch; keep PS for wheel + custom rail. */
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps {
+/* Native overflow-x: better touch inertia than PerfectScrollbar touch; keep PS for wheel + custom rail on wide viewports.
+   On max-width 767px PS is omitted — match `.theia-tabbar-native-scroll-x` (see ScrollableTabBar). */
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x) {
   overflow-x: auto !important;
   overflow-y: hidden !important;
   touch-action: pan-x !important;
@@ -113,17 +114,17 @@
   -ms-overflow-style: none;
 }
 
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps::-webkit-scrollbar {
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x)::-webkit-scrollbar {
   display: none;
   height: 0;
   width: 0;
 }
 
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps.theia-activity-strip-scrollable:not(.theia-activity-strip-dragging) {
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x).theia-activity-strip-scrollable:not(.theia-activity-strip-dragging) {
   cursor: grab;
 }
 
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.ps.theia-activity-strip-dragging {
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x).theia-activity-strip-dragging {
   cursor: grabbing;
   user-select: none;
 }
