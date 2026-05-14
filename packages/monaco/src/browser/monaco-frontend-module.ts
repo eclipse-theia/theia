@@ -64,6 +64,7 @@ import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { MonacoFormattingConflictsContribution } from './monaco-formatting-conflicts';
 import { MonacoFormatterService } from './monaco-formatter-service';
 import { MonacoQuickInputImplementation, MonacoQuickInputService } from './monaco-quick-input-service';
+import { DefaultMonacoQuickInputLayout, MonacoQuickInputLayout } from './monaco-quick-input-layout';
 import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access';
 import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
@@ -169,6 +170,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoKeybindingContribution).toSelf().inSingletonScope();
     bind(KeybindingContribution).toService(MonacoKeybindingContribution);
 
+    bind(MonacoQuickInputLayout).to(DefaultMonacoQuickInputLayout).inSingletonScope();
     bind(MonacoQuickInputImplementation).toSelf().inSingletonScope();
     bind(MonacoQuickInputService).toSelf().inSingletonScope().onActivation(({ container }, quickInputService: MonacoQuickInputService) => {
         WebSocketConnectionProvider.createHandler(container, quickInputServicePath, quickInputService);

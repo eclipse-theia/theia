@@ -36,15 +36,15 @@ import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/f
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
-import { ElementInspectorService } from '../../../qaap-element-inspector/src/browser/element-inspector-service';
+import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
 import {
     ELEMENT_PICKER_MESSAGE_TYPE,
     ELEMENT_PICKER_CANCEL_TYPE,
     ELEMENT_REFRESH_RESPONSE_TYPE,
     PickedElement
-} from '../../../qaap-element-inspector/src/browser/element-inspector-types';
-import { buildElementBridgeScript, buildElementPickerScript } from '../../../qaap-element-inspector/src/browser/element-picker-script';
-import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from '../../../qaap-element-inspector/src/browser/element-inspector-contribution';
+} from '@theia/qaap-element-inspector/lib/browser/element-inspector-types';
+import { buildElementBridgeScript, buildElementPickerScript } from '@theia/qaap-element-inspector/lib/browser/element-picker-script';
+import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from '@theia/qaap-element-inspector/lib/browser/element-inspector-contribution';
 
 /**
  * Initializer properties for the embedded browser widget.

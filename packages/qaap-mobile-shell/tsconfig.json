@@ -11,6 +11,12 @@
   "references": [
     {
       "path": "../core"
+    },
+    {
+      "path": "../mini-browser"
+    },
+    {
+      "path": "../monaco"
     }
   ]
 }

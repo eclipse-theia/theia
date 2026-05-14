@@ -27,13 +27,15 @@ import { NavigatableWidget, NavigatableWidgetOpenHandler } from '@theia/core/lib
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
-import { WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler';
 import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';
 import { LocationMapperService } from './location-mapper-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { MiniBrowserOpenerOptions } from './mini-browser-opener-options';
+import { MiniBrowserOpenHook } from './mini-browser-open-hook';
+import { normalizeMiniBrowserOpenUrl } from './mini-browser-url-utils';
 
 export namespace MiniBrowserCommands {
 
@@ -54,18 +56,6 @@ export namespace MiniBrowserCommands {
         category: PREVIEW_CATEGORY,
         label: 'Open URL'
     });
-}
-
-/**
- * Further options for opening a new `Mini Browser` widget.
- */
-export interface MiniBrowserOpenerOptions extends WidgetOpenerOptions, MiniBrowserProps {
-    /**
-     * Controls how the mini-browser widget should be opened.
-     * - `source`: editable source.
-     * - `preview`: rendered content of the source.
-     */
-    openFor?: 'source' | 'preview';
 }
 
 @injectable()
@@ -105,6 +95,9 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     @inject(LocationMapperService)
     protected readonly locationMapperService: LocationMapperService;
 
+    @inject(MiniBrowserOpenHook)
+    protected readonly openHook: MiniBrowserOpenHook;
+
     onStart(): void {
         this.miniBrowserService.supportedFileExtensions().then(entries => {
             entries.forEach(entry => {
@@ -133,9 +126,9 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     override async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
         const widget = await super.open(uri, options);
         try {
-            this.schedulePostShellNavigation(widget, options);
+            this.openHook.afterOpen(widget, options);
         } catch (e) {
-            console.error('MiniBrowserOpenHandler.schedulePostShellNavigation failed', e);
+            console.error('MiniBrowserOpenHook.afterOpen failed', e);
         }
         try {
             const area = this.shell.getAreaFor(widget);
@@ -150,38 +143,6 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             console.error('MiniBrowserOpenHandler.open side-panel resize failed', e);
         }
         return widget;
-    }
-
-    /**
-     * After `ApplicationShell#addWidget` the preview often still has 0×0 geometry; Quick Input flows are
-     * especially sensitive. Re-run `go()` on the next frames and again after layout settles.
-     */
-    protected schedulePostShellNavigation(widget: MiniBrowser, options?: MiniBrowserOpenerOptions): void {
-        const startPage = typeof options?.startPage === 'string' ? MiniBrowserOpenHandler.normalizeUrlInput(options.startPage) : '';
-        if (!startPage) {
-            return;
-        }
-        const bump = (): void => {
-            const layout = widget.layout as { widgets?: ReadonlyArray<{ isDisposed?: boolean }> };
-            const widgets = layout.widgets;
-            if (!widgets?.length) {
-                return;
-            }
-            const content = widgets[0];
-            if (!content || content.isDisposed) {
-                return;
-            }
-            const forceNavigate = (content as { forceNavigate?: (u: string) => Promise<void> }).forceNavigate;
-            if (typeof forceNavigate === 'function') {
-                void forceNavigate.call(content, startPage);
-            }
-        };
-        window.requestAnimationFrame(() => window.requestAnimationFrame(bump));
-        window.setTimeout(bump, 300);
-    }
-
-    protected static normalizeUrlInput(url: string): string {
-        return url.replace(/\u00a0/g, ' ').trim();
     }
 
     protected override async getOrCreateWidget(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
@@ -331,7 +292,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     protected coerceUrlCommandArg(args: unknown[]): string | undefined {
         for (const arg of args) {
             if (typeof arg === 'string') {
-                const t = MiniBrowserOpenHandler.normalizeUrlInput(arg);
+                const t = normalizeMiniBrowserOpenUrl(arg);
                 if (t) {
                     return t;
                 }
@@ -341,7 +302,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     }
 
     protected async openUrl(urlFromCommand?: string): Promise<void> {
-        let url = urlFromCommand ? MiniBrowserOpenHandler.normalizeUrlInput(urlFromCommand) : '';
+        let url = urlFromCommand ? normalizeMiniBrowserOpenUrl(urlFromCommand) : '';
         if (!url) {
             if (this.quickInputService) {
                 const raw = await this.quickInputService.input({
@@ -350,7 +311,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
                     /* Keep the prompt open when focus briefly leaves (mobile bottom bar, Welcome, shell layout). */
                     ignoreFocusLost: true
                 });
-                url = raw ? MiniBrowserOpenHandler.normalizeUrlInput(raw) : '';
+                url = raw ? normalizeMiniBrowserOpenUrl(raw) : '';
             } else {
                 this.messages.warn(nls.localize(
                     'theia/mini-browser/quickInputUnavailable',
@@ -366,7 +327,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     }
 
     async openPreview(startPage: string): Promise<MiniBrowser | undefined> {
-        const trimmed = MiniBrowserOpenHandler.normalizeUrlInput(startPage);
+        const trimmed = normalizeMiniBrowserOpenUrl(startPage);
         if (!trimmed) {
             this.messages.warn(nls.localize('theia/mini-browser/emptyUrl', 'Please enter a URL.'));
             return undefined;
@@ -421,3 +382,5 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     }
 
 }
+
+export type { MiniBrowserOpenerOptions } from './mini-browser-opener-options';
