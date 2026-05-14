@@ -86,6 +86,16 @@ Example configuration:\n\
                             'Automatically start this server when the frontend starts. Newly added servers are not immediately auto started, but on restart'),
                         default: true
                     },
+                    deferLoading: {
+                        type: 'boolean',
+                        title: nls.localize('theia/ai/mcp/servers/deferLoading/title', 'Defer Loading'),
+                        markdownDescription: nls.localize('theia/ai/mcp/servers/deferLoading/mdDescription',
+                            'If enabled, the tools provided by this server are marked as deferred in the generated prompt fragment ' +
+                            '`mcp_<server>_tools`. Deferred tools are not loaded into the model\'s context upfront. Instead, the model ' +
+                            'discovers them on-demand via the provider\'s built-in tool search mechanism (Anthropic, OpenAI) when supported. ' +
+                            'This significantly reduces token overhead for servers that expose many tools.'),
+                        default: false
+                    },
                     serverUrl: {
                         type: 'string',
                         title: nls.localize('theia/ai/mcp/servers/serverUrl/title', 'Server URL'),

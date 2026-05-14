@@ -20,7 +20,7 @@ import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVar
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
 import { ToolRequest } from './language-model';
-import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, stripFrontMatter } from './prompt-service-util';
+import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, parseFunctionReference, stripFrontMatter } from './prompt-service-util';
 import { AISettingsService } from './settings-service';
 
 export interface CommandPromptFragmentMetadata {
@@ -123,6 +123,16 @@ export interface ResolvedPromptFragment {
 
     /** All functions referenced in the prompt fragment */
     functionDescriptions?: Map<string, ToolRequest>;
+
+    /**
+     * Ids of functions referenced in the prompt fragment that were marked as
+     * deferred (`~{?functionId}`). Deferred tools should not be loaded into
+     * the model's context upfront. Providers that support deferred tool
+     * loading (e.g. Anthropic, OpenAI) may use this information to set the
+     * appropriate flag on the tool definition and include the tool search
+     * tool in the request.
+     */
+    deferredFunctionIds?: Set<string>;
 
     /** All variables resolved in the prompt fragment */
     variables?: ResolvedAIVariable[];
@@ -779,12 +789,16 @@ export class PromptServiceImpl implements PromptService {
         // This allows to resolve function references contained in resolved variables (e.g. prompt fragments)
         const functionMatches = matchFunctionsRegEx(resolvedTemplate);
         const functionMap = new Map<string, ToolRequest>();
+        const deferredFunctionIds = new Set<string>();
         const functionReplacements = functionMatches.map(match => {
             const completeText = match[0];
-            const functionId = match[1];
+            const { id: functionId, deferred } = parseFunctionReference(match[1]);
             const toolRequest = this.toolInvocationRegistry?.getFunction(functionId);
             if (toolRequest) {
                 functionMap.set(toolRequest.id, toolRequest);
+                if (deferred) {
+                    deferredFunctionIds.add(toolRequest.id);
+                }
             }
             return {
                 placeholder: completeText,
@@ -798,6 +812,7 @@ export class PromptServiceImpl implements PromptService {
             id: systemOrFragmentId,
             text: resolvedTemplate,
             functionDescriptions: functionMap.size > 0 ? functionMap : undefined,
+            deferredFunctionIds: deferredFunctionIds.size > 0 ? deferredFunctionIds : undefined,
             variables: variableAndArgResolutions.resolvedVariables
         };
     }

@@ -361,6 +361,61 @@ describe('PromptService', () => {
 
         // Verify that the tool invocation registry was called
         expect(toolInvocationRegistry.getFunction.calledWith('testFunction')).to.be.true;
+
+        // The reference was not deferred, so deferredFunctionIds should be undefined
+        expect(resolvedPrompt?.deferredFunctionIds).to.be.undefined;
+    });
+
+    it('should mark functions referenced with the `?` prefix as deferred', async () => {
+        const toolInvocationRegistry = {
+            getFunction: sinon.stub()
+        };
+
+        const eagerTool: ToolRequest = {
+            id: 'eagerTool',
+            name: 'Eager Tool',
+            parameters: { type: 'object', properties: {} },
+            handler: sinon.stub()
+        };
+        const deferredTool: ToolRequest = {
+            id: 'deferredTool',
+            name: 'Deferred Tool',
+            parameters: { type: 'object', properties: {} },
+            handler: sinon.stub()
+        };
+        toolInvocationRegistry.getFunction.withArgs('eagerTool').returns(eagerTool);
+        toolInvocationRegistry.getFunction.withArgs('deferredTool').returns(deferredTool);
+
+        const container = new Container();
+        container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        container.bind<ToolInvocationRegistry>(ToolInvocationRegistry).toConstantValue(toolInvocationRegistry as any);
+
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] }, sinon.createStubInstance(Logger));
+        container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
+        container.bind<ILogger>(ILogger).toConstantValue(new MockLogger);
+
+        const testPromptService = container.get<PromptService>(PromptService);
+        testPromptService.addBuiltInPromptFragment({
+            id: 'mixed',
+            template: 'Use ~{eagerTool} eagerly and ~{?deferredTool} on demand.'
+        });
+
+        const resolvedPrompt = await testPromptService.getResolvedPromptFragment('mixed');
+
+        expect(resolvedPrompt).to.not.be.undefined;
+        expect(resolvedPrompt?.functionDescriptions?.size).to.equal(2);
+        expect(resolvedPrompt?.functionDescriptions?.get('eagerTool')).to.deep.equal(eagerTool);
+        expect(resolvedPrompt?.functionDescriptions?.get('deferredTool')).to.deep.equal(deferredTool);
+
+        expect(resolvedPrompt?.deferredFunctionIds).to.not.be.undefined;
+        expect(resolvedPrompt?.deferredFunctionIds?.size).to.equal(1);
+        expect(resolvedPrompt?.deferredFunctionIds?.has('deferredTool')).to.be.true;
+        expect(resolvedPrompt?.deferredFunctionIds?.has('eagerTool')).to.be.false;
+
+        // The deferred marker should be stripped from the resolved text
+        expect(resolvedPrompt?.text).to.not.include('~{eagerTool}');
+        expect(resolvedPrompt?.text).to.not.include('~{?deferredTool}');
     });
 
     // ===== Command Tests =====
