@@ -14,18 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { Command, CommandContribution, CommandRegistry } from '../../common/command';
-import { nls } from '../../common/nls';
-import { DisposableCollection } from '../../common/disposable';
-import { FrontendApplication } from '../frontend-application';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { StorageService } from '../storage-service';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
+import { nls } from '@theia/core/lib/common/nls';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MobileHaptics } from './mobile-haptics';
 
-// Matches the breakpoint in `packages/core/src/browser/style/mobile-workbench.css` and the one
-// used by `MobileOneColumnShellContribution`.
-const MOBILE_MEDIA = '(max-width: 767px)';
+// Breakpoint matches `mobile-workbench.css` and {@link MOBILE_NARROW_VIEWPORT_MEDIA_QUERY} in core.
 
 type StepPlacement = 'top' | 'bottom' | 'center';
 type StepDemo = 'swipe-right' | 'tap';
@@ -75,7 +74,7 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
-        typeof window !== 'undefined' ? window.matchMedia(MOBILE_MEDIA) : undefined;
+        typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
 
     protected overlay: HTMLElement | undefined;
     protected backdrop: HTMLElement | undefined;

@@ -23,6 +23,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { codicon, Widget } from '@theia/core/lib/browser/widgets';
+import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { OutlineViewWidget } from './outline-view-widget';
 import { CompositeTreeNode } from '@theia/core/lib/browser/tree';
 import { OS } from '@theia/core/lib/common/os';
@@ -74,10 +75,7 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
      * Same breakpoint as `menus.css` / mobile workbench: do not open the Outline side panel by default.
      */
     protected isNarrowMobileWorkbench(): boolean {
-        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-            return false;
-        }
-        return window.matchMedia('(max-width: 767px)').matches;
+        return matchesMobileNarrowViewport();
     }
 
     transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {

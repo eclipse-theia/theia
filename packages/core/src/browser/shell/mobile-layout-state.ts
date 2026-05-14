@@ -1,0 +1,31 @@
+// *****************************************************************************
+// Copyright (C) 2026 theia-ide and others.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+/**
+ * DOM class applied to `#theia-app-shell` when the narrow-viewport (one-column) mobile layout is active.
+ * Kept in `@theia/core` so packages such as the navigator can detect the mode without depending on
+ * product-specific contributions (`@theia/qaap-mobile-shell`).
+ *
+ * **Upstream / fork note:** this file (and call sites in `browser-menu-plugin.ts`, `tab-bars.ts`) are
+ * intentional minimal hooks so multiple `@theia/*` features share one breakpoint. Product-only UI
+ * belongs in `@theia/qaap-mobile-shell` and `@theia/qaap-product-theme`. Run `npm run qaap:drift-report`
+ * to list all paths that still diverge from `origin/master` (or set `QAAP_DIFF_BASE`).
+ */
+export const MOBILE_ONE_COLUMN_LAYOUT_CLASS = 'theia-mod-mobile-one-column';
+
+/**
+ * Breakpoint for narrow mobile layout. TypeScript should use this constant; CSS must duplicate the
+ * value — search the repo for `767px` when changing it (e.g. `@theia/qaap-product-theme`
+ * `qaap-*-narrow-viewport.css`, `@theia/qaap-mobile-shell` `mobile-workbench.css`, `ai-chat-ui` styles).
+ */
+export const MOBILE_NARROW_VIEWPORT_MEDIA_QUERY = '(max-width: 767px)';
+
+/** `true` when the viewport matches {@link MOBILE_NARROW_VIEWPORT_MEDIA_QUERY} (safe without `window`). */
+export function matchesMobileNarrowViewport(): boolean {
+    return typeof window !== 'undefined'
+        && typeof window.matchMedia === 'function'
+        && window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY).matches;
+}

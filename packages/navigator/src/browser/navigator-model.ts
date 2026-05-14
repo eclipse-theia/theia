@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
 import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { MobileOneColumnShellContribution } from '@theia/core/lib/browser/shell/mobile-one-column-shell-contribution';
+import { MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -116,7 +116,7 @@ export class FileNavigatorModel extends FileTreeModel {
      * panel after opening a file reveals the editor immediately.
      */
     protected collapseLeftExplorerSheetIfMobile(): void {
-        if (!this.shell.node.classList.contains(MobileOneColumnShellContribution.MOBILE_LAYOUT_CLASS)) {
+        if (!this.shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS)) {
             return;
         }
         if (this.shell.isExpanded('left')) {

@@ -301,57 +301,6 @@
 }
 
 /*-----------------------------------------------------------------------------
-| Responsive: hide the main menu bar (File, Edit, Selection, View, Go, Run,
-| Terminal, Help, …) on mobile-sized viewports. The bar still shows on
-| tablets and desktops (>= 768px) where there is room for horizontal menus.
-| The workbench nav controls (sidebar toggle / back / forward) remain
-| visible since they live in a separate widget within the top panel.
+| Responsive menu / touch rules for max-width 767px: `@theia/qaap-product-theme`
+| `style/qaap-menus-narrow-viewport.css` (keep in sync with `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY`).
 |----------------------------------------------------------------------------*/
-
-@media (max-width: 767px) {
-  #theia-top-panel .lm-MenuBar {
-    display: none !important;
-  }
-
-  /*-----------------------------------------------------------------------------
-  || Touch-friendly context menus: enforce a 44px minimum hit area on each
-  || menu item (WCAG 2.5.5 / Apple HIG guidance) so menu items can be tapped
-  || reliably on phones. The desktop `--theia-private-menu-item-height: 24px`
-  || stays unchanged outside this breakpoint.
-  ||----------------------------------------------------------------------------*/
-
-  .lm-Menu-item {
-    min-height: 44px;
-    /* Override the desktop `max-height: var(--theia-private-menu-item-height)`
-       (24px) which would clip the larger touch target. */
-    max-height: none;
-    line-height: 1.4;
-  }
-
-  .lm-Menu-itemIcon,
-  .lm-Menu-itemSubmenuIcon {
-    height: 44px;
-    line-height: 44px;
-  }
-
-  .lm-Menu-itemIcon::before,
-  .lm-Menu-itemSubmenuIcon::before {
-    transform: translateY(0);
-    vertical-align: middle;
-  }
-
-  /* Separator stays slim; the rule above would otherwise inflate it. */
-  .lm-Menu-item[data-type="separator"] {
-    min-height: 9px;
-    max-height: 9px;
-  }
-
-  .lm-Menu-item[data-type="separator"] > div {
-    height: 9px;
-  }
-
-  /* Bigger inline padding for label so labels don't crowd the icon. */
-  .lm-Menu-itemLabel {
-    padding: 0 32px 0 6px;
-  }
-}

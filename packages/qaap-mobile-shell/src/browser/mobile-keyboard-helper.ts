@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, DisposableCollection } from '../../common/disposable';
-import { nls } from '../../common/nls';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Mobile virtual-keyboard support for the narrow-viewport workbench.

@@ -250,20 +250,9 @@
 }
 
 /*-----------------------------------------------------------------------------
-| Mobile: hide collapsed right panel strip (reclaim width; same breakpoint as menus.css).
-| When a right view is expanded, `.theia-mod-collapsed` is absent and the panel shows normally.
+| Mobile collapsed right strip (767px): `@theia/qaap-product-theme`
+| `style/qaap-sidepanel-narrow-viewport.css`.
 |-----------------------------------------------------------------------------*/
-@media (max-width: 767px) {
-  #theia-right-content-panel.theia-mod-collapsed {
-    min-width: 0 !important;
-    max-width: 0 !important;
-    width: 0 !important;
-    overflow: hidden !important;
-    opacity: 0;
-    pointer-events: none;
-    border: none !important;
-  }
-}
 
 #theia-left-content-panel.theia-mod-collapsed .theia-app-activity-bar-row {
   border-right: none;

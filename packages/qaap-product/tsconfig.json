@@ -13,10 +13,13 @@
       "path": "../core"
     },
     {
-      "path": "../filesystem"
+      "path": "../qaap-element-inspector"
     },
     {
-      "path": "../qaap-element-inspector"
+      "path": "../qaap-mobile-shell"
+    },
+    {
+      "path": "../qaap-product-theme"
     }
   ]
 }

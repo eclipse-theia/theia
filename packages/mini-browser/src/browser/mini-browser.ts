@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Message } from '@theia/core/shared/@lumino/messaging';
+import { Message, MessageLoop } from '@theia/core/shared/@lumino/messaging';
+import { Widget } from '@theia/core/shared/@lumino/widgets';
 import URI from '@theia/core/lib/common/uri';
 import { NavigatableWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -47,6 +48,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
         this.id = `${MiniBrowser.ID}:${uri.toString()}`;
         this.title.closable = true;
         this.layout = new PanelLayout({ fitPolicy: 'set-no-constraint' });
+        this.toDispose.push(this.toDisposeOnProps);
     }
 
     getResourceUri(): URI | undefined {
@@ -69,11 +71,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
             name: raw.name,
             resetBackground: raw.resetBackground
         };
-        if (JSON.stringify(props) === JSON.stringify(this.props)) {
-            return;
-        }
         this.toDisposeOnProps.dispose();
-        this.toDispose.push(this.toDisposeOnProps);
         this.props = props;
 
         this.title.caption = this.title.label = props.name || 'Browser';
@@ -82,6 +80,38 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
         const content = this.createContent(props);
         (this.layout as PanelLayout).addWidget(content);
         this.toDisposeOnProps.push(content);
+        this.scheduleInitialContentNavigation();
+    }
+
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        MessageLoop.postMessage(this, Widget.Msg.FitRequest);
+        MessageLoop.postMessage(this, Widget.Msg.UpdateRequest);
+        this.scheduleInitialContentNavigation();
+    }
+
+    /**
+     * Re-run navigation after the shell has attached this widget so Lumino has measured the panel.
+     * Re-resolves the content child inside the deferred callback (setProps can replace it).
+     */
+    protected scheduleInitialContentNavigation(): void {
+        const start = this.props?.startPage?.trim();
+        if (!start || !this.isAttached || this.isDisposed) {
+            return;
+        }
+        queueMicrotask(() => {
+            requestAnimationFrame(() => {
+                if (!this.isAttached || this.isDisposed) {
+                    return;
+                }
+                const layout = this.layout as PanelLayout;
+                const w = layout.widgets[0] as { isDisposed?: boolean; forceNavigate?: (u: string) => Promise<void> } | undefined;
+                if (!w || w.isDisposed || typeof w.forceNavigate !== 'function') {
+                    return;
+                }
+                void w.forceNavigate.call(w, start);
+            });
+        });
     }
 
     protected override onActivateRequest(msg: Message): void {

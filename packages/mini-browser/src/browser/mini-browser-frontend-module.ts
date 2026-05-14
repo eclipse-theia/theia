@@ -27,7 +27,6 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 import { NavigatableWidgetOptions } from '@theia/core/lib/browser/navigatable';
-import { bindViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { MiniBrowserOpenHandler } from './mini-browser-open-handler';
 import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserOptions } from './mini-browser';
@@ -41,9 +40,6 @@ import {
     LocationWithoutSchemeMapper,
 } from './location-mapper-service';
 import { MiniBrowserFrontendSecurityWarnings } from './mini-browser-frontend-security-warnings';
-import { ElementInspectorService } from './element-inspector/element-inspector-service';
-import { ElementInspectorWidget } from './element-inspector/element-inspector-widget';
-import { ElementInspectorContribution } from './element-inspector/element-inspector-contribution';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserContent).toSelf();
@@ -87,12 +83,4 @@ export default new ContainerModule(bind => {
 
     bind(MiniBrowserFrontendSecurityWarnings).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MiniBrowserFrontendSecurityWarnings);
-
-    bind(ElementInspectorService).toSelf().inSingletonScope();
-    bind(ElementInspectorWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: ElementInspectorWidget.ID,
-        createWidget: () => container.get(ElementInspectorWidget)
-    })).inSingletonScope();
-    bindViewContribution(bind, ElementInspectorContribution);
 });

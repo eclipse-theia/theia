@@ -20,6 +20,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
+import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
 import { Color } from '@theia/core/lib/common/color';
@@ -72,10 +73,7 @@ export class DebugFrontendContribution extends AbstractViewContribution<MemoryLa
      * Same breakpoint as `menus.css` / mobile workbench (`#theia-right-content-panel`).
      */
     protected isNarrowMobileWorkbench(): boolean {
-        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-            return false;
-        }
-        return window.matchMedia('(max-width: 767px)').matches;
+        return matchesMobileNarrowViewport();
     }
 
     transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {

@@ -14,14 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { CommandRegistry } from '../../common/command';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { CommonCommands } from '../common-commands';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { CommandRegistry } from '@theia/core/lib/common/command';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { CommonCommands } from '@theia/core/lib/browser/common-commands';
+import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MobileHaptics } from './mobile-haptics';
-
-/** Matches the breakpoint used by the rest of the mobile workbench. */
-const MOBILE_MEDIA = '(max-width: 767px)';
 
 /** Monaco's built-in editor commands; safe as string IDs to avoid hard-depending on monaco-editor here. */
 const MONACO_FONT_ZOOM_IN = 'editor.action.fontZoomIn';
@@ -77,7 +75,7 @@ export class MobileEditorGestureContribution implements FrontendApplicationContr
         if (typeof window === 'undefined') {
             return;
         }
-        this.mobileMq = window.matchMedia(MOBILE_MEDIA);
+        this.mobileMq = window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY);
         this.coarseMq = window.matchMedia('(pointer: coarse)');
         this.mobileMq.addEventListener('change', this.refreshAttached);
         this.coarseMq.addEventListener('change', this.refreshAttached);

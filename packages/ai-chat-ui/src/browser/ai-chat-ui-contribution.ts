@@ -31,6 +31,7 @@ import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
+import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -192,10 +193,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
      * On these screens the AI chat view is not part of the default layout so the right strip does not consume width.
      */
     protected isNarrowMobileWorkbench(): boolean {
-        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-            return false;
-        }
-        return window.matchMedia('(max-width: 767px)').matches;
+        return matchesMobileNarrowViewport();
     }
 
     transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {

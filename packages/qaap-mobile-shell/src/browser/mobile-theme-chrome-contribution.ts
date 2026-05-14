@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
-import { Disposable, DisposableCollection } from '../../common/disposable';
-import { getThemeMode, isHighContrast } from '../../common/theme';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { ThemeService } from '../theming';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { getThemeMode, isHighContrast } from '@theia/core/lib/common/theme';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 
 /**
  * Synchronizes the browser chrome (Android tab bar / iOS web-app status bar / installed PWA

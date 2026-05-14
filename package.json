@@ -69,6 +69,7 @@
     "clean": "npm run -s rebuild:clean && npm run -s lint:clean && lerna run clean",
     "compile": "lerna run compile",
     "compute-references": "node scripts/compile-references.js",
+    "qaap:drift-report": "node scripts/qaap-upstream-drift-report.js",
     "docs": "rimraf gh-pages/ && npm run docs:packages && npm run docs:merge",
     "docs:packages": "node scripts/generate-typedoc-per-package.js",
     "docs:merge": "node scripts/merge-package-typedocs.js",

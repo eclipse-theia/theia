@@ -40,6 +40,7 @@ import { IMatch } from '@theia/monaco-editor-core/esm/vs/base/common/filters';
 import { CancellationToken, Event } from '@theia/core';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
+import { MOBILE_ONE_COLUMN_LAYOUT_CLASS, matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService';
 import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate';
@@ -144,7 +145,18 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.scopedInQuickOpen = this.scopedContextKeyService.createKey<boolean>('inQuickOpen', false);
 
         this.controller.onShow(() => {
-            this.container.style.top = this.shell.mainPanel.node.getBoundingClientRect().top + 'px';
+            document.body.appendChild(this.container);
+            const mobile = matchesMobileNarrowViewport()
+                || this.shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
+            this.applyQuickInputContainerTopForLayout();
+            if (mobile) {
+                /* `QuickInputController.show()` fires `onShow` then synchronously calls `updateLayout()`,
+                 which writes `top`/`left` onto `.quick-input-widget`. Defer fixes until after that. */
+                queueMicrotask(() => {
+                    this.applyQuickInputContainerTopForLayout();
+                    requestAnimationFrame(() => this.applyQuickInputContainerTopForLayout());
+                });
+            }
             this.inQuickOpen.set(true);
             this.scopedInQuickOpen.set(true);
         });
@@ -282,6 +294,30 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         // Initialize the layout using screen dimensions as monaco computes the actual sizing.
         // https://github.com/microsoft/vscode/blob/6261075646f055b99068d3688932416f2346dd3b/src/vs/base/parts/quickinput/browser/quickInput.ts#L1799
         this.controller.layout(this.getClientDimension(), 0);
+        this.applyQuickInputContainerTopForLayout();
+    }
+
+    /**
+     * Desktop: align the outer `#quick-input-container` with the main editor (`mainPanel` top).
+     * Narrow / one-column mobile: CSS lays out a full-width top sheet on `#quick-input-container`;
+     * Monaco's `QuickInputController#updateLayout` still assigns `top`/`left` to the inner
+     * `.quick-input-widget` after `onShow`, which anchored it like the desktop picker under the
+     * editor tabs — clear outer `top` and inner positioning here (CSS `!important` rules reinforce).
+     */
+    protected applyQuickInputContainerTopForLayout(): void {
+        const useMobileTopSheet = matchesMobileNarrowViewport()
+            || this.shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
+        if (useMobileTopSheet) {
+            this.container.style.removeProperty('top');
+            const inner = this.container.querySelector<HTMLElement>('.quick-input-widget');
+            if (inner) {
+                inner.style.removeProperty('top');
+                inner.style.removeProperty('left');
+                inner.style.removeProperty('transform');
+            }
+        } else {
+            this.container.style.top = `${this.shell.mainPanel.node.getBoundingClientRect().top}px`;
+        }
     }
 
     private getClientDimension(): monaco.editor.IDimension {

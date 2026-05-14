@@ -36,15 +36,15 @@ import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/f
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
-import { ElementInspectorService } from './element-inspector/element-inspector-service';
+import { ElementInspectorService } from '../../../qaap-element-inspector/src/browser/element-inspector-service';
 import {
     ELEMENT_PICKER_MESSAGE_TYPE,
     ELEMENT_PICKER_CANCEL_TYPE,
     ELEMENT_REFRESH_RESPONSE_TYPE,
     PickedElement
-} from './element-inspector/element-inspector-types';
-import { buildElementBridgeScript, buildElementPickerScript } from './element-inspector/element-picker-script';
-import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from './element-inspector/element-inspector-contribution';
+} from '../../../qaap-element-inspector/src/browser/element-inspector-types';
+import { buildElementBridgeScript, buildElementPickerScript } from '../../../qaap-element-inspector/src/browser/element-picker-script';
+import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from '../../../qaap-element-inspector/src/browser/element-inspector-contribution';
 
 /**
  * Initializer properties for the embedded browser widget.
@@ -250,6 +250,13 @@ export class MiniBrowserContent extends BaseWidget {
         ]);
     }
 
+    /**
+     * Re-run navigation (e.g. after the shell has laid out the target area). Safe to call multiple times.
+     */
+    forceNavigate(url: string): Promise<void> {
+        return this.go(url.trim());
+    }
+
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.mouseTracker.onMousedown(e => {
@@ -264,9 +271,29 @@ export class MiniBrowserContent extends BaseWidget {
         }));
         const { startPage } = this.props;
         if (startPage) {
-            setTimeout(() => this.go(startPage), 500);
-            this.listenOnContentChange(startPage);
+            void this.listenOnContentChange(startPage);
+            void this.go(startPage.trim());
         }
+    }
+
+    /**
+     * If the first `go()` ran before the widget was in the document, `iframe.src` can stay blank;
+     * retry once after attach when the URL still has not loaded.
+     */
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        const { startPage } = this.props;
+        if (!startPage) {
+            return;
+        }
+        const url = startPage.trim();
+        queueMicrotask(() => {
+            const src = this.frame.src || '';
+            const blankish = !src || src === 'about:blank';
+            if (blankish) {
+                void this.go(url);
+            }
+        });
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -279,18 +306,22 @@ export class MiniBrowserContent extends BaseWidget {
     }
 
     protected async listenOnContentChange(location: string): Promise<void> {
-        if (await this.fileService.exists(new URI(location))) {
-            const fileUri = new URI(location);
-            const watcher = this.fileService.watch(fileUri);
-            this.toDispose.push(watcher);
-            const onFileChange = (event: FileChangesEvent) => {
-                if (event.contains(fileUri, FileChangeType.ADDED) || event.contains(fileUri, FileChangeType.UPDATED)) {
-                    this.go(location, {
-                        showLoadIndicator: false
-                    });
-                }
-            };
-            this.toDispose.push(this.fileService.onDidFilesChange(debounce(onFileChange, 500)));
+        try {
+            if (await this.fileService.exists(new URI(location))) {
+                const fileUri = new URI(location);
+                const watcher = this.fileService.watch(fileUri);
+                this.toDispose.push(watcher);
+                const onFileChange = (event: FileChangesEvent) => {
+                    if (event.contains(fileUri, FileChangeType.ADDED) || event.contains(fileUri, FileChangeType.UPDATED)) {
+                        this.go(location, {
+                            showLoadIndicator: false
+                        });
+                    }
+                };
+                this.toDispose.push(this.fileService.onDidFilesChange(debounce(onFileChange, 500)));
+            }
+        } catch {
+            /* not a workspace file URL — skip watching */
         }
     }
 

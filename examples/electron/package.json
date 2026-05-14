@@ -71,6 +71,7 @@
     "@theia/messages": "1.71.0",
     "@theia/metrics": "1.71.0",
     "@theia/mini-browser": "1.71.0",
+    "@theia/qaap-product": "1.71.0",
     "@theia/monaco": "1.71.0",
     "@theia/navigator": "1.71.0",
     "@theia/outline-view": "1.71.0",

@@ -27,6 +27,18 @@
     min-height: 100dvh;
   }
 
+  /* Monaco quick input lives on `document.body`; keep it above side sheets / backdrops (~10k). */
+  #quick-input-container {
+    z-index: 2147483000 !important;
+  }
+
+  /* Same as `@theia/qaap-product-theme` `qaap-menus-narrow-viewport.css` — duplicated here so the
+     rule ships with the mobile shell even if extension CSS order differs in the bundle. */
+  #theia-top-panel .lm-MenuBar,
+  #theia-top-panel [id='theia:menubar'] {
+    display: none !important;
+  }
+
   #theia-app-shell.theia-ApplicationShell {
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);

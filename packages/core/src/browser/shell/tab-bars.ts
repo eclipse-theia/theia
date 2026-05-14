@@ -41,6 +41,7 @@ import { PreviewableWidget } from '../widgets/previewable-widget';
 import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget';
 import { isContextMenuEvent } from '../browser';
 import { ContextKeyService } from '../context-key-service';
+import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from './mobile-layout-state';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -730,7 +731,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     /** Matches `mobile-workbench.css` breakpoint; horizontal tabs use native overflow (like the bottom nav). */
     protected readonly narrowViewportMq: MediaQueryList | undefined =
-        typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)') : undefined;
+        typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
 
     protected readonly handleNarrowViewportMqChange = (): void => {
         this.syncPerfectScrollbarWithViewport();

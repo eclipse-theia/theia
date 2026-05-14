@@ -11,12 +11,6 @@
   "references": [
     {
       "path": "../core"
-    },
-    {
-      "path": "../filesystem"
-    },
-    {
-      "path": "../qaap-element-inspector"
     }
   ]
 }

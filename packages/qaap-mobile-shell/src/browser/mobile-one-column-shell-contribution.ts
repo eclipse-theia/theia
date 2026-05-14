@@ -14,16 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ArrayExt } from '@lumino/algorithm';
 import { MessageLoop } from '@lumino/messaging';
 import { BoxLayout, BoxPanel, Widget as LuminoWidget } from '@lumino/widgets';
-import { Disposable, DisposableCollection } from '../../common/disposable';
-import { CommandRegistry } from '../../common/command';
-import { nls } from '../../common/nls';
-import { FrontendApplication } from '../frontend-application';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { ApplicationShell } from './application-shell';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { CommandRegistry } from '@theia/core/lib/common/command';
+import { nls } from '@theia/core/lib/common/nls';
+import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY, MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MobileHaptics } from './mobile-haptics';
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 
@@ -37,11 +38,11 @@ class MobileBottomBarWidget extends LuminoWidget {
     }
 }
 
-/** Matches {@link packages/core/src/browser/style/mobile-workbench.css} breakpoint. */
-const MOBILE_MEDIA = '(max-width: 767px)';
-
-/** Commands referenced for active-state and click-through; declared as strings so `@theia/core` stays free of
- *  optional dependencies (`@theia/ai-chat-ui`, `@theia/terminal`, `@theia/mini-browser`, …). */
+/**
+ * Commands referenced for active-state and click-through; declared as strings so `@theia/core` stays free of
+ * optional dependencies (`@theia/ai-chat-ui`, `@theia/terminal`, `@theia/mini-browser`, …).
+ * Breakpoint for the shell matches {@link mobile-workbench.css} / {@link MOBILE_NARROW_VIEWPORT_MEDIA_QUERY}.
+ */
 const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
 const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
@@ -66,8 +67,6 @@ interface MobileBottomButton {
 @injectable()
 export class MobileOneColumnShellContribution implements FrontendApplicationContribution {
 
-    static readonly MOBILE_LAYOUT_CLASS = 'theia-mod-mobile-one-column';
-
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
@@ -76,7 +75,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
-        typeof window !== 'undefined' ? window.matchMedia(MOBILE_MEDIA) : undefined;
+        typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
 
     protected backdrop: HTMLElement | undefined;
     protected bottomBarWidget: MobileBottomBarWidget | undefined;
@@ -156,7 +155,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         } catch {
             this.savedSplitSizes = undefined;
         }
-        this.shell.node.classList.add(MobileOneColumnShellContribution.MOBILE_LAYOUT_CLASS);
+        this.shell.node.classList.add(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
         this.ensureOverlayElements();
         this.scheduleSnapAndUiRefresh();
     }
@@ -166,7 +165,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             return;
         }
         this.mobileActive = false;
-        this.shell.node.classList.remove(MobileOneColumnShellContribution.MOBILE_LAYOUT_CLASS);
+        this.shell.node.classList.remove(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
         this.teardownMobileUi();
         if (this.savedSplitSizes && this.savedSplitSizes.length === 3) {
             try {
@@ -533,25 +532,35 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         } else {
             btn.setAttribute('aria-pressed', 'false');
         }
-        btn.addEventListener('click', () => this.onMobileBottomButtonClick(def));
+        btn.addEventListener('click', () => { void this.onMobileBottomButtonClick(def); });
         return btn;
     }
 
-    protected onMobileBottomButtonClick(def: MobileBottomButton): void {
+    protected async onMobileBottomButtonClick(def: MobileBottomButton): Promise<void> {
         MobileHaptics.fire(MobileHaptics.LIGHT);
         // The side panels render as full-bleed sheets on mobile (`position: fixed; width: 100vw`).
         // If one is open when the user picks an action that targets the main editor area, the sheet
         // would visually cover the resulting widget (e.g. the mini-browser preview). Collapse them
         // first so the new widget is unobstructed. Actions that explicitly open a side panel via
         // the side activity bar bypass this contribution.
+        //
+        // Await collapse + command completion before `scheduleSnapAndUiRefresh`: firing the layout
+        // refresh in parallel with `mini-browser.openUrl` (quick input) recreated the bottom bar and
+        // stole focus so the URL prompt often failed to appear on the first tap.
         if (def.id === 'agent') {
-            this.dismissLeftSheet();
+            if (this.shell.isExpanded('left')) {
+                await this.shell.collapsePanel('left');
+            }
         } else if (this.shouldDismissSheetsForButton(def.id)) {
-            this.dismissSheets();
+            await this.dismissSheetsAsync();
         }
         const commandId = def.commandId;
         if (commandId && this.commands.getCommand(commandId) && this.commands.isEnabled(commandId)) {
-            void this.commands.executeCommand(commandId).catch(() => undefined);
+            try {
+                await this.commands.executeCommand(commandId);
+            } catch (e) {
+                console.error(`[qaap-mobile-shell] bottom bar command failed: ${commandId}`, e);
+            }
             this.scheduleSnapAndUiRefresh();
         }
     }
@@ -563,18 +572,17 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         return id !== 'agent';
     }
 
-    protected dismissLeftSheet(): void {
+    /** Collapse expanded side sheets and await layout so follow-up UI (e.g. quick input) is stable. */
+    protected async dismissSheetsAsync(): Promise<void> {
+        const tasks: Promise<void>[] = [];
         if (this.shell.isExpanded('left')) {
-            void this.shell.collapsePanel('left');
-        }
-    }
-
-    protected dismissSheets(): void {
-        if (this.shell.isExpanded('left')) {
-            void this.shell.collapsePanel('left');
+            tasks.push(this.shell.collapsePanel('left'));
         }
         if (this.shell.isExpanded('right')) {
-            void this.shell.collapsePanel('right');
+            tasks.push(this.shell.collapsePanel('right'));
+        }
+        if (tasks.length) {
+            await Promise.all(tasks);
         }
     }
 

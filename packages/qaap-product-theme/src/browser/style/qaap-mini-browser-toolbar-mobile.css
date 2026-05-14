@@ -1,0 +1,56 @@
+/********************************************************************************
+ * Copyright (C) 2026 theia-ide and others.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Mini-browser URL bar: toolbar is a single flex row; on narrow widths the input
+| can collapse to 0px because `width: 100%` on a flex item does not reserve
+| space. Give the field a flex basis and min-width, optional wrap so controls
+| stay usable (same 767px breakpoint as the rest of Qaap mobile).
+|-----------------------------------------------------------------------------*/
+
+@media (max-width: 767px) {
+  .theia-mini-browser {
+    min-height: 0;
+  }
+
+  .theia-mini-browser-content-area {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .theia-mini-browser-toolbar,
+  .theia-mini-browser-toolbar-read-only {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .theia-mini-browser-toolbar .theia-input,
+  .theia-mini-browser-toolbar-read-only .theia-input {
+    flex: 1 1 100%;
+    min-width: 0;
+    width: 100% !important;
+    margin-left: 0;
+    margin-right: 0;
+    order: -1;
+  }
+
+  .theia-mini-browser-toolbar > .theia-mini-browser-button,
+  .theia-mini-browser-toolbar-read-only > .theia-mini-browser-button {
+    flex: 0 0 auto;
+  }
+
+  .theia-mini-browser-toolbar .theia-mini-browser-workbench-controls,
+  .theia-mini-browser-toolbar-read-only .theia-mini-browser-workbench-controls {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
+    border-left: none;
+    padding-left: 0;
+  }
+}

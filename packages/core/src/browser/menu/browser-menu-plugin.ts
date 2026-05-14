@@ -37,6 +37,7 @@ import { CommonCommands } from '../common-commands';
 import { nls } from '../../common/nls';
 import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
 import { MenuModelRegistry } from '../../common/menu/menu-model-registry';
+import { matchesMobileNarrowViewport } from '../shell/mobile-layout-state';
 
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
@@ -433,7 +434,6 @@ const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
 const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 /** Matches `@theia/ai-chat-ui` ChatViewWidget.ID; used without depending on that package. */
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
-const WORKBENCH_MOBILE_MEDIA = '(max-width: 767px)';
 
 /**
  * VS Code–style controls in the menu bar: primary sidebar toggle, Go Back, Go Forward (replaces the branding logo slot).
@@ -607,9 +607,7 @@ class WorkbenchRightControlsWidget extends Widget {
     }
 
     protected isNarrowMobileWorkbench(): boolean {
-        return typeof window !== 'undefined'
-            && typeof window.matchMedia === 'function'
-            && window.matchMedia(WORKBENCH_MOBILE_MEDIA).matches;
+        return matchesMobileNarrowViewport();
     }
 
     protected updateEnabledStates(): void {
@@ -633,7 +631,7 @@ class WorkbenchRightControlsWidget extends Widget {
 
     /** On narrow viewports the AI chat strip is optional; mirror terminal “switch” affordance when chat is open. */
     protected updateAiChatSwitchVisual(): void {
-        const narrow = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+        const narrow = matchesMobileNarrowViewport();
         if (!narrow) {
             this.aiChatBtn.classList.remove('theia-mod-toggled');
             this.aiChatBtn.title = nls.localize('theia/core/workbenchBar/openAiChat', 'Open AI Chat');

@@ -32,6 +32,8 @@ import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';
 import { LocationMapperService } from './location-mapper-service';
 import { nls } from '@theia/core/lib/common/nls';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
 
 export namespace MiniBrowserCommands {
 
@@ -97,6 +99,9 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     @inject(MiniBrowserService)
     protected readonly miniBrowserService: MiniBrowserService;
 
+    @inject(MessageService)
+    protected readonly messages: MessageService;
+
     @inject(LocationMapperService)
     protected readonly locationMapperService: LocationMapperService;
 
@@ -127,15 +132,56 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
 
     override async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
         const widget = await super.open(uri, options);
-        const area = this.shell.getAreaFor(widget);
-        if (area === 'right' || area === 'left') {
-            const panelLayout = area === 'right' ? this.shell.getLayoutData().rightPanel : this.shell.getLayoutData().leftPanel;
-            const minSize = this.shell.mainPanel.node.offsetWidth / 2;
-            if (panelLayout && panelLayout.size && panelLayout.size <= minSize) {
-                requestAnimationFrame(() => this.shell.resize(minSize, area));
+        try {
+            this.schedulePostShellNavigation(widget, options);
+        } catch (e) {
+            console.error('MiniBrowserOpenHandler.schedulePostShellNavigation failed', e);
+        }
+        try {
+            const area = this.shell.getAreaFor(widget);
+            if (area === 'right' || area === 'left') {
+                const panelLayout = area === 'right' ? this.shell.getLayoutData().rightPanel : this.shell.getLayoutData().leftPanel;
+                const minSize = this.shell.mainPanel.node.offsetWidth / 2;
+                if (panelLayout && panelLayout.size && panelLayout.size <= minSize) {
+                    requestAnimationFrame(() => this.shell.resize(minSize, area));
+                }
             }
+        } catch (e) {
+            console.error('MiniBrowserOpenHandler.open side-panel resize failed', e);
         }
         return widget;
+    }
+
+    /**
+     * After `ApplicationShell#addWidget` the preview often still has 0×0 geometry; Quick Input flows are
+     * especially sensitive. Re-run `go()` on the next frames and again after layout settles.
+     */
+    protected schedulePostShellNavigation(widget: MiniBrowser, options?: MiniBrowserOpenerOptions): void {
+        const startPage = typeof options?.startPage === 'string' ? MiniBrowserOpenHandler.normalizeUrlInput(options.startPage) : '';
+        if (!startPage) {
+            return;
+        }
+        const bump = (): void => {
+            const layout = widget.layout as { widgets?: ReadonlyArray<{ isDisposed?: boolean }> };
+            const widgets = layout.widgets;
+            if (!widgets?.length) {
+                return;
+            }
+            const content = widgets[0];
+            if (!content || content.isDisposed) {
+                return;
+            }
+            const forceNavigate = (content as { forceNavigate?: (u: string) => Promise<void> }).forceNavigate;
+            if (typeof forceNavigate === 'function') {
+                void forceNavigate.call(content, startPage);
+            }
+        };
+        window.requestAnimationFrame(() => window.requestAnimationFrame(bump));
+        window.setTimeout(bump, 300);
+    }
+
+    protected static normalizeUrlInput(url: string): string {
+        return url.replace(/\u00a0/g, ' ').trim();
     }
 
     protected override async getOrCreateWidget(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
@@ -206,7 +252,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             isVisible: widget => !!this.getSourceUri(widget)
         });
         commands.registerCommand(MiniBrowserCommands.OPEN_URL, {
-            execute: (arg?: string) => this.openUrl(arg)
+            execute: (...args: unknown[]) => this.openUrl(this.coerceUrlCommandArg(args))
         });
     }
 
@@ -279,23 +325,74 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         return uri;
     }
 
-    protected async openUrl(arg?: string): Promise<void> {
-        const url = arg ? arg : await this.quickInputService?.input({
-            prompt: nls.localizeByDefault('URL to open'),
-            placeHolder: nls.localize('theia/mini-browser/typeUrl', 'Type a URL')
-        });
-        if (url) {
-            await this.openPreview(url);
+    /**
+     * Command handlers may receive non-string arguments (e.g. widget context); only a string is a URL.
+     */
+    protected coerceUrlCommandArg(args: unknown[]): string | undefined {
+        for (const arg of args) {
+            if (typeof arg === 'string') {
+                const t = MiniBrowserOpenHandler.normalizeUrlInput(arg);
+                if (t) {
+                    return t;
+                }
+            }
         }
+        return undefined;
     }
 
-    async openPreview(startPage: string): Promise<MiniBrowser> {
-        const props = await this.getOpenPreviewProps(await this.locationMapperService.map(startPage));
+    protected async openUrl(urlFromCommand?: string): Promise<void> {
+        let url = urlFromCommand ? MiniBrowserOpenHandler.normalizeUrlInput(urlFromCommand) : '';
+        if (!url) {
+            if (this.quickInputService) {
+                const raw = await this.quickInputService.input({
+                    prompt: nls.localizeByDefault('URL to open'),
+                    placeHolder: nls.localize('theia/mini-browser/typeUrl', 'Type a URL'),
+                    /* Keep the prompt open when focus briefly leaves (mobile bottom bar, Welcome, shell layout). */
+                    ignoreFocusLost: true
+                });
+                url = raw ? MiniBrowserOpenHandler.normalizeUrlInput(raw) : '';
+            } else {
+                this.messages.warn(nls.localize(
+                    'theia/mini-browser/quickInputUnavailable',
+                    'Cannot prompt for a URL because quick input is not available. Open the Preview from the editor toolbar or configure Quick Input.'
+                ));
+                return;
+            }
+        }
+        if (!url) {
+            return;
+        }
+        await this.openPreview(url);
+    }
+
+    async openPreview(startPage: string): Promise<MiniBrowser | undefined> {
+        const trimmed = MiniBrowserOpenHandler.normalizeUrlInput(startPage);
+        if (!trimmed) {
+            this.messages.warn(nls.localize('theia/mini-browser/emptyUrl', 'Please enter a URL.'));
+            return undefined;
+        }
+        let mapped: string;
+        try {
+            mapped = await this.locationMapperService.map(trimmed);
+        } catch (err) {
+            this.messages.error(nls.localize(
+                'theia/mini-browser/urlMapFailed',
+                'Could not resolve that URL: {0}',
+                String(err)
+            ));
+            return undefined;
+        }
+        const props = await this.getOpenPreviewProps(mapped);
         return this.open(MiniBrowserOpenHandler.PREVIEW_URI, props);
     }
 
     protected async getOpenPreviewProps(startPage: string): Promise<MiniBrowserOpenerOptions> {
-        const resetBackground = await this.resetBackground(new URI(startPage));
+        let resetBackground = false;
+        try {
+            resetBackground = await this.resetBackground(new URI(startPage));
+        } catch {
+            resetBackground = startPage.startsWith('http://') || startPage.startsWith('https://');
+        }
         return {
             name: nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY),
             startPage,
@@ -303,7 +400,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             // the new URL). The dedicated "Open In A New Window" button still handles opening the
             // current page externally, making the read-only click-to-open behaviour redundant.
             toolbar: 'show',
-            // On mobile (one-column shell, `theia-mod-mobile-one-column`), the right-side panel is shown
+            // On mobile (one-column shell, see MOBILE_ONE_COLUMN_LAYOUT_CLASS), the right-side panel is shown
             // as a sheet and is not the right place for a fullscreen browser preview. Open the preview
             // in the main editor area instead so it inherits the full device width.
             widgetOptions: {
@@ -320,7 +417,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             return false;
         }
         const shellNode = document.getElementById('theia-app-shell');
-        return !!shellNode?.classList.contains('theia-mod-mobile-one-column');
+        return !!shellNode?.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
     }
 
 }
