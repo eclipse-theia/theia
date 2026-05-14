@@ -33,6 +33,7 @@ describe('DefaultMCPClientFactory — event surface (RFC Q3)', () => {
 
     function makeStubTransport(): MCPTransport {
         return {
+            kind: 'stub',
             send: async () => undefined,
             close: async () => undefined,
             onMessage: new Emitter().event,

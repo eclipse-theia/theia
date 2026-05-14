@@ -157,11 +157,17 @@ and should surface immediately.
 
 ### Client factory consumption
 
-Phase B wires the `MCPClientFactory` contribution point, but `MCPServer`
-doesn't yet delegate client construction to it. Plugins that want to wrap
-the SDK client today must continue to replace `MCPServerManagerImpl`
-until a follow-up widens `MCPClient`'s public surface. Track progress in
-the RFC discussion on `eclipse-theia/theia`.
+`MCPServer.start()` picks the highest-priority `MCPClientFactory` and
+asks it to produce the `MCPClient` whose event surface (`onDidAddTools`,
+`onClose`, `onWillInvokeTool`, `onDidInvokeTool`) consumers subscribe
+to. Inventory and invocation events fire from inside `MCPServer`
+through the `__fire*` hooks the default factory wires.
+
+The factory's `.sdk` property (if any) is intentionally not used:
+workspace-roots-aware SDK-Client construction stays in `MCPServer` so
+capability negotiation and the `ListRootsRequestSchema` handler remain
+in one place. Plugin factories that want to fully replace the SDK
+client are tracked as a follow-up RFC.
 
 ### Tool filter context
 

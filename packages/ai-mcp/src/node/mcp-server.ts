@@ -21,21 +21,44 @@ import {
     isInProcessMCPServerDescription, isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription,
     MCPServerStatus, ToolInformation,
     MCPTransportProvider, MCPToolFilter, MCPToolFilterContext, MCPToolFilterOutcome, MCPWorkspaceTrustLevel,
-    MCPClientFactory, MCPCredentialResolver,
+    MCPClient, MCPClientFactory, MCPClientFactoryContext, MCPCredentialResolver,
 } from '../common';
 import { Emitter } from '@theia/core/lib/common/event.js';
 import { CallToolResult, CallToolResultSchema, ListResourcesResult, ListRootsRequestSchema, ListRootsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { SdkTransportAdapter } from './mcp-transport-adapter';
+import {
+    fireDefaultClientDidInvokeTool,
+    fireDefaultClientToolsAdded,
+    fireDefaultClientWillInvokeTool,
+} from './default-mcp-client-factory';
 
 export class MCPServer {
     private description: MCPServerDescription;
     private transport: Transport;
     private client: Client;
+    /**
+     * The {@link MCPClient} produced by the picked {@link MCPClientFactory}
+     * during {@link start}. Owns the public event surface
+     * (`onDidAddTools` / `onClose` / `onWillInvokeTool` / `onDidInvokeTool`)
+     * that consumers subscribe to. `MCPServer` fires invocation events on
+     * this object around every {@link callTool}; the inventory events fire
+     * via {@link fireDefaultClientToolsAdded} / `__fireClose` from the
+     * default-client-factory hooks.
+     */
+    private mcpClient?: MCPClient;
     private error?: string;
     private status: MCPServerStatus;
     private workspaceRoots: string[] | undefined;
     private workspaceTrustLevel: MCPWorkspaceTrustLevel = 'unknown';
+
+    /**
+     * Maps a filter-rewritten tool name back to the upstream MCP server's
+     * original name, populated by {@link getTools} when the filter chain
+     * runs. {@link callTool} consults this map so the SDK call uses the
+     * upstream name even when the registered tool name was rewritten.
+     */
+    private filteredNameToOriginal: Map<string, string> = new Map();
 
     private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
     readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
@@ -48,11 +71,15 @@ export class MCPServer {
      * original inline behaviour is preserved so existing callers continue to
      * work unchanged.
      *
-     * Client factory contributions are accepted but not yet consumed: see the
-     * Phase C follow-up in the RFC. The type is declared here so plugins
-     * binding the contribution point today do not break once it is wired.
+     * The picked {@link MCPClientFactory} is asked to produce the
+     * event-bearing {@link MCPClient} that {@link callTool} fires
+     * `__fireWillInvokeTool` / `__fireDidInvokeTool` on; see {@link start}
+     * for the wiring. The factory's `.sdk` property (if any) is intentionally
+     * unused — workspace-roots-aware SDK-Client construction stays in
+     * {@link MCPServer} so capability negotiation and roots handling remain
+     * in one place. Plugin factories that want to fully replace the SDK
+     * client are tracked as a follow-up RFC.
      */
-    /** Placeholder for the forthcoming client-factory consumption — see `MCPServer` docstring. */
     protected readonly clientFactories: readonly MCPClientFactory[];
 
     constructor(
@@ -100,24 +127,27 @@ export class MCPServer {
         let toReturnTools: ToolInformation[] | undefined = undefined;
         if (this.isRunning()) {
             try {
+                // `getTools()` already applies the filter chain — don't
+                // re-filter here, just project to ToolInformation shape.
                 const { tools } = await this.getTools();
-                toReturnTools = tools
-                    .map(tool => ({
-                        name: tool.name,
-                        description: tool.description
-                    }))
-                    .map(tool => this.applyToolFilters(tool))
-                    .filter((tool): tool is ToolInformation => tool !== undefined);
+                toReturnTools = tools.map(tool => ({
+                    name: tool.name,
+                    description: tool.description,
+                }));
             } catch (error) {
                 console.error('Error fetching tools for description:', error);
             }
         }
 
+        // Returns the operator-supplied description verbatim — credential
+        // sentinels remain as `${env:...}` / `${helper}`. Resolved
+        // material lives only inside `start()`'s local `resolved` copy
+        // and never escapes to RPC consumers.
         return {
             ...this.description,
             status: this.status,
             error: this.error,
-            tools: toReturnTools
+            tools: toReturnTools,
         };
     }
 
@@ -289,71 +319,61 @@ export class MCPServer {
         }
 
         // Materialise credential-shaped sentinels (e.g. `${env:TOKEN}` or
-        // `${mcp:credential}`) into concrete values by running the credential
-        // resolver chain. Descriptions without sentinels are returned
-        // unchanged, preserving today's behaviour. We update `this.description`
-        // so that both the transport-provider path and the inline fallback
-        // path see the resolved values.
-        this.description = await this.materialiseCredentials(this.description);
+        // `${helper}`) into concrete values for the transport layer. Keep the
+        // operator-supplied `this.description` UNCHANGED — `getDescription()`
+        // returns it over the frontend RPC, and resolved tokens / helper
+        // outputs must never leak into that surface. Only `resolved` (a local
+        // working copy) carries the materialised values, and it never
+        // escapes `start()`.
+        const resolved = await this.materialiseCredentials(this.description);
+        this.error = undefined;
+        this.filteredNameToOriginal = new Map();
 
-        let connected = false;
-
-        // if the preference useWorkspaceRoots is set to false, we will receive undefined here
-        // in that case the MCP server should have access to the entire filesystem, i.e. we don't configure roots
+        // Build the SDK Client with capabilities matching whether we have
+        // workspace roots to advertise. Roots-list-changed handler is wired
+        // in the with-roots branch.
         if (!this.workspaceRoots) {
             this.client = new Client(
-                {
-                    name: 'theia-client',
-                    version: '1.0.0',
-                },
-                {
-                    capabilities: {}
-                }
+                { name: 'theia-client', version: '1.0.0' },
+                { capabilities: {} },
             );
         } else {
             this.client = new Client(
-                {
-                    name: 'theia-client',
-                    version: '1.0.0',
-                },
-                {
-                    capabilities: {
-                        roots: {
-                            listChanged: true
-                        }
-                    }
-                }
+                { name: 'theia-client', version: '1.0.0' },
+                { capabilities: { roots: { listChanged: true } } },
             );
-            // Register request handler to provide workspace roots when server requests them
             this.client.setRequestHandler(ListRootsRequestSchema, async () => {
                 const roots = this.workspaceRoots?.map(uri => ({
                     uri,
-                    name: uri.split('/').pop() || uri
+                    name: uri.split('/').pop() || uri,
                 }));
                 return { roots } as ListRootsResult;
             });
         }
-        this.error = undefined;
 
-        // Extension-point: consult transport providers first; fall back to
-        // the inline construction when no provider matches so existing
-        // deployments without any plugin bindings see zero behavioural change.
-        const customProvider = this.pickTransportProvider(this.description);
+        // Build the raw SDK transport (provider path, stdio inline, or
+        // remote inline). For every code path we ALSO produce a
+        // `mcpTransport` (SdkTransportAdapter) so the picked
+        // `MCPClientFactory` can be handed an `MCPTransport` that satisfies
+        // its public contract.
+        let mcpTransport: SdkTransportAdapter | undefined;
+        const customProvider = this.pickTransportProvider(resolved);
         if (customProvider) {
             this.setStatus(
-                isLocalMCPServerDescription(this.description)
+                isLocalMCPServerDescription(resolved)
                     ? MCPServerStatus.Starting
                     : MCPServerStatus.Connecting,
             );
             console.log(
-                `Starting server "${this.description.name}" via transport provider "${customProvider.id}"`,
+                `Starting server "${resolved.name}" via transport provider "${customProvider.id}"`,
             );
-            const adapter = await customProvider.create(this.description, new AbortController().signal);
-            // Unwrap the SDK transport from the adapter (the default providers
-            // wrap via SdkTransportAdapter). Third-party providers that bring
-            // their own transport implementation need to supply an adapter
-            // that extends SdkTransportAdapter so this cast still succeeds.
+            const adapter = await customProvider.create(resolved, new AbortController().signal);
+            // Unwrap the SDK transport from the adapter. Plugin providers
+            // must return an SdkTransportAdapter (or instance thereof) until
+            // MCPServer gains native MCPTransport support — see MIGRATION
+            // "Transport adapters" pitfall.
             if (adapter instanceof SdkTransportAdapter) {
+                mcpTransport = adapter;
                 this.transport = adapter.sdkTransport;
             } else {
                 throw new Error(
@@ -362,77 +382,34 @@ export class MCPServer {
                     + 'native support for the narrower MCPTransport interface.',
                 );
             }
-        } else if (isLocalMCPServerDescription(this.description)) {
+        } else if (isLocalMCPServerDescription(resolved)) {
             this.setStatus(MCPServerStatus.Starting);
             console.log(
-                `Starting server "${this.description.name}" with command: ${this.description.command} ` +
-                `and args: ${this.description.args?.join(' ')} and env: ${JSON.stringify(this.description.env)}`
+                `Starting server "${resolved.name}" with command: ${resolved.command} ` +
+                `and args: ${resolved.args?.join(' ')} and env: ${JSON.stringify(resolved.env)}`,
             );
-
-            // Filter process.env to exclude undefined values
             const sanitizedEnv: Record<string, string> = Object.fromEntries(
-                Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
+                Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
             );
-
             const mergedEnv: Record<string, string> = {
                 ...sanitizedEnv,
-                ...(this.description.env || {})
+                ...(resolved.env || {}),
             };
             this.transport = new StdioClientTransport({
-                command: this.description.command,
-                args: this.description.args,
+                command: resolved.command,
+                args: resolved.args,
                 env: mergedEnv,
             });
-        } else if (isRemoteMCPServerDescription(this.description)) {
+            mcpTransport = new SdkTransportAdapter(this.transport, 'stdio');
+        } else if (isRemoteMCPServerDescription(resolved)) {
             this.setStatus(MCPServerStatus.Connecting);
-            console.log(`Connecting to server "${this.description.name}" via MCP Server Communication with URL: ${this.description.serverUrl}`);
-
-            let descHeaders;
-            if (this.description.headers) {
-                descHeaders = this.description.headers;
-            }
-
-            // create header for auth token
-            if (this.description.serverAuthToken) {
-                if (!descHeaders) {
-                    descHeaders = {};
-                }
-
-                if (this.description.serverAuthTokenHeader) {
-                    descHeaders = { ...descHeaders, [this.description.serverAuthTokenHeader]: this.description.serverAuthToken };
-                } else {
-                    descHeaders = { ...descHeaders, Authorization: `Bearer ${this.description.serverAuthToken}` };
-                }
-            }
-
-            if (descHeaders) {
-                this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl), {
-                    requestInit: { headers: descHeaders },
-                });
-            } else {
-                this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl));
-            }
-
-            try {
-                await this.client.connect(this.transport);
-                connected = true;
-                console.log(`MCP Streamable HTTP successful connected: ${this.description.serverUrl}`);
-            } catch (e) {
-                console.log(`MCP SSE fallback initiated: ${this.description.serverUrl}`);
-                await this.client.close();
-                if (descHeaders) {
-                    this.transport = new SSEClientTransport(new URL(this.description.serverUrl), {
-                        eventSourceInit: {
-                            fetch: (url, init) =>
-                                fetch(url, { ...init, headers: descHeaders }),
-                        },
-                        requestInit: { headers: descHeaders },
-                    });
-                } else {
-                    this.transport = new SSEClientTransport(new URL(this.description.serverUrl));
-                }
-            }
-        } else if (isInProcessMCPServerDescription(this.description)) {
+            console.log(`Connecting to server "${resolved.name}" via MCP Server Communication with URL: ${resolved.serverUrl}`);
+            const descHeaders = this.buildRemoteHeaders(resolved);
+            this.transport = descHeaders
+                ? new StreamableHTTPClientTransport(new URL(resolved.serverUrl), { requestInit: { headers: descHeaders } })
+                : new StreamableHTTPClientTransport(new URL(resolved.serverUrl));
+            mcpTransport = new SdkTransportAdapter(this.transport, 'http');
+        } else if (isInProcessMCPServerDescription(resolved)) {
             // In-process descriptions have no command and no serverUrl —
             // they MUST be served by a plugin-contributed MCPTransportProvider
             // (typically wrapping `createInProcessTransportPair`). If we
@@ -440,11 +417,36 @@ export class MCPServer {
             // configuration error surfaces immediately rather than as a
             // mysterious "transport is undefined" downstream.
             throw new Error(
-                `No MCPTransportProvider matched in-process MCP server "${this.description.name}". `
+                `No MCPTransportProvider matched in-process MCP server "${resolved.name}". `
                 + 'A plugin must contribute an MCPTransportProvider that handles in-process descriptions, '
                 + 'typically wrapping `createInProcessTransportPair` to bridge to a server-side `Server` from '
                 + '`@modelcontextprotocol/sdk/server`.',
             );
+        }
+
+        // Pick the highest-priority MCPClientFactory and ask it to build
+        // an MCPClient (the public event-bearing wrapper). Stored on
+        // `this.mcpClient` so `callTool` can fire `__fireWillInvokeTool` /
+        // `__fireDidInvokeTool` around real invocations. The factory's
+        // returned `.sdk` (if any) is intentionally NOT used: the SDK
+        // Client constructed above owns the workspace-roots handler and
+        // capability negotiation. Plugin factories that want to fully
+        // replace the SDK client are tracked as a follow-up.
+        this.mcpClient = undefined;
+        const factory = this.pickClientFactory();
+        if (factory && mcpTransport) {
+            try {
+                const ctx: MCPClientFactoryContext = {
+                    resolveCredential: req => this.resolveCredential(resolved, req.field, req.literal),
+                };
+                this.mcpClient = await factory.create(resolved, mcpTransport, ctx);
+            } catch (factoryError) {
+                console.warn(
+                    `[@theia/ai-mcp] MCPClientFactory "${factory.id}" failed to create an MCPClient ` +
+                    `for "${resolved.name}"; invocation events will not fire.`,
+                    factoryError,
+                );
+            }
         }
 
         this.transport.onerror = error => {
@@ -463,15 +465,89 @@ export class MCPServer {
         };
 
         try {
-            if (!connected) {
-                await this.client.connect(this.transport);
+            await this.client.connect(this.transport);
+            this.setStatus(isLocalMCPServerDescription(resolved) ? MCPServerStatus.Running : MCPServerStatus.Connected);
+        } catch (initialConnectError) {
+            // SSE fallback — only meaningful when the failed transport was
+            // Streamable-HTTP (default for remote descriptions). Plugin
+            // providers returning other transport types don't get a
+            // fallback; the catch below rethrows in that case.
+            if (isRemoteMCPServerDescription(resolved)
+                && this.transport instanceof StreamableHTTPClientTransport) {
+                console.log(`MCP SSE fallback initiated: ${resolved.serverUrl}`);
+                try {
+                    await this.client.close();
+                } catch {
+                    // The streamable client may already be in a bad state;
+                    // ignore close errors so we can proceed with SSE.
+                }
+                const descHeaders = this.buildRemoteHeaders(resolved);
+                this.transport = descHeaders
+                    ? new SSEClientTransport(new URL(resolved.serverUrl), {
+                        eventSourceInit: {
+                            fetch: (url, init) => fetch(url, { ...init, headers: descHeaders }),
+                        },
+                        requestInit: { headers: descHeaders },
+                    })
+                    : new SSEClientTransport(new URL(resolved.serverUrl));
+                try {
+                    await this.client.connect(this.transport);
+                    this.setStatus(MCPServerStatus.Connected);
+                } catch (sseError) {
+                    this.error = 'Error on MCP startup: ' + sseError;
+                    await this.client.close();
+                    this.setStatus(MCPServerStatus.Errored);
+                }
+            } else {
+                this.error = 'Error on MCP startup: ' + initialConnectError;
+                await this.client.close();
+                this.setStatus(MCPServerStatus.Errored);
             }
-            this.setStatus(isLocalMCPServerDescription(this.description) ? MCPServerStatus.Running : MCPServerStatus.Connected);
-        } catch (e) {
-            this.error = 'Error on MCP startup: ' + e;
-            await this.client.close();
-            this.setStatus(MCPServerStatus.Errored);
         }
+    }
+
+    /**
+     * Build the outbound header map for a remote description: explicit
+     * `headers` map plus the auth token slotted into either
+     * `serverAuthTokenHeader` or `Authorization: Bearer ...`. Returns
+     * `undefined` when there are no headers to set, so the
+     * `StreamableHTTPClientTransport` / `SSEClientTransport` constructor
+     * doesn't get an empty `requestInit`.
+     */
+    protected buildRemoteHeaders(description: MCPServerDescription): Record<string, string> | undefined {
+        if (!isRemoteMCPServerDescription(description)) {
+            return undefined;
+        }
+        let headers: Record<string, string> | undefined;
+        if (description.headers) {
+            headers = { ...description.headers };
+        }
+        if (description.serverAuthToken) {
+            if (!headers) {
+                headers = {};
+            }
+            if (description.serverAuthTokenHeader) {
+                headers[description.serverAuthTokenHeader] = description.serverAuthToken;
+            } else {
+                headers.Authorization = `Bearer ${description.serverAuthToken}`;
+            }
+        }
+        return headers;
+    }
+
+    /**
+     * Pick the highest-priority {@link MCPClientFactory} from the injected
+     * contributions. Returns `undefined` when no factories are wired (e.g.
+     * unit tests that construct {@link MCPServer} directly without a
+     * factory list) — in that case `start()` skips factory invocation and
+     * invocation events are silently a no-op.
+     */
+    protected pickClientFactory(): MCPClientFactory | undefined {
+        if (this.clientFactories.length === 0) {
+            return undefined;
+        }
+        return [...this.clientFactories]
+            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
     }
 
     async callTool(toolName: string, arg_string: string): Promise<CallToolResult> {
@@ -485,19 +561,98 @@ export class MCPServer {
                 error
             );
         }
+        // If the LLM-facing name was rewritten by a filter (see
+        // `getTools`), translate back to the upstream MCP server's
+        // original tool name before calling the SDK.
+        const sdkToolName = this.filteredNameToOriginal.get(toolName) ?? toolName;
         const params = {
-            name: toolName,
+            name: sdkToolName,
             arguments: args,
         };
-        // need to cast since other result schemas (second parameter) might be possible
-        return this.client.callTool(params, CallToolResultSchema) as Promise<CallToolResult>;
+
+        // Fire the public invocation events on the factory-supplied
+        // MCPClient. Default-factory clients are picked up via the
+        // `__fire*` hooks; plugin clients without those hooks see
+        // `false` and silently skip — those plugins own their own event
+        // wiring around their own callTool proxy. The argsJSON is the
+        // raw incoming JSON so it survives JSON-roundtripping for
+        // cross-process consumers.
+        if (this.mcpClient) {
+            fireDefaultClientWillInvokeTool(this.mcpClient, { toolName, argsJSON: arg_string });
+        }
+        const startedAt = Date.now();
+        try {
+            // need to cast since other result schemas (second parameter) might be possible
+            const result = await this.client.callTool(params, CallToolResultSchema) as CallToolResult;
+            if (this.mcpClient) {
+                fireDefaultClientDidInvokeTool(this.mcpClient, {
+                    toolName,
+                    durationMs: Date.now() - startedAt,
+                    ok: true,
+                });
+            }
+            return result;
+        } catch (callError) {
+            if (this.mcpClient) {
+                const err = callError instanceof Error ? callError : new Error(String(callError));
+                fireDefaultClientDidInvokeTool(this.mcpClient, {
+                    toolName,
+                    durationMs: Date.now() - startedAt,
+                    ok: false,
+                    error: { name: err.name, message: err.message },
+                });
+            }
+            throw callError;
+        }
     }
 
     async getTools(): ReturnType<Client['listTools']> {
-        if (this.isRunning()) {
-            return this.client.listTools();
+        if (!this.isRunning()) {
+            return { tools: [] };
         }
-        return { tools: [] };
+        const raw = await this.client.listTools();
+
+        // Rebuild the filter chain on every list — `tools/list_changed`
+        // refreshes from the server should be reflected in both the
+        // returned tool set and the name-remap that `callTool` consults.
+        const newMap = new Map<string, string>();
+        const filtered: typeof raw.tools = [];
+        for (const tool of raw.tools) {
+            const info: ToolInformation = {
+                name: tool.name,
+                description: tool.description,
+            };
+            const result = this.applyToolFilters(info);
+            if (result === undefined) {
+                // Suppressed — exclude from the registered set so the
+                // LLM cannot invoke it via the tool registry.
+                continue;
+            }
+            // If the filter chain renamed the tool, remember the original
+            // upstream name so `callTool` can translate back.
+            const originalName = result.originalName ?? tool.name;
+            newMap.set(result.name, originalName);
+            filtered.push({
+                ...tool,
+                name: result.name,
+                description: result.description,
+            });
+        }
+        this.filteredNameToOriginal = newMap;
+
+        // Notify factory-supplied MCPClients that the inventory changed
+        // (post-filter view). For the default factory this fires the
+        // public `onDidAddTools` event so reactive UI can refresh
+        // without polling.
+        if (this.mcpClient) {
+            const infos: ToolInformation[] = filtered.map(t => ({
+                name: t.name,
+                description: t.description,
+            }));
+            fireDefaultClientToolsAdded(this.mcpClient, infos);
+        }
+
+        return { ...raw, tools: filtered };
     }
 
     update(description: MCPServerDescription): void {

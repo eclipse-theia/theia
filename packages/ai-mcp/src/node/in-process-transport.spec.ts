@@ -65,10 +65,11 @@ describe('createInProcessTransportPair', () => {
         const received: unknown[] = [];
         pair.client.onMessage(msg => received.push(msg));
 
-        await pair.server.send({ hello: 'from server' });
+        const msg = { jsonrpc: '2.0' as const, method: 'ping', params: { from: 'server' } };
+        await pair.server.send(msg);
         await flushMicrotasks();
 
-        expect(received).to.deep.equal([{ hello: 'from server' }]);
+        expect(received).to.deep.equal([msg]);
     });
 
     it('delivers messages from client to server (raw SDK transport)', async () => {
@@ -78,10 +79,11 @@ describe('createInProcessTransportPair', () => {
 
         // The SdkTransportAdapter wraps the underlying LinkedTransport;
         // send() goes through the adapter to the inner transport.
-        await pair.client.send({ hello: 'from client' });
+        const msg = { jsonrpc: '2.0' as const, method: 'ping', params: { from: 'client' } };
+        await pair.client.send(msg);
         await flushMicrotasks();
 
-        expect(received).to.deep.equal([{ hello: 'from client' }]);
+        expect(received).to.deep.equal([msg]);
     });
 
     it('delivery is asynchronous — onmessage does not fire reentrantly inside send', async () => {
@@ -89,7 +91,7 @@ describe('createInProcessTransportPair', () => {
         let sawReentrantDelivery = false;
         pair.server.onmessage = () => { sawReentrantDelivery = true; };
 
-        const sendPromise = pair.client.send({ msg: 1 });
+        const sendPromise = pair.client.send({ jsonrpc: '2.0' as const, method: 'ping' });
         // Right after the synchronous send-call returns: nothing delivered yet.
         expect(sawReentrantDelivery).to.be.false;
         await sendPromise;
@@ -162,20 +164,19 @@ describe('createInProcessTransportPair', () => {
         expect(threw).to.be.instanceOf(Error);
     });
 
-    it('send to an already-closed peer drops silently (no throw)', async () => {
-        const pair = createInProcessTransportPair();
-        await pair.server.close();
-        await flushMicrotasks();
-        // The client is also closed via mutual-close, so we test by
-        // sending from a fresh sender into the already-closed peer.
-        const fresh = new LinkedTransport();
-        const closedPeer = new LinkedTransport();
-        fresh.peer = closedPeer;
-        closedPeer.peer = fresh;
-        await closedPeer.close();
-        await flushMicrotasks();
-        // fresh.send should resolve without throwing — peer is gone.
-        await fresh.send({ ignored: true });
+    it('send to a closed peer drops silently (defensive code path)', async () => {
+        // The public createInProcessTransportPair API enforces mutual
+        // close, so this case isn't reachable from a real consumer.
+        // Construct LinkedTransports directly to verify the defensive
+        // "peer closed, we're not" branch in send() does the right thing.
+        const a = new LinkedTransport();
+        const b = new LinkedTransport();
+        a.peer = b;
+        b.peer = a;
+        // Mark b closed without going through close() (which would
+        // mutual-close a too).
+        (b as unknown as { closed: boolean }).closed = true;
+        await a.send({ jsonrpc: '2.0' as const, method: 'ping' });
     });
 
     it('start() is a no-op (linked-pair is connected on construction)', async () => {

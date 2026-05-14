@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MCPCredentialRequest, MCPServerDescription } from '../common';
+import { MCPCredentialRequest, MCPServerDescription, RemoteMCPServerDescription } from '../common';
 import {
     HeadersHelperCredentialResolver,
     runHelper,
@@ -34,7 +34,7 @@ function nodeJsonHelper(json: Record<string, unknown>): string {
     return `"${process.execPath}" -e "process.stdout.write(Buffer.from('${b64}','base64').toString('utf8'))"`;
 }
 
-const remoteDesc: MCPServerDescription = {
+const remoteDesc: RemoteMCPServerDescription = {
     name: 'gw',
     serverUrl: 'https://gateway.example.com/mcp',
 };
