@@ -111,7 +111,7 @@ describe('Task server / back-end', function (): void {
             setup.connectionProvider.listen(`${terminalsPath}/${terminalId}`, (path, channel) => {
                 channel.onMessage(e => stringBuffer.push(e().readString()));
                 channel.onError(reject);
-                channel.onClose(() => reject(new Error('Channel has been closed')));
+                // onClose is not used to reject: the server now closes the channel after process exit (expected behavior).
             }, false);
             stringBuffer.onData(currentMessage => {
                 // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
