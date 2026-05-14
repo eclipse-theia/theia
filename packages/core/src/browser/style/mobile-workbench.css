@@ -192,6 +192,8 @@
 
 #theia-app-shell.theia-mod-mobile-one-column {
   --theia-mobile-bottom-bar-height: 56px;
+  /* Horizontal space reserved on the activity strip so fixed close control does not cover icons. */
+  --theia-mobile-sheet-close-reserve: 48px;
 }
 
 #theia-app-shell.theia-mod-mobile-one-column #theia-left-right-split-panel > .lm-SplitPanel-handle {
@@ -211,7 +213,8 @@
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel {
   position: fixed !important;
   z-index: 9600;
-  top: calc(env(safe-area-inset-top, 0px) + var(--theia-private-menubar-height, 40px)) !important;
+  /* Full viewport height under the top safe-area only; menubar strip is not reserved so the sheet gains vertical space. */
+  top: env(safe-area-inset-top, 0px) !important;
   /* The sheet runs all the way to the bottom of the viewport, overlaying both
      `#theia-mobile-bottom-bar` and `#theia-statusBar`. While a sheet is open
      the user reaches the bottom-bar actions by dismissing it (backdrop tap,
@@ -288,6 +291,13 @@
   border-radius: 0 !important;
 }
 
+/* Keep trailing activity-bar controls (overflow / pinned views) clear of the fixed close button. */
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .theia-app-activity-bar-row,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .theia-app-activity-bar-row {
+  padding-inline-end: var(--theia-mobile-sheet-close-reserve, 48px);
+  box-sizing: border-box;
+}
+
 /* Hide the side panel's inner Lumino `DockPanel` TabBar entirely on mobile.
    The dock panel is created in `single-document` mode and the activity strip already lets the
    user switch between views; this TabBar would duplicate the same tabs (Explorer / Search /
@@ -334,17 +344,19 @@
 }
 
 /* Floating close button (one shared instance, appended to `document.body`). Visible whenever a
-   side sheet is expanded. Sits in the menubar / safe-area strip above the sheet so it never
-   overlaps the activity strip icons inside the sheet. Horizontally centered on the viewport.
+   side sheet is expanded. Fixed to the top-trailing corner of the viewport (same as the sheet’s
+   top edge now that the sheet is full-height); the activity row uses `--theia-mobile-sheet-close-reserve`
+   so scrollable and pinned strip icons are not covered.
 
    Rendered as a bare X glyph — no background, border, or shadow. The button element itself is
-   kept at 36 × 36 px so the tappable area remains large (well above the 44 px-with-margin iOS
+   kept at 44 × 44 px so the tappable area remains large (well above the 44 px-with-margin iOS
    minimum) even though only the icon is visible. */
 .theia-mobile-sheet-close-btn {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 4px);
-  left: 50%;
-  transform: translateX(-50%) translateY(-4px);
+  top: calc(env(safe-area-inset-top, 0px) + 2px);
+  inset-inline-end: calc(env(safe-area-inset-right, 0px) + 4px);
+  inset-inline-start: auto;
+  transform: translateY(-4px);
   width: 44px;
   height: 44px;
   margin: 0;
@@ -370,7 +382,7 @@
   display: inline-flex;
   pointer-events: auto;
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
 /* Bare glyph styled like an embossed control: layered `text-shadow` plus a `drop-shadow` filter
@@ -398,7 +410,7 @@
 }
 
 .theia-mobile-sheet-close-btn:active {
-  transform: translateX(-50%) scale(0.9);
+  transform: scale(0.92);
 }
 
 .theia-mobile-sheet-close-btn:active .theia-mobile-sheet-close-btn-icon {

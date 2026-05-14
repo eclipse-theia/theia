@@ -312,9 +312,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /**
      * Floating close button rendered into `document.body` and visible whenever any side sheet is
-     * expanded. Sits in the safe-area/menubar strip above the sheet so it does not overlap the
-     * activity strip icons; horizontally centered. A single instance handles both sides — tapping
-     * collapses whichever sheet is currently open (left, right, or both).
+     * expanded. Positioned at the top-trailing corner of the viewport (CSS) so it aligns with the
+     * full-height sheet; the activity strip reserves `--theia-mobile-sheet-close-reserve` so icons
+     * are not covered. A single instance handles both sides — tapping collapses whichever sheet is
+     * currently open (left, right, or both).
      */
     protected ensureCloseButton(): void {
         if (this.closeButton?.isConnected) {
