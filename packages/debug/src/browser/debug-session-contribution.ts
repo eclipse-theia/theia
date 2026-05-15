@@ -14,25 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import { CommandService, MessageClient } from '@theia/core/lib/common';
-import { LabelProvider } from '@theia/core/lib/browser';
-import { EditorManager } from '@theia/editor/lib/browser';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { DebugSession } from './debug-session';
-import { BreakpointManager } from './breakpoint/breakpoint-manager';
+import { injectable, inject, named, postConstruct, interfaces } from '@theia/core/shared/inversify';
+import { DebugSession, DebugSessionData } from './debug-session';
 import { DebugConfigurationSessionOptions, DebugSessionOptions } from './debug-session-options';
 import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '../common/debug-preferences';
 import { DebugSessionConnection } from './debug-session-connection';
 import { DebugChannel, DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { DebugContribution } from './debug-contribution';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
-import { TestService } from '@theia/test/lib/browser/test-service';
-import { DebugSessionManager } from './debug-session-manager';
 
 /**
  * DebugSessionContribution symbol for DI.
@@ -92,39 +82,25 @@ export const DebugSessionFactory = Symbol('DebugSessionFactory');
  * The [debug session](#DebugSession) factory.
  */
 export interface DebugSessionFactory {
-    get(manager: DebugSessionManager, sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession;
+    createSession(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession;
 }
 
 @injectable()
 export class DefaultDebugSessionFactory implements DebugSessionFactory {
     @inject(RemoteConnectionProvider)
     protected readonly connectionProvider: ServiceConnectionProvider;
-    @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
-    @inject(BreakpointManager)
-    protected readonly breakpoints: BreakpointManager;
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
-    @inject(MessageClient)
-    protected readonly messages: MessageClient;
     @inject(OutputChannelManager)
-    protected readonly outputChannelManager: OutputChannelManager;
+    protected outputChannelManager: OutputChannelManager;
     @inject(DebugPreferences)
-    protected readonly debugPreferences: DebugPreferences;
-    @inject(FileService)
-    protected readonly fileService: FileService;
-    @inject(ContributionProvider) @named(DebugContribution)
-    protected readonly debugContributionProvider: ContributionProvider<DebugContribution>;
-    @inject(TestService)
-    protected readonly testService: TestService;
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
-    @inject(CommandService)
-    protected commandService: CommandService;
+    protected debugPreferences: DebugPreferences;
 
-    get(manager: DebugSessionManager, sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
+    protected parentContainer: interfaces.Container;
+
+    setContainer(container: interfaces.Container): void {
+        this.parentContainer = container;
+    }
+
+    createSession(sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             () => new Promise<DebugChannel>(resolve =>
@@ -133,25 +109,14 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
                 }, false)
             ),
             this.getTraceOutputChannel());
-        return new DebugSession(
-            sessionId,
+        const data: DebugSessionData = {
+            id: sessionId,
             options,
             parentSession,
-            this.testService,
-            options.testRun,
-            manager,
-            connection,
-            this.terminalService,
-            this.editorManager,
-            this.breakpoints,
-            this.labelProvider,
-            this.messages,
-            this.fileService,
-            this.debugContributionProvider,
-            this.workspaceService,
-            this.debugPreferences,
-            this.commandService
-        );
+            testRun: options.testRun,
+        };
+        const child = DebugSession.createContainer(this.parentContainer, data, connection);
+        return child.get(DebugSession);
     }
 
     protected getTraceOutputChannel(): OutputChannel | undefined {

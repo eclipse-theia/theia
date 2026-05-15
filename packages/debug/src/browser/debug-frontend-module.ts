@@ -77,7 +77,12 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     ).inSingletonScope();
 
     bindRootContributionProvider(bind, DebugSessionContribution);
-    bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
+    bind(DebugSessionFactory).toDynamicValue(({ container }) => {
+        const factory = container.get(DefaultDebugSessionFactory);
+        factory.setContainer(container);
+        return factory;
+    }).inSingletonScope();
+    bind(DefaultDebugSessionFactory).toSelf().inSingletonScope();
     bind(DebugSessionManager).toSelf().inSingletonScope();
 
     bind(BreakpointManager).toSelf().inSingletonScope();

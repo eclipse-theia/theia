@@ -31,6 +31,7 @@ import {
     CommandService,
     CancellationError
 } from '@theia/core/lib/common';
+import { inject, injectable, named, postConstruct, interfaces } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
@@ -56,6 +57,14 @@ import { TestService, TestServices } from '@theia/test/lib/browser/test-service'
 import { DebugSessionManager } from './debug-session-manager';
 
 import { DebugPreferences } from '../common/debug-preferences';
+
+export const DebugSessionData = Symbol('DebugSessionData');
+export interface DebugSessionData {
+    id: string;
+    options: DebugConfigurationSessionOptions;
+    parentSession: DebugSession | undefined;
+    testRun: TestRunReference | undefined;
+}
 
 export enum DebugState {
     Inactive,
@@ -87,8 +96,79 @@ export function formatMessage(format: string, variables?: { [key: string]: strin
     return variables ? format.replace(formatMessageRegexp, (match, group) => variables.hasOwnProperty(group) ? variables[group] : match) : format;
 }
 
-// FIXME: make injectable to allow easily inject services
+
+@injectable()
 export class DebugSession implements CompositeTreeElement {
+
+    static createContainer(parent: interfaces.Container, data: DebugSessionData, connection: DebugSessionConnection): interfaces.Container {
+        const child = parent.createChild();
+        child.bind(DebugSessionData).toConstantValue(data);
+        child.bind(DebugSessionConnection).toConstantValue(connection);
+        child.bind(DebugSession).toSelf();
+        return child;
+    }
+
+    @inject(DebugSessionData)
+    protected readonly data: DebugSessionData;
+
+    @inject(DebugSessionConnection)
+    protected readonly connection: DebugSessionConnection;
+
+    @inject(TestService)
+    protected readonly testService: TestService;
+
+    @inject(DebugSessionManager)
+    protected readonly sessionManager: DebugSessionManager;
+
+    @inject(TerminalService)
+    protected readonly terminalServer: TerminalService;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(BreakpointManager)
+    protected readonly breakpoints: BreakpointManager;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(MessageClient)
+    protected readonly messages: MessageClient;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @inject(ContributionProvider)
+    @named(DebugContribution)
+    protected readonly debugContributionProvider: ContributionProvider<DebugContribution>;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(DebugPreferences)
+    protected readonly debugPreferences: DebugPreferences;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
+    /**
+     * Number of millis after a `stop` request times out. It's 5 seconds by default.
+     */
+    protected readonly stopTimeout = 5_000;
+
+    get id(): string {
+        return this.data.id;
+    }
+
+    get options(): DebugConfigurationSessionOptions {
+        return this.data.options;
+    }
+
+    get parentSession(): DebugSession | undefined {
+        return this.data.parentSession;
+    }
+
+
     protected readonly deferredOnDidConfigureCapabilities = new Deferred<void>();
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
@@ -117,47 +197,27 @@ export class DebugSession implements CompositeTreeElement {
     /** Maximum time to wait for the shell integration prompt before proceeding. */
     protected readonly PROMPT_READY_TIMEOUT_MS = 3000;
 
-    constructor(
-        readonly id: string,
-        readonly options: DebugConfigurationSessionOptions,
-        readonly parentSession: DebugSession | undefined,
-        testService: TestService,
-        testRun: TestRunReference | undefined,
-        sessionManager: DebugSessionManager,
-        protected readonly connection: DebugSessionConnection,
-        protected readonly terminalServer: TerminalService,
-        protected readonly editorManager: EditorManager,
-        protected readonly breakpoints: BreakpointManager,
-        protected readonly labelProvider: LabelProvider,
-        protected readonly messages: MessageClient,
-        protected readonly fileService: FileService,
-        protected readonly debugContributionProvider: ContributionProvider<DebugContribution>,
-        protected readonly workspaceService: WorkspaceService,
-        protected readonly debugPreferences: DebugPreferences,
-        protected readonly commandService: CommandService,
-        /**
-         * Number of millis after a `stop` request times out. It's 5 seconds by default.
-         */
-        protected readonly stopTimeout = 5_000,
-    ) {
+
+    @postConstruct()
+    protected init(): void {
         this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
         this.connection.onDidClose(() => {
             this.toDispose.dispose();
         });
-        this.registerDebugContributions(options.configuration.type, this.connection);
+        this.registerDebugContributions(this.options.configuration.type, this.connection);
 
-        if (parentSession) {
-            parentSession.childSessions.set(id, this);
+        if (this.parentSession) {
+            this.parentSession.childSessions.set(this.id, this);
             this.toDispose.push(Disposable.create(() => {
-                this.parentSession?.childSessions?.delete(id);
+                this.parentSession?.childSessions?.delete(this.id);
             }));
         }
-        if (testRun) {
+        if (this.data.testRun) {
             try {
-                const run = TestServices.withTestRun(testService, testRun.controllerId, testRun.runId);
+                const run = TestServices.withTestRun(this.testService, this.data.testRun.controllerId, this.data.testRun.runId);
                 run.onDidChangeProperty(evt => {
                     if (evt.isRunning === false) {
-                        sessionManager.terminateSession(this);
+                        this.sessionManager.terminateSession(this);
                     }
                 });
             } catch (err) {
