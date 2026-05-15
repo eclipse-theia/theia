@@ -114,15 +114,21 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         commands.registerCommand(AI_TERMINAL_ASK_AI_COMMAND, this.commandHandlerFactory({
             execute: async (terminalBlock: TerminalBlock) => {
                 const terminal = this.terminalService.lastUsedTerminal;
-                if (terminal) {
-                    this.showInputOverlay(terminal, terminalBlock);
+                if (!terminal) {
+                    return;
                 }
+                const commandHistory = terminal?.commandHistoryState?.commandHistory;
+                const terminalHistoryIndex = commandHistory?.indexOf(terminalBlock) ?? -1;
+                if (terminalHistoryIndex < 0) {
+                    return;
+                }
+                this.showInputOverlay(terminal, terminalHistoryIndex);
             },
             isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
         }));
     }
 
-    private showInputOverlay(terminal: TerminalWidget, terminalBlock: TerminalBlock): void {
+    private showInputOverlay(terminal: TerminalWidget, terminalHistoryIndex: number): void {
         this.cleanupInputOverlay();
         if (!(terminal instanceof TerminalWidgetImpl)) {
             return;
@@ -135,7 +141,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         );
 
         this.askAiInputOverlay.onSubmit(request => {
-            this.createNewChatSession(request, terminal, terminalBlock);
+            this.createNewChatSession(request, terminal, terminalHistoryIndex);
             this.cleanupInputOverlay();
         });
 
@@ -160,18 +166,19 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         }
     }
 
-    protected async createNewChatSession(request: ChatRequest, currentTerminal: TerminalWidgetImpl, terminalBlock: TerminalBlock): Promise<void> {
+    protected async createNewChatSession(
+        request: ChatRequest,
+        currentTerminal: TerminalWidgetImpl,
+        terminalHistoryIndex: number
+    ): Promise<void> {
         const coderAgent = this.chatAgentService.getAgent('Coder');
         const cwd = (await currentTerminal.cwd).toString();
         const shell = await this.getTerminalShell(currentTerminal);
         const text = [
-            '### Terminal Content:',
-            `Command: ${terminalBlock.command}\n`,
-            `Output: ${terminalBlock.output}`,
+            `#terminalCommand:${terminalHistoryIndex}`,
             '### Terminal Context:',
             `Cwd: ${cwd}\n`,
             `ShellType: ${shell}`,
-            '',
             '### User Questions',
             request.text
         ].join('\n');
