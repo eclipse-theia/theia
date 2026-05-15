@@ -6,6 +6,8 @@
 
 import '../../src/browser/style/workbench-cursor-typography.css';
 import '../../src/browser/style/qaap-workbench-top-bar.css';
+import '../../src/browser/style/qaap-ai-chat-mobile.css';
+import '../../src/browser/style/qaap-vsx-registry.css';
 import '../../src/browser/style/qaap-menus-narrow-viewport.css';
 import '../../src/browser/style/qaap-sidepanel.css';
 import '../../src/browser/style/qaap-sidepanel-narrow-viewport.css';

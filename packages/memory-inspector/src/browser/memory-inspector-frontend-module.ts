@@ -19,7 +19,6 @@ import '../../src/browser/style/index.css';
 import '../../src/browser/utils/multi-select-bar.css';
 import { bindRootContributionProvider } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
-import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -49,7 +48,6 @@ export default new ContainerModule(bind => {
     bind(ColorContribution).toService(DebugFrontendContribution);
     bind(TabBarToolbarContribution).toService(DebugFrontendContribution);
     bind(FrontendApplicationContribution).toService(DebugFrontendContribution);
-    bind(ShellLayoutTransformer).toService(DebugFrontendContribution);
 
     bind(MemoryProviderService).toSelf().inSingletonScope();
     bind(DefaultMemoryProvider).toSelf().inSingletonScope();

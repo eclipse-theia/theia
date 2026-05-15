@@ -1,0 +1,39 @@
+/********************************************************************************
+ * Copyright (C) 2026 theia-ide and others.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Mobile: AI chat full viewport (body.theia-mod-mobile-ai-chat-fullwidth).
+| Class toggled by @theia/qaap-extensions QaapAiChatMobileContribution.
+|-----------------------------------------------------------------------------*/
+@media (max-width: 767px) {
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > #theia-left-content-panel,
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > #theia-bottom-split-panel {
+    flex-basis: 0 !important;
+    flex-grow: 0 !important;
+    min-width: 0 !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+    border: none !important;
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"] > .lm-SplitPanel-handle {
+    display: none !important;
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-left-right-split-panel > #theia-right-content-panel {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-right-content-panel .theia-side-panel,
+  body.theia-mod-mobile-ai-chat-fullwidth #theia-right-content-panel .lm-DockPanel-widget {
+    max-width: none !important;
+  }
+}

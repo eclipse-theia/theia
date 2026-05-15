@@ -1,15 +1,14 @@
 {
-  "name": "@theia/qaap-product",
+  "name": "@theia/qaap-extensions",
   "version": "1.71.0",
-  "description": "Qaap umbrella: add this single dependency to example/browser apps; transitively enables qaap-element-inspector, qaap-mobile-shell, qaap-product-theme. @theia/mini-browser still depends on qaap-element-inspector directly.",
+  "description": "Qaap product overrides for upstream Theia extensions (AI chat, outline, memory inspector, navigator)",
   "dependencies": {
-    "@theia/qaap-adapters": "1.71.0",
-    "@theia/qaap-extensions": "1.71.0",
-    "@theia/qaap-element-inspector": "1.71.0",
-    "@theia/qaap-mobile-shell": "1.71.0",
-    "@theia/qaap-product-theme": "1.71.0",
-    "@theia/qaap-shell": "1.71.0",
+    "@theia/ai-chat-ui": "1.71.0",
     "@theia/core": "1.71.0",
+    "@theia/filesystem": "1.71.0",
+    "@theia/memory-inspector": "1.71.0",
+    "@theia/navigator": "1.71.0",
+    "@theia/outline-view": "1.71.0",
     "tslib": "^2.8.1"
   },
   "publishConfig": {
@@ -17,7 +16,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/qaap-product-frontend-module"
+      "frontend": "lib/browser/qaap-extensions-frontend-module"
     }
   ],
   "keywords": [

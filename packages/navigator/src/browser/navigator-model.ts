@@ -18,8 +18,6 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
 import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
-import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { collapseLeftPanelIfMobileOneColumn } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -34,7 +32,6 @@ export class FileNavigatorModel extends FileTreeModel {
     @inject(FileNavigatorTree) protected override readonly tree: FileNavigatorTree;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FrontendApplicationStateService) protected readonly applicationState: FrontendApplicationStateService;
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
@@ -97,8 +94,7 @@ export class FileNavigatorModel extends FileTreeModel {
 
     previewNode(node: TreeNode): void {
         if (FileNode.is(node)) {
-            void open(this.openerService, node.uri, { mode: 'reveal', preview: true });
-            this.collapseLeftExplorerSheetIfMobile();
+            open(this.openerService, node.uri, { mode: 'reveal', preview: true });
         }
     }
 
@@ -106,17 +102,8 @@ export class FileNavigatorModel extends FileTreeModel {
         if (node.visible === false) {
             return;
         } else if (FileNode.is(node)) {
-            void open(this.openerService, node.uri);
-            this.collapseLeftExplorerSheetIfMobile();
+            open(this.openerService, node.uri);
         }
-    }
-
-    /**
-     * On narrow viewports the file explorer is a full-width sheet over the editor; closing the left
-     * panel after opening a file reveals the editor immediately.
-     */
-    protected collapseLeftExplorerSheetIfMobile(): void {
-        collapseLeftPanelIfMobileOneColumn(this.shell);
     }
 
     override *getNodesByUri(uri: URI): IterableIterator<TreeNode> {

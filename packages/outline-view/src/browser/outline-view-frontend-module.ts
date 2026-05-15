@@ -27,7 +27,6 @@ import {
     BreadcrumbsContribution
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
 import '../../src/browser/styles/index.css';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
@@ -53,7 +52,6 @@ export default new ContainerModule(bind => {
     bindViewContribution(bind, OutlineViewContribution);
     bind(FrontendApplicationContribution).toService(OutlineViewContribution);
     bind(TabBarToolbarContribution).toService(OutlineViewContribution);
-    bind(ShellLayoutTransformer).toService(OutlineViewContribution);
 
     bind(OutlineBreadcrumbsContribution).toSelf().inSingletonScope();
     bind(BreadcrumbsContribution).toService(OutlineBreadcrumbsContribution);

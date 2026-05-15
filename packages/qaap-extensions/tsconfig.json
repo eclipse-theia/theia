@@ -10,25 +10,22 @@
   ],
   "references": [
     {
+      "path": "../ai-chat-ui"
+    },
+    {
       "path": "../core"
     },
     {
-      "path": "../qaap-adapters"
+      "path": "../filesystem"
     },
     {
-      "path": "../qaap-element-inspector"
+      "path": "../memory-inspector"
     },
     {
-      "path": "../qaap-extensions"
+      "path": "../navigator"
     },
     {
-      "path": "../qaap-mobile-shell"
-    },
-    {
-      "path": "../qaap-product-theme"
-    },
-    {
-      "path": "../qaap-shell"
+      "path": "../outline-view"
     }
   ]
 }

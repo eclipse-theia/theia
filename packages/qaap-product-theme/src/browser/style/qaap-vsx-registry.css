@@ -1,0 +1,64 @@
+/********************************************************************************
+ * Copyright (C) 2026 theia-ide and others.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Qaap marketplace / VSX list density (moved from @theia/vsx-registry style/index.css).
+|-----------------------------------------------------------------------------*/
+
+:root {
+  --theia-vsx-extension-icon-size: calc(var(--theia-ui-icon-font-size) * 2);
+}
+
+.theia-vsx-extension,
+.theia-vsx-extensions-view-container .part > .body {
+  min-height: calc(var(--theia-content-line-height) * 2.35);
+}
+
+.theia-vsx-extensions-search-bar .theia-input {
+  font-size: var(--theia-ui-font-size0);
+}
+
+.theia-vsx-extension {
+  align-items: center;
+  font-size: var(--theia-ui-font-size0);
+  line-height: 1.4;
+}
+
+.theia-vsx-extension-icon {
+  padding-right: calc(var(--theia-ui-padding) * 1.5);
+}
+
+.theia-vsx-extension-content {
+  width: calc(100% - var(--theia-vsx-extension-icon-size) - var(--theia-ui-padding) * 1.5);
+}
+
+.theia-vsx-extension-content .title .name {
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 600;
+}
+
+.theia-vsx-extension-content .title .version,
+.theia-vsx-extension-content .title .stat {
+  font-size: calc(var(--theia-ui-font-size0) * 0.92);
+}
+
+.theia-vsx-extension-content .title .stat .codicon {
+  font-size: 1em;
+}
+
+.theia-vsx-extension-description {
+  font-size: calc(var(--theia-ui-font-size0) * 0.95);
+  opacity: 0.92;
+}
+
+.theia-vsx-extension-publisher {
+  font-size: calc(var(--theia-ui-font-size0) * 0.92);
+  opacity: 0.9;
+}
+
+.theia-vsx-extension-action-bar .action {
+  font-size: var(--theia-ui-font-size0);
+}

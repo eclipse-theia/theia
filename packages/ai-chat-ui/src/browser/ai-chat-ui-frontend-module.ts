@@ -18,7 +18,6 @@ import '../../src/browser/style/index.css';
 import '../../src/browser/style/tool-call-rendering.css';
 import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
-import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
@@ -80,7 +79,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
     bind(FrontendApplicationContribution).toService(AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
-    bind(ShellLayoutTransformer).toService(AIChatContribution);
 
     bind(ChatInputHistoryService).toSelf().inSingletonScope();
     bind(ChatInputHistoryContribution).toSelf().inSingletonScope();

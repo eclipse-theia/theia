@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 :root {
-  /* List row icons: ~2× codicon grid (Cursor / compact marketplace density vs 3×). */
-  --theia-vsx-extension-icon-size: calc(var(--theia-ui-icon-font-size) * 2);
+  --theia-vsx-extension-icon-size: calc(var(--theia-ui-icon-font-size) * 3);
   --theia-vsx-extension-editor-icon-size: calc(var(--theia-vsx-extension-icon-size) * 3);
 }
 
@@ -73,7 +72,7 @@
 
 .theia-vsx-extension,
 .theia-vsx-extensions-view-container .part>.body {
-  min-height: calc(var(--theia-content-line-height) * 2.35);
+  min-height: calc(var(--theia-content-line-height) * 3);
 }
 
 .theia-vsx-extensions-search-bar {
@@ -86,7 +85,6 @@
   overflow: hidden;
   flex: 1;
   background: transparent;
-  font-size: var(--theia-ui-font-size0);
 }
 
 .theia-vsx-extensions-search-bar .theia-input:focus {
@@ -97,16 +95,15 @@
 .theia-vsx-extension {
   display: flex;
   flex-direction: row;
+  line-height: calc(var(--theia-content-line-height) * 17 / 22);
   align-items: center;
-  font-size: var(--theia-ui-font-size0);
-  line-height: 1.4;
 }
 
 .theia-vsx-extension-icon {
   height: var(--theia-vsx-extension-icon-size);
   width: var(--theia-vsx-extension-icon-size);
   align-self: center;
-  padding-right: calc(var(--theia-ui-padding) * 1.5);
+  padding-right: calc(var(--theia-ui-padding) * 2.5);
   flex-shrink: 0;
   object-fit: contain;
 }
@@ -120,7 +117,7 @@
 .theia-vsx-extension-content {
   display: flex;
   flex-direction: column;
-  width: calc(100% - var(--theia-vsx-extension-icon-size) - var(--theia-ui-padding) * 1.5);
+  width: calc(100% - var(--theia-vsx-extension-icon-size) - var(--theia-ui-padding) * 2.5);
 }
 
 .theia-vsx-extension-content .title {
@@ -132,8 +129,7 @@
 }
 
 .theia-vsx-extension-content .title .name {
-  font-size: var(--theia-ui-font-size1);
-  font-weight: 600;
+  font-weight: bold;
 }
 
 .theia-vsx-extension-content .disabled {
@@ -166,11 +162,11 @@
 .theia-vsx-extension-content .title .version,
 .theia-vsx-extension-content .title .stat {
   opacity: 0.85;
-  font-size: calc(var(--theia-ui-font-size0) * 0.92);
+  font-size: 80%;
 }
 
 .theia-vsx-extension-content .title .stat .codicon {
-  font-size: 1em;
+  font-size: 110%;
 }
 
 .theia-vsx-extension-content .title .stat .download-count,
@@ -196,14 +192,11 @@
 
 .theia-vsx-extension-description {
   padding-right: calc(var(--theia-ui-padding) * 2);
-  font-size: calc(var(--theia-ui-font-size0) * 0.95);
-  opacity: 0.92;
 }
 
 .theia-vsx-extension-publisher {
   font-weight: 600;
-  font-size: calc(var(--theia-ui-font-size0) * 0.92);
-  opacity: 0.9;
+  font-size: 90%;
 }
 
 .theia-vsx-extension-action-bar {
@@ -224,7 +217,7 @@
 }
 
 .theia-vsx-extension-action-bar .action {
-  font-size: var(--theia-ui-font-size0);
+  font-size: 90%;
   min-width: auto !important;
   padding: 2px var(--theia-ui-padding) !important;
   margin-top: 2px;
