@@ -17,15 +17,13 @@
 import { ChatAgentLocation, ChatRequest, MutableChatModel } from '@theia/ai-chat';
 import { generateUuid, ILogger, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
+import { AIChatInputWidget } from './chat-input-widget';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 
 export interface AskAIInputBaseArgs {
     onSubmit: (request: ChatRequest) => void | Promise<void>;
     onCancel: () => void;
 }
-
-export interface AskAIInputBaseConfiguration extends AIChatInputConfiguration { }
 
 @injectable()
 export abstract class AskAIInputWidgetBase extends AIChatInputWidget {

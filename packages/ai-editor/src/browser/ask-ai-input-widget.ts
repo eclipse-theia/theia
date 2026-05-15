@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { ChatAgentLocation } from '@theia/ai-chat';
-import { AskAIInputBaseArgs, AskAIInputBaseConfiguration, AskAIInputWidgetBase } from '@theia/ai-chat-ui/lib/browser/ask-ai-input-widget-base';
+import { AskAIInputBaseArgs, AskAIInputWidgetBase } from '@theia/ai-chat-ui/lib/browser/ask-ai-input-widget-base';
+import { AIChatInputConfiguration } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 
 export const AskAIInputConfiguration = Symbol('AskAIInputConfiguration');
-export interface AskAIInputConfiguration extends AskAIInputBaseConfiguration { }
+export interface AskAIInputConfiguration extends AIChatInputConfiguration { }
 
 export const AskAIInputArgs = Symbol('AskAIInputArgs');
 export interface AskAIInputArgs extends AskAIInputBaseArgs { }
