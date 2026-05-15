@@ -96,7 +96,6 @@ export function formatMessage(format: string, variables?: { [key: string]: strin
     return variables ? format.replace(formatMessageRegexp, (match, group) => variables.hasOwnProperty(group) ? variables[group] : match) : format;
 }
 
-
 @injectable()
 export class DebugSession implements CompositeTreeElement {
 
@@ -168,7 +167,6 @@ export class DebugSession implements CompositeTreeElement {
         return this.data.parentSession;
     }
 
-
     protected readonly deferredOnDidConfigureCapabilities = new Deferred<void>();
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
@@ -196,7 +194,6 @@ export class DebugSession implements CompositeTreeElement {
 
     /** Maximum time to wait for the shell integration prompt before proceeding. */
     protected readonly PROMPT_READY_TIMEOUT_MS = 3000;
-
 
     @postConstruct()
     protected init(): void {
