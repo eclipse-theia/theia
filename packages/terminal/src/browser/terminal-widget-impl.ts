@@ -540,7 +540,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.blockOverlayController?.addBlock(
                 block,
                 this.promptStartMarker,
-                endMarker ?? undefined,
+                endMarker,
             );
         }
 
@@ -791,7 +791,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.blockOverlayController?.clearBlocks();
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
-        this.promptStartMarker = this.term.registerMarker(0);
+        if (this.commandHistoryState) {
+            this.promptStartMarker = this.term.registerMarker(0);
+        }
     }
 
     selectAll(): void {
