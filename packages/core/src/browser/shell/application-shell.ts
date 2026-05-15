@@ -25,7 +25,7 @@ import { Drag } from '@lumino/dragdrop';
 import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, isObject, UntitledResourceResolver, UNTITLED_SCHEME } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
-import { StatusBarImpl } from '../status-bar/status-bar';
+import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
 import { TabBarRendererFactory, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
@@ -130,9 +130,8 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
                 renderer
             },
             {
-                // Omit `touch`: native overflow pan (see mobile-workbench.css) gives the same touch
-                // momentum as the bottom activity bar; PerfectScrollbar keeps wheel, keyboard, thumb.
-                handlers: ['drag-thumb', 'keyboard', 'wheel'],
+                // Scroll bar options
+                handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
                 useBothWheelAxes: true,
                 scrollXMarginOffset: 4,
                 suppressScrollY: true
@@ -1616,11 +1615,6 @@ export class ApplicationShell extends Widget {
      */
     protected collapseBottomPanel(): Promise<void> {
         const bottomPanel = this.bottomPanel;
-        // When maximized (full-screen overlay), `hide()` is not enough: restore the dock layout first.
-        if (bottomPanel.hasClass(MAXIMIZED_CLASS) && this.unmaximize) {
-            this.unmaximize();
-            this.unmaximize = undefined;
-        }
         if (bottomPanel.isHidden) {
             return Promise.resolve();
         }
@@ -1639,12 +1633,25 @@ export class ApplicationShell extends Widget {
      * Refresh the toggle button for the bottom panel. This implementation creates a status bar entry
      * and refers to the command `core.toggle.bottom.panel`.
      */
-    /**
-     * Previously showed a status-bar control for `core.toggle.bottom.panel`.
-     * The same action is exposed from the top workbench bar; keep the slot cleared.
-     */
     protected refreshBottomPanelToggleButton(): void {
-        this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
+        if (this.bottomPanel.isEmpty) {
+            this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
+        } else {
+            const label = nls.localize('theia/core/common/collapseBottomPanel', 'Toggle Bottom Panel');
+            const element: StatusBarEntry = {
+                name: label,
+                text: '$(codicon-window)',
+                alignment: StatusBarAlignment.RIGHT,
+                tooltip: label,
+                command: 'core.toggle.bottom.panel',
+                accessibilityInformation: {
+                    label: label,
+                    role: 'button'
+                },
+                priority: -1000
+            };
+            this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
+        }
     }
 
     /**

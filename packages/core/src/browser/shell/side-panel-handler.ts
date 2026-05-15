@@ -16,11 +16,10 @@
 
 import { injectable, inject } from 'inversify';
 import { find, map, toArray, some } from '@lumino/algorithm';
-import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel } from '@lumino/widgets';
+import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel, PanelLayout } from '@lumino/widgets';
 import { MimeData } from '@lumino/coreutils';
 import { Drag } from '@lumino/dragdrop';
 import { AttachedProperty } from '@lumino/properties';
-import { MessageLoop } from '@lumino/messaging';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
 import { SidebarMenuWidget, SidebarMenu, SidebarBottomMenuWidgetFactory, SidebarTopMenuWidgetFactory } from './sidebar-menu-widget';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
@@ -42,9 +41,6 @@ export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
 
 /** The class name added to collapsed side panels. */
 const COLLAPSED_CLASS = 'theia-mod-collapsed';
-
-/** Collapsed sidebar width; must match `--theia-private-sidebar-tab-width` in `sidepanel.css`. */
-const SIDEBAR_COLLAPSED_STRIP_WIDTH = 48;
 
 export const SidePanelHandlerFactory = Symbol('SidePanelHandlerFactory');
 
@@ -122,10 +118,6 @@ export class SidePanelHandler {
      * Options that control the behavior of the side panel.
      */
     protected options: SidePanel.Options;
-    protected containerResizeObserver: ResizeObserver | undefined;
-    protected resizeRelayoutFrame: number | undefined;
-    protected lastObservedWidth = -1;
-    protected lastObservedHeight = -1;
 
     @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
     @inject(TabBarToolbarFactory) protected tabBarToolBarFactory: () => TabBarToolbar;
@@ -153,7 +145,6 @@ export class SidePanelHandler {
         this.toolBar = this.createToolbar();
         this.dockPanel = this.createSidePanel();
         this.container = this.createContainer();
-        this.observeContainerResize();
 
         this.refresh();
     }
@@ -162,21 +153,18 @@ export class SidePanelHandler {
         const side = this.side;
         const tabBarRenderer = this.tabBarRendererFactory();
         const sideBar = new SideTabBar({
-            // Horizontal strip at top of side panel (Cursor / VS Code activity bar on top)
-            orientation: 'horizontal',
+            // Tab bar options
+            orientation: side === 'left' || side === 'right' ? 'vertical' : 'horizontal',
             insertBehavior: 'none',
             removeBehavior: 'select-previous-tab',
             allowDeselect: false,
             tabsMovable: true,
             renderer: tabBarRenderer,
-            // Omit `touch`: native horizontal pan (CSS overflow-x + touch-action) gives better momentum on mobile.
-            handlers: ['drag-thumb', 'keyboard', 'wheel'],
+            // Scroll bar options
+            handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
             useBothWheelAxes: true,
-            scrollXMarginOffset: 8,
-            suppressScrollX: false,
-            suppressScrollY: true,
-            wheelSpeed: 1.45,
-            wheelPropagation: false
+            scrollYMarginOffset: 8,
+            suppressScrollX: true
         });
         tabBarRenderer.tabBar = sideBar;
         sideBar.disposed.connect(() => tabBarRenderer.dispose());
@@ -265,84 +253,34 @@ export class SidePanelHandler {
         contentBox.addWidget(this.dockPanel);
         const contentPanel = new BoxPanel({ layout: contentBox });
 
-        const activityRowLayout = new BoxLayout({ direction: 'left-to-right', spacing: 0 });
-        BoxPanel.setStretch(this.topMenu, 0);
-        BoxPanel.setStretch(this.tabBar, 1);
-        BoxPanel.setStretch(this.additionalViewsMenu, 0);
-        BoxPanel.setStretch(this.bottomMenu, 0);
-        activityRowLayout.addWidget(this.topMenu);
-        activityRowLayout.addWidget(this.tabBar);
-        activityRowLayout.addWidget(this.additionalViewsMenu);
-        activityRowLayout.addWidget(this.bottomMenu);
-        const activityBarRow = new BoxPanel({ layout: activityRowLayout });
-        activityBarRow.addClass('theia-app-activity-bar-row');
-        activityBarRow.addClass(this.side === 'right' ? 'theia-app-activity-bar-right' : 'theia-app-activity-bar-left');
-        activityBarRow.node.style.minHeight = 'var(--theia-horizontal-toolbar-height, 28px)';
+        const side = this.side;
+        let direction: BoxLayout.Direction;
+        switch (side) {
+            case 'left':
+                direction = 'left-to-right';
+                break;
+            case 'right':
+                direction = 'right-to-left';
+                break;
+            default:
+                throw new Error('Illegal argument: ' + side);
+        }
+        const containerLayout = new BoxLayout({ direction, spacing: 0 });
+        const sidebarContainerLayout = new PanelLayout();
+        const sidebarContainer = new Panel({ layout: sidebarContainerLayout });
+        sidebarContainer.addClass('theia-app-sidebar-container');
+        sidebarContainerLayout.addWidget(this.topMenu);
+        sidebarContainerLayout.addWidget(this.tabBar);
+        sidebarContainerLayout.addWidget(this.additionalViewsMenu);
+        sidebarContainerLayout.addWidget(this.bottomMenu);
 
-        const outerLayout = new BoxLayout({ direction: 'top-to-bottom', spacing: 0 });
-        BoxPanel.setStretch(activityBarRow, 0);
+        BoxPanel.setStretch(sidebarContainer, 0);
         BoxPanel.setStretch(contentPanel, 1);
-        outerLayout.addWidget(activityBarRow);
-        outerLayout.addWidget(contentPanel);
-        const boxPanel = new BoxPanel({ layout: outerLayout });
-        boxPanel.id = 'theia-' + this.side + '-content-panel';
+        containerLayout.addWidget(sidebarContainer);
+        containerLayout.addWidget(contentPanel);
+        const boxPanel = new BoxPanel({ layout: containerLayout });
+        boxPanel.id = 'theia-' + side + '-content-panel';
         return boxPanel;
-    }
-
-    protected observeContainerResize(): void {
-        if (typeof ResizeObserver === 'undefined') {
-            return;
-        }
-        this.containerResizeObserver?.disconnect();
-        this.containerResizeObserver = new ResizeObserver(entries => {
-            const entry = entries[0];
-            if (!entry) {
-                return;
-            }
-            const width = Math.round(entry.contentRect.width);
-            const height = Math.round(entry.contentRect.height);
-            if (width === this.lastObservedWidth && height === this.lastObservedHeight) {
-                return;
-            }
-            this.lastObservedWidth = width;
-            this.lastObservedHeight = height;
-            if (width <= 0 || height <= 0 || this.container.isHidden) {
-                return;
-            }
-            this.scheduleContentRelayout();
-        });
-        this.containerResizeObserver.observe(this.container.node);
-    }
-
-    protected scheduleContentRelayout(): void {
-        if (this.resizeRelayoutFrame !== undefined) {
-            return;
-        }
-        this.resizeRelayoutFrame = requestAnimationFrame(() => {
-            this.resizeRelayoutFrame = undefined;
-            this.relayoutContent();
-        });
-    }
-
-    protected relayoutContent(): void {
-        if (this.container.isHidden || this.dockPanel.isHidden) {
-            return;
-        }
-        this.relayoutWidget(this.container);
-        this.relayoutWidget(this.tabBar);
-        this.relayoutWidget(this.additionalViewsMenu);
-        this.relayoutWidget(this.toolBar);
-        this.relayoutWidget(this.dockPanel);
-        const currentWidget = this.tabBar.currentTitle?.owner;
-        if (currentWidget) {
-            this.relayoutWidget(currentWidget);
-        }
-    }
-
-    protected relayoutWidget(widget: Widget): void {
-        MessageLoop.sendMessage(widget, Widget.ResizeMessage.UnknownSize);
-        MessageLoop.postMessage(widget, Widget.Msg.FitRequest);
-        MessageLoop.postMessage(widget, Widget.Msg.UpdateRequest);
     }
 
     /**
@@ -558,24 +496,14 @@ export class SidePanelHandler {
                 }
             }
             this.state.expansion = SidePanel.ExpansionState.collapsed;
-            // Left: reclaim full horizontal space (hide activity row + dock). Right: keep narrow strip when it has tabs.
-            if (this.side === 'left') {
-                void this.setPanelSize(0);
-            } else if (!isEmpty) {
-                void this.setPanelSize(SIDEBAR_COLLAPSED_STRIP_WIDTH);
-            }
         } else {
             container.removeClass(COLLAPSED_CLASS);
-            if (this.side === 'left') {
-                container.setHidden(false);
-                tabBar.setHidden(false);
-            }
             let size: number | undefined;
             if (this.state.expansion !== SidePanel.ExpansionState.expanded) {
                 if (this.state.lastPanelSize) {
                     size = this.state.lastPanelSize;
                 } else {
-                    size = this.getDefaultPanelSize() ?? this.options.emptySize;
+                    size = this.getDefaultPanelSize();
                 }
             }
             if (size) {
@@ -593,14 +521,8 @@ export class SidePanelHandler {
                 this.state.expansion = SidePanel.ExpansionState.expanded;
             }
         }
-        // Left: when collapsed (no view selected), hide the whole column including the activity strip. Right: stock behavior.
-        if (this.side === 'left') {
-            container.setHidden(hideDockPanel);
-            tabBar.setHidden(hideDockPanel);
-        } else {
-            container.setHidden(isEmpty && hideDockPanel);
-            tabBar.setHidden(isEmpty);
-        }
+        container.setHidden(isEmpty && hideDockPanel);
+        tabBar.setHidden(isEmpty);
         dockPanel.setHidden(hideDockPanel);
         this.state.empty = isEmpty;
         if (currentTitle) {
@@ -610,7 +532,6 @@ export class SidePanelHandler {
             // Make sure that the expansion animation starts at the smallest possible size
             parent.setRelativeSizes(relativeSizes);
         }
-        this.updateAdditionalViewsMenu();
     }
 
     /**
@@ -654,16 +575,9 @@ export class SidePanelHandler {
      */
     protected getDefaultPanelSize(): number | undefined {
         const parent = this.container.parent;
-        if (!parent) {
-            return undefined;
+        if (parent && parent.isVisible) {
+            return parent.node.clientWidth * this.options.initialSizeRatio;
         }
-        const ratio = this.options.initialSizeRatio;
-        const cw = parent.node.clientWidth;
-        if (cw > 0) {
-            return Math.max(this.options.emptySize, Math.round(cw * ratio));
-        }
-        const approx = typeof window !== 'undefined' ? window.innerWidth : 1280;
-        return Math.max(this.options.emptySize, Math.round(approx * ratio));
     }
 
     /**
@@ -675,15 +589,13 @@ export class SidePanelHandler {
         const options: SplitPositionOptions = {
             side: this.side,
             duration: enableAnimation ? this.options.expandDuration : 0,
-            // dockPanel is hidden when the side view is collapsed; SplitPositionHandler aborts the move if reference is hidden.
-            referenceWidget: undefined
+            referenceWidget: this.dockPanel
         };
         const promise = this.splitPositionHandler.setSidePanelSize(this.container, size, options);
         const result = new Promise<void>(resolve => {
             // Resolve the resulting promise in any case, regardless of whether resizing was successful
             promise.then(() => resolve(), () => resolve());
         });
-        void result.then(() => this.scheduleContentRelayout());
         this.state.pendingUpdate = this.state.pendingUpdate.then(() => result);
         return result;
     }
@@ -779,18 +691,6 @@ export class SidePanelHandler {
     protected onWidgetRemoved(sender: DockPanel, widget: Widget): void {
         this.tabBar.removeTab(widget.title);
         this.refresh();
-    }
-
-    /**
-     * Keep the “additional views” dropdown icon in sync with the current side bar tabs,
-     * even when there is no horizontal overflow.
-     */
-    protected updateAdditionalViewsMenu(): void {
-        if (!this.additionalViewsMenu) {
-            return;
-        }
-        const titles = toArray(this.tabBar.titles);
-        this.additionalViewsMenu.updateAdditionalViews(this.tabBar, { titles, startIndex: -1 });
     }
 
     protected updateSashState(sidePanelElement: Panel | null, sidePanelCollapsed: boolean): void {

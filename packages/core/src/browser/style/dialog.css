@@ -131,8 +131,3 @@
   align-content: center;
   margin-right: calc(var(--theia-ui-padding) * 1.5);
 }
-
-/*-----------------------------------------------------------------------------
-| Mobile dialog layout (767px): `@theia/qaap-product-theme`
-| `style/qaap-dialog-narrow-viewport.css`.
-|-----------------------------------------------------------------------------*/

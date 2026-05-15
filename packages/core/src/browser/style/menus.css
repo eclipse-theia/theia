@@ -89,15 +89,8 @@
   background: var(--theia-titleBar-activeBackground);
   color: var(--theia-titleBar-activeForeground);
   display: flex;
-  align-items: stretch;
   min-height: var(--theia-private-menubar-height);
   border-bottom: 1px solid var(--theia-titleBar-border);
-}
-
-/* Let the main menu absorb extra width so right-side controls stay at the trailing edge */
-#theia-top-panel > .lm-MenuBar {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 #theia-top-panel:window-inactive,
 #theia-top-panel:-moz-window-inactive {
@@ -238,69 +231,3 @@
 .lm-Menu-item[data-type="submenu"] > .lm-Menu-itemSubmenuIcon::before {
   content: "\eab6";
 }
-
-/*-----------------------------------------------------------------------------
-| Workbench nav (menu bar): sidebar toggle, back, forward — replaces logo slot
-|----------------------------------------------------------------------------*/
-
-.theia-workbench-nav-controls {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin: 0 4px 0 8px;
-  height: 100%;
-  gap: 0;
-  /* Override single-logo .theia-icon fixed size from index.css */
-  width: auto;
-  min-width: auto;
-}
-
-.theia-workbench-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 20px;
-  margin: 0 1px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--theia-icon-foreground);
-  border-radius: 2px;
-  cursor: pointer;
-}
-
-.theia-workbench-nav-btn:hover:not(:disabled) {
-  background: var(--theia-toolbar-hoverBackground);
-}
-
-.theia-workbench-nav-btn:disabled {
-  opacity: var(--theia-mod-disabled-opacity);
-  cursor: default;
-}
-
-/* Terminal bar control as a switch: “on” when the panel is open with terminal focused */
-.theia-workbench-nav-btn.theia-mod-toggled:not(:disabled) {
-  background: var(--theia-inputOption-activeBackground, var(--theia-toolbar-hoverBackground));
-  color: var(--theia-inputOption-activeForeground, var(--theia-icon-foreground));
-}
-
-.theia-workbench-nav-btn.codicon::before {
-  font-size: var(--theia-icon-size, 14px);
-}
-
-.theia-workbench-right-controls {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex: 0 0 auto;
-  margin-left: auto;
-  margin-right: 6px;
-  height: 100%;
-  gap: 0;
-}
-
-/*-----------------------------------------------------------------------------
-| Responsive menu / touch rules for max-width 767px: `@theia/qaap-product-theme`
-| `style/qaap-menus-narrow-viewport.css` (keep in sync with `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY`).
-|----------------------------------------------------------------------------*/

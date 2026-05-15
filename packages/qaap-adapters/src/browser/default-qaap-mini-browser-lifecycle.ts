@@ -6,12 +6,12 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { MiniBrowser } from '@theia/mini-browser/lib/browser/mini-browser';
-import { MiniBrowserOpenHook } from '@theia/mini-browser/lib/browser/mini-browser-open-hook';
 import { MiniBrowserOpenerOptions } from '@theia/mini-browser/lib/browser/mini-browser-opener-options';
 import { normalizeMiniBrowserOpenUrl } from '@theia/mini-browser/lib/browser/mini-browser-url-utils';
+import { QaapMiniBrowserLifecycle } from './qaap-mini-browser-lifecycle';
 
 @injectable()
-export class QaapMiniBrowserOpenHook implements MiniBrowserOpenHook {
+export class DefaultQaapMiniBrowserLifecycle implements QaapMiniBrowserLifecycle {
 
     afterOpen(widget: MiniBrowser, options?: MiniBrowserOpenerOptions): void {
         const startPage = typeof options?.startPage === 'string' ? normalizeMiniBrowserOpenUrl(options.startPage) : '';

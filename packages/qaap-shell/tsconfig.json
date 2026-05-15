@@ -3,7 +3,8 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "src",
-    "outDir": "lib"
+    "outDir": "lib",
+    "noImplicitOverride": false
   },
   "include": [
     "src"
@@ -13,7 +14,7 @@
       "path": "../core"
     },
     {
-      "path": "../qaap-adapters"
+      "path": "../toolbar"
     }
   ]
 }

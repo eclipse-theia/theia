@@ -1,0 +1,294 @@
+// *****************************************************************************
+// Copyright (C) 2026 Theia contributors and Qaap product fork.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+import { injectable } from '@theia/core/shared/inversify';
+import { some, toArray } from '@lumino/algorithm';
+import { Widget, Title, Panel, BoxPanel, BoxLayout, SplitPanel } from '@lumino/widgets';
+import { MessageLoop } from '@lumino/messaging';
+import {
+    SidePanelHandler,
+    SidePanel,
+    LEFT_RIGHT_AREA_CLASS
+} from '@theia/core/lib/browser/shell/side-panel-handler';
+import { SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from '@theia/core/lib/browser/shell/tab-bars';
+import { SplitPositionOptions } from '@theia/core/lib/browser/shell/split-panels';
+import { QaapSideTabBar } from './qaap-tab-bars';
+
+const COLLAPSED_CLASS = 'theia-mod-collapsed';
+
+/** Collapsed sidebar width; must match `--theia-private-sidebar-tab-width` in product `qaap-sidepanel.css`. */
+const SIDEBAR_COLLAPSED_STRIP_WIDTH = 48;
+
+/**
+ * Qaap side panel: horizontal activity strip, left-panel collapse behavior, resize relayout.
+ */
+@injectable()
+export class QaapSidePanelHandler extends SidePanelHandler {
+
+    protected containerResizeObserver: ResizeObserver | undefined;
+    protected resizeRelayoutFrame: number | undefined;
+    protected lastObservedWidth = -1;
+    protected lastObservedHeight = -1;
+
+    override create(side: 'left' | 'right', options: SidePanel.Options): void {
+        this.side = side;
+        this.options = options;
+        this.topMenu = this.createSidebarTopMenu();
+        this.tabBar = this.createSideBar();
+        this.additionalViewsMenu = this.createAdditionalViewsWidget();
+        this.bottomMenu = this.createSidebarBottomMenu();
+        this.toolBar = this.createToolbar();
+        this.dockPanel = this.createSidePanel();
+        this.container = this.createContainer();
+        this.observeContainerResize();
+        this.refresh();
+    }
+
+    protected override createSideBar(): SideTabBar {
+        const side = this.side;
+        const tabBarRenderer = this.tabBarRendererFactory();
+        const sideBar = new QaapSideTabBar({
+            orientation: 'horizontal',
+            insertBehavior: 'none',
+            removeBehavior: 'select-previous-tab',
+            allowDeselect: false,
+            tabsMovable: true,
+            renderer: tabBarRenderer,
+            handlers: ['drag-thumb', 'keyboard', 'wheel'],
+            useBothWheelAxes: true,
+            scrollXMarginOffset: 8,
+            suppressScrollX: false,
+            suppressScrollY: true,
+            wheelSpeed: 1.45,
+            wheelPropagation: false
+        });
+        tabBarRenderer.tabBar = sideBar;
+        sideBar.disposed.connect(() => tabBarRenderer.dispose());
+        tabBarRenderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
+        sideBar.addClass('theia-app-' + side);
+        sideBar.addClass(LEFT_RIGHT_AREA_CLASS);
+
+        sideBar.tabAdded.connect((sender, { title }) => {
+            const widget = title.owner;
+            if (!some(this.dockPanel.widgets(), w => w === widget)) {
+                this.dockPanel.addWidget(widget);
+            }
+        }, this);
+        sideBar.tabActivateRequested.connect((sender, { title }) => title.owner.activate());
+        sideBar.tabCloseRequested.connect((sender, { title }) => title.owner.close());
+        sideBar.collapseRequested.connect(() => this.collapse(), this);
+        sideBar.currentChanged.connect(this.onCurrentTabChanged, this);
+        sideBar.tabDetachRequested.connect(this.onTabDetachRequested, this);
+        sideBar.tabsOverflowChanged.connect(this.onTabsOverflowChanged, this);
+        return sideBar;
+    }
+
+    protected override createContainer(): Panel {
+        const contentBox = new BoxLayout({ direction: 'top-to-bottom', spacing: 0 });
+        BoxPanel.setStretch(this.toolBar, 0);
+        contentBox.addWidget(this.toolBar);
+        BoxPanel.setStretch(this.dockPanel, 1);
+        contentBox.addWidget(this.dockPanel);
+        const contentPanel = new BoxPanel({ layout: contentBox });
+
+        const activityRowLayout = new BoxLayout({ direction: 'left-to-right', spacing: 0 });
+        BoxPanel.setStretch(this.topMenu, 0);
+        BoxPanel.setStretch(this.tabBar, 1);
+        BoxPanel.setStretch(this.additionalViewsMenu, 0);
+        BoxPanel.setStretch(this.bottomMenu, 0);
+        activityRowLayout.addWidget(this.topMenu);
+        activityRowLayout.addWidget(this.tabBar);
+        activityRowLayout.addWidget(this.additionalViewsMenu);
+        activityRowLayout.addWidget(this.bottomMenu);
+        const activityBarRow = new BoxPanel({ layout: activityRowLayout });
+        activityBarRow.addClass('theia-app-activity-bar-row');
+        activityBarRow.addClass(this.side === 'right' ? 'theia-app-activity-bar-right' : 'theia-app-activity-bar-left');
+        activityBarRow.node.style.minHeight = 'var(--theia-horizontal-toolbar-height, 28px)';
+
+        const outerLayout = new BoxLayout({ direction: 'top-to-bottom', spacing: 0 });
+        BoxPanel.setStretch(activityBarRow, 0);
+        BoxPanel.setStretch(contentPanel, 1);
+        outerLayout.addWidget(activityBarRow);
+        outerLayout.addWidget(contentPanel);
+        const boxPanel = new BoxPanel({ layout: outerLayout });
+        boxPanel.id = 'theia-' + this.side + '-content-panel';
+        return boxPanel;
+    }
+
+    protected observeContainerResize(): void {
+        if (typeof ResizeObserver === 'undefined') {
+            return;
+        }
+        this.containerResizeObserver?.disconnect();
+        this.containerResizeObserver = new ResizeObserver(entries => {
+            const entry = entries[0];
+            if (!entry) {
+                return;
+            }
+            const width = Math.round(entry.contentRect.width);
+            const height = Math.round(entry.contentRect.height);
+            if (width === this.lastObservedWidth && height === this.lastObservedHeight) {
+                return;
+            }
+            this.lastObservedWidth = width;
+            this.lastObservedHeight = height;
+            if (width <= 0 || height <= 0 || this.container.isHidden) {
+                return;
+            }
+            this.scheduleContentRelayout();
+        });
+        this.containerResizeObserver.observe(this.container.node);
+    }
+
+    protected scheduleContentRelayout(): void {
+        if (this.resizeRelayoutFrame !== undefined) {
+            return;
+        }
+        this.resizeRelayoutFrame = requestAnimationFrame(() => {
+            this.resizeRelayoutFrame = undefined;
+            this.relayoutContent();
+        });
+    }
+
+    protected relayoutContent(): void {
+        if (this.container.isHidden || this.dockPanel.isHidden) {
+            return;
+        }
+        this.relayoutWidget(this.container);
+        this.relayoutWidget(this.tabBar);
+        this.relayoutWidget(this.additionalViewsMenu);
+        this.relayoutWidget(this.toolBar);
+        this.relayoutWidget(this.dockPanel);
+        const currentWidget = this.tabBar.currentTitle?.owner;
+        if (currentWidget) {
+            this.relayoutWidget(currentWidget);
+        }
+    }
+
+    protected relayoutWidget(widget: Widget): void {
+        MessageLoop.sendMessage(widget, Widget.ResizeMessage.UnknownSize);
+        MessageLoop.postMessage(widget, Widget.Msg.FitRequest);
+        MessageLoop.postMessage(widget, Widget.Msg.UpdateRequest);
+    }
+
+    override refresh(): void {
+        const container = this.container;
+        const parent = container.parent;
+        const tabBar = this.tabBar;
+        const dockPanel = this.dockPanel;
+        const isEmpty = tabBar.titles.length === 0;
+        const currentTitle = tabBar.currentTitle;
+        // eslint-disable-next-line no-null/no-null
+        const hideDockPanel = currentTitle === null;
+        this.updateSashState(this.container, hideDockPanel);
+        let relativeSizes: number[] | undefined;
+
+        if (hideDockPanel) {
+            container.addClass(COLLAPSED_CLASS);
+            if (this.state.expansion === SidePanel.ExpansionState.expanded && !this.state.empty) {
+                const size = this.getPanelSize();
+                if (size) {
+                    this.state.lastPanelSize = size;
+                }
+            }
+            this.state.expansion = SidePanel.ExpansionState.collapsed;
+            if (this.side === 'left') {
+                void this.setPanelSize(0);
+            } else if (!isEmpty) {
+                void this.setPanelSize(SIDEBAR_COLLAPSED_STRIP_WIDTH);
+            }
+        } else {
+            container.removeClass(COLLAPSED_CLASS);
+            if (this.side === 'left') {
+                container.setHidden(false);
+                tabBar.setHidden(false);
+            }
+            let size: number | undefined;
+            if (this.state.expansion !== SidePanel.ExpansionState.expanded) {
+                if (this.state.lastPanelSize) {
+                    size = this.state.lastPanelSize;
+                } else {
+                    size = this.getDefaultPanelSize() ?? this.options.emptySize;
+                }
+            }
+            if (size) {
+                this.state.expansion = SidePanel.ExpansionState.expanding;
+                if (parent instanceof SplitPanel) {
+                    relativeSizes = parent.relativeSizes();
+                }
+                this.setPanelSize(size).then(() => {
+                    if (this.state.expansion === SidePanel.ExpansionState.expanding) {
+                        this.state.expansion = SidePanel.ExpansionState.expanded;
+                    }
+                });
+            } else {
+                this.state.expansion = SidePanel.ExpansionState.expanded;
+            }
+        }
+        if (this.side === 'left') {
+            container.setHidden(hideDockPanel);
+            tabBar.setHidden(hideDockPanel);
+        } else {
+            container.setHidden(isEmpty && hideDockPanel);
+            tabBar.setHidden(isEmpty);
+        }
+        dockPanel.setHidden(hideDockPanel);
+        this.state.empty = isEmpty;
+        if (currentTitle) {
+            dockPanel.selectWidget(currentTitle.owner);
+        }
+        if (relativeSizes && parent instanceof SplitPanel) {
+            parent.setRelativeSizes(relativeSizes);
+        }
+        this.updateAdditionalViewsMenu();
+    }
+
+    protected override getDefaultPanelSize(): number | undefined {
+        const parent = this.container.parent;
+        if (!parent) {
+            return undefined;
+        }
+        const ratio = this.options.initialSizeRatio;
+        const cw = parent.node.clientWidth;
+        if (cw > 0) {
+            return Math.max(this.options.emptySize, Math.round(cw * ratio));
+        }
+        const approx = typeof window !== 'undefined' ? window.innerWidth : 1280;
+        return Math.max(this.options.emptySize, Math.round(approx * ratio));
+    }
+
+    protected override setPanelSize(size: number): Promise<void> {
+        const enableAnimation = this.applicationStateService.state === 'ready';
+        const options: SplitPositionOptions = {
+            side: this.side,
+            duration: enableAnimation ? this.options.expandDuration : 0,
+            referenceWidget: undefined
+        };
+        const promise = this.splitPositionHandler.setSidePanelSize(this.container, size, options);
+        const result = new Promise<void>(resolve => {
+            promise.then(() => resolve(), () => resolve());
+        });
+        void result.then(() => this.scheduleContentRelayout());
+        this.state.pendingUpdate = this.state.pendingUpdate.then(() => result);
+        return result;
+    }
+
+    protected override onTabsOverflowChanged(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {
+        if (event.startIndex > 0 && event.startIndex <= sender.currentIndex) {
+            sender.revealTab(sender.currentIndex);
+        } else {
+            this.additionalViewsMenu.updateAdditionalViews(sender, event);
+        }
+    }
+
+    protected updateAdditionalViewsMenu(): void {
+        if (!this.additionalViewsMenu) {
+            return;
+        }
+        const titles = toArray(this.tabBar.titles);
+        this.additionalViewsMenu.updateAdditionalViews(this.tabBar, { titles, startIndex: -1 });
+    }
+}

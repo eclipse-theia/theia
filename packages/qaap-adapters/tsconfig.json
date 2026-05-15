@@ -13,19 +13,10 @@
       "path": "../core"
     },
     {
-      "path": "../qaap-adapters"
+      "path": "../mini-browser"
     },
     {
-      "path": "../qaap-element-inspector"
-    },
-    {
-      "path": "../qaap-mobile-shell"
-    },
-    {
-      "path": "../qaap-product-theme"
-    },
-    {
-      "path": "../qaap-shell"
+      "path": "../monaco"
     }
   ]
 }

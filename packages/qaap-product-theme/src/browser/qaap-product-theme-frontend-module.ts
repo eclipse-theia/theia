@@ -5,7 +5,9 @@
 // *****************************************************************************
 
 import '../../src/browser/style/workbench-cursor-typography.css';
+import '../../src/browser/style/qaap-workbench-top-bar.css';
 import '../../src/browser/style/qaap-menus-narrow-viewport.css';
+import '../../src/browser/style/qaap-sidepanel.css';
 import '../../src/browser/style/qaap-sidepanel-narrow-viewport.css';
 import '../../src/browser/style/qaap-dialog-narrow-viewport.css';
 import '../../src/browser/style/qaap-mini-browser-toolbar-mobile.css';

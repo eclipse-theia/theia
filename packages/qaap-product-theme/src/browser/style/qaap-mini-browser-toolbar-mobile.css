@@ -5,10 +5,8 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Mini-browser URL bar: toolbar is a single flex row; on narrow widths the input
-| can collapse to 0px because `width: 100%` on a flex item does not reserve
-| space. Give the field a flex basis and min-width, optional wrap so controls
-| stay usable (same 767px breakpoint as the rest of Qaap mobile).
+| Mini-browser toolbar: single horizontal row on narrow viewports (767px).
+| Nav buttons + URL field + workbench controls share one line to save height.
 |-----------------------------------------------------------------------------*/
 
 @media (max-width: 767px) {
@@ -23,34 +21,53 @@
 
   .theia-mini-browser-toolbar,
   .theia-mini-browser-toolbar-read-only {
-    flex-wrap: wrap;
-    row-gap: 8px;
+    flex-wrap: nowrap;
+    align-items: center;
     justify-content: flex-start;
-  }
-
-  .theia-mini-browser-toolbar .theia-input,
-  .theia-mini-browser-toolbar-read-only .theia-input {
-    flex: 1 1 100%;
-    min-width: 0;
-    width: 100% !important;
-    margin-left: 0;
-    margin-right: 0;
-    order: -1;
+    gap: 2px;
+    margin-top: 4px;
+    padding: 0 6px;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .theia-mini-browser-toolbar > .theia-mini-browser-button,
   .theia-mini-browser-toolbar-read-only > .theia-mini-browser-button {
     flex: 0 0 auto;
+    margin: 0 2px;
+    min-width: 1.25rem;
+  }
+
+  .theia-mini-browser-toolbar .theia-input,
+  .theia-mini-browser-toolbar-read-only .theia-input {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto !important;
+    margin: 0 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .theia-mini-browser-toolbar .theia-mini-browser-workbench-controls,
   .theia-mini-browser-toolbar-read-only .theia-mini-browser-workbench-controls {
-    flex: 1 1 auto;
-    min-width: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    margin-left: auto;
-    border-left: none;
-    padding-left: 0;
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 0 4px;
+    padding-left: 6px;
+    border-left: 1px solid var(--theia-widget-border, var(--theia-panel-border));
+  }
+
+  .theia-mini-browser-workbench-button {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .theia-mini-browser-workbench-button::before {
+    font-size: 16px;
   }
 }

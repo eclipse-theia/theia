@@ -7,12 +7,12 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { MOBILE_ONE_COLUMN_LAYOUT_CLASS, matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
-import { DefaultMonacoQuickInputLayout } from '@theia/monaco/lib/browser/monaco-quick-input-layout';
+import { QaapMonacoQuickInputAdapter } from './qaap-monaco-quick-input-adapter';
 
 @injectable()
-export class QaapMonacoQuickInputLayout extends DefaultMonacoQuickInputLayout {
+export class DefaultQaapMonacoQuickInputAdapter implements QaapMonacoQuickInputAdapter {
 
-    override synchronize(shell: ApplicationShell, container: HTMLElement): void {
+    synchronize(shell: ApplicationShell, container: HTMLElement, defaultSync: () => void): void {
         document.body.appendChild(container);
         const mobile = matchesMobileNarrowViewport()
             || shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
@@ -23,7 +23,7 @@ export class QaapMonacoQuickInputLayout extends DefaultMonacoQuickInputLayout {
                 requestAnimationFrame(() => this.clearMobileInlineStyles(container));
             });
         } else {
-            super.synchronize(shell, container);
+            defaultSync();
         }
     }
 

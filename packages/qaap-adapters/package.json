@@ -1,14 +1,11 @@
 {
-  "name": "@theia/qaap-product",
+  "name": "@theia/qaap-adapters",
   "version": "1.71.0",
-  "description": "Qaap umbrella: add this single dependency to example/browser apps; transitively enables qaap-element-inspector, qaap-mobile-shell, qaap-product-theme. @theia/mini-browser still depends on qaap-element-inspector directly.",
+  "description": "Qaap adapter layer: rebinds Theia platform hooks (mini-browser, monaco) with product implementations",
   "dependencies": {
-    "@theia/qaap-adapters": "1.71.0",
-    "@theia/qaap-element-inspector": "1.71.0",
-    "@theia/qaap-mobile-shell": "1.71.0",
-    "@theia/qaap-product-theme": "1.71.0",
-    "@theia/qaap-shell": "1.71.0",
     "@theia/core": "1.71.0",
+    "@theia/mini-browser": "1.71.0",
+    "@theia/monaco": "1.71.0",
     "tslib": "^2.8.1"
   },
   "publishConfig": {
@@ -16,7 +13,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/qaap-product-frontend-module"
+      "frontend": "lib/browser/qaap-adapters-frontend-module"
     }
   ],
   "keywords": [

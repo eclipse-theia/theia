@@ -1,33 +1,13 @@
 // *****************************************************************************
 // Copyright (C) 2026 theia-ide and others.
 //
-// This program and the accompanying materials are made available under the
-// terms of the Eclipse Public License v. 2.0 which is available at
-// http://www.eclipse.org/legal/epl-2.0.
-//
-// This Source Code may also be made available under the following Secondary
-// Licenses when the conditions for such availability set forth in the Eclipse
-// Public License v. 2.0 are satisfied: GNU General Public License, version 2
-// with the GNU Classpath Exception which is available at
-// https://www.gnu.org/software/classpath/license.html.
-//
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
+import { injectable } from '@theia/core/shared/inversify';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 
-/**
- * Synthesizes a `contextmenu` event after a 500 ms touch-and-hold on coarse pointers
- * (touch screens). Without this, iOS Safari shows the native callout/selection menu
- * and Android Chrome's timing varies, so right-click menus would be inaccessible
- * on mobile. Movement beyond the threshold cancels the gesture, and the synthetic
- * click that follows the press is swallowed so the just-opened menu isn't
- * immediately dismissed by Lumino's outside-tap handler.
- *
- * Tap-outside dismissal is already provided by Lumino's `DynamicMenuWidget`
- * (it listens for `pointerdown` on the document while the menu is attached).
- */
+/** Touch long-press → synthetic `contextmenu` for coarse pointers (product layer). */
 @injectable()
 export class LongPressContextMenuContribution implements FrontendApplicationContribution {
 
@@ -111,10 +91,6 @@ export class LongPressContextMenuContribution implements FrontendApplicationCont
     protected readonly onTouchEnd = (ev: TouchEvent): void => {
         this.cancelTimer();
         if (this.recentlyFired()) {
-            // Browsers synthesize a `mousedown` → `mouseup` → `click` after `touchend`.
-            // Suppressing the touch's default cuts the synthetic click that would
-            // otherwise immediately close the just-opened menu via Lumino's
-            // outside-tap listener.
             if (ev.cancelable) {
                 ev.preventDefault();
             }
@@ -134,10 +110,6 @@ export class LongPressContextMenuContribution implements FrontendApplicationCont
         }
     };
 
-    /**
-     * If the platform fires its own `contextmenu` (e.g. Android Chrome on long-press),
-     * cancel the pending timer to avoid a double-open.
-     */
     protected readonly onNativeContextMenu = (_ev: MouseEvent): void => {
         this.cancelTimer();
     };
