@@ -19,6 +19,7 @@ import { AskAIInputBaseArgs, AskAIInputWidgetBase } from '@theia/ai-chat-ui/lib/
 import { AIChatInputConfiguration } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 
 export const AskAITerminalInputConfiguration = Symbol('AskAITerminalInputConfiguration');
@@ -48,40 +49,57 @@ export class AskAITerminalOverlay implements Disposable {
     protected readonly toDispose = new DisposableCollection();
     protected readonly containerNode: HTMLDivElement;
     protected readonly inputWidget: AskAITerminalInputWidget;
-    protected disposed = false;
+
+    protected readonly onSubmitEmitter = new Emitter<ChatRequest>();
+    protected readonly onCancelEmitter = new Emitter<void>();
+
+    readonly onSubmit: Event<ChatRequest> = this.onSubmitEmitter.event;
+    readonly onCancel: Event<void> = this.onCancelEmitter.event;
 
     constructor(
         protected readonly terminalWidget: TerminalWidgetImpl,
         inputWidgetFactory: AskAITerminalInputFactory,
-        onSubmit: (chatRequest: ChatRequest) => void | Promise<void>,
-        onCancel: () => void,
-        onDispose: () => void
     ) {
         this.containerNode = document.createElement('div');
         this.containerNode.className = 'ai-terminal-ask-overlay';
         terminalWidget.node.appendChild(this.containerNode);
-        this.toDispose.push(Disposable.create(() => {
-            this.containerNode.remove();
-        }));
-        this.toDispose.push(Disposable.create(onDispose));
-        this.toDispose.push(this.terminalWidget.onDidDispose(() => this.dispose()));
 
         this.inputWidget = inputWidgetFactory({
-            onSubmit,
-            onCancel
+            onSubmit: event => this.handleSubmit(event),
+            onCancel: () => this.handleCancel()
         });
-        this.toDispose.push(this.inputWidget);
 
         this.containerNode.appendChild(this.inputWidget.node);
         this.inputWidget.activate();
         this.inputWidget.update();
+
+        this.toDispose.push(Disposable.create(() => {
+            this.containerNode.remove();
+        }));
+        this.toDispose.push(this.terminalWidget.onDidDispose(() => this.dispose()));
+        this.toDispose.push(this.inputWidget);
+
+        this.toDispose.pushAll([
+            this.onSubmitEmitter,
+            this.onCancelEmitter,
+            this.inputWidget
+        ]);
     }
 
     dispose(): void {
-        if (this.disposed) {
+        if (this.toDispose.disposed) {
             return;
         }
-        this.disposed = true;
         this.toDispose.dispose();
+    }
+
+    protected handleSubmit(request: ChatRequest): void {
+        this.onSubmitEmitter.fire(request);
+        this.dispose();
+    }
+
+    protected handleCancel(): void {
+        this.onCancelEmitter.fire();
+        this.dispose();
     }
 }
