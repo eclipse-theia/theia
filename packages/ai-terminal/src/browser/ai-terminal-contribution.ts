@@ -26,13 +26,21 @@ import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
-import { TerminalBlock } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalBlock, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { AskAITerminalInputFactory, AskAITerminalOverlay } from './ask-ai-terminal-widget';
+import { ChatAgentLocation, ChatAgentService, ChatRequest, ChatService } from '@theia/ai-chat';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
-    label: 'Ask AI',
+    label: 'Generate Command via AI',
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/askAi');
+
+const AI_TERMINAL_ASK_AI_COMMAND = Command.toLocalizedCommand({
+    id: 'ai-terminal:askAi',
+    label: 'Ask AI about this Command',
+    iconClass: codicon('sparkle')
+}, 'theia/ai/terminal/askAiTerminal');
 
 @injectable()
 export class AiTerminalCommandContribution implements CommandContribution, MenuContribution, KeybindingContribution {
@@ -47,13 +55,24 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     protected commandHandlerFactory: AICommandHandlerFactory;
 
     @inject(AgentService)
-    private readonly agentService: AgentService;
+    protected readonly agentService: AgentService;
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
     @inject(TerminalPreferences)
     protected readonly terminalPreferences: TerminalPreferences;
+
+    @inject(AskAITerminalInputFactory)
+    protected readonly askAITerminalInputFactory: AskAITerminalInputFactory;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
+
+    protected askAiInputOverlay: AskAITerminalOverlay | undefined;
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
@@ -67,6 +86,11 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             when: ENABLE_AI_CONTEXT_KEY,
             commandId: AI_TERMINAL_COMMAND.id,
             icon: AI_TERMINAL_COMMAND.iconClass
+        });
+        menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_AI_ACTIONS, {
+            when: ENABLE_AI_CONTEXT_KEY,
+            commandId: AI_TERMINAL_ASK_AI_COMMAND.id,
+            icon: AI_TERMINAL_ASK_AI_COMMAND.iconClass
         });
     }
     registerCommands(commands: CommandRegistry): void {
@@ -87,7 +111,81 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 && this.shell.currentWidget instanceof TerminalWidgetImpl
                 && (this.shell.currentWidget as TerminalWidgetImpl).kind === 'user'
         }));
+        commands.registerCommand(AI_TERMINAL_ASK_AI_COMMAND, this.commandHandlerFactory({
+            execute: async (terminalBlock: TerminalBlock) => {
+                const terminal = this.terminalService.lastUsedTerminal;
+                if (!terminal) {
+                    return;
+                }
+                const commandHistory = terminal?.commandHistoryState?.commandHistory;
+                const terminalHistoryIndex = commandHistory?.indexOf(terminalBlock) ?? -1;
+                if (terminalHistoryIndex < 0) {
+                    return;
+                }
+                this.showInputOverlay(terminal, terminalHistoryIndex);
+            },
+            isVisible: (terminalBlock: TerminalBlock) => (!!terminalBlock.command && !!terminalBlock.output)
+        }));
     }
+
+    private showInputOverlay(terminal: TerminalWidget, terminalHistoryIndex: number): void {
+        this.cleanupInputOverlay();
+        if (!(terminal instanceof TerminalWidgetImpl)) {
+            return;
+        }
+
+        // Create the input widget using the factory
+        this.askAiInputOverlay = new AskAITerminalOverlay(
+            terminal,
+            this.askAITerminalInputFactory
+        );
+
+        this.askAiInputOverlay.onSubmit(request => {
+            this.createNewChatSession(request, terminal, terminalHistoryIndex);
+            this.cleanupInputOverlay();
+        });
+
+        this.askAiInputOverlay.onCancel(() => {
+            this.cleanupInputOverlay();
+        });
+    }
+
+    protected async getTerminalShell(terminal: TerminalWidget): Promise<string | undefined> {
+        try {
+            const processInfo = await terminal.processInfo;
+            return processInfo ? processInfo.executable : undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
+    protected cleanupInputOverlay(): void {
+        if (this.askAiInputOverlay) {
+            this.askAiInputOverlay.dispose();
+            this.askAiInputOverlay = undefined;
+        }
+    }
+
+    protected async createNewChatSession(
+        request: ChatRequest,
+        currentTerminal: TerminalWidgetImpl,
+        terminalHistoryIndex: number
+    ): Promise<void> {
+        const coderAgent = this.chatAgentService.getAgent('Coder');
+        const cwd = (await currentTerminal.cwd).toString();
+        const shell = await this.getTerminalShell(currentTerminal);
+        const text = [
+            `#terminalCommand:${terminalHistoryIndex}`,
+            '### Terminal Context:',
+            `Cwd: ${cwd}\n`,
+            `ShellType: ${shell}`,
+            '### User Questions',
+            request.text
+        ].join('\n');
+        const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, coderAgent);
+        this.chatService.sendRequest(session.id, { ...request, text });
+    }
+
 }
 
 class AiTerminalChatWidget {

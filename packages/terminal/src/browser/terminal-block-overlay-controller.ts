@@ -1,0 +1,262 @@
+// *****************************************************************************
+// Copyright (C) 2026 EclipseSource GmbH and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+import { Disposable, DisposableCollection } from '@theia/core';
+import { nls } from '@theia/core/lib/common/nls';
+import { IMarker, Terminal } from 'xterm';
+import { TerminalBlock, TerminalBlockBoundary } from './base/terminal-widget';
+import { inject } from '@theia/core/shared/inversify';
+
+export const TerminalBlockOverlayOptions = Symbol('TerminalBlockOverlayOptions');
+export interface TerminalBlockOverlayOptions {
+    readonly term: Terminal;
+    readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
+}
+
+export interface TerminalBlockOverlay {
+    element: HTMLElement;
+    startMarker: IMarker;
+    endMarker: IMarker;
+}
+
+export const TerminalBlockOverlayControllerFactory = Symbol('TerminalBlockOverlayControllerFactory');
+export type TerminalBlockOverlayControllerFactory =
+    (options: TerminalBlockOverlayOptions) => TerminalBlockOverlayController;
+
+/**
+ * Owns the terminal block overlay DOM, marker tracking, and refresh lifecycle.
+ */
+export class TerminalBlockOverlayController implements Disposable {
+    protected readonly term: Terminal;
+    protected readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock) => void;
+
+    protected container: HTMLElement | undefined;
+    protected readonly blockOverlays: TerminalBlockOverlay[] = [];
+    protected readonly markerMap = new WeakMap<TerminalBlock, Record<TerminalBlockBoundary, IMarker | undefined>>();
+    protected readonly toDispose = new DisposableCollection();
+    protected pendingOverlayUpdate = false;
+    protected enabled = true;
+    protected disposed = false;
+
+    constructor(
+        @inject(TerminalBlockOverlayOptions) protected readonly options: TerminalBlockOverlayOptions
+    ) {
+        this.term = options.term;
+        this.renderBlockMenu = options.renderBlockMenu;
+    }
+
+    /**
+     * Attaches the overlay container and subscribes to terminal and viewport refresh events.
+     */
+    initialize(): void {
+        if (this.disposed || this.container || !this.term.element) {
+            return;
+        }
+        const container = document.createElement('div');
+        container.className = 'terminal-block-overlay';
+        this.term.element.appendChild(container);
+        this.container = container;
+
+        this.toDispose.push(this.term.onResize(() => this.update()));
+
+        const viewport = this.term.element.querySelector('.xterm-viewport');
+        if (viewport) {
+            const scrollHandler = () => this.update();
+            viewport.addEventListener('scroll', scrollHandler);
+            this.toDispose.push(Disposable.create(() => viewport.removeEventListener('scroll', scrollHandler)));
+        }
+    }
+
+    /**
+     * Sets the enablement of the overlay controller. Hides all blocks when set to disabled.
+     */
+    setEnabled(enabled: boolean): void {
+        if (this.disposed || this.enabled === enabled) {
+            return;
+        }
+        this.enabled = enabled;
+        if (this.container) {
+            this.container.style.display = enabled ? '' : 'none';
+        }
+        if (!enabled) {
+            for (const { element } of this.blockOverlays) {
+                element.style.display = 'none';
+            }
+            return;
+        }
+        this.update();
+    }
+
+    /**
+     * Registers a completed terminal block so its overlay can be rendered and tracked.
+     */
+    addBlock(block: TerminalBlock, commandStartMarker: IMarker | undefined, endMarker: IMarker | undefined): void {
+        if (this.disposed || !this.enabled) {
+            return;
+        }
+        this.initialize();
+        if (!commandStartMarker || commandStartMarker.isDisposed || !endMarker || endMarker.isDisposed || !this.container) {
+            return;
+        }
+
+        const currentAbsLine = this.term.buffer.active.baseY + this.term.buffer.active.cursorY;
+        const trackStart = this.term.registerMarker(commandStartMarker.line - currentAbsLine);
+        const trackEnd = this.term.registerMarker(endMarker.line - currentAbsLine);
+
+        if (!trackStart || !trackEnd) {
+            trackStart?.dispose();
+            trackEnd?.dispose();
+            return;
+        }
+
+        this.markerMap.set(block,
+            {
+                [TerminalBlockBoundary.Top]: trackStart,
+                [TerminalBlockBoundary.Bottom]: trackEnd
+            }
+        );
+
+        const overlay = document.createElement('div');
+        overlay.classList.add('terminal-command-overlay');
+        overlay.style.display = 'none';
+        overlay.appendChild(this.createButton(block, overlay));
+        this.container.appendChild(overlay);
+
+        this.blockOverlays.push({ element: overlay, startMarker: trackStart, endMarker: trackEnd });
+        this.update();
+    }
+
+    protected createButton(block: TerminalBlock, overlay: HTMLElement): HTMLElement {
+        const button = document.createElement('button');
+        button.classList.add('terminal-block-actions-button', 'codicon', 'codicon-ellipsis');
+        const blockActionsLabel = nls.localize('theia/terminal/blockActions', 'Terminal Block Actions');
+        button.title = blockActionsLabel;
+        button.setAttribute('aria-label', blockActionsLabel);
+        button.addEventListener('mouseenter', () => overlay.classList.add('active'));
+        button.addEventListener('mouseleave', () => overlay.classList.remove('active'));
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            event.preventDefault();
+            this.renderBlockMenu(event, block);
+        });
+        return button;
+    }
+
+    /**
+     * Schedules an overlay reposition pass for the next animation frame.
+     */
+    update(): void {
+        if (this.disposed || !this.enabled || this.pendingOverlayUpdate) {
+            return;
+        }
+        this.pendingOverlayUpdate = true;
+        requestAnimationFrame(() => {
+            this.pendingOverlayUpdate = false;
+            if (this.disposed || !this.enabled) {
+                return;
+            }
+            this.doUpdate();
+        });
+    }
+
+    /**
+     * Scrolls the terminal viewport to the requested boundary of a previously registered block.
+     */
+    scrollToBoundary(block: TerminalBlock, boundary: TerminalBlockBoundary): void {
+        const markers = this.markerMap.get(block);
+        if (!markers) {
+            return;
+        }
+        if (boundary === TerminalBlockBoundary.Top) {
+            const marker = markers[TerminalBlockBoundary.Top];
+            if (marker) {
+                this.term.scrollToLine(marker.line);
+            }
+            return;
+        }
+        const startMarker = markers[TerminalBlockBoundary.Top];
+        const endMarker = markers[TerminalBlockBoundary.Bottom];
+        if (!startMarker || !endMarker) {
+            return;
+        }
+        const lastBlockLine = Math.max(startMarker.line, endMarker.line - 1);
+        const topLineForBottomAlignment = Math.max(0, lastBlockLine - (this.term.rows - 1));
+        this.term.scrollToLine(topLineForBottomAlignment);
+    }
+
+    /**
+     * Clears all stored blocks and dispose start and end markers
+     */
+    clearBlocks(): void {
+        this.pendingOverlayUpdate = false;
+        for (const { element, startMarker, endMarker } of this.blockOverlays) {
+            element.remove();
+            if (!startMarker.isDisposed) {
+                startMarker.dispose();
+            }
+            if (!endMarker.isDisposed) {
+                endMarker.dispose();
+            }
+        }
+        this.blockOverlays.length = 0;
+    }
+
+    protected doUpdate(): void {
+        if (this.disposed || !this.enabled || !this.container || !this.term.element) {
+            return;
+        }
+        const screen = this.term.element.querySelector('.xterm-screen') as HTMLElement | null;
+        if (!screen || this.term.rows === 0) {
+            return;
+        }
+        const rowHeight = screen.clientHeight / this.term.rows;
+        if (rowHeight <= 0) {
+            return;
+        }
+        const viewportY = this.term.buffer.active.viewportY;
+        const termHeight = this.term.rows * rowHeight;
+        for (let i = this.blockOverlays.length - 1; i >= 0; i--) {
+            const { element, startMarker, endMarker } = this.blockOverlays[i];
+            if (startMarker.isDisposed || endMarker.isDisposed) {
+                element.remove();
+                this.blockOverlays.splice(i, 1);
+                continue;
+            }
+            const startPx = (startMarker.line - viewportY) * rowHeight;
+            const endPx = (endMarker.line - viewportY) * rowHeight;
+            const visibleTop = Math.max(0, startPx);
+            const visibleBottom = Math.min(termHeight, endPx);
+            if (visibleBottom <= visibleTop) {
+                element.style.display = 'none';
+            } else {
+                element.style.display = 'flex';
+                element.style.top = `${visibleTop}px`;
+                element.style.height = `${visibleBottom - visibleTop}px`;
+            }
+        }
+    }
+
+    dispose(): void {
+        if (this.disposed) {
+            return;
+        }
+        this.disposed = true;
+        this.clearBlocks();
+        this.container?.remove();
+        this.container = undefined;
+        this.toDispose.dispose();
+    }
+}

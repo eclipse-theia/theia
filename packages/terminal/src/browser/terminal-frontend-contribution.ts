@@ -40,7 +40,7 @@ import {
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
 import { TerminalService } from './base/terminal-service';
-import { TerminalWidgetOptions, TerminalWidget, TerminalLocation } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalLocation, TerminalBlock, TerminalBlockBoundary } from './base/terminal-widget';
 import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore } from './terminal-profile-service';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
@@ -58,6 +58,7 @@ import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/t
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -73,6 +74,11 @@ export namespace TerminalMenus {
     export const TERMINAL_CONTRIBUTIONS = [...TERMINAL_CONTEXT_MENU, '5_terminal_contributions'];
 
     export const TERMINAL_TITLE_CONTRIBUTIONS = [...SHELL_TABBAR_CONTEXT_MENU, 'terminal_title_contributions'];
+
+    export const TERMINAL_BLOCK_ACTIONS = ['terminal-block-menu'];
+    export const TERMINAL_BLOCK_COPY_ACTIONS = [...TERMINAL_BLOCK_ACTIONS, '1_copy'];
+    export const TERMINAL_BLOCK_SCROLL_ACTIONS = [...TERMINAL_BLOCK_ACTIONS, '2_scroll'];
+    export const TERMINAL_BLOCK_AI_ACTIONS = [...TERMINAL_BLOCK_ACTIONS, '3_ai'];
 }
 
 export namespace TerminalCommands {
@@ -173,6 +179,36 @@ export namespace TerminalCommands {
         category: CommonCommands.VIEW_CATEGORY,
         label: 'Show All Opened Terminals'
     });
+
+    export const TERMINAL_BLOCK_COPY_ALL = Command.toDefaultLocalizedCommand({
+        id: 'terminal:block:copyAll',
+        category: TERMINAL_CATEGORY,
+        label: 'Copy Command and Output'
+    });
+
+    export const TERMINAL_BLOCK_COPY_COMMAND = Command.toDefaultLocalizedCommand({
+        id: 'terminal:block:copyCommand',
+        category: TERMINAL_CATEGORY,
+        label: 'Copy Command'
+    });
+
+    export const TERMINAL_BLOCK_COPY_OUTPUT = Command.toDefaultLocalizedCommand({
+        id: 'terminal:block:copyOutput',
+        category: TERMINAL_CATEGORY,
+        label: 'Copy Output'
+    });
+
+    export const TERMINAL_BLOCK_SCROLL_TO_TOP = Command.toLocalizedCommand({
+        id: 'terminal:block:scrollToTop',
+        category: TERMINAL_CATEGORY,
+        label: 'Scroll to Top of Block'
+    }, 'theia/terminal/scrollBlockTop');
+
+    export const TERMINAL_BLOCK_SCROLL_TO_BOTTOM = Command.toLocalizedCommand({
+        id: 'terminal:block:scrollToBottom',
+        category: TERMINAL_CATEGORY,
+        label: 'Scroll to Bottom of Block'
+    }, 'theia/terminal/scrollBlockBottom');
 }
 
 const ENVIRONMENT_VARIABLE_COLLECTIONS_KEY = 'terminal.integrated.environmentVariableCollections';
@@ -232,6 +268,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
 
     @postConstruct()
     protected init(): void {
@@ -670,6 +709,48 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             isEnabled: () => !!this.currentTerminal,
             execute: () => this.currentTerminal?.selectAll()
         });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_ALL, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    this.clipboardService.writeText(`${block.command}\n${block.output}`);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_COMMAND, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    this.clipboardService.writeText(block.command);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && !!block.command
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_COPY_OUTPUT, {
+            execute: (block: TerminalBlock) => {
+                if (block) {
+                    this.clipboardService.writeText(block.output);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_TOP, {
+            execute: (block: TerminalBlock) => {
+                const terminal = this.shell.activeWidget;
+                if (terminal instanceof TerminalWidget && block) {
+                    terminal.scrollToBlockBoundary(block, TerminalBlockBoundary.Top);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_BOTTOM, {
+            execute: (block: TerminalBlock) => {
+                const terminal = this.shell.activeWidget;
+                if (terminal instanceof TerminalWidget && block) {
+                    terminal.scrollToBlockBoundary(block, TerminalBlockBoundary.Bottom);
+                }
+            },
+            isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
+        });
         commands.registerHandler(CommonCommands.COPY.id, {
             execute: () => {
                 const terminal = this.shell.activeWidget;
@@ -783,6 +864,30 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         menus.registerSubmenu(TerminalMenus.TERMINAL_CONTRIBUTIONS, '');
 
         menus.registerSubmenu(TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS, '', { when: 'isTerminalTab' });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_COPY_ACTIONS, {
+            commandId: TerminalCommands.TERMINAL_BLOCK_COPY_ALL.id,
+            label: nls.localizeByDefault('Copy Command and Output'),
+            order: '1'
+        });
+        menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_COPY_ACTIONS, {
+            commandId: TerminalCommands.TERMINAL_BLOCK_COPY_COMMAND.id,
+            label: nls.localizeByDefault('Copy Command'),
+            order: '2'
+        });
+        menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_COPY_ACTIONS, {
+            commandId: TerminalCommands.TERMINAL_BLOCK_COPY_OUTPUT.id,
+            label: nls.localizeByDefault('Copy Output'),
+            order: '3'
+        });
+        menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_SCROLL_ACTIONS, {
+            commandId: TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_TOP.id,
+            order: '1'
+        });
+        menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_SCROLL_ACTIONS, {
+            commandId: TerminalCommands.TERMINAL_BLOCK_SCROLL_TO_BOTTOM.id,
+            order: '2'
+        });
     }
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
