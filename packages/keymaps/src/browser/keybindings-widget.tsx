@@ -673,7 +673,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             title: nls.localize('theia/keymaps/editKeybindingTitle', 'Edit Keybinding for {0}', item.labels.command.value),
             maxWidth: 400,
             initialValue: oldKeybinding?.keybinding,
-            validate: newKeybinding => this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
+            validate: (newKeybinding, mode) => mode === 'preview' && !newKeybinding ? '' : this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
         }, this.keymapsService, item, this.canResetKeybinding(item));
         dialog.open().then(async keybinding => {
             if (keybinding && keybinding !== oldKeybinding?.keybinding) {
@@ -725,9 +725,8 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         const dialog = new EditKeybindingDialog({
             title: nls.localize('theia/keymaps/addKeybindingTitle', 'Add Keybinding for {0}', item.labels.command.value),
             maxWidth: 400,
-            validate: newKeybinding => this.validateKeybinding(command, undefined, newKeybinding),
+            validate: (newKeybinding, mode) => mode === 'preview' && !newKeybinding ? '' : this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
         }, this.keymapsService, item, false);
-
         dialog.open().then(async keybinding => {
             if (keybinding) {
                 await this.keymapsService.setKeybinding({
@@ -881,7 +880,6 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         }
     }
 }
-
 /**
  * Dialog used to edit keybindings, and reset custom keybindings.
  */
@@ -900,7 +898,6 @@ class EditKeybindingDialog extends SingleTextInputDialog {
 
     // Tracks resources that need to be disposed of when the dialog closes.
     protected readonly keystrokeDisposable = new DisposableCollection();
-
     constructor(
         @inject(SingleTextInputDialogProps) props: SingleTextInputDialogProps,
         @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
@@ -909,6 +906,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
     ) {
         super(props);
         this.item = item;
+        // Add the `Reset` button if the command currently has a custom keybinding.
         if (canReset) {
             this.appendResetButton();
         }
@@ -919,12 +917,10 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         if (this.resetButton) {
             this.addResetAction(this.resetButton, 'click');
         }
-
         window.addEventListener('keydown', this.handleKeyDown, { capture: true });
         this.keystrokeDisposable.push(Disposable.create(() => {
             window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
         }));
-
         setTimeout(() => {
             const inputField = this.node.querySelector('input');
             if (inputField) {
@@ -932,7 +928,6 @@ class EditKeybindingDialog extends SingleTextInputDialog {
             }
         }, 100);
     }
-
     protected override onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
         this.keystrokeDisposable.dispose();
@@ -965,7 +960,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
 
         const inputField = target as HTMLInputElement;
         inputField.value = keyCode.toString();
-        inputField.dispatchEvent(new window.Event('input', { bubbles: true}));
+        inputField.dispatchEvent(new window.Event('input', { bubbles: true }));
     };
 
     /**
@@ -986,8 +981,10 @@ class EditKeybindingDialog extends SingleTextInputDialog {
      * @returns the `Reset` button.
      */
     protected appendResetButton(): HTMLButtonElement {
+        // Create the `Reset` button.
         const resetButtonTitle = nls.localizeByDefault('Reset');
         this.resetButton = this.createButton(resetButtonTitle);
+        // Add the `Reset` button to the dialog control panel, before the `Accept` button.
         this.controlPanel.insertBefore(this.resetButton, this.acceptButton!);
         this.resetButton.title = nls.localizeByDefault('Reset Keybinding');
         this.resetButton.classList.add('secondary');
