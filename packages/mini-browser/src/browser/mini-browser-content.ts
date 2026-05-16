@@ -20,7 +20,6 @@ import { Message } from '@theia/core/shared/@lumino/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Emitter } from '@theia/core/lib/common/event';
-import { CommandRegistry } from '@theia/core/lib/common/command';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
@@ -33,18 +32,6 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { MiniBrowserContentStyle } from './mini-browser-content-style';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
-import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { MessageService } from '@theia/core/lib/common/message-service';
-import { nls } from '@theia/core/lib/common/nls';
-import { ElementInspectorService } from '@theia/qaap-element-inspector/lib/browser/element-inspector-service';
-import {
-    ELEMENT_PICKER_MESSAGE_TYPE,
-    ELEMENT_PICKER_CANCEL_TYPE,
-    ELEMENT_REFRESH_RESPONSE_TYPE,
-    PickedElement
-} from '@theia/qaap-element-inspector/lib/browser/element-inspector-types';
-import { buildElementBridgeScript, buildElementPickerScript } from '@theia/qaap-element-inspector/lib/browser/element-picker-script';
-import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from '@theia/qaap-element-inspector/lib/browser/element-inspector-contribution';
 
 /**
  * Initializer properties for the embedded browser widget.
@@ -53,9 +40,7 @@ import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_I
 export class MiniBrowserProps {
 
     /**
-     * `show` if the toolbar should be visible. If `read-only`, the toolbar is visible with a link-styled
-     * address; clicking the address bar lets the user edit it inline (Enter navigates), while the dedicated
-     * "Open In A New Window" button is used to open the page externally.\
+     * `show` if the toolbar should be visible. If `read-only`, the toolbar is visible but the address cannot be changed and it acts as a link instead.\
      * `hide` if the toolbar should be hidden. `show` by default. If the `startPage` is not defined, this property is always `show`.
      */
     readonly toolbar?: 'show' | 'hide' | 'read-only';
@@ -189,25 +174,11 @@ export class MiniBrowserContent extends BaseWidget {
     @inject(KeybindingRegistry)
     protected readonly keybindings: KeybindingRegistry;
 
-    @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
-
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
 
     @inject(FileService)
     protected readonly fileService: FileService;
-
-    @inject(ClipboardService)
-    protected readonly clipboard: ClipboardService;
-
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
-
-    @inject(ElementInspectorService)
-    protected readonly inspectorService: ElementInspectorService;
-
-    protected pickerListenerInstalled = false;
 
     protected readonly submitInputEmitter = new Emitter<string>();
     protected readonly navigateBackEmitter = new Emitter<void>();
@@ -271,29 +242,9 @@ export class MiniBrowserContent extends BaseWidget {
         }));
         const { startPage } = this.props;
         if (startPage) {
-            void this.listenOnContentChange(startPage);
-            void this.go(startPage.trim());
+            setTimeout(() => this.go(startPage), 500);
+            this.listenOnContentChange(startPage);
         }
-    }
-
-    /**
-     * If the first `go()` ran before the widget was in the document, `iframe.src` can stay blank;
-     * retry once after attach when the URL still has not loaded.
-     */
-    protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        const { startPage } = this.props;
-        if (!startPage) {
-            return;
-        }
-        const url = startPage.trim();
-        queueMicrotask(() => {
-            const src = this.frame.src || '';
-            const blankish = !src || src === 'about:blank';
-            if (blankish) {
-                void this.go(url);
-            }
-        });
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -306,22 +257,18 @@ export class MiniBrowserContent extends BaseWidget {
     }
 
     protected async listenOnContentChange(location: string): Promise<void> {
-        try {
-            if (await this.fileService.exists(new URI(location))) {
-                const fileUri = new URI(location);
-                const watcher = this.fileService.watch(fileUri);
-                this.toDispose.push(watcher);
-                const onFileChange = (event: FileChangesEvent) => {
-                    if (event.contains(fileUri, FileChangeType.ADDED) || event.contains(fileUri, FileChangeType.UPDATED)) {
-                        this.go(location, {
-                            showLoadIndicator: false
-                        });
-                    }
-                };
-                this.toDispose.push(this.fileService.onDidFilesChange(debounce(onFileChange, 500)));
-            }
-        } catch {
-            /* not a workspace file URL — skip watching */
+        if (await this.fileService.exists(new URI(location))) {
+            const fileUri = new URI(location);
+            const watcher = this.fileService.watch(fileUri);
+            this.toDispose.push(watcher);
+            const onFileChange = (event: FileChangesEvent) => {
+                if (event.contains(fileUri, FileChangeType.ADDED) || event.contains(fileUri, FileChangeType.UPDATED)) {
+                    this.go(location, {
+                        showLoadIndicator: false
+                    });
+                }
+            };
+            this.toDispose.push(this.fileService.onDidFilesChange(debounce(onFileChange, 500)));
         }
     }
 
@@ -333,7 +280,8 @@ export class MiniBrowserContent extends BaseWidget {
         this.createNext(toolbar);
         this.createRefresh(toolbar);
         const input = this.createInput(toolbar);
-        this.createWorkbenchControls(toolbar);
+        input.readOnly = this.getToolbarProps() === 'read-only';
+        this.createOpen(toolbar);
         if (this.getToolbarProps() === 'hide') {
             toolbar.style.display = 'none';
         }
@@ -412,24 +360,6 @@ export class MiniBrowserContent extends BaseWidget {
         this.maybeResetBackground();
         this.hideLoadIndicator();
         this.hideErrorBar();
-        this.injectInspectorBridge();
-    }
-
-    /**
-     * Installs the resident inspector bridge inside the iframe so the inspector panel can
-     * mutate styles after a pick. No-op when the iframe is cross-origin.
-     */
-    protected injectInspectorBridge(): void {
-        try {
-            const doc = this.frame?.contentDocument;
-            if (!doc) return;
-            const script = doc.createElement('script');
-            script.textContent = buildElementBridgeScript();
-            doc.documentElement.appendChild(script);
-            script.remove();
-        } catch {
-            // cross-origin iframe — silently skip; the picker will warn at use time.
-        }
     }
 
     protected onFrameError(): void {
@@ -519,7 +449,7 @@ export class MiniBrowserContent extends BaseWidget {
     protected handleOpen(): void {
         const location = this.frameSrc() || this.input.value;
         if (location) {
-            this.windowService.openNewWindow(location, { external: true });
+            this.windowService.openNewWindow(location);
         }
     }
 
@@ -531,8 +461,12 @@ export class MiniBrowserContent extends BaseWidget {
         this.toDispose.pushAll([
             addEventListener(input, 'keydown', this.handleInputChange.bind(this)),
             addEventListener(input, 'click', () => {
-                if (input.value) {
-                    input.select();
+                if (this.getToolbarProps() === 'read-only') {
+                    this.handleOpen();
+                } else {
+                    if (input.value) {
+                        input.select();
+                    }
                 }
             })
         ]);
@@ -542,7 +476,7 @@ export class MiniBrowserContent extends BaseWidget {
 
     protected handleInputChange(e: KeyboardEvent): void {
         const { key } = KeyCode.createKeyCode(e);
-        if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() !== 'hide') {
+        if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() === 'show') {
             const { target } = e;
             if (target instanceof HTMLInputElement) {
                 this.mapLocation(target.value).then(location => this.submitInputEmitter.fire(location));
@@ -562,147 +496,8 @@ export class MiniBrowserContent extends BaseWidget {
         return this.onClick(this.createButton(parent, 'Reload This Page', MiniBrowserContentStyle.REFRESH), this.refreshEmitter);
     }
 
-    protected createWorkbenchControls(parent: HTMLElement): HTMLElement {
-        const controls = document.createElement('div');
-        controls.classList.add(MiniBrowserContentStyle.WORKBENCH_CONTROLS);
-        parent.appendChild(controls);
-        this.createOpen(controls);
-        this.createInspectButton(controls);
-        this.createCommandButton(
-            controls,
-            ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID,
-            nls.localize('theia/mini-browser/toggleElementInspector', 'Toggle Element Inspector'),
-            'layout-panel'
-        );
-        return controls;
-    }
-
-    protected createInspectButton(parent: HTMLElement): HTMLElement {
-        const button = this.createWorkbenchButton(
-            parent,
-            nls.localize('theia/mini-browser/pickElement', 'Pick an element to send to chat'),
-            'inspect'
-        );
-        this.toDispose.push(addEventListener(button, 'click', () => this.handleInspect()));
-        return button;
-    }
-
-    protected handleInspect(): void {
-        this.installPickerListener();
-        try {
-            const doc = this.frame?.contentDocument;
-            const win = this.frame?.contentWindow;
-            if (!doc || !win) {
-                this.notifyPickerUnavailable();
-                return;
-            }
-            // The bridge is normally injected at load; make sure it is in place before the picker.
-            this.injectInspectorBridge();
-            const script = doc.createElement('script');
-            script.textContent = buildElementPickerScript();
-            doc.documentElement.appendChild(script);
-            script.remove();
-        } catch {
-            this.notifyPickerUnavailable();
-        }
-    }
-
-    protected notifyPickerUnavailable(): void {
-        this.messageService.warn(nls.localize(
-            'theia/mini-browser/pickerUnavailable',
-            'The element picker cannot run on this page because the preview is cross-origin. Open a same-origin preview to use it.'
-        ));
-    }
-
-    protected installPickerListener(): void {
-        if (this.pickerListenerInstalled) {
-            return;
-        }
-        this.pickerListenerInstalled = true;
-        const handler = (event: MessageEvent) => {
-            if (!event.data || typeof event.data !== 'object') return;
-            if (this.frame && event.source && event.source !== this.frame.contentWindow) return;
-            const data = event.data as { type?: string; payload?: PickedElement; error?: string };
-            if (data.type === ELEMENT_PICKER_MESSAGE_TYPE && data.payload) {
-                void this.handlePickedElement(data.payload);
-            } else if (data.type === ELEMENT_REFRESH_RESPONSE_TYPE && data.payload) {
-                this.inspectorService.refreshed(data.payload);
-            } else if (data.type === ELEMENT_PICKER_CANCEL_TYPE) {
-                // no-op: the in-frame script tears itself down
-            }
-        };
-        window.addEventListener('message', handler);
-        this.toDispose.push(Disposable.create(() => window.removeEventListener('message', handler)));
-    }
-
-    protected async handlePickedElement(element: PickedElement): Promise<void> {
-        this.inspectorService.bind(this.frame?.contentWindow ?? undefined);
-        this.inspectorService.pick(element);
-        const summary = this.formatElementForChat(element);
-        try {
-            await this.clipboard.writeText(summary);
-        } catch {
-            // clipboard may be denied in some sandboxes; the inspector panel still has the data
-        }
-        await this.revealInspector();
-        this.messageService.info(nls.localize(
-            'theia/mini-browser/elementCaptured',
-            'Captured {0}. Details opened in the Element Inspector and copied to the clipboard.',
-            element.tagName + (element.id ? '#' + element.id : '') + (element.classes.length ? '.' + element.classes.slice(0, 2).join('.') : '')
-        ));
-    }
-
-    protected async revealInspector(): Promise<void> {
-        if (!this.commands.getCommand(ELEMENT_INSPECTOR_REVEAL_COMMAND_ID)) {
-            return;
-        }
-        try {
-            await this.commands.executeCommand(ELEMENT_INSPECTOR_REVEAL_COMMAND_ID);
-        } catch {
-            // inspector contribution might not be available; ignore
-        }
-    }
-
-    protected formatElementForChat(element: PickedElement): string {
-        const lines: string[] = [];
-        lines.push('Selected DOM element from preview ' + element.pageUrl);
-        lines.push('DOM Path: ' + element.domPath);
-        const { top, left, width, height } = element.position;
-        lines.push(`Position: top=${top}px, left=${left}px, width=${width}px, height=${height}px`);
-        lines.push('HTML Element: ' + element.outerHTML);
-        if (element.textPreview) {
-            lines.push('Text: ' + element.textPreview);
-        }
-        return lines.join('\n');
-    }
-
-    protected createCommandButton(parent: HTMLElement, commandId: string, title: string, icon: string): HTMLElement {
-        const button = this.createWorkbenchButton(parent, title, icon);
-        this.toDispose.push(addEventListener(button, 'click', () => {
-            if (this.commands.isEnabled(commandId)) {
-                void this.commands.executeCommand(commandId).catch(() => undefined);
-            }
-        }));
-        return button;
-    }
-
-    protected createWorkbenchButton(parent: HTMLElement, title: string, icon: string): HTMLButtonElement {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.title = title;
-        button.classList.add(MiniBrowserContentStyle.WORKBENCH_BUTTON, ...codiconArray(icon));
-        parent.appendChild(button);
-        return button;
-    }
-
     protected createOpen(parent: HTMLElement): HTMLElement {
-        const button = this.createWorkbenchButton(
-            parent,
-            nls.localize('theia/mini-browser/openInNewBrowserTab', 'Open in New Browser Tab'),
-            'link-external'
-        );
-        button.classList.add(MiniBrowserContentStyle.OPEN);
-        this.toDispose.push(addEventListener(button, 'click', () => this.openEmitter.fire(undefined)));
+        const button = this.onClick(this.createButton(parent, 'Open In A New Window', MiniBrowserContentStyle.OPEN), this.openEmitter);
         return button;
     }
 
@@ -783,6 +578,9 @@ export class MiniBrowserContent extends BaseWidget {
                 this.toDisposeOnGo.dispose();
                 const url = await this.mapLocation(location);
                 this.setInput(url);
+                if (this.getToolbarProps() === 'read-only') {
+                    this.input.title = `Open ${url} In A New Window`;
+                }
                 clearTimeout(this.frameLoadTimeout);
                 this.frameLoadTimeout = window.setTimeout(this.onFrameTimeout.bind(this), 4000);
                 if (showLoadIndicator) {

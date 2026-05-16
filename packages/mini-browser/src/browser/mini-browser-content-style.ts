@@ -25,8 +25,6 @@ export namespace MiniBrowserContentStyle {
     export const NEXT = 'theia-mini-browser-next';
     export const REFRESH = 'theia-mini-browser-refresh';
     export const OPEN = 'theia-mini-browser-open';
-    export const WORKBENCH_CONTROLS = 'theia-mini-browser-workbench-controls';
-    export const WORKBENCH_BUTTON = 'theia-mini-browser-workbench-button';
     export const BUTTON = 'theia-mini-browser-button';
     export const DISABLED = 'theia-mini-browser-button-disabled';
     export const TRANSPARENT_OVERLAY = 'theia-transparent-overlay';

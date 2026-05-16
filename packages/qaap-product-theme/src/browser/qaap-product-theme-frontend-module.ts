@@ -15,7 +15,16 @@ import '../../src/browser/style/qaap-dialog-narrow-viewport.css';
 import '../../src/browser/style/qaap-mini-browser-toolbar-mobile.css';
 import '../../src/browser/style/qaap-monaco-quick-input-narrow.css';
 import '../../src/browser/style/qaap-status-bar.css';
+import '../../src/browser/style/qaap-workbench-chrome.css';
+import '../../src/browser/style/qaap-file-dialog.css';
+import '../../src/browser/style/qaap-notifications.css';
+import '../../src/browser/style/qaap-getting-started.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { QaapWorkbenchColorContribution } from './qaap-workbench-color-contribution';
 
-export default new ContainerModule(() => { /* CSS side-effect only */ });
+export default new ContainerModule(bind => {
+    bind(QaapWorkbenchColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(QaapWorkbenchColorContribution);
+});

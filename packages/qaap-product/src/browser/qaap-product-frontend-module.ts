@@ -7,7 +7,7 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 
 /**
- * No bindings: real contributions come from transitive `@theia/qaap-*` dependencies.
- * This module exists so `ExtensionPackageCollector` recurses into those packages.
+ * Umbrella module: `ExtensionPackageCollector` recurses into transitive `@theia/qaap-*` deps.
+ * Product DI rebinds live in `qaap-product-bindings-frontend-module`.
  */
 export default new ContainerModule(() => { /* intentionally empty */ });

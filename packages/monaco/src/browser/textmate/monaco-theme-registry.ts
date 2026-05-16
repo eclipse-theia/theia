@@ -31,12 +31,7 @@ export class MonacoThemeRegistry {
 
     @inject(TextmateRegistryFactory) protected readonly registryFactory: TextmateRegistryFactory;
 
-    protected defaultThemesInitialized = false;
-
     initializeDefaultThemes(): void {
-        if (this.defaultThemesInitialized) {
-            return;
-        }
         this.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
             './dark_vs.json': require('../../../data/monaco-themes/vscode/dark_vs.json'),
             './dark_plus.json': require('../../../data/monaco-themes/vscode/dark_plus.json')
@@ -51,7 +46,6 @@ export class MonacoThemeRegistry {
         this.register(require('../../../data/monaco-themes/vscode/hc_theia_light.json'), {
             './hc_light.json': require('../../../data/monaco-themes/vscode/hc_light.json')
         }, 'hc-theia-light', 'hc-light');
-        this.defaultThemesInitialized = true;
     }
 
     getThemeData(): ThemeMix;
@@ -99,12 +93,6 @@ export class MonacoThemeRegistry {
                 Object.assign(result.colors, parentTheme.colors);
                 result.rules.push(...parentTheme.rules);
                 result.settings.push(...parentTheme.settings);
-                if (parentTheme.semanticHighlighting !== undefined) {
-                    result.semanticHighlighting = parentTheme.semanticHighlighting;
-                }
-                if (parentTheme.semanticTokenColors) {
-                    result.semanticTokenColors = { ...parentTheme.semanticTokenColors };
-                }
             }
         }
         const tokenColors: IRawTheme['settings'] = json.tokenColors;
@@ -122,12 +110,6 @@ export class MonacoThemeRegistry {
                 }
             }
         }
-        if (typeof json.semanticHighlighting === 'boolean') {
-            result.semanticHighlighting = json.semanticHighlighting;
-        }
-        if (json.semanticTokenColors && typeof json.semanticTokenColors === 'object') {
-            result.semanticTokenColors = Object.assign({}, result.semanticTokenColors, json.semanticTokenColors);
-        }
         if (json.colors) {
             Object.assign(result.colors, json.colors);
             result.encodedTokensColors = Object.keys(result.colors).map(key => result.colors[key]);
@@ -138,10 +120,7 @@ export class MonacoThemeRegistry {
             }
 
             // the default rule (scope empty) is always the first rule. Ignore all other default rules.
-            const defaultTheme = (StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService)['_knownThemes'].get(result.base);
-            if (!defaultTheme) {
-                throw new Error(`MonacoThemeRegistry: base builtin theme "${result.base}" is not registered yet; cannot build token color map for "${givenName}".`);
-            }
+            const defaultTheme = (StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService)['_knownThemes'].get(result.base)!;
             const foreground = result.colors['editor.foreground'] || defaultTheme.getColor('editor.foreground');
             const background = result.colors['editor.background'] || defaultTheme.getColor('editor.background');
             result.settings.unshift({
@@ -178,9 +157,6 @@ export class MonacoThemeRegistry {
     protected normalizeColor(color: string | Color | undefined): string | undefined {
         if (!color) {
             return undefined;
-        }
-        if (color instanceof Color) {
-            return Color.Format.CSS.formatHex(color);
         }
         const normalized = String(color).replace(/^\#/, '').slice(0, 6);
         if (normalized.length < 6 || !(normalized).match(/^[0-9A-Fa-f]{6}$/)) {

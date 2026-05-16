@@ -1,0 +1,37 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Global workbench chrome (product): splash, preload, editor watermark.
+| Replaces drift formerly in `@theia/core` `style/index.css`.
+|----------------------------------------------------------------------------*/
+
+:root {
+  --theia-ui-icon-font-size: 16px;
+  --theia-code-line-height: 18px;
+}
+
+.theia-preload {
+  background-color: var(--theia-editor-background);
+  background-image: var(--theia-preload-logo-url, none);
+  background-size: min(35vmin, 220px) min(35vmin, 220px);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
+}
+
+.theia-preload::after {
+  content: none;
+  display: none;
+}
+
+html.theia-splash-branded .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .letterpress,
+html.theia-splash-branded .monaco-workbench .editor-group-watermark .letterpress {
+  background-image: var(--theia-workbench-brand-logo-url) !important;
+  background-size: min(40vmin, 256px) min(40vmin, 256px);
+  background-position: center;
+  background-repeat: no-repeat;
+}

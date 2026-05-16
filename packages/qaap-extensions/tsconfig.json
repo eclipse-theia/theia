@@ -13,7 +13,16 @@
       "path": "../ai-chat-ui"
     },
     {
+      "path": "../ai-code-completion"
+    },
+    {
+      "path": "../ai-core"
+    },
+    {
       "path": "../core"
+    },
+    {
+      "path": "../getting-started"
     },
     {
       "path": "../filesystem"
@@ -26,6 +35,12 @@
     },
     {
       "path": "../outline-view"
+    },
+    {
+      "path": "../preview"
+    },
+    {
+      "path": "../workspace"
     }
   ]
 }

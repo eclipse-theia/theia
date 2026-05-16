@@ -8,6 +8,8 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultMiniBrowserOpenHook, MiniBrowserOpenHook } from '@theia/mini-browser/lib/browser/mini-browser-open-hook';
 import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import { MonacoQuickInputLayout } from '@theia/monaco/lib/browser/monaco-quick-input-layout';
+import { MiniBrowserContent } from '@theia/mini-browser/lib/browser/mini-browser-content';
+import { QaapMiniBrowserContent } from './qaap-mini-browser-content';
 import { QaapMiniBrowserOpenHandler } from './qaap-mini-browser-open-handler';
 import { DefaultQaapMiniBrowserLifecycle } from './default-qaap-mini-browser-lifecycle';
 import { DefaultQaapMonacoQuickInputAdapter } from './default-qaap-monaco-quick-input-adapter';
@@ -33,6 +35,9 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     if (isBound(MonacoQuickInputLayout)) {
         rebind(MonacoQuickInputLayout).to(QaapMonacoQuickInputLayoutBridge).inSingletonScope();
     }
+
+    bind(QaapMiniBrowserContent).toSelf();
+    rebind(MiniBrowserContent).to(QaapMiniBrowserContent);
 
     bind(QaapMiniBrowserOpenHandler).toSelf().inSingletonScope();
     rebind(MiniBrowserOpenHandler).toService(QaapMiniBrowserOpenHandler);

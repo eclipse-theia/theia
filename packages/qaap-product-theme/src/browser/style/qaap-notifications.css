@@ -1,0 +1,142 @@
+/* *****************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ * *****************************************************************************/
+
+.theia-notifications-container {
+  bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  width: min(
+    500px,
+    calc(
+      100vw - 32px - env(safe-area-inset-left, 0px) -
+        env(safe-area-inset-right, 0px)
+    )
+  );
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.theia-notification-list-item-content-bottom {
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.theia-notification-message {
+  min-width: 0;
+}
+
+.theia-notification-buttons > button {
+  max-width: min(160px, 100%);
+}
+
+@media (max-width: 500px) {
+  .theia-notification-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .theia-notification-buttons > button {
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .theia-notification-list-item-content-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .theia-notification-source {
+    width: 100%;
+  }
+}
+
+/*-----------------------------------------------------------------------------
+| Mobile / narrow viewport: lift notifications above the mobile bottom bar,
+| status bar, safe area, and keyboard inset (`MobileKeyboardHelper` sets
+| `--theia-mobile-keyboard-inset` on `document.documentElement`).
+|
+| `--theia-mobile-bottom-bar-height` is defined on `:root` in
+| `mobile-workbench.css` at this breakpoint so body-level overlays inherit it
+| (it is not enough to define it only on `#theia-app-shell`).
+|
+| Higher z-index keeps notifications above shell content / bottom bar paint order.
+|-----------------------------------------------------------------------------*/
+@media (max-width: 767px) {
+  .theia-notifications-container.theia-notification-center {
+    z-index: 9800;
+    bottom: calc(
+      var(--theia-mobile-bottom-bar-height, 56px) +
+        var(--theia-statusBar-height, 34px) + 8px +
+        env(safe-area-inset-bottom, 0px) +
+        var(--theia-mobile-keyboard-inset, 0px)
+    );
+    right: max(8px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-width: none;
+  }
+
+  .theia-notifications-container.theia-notification-toasts {
+    z-index: 9800;
+    bottom: calc(
+      var(--theia-mobile-bottom-bar-height, 56px) +
+        var(--theia-statusBar-height, 34px) + 8px +
+        env(safe-area-inset-bottom, 0px) +
+        var(--theia-mobile-keyboard-inset, 0px)
+    );
+    top: auto;
+    right: max(8px, env(safe-area-inset-right, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-width: none;
+  }
+
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-list-item-container {
+    margin-top: 6px;
+    margin-bottom: 0;
+  }
+
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-list-item {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-list-item-content {
+    margin: 8px 10px;
+  }
+
+  .theia-notifications-container.theia-notification-toasts
+    .theia-notification-message {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  @media (max-width: 767px) {
+    .theia-notifications-container.theia-notification-toasts
+      .theia-notification-list-item {
+      background: color-mix(
+        in srgb,
+        var(--theia-notifications-background) 78%,
+        transparent
+      );
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      backdrop-filter: blur(16px) saturate(140%);
+    }
+  }
+}

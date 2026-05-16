@@ -29,7 +29,7 @@ export const GooglePreferencesSchema: PreferenceSchema = {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/google/apiKey/description',
                 'Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text\
-            on the machine running this application. Use the environment variable `GOOGLE_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
+            on the machine running Theia. Use the environment variable `GOOGLE_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [MODELS_PREF]: {

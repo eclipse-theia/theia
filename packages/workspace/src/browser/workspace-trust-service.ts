@@ -33,7 +33,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { WorkspaceTrustDialog } from './workspace-trust-dialog';
+import { WorkspaceTrustDialogFactory } from './workspace-trust-dialog-factory';
 import { UntitledWorkspaceService } from '../common/untitled-workspace-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
@@ -105,6 +105,9 @@ export class WorkspaceTrustService {
 
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
+
+    @inject(WorkspaceTrustDialogFactory)
+    protected readonly workspaceTrustDialogFactory: WorkspaceTrustDialogFactory;
 
     protected workspaceTrust = new Deferred<boolean>();
     protected currentTrust: boolean | undefined;
@@ -322,7 +325,7 @@ export class WorkspaceTrustService {
             // Show the workspace folders in the dialog
             const folderUris = this.workspaceService.tryGetRoots().map(root => root.resource);
 
-            const dialog = new WorkspaceTrustDialog(folderUris);
+            const dialog = this.workspaceTrustDialogFactory.create(folderUris);
 
             const result = await dialog.open();
             const trusted = result === true;

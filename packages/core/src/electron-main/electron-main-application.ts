@@ -511,26 +511,19 @@ export class ElectronMainApplication {
             },
             ...windowOpts,
         };
-        if (!options.icon) {
-            const resolvedIcon = this.resolveApplicationIconForWindow();
-            if (resolvedIcon) {
-                options.icon = resolvedIcon;
-            }
+        const resolvedIcon = this.resolveApplicationIconPath();
+        if (resolvedIcon && !options.icon) {
+            options.icon = resolvedIcon;
         }
         return options;
     }
 
     /**
-     * Resolves `FrontendApplicationConfig.applicationIcon` to a local file path for Electron `BrowserWindow.icon`.
-     * HTTP(S) URLs are skipped (the browser frontend uses `<link rel="icon">` instead).
+     * Resolves `FrontendApplicationConfig.applicationIcon` to a local path for Electron `BrowserWindow.icon`.
+     * HTTP(S) URLs are skipped. Override in product layers.
      */
-    protected resolveApplicationIconForWindow(): string | undefined {
-        const ref = this.config.applicationIcon?.trim();
-        if (!ref || ref.startsWith('http://') || ref.startsWith('https://')) {
-            return undefined;
-        }
-        const candidate = path.isAbsolute(ref) ? ref : path.join(app.getAppPath(), ref.replace(/^\.\//, ''));
-        return existsSync(candidate) ? candidate : undefined;
+    protected resolveApplicationIconPath(): string | undefined {
+        return undefined;
     }
 
     closeWindowById(webContentsId: number): void {

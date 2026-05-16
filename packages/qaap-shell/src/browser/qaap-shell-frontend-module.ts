@@ -5,6 +5,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { CommandContribution } from '@theia/core/lib/common/command';
 import {
     ApplicationShell,
     DockPanelRenderer,
@@ -19,8 +20,11 @@ import { QaapApplicationShellWithToolbar } from './qaap-application-shell-with-t
 import { QaapDockPanelRenderer } from './qaap-dock-panel-renderer';
 import { QaapSidePanelHandler } from './qaap-side-panel-handler';
 import { QaapStatusBarImpl } from './qaap-status-bar';
+import { QaapShellCommandContribution } from './qaap-shell-command-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    bind(QaapShellCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapShellCommandContribution);
     bind(QaapApplicationShellWithToolbar).toSelf().inSingletonScope();
     rebind(ApplicationShell).toService(QaapApplicationShellWithToolbar);
 

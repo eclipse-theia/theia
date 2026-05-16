@@ -5,16 +5,30 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
+import { CodeCompletionAgent, CodeCompletionAgentImpl } from '@theia/ai-code-completion/lib/browser/code-completion-agent';
+import { WindowBlinkService } from '@theia/ai-core/lib/browser/window-blink-service';
+import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting-started-widget';
 import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 import { DebugFrontendContribution } from '@theia/memory-inspector/lib/browser/memory-inspector-frontend-contribution';
+import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
+import { WorkspaceFrontendContribution } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
+import { WorkspaceTrustDialogFactory } from '@theia/workspace/lib/browser/workspace-trust-dialog-factory';
 import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
+import { QaapAiPreferenceBrandingContribution } from './qaap-ai-preference-branding-contribution';
+import { QaapCodeCompletionAgentImpl } from './qaap-code-completion-agent';
+import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
 import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
 import { QaapMemoryInspectorMobileContribution } from './qaap-memory-inspector-mobile-contribution';
 import { QaapFileNavigatorContribution } from './qaap-file-navigator-contribution';
+import { QaapWindowBlinkService } from './qaap-window-blink-service';
+import { QaapPreviewContribution } from './qaap-preview-contribution';
+import { QaapWorkspaceFrontendContribution } from './qaap-workspace-frontend-contribution';
+import { QaapWorkspaceTrustDialogFactory } from './qaap-workspace-trust-dialog-factory';
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
@@ -34,4 +48,26 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapFileNavigatorContribution).toSelf().inSingletonScope();
     rebind(FileNavigatorContribution).toService(QaapFileNavigatorContribution);
+
+    bind(QaapWindowBlinkService).toSelf().inSingletonScope();
+    rebind(WindowBlinkService).toService(QaapWindowBlinkService);
+
+    bind(QaapCodeCompletionAgentImpl).toSelf().inSingletonScope();
+    rebind(CodeCompletionAgentImpl).toService(QaapCodeCompletionAgentImpl);
+    rebind(CodeCompletionAgent).toService(QaapCodeCompletionAgentImpl);
+
+    bind(QaapAiPreferenceBrandingContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapAiPreferenceBrandingContribution);
+
+    bind(QaapWorkspaceFrontendContribution).toSelf().inSingletonScope();
+    rebind(WorkspaceFrontendContribution).toService(QaapWorkspaceFrontendContribution);
+
+    bind(QaapGettingStartedWidget).toSelf();
+    rebind(GettingStartedWidget).toService(QaapGettingStartedWidget);
+
+    bind(QaapPreviewContribution).toSelf().inSingletonScope();
+    rebind(PreviewContribution).toService(QaapPreviewContribution);
+
+    bind(QaapWorkspaceTrustDialogFactory).toSelf().inSingletonScope();
+    rebind(WorkspaceTrustDialogFactory).toService(QaapWorkspaceTrustDialogFactory);
 });

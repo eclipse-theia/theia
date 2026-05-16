@@ -16,7 +16,6 @@
 
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import * as React from '@theia/core/shared/react';
 import URI from '@theia/core/lib/common/uri';
@@ -51,6 +50,11 @@ export class WorkspaceTrustDialog extends ReactDialog<boolean> {
         this.accept();
     }
 
+    /** Override in product layers (e.g. to use {@link FrontendApplicationConfig.applicationName}). */
+    protected getTrustDevelopmentHostLabel(): string {
+        return 'Theia';
+    }
+
     protected render(): React.ReactNode {
         return (
             <div className="workspace-trust-content">
@@ -69,7 +73,7 @@ export class WorkspaceTrustDialog extends ReactDialog<boolean> {
                         
                         The workspace trust feature is currently under development in {0}; not all features are integrated with workspace trust yet.
                         Check the 'Restricted Mode' indicator in the status bar for details.`,
-                        FrontendApplicationConfigProvider.get().applicationName
+                        this.getTrustDevelopmentHostLabel()
                     )}
                 </div>
                 {this.folderUris.length > 0 && (

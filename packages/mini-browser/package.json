@@ -5,7 +5,6 @@
   "dependencies": {
     "@theia/core": "1.71.0",
     "@theia/filesystem": "1.71.0",
-    "@theia/qaap-element-inspector": "1.71.0",
     "@types/mime-types": "^2.1.4",
     "mime-types": "^2.1.35",
     "pdfobject": "^2.3.1",

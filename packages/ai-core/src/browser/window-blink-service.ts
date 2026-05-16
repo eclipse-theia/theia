@@ -16,7 +16,6 @@
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { environment, nls } from '@theia/core';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 
@@ -95,6 +94,13 @@ export class WindowBlinkService {
         }
     }
 
+    /** Override in product layers to brand alert titles (e.g. application name). */
+    protected getBlinkAlertTitle(agentName?: string): string {
+        return '🔔 ' + (agentName
+            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', 'Theia - Agent "{0}" Completed', agentName)
+            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', 'Theia - Agent Completed'));
+    }
+
     private async blinkDocumentTitle(agentName?: string): Promise<void> {
         // Clear any existing blink interval to prevent concurrent title animations
         if (this.activeBlinkInterval) {
@@ -103,10 +109,7 @@ export class WindowBlinkService {
         }
 
         const originalTitle = this.windowTitleService?.title ?? document.title;
-        const app = FrontendApplicationConfigProvider.get().applicationName;
-        const alertTitle = '🔔 ' + (agentName
-            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', '{0} - Agent "{1}" Completed', app, agentName)
-            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', '{0} - Agent Completed', app));
+        const alertTitle = this.getBlinkAlertTitle(agentName);
 
         // Save original titles of secondary windows
         this.originalSecondaryTitles.clear();

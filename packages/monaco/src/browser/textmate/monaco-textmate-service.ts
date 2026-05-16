@@ -74,10 +74,6 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             return;
         }
 
-        // Default Monaco themes must exist before TextMate builds its color map; contribution order is not guaranteed.
-        // Only register built-in themes here — not full MonacoThemingService.initialize() (IndexedDB restore, listeners).
-        this.monacoThemeRegistry.initializeDefaultThemes();
-
         for (const grammarProvider of this.grammarProviders.getContributions()) {
             try {
                 grammarProvider.registerTextmateLanguage(this.textmateRegistry);
@@ -86,16 +82,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             }
         }
 
-        const editorThemeId = this.currentEditorTheme;
-        let themeForGrammar = this.monacoThemeRegistry.getThemeData(editorThemeId);
-        if (!themeForGrammar) {
-            this.logger.error(
-                `No Monaco theme registered for editor id "${editorThemeId}"; TextMate will use "${MonacoThemeRegistry.DARK_DEFAULT_THEME}". ` +
-                'Check `workbench.colorTheme` / built-in theme `editorTheme` in ThemeService.'
-            );
-            themeForGrammar = this.monacoThemeRegistry.getThemeData(MonacoThemeRegistry.DARK_DEFAULT_THEME);
-        }
-        this.grammarRegistry = this.registryFactory(themeForGrammar);
+        this.grammarRegistry = this.registryFactory(this.monacoThemeRegistry.getThemeData(this.currentEditorTheme));
 
         this.tokenizerOption.lineLimit = this.preferences['editor.maxTokenizationLineLength'];
         this.preferences.onPreferenceChanged(e => {

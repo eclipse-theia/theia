@@ -23,7 +23,7 @@ export const ScanOSSPreferencesSchema: PreferenceSchema = {
         [SCAN_OSS_API_KEY_PREF]: {
             type: 'string',
             markdownDescription: 'Enter an API Key of your SCANOSS  Account. **Please note:** By using this preference the key will be stored in clear text\
-            on the machine running this application. Use the environment variable `SCANOSS_API_KEY` to set the key securely.' + LINUX_ENV_HINT,
+            on the machine running Theia. Use the environment variable `SCANOSS_API_KEY` to set the key securely.' + LINUX_ENV_HINT,
             title: 'SCANOSS API Key'
         }
     }

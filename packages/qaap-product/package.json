@@ -18,6 +18,15 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/qaap-product-frontend-module"
+    },
+    {
+      "frontend": "lib/browser/qaap-product-bindings-frontend-module"
+    },
+    {
+      "frontendPreload": "lib/browser/preload/qaap-product-preload-module"
+    },
+    {
+      "electronMain": "lib/electron-main/qaap-product-electron-main-module"
     }
   ],
   "keywords": [

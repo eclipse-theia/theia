@@ -51,6 +51,7 @@ import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contribution';
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
 import { WorkspaceTrustService, WorkspaceRestrictionContribution } from './workspace-trust-service';
+import { DefaultWorkspaceTrustDialogFactory, WorkspaceTrustDialogFactory } from './workspace-trust-dialog-factory';
 import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
@@ -125,6 +126,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 
     bindRootContributionProvider(bind, WorkspaceRestrictionContribution);
+    bind(DefaultWorkspaceTrustDialogFactory).toSelf().inSingletonScope();
+    bind(WorkspaceTrustDialogFactory).toService(DefaultWorkspaceTrustDialogFactory);
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 
