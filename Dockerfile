@@ -29,9 +29,10 @@ ENV NODE_OPTIONS=--max_old_space_size=4096
 
 RUN npm ci
 
-RUN npm run download:plugins -- --rate-limit 5
-
+# @theia/cli bin/theia.js requires ../lib/theia (built by compile)
 RUN npm run compile
+
+RUN npm run download:plugins -- --rate-limit 5
 
 WORKDIR /app/examples/browser
 RUN npm run build:production
