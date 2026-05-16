@@ -2,7 +2,7 @@
 
 **Base de comparación:** `upstream/master` (Eclipse Theia)  
 **Fork:** `origin/master` (Qaap)  
-**Fecha de referencia:** 2026-05-15  
+**Fecha de referencia:** 2026-05-16 (actualizado tras S1–S7)  
 **Comandos:** `npm run qaap:drift-report`, `npm run qaap:drift-check`
 
 ---
@@ -11,15 +11,15 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Archivos distintos vs upstream | **166** |
-| Capa producto (`packages/qaap-*`) | **~75** archivos (correcto) |
-| Drift fuera de allowlist (baseline) | **48** rutas (deuda técnica) |
-| Core modificado (`packages/core`) | **19** rutas |
+| Archivos distintos vs `upstream/master` | **~160** (producto + seams + examples) |
+| Capa producto (`packages/qaap-*`) | **~90+** archivos (correcto) |
+| Drift fuera de allowlist (baseline) | **0** (`qaap-drift-baseline.txt` vacío) |
+| Violaciones sin allowlist | **0** (`qaap:drift-check` OK) |
 | Guard CI drift nuevo | **Sí** (`qaap:drift-check`) |
-| Guard en GitHub Actions | **No** (pendiente) |
-| Objetivo global cumplido | **~40%** |
+| GitHub Actions | **Sí** (`.github/workflows/qaap-drift-check.yml`) |
+| Objetivo desacoplamiento (S1–S7) | **Cumplido** |
 
-La **arquitectura en capas está definida y operativa** para el workbench móvil. El **core upstream no está aún mínimo**: 48 archivos siguen parcheados directamente.
+La **lógica de producto vive en `packages/qaap-*`**. Upstream solo conserva **seams documentados** (allowlist en `scripts/qaap-drift-check.js`): rebinds, hooks, `forceNavigate`, workspace trust factory, icono Electron, etc.
 
 ---
 
@@ -32,19 +32,19 @@ La **arquitectura en capas está definida y operativa** para el workbench móvil
 │  • mobile-layout-state.ts                                   │
 │  • mini-browser-open-hook / opener-options / url-utils      │
 │  • monaco-quick-input-layout.ts                             │
-│  • + 48 archivos en qaap-drift-baseline.txt (pendiente)     │
+│  • seams allowlist (ver §3.1) — sin baseline de deuda       │
 └───────────────────────────┬─────────────────────────────────┘
                             │ rebind / Symbol interfaces
 ┌───────────────────────────▼─────────────────────────────────┐
 │  ADAPTER LAYER — @theia/qaap-adapters                       │
-│  MiniBrowserOpenHook, MonacoQuickInputLayout bridges        │
+│  MiniBrowserContent, OpenHook, MonacoQuickInputLayout       │
 └───────────────────────────┬─────────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
 │  PRODUCT LAYER                                              │
 │  qaap-shell │ qaap-extensions │ qaap-mobile-shell           │
 │  qaap-product-theme │ qaap-element-inspector                │
-│  qaap-product (umbrella)                                    │
+│  qaap-product (umbrella + preload + electron-main)          │
 └───────────────────────────┬─────────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────────┐
@@ -58,20 +58,38 @@ La **arquitectura en capas está definida y operativa** para el workbench móvil
 @theia/qaap-product
 ├── @theia/qaap-shell          → rebind ApplicationShell, SidePanelHandler, DockPanelRenderer
 ├── @theia/qaap-adapters       → rebind MiniBrowserOpenHook, MonacoQuickInputLayout
-├── @theia/qaap-extensions     → rebind AIChat, Outline, Debug, FileNavigator
+├── @theia/qaap-extensions     → AI, Outline, Debug, Navigator, Preview, workspace, Getting Started
 ├── @theia/qaap-mobile-shell   → rebind WorkbenchTopBarFactory, mobile contributions
 ├── @theia/qaap-product-theme  → CSS only (theiaExtensions frontend)
 ├── @theia/qaap-element-inspector
 └── @theia/core
 
-@theia/mini-browser → @theia/qaap-element-inspector  (acoplamiento conocido, pendiente)
+@theia/mini-browser → (sin dep directa; inspector vía @theia/qaap-adapters → qaap-element-inspector)
 ```
 
 ---
 
-## 3. FASE 1 — Inventario de drift (baseline)
+## 3. FASE 1 — Inventario de drift (histórico)
 
-Archivos que **aún modifican upstream** y deben migrarse o revertirse. Sprint asignado en §6.
+> **Estado 2026-05-16:** migración completada. La tabla siguiente es referencia histórica; el inventario activo es el **allowlist** + `packages/qaap-*`.
+
+### 3.1 Seams y rutas permitidas (allowlist drift-check)
+
+Además de `packages/qaap-*` y `scripts/qaap-*`, ver regex en `scripts/qaap-drift-check.js`:
+
+| Área | Archivos seam |
+|------|----------------|
+| Core menú / shell móvil | `workbench-top-bar-factory`, `mobile-layout-state`, `shell/index`, `browser-menu-module`, `browser-menu-plugin`, `window-title-service` |
+| mini-browser | `mini-browser-open-hook`, `opener-options`, `url-utils`, `open-handler`, `mini-browser-content` (`forceNavigate`) |
+| monaco | `monaco-quick-input-layout`, `monaco-frontend-module`, `monaco-quick-input-service` |
+| ai-core | `window-blink-service` (`getBlinkAlertTitle`) |
+| electron | `electron-main-application` (`resolveApplicationIconPath`) |
+| workspace trust | `workspace-trust-dialog`, `workspace-trust-dialog-factory`, `workspace-trust-service`, `workspace-frontend-module` |
+| tooling | `.nvmrc`, `Dockerfile`, `docker-compose.yml`, examples, … |
+
+### 3.2 Inventario histórico (pre-migración)
+
+Archivos que **modificaban upstream** antes de S1–S7 (ya migrados a `qaap-*` o revertidos).
 
 | Ruta | Riesgo | Sprint | Problema | Solución mantenible |
 |------|--------|--------|----------|---------------------|
@@ -101,18 +119,6 @@ Archivos que **aún modifican upstream** y deben migrarse o revertirse. Sprint a
 | `getting-started`, `messages`, `filesystem`, `preview`, `scanoss` | **Medio** | S4 | CSS/UX puntual | Theme o extensions |
 | `.nvmrc` | **Bajo** | — | Versión Node | Mantener en repo, no en baseline tras decisión |
 
-### Seams permitidos en core (allowlist drift-check)
-
-| Archivo | Propósito |
-|---------|-----------|
-| `workbench-top-bar-factory.ts` | `rebind(WorkbenchTopBarFactory)` → Qaap top bar |
-| `mobile-layout-state.ts` | `MOBILE_NARROW_VIEWPORT_MEDIA_QUERY`, helpers TS |
-| `shell/index.ts` | Export seam |
-| `mini-browser-open-hook.ts` | Hook ciclo de vida preview |
-| `mini-browser-opener-options.ts` | Opciones apertura |
-| `mini-browser-url-utils.ts` | Normalización URL |
-| `monaco-quick-input-layout.ts` | Layout quick pick móvil |
-
 ---
 
 ## 4. Anti-patterns detectados
@@ -125,9 +131,7 @@ Archivos que **aún modifican upstream** y deben migrarse o revertirse. Sprint a
 | **CSS en paquetes upstream** | core, mini-browser, monaco baseline | Conflictos visuales | Solo `qaap-product-theme` |
 | **mini-browser → qaap-element-inspector** | `mini-browser/package.json` | Acopla runtime a producto | Seam `ElementInspector` en mini-browser (futuro) |
 | **body classList en contribution** | `qaap-ai-chat-mobile` | Frágil pero aislado | OK en product layer; test UI |
-| **Baseline como deuda permanente** | 48 entradas | Falsa sensación de “limpio” | Reducir cada sprint |
 | **patch-package producto** | No usado para Qaap | N/A | Usar DI; reservar `theia-patch` solo deps npm |
-| **Drift-check no en CI** | `.github/workflows` | Regresiones silenciosas | Añadir job (§8) |
 
 ### Patrones correctos ya aplicados
 
@@ -152,41 +156,22 @@ Archivos que **aún modifican upstream** y deben migrarse o revertirse. Sprint a
 
 ## 6. Roadmap técnico (orden de ejecución)
 
-### S1 — Core shell (prioridad 1)
-**Objetivo:** `application-shell.ts`, `status-bar`, `additional-views-menu` = upstream; comportamiento solo en `qaap-shell`.
+| Sprint | Estado | Entregable principal |
+|--------|--------|----------------------|
+| **S1** Core shell | ✅ | `qaap-shell`, `qaap-mobile-shell`; core shell revertido |
+| **S2** mini-browser | ✅ | `QaapMiniBrowserContent` en adapters; seam `forceNavigate` |
+| **S3** monaco | ✅ | CSS en theme; wiring layout en allowlist |
+| **S4** Core UX | ✅ | theme CSS, `qaap-product` bindings, workspace, getting-started |
+| **S5** AI | ✅ | `qaap-extensions` (prefs, blink, completion); prefs upstream revertidas |
+| **S6** Hardening | ✅ | CI `qaap-drift-check.yml`; build browser en CI/CD existente |
+| **S7** Baseline 0 | ✅ | `qaap-drift-baseline.txt` vacío |
 
-1. `git diff upstream/master -- packages/core/src/browser/shell/application-shell.ts` → portar delta restante a `QaapApplicationShellWithToolbar`.
-2. Revertir los 3 archivos core.
-3. `npm run build:browser` + viewport 375px.
-4. Quitar rutas de `qaap-drift-baseline.txt`.
+### Post-S7 (opcional)
 
-### S2 — mini-browser
-**Objetivo:** Solo seams + `@theia/qaap-adapters`; handler/content upstream.
-
-1. Revertir 8 archivos baseline excepto hook/opener/url-utils.
-2. Verificar `DefaultQaapMiniBrowserLifecycle` cubre el delta.
-3. Recortar baseline.
-
-### S3 — monaco
-**Objetivo:** Solo `monaco-quick-input-layout` seam.
-
-1. Revertir `monaco-quick-input-service`, textmate, CSS.
-2. CSS → `qaap-monaco-quick-input-narrow.css` (ya en theme).
-3. Recortar baseline.
-
-### S4 — Core UX restante
-`common-frontend-contribution`, menus, theming, storage, nls, workspace, getting-started CSS.
-
-### S5 — AI providers
-Paquete `qaap-ai-config` o extensions con `PreferenceContribution` sin tocar 7 forks.
-
-### S6 — Hardening + upstream process
-- CI job `qaap:drift-check` + `build:browser`.
-- Playwright: status bar móvil, AI chat fullwidth, navigator collapse.
-- Documentar merge: `git fetch upstream && git merge upstream/master`.
-
-### S7 — Baseline = 0
-Eliminar `qaap-drift-baseline.txt` cuando no queden violaciones.
+- Playwright `@qaap-mobile` (status bar, AI chat, navigator).
+- Overlays i18n no inglés (`TextReplacementContribution` solo `en` hoy).
+- Proponer seams upstream a Eclipse Theia.
+- `packages/qaap-ai-config` solo si crece la superficie AI.
 
 ---
 
@@ -202,11 +187,10 @@ packages/
   qaap-mobile-shell/
   qaap-product-theme/
   qaap-element-inspector/
-  qaap-ai-config/            # (futuro) S5
-  qaap-electron/             # (futuro) main-process
+  qaap-ai-config/            # (opcional) si se extrae más AI
 scripts/
   qaap-drift-check.js
-  qaap-drift-baseline.txt    # → vacío al final
+  qaap-drift-baseline.txt    # vacío (solo comentarios)
   qaap-upstream-drift-report.js
 doc/
   qaap-architecture-audit.md # este documento
@@ -216,13 +200,20 @@ doc/
 
 ## 8. Estrategia CI/CD
 
+**Implementado:** `.github/workflows/qaap-drift-check.yml`
+
+- Checkout + `git fetch` `eclipse-theia/theia` → `upstream/master`
+- `npm run qaap:drift-check` (sin `npm ci`; solo Node + git)
+
+**Existente:** `.github/workflows/ci-cd.yml` — `npm run build`, tests.
+
+**Opcional:**
+
 ```yaml
-# Propuesta: .github/workflows/qaap-product.yml
-- run: npm run qaap:drift-check
-- run: npm run build:browser
-# Opcional:
 - run: npx playwright test --grep @qaap-mobile
 ```
+
+**Deploy:** `Dockerfile` + `docker-compose.yml` en raíz (build `examples/browser` producción).
 
 **Validación manual obligatoria** hasta tener UI tests:
 1. `npm run start:browser`
@@ -280,17 +271,18 @@ doc/
 | Subsistema | Estado | Paquete / notas |
 |------------|--------|-----------------|
 | Shell / layout / tabs | **Hecho** | `qaap-shell`, `qaap-mobile-shell` |
-| mini-browser | **Parcial** | adapters + drift baseline |
-| monaco / quick input | **Parcial** | adapters + drift baseline |
-| AI chat / outline / navigator | **Hecho** | `qaap-extensions` |
+| mini-browser | **Hecho** | `QaapMiniBrowserContent`, lifecycle, open handler |
+| monaco / quick input | **Hecho** | `QaapMonacoQuickInputLayoutBridge` + theme CSS |
+| AI chat / outline / navigator / preview | **Hecho** | `qaap-extensions` |
+| Getting Started / workspace trust | **Hecho** | `QaapGettingStartedWidget`, trust dialog factory |
+| AI branding (prefs, blink, completion) | **Hecho** | `qaap-extensions` + preload text replacement |
+| Electron icon | **Hecho** | `qaap-product` `QaapElectronMainApplication` |
 | Editor gestos | **Hecho** | `mobile-editor-gesture-contribution` |
 | Element inspector | **Hecho** | `qaap-element-inspector` |
+| Filesystem / messages CSS móvil | **Hecho** | `qaap-product-theme` |
 | Terminal | **Pendiente** | Sin adapter |
 | Git | **Pendiente** | Sin adapter |
-| Filesystem | **Pendiente** | Solo CSS drift |
 | WebSocket / runtime | **Pendiente** | Sin `qaap-runtime` |
-| Webviews | **Pendiente** | mini-browser cubre parte |
-| AI preferences | **Pendiente** | 7 archivos baseline |
 
 ---
 
@@ -318,8 +310,11 @@ npm run compile                    # solo TS
 
 ## 15. Siguiente paso inmediato
 
-**S1 — Core shell:** revertir `application-shell.ts` en core portando cualquier delta restante a `packages/qaap-shell/src/browser/qaap-application-shell-with-toolbar.ts`.
+1. **Validación manual** tras cada merge upstream: `npm run build:browser`, viewport 375px, checklist §8.
+2. **Playwright** móvil (opcional): etiquetar tests `@qaap-mobile`.
+3. **Merge upstream:** `git fetch upstream && git merge upstream/master` → `npm run qaap:drift-check`.
+4. **i18n:** ampliar `QaapTextReplacementContribution` u overlays por locale si se soportan idiomas distintos de `en`.
 
 ---
 
-*Documento generado como Fase 1 del plan de arquitectura Qaap. Actualizar al cerrar cada sprint (recortar baseline, marcar adaptadores completados).*
+*Documento Fase 1 + cierre S1–S7 (2026-05-16). Baseline vacío; CI drift activo.*
