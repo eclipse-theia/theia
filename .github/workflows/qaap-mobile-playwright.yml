@@ -1,0 +1,48 @@
+name: Qaap Mobile Playwright
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'examples/playwright/**'
+      - 'packages/qaap-mobile-shell/**'
+      - 'packages/qaap-product/**'
+      - 'packages/qaap-extensions/**'
+      - 'packages/qaap-product-theme/**'
+      - 'packages/core/src/browser/shell/mobile-layout-state.ts'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'examples/playwright/**'
+      - 'packages/qaap-mobile-shell/**'
+      - 'packages/qaap-product/**'
+      - 'packages/qaap-extensions/**'
+      - 'packages/qaap-product-theme/**'
+      - 'packages/core/src/browser/shell/mobile-layout-state.ts'
+  workflow_dispatch:
+
+jobs:
+  qaap-mobile:
+    name: Playwright @qaap-mobile
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Build Browser
+        run: npm run build:browser
+
+      - name: Qaap mobile UI tests
+        run: |
+          cd examples/playwright
+          npm run ui-tests:qaap-mobile

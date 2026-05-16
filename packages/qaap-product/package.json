@@ -3,6 +3,7 @@
   "version": "1.71.0",
   "description": "Qaap umbrella: add this single dependency to example/browser apps; transitively enables qaap-element-inspector, qaap-mobile-shell, qaap-product-theme. @theia/mini-browser still depends on qaap-element-inspector directly.",
   "dependencies": {
+    "fs-extra": "^11.3.0",
     "@theia/qaap-adapters": "1.71.0",
     "@theia/qaap-extensions": "1.71.0",
     "@theia/qaap-element-inspector": "1.71.0",
@@ -27,6 +28,9 @@
     },
     {
       "electronMain": "lib/electron-main/qaap-product-electron-main-module"
+    },
+    {
+      "backend": "lib/node/qaap-product-backend-module"
     }
   ],
   "keywords": [
@@ -35,7 +39,7 @@
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/juancristobalgd1/theia.git"
+    "url": "https://github.com/juancristobalgd1/qaap.git"
   },
   "files": [
     "lib",
