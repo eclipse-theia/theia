@@ -8,6 +8,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { TreeNode } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { collapseLeftPanelIfMobileOneColumn } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { FileNode } from '@theia/filesystem/lib/browser/file-tree';
 import { FileNavigatorModel } from '@theia/navigator/lib/browser/navigator-model';
 
 @injectable()
@@ -18,12 +19,16 @@ export class QaapFileNavigatorModel extends FileNavigatorModel {
 
     override previewNode(node: TreeNode): void {
         super.previewNode(node);
-        this.collapseLeftExplorerSheetIfMobile();
+        if (FileNode.is(node)) {
+            this.collapseLeftExplorerSheetIfMobile();
+        }
     }
 
     protected override doOpenNode(node: TreeNode): void {
         super.doOpenNode(node);
-        this.collapseLeftExplorerSheetIfMobile();
+        if (FileNode.is(node)) {
+            this.collapseLeftExplorerSheetIfMobile();
+        }
     }
 
     protected collapseLeftExplorerSheetIfMobile(): void {
