@@ -211,12 +211,6 @@ export class ApplicationShell extends Widget {
     rightPanelHandler: SidePanelHandler;
 
     /**
-     * Horizontal split: left sidebar | main + bottom stack | right sidebar.
-     * Used by mobile one-column layout to keep the editor full-width while side panels overlay.
-     */
-    leftRightSplitPanel!: TheiaSplitPanel;
-
-    /**
      * General options for the application shell.
      */
     protected options: ApplicationShell.Options;
@@ -772,7 +766,6 @@ export class ApplicationShell extends Widget {
         );
         const panelForSideAreas = new TheiaSplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
-        this.leftRightSplitPanel = panelForSideAreas;
 
         return this.createBoxLayout(
             [this.topPanel, panelForSideAreas, this.statusBar],

@@ -1,0 +1,48 @@
+/**
+ * Qaap mobile status bar: horizontal scroll track and compact areas.
+ * Replaces product rules formerly in `@theia/core` status-bar.css.
+ */
+
+#theia-statusBar {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#theia-statusBar::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+#theia-statusBar .theia-statusBar-track {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  min-width: 100%;
+  width: max-content;
+  min-height: var(--theia-statusBar-height);
+  box-sizing: border-box;
+}
+
+#theia-statusBar .theia-statusBar-center-spacer {
+  flex: 1 1 0;
+  min-width: var(--theia-ui-padding);
+  pointer-events: none;
+}
+
+#theia-statusBar .area {
+  flex: 0 0 auto;
+}
+
+#theia-statusBar .element {
+  flex-shrink: 0;
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-statusBar-font-size);
+}

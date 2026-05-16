@@ -15,12 +15,8 @@ packages/core/src/browser/frontend-application-config-provider.spec.ts
 packages/core/src/browser/frontend-application-module.ts
 packages/core/src/browser/menu/browser-menu-module.ts
 packages/core/src/browser/menu/browser-menu-plugin.ts
-packages/core/src/browser/shell/additional-views-menu-widget.tsx
-packages/core/src/browser/shell/application-shell.ts
-packages/core/src/browser/status-bar/status-bar.tsx
 packages/core/src/browser/storage-service.ts
 packages/core/src/browser/style/index.css
-packages/core/src/browser/style/status-bar.css
 packages/core/src/browser/theming.ts
 packages/core/src/browser/window/window-title-service.ts
 packages/core/src/common/core-preferences.ts
@@ -45,6 +41,5 @@ packages/monaco/src/browser/textmate/monaco-theme-registry.ts
 packages/monaco/src/browser/textmate/monaco-theme-types.ts
 packages/preview/src/browser/preview-contribution.ts
 packages/scanoss/src/common/scanoss-preferences.ts
-packages/toolbar/src/browser/application-shell-with-toolbar-override.ts
 packages/workspace/src/browser/workspace-frontend-contribution.ts
 packages/workspace/src/browser/workspace-trust-dialog.tsx

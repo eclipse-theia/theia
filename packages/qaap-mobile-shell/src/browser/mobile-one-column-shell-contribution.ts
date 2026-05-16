@@ -25,6 +25,7 @@ import { FrontendApplication } from '@theia/core/lib/browser/frontend-applicatio
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY, MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import { hasQaapLeftRightSplitPanel } from '@theia/qaap-shell/lib/browser/qaap-shell-layout';
 import { MobileHaptics } from './mobile-haptics';
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 
@@ -150,9 +151,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             return;
         }
         this.mobileActive = true;
-        try {
-            this.savedSplitSizes = this.shell.leftRightSplitPanel.relativeSizes();
-        } catch {
+        if (hasQaapLeftRightSplitPanel(this.shell)) {
+            try {
+                this.savedSplitSizes = this.shell.leftRightSplitPanel.relativeSizes();
+            } catch {
+                this.savedSplitSizes = undefined;
+            }
+        } else {
             this.savedSplitSizes = undefined;
         }
         this.shell.node.classList.add(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
@@ -167,7 +172,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.mobileActive = false;
         this.shell.node.classList.remove(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
         this.teardownMobileUi();
-        if (this.savedSplitSizes && this.savedSplitSizes.length === 3) {
+        if (this.savedSplitSizes && this.savedSplitSizes.length === 3 && hasQaapLeftRightSplitPanel(this.shell)) {
             try {
                 this.shell.leftRightSplitPanel.setRelativeSizes(this.savedSplitSizes);
             } catch {
@@ -413,10 +418,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (!this.mobileActive) {
             return;
         }
-        try {
-            this.shell.leftRightSplitPanel.setRelativeSizes([0, 1, 0]);
-        } catch {
-            /* layout not ready */
+        if (hasQaapLeftRightSplitPanel(this.shell)) {
+            try {
+                this.shell.leftRightSplitPanel.setRelativeSizes([0, 1, 0]);
+            } catch {
+                /* layout not ready */
+            }
         }
         // The sheet panels are taken out of split flow via `position: fixed` and forced to 100vw via CSS.
         // Lumino still lays out their children using `clientWidth`/`clientHeight` of the sheet container,

@@ -28,14 +28,6 @@ export const AdditionalViewsMenuPath = Symbol('AdditionalViewsMenuPath');
 export class AdditionalViewsMenuWidget extends SidebarMenuWidget {
     static readonly ID = 'sidebar.additional.views';
 
-    /**
-     * Keep the chevron button always visible – Lumino tries to hide widgets with no
-     * items, but we want the "▼ views" control to stay in the activity row at all times.
-     */
-    override setHidden(hidden: boolean): void {
-        super.setHidden(false);
-    }
-
     @inject(AdditionalViewsMenuPath)
     protected menuPath: MenuPath;
 
@@ -48,28 +40,21 @@ export class AdditionalViewsMenuWidget extends SidebarMenuWidget {
     protected menuDisposables: Disposable[] = [];
 
     updateAdditionalViews(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {
-        // When there is no overflow, build the dropdown from all sidebar tabs; when there is
-        // overflow, limit it to the hidden tabs. This keeps a compact, always-available
-        // menu button at the end of the horizontal activity strip.
-        const titles = event.startIndex === -1 ? sender.titles : event.titles;
-        if (!titles.length) {
+        if (event.startIndex === -1) {
             this.removeMenu(AdditionalViewsMenuWidget.ID);
-            this.menuDisposables.forEach(disposable => disposable.dispose());
-            this.menuDisposables = [];
-            return;
+        } else {
+            this.addMenu({
+                title: nls.localizeByDefault('Additional Views'),
+                iconClass: codicon('ellipsis'),
+                id: AdditionalViewsMenuWidget.ID,
+                menuPath: this.menuPath,
+                order: 0
+            });
         }
-
-        this.addMenu({
-            title: nls.localizeByDefault('Additional Views'),
-            iconClass: `${codicon('chevron-down')} theia-compact-menu`,
-            id: AdditionalViewsMenuWidget.ID,
-            menuPath: this.menuPath,
-            order: 0
-        });
 
         this.menuDisposables.forEach(disposable => disposable.dispose());
         this.menuDisposables = [];
-        titles.forEach((title, i) => this.registerMenuAction(sender, title, i));
+        event.titles.forEach((title, i) => this.registerMenuAction(sender, title, i));
     }
 
     protected registerMenuAction(sender: SideTabBar, title: Title<Widget>, index: number): void {

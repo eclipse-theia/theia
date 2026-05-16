@@ -20,23 +20,10 @@
 
 #theia-statusBar {
   background: var(--theia-statusBar-background);
-  display: block;
+  display: flex;
   min-height: var(--theia-statusBar-height);
   white-space: nowrap;
   border-top: var(--theia-border-width) solid var(--theia-statusBar-border);
-  overflow-x: auto;
-  overflow-y: hidden;
-  touch-action: pan-x;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-#theia-statusBar::-webkit-scrollbar {
-  display: none;
-  height: 0;
-  width: 0;
 }
 
 body.theia-no-open-workspace #theia-statusBar {
@@ -46,28 +33,11 @@ body.theia-no-open-workspace #theia-statusBar {
   var(--theia-statusBar-noFolderBorder);
 }
 
-#theia-statusBar .theia-statusBar-track {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  min-width: 100%;
-  width: max-content;
-  min-height: var(--theia-statusBar-height);
-  box-sizing: border-box;
-}
-
-#theia-statusBar .theia-statusBar-center-spacer {
-  flex: 1 1 0;
-  min-width: var(--theia-ui-padding);
-  pointer-events: none;
-}
-
 #theia-statusBar .area {
-  flex: 0 0 auto;
+  flex: 1;
   display: flex;
   align-items: stretch;
-  gap: var(--theia-ui-padding);
+  gap: var(--theia-ui-padding)
 }
 
 #theia-statusBar .area.left {
@@ -87,7 +57,6 @@ body.theia-no-open-workspace #theia-statusBar {
   justify-content: center;
   font-size: var(--theia-statusBar-font-size);
   min-width: var(--theia-statusBar-height);
-  flex-shrink: 0;
 }
 
 #theia-statusBar .area.left .element.has-background {
@@ -149,8 +118,11 @@ body.theia-no-open-workspace #theia-statusBar {
 }
 
 #theia-statusBar .element {
-  font-family: var(--theia-ui-font-family);
-  font-size: var(--theia-statusBar-font-size);
+  /* https://css-tricks.com/os-specific-fonts-css/#article-header-id-0 */
+  /* https://github.com/Microsoft/vscode/blob/5dbdc8d19c8cf6dd10d558eabcc48bba962ea45f/src/vs/workbench/browser/media/style.css#L8-L24 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI",
+    "Ubuntu", "Droid Sans", sans-serif;
+  font-size: 12px;
   text-rendering: auto;
   text-decoration: none;
   -webkit-font-smoothing: antialiased;
