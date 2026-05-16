@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     git \
     ca-certificates \
+    pkg-config \
+    libx11-dev \
+    libxkbfile-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
