@@ -6,6 +6,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createFileTreeContainer } from '@theia/filesystem/lib/browser';
+import { FileNavigatorModel } from '@theia/navigator/lib/browser/navigator-model';
 import { FileNavigatorTree } from '@theia/navigator/lib/browser/navigator-tree';
 import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
 import { NavigatorDecoratorService } from '@theia/navigator/lib/browser/navigator-decorator-service';
@@ -20,5 +21,6 @@ export function createQaapFileNavigatorWidget(parent: interfaces.Container): Fil
         decoratorService: NavigatorDecoratorService,
         props: FILE_NAVIGATOR_PROPS,
     });
+    child.bind(FileNavigatorModel).toService(QaapFileNavigatorModel);
     return child.get(FileNavigatorWidget);
 }

@@ -11,7 +11,7 @@ import { ArrayExt } from '@lumino/algorithm';
 import { ElementExt } from '@lumino/domutils';
 import { Signal } from '@lumino/signaling';
 import { Drag } from '@lumino/dragdrop';
-import { Disposable, DisposableCollection, nls } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import {
     TabBarRenderer,
@@ -441,8 +441,6 @@ export class QaapToolbarAwareTabBar extends QaapScrollableTabBar {
 export class QaapSideTabBar extends SideTabBar {
 
     protected static override readonly DRAG_THRESHOLD = 5;
-    /** Pixels of horizontal movement before mouse-drag scroll activates (avoids stealing tab clicks). */
-    protected static readonly STRIP_DRAG_THRESHOLD_PX = 8;
 
     /**
      * Emitted when a tab is added to the tab bar.
@@ -470,15 +468,8 @@ export class QaapSideTabBar extends SideTabBar {
         startIndex: number
     };
 
-    /** Horizontal activity strip: prev/next carousel controls (DOM on `topRow`). */
-    protected carouselNavInstalled = false;
-    protected carouselPrevButton?: HTMLButtonElement;
-    protected carouselNextButton?: HTMLButtonElement;
-    protected onCarouselScrollBound?: () => void;
-
-    protected readonly onActivityStripPointerDownBound = (e: PointerEvent): void => {
-        this.onActivityStripPointerDown(e);
-    };
+    protected activityStripScrollInstalled = false;
+    protected activityStripResizeObserver?: ResizeObserver;
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
@@ -506,12 +497,15 @@ export class QaapSideTabBar extends SideTabBar {
     override insertTab(index: number, value: Title<Widget> | Title.IOptions<Widget>): Title<Widget> {
         const result = super.insertTab(index, value);
         this.tabAdded.emit({ title: result });
+        if (this.orientation === 'horizontal') {
+            window.requestAnimationFrame(() => this.refreshActivityStripScrollState());
+        }
         return result;
     }
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.ensureCarouselNavButtons();
+        this.installActivityStripScroll();
         this.updateTabs();
         this.node.addEventListener('lm-dragenter', this);
         this.node.addEventListener('lm-dragover', this);
@@ -520,7 +514,7 @@ export class QaapSideTabBar extends SideTabBar {
     }
 
     protected override onBeforeDetach(msg: Message): void {
-        this.disposeCarouselNav();
+        this.disposeActivityStripScroll();
         super.onBeforeDetach(msg);
     }
 
@@ -532,175 +526,42 @@ export class QaapSideTabBar extends SideTabBar {
         document.removeEventListener('lm-drop', this);
     }
 
-    protected ensureCarouselNavButtons(): void {
-        if (this.orientation !== 'horizontal' || this.carouselNavInstalled) {
+    protected installActivityStripScroll(): void {
+        if (this.orientation !== 'horizontal' || this.activityStripScrollInstalled) {
             return;
         }
-        this.carouselNavInstalled = true;
-        const prev = document.createElement('button');
-        prev.type = 'button';
-        prev.className = 'theia-activity-carousel-nav theia-activity-carousel-prev';
-        prev.setAttribute('aria-label', nls.localizeByDefault('Scroll activity views left'));
-        prev.tabIndex = -1;
-        prev.innerHTML = '<span class="codicon codicon-chevron-left"></span>';
-        prev.addEventListener('click', e => {
-            e.stopPropagation();
-            this.scrollActivityCarousel(-1);
+        this.activityStripScrollInstalled = true;
+        this.contentContainer.classList.add(QaapScrollableTabBar.NATIVE_SCROLL_X_CLASS);
+        this.observeActivityStripResize();
+        this.refreshActivityStripScrollState();
+    }
+
+    protected observeActivityStripResize(): void {
+        if (typeof ResizeObserver === 'undefined') {
+            return;
+        }
+        this.activityStripResizeObserver?.disconnect();
+        this.activityStripResizeObserver = new ResizeObserver(() => {
+            this.refreshActivityStripScrollState();
         });
-        const next = document.createElement('button');
-        next.type = 'button';
-        next.className = 'theia-activity-carousel-nav theia-activity-carousel-next';
-        next.setAttribute('aria-label', nls.localizeByDefault('Scroll activity views right'));
-        next.tabIndex = -1;
-        next.innerHTML = '<span class="codicon codicon-chevron-right"></span>';
-        next.addEventListener('click', e => {
-            e.stopPropagation();
-            this.scrollActivityCarousel(1);
-        });
-        this.topRow.insertBefore(prev, this.contentContainer);
-        this.topRow.insertBefore(next, this.openTabsContainer);
-        this.carouselPrevButton = prev;
-        this.carouselNextButton = next;
-        this.onCarouselScrollBound = () => this.refreshActivityCarouselNav();
-        this.contentContainer.addEventListener('scroll', this.onCarouselScrollBound);
-        this.contentContainer.addEventListener('pointerdown', this.onActivityStripPointerDownBound, { passive: true });
-        this.refreshActivityCarouselNav();
+        this.activityStripResizeObserver.observe(this.contentContainer);
+        this.activityStripResizeObserver.observe(this.topRow);
     }
 
-    protected disposeCarouselNav(): void {
-        if (!this.carouselNavInstalled) {
+    protected disposeActivityStripScroll(): void {
+        if (!this.activityStripScrollInstalled) {
             return;
         }
-        this.carouselNavInstalled = false;
-        this.contentContainer.removeEventListener('pointerdown', this.onActivityStripPointerDownBound);
-        if (this.onCarouselScrollBound) {
-            this.contentContainer.removeEventListener('scroll', this.onCarouselScrollBound);
-            this.onCarouselScrollBound = undefined;
-        }
-        this.carouselPrevButton?.remove();
-        this.carouselNextButton?.remove();
-        this.carouselPrevButton = undefined;
-        this.carouselNextButton = undefined;
+        this.activityStripScrollInstalled = false;
+        this.activityStripResizeObserver?.disconnect();
+        this.activityStripResizeObserver = undefined;
     }
 
-    /** Scroll the horizontal activity strip by roughly one “page” (CSS scroll-snap aligns to tabs). */
-    protected scrollActivityCarousel(direction: -1 | 1): void {
-        if (this.orientation !== 'horizontal') {
-            return;
-        }
-        const host = this.contentContainer;
-        const step = Math.max(56, Math.floor(host.clientWidth * 0.55)) * direction;
-        host.scrollBy({ left: step, behavior: 'smooth' });
-        const bump = (): void => {
-            this.scrollBar?.update();
-            this.refreshActivityCarouselNav();
-        };
-        window.setTimeout(bump, 320);
-    }
-
-    protected refreshActivityCarouselNav(): void {
+    protected refreshActivityStripScrollState(): void {
         const host = this.contentContainer;
         const overflow = host.scrollWidth > host.clientWidth + 1;
         host.classList.toggle('theia-activity-strip-scrollable', overflow);
-        if (!this.carouselPrevButton || !this.carouselNextButton) {
-            return;
-        }
-        if (!overflow) {
-            this.carouselPrevButton.classList.add('theia-mod-hidden');
-            this.carouselNextButton.classList.add('theia-mod-hidden');
-            return;
-        }
-        this.carouselPrevButton.classList.remove('theia-mod-hidden');
-        this.carouselNextButton.classList.remove('theia-mod-hidden');
-        const atStart = host.scrollLeft <= 1;
-        const atEnd = host.scrollLeft >= host.scrollWidth - host.clientWidth - 1;
-        this.carouselPrevButton.disabled = atStart;
-        this.carouselNextButton.disabled = atEnd;
-    }
-
-    /**
-     * Mouse / pen: drag horizontally to scroll the strip (touch uses native pan — see sidepanel.css).
-     */
-    protected onActivityStripPointerDown(e: PointerEvent): void {
-        if (this.orientation !== 'horizontal' || e.button !== 0) {
-            return;
-        }
-        if (e.pointerType === 'touch') {
-            return;
-        }
-        const host = this.contentContainer;
-        if (host.scrollWidth <= host.clientWidth + 1) {
-            return;
-        }
-        const target = e.target as HTMLElement | undefined;
-        if (!target || !host.contains(target)) {
-            return;
-        }
-        const onTab = !!target.closest('.lm-TabBar-tab');
-        const onChrome = target === this.contentNode || target === host;
-        if (!onTab && !onChrome) {
-            return;
-        }
-        const pointerId = e.pointerId;
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const startScroll = host.scrollLeft;
-        let dragging = false;
-
-        const onUp = (ev: PointerEvent): void => {
-            if (ev.pointerId !== pointerId) {
-                return;
-            }
-            document.removeEventListener('pointermove', onMove);
-            document.removeEventListener('pointerup', onUp);
-            document.removeEventListener('pointercancel', onUp);
-            if (dragging) {
-                try {
-                    host.releasePointerCapture(pointerId);
-                } catch {
-                    /* no capture */
-                }
-                host.classList.remove('theia-activity-strip-dragging');
-                const suppressClick = (ce: Event): void => {
-                    if (host.contains(ce.target as Node)) {
-                        ce.preventDefault();
-                        ce.stopPropagation();
-                    }
-                    window.removeEventListener('click', suppressClick, true);
-                };
-                window.addEventListener('click', suppressClick, true);
-                this.scrollBar?.update();
-                this.refreshActivityCarouselNav();
-            }
-        };
-
-        const onMove = (ev: PointerEvent): void => {
-            if (ev.pointerId !== pointerId) {
-                return;
-            }
-            const dx = ev.clientX - startX;
-            const dy = ev.clientY - startY;
-            if (!dragging) {
-                if (Math.abs(dx) < QaapSideTabBar.STRIP_DRAG_THRESHOLD_PX) {
-                    return;
-                }
-                if (Math.abs(dx) <= Math.abs(dy)) {
-                    document.removeEventListener('pointermove', onMove);
-                    return;
-                }
-                dragging = true;
-                host.classList.add('theia-activity-strip-dragging');
-                host.setPointerCapture(pointerId);
-            }
-            ev.preventDefault();
-            host.scrollLeft = startScroll - dx;
-            this.scrollBar?.update();
-            this.refreshActivityCarouselNav();
-        };
-
-        document.addEventListener('pointermove', onMove);
-        document.addEventListener('pointerup', onUp);
-        document.addEventListener('pointercancel', onUp);
+        this.node.classList.toggle('theia-activity-strip-scrollable', overflow);
     }
 
     protected override onUpdateRequest(msg: Message): void {
@@ -713,7 +574,7 @@ export class QaapSideTabBar extends SideTabBar {
             if (this.tabsOverflowData || this.contentContainer.clientWidth < this.contentNode.scrollWidth) {
                 this.updateTabs();
             }
-            this.refreshActivityCarouselNav();
+            this.refreshActivityStripScrollState();
             return;
         }
         if (this.tabsOverflowData || this.node.clientHeight < this.contentNode.clientHeight) {
@@ -761,7 +622,7 @@ export class QaapSideTabBar extends SideTabBar {
                 VirtualDOM.render([], this.hiddenContentNode);
                 this.renderTabs(this.contentNode);
                 this.scrollBar?.update();
-                this.refreshActivityCarouselNav();
+                this.refreshActivityStripScrollState();
                 window.requestAnimationFrame(() => this.computeOverflowingTabsData());
             }
             return;
@@ -826,7 +687,7 @@ export class QaapSideTabBar extends SideTabBar {
                 }
             }
             this.scrollBar?.update();
-            this.refreshActivityCarouselNav();
+            this.refreshActivityStripScrollState();
         });
     }
 

@@ -349,11 +349,15 @@
   border-radius: 0 !important;
 }
 
-/* Keep trailing activity-bar controls (overflow / pinned views) clear of the fixed close button. */
+/* Keep trailing activity-bar controls clear of the fixed close button (floating X on mobile). */
 #theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .theia-app-activity-bar-row,
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .theia-app-activity-bar-row {
   padding-inline-end: var(--theia-mobile-sheet-close-reserve, 48px);
   box-sizing: border-box;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column .theia-activity-bar-close-btn {
+  display: none;
 }
 
 /* Hide the side panel's inner Lumino `DockPanel` TabBar entirely on mobile.
@@ -404,11 +408,7 @@
 /* Floating close button (one shared instance, appended to `document.body`). Visible whenever a
    side sheet is expanded. Fixed to the top-trailing corner of the viewport (same as the sheet’s
    top edge now that the sheet is full-height); the activity row uses `--theia-mobile-sheet-close-reserve`
-   so scrollable and pinned strip icons are not covered.
-
-   Rendered as a bare X glyph — no background, border, or shadow. The button element itself is
-   kept at 44 × 44 px so the tappable area remains large (well above the 44 px-with-margin iOS
-   minimum) even though only the icon is visible. */
+   so scrollable and pinned strip icons are not covered. */
 .theia-mobile-sheet-close-btn {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 2px);
@@ -423,17 +423,20 @@
   align-items: center;
   justify-content: center;
   border: none;
-  background: transparent;
-  color: var(--theia-foreground, rgba(255, 255, 255, 0.95));
+  border-radius: 50%;
+  background-color: var(--theia-activityBar-background, var(--theia-sideBar-background));
+  color: var(--theia-activityBar-inactiveForeground, var(--theia-foreground));
   cursor: pointer;
   z-index: 9750;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   pointer-events: none;
   opacity: 0;
+  box-shadow: none;
   transition:
     opacity 200ms ease,
-    transform 200ms cubic-bezier(.2, .8, .2, 1);
+    transform 200ms cubic-bezier(.2, .8, .2, 1),
+    background-color 150ms ease;
 }
 
 .theia-mobile-sheet-close-btn.theia-mod-visible {
@@ -443,32 +446,26 @@
   transform: translateY(0);
 }
 
-/* Bare glyph styled like an embossed control: layered `text-shadow` plus a `drop-shadow` filter
-   make the X readable on any background that can show through (status bar wallpaper, light
-   editor chrome, glass sheet, etc.). The stacked shadows create a soft 1 px outline + a longer
-   drop-cast for depth, mimicking how iOS / macOS render unframed glyphs over translucent
-   surfaces. `filter: drop-shadow` complements `text-shadow` because some browsers anti-alias
-   shadows differently for filter vs. text — combined they hold up across Safari and Chrome. */
 .theia-mobile-sheet-close-btn-icon {
   font-size: 24px;
   line-height: 1;
-  font-weight: 600;
-  text-shadow:
-    0 0 2px rgba(0, 0, 0, 0.55),
-    0 1px 1px rgba(0, 0, 0, 0.5),
-    0 2px 6px rgba(0, 0, 0, 0.45);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
-  transition: transform 160ms cubic-bezier(.2, .8, .2, 1), color 160ms ease;
+  color: inherit;
+}
+
+.theia-mobile-sheet-close-btn:hover,
+.theia-mobile-sheet-close-btn:focus-visible {
+  background-color: var(--theia-activityBar-activeBackground, var(--theia-sideBar-background));
+  color: var(--theia-activityBar-foreground, var(--theia-foreground));
 }
 
 .theia-mobile-sheet-close-btn:hover .theia-mobile-sheet-close-btn-icon,
 .theia-mobile-sheet-close-btn:focus-visible .theia-mobile-sheet-close-btn-icon {
-  color: #ffffff;
-  transform: scale(1.06);
+  color: inherit;
 }
 
 .theia-mobile-sheet-close-btn:active {
   transform: scale(0.92);
+  background-color: var(--theia-activityBar-activeBackground, var(--theia-sideBar-background));
 }
 
 .theia-mobile-sheet-close-btn:active .theia-mobile-sheet-close-btn-icon {
@@ -485,20 +482,19 @@
   border-radius: 50%;
 }
 
-/* Light-theme override — flip the shadow palette so the X reads against bright sheet headers /
-   wallpapers. We swap to a white halo (so the glyph appears to "punch out") combined with a soft
-   black drop for definition. */
+/* Light theme: same solid activity-bar tokens (no transparent halo). */
 .theia-light .theia-mobile-sheet-close-btn,
 body.theia-light .theia-mobile-sheet-close-btn {
-  color: rgba(20, 20, 24, 0.92);
+  background-color: var(--theia-activityBar-background, var(--theia-sideBar-background));
+  color: var(--theia-activityBar-inactiveForeground, rgba(20, 20, 24, 0.95));
 }
-.theia-light .theia-mobile-sheet-close-btn-icon,
-body.theia-light .theia-mobile-sheet-close-btn-icon {
-  text-shadow:
-    0 0 2px rgba(255, 255, 255, 0.85),
-    0 1px 1px rgba(255, 255, 255, 0.7),
-    0 2px 6px rgba(0, 0, 0, 0.18);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+
+.theia-light .theia-mobile-sheet-close-btn:hover,
+body.theia-light .theia-mobile-sheet-close-btn:hover,
+.theia-light .theia-mobile-sheet-close-btn:focus-visible,
+body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
+  background-color: var(--theia-activityBar-activeBackground, var(--theia-sideBar-background));
+  color: var(--theia-activityBar-foreground, rgba(20, 20, 24, 1));
 }
 
 /* Editor tabs: show every open tab; the narrow-viewport rules above (max-width: 767px) make the

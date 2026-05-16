@@ -23,9 +23,8 @@ export class QaapAdditionalViewsMenuWidget extends AdditionalViewsMenuWidget {
         super.setHidden(false);
     }
 
-    override updateAdditionalViews(sender: SideTabBar, event: { titles: Title<Widget>[]; startIndex: number }): void {
-        const titles = event.startIndex === -1 ? sender.titles : event.titles;
-        if (!titles.length) {
+    override updateAdditionalViews(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {
+        if (event.startIndex === -1) {
             this.removeMenu(AdditionalViewsMenuWidget.ID);
             this.menuDisposables.forEach(disposable => disposable.dispose());
             this.menuDisposables = [];
@@ -42,6 +41,6 @@ export class QaapAdditionalViewsMenuWidget extends AdditionalViewsMenuWidget {
 
         this.menuDisposables.forEach(disposable => disposable.dispose());
         this.menuDisposables = [];
-        titles.forEach((title, i) => this.registerMenuAction(sender, title, i));
+        event.titles.forEach((title, i) => this.registerMenuAction(sender, title, i));
     }
 }

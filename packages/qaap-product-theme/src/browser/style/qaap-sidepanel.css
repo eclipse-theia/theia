@@ -61,13 +61,77 @@
   --theia-private-sidebar-scrollbar-width: 4px;
 }
 
-/* Pin overflow chevron to the trailing edge of the row (before bottom/account menus). */
-.theia-app-activity-bar-left .theia-additional-views-menu {
-  margin-left: auto;
+/* Scrollable view icons — grows between top menu and trailing controls. */
+.theia-app-activity-bar-scroll-host {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.theia-app-activity-bar-right .theia-additional-views-menu {
-  margin-right: auto;
+.theia-app-activity-bar-scroll-host > .lm-TabBar.theia-app-sides[data-orientation="horizontal"] {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+}
+
+/* Bottom sidebar menu (settings / accounts) + close — direct children of the activity row. */
+.theia-app-activity-bar-row > .theia-sidebar-menu:nth-of-type(2) {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background-color: var(--theia-activityBar-background);
+}
+
+.theia-app-activity-bar-row > .theia-sidebar-menu:nth-of-type(2) .theia-sidebar-menu-item i {
+  background-color: var(--theia-activityBar-background);
+}
+
+/* Order: optional accounts, then settings immediately left of close. */
+.theia-app-activity-bar-row > .theia-sidebar-menu:nth-of-type(2) .theia-sidebar-menu-item:nth-child(1) {
+  order: 2;
+}
+
+.theia-app-activity-bar-row > .theia-sidebar-menu:nth-of-type(2) .theia-sidebar-menu-item:nth-child(2) {
+  order: 1;
+}
+
+.theia-app-activity-bar-row > .theia-activity-bar-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+  background-color: var(--theia-activityBar-background);
+}
+
+.theia-app-activity-bar-row > .theia-activity-bar-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--theia-private-sidebar-tab-height, 24px) + 4px);
+  min-width: calc(var(--theia-private-sidebar-tab-height, 24px) + 4px);
+  height: var(--theia-private-sidebar-tab-height, 24px);
+  margin: 2px 0;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background-color: var(--theia-activityBar-background);
+  color: var(--theia-activityBar-inactiveForeground);
+  cursor: pointer;
+}
+
+.theia-app-activity-bar-row > .theia-activity-bar-close-btn:hover,
+.theia-app-activity-bar-row > .theia-activity-bar-close-btn:focus-visible {
+  color: var(--theia-activityBar-foreground);
+  background-color: var(--theia-activityBar-activeBackground);
+}
+
+.theia-app-activity-bar-row > .theia-activity-bar-close-btn-icon {
+  font-size: var(--theia-private-sidebar-icon-size);
+  line-height: 1;
+  background: none;
+  opacity: 1;
 }
 
 .lm-TabBar.theia-app-sides[data-orientation="horizontal"] {
@@ -88,12 +152,16 @@
 }
 
 .lm-TabBar.theia-app-sides[data-orientation="horizontal"] .theia-tabBar-tab-row {
+  display: flex;
+  flex-flow: row nowrap;
   flex: 1 1 auto;
+  align-items: stretch;
+  min-width: 0;
   min-height: var(--theia-horizontal-toolbar-height, 28px);
+  overflow: hidden;
 }
 
 .lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content {
-  z-index: 1;
   gap: 2px 6px;
   flex-wrap: nowrap;
   align-items: center;
@@ -101,41 +169,56 @@
   min-width: min-content;
 }
 
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container {
+/* Native horizontal pan — same interaction model as `.theia-mobile-bottom-activity-bar`. */
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container,
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container.theia-tabbar-native-scroll-x {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: 6px;
   touch-action: pan-x;
   overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   scroll-padding-inline: 6px;
-}
-
-/* Native overflow-x: better touch inertia than PerfectScrollbar touch; keep PS for wheel + custom rail on wide viewports.
-   On max-width 767px PS is omitted — match `.theia-tabbar-native-scroll-x` (see ScrollableTabBar). */
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x) {
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  touch-action: pan-x !important;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x)::-webkit-scrollbar {
+/* When every icon fits, use the scroll host width. */
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"]:not(.theia-activity-strip-scrollable)
+  .lm-TabBar-content {
+  width: 100%;
+  max-width: 100%;
+  justify-content: flex-start;
+}
+
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container::-webkit-scrollbar {
   display: none;
   height: 0;
   width: 0;
 }
 
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x).theia-activity-strip-scrollable:not(.theia-activity-strip-dragging) {
-  cursor: grab;
+.lm-TabBar.theia-app-sides[data-orientation="horizontal"] > .ps__rail-x {
+  display: none !important;
 }
 
-.lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container:is(.ps, .theia-tabbar-native-scroll-x).theia-activity-strip-dragging {
-  cursor: grabbing;
-  user-select: none;
+@media (prefers-reduced-motion: reduce) {
+  .lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-content-container {
+    scroll-snap-type: none;
+  }
+
+  .lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-tab {
+    scroll-snap-align: none;
+  }
 }
 
 .lm-TabBar.theia-app-sides[data-orientation="horizontal"] .lm-TabBar-tab {
-  scroll-snap-align: center;
+  scroll-snap-align: start;
   scroll-snap-stop: normal;
   position: relative;
   flex-shrink: 0;
@@ -345,44 +428,9 @@
   font-size: var(--theia-private-sidebar-icon-size);
 }
 
-/*-----------------------------------------------------------------------------
-| Activity strip carousel (prev / next beside scrollable tabs)
-|----------------------------------------------------------------------------*/
-
-.theia-app-activity-bar-row .theia-activity-carousel-nav {
-  flex: 0 0 auto;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  min-width: 18px;
-  padding: 0;
-  margin: 0;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--theia-activityBar-inactiveForeground);
-  cursor: pointer;
-  opacity: 0.88;
-}
-
-.theia-app-activity-bar-row .theia-activity-carousel-nav:hover:not(:disabled) {
-  color: var(--theia-activityBar-foreground);
-  background: var(--theia-toolbar-hoverBackground);
-}
-
-.theia-app-activity-bar-row .theia-activity-carousel-nav:disabled {
-  opacity: 0.28;
-  cursor: default;
-}
-
-.theia-app-activity-bar-row .theia-activity-carousel-nav.theia-mod-hidden {
-  display: none;
-}
-
-.theia-app-activity-bar-row .theia-activity-carousel-nav .codicon {
-  font-size: var(--theia-private-sidebar-icon-size);
+.theia-app-activity-bar-scroll-host .theia-additional-views-menu {
+  flex-shrink: 0;
+  margin-left: 0;
 }
 
 .lm-SplitPanel-handle.sash-hidden {

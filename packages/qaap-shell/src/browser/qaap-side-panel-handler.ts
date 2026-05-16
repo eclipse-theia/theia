@@ -16,6 +16,7 @@ import {
 import { SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from '@theia/core/lib/browser/shell/tab-bars';
 import { SplitPositionOptions } from '@theia/core/lib/browser/shell/split-panels';
 import { QaapSideTabBar } from './qaap-tab-bars';
+import { QaapActivityBarCloseButton } from './qaap-activity-bar-close-button';
 
 const COLLAPSED_CLASS = 'theia-mod-collapsed';
 
@@ -32,6 +33,9 @@ export class QaapSidePanelHandler extends SidePanelHandler {
     protected resizeRelayoutFrame: number | undefined;
     protected lastObservedWidth = -1;
     protected lastObservedHeight = -1;
+
+    protected activityScrollHost!: Panel;
+    protected activityCloseButton!: QaapActivityBarCloseButton;
 
     override create(side: 'left' | 'right', options: SidePanel.Options): void {
         this.side = side;
@@ -94,15 +98,28 @@ export class QaapSidePanelHandler extends SidePanelHandler {
         contentBox.addWidget(this.dockPanel);
         const contentPanel = new BoxPanel({ layout: contentBox });
 
-        const activityRowLayout = new BoxLayout({ direction: 'left-to-right', spacing: 0 });
-        BoxPanel.setStretch(this.topMenu, 0);
+        this.activityCloseButton = new QaapActivityBarCloseButton(() => {
+            void this.collapse();
+        });
+
+        const scrollLayout = new BoxLayout({ direction: 'left-to-right', spacing: 0 });
         BoxPanel.setStretch(this.tabBar, 1);
         BoxPanel.setStretch(this.additionalViewsMenu, 0);
+        scrollLayout.addWidget(this.tabBar);
+        scrollLayout.addWidget(this.additionalViewsMenu);
+        this.activityScrollHost = new BoxPanel({ layout: scrollLayout });
+        this.activityScrollHost.addClass('theia-app-activity-bar-scroll-host');
+
+        const activityRowLayout = new BoxLayout({ direction: 'left-to-right', spacing: 0 });
+        BoxPanel.setStretch(this.topMenu, 0);
+        BoxPanel.setStretch(this.activityScrollHost, 1);
         BoxPanel.setStretch(this.bottomMenu, 0);
+        BoxPanel.setStretch(this.activityCloseButton, 0);
         activityRowLayout.addWidget(this.topMenu);
-        activityRowLayout.addWidget(this.tabBar);
-        activityRowLayout.addWidget(this.additionalViewsMenu);
+        activityRowLayout.addWidget(this.activityScrollHost);
         activityRowLayout.addWidget(this.bottomMenu);
+        activityRowLayout.addWidget(this.activityCloseButton);
+
         const activityBarRow = new BoxPanel({ layout: activityRowLayout });
         activityBarRow.addClass('theia-app-activity-bar-row');
         activityBarRow.addClass(this.side === 'right' ? 'theia-app-activity-bar-right' : 'theia-app-activity-bar-left');
@@ -231,9 +248,15 @@ export class QaapSidePanelHandler extends SidePanelHandler {
         if (this.side === 'left') {
             container.setHidden(hideDockPanel);
             tabBar.setHidden(hideDockPanel);
+            this.activityScrollHost?.setHidden(hideDockPanel);
+            this.bottomMenu?.setHidden(hideDockPanel);
+            this.activityCloseButton?.setHidden(hideDockPanel);
         } else {
             container.setHidden(isEmpty && hideDockPanel);
             tabBar.setHidden(isEmpty);
+            this.activityScrollHost?.setHidden(isEmpty);
+            this.bottomMenu?.setHidden(isEmpty);
+            this.activityCloseButton?.setHidden(isEmpty);
         }
         dockPanel.setHidden(hideDockPanel);
         this.state.empty = isEmpty;
