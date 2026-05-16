@@ -1,0 +1,31 @@
+# Local or VPS deployment (Hetzner, Contabo, etc.).
+#
+#   docker compose up --build -d
+#   open http://localhost:3000
+#
+# Railway / Fly.io: point the service at this Dockerfile (root context).
+# They inject PORT; the image reads ${PORT} at runtime.
+
+services:
+  theia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${THEIA_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      # Optional: mount a host folder as the default workspace
+      # THEIA_PLUGINS_DIR: /app/plugins
+    volumes:
+      - theia-workspace:/workspace
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+volumes:
+  theia-workspace:

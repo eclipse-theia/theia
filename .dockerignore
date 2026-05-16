@@ -1,0 +1,39 @@
+# Dependencies and build outputs (rebuilt inside the image)
+node_modules
+**/node_modules
+**/lib
+examples/*/src-gen
+examples/*/gen-webpack.config.js
+examples/*/gen-webpack.node.config.js
+examples/*/gen-esbuild.*.mjs
+examples/*/.test
+.browser_modules
+plugins
+
+# VCS and CI
+.git
+.github
+.gitlab
+
+# Docs, tests, and local tooling (not needed to run the IDE)
+doc
+logo
+allure-results
+coverage
+.nyc_output
+gh-pages
+**/*.spec.ts
+**/*.ui-spec.ts
+**/*.slow-spec.ts
+examples/playwright
+examples/api-tests
+
+# Editor and OS noise
+.DS_Store
+.idea
+.vscode
+.history
+.eslintcache
+**/*.tsbuildinfo
+*.log
+lerna-debug.log
