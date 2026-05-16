@@ -1,0 +1,49 @@
+# Blocks new upstream drift outside packages/qaap-* and the documented allowlist.
+# Compares HEAD to eclipse-theia/theia master (see scripts/qaap-drift-check.js).
+name: Qaap drift guard
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - 'logo/**'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - 'logo/**'
+  workflow_dispatch:
+
+jobs:
+  drift-check:
+    name: qaap:drift-check
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: 22.x
+
+      - name: Fetch upstream Theia (eclipse-theia/master)
+        run: |
+          if git remote get-url upstream >/dev/null 2>&1; then
+            git remote set-url upstream https://github.com/eclipse-theia/theia.git
+          else
+            git remote add upstream https://github.com/eclipse-theia/theia.git
+          fi
+          git fetch --no-tags --depth=1 upstream master:upstream/master
+
+      - name: Run qaap:drift-check
+        run: npm run qaap:drift-check
