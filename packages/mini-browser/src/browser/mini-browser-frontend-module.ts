@@ -40,7 +40,6 @@ import {
     LocationWithoutSchemeMapper,
 } from './location-mapper-service';
 import { MiniBrowserFrontendSecurityWarnings } from './mini-browser-frontend-security-warnings';
-import { DefaultMiniBrowserOpenHook, MiniBrowserOpenHook } from './mini-browser-open-hook';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserContent).toSelf();
@@ -84,6 +83,4 @@ export default new ContainerModule(bind => {
 
     bind(MiniBrowserFrontendSecurityWarnings).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MiniBrowserFrontendSecurityWarnings);
-
-    bind(MiniBrowserOpenHook).to(DefaultMiniBrowserOpenHook).inSingletonScope();
 });

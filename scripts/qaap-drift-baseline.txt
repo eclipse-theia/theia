@@ -28,10 +28,6 @@ packages/messages/src/browser/style/notifications.css
 packages/mini-browser/package.json
 packages/mini-browser/src/browser/mini-browser-content-style.ts
 packages/mini-browser/src/browser/mini-browser-content.ts
-packages/mini-browser/src/browser/mini-browser-frontend-module.ts
-packages/mini-browser/src/browser/mini-browser-open-handler.ts
-packages/mini-browser/src/browser/mini-browser.ts
-packages/mini-browser/src/browser/style/index.css
 packages/mini-browser/tsconfig.json
 packages/monaco/src/browser/monaco-frontend-module.ts
 packages/monaco/src/browser/monaco-quick-input-service.ts

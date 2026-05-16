@@ -31,11 +31,8 @@ import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';
 import { LocationMapperService } from './location-mapper-service';
 import { nls } from '@theia/core/lib/common/nls';
-import { MessageService } from '@theia/core/lib/common/message-service';
-import { MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MiniBrowserOpenerOptions } from './mini-browser-opener-options';
 import { MiniBrowserOpenHook } from './mini-browser-open-hook';
-import { normalizeMiniBrowserOpenUrl } from './mini-browser-url-utils';
 
 export namespace MiniBrowserCommands {
 
@@ -45,7 +42,7 @@ export namespace MiniBrowserCommands {
     export const PREVIEW = Command.toLocalizedCommand({
         id: 'mini-browser.preview',
         label: 'Open Preview',
-        iconClass: codicon('play')
+        iconClass: codicon('open-preview')
     }, 'vscode.markdown-language-features/package/markdown.preview.title');
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source',
@@ -64,14 +61,6 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
 
     static PREVIEW_URI = new URI().withScheme('__minibrowser__preview__');
 
-    /**
-     * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
-     * we have this map of extension and priority pairs that we populate at application startup.
-     * The real advantage of this approach is the following: [Lumino cannot run async code when invoking `isEnabled`/`isVisible`
-     * for the command handlers](https://github.com/eclipse-theia/theia/issues/1958#issuecomment-392829371)
-     * so the menu item would be always visible for the user even if the file type cannot be handled eventually.
-     * Hopefully, we could get rid of this hack once we have migrated the existing Lumino code to [React](https://github.com/eclipse-theia/theia/issues/1915).
-     */
     protected readonly supportedExtensions: Map<string, number> = new Map();
 
     readonly id = MiniBrowser.ID;
@@ -89,9 +78,6 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     @inject(MiniBrowserService)
     protected readonly miniBrowserService: MiniBrowserService;
 
-    @inject(MessageService)
-    protected readonly messages: MessageService;
-
     @inject(LocationMapperService)
     protected readonly locationMapperService: LocationMapperService;
 
@@ -108,8 +94,6 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     }
 
     canHandle(uri: URI, options?: MiniBrowserOpenerOptions): number {
-        // It does not guard against directories. For instance, a folder with this name: `Hahahah.html`.
-        // We could check with the FS, but then, this method would become async again.
         const extension = uri.toString().split('.').pop();
         if (!extension) {
             return 0;
@@ -117,7 +101,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         if (options?.openFor === 'source') {
             return -100;
         } else if (options?.openFor === 'preview') {
-            return 200; // higher than that of the editor.
+            return 200;
         } else {
             return this.supportedExtensions.get(extension.toLocaleLowerCase()) || 0;
         }
@@ -130,17 +114,13 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         } catch (e) {
             console.error('MiniBrowserOpenHook.afterOpen failed', e);
         }
-        try {
-            const area = this.shell.getAreaFor(widget);
-            if (area === 'right' || area === 'left') {
-                const panelLayout = area === 'right' ? this.shell.getLayoutData().rightPanel : this.shell.getLayoutData().leftPanel;
-                const minSize = this.shell.mainPanel.node.offsetWidth / 2;
-                if (panelLayout && panelLayout.size && panelLayout.size <= minSize) {
-                    requestAnimationFrame(() => this.shell.resize(minSize, area));
-                }
+        const area = this.shell.getAreaFor(widget);
+        if (area === 'right' || area === 'left') {
+            const panelLayout = area === 'right' ? this.shell.getLayoutData().rightPanel : this.shell.getLayoutData().leftPanel;
+            const minSize = this.shell.mainPanel.node.offsetWidth / 2;
+            if (panelLayout && panelLayout.size && panelLayout.size <= minSize) {
+                requestAnimationFrame(() => this.shell.resize(minSize, area));
             }
-        } catch (e) {
-            console.error('MiniBrowserOpenHandler.open side-panel resize failed', e);
         }
         return widget;
     }
@@ -153,27 +133,22 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     }
 
     protected async options(uri?: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowserOpenerOptions & { widgetOptions: ApplicationShell.WidgetOptions }> {
-        // Get the default options.
         let result = await this.defaultOptions();
         if (uri) {
-            // Decorate it with a few properties inferred from the URI.
             const startPage = uri.toString(true);
             const name = this.labelProvider.getName(uri);
             const iconClass = `${this.labelProvider.getIcon(uri)} file-icon`;
-            // The background has to be reset to white only for "real" web-pages but not for images, for instance.
             const resetBackground = await this.resetBackground(uri);
             result = {
                 ...result,
                 startPage,
                 name,
                 iconClass,
-                // Make sure the toolbar is not visible. We have the `iframe.src` anyway.
                 toolbar: 'hide',
                 resetBackground
             };
         }
         if (options) {
-            // Explicit options overrule everything.
             result = {
                 ...result,
                 ...options
@@ -213,7 +188,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
             isVisible: widget => !!this.getSourceUri(widget)
         });
         commands.registerCommand(MiniBrowserCommands.OPEN_URL, {
-            execute: (...args: unknown[]) => this.openUrl(this.coerceUrlCommandArg(args))
+            execute: (arg?: string) => this.openUrl(arg)
         });
     }
 
@@ -248,7 +223,6 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
 
     protected getWidgetToPreview(widget?: Widget): NavigatableWidget | undefined {
         const current = widget ? widget : this.shell.currentWidget;
-        // MiniBrowser is NavigatableWidget and should be excluded from widgets to preview
         return !(current instanceof MiniBrowser) && NavigatableWidget.is(current) && current || undefined;
     }
 
@@ -286,99 +260,34 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         return uri;
     }
 
-    /**
-     * Command handlers may receive non-string arguments (e.g. widget context); only a string is a URL.
-     */
-    protected coerceUrlCommandArg(args: unknown[]): string | undefined {
-        for (const arg of args) {
-            if (typeof arg === 'string') {
-                const t = normalizeMiniBrowserOpenUrl(arg);
-                if (t) {
-                    return t;
-                }
-            }
+    protected async openUrl(arg?: string): Promise<void> {
+        const url = arg ? arg : await this.quickInputService?.input({
+            prompt: nls.localizeByDefault('URL to open'),
+            placeHolder: nls.localize('theia/mini-browser/typeUrl', 'Type a URL')
+        });
+        if (url) {
+            await this.openPreview(url);
         }
-        return undefined;
     }
 
-    protected async openUrl(urlFromCommand?: string): Promise<void> {
-        let url = urlFromCommand ? normalizeMiniBrowserOpenUrl(urlFromCommand) : '';
-        if (!url) {
-            if (this.quickInputService) {
-                const raw = await this.quickInputService.input({
-                    prompt: nls.localizeByDefault('URL to open'),
-                    placeHolder: nls.localize('theia/mini-browser/typeUrl', 'Type a URL'),
-                    /* Keep the prompt open when focus briefly leaves (mobile bottom bar, Welcome, shell layout). */
-                    ignoreFocusLost: true
-                });
-                url = raw ? normalizeMiniBrowserOpenUrl(raw) : '';
-            } else {
-                this.messages.warn(nls.localize(
-                    'theia/mini-browser/quickInputUnavailable',
-                    'Cannot prompt for a URL because quick input is not available. Open the Preview from the editor toolbar or configure Quick Input.'
-                ));
-                return;
-            }
-        }
-        if (!url) {
-            return;
-        }
-        await this.openPreview(url);
-    }
-
-    async openPreview(startPage: string): Promise<MiniBrowser | undefined> {
-        const trimmed = normalizeMiniBrowserOpenUrl(startPage);
-        if (!trimmed) {
-            this.messages.warn(nls.localize('theia/mini-browser/emptyUrl', 'Please enter a URL.'));
-            return undefined;
-        }
-        let mapped: string;
-        try {
-            mapped = await this.locationMapperService.map(trimmed);
-        } catch (err) {
-            this.messages.error(nls.localize(
-                'theia/mini-browser/urlMapFailed',
-                'Could not resolve that URL: {0}',
-                String(err)
-            ));
-            return undefined;
-        }
-        const props = await this.getOpenPreviewProps(mapped);
+    async openPreview(startPage: string): Promise<MiniBrowser> {
+        const props = await this.getOpenPreviewProps(await this.locationMapperService.map(startPage));
         return this.open(MiniBrowserOpenHandler.PREVIEW_URI, props);
     }
 
     protected async getOpenPreviewProps(startPage: string): Promise<MiniBrowserOpenerOptions> {
-        let resetBackground = false;
-        try {
-            resetBackground = await this.resetBackground(new URI(startPage));
-        } catch {
-            resetBackground = startPage.startsWith('http://') || startPage.startsWith('https://');
-        }
+        const resetBackground = await this.resetBackground(new URI(startPage));
         return {
             name: nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY),
             startPage,
-            // Use the editable toolbar so the address bar can be modified inline (Enter navigates to
-            // the new URL). The dedicated "Open In A New Window" button still handles opening the
-            // current page externally, making the read-only click-to-open behaviour redundant.
-            toolbar: 'show',
-            // On mobile (one-column shell, see MOBILE_ONE_COLUMN_LAYOUT_CLASS), the right-side panel is shown
-            // as a sheet and is not the right place for a fullscreen browser preview. Open the preview
-            // in the main editor area instead so it inherits the full device width.
+            toolbar: 'read-only',
             widgetOptions: {
-                area: this.isMobileOneColumn() ? 'main' : 'right'
+                area: 'right'
             },
             resetBackground,
             iconClass: codicon('preview'),
             openFor: 'preview'
         };
-    }
-
-    protected isMobileOneColumn(): boolean {
-        if (typeof document === 'undefined') {
-            return false;
-        }
-        const shellNode = document.getElementById('theia-app-shell');
-        return !!shellNode?.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
     }
 
 }

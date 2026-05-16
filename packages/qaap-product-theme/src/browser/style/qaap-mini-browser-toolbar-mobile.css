@@ -4,6 +4,42 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* Workbench toolbar controls (element inspector, etc.) */
+.theia-mini-browser-workbench-controls {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+  margin: 0 2px 0 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--theia-widget-border, var(--theia-panel-border));
+}
+
+.theia-mini-browser-workbench-button {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+}
+
+.theia-mini-browser-workbench-button::before {
+  font-size: 18px;
+}
+
+.theia-mini-browser-workbench-button:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
 /*-----------------------------------------------------------------------------
 | Mini-browser toolbar: single horizontal row on narrow viewports (767px).
 | Nav buttons + URL field + workbench controls share one line to save height.
