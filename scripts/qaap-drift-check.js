@@ -71,6 +71,7 @@ const ALLOWED = [
     /^package-lock\.json$/,
     /^CLAUDE\.md$/,
     /^doc\/qaap-.*\.md$/,
+    /^\.github\/workflows\/qaap-.*\.yml$/,
     /^\.prompts\//,
     /^\.theia\//,
     /^\.dockerignore$/,

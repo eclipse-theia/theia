@@ -28,6 +28,10 @@ import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY, MOBILE_ONE_COLUMN_LAYOUT_CLASS } fr
 import { hasQaapLeftRightSplitPanel } from '@theia/qaap-shell/lib/browser/qaap-shell-layout';
 import { MobileHaptics } from './mobile-haptics';
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { MobileProjectsService } from './mobile-projects-service';
+import { MobileProjectsPanel } from './mobile-projects-panel';
+import { MobileProjectEntry } from './mobile-projects-types';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -52,7 +56,7 @@ const WORKBENCH_FOCUS_EDITOR = 'workbench.action.focusActiveEditorGroup';
 const WORKBENCH_OPEN_DIFF = 'editor.action.diffReview.next';
 const MINI_BROWSER_OPEN_URL = 'mini-browser.openUrl';
 
-type MobileBottomButtonId = 'agent' | 'preview' | 'plan' | 'diff' | 'tasks' | 'skills' | 'terminal' | 'editor';
+type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'plan' | 'diff' | 'tasks' | 'skills' | 'terminal' | 'editor';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -74,6 +78,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
+    @inject(MobileProjectsService)
+    protected readonly projectsService: MobileProjectsService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
         typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
@@ -89,6 +99,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected mobileActive = false;
     protected snapRaf = 0;
     protected shellHooked = false;
+    protected projectsPanel: MobileProjectsPanel | undefined;
+    protected projectsCount = 0;
 
     protected leftEdgeTouchStartX = 0;
     protected rightEdgeTouchStartX = 0;
@@ -162,7 +174,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         this.shell.node.classList.add(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
         this.ensureOverlayElements();
-        this.scheduleSnapAndUiRefresh();
+        // Restored layout and explorer startup may leave the left sheet expanded; collapse so only
+        // the editor column is visible until the user opens a sheet intentionally.
+        void this.dismissSheetsAsync().then(() => this.scheduleSnapAndUiRefresh());
     }
 
     protected leaveMobileLayout(): void {
@@ -204,6 +218,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.removeCloseButton();
         this.keyboardHelper?.dispose();
         this.keyboardHelper = undefined;
+        this.hideProjectsPanel();
+        if (this.projectsPanel?.node.parentElement) {
+            this.projectsPanel.node.parentElement.removeChild(this.projectsPanel.node);
+        }
+        this.projectsPanel = undefined;
     }
 
     protected ensureOverlayElements(): void {
@@ -244,8 +263,69 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.keyboardHelper = new MobileKeyboardHelper(this.shell.node);
             this.keyboardHelper.install();
         }
+        this.ensureProjectsPanel();
+        void this.refreshProjectsCount();
         this.refreshBottomBar();
         this.updateBackdropVisibility();
+    }
+
+    protected ensureProjectsPanel(): void {
+        if (this.projectsPanel) {
+            return;
+        }
+        this.projectsPanel = new MobileProjectsPanel(
+            this.projectsService,
+            this.workspaceService,
+            this.commands,
+            {
+                onProjectOpen: (project: MobileProjectEntry) => { void this.onProjectsPanelOpen(project); },
+                onDismiss: () => this.scheduleSnapAndUiRefresh(),
+                onProjectsChanged: () => { void this.refreshProjectsCount().then(() => this.refreshBottomBar()); },
+            }
+        );
+        this.shell.node.appendChild(this.projectsPanel.node);
+    }
+
+    protected async refreshProjectsCount(): Promise<void> {
+        try {
+            const projects = await this.projectsService.loadProjects();
+            this.projectsCount = projects.length;
+        } catch {
+            this.projectsCount = 0;
+        }
+    }
+
+    protected hideProjectsPanel(): void {
+        this.projectsPanel?.hide();
+    }
+
+    protected async toggleProjectsPanel(): Promise<void> {
+        this.ensureProjectsPanel();
+        const panel = this.projectsPanel;
+        if (!panel) {
+            return;
+        }
+        if (panel.isVisible()) {
+            panel.hide();
+            this.scheduleSnapAndUiRefresh();
+            return;
+        }
+        await this.dismissSheetsAsync();
+        if (this.shell.isExpanded('bottom')) {
+            await this.shell.collapsePanel('bottom');
+        }
+        await panel.show();
+        this.refreshBottomBar();
+    }
+
+    protected async onProjectsPanelOpen(project: MobileProjectEntry): Promise<void> {
+        const panel = this.projectsPanel;
+        if (!panel) {
+            return;
+        }
+        await panel.openProject(project);
+        panel.hide();
+        this.scheduleSnapAndUiRefresh();
     }
 
     protected attachBottomBarToShell(): void {
@@ -468,9 +548,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.updateCloseButtonVisibility();
     }
 
-    /** Fixed agent-first actions for the mobile bottom bar. Mirrors the prototype in the design spec. */
+    /** Primary mobile views; Projects first (multi-workspace hub), then agent-first actions. */
     protected getMobileBottomButtons(): MobileBottomButton[] {
         return [
+            { id: 'projects', label: nls.localize('qaap/mobileBottomBar/projects', 'Projects'), icon: 'codicon-project' },
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
             { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
             { id: 'plan', label: nls.localize('theia/core/mobileBottomBar/plan', 'Plan'), icon: 'codicon-checklist' },
@@ -484,6 +565,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected isMobileBottomButtonActive(id: MobileBottomButtonId): boolean {
         switch (id) {
+            case 'projects':
+                return !!this.projectsPanel?.isVisible();
             case 'agent': {
                 const title = this.shell.rightPanelHandler.tabBar.currentTitle;
                 return this.shell.isExpanded('right') && title?.owner?.id === WORKBENCH_CHAT_VIEW_WIDGET_ID;
@@ -527,7 +610,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         icon.setAttribute('aria-hidden', 'true');
         const label = document.createElement('span');
         label.className = 'theia-mobile-bottom-activity-label';
-        label.textContent = def.label;
+        label.textContent = def.id === 'projects' && this.projectsCount > 0
+            ? `${def.label} ${this.projectsCount}`
+            : def.label;
         btn.append(icon, label);
         const commandId = def.commandId;
         if (commandId && !this.commands.getCommand(commandId)) {
@@ -545,6 +630,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected async onMobileBottomButtonClick(def: MobileBottomButton): Promise<void> {
         MobileHaptics.fire(MobileHaptics.LIGHT);
+        if (def.id === 'projects') {
+            await this.toggleProjectsPanel();
+            return;
+        }
+        this.hideProjectsPanel();
         // The side panels render as full-bleed sheets on mobile (`position: fixed; width: 100vw`).
         // If one is open when the user picks an action that targets the main editor area, the sheet
         // would visually cover the resulting widget (e.g. the mini-browser preview). Collapse them
@@ -573,10 +663,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected shouldDismissSheetsForButton(id: MobileBottomButtonId): boolean {
-        // Agent lives in the right-side panel by design, so keep that sheet open. All other actions
-        // target the main editor area, the bottom panel, or a global prompt; the side sheets must
-        // be closed so the result is visible.
-        return id !== 'agent';
+        // Agent lives in the right-side panel by design, so keep that sheet open. Projects uses its
+        // own overlay. All other actions target the main editor area, the bottom panel, or a global
+        // prompt; the side sheets must be closed so the result is visible.
+        return id !== 'agent' && id !== 'projects';
     }
 
     /** Collapse expanded side sheets and await layout so follow-up UI (e.g. quick input) is stable. */

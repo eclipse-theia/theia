@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
 import { isObject } from '@theia/core/lib/common/types';
 import { applyQaapBrandingToText } from '../common/qaap-i18n-branding-rules';
 
@@ -12,6 +10,29 @@ import { applyQaapBrandingToText } from '../common/qaap-i18n-branding-rules';
 export const QAAP_BRANDING_LOCALES = [
     'de', 'es', 'fr', 'it', 'pt-br', 'ja', 'ko', 'zh-cn', 'zh-tw', 'ru', 'tr', 'pl', 'cs', 'hu'
 ] as const;
+
+export type QaapBrandingLocale = (typeof QAAP_BRANDING_LOCALES)[number];
+
+/**
+ * Core nls packs (static requires — same approach as core's TheiaLocalizationContribution).
+ * Avoids `require.resolve('@theia/core/package.json')`, which esbuild flags when bundling the backend.
+ */
+const CORE_NLS_BY_LOCALE: Record<QaapBrandingLocale, unknown> = {
+    de: require('@theia/core/i18n/nls.de.json'),
+    es: require('@theia/core/i18n/nls.es.json'),
+    fr: require('@theia/core/i18n/nls.fr.json'),
+    it: require('@theia/core/i18n/nls.it.json'),
+    'pt-br': require('@theia/core/i18n/nls.pt-br.json'),
+    ja: require('@theia/core/i18n/nls.ja.json'),
+    ko: require('@theia/core/i18n/nls.ko.json'),
+    'zh-cn': require('@theia/core/i18n/nls.zh-cn.json'),
+    'zh-tw': require('@theia/core/i18n/nls.zh-tw.json'),
+    ru: require('@theia/core/i18n/nls.ru.json'),
+    tr: require('@theia/core/i18n/nls.tr.json'),
+    pl: require('@theia/core/i18n/nls.pl.json'),
+    cs: require('@theia/core/i18n/nls.cs.json'),
+    hu: require('@theia/core/i18n/nls.hu.json')
+};
 
 export function flattenTranslations(localization: unknown, prefix = ''): Record<string, string> {
     if (!isObject(localization)) {
@@ -29,20 +50,12 @@ export function flattenTranslations(localization: unknown, prefix = ''): Record<
     return record;
 }
 
-export function resolveCoreNlsPath(languageId: string): string {
-    const coreRoot = path.dirname(require.resolve('@theia/core/package.json'));
-    const file = languageId === 'en' ? 'nls.json' : `nls.${languageId}.json`;
-    return path.join(coreRoot, 'i18n', file);
-}
-
 /** Builds translation-key overrides to merge after core localizations for a locale. */
 export async function buildQaapBrandingOverlay(languageId: string): Promise<Record<string, string>> {
-    const nlsPath = resolveCoreNlsPath(languageId);
-    if (!await fs.pathExists(nlsPath)) {
+    if (!isQaapBrandingLocale(languageId)) {
         return {};
     }
-    const json = await fs.readJson(nlsPath);
-    const flat = flattenTranslations(json);
+    const flat = flattenTranslations(CORE_NLS_BY_LOCALE[languageId]);
     const overlay: Record<string, string> = {};
     for (const [key, value] of Object.entries(flat)) {
         const branded = applyQaapBrandingToText(value, languageId);
@@ -51,4 +64,8 @@ export async function buildQaapBrandingOverlay(languageId: string): Promise<Reco
         }
     }
     return overlay;
+}
+
+function isQaapBrandingLocale(languageId: string): languageId is QaapBrandingLocale {
+    return (QAAP_BRANDING_LOCALES as readonly string[]).includes(languageId);
 }

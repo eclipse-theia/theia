@@ -14,8 +14,10 @@ import { MobileOnboardingTutorialContribution } from './mobile-onboarding-tutori
 import { MobileThemeChromeContribution } from './mobile-theme-chrome-contribution';
 import { MobileEditorGestureContribution } from './mobile-editor-gesture-contribution';
 import { LongPressContextMenuContribution } from './long-press-context-menu';
+import { MobileProjectsService } from './mobile-projects-service';
 
 export default new ContainerModule(bind => {
+    bind(MobileProjectsService).toSelf().inSingletonScope();
     bind(MobileOneColumnShellContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileOneColumnShellContribution);
     bind(MobileOnboardingTutorialContribution).toSelf().inSingletonScope();

@@ -8,23 +8,35 @@ import { injectable } from '@theia/core/shared/inversify';
 import { find } from '@lumino/algorithm';
 import { FrontendApplication, ViewContainer } from '@theia/core/lib/browser';
 import { OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
+import {
+    MOBILE_ONE_COLUMN_LAYOUT_CLASS,
+    matchesMobileNarrowViewport,
+} from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser/navigator-widget-factory';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widget';
 
 /**
- * Ensures the Explorer (file tree) is registered in the left activity strip and opened on startup.
+ * Ensures the Explorer (file tree) is registered in the left activity strip. On desktop it is
+ * opened on startup; on narrow mobile one-column layout the left sheet stays collapsed until the
+ * user opens it (swipe / activity tab).
  */
 @injectable()
 export class QaapFileNavigatorContribution extends FileNavigatorContribution {
 
     override async initializeLayout(_app: FrontendApplication): Promise<void> {
-        await this.ensureExplorerInLeftPanel(true);
+        await this.ensureExplorerInLeftPanel(this.shouldActivateExplorerOnStartup());
     }
 
     async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
         await this.shell.pendingUpdates;
-        await this.ensureExplorerInLeftPanel(true);
+        await this.ensureExplorerInLeftPanel(this.shouldActivateExplorerOnStartup());
+    }
+
+    /** Register the explorer tab without expanding the mobile side sheet on startup / reload. */
+    protected shouldActivateExplorerOnStartup(): boolean {
+        return !matchesMobileNarrowViewport()
+            && !this.shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
     }
 
     override async openView(args: Partial<OpenViewArguments> = {}): Promise<FileNavigatorWidget> {

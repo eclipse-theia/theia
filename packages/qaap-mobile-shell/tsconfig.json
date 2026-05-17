@@ -17,6 +17,9 @@
     },
     {
       "path": "../qaap-shell"
+    },
+    {
+      "path": "../workspace"
     }
   ]
 }

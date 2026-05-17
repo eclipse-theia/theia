@@ -175,26 +175,31 @@ Archivos que **modificaban upstream** antes de S1–S7 (ya migrados a `qaap-*` o
 
 ---
 
-## 7. Estructura de carpetas ideal (objetivo final)
+## 7. Estructura de carpetas (canónica)
 
 ```
 packages/
-  qaap-product/              # umbrella dependency
-  qaap-api/                  # (futuro) interfaces públicas del producto
+  qaap-product/           # umbrella + preload + electron + i18n node
+  qaap-adapters/          # bridges cross-cutting
   qaap-shell/
-  qaap-adapters/
-  qaap-extensions/
   qaap-mobile-shell/
+  qaap-extensions/
   qaap-product-theme/
   qaap-element-inspector/
-  qaap-ai-config/            # (opcional) si se extrae más AI
+  qaap-api/               # (futuro) interfaces exportadas
+  qaap-ai-config/         # (opcional) si AI crece
 scripts/
   qaap-drift-check.js
-  qaap-drift-baseline.txt    # vacío (solo comentarios)
+  qaap-drift-baseline.txt
   qaap-upstream-drift-report.js
 doc/
-  qaap-architecture-audit.md # este documento
+  qaap-architecture-audit.md
+.github/workflows/
+  qaap-drift-check.yml
+  qaap-mobile-playwright.yml
 ```
+
+Paquetes **presentes** hoy: los siete `qaap-*` sin `qaap-api` ni `qaap-ai-config`. Añadir esos directorios solo cuando haya interfaces o prefs AI que justifiquen un paquete propio.
 
 ---
 
