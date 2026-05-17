@@ -22,10 +22,10 @@
       "path": "../core"
     },
     {
-      "path": "../getting-started"
+      "path": "../filesystem"
     },
     {
-      "path": "../filesystem"
+      "path": "../getting-started"
     },
     {
       "path": "../memory-inspector"
@@ -38,6 +38,9 @@
     },
     {
       "path": "../preview"
+    },
+    {
+      "path": "../vsx-registry"
     },
     {
       "path": "../workspace"

@@ -30,6 +30,7 @@ import { QaapPreviewContribution } from './qaap-preview-contribution';
 import { QaapWorkspaceFrontendContribution } from './qaap-workspace-frontend-contribution';
 import { QaapWorkspaceTrustDialogFactory } from './qaap-workspace-trust-dialog-factory';
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
+import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
@@ -70,4 +71,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapWorkspaceTrustDialogFactory).toSelf().inSingletonScope();
     rebind(WorkspaceTrustDialogFactory).toService(QaapWorkspaceTrustDialogFactory);
+
+    bind(QaapVsxExtensionsMobileContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapVsxExtensionsMobileContribution);
 });
