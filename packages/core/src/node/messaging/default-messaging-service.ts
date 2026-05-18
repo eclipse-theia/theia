@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named, interfaces, Container } from 'inversify';
-import { ContributionProvider, ConnectionHandler, bindContributionProvider, servicesPath } from '../../common';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider, servicesPath, disposableTrackingMiddleware } from '../../common';
 import { MessagingService } from './messaging-service';
 import { ConnectionContainerModule } from './connection-container-module';
 import Route = require('route-parser');
@@ -71,6 +71,7 @@ export class DefaultMessagingService implements MessagingService, BackendApplica
     protected createMainChannelContainer(socket: Channel): Container {
         const connectionContainer: Container = this.container.createChild() as Container;
         connectionContainer.bind(MainChannel).toConstantValue(socket);
+        connectionContainer.applyMiddleware(disposableTrackingMiddleware(connectionContainer));
         socket.onClose(() => connectionContainer.unbindAllAsync().catch(e => console.error(e)));
         return connectionContainer;
     }
