@@ -48,6 +48,7 @@ import {
     ToolCallResult,
     ToolInvocationContext
 } from '../common';
+import { AgentSessionHookRegistry } from '../common/agent-session-hooks';
 
 @injectable()
 export class LanguageModelDelegateClientImpl
@@ -141,6 +142,9 @@ export class FrontendLanguageModelRegistryImpl
 
     @inject(AISettingsService)
     protected settingsService: AISettingsService;
+
+    @inject(AgentSessionHookRegistry)
+    protected hookRegistry: AgentSessionHookRegistry;
 
     private static requestCounter: number = 0;
 
@@ -318,14 +322,32 @@ export class FrontendLanguageModelRegistryImpl
         const request = this.requests.get(id)!;
         const tool = request.tools?.find(t => t.id === toolId);
         if (tool) {
+            let toolInput: Record<string, unknown> | undefined;
+            try { toolInput = JSON.parse(arg_string); } catch { /* not JSON */ }
+
+            this.fireHookEvent('PreToolUse', id, toolId, toolInput);
             try {
-                return await tool.handler(arg_string, ToolInvocationContext.create(toolCallId));
+                const result = await tool.handler(arg_string, ToolInvocationContext.create(toolCallId));
+                this.fireHookEvent('PostToolUse', id, toolId, toolInput);
+                return result;
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
+                this.fireHookEvent('PostToolUseFailure', id, toolId, toolInput, errorMessage);
                 return createToolCallError(`Error executing tool '${toolId}': ${errorMessage}`);
             }
         }
         return createToolCallError(`Tool '${toolId}' not found in the available tools for this request.`, 'tool-not-available');
+    }
+
+    protected fireHookEvent(
+        event: 'PreToolUse' | 'PostToolUse' | 'PostToolUseFailure',
+        sessionId: string, toolName: string,
+        toolInput?: Record<string, unknown>, error?: string
+    ): void {
+        this.hookRegistry.fireEvent({
+            event, sessionId, toolName, toolInput,
+            payload: error ? { error } : undefined
+        });
     }
 
     // called by backend via the "delegate client" with the error to use for rejection

@@ -22,6 +22,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, HoverService, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { createConfirmationHandlers, ToolConfirmation, useToolConfirmationState } from './tool-confirmation';
+import { McpAppFrame } from './mcp-app-frame';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { MarkdownRender } from './markdown-part-renderer';
@@ -110,6 +111,11 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
                         case 'text': {
                             return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-text-result'>
                                 <MarkdownRender text={content.text} openerService={this.openerService} />
+                            </div>;
+                        }
+                        case 'html': {
+                            return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-html-result'>
+                                <McpAppFrame html={content.html} title={content.title} />
                             </div>;
                         }
                         case 'audio':
