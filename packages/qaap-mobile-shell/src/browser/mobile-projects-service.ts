@@ -6,6 +6,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProvider } from '@theia/core/lib/browser';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { nls } from '@theia/core/lib/common/nls';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -16,6 +17,7 @@ import {
     mobileProjectInitials,
     StoredMobileProject,
 } from './mobile-projects-types';
+import { markMobileProjectReadmeForOpen } from './mobile-projects-open';
 
 const HIDDEN_PROJECT_IDS_STORAGE_KEY = 'qaap.mobileProjects.hiddenIds';
 const PINNED_PROJECT_IDS_STORAGE_KEY = 'qaap.mobileProjects.pinnedIds';
@@ -65,6 +67,9 @@ export class MobileProjectsService {
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     protected filter: MobileProjectFilter = 'all';
 
@@ -148,11 +153,34 @@ export class MobileProjectsService {
         return !!project.uri;
     }
 
+    protected workspacePathFromUri(uri: URI): string {
+        return uri.authority
+            ? `//${uri.authority}${uri.path.toString()}`
+            : uri.path.toString();
+    }
+
+    openWorkspaceUri(uri: URI): void {
+        markMobileProjectReadmeForOpen();
+        const url = new URL(window.location.href);
+        url.hash = encodeURI(this.workspacePathFromUri(uri));
+        window.location.replace(url.toString());
+    }
+
+    openInCurrentWindow(project: MobileProjectEntry): void {
+        if (!project.uri) {
+            return;
+        }
+        this.openWorkspaceUri(project.uri);
+    }
+
     openInNewWindow(project: MobileProjectEntry): void {
         if (!project.uri) {
             return;
         }
-        this.workspaceService.open(project.uri, { preserveWindow: false });
+        markMobileProjectReadmeForOpen();
+        const url = new URL(window.location.href);
+        url.hash = encodeURI(this.workspacePathFromUri(project.uri));
+        this.windowService.openNewWindow(url.toString());
     }
 
     protected readDisplayNames(): Record<string, string> {

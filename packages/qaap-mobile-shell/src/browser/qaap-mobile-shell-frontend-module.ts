@@ -5,19 +5,26 @@
 // *****************************************************************************
 
 import '../../src/browser/style/mobile-workbench.css';
+import '../../src/browser/style/qaap-empty-workbench-brand.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { CommandContribution } from '@theia/core/lib/common/command';
+import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { MobileOneColumnShellContribution } from './mobile-one-column-shell-contribution';
 import { MobileOnboardingTutorialContribution } from './mobile-onboarding-tutorial-contribution';
 import { MobileThemeChromeContribution } from './mobile-theme-chrome-contribution';
 import { MobileEditorGestureContribution } from './mobile-editor-gesture-contribution';
+import { QaapEmptyWorkbenchBrandingContribution } from './qaap-empty-workbench-branding-contribution';
+import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-contribution';
 import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MobileProjectsService } from './mobile-projects-service';
+import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsService).toSelf().inSingletonScope();
+    bind(MobileProjectsReadmeContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MobileProjectsReadmeContribution);
     bind(MobileOneColumnShellContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileOneColumnShellContribution);
     bind(MobileOnboardingTutorialContribution).toSelf().inSingletonScope();
@@ -27,6 +34,13 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(MobileThemeChromeContribution);
     bind(MobileEditorGestureContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileEditorGestureContribution);
+
+    bind(QaapWatermarkCommandsContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapWatermarkCommandsContribution);
+    bind(KeybindingContribution).toService(QaapWatermarkCommandsContribution);
+
+    bind(QaapEmptyWorkbenchBrandingContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapEmptyWorkbenchBrandingContribution);
 
     bind(LongPressContextMenuContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(LongPressContextMenuContribution);

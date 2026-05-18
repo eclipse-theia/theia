@@ -3,96 +3,144 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { QAAP_APPLICATION_DISPLAY_NAME } from './qaap-application-name';
+
 interface BrandingRule {
     pattern: RegExp;
     replacement: string;
 }
 
+const APP = QAAP_APPLICATION_DISPLAY_NAME;
+
+/** Legacy product name → Qaap (e.g. prior `IDE_APPLICATION_NAME=Nova`). */
+const LEGACY_NAME_RULES: BrandingRule[] = [
+    { pattern: /\bNova\b/g, replacement: APP }
+];
+
 /** Per-locale regex replacements for translated / default UI strings. */
 const LOCALE_RULES: Record<string, BrandingRule[]> = {
     en: [
-        { pattern: /on the machine running Theia\.?/gi, replacement: 'on the machine running this application.' },
-        { pattern: /running Theia application/gi, replacement: 'running application window' },
-        { pattern: /AI Support in the Theia IDE is available!/g, replacement: 'AI Support is available!' },
-        { pattern: /in the code editor in the Theia IDE/gi, replacement: 'in the code editor in this application' },
-        { pattern: /capabilities of Theia IDE/gi, replacement: 'capabilities of this application' },
+        ...LEGACY_NAME_RULES,
+        { pattern: /on the machine running Theia\.?/gi, replacement: `on the machine running ${APP}.` },
+        { pattern: /running Theia application/gi, replacement: `running ${APP} application window` },
+        { pattern: /AI Support in the Theia IDE is available!/g, replacement: `AI Support in ${APP} is available!` },
+        { pattern: /in the code editor in the Theia IDE/gi, replacement: `in the code editor in ${APP}` },
+        { pattern: /capabilities of Theia IDE/gi, replacement: `capabilities of ${APP}` },
         { pattern: /configure and manage LlamaFile models in Theia IDE/gi,
-            replacement: 'configure and manage LlamaFile models in this application' },
-        { pattern: /in the Theia IDE documentation/gi, replacement: 'in the application documentation' },
-        { pattern: /in the Theia IDE\b/g, replacement: 'in this application' },
-        { pattern: /within the Theia IDE\b/g, replacement: 'in this application' },
-        { pattern: /in Theia IDE\b/g, replacement: 'in this application' },
-        { pattern: /Theia IDE/g, replacement: 'this application' }
+            replacement: `configure and manage LlamaFile models in ${APP}` },
+        { pattern: /in the Theia IDE documentation/gi, replacement: `in the ${APP} documentation` },
+        { pattern: /in the Theia IDE\b/g, replacement: `in ${APP}` },
+        { pattern: /within the Theia IDE\b/g, replacement: `in ${APP}` },
+        { pattern: /in Theia IDE\b/g, replacement: `in ${APP}` },
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\bthis application\b/gi, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     de: [
+        ...LEGACY_NAME_RULES,
         { pattern: /auf dem Rechner gespeichert, auf dem Theia ausgeführt wird/gi,
-            replacement: 'auf dem Rechner gespeichert, auf dem diese Anwendung ausgeführt wird' },
-        { pattern: /der laufenden Theia-Anwendung/gi, replacement: 'des laufenden Anwendungsfensters' },
+            replacement: `auf dem Rechner gespeichert, auf dem ${APP} ausgeführt wird` },
+        { pattern: /der laufenden Theia-Anwendung/gi, replacement: `des laufenden ${APP}-Fensters` },
         { pattern: /der halben Breite der laufenden Theia-Anwendung/gi,
-            replacement: 'der halben Breite des laufenden Anwendungsfensters' },
-        { pattern: /AI-Unterstützung in der Theia IDE ist verfügbar!/g, replacement: 'KI-Unterstützung ist verfügbar!' },
-        { pattern: /in der Theia IDE\b/gi, replacement: 'in dieser Anwendung' },
-        { pattern: /im Theia IDE\b/gi, replacement: 'in dieser Anwendung' },
-        { pattern: /Theia IDE/g, replacement: 'diese Anwendung' }
+            replacement: `der halben Breite des laufenden ${APP}-Fensters` },
+        { pattern: /AI-Unterstützung in der Theia IDE ist verfügbar!/g, replacement: `KI-Unterstützung in ${APP} ist verfügbar!` },
+        { pattern: /in der Theia IDE\b/gi, replacement: `in ${APP}` },
+        { pattern: /im Theia IDE\b/gi, replacement: `in ${APP}` },
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\bdiese Anwendung\b/gi, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     es: [
-        { pattern: /en la máquina que ejecuta Theia/gi, replacement: 'en la máquina que ejecuta esta aplicación' },
-        { pattern: /aplicación Theia en ejecución/gi, replacement: 'ventana de la aplicación en ejecución' },
-        { pattern: /Theia IDE/g, replacement: 'esta aplicación' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /en la máquina que ejecuta Theia/gi, replacement: `en la máquina que ejecuta ${APP}` },
+        { pattern: /aplicación Theia en ejecución/gi, replacement: `ventana de ${APP} en ejecución` },
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\besta aplicación\b/gi, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     fr: [
-        { pattern: /sur la machine exécutant Theia/gi, replacement: 'sur la machine exécutant cette application' },
-        { pattern: /application Theia en cours/gi, replacement: 'fenêtre de l\'application en cours' },
-        { pattern: /Theia IDE/g, replacement: 'cette application' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /sur la machine exécutant Theia/gi, replacement: `sur la machine exécutant ${APP}` },
+        { pattern: /application Theia en cours/gi, replacement: `fenêtre ${APP} en cours` },
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\bcette application\b/gi, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     'pt-br': [
+        ...LEGACY_NAME_RULES,
         { pattern: /na máquina em que o Theia está em execução/gi,
-            replacement: 'na máquina em que esta aplicação está em execução' },
-        { pattern: /aplicação Theia em execução/gi, replacement: 'janela da aplicação em execução' },
-        { pattern: /Theia IDE/g, replacement: 'esta aplicação' }
+            replacement: `na máquina em que o ${APP} está em execução` },
+        { pattern: /aplicação Theia em execução/gi, replacement: `janela do ${APP} em execução` },
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\besta aplicação\b/gi, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     it: [
-        { pattern: /sulla macchina che esegue Theia/gi, replacement: 'sulla macchina che esegue questa applicazione' },
-        { pattern: /Theia IDE/g, replacement: 'questa applicazione' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /sulla macchina che esegue Theia/gi, replacement: `sulla macchina che esegue ${APP}` },
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\bquesta applicazione\b/gi, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     ja: [
-        { pattern: /Theia IDE/g, replacement: 'this application' },
-        { pattern: /Theia を実行しているマシン/g, replacement: 'このアプリケーションを実行しているマシン' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /Theia を実行しているマシン/g, replacement: `${APP} を実行しているマシン` },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     ko: [
-        { pattern: /Theia IDE/g, replacement: 'this application' },
-        { pattern: /Theia를 실행하는 머신/g, replacement: '이 애플리케이션을 실행하는 머신' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /Theia를 실행하는 머신/g, replacement: `${APP}를 실행하는 머신` },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     'zh-cn': [
-        { pattern: /Theia IDE/g, replacement: '本应用程序' },
-        { pattern: /运行 Theia 的机器/g, replacement: '运行本应用程序的机器' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /运行 Theia 的机器/g, replacement: `运行 ${APP} 的机器` },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     'zh-tw': [
-        { pattern: /Theia IDE/g, replacement: '本應用程式' },
-        { pattern: /執行 Theia 的機器/g, replacement: '執行本應用程式的機器' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /執行 Theia 的機器/g, replacement: `執行 ${APP} 的機器` },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     ru: [
-        { pattern: /Theia IDE/g, replacement: 'this application' },
-        { pattern: /компьютере, на котором запущен Theia/gi, replacement: 'компьютере, на котором запущено это приложение' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /компьютере, на котором запущен Theia/gi, replacement: `компьютере, на котором запущен ${APP}` },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     tr: [
-        { pattern: /Theia IDE/g, replacement: 'this application' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     pl: [
-        { pattern: /Theia IDE/g, replacement: 'this application' },
-        { pattern: /maszynie uruchomionym Theia/gi, replacement: 'maszynie uruchomionej tej aplikacji' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /maszynie uruchomionym Theia/gi, replacement: `maszynie uruchomionej ${APP}` },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     cs: [
-        { pattern: /Theia IDE/g, replacement: 'this application' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ],
     hu: [
-        { pattern: /Theia IDE/g, replacement: 'this application' }
+        ...LEGACY_NAME_RULES,
+        { pattern: /Theia IDE/g, replacement: APP },
+        { pattern: /\bEclipse Theia\b/g, replacement: APP }
     ]
 };
 
 const DEFAULT_RULES: BrandingRule[] = [
-    { pattern: /on the machine running Theia\.?/gi, replacement: 'on the machine running this application.' },
-    { pattern: /Theia IDE/g, replacement: 'this application' }
+    ...LEGACY_NAME_RULES,
+    { pattern: /on the machine running Theia\.?/gi, replacement: `on the machine running ${APP}.` },
+    { pattern: /Theia IDE/g, replacement: APP },
+    { pattern: /\bthis application\b/gi, replacement: APP },
+    { pattern: /\bEclipse Theia\b/g, replacement: APP }
 ];
 
 export function applyQaapBrandingToText(text: string, languageId: string): string {

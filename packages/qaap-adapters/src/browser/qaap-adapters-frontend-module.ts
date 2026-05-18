@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '../../src/browser/style/qaap-mini-browser-content.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultMiniBrowserOpenHook, MiniBrowserOpenHook } from '@theia/mini-browser/lib/browser/mini-browser-open-hook';
 import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';

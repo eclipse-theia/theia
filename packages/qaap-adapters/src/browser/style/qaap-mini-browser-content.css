@@ -1,0 +1,124 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Flush under the editor tab row (upstream mini-browser uses 8px / 6px margins). */
+#theia-main-content-panel .theia-mini-browser-toolbar,
+#theia-main-content-panel .theia-mini-browser-toolbar-read-only {
+  margin-top: 0;
+}
+
+#theia-main-content-panel .theia-mini-browser-content-area {
+  margin-top: 0;
+}
+
+#theia-main-content-panel:has(.theia-mini-browser) .lm-TabBar.theia-tabBar-multirow[data-orientation="horizontal"] {
+  min-height: var(--theia-horizontal-toolbar-height);
+}
+
+#theia-main-content-panel:has(.theia-mini-browser) .theia-tabBar-breadcrumb-row {
+  display: none !important;
+}
+
+.theia-mini-browser-toolbar,
+.theia-mini-browser-toolbar-read-only {
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+.theia-mini-browser-toolbar .theia-mini-browser-url-field,
+.theia-mini-browser-toolbar-read-only .theia-mini-browser-url-field {
+  --qaap-url-go-inset: 3px;
+  --qaap-url-go-gap: 4px;
+  --qaap-url-go-width: 2.75em;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  margin-inline: 4px;
+  container-type: inline-size;
+}
+
+.theia-mini-browser-toolbar .theia-mini-browser-url-field .theia-input,
+.theia-mini-browser-toolbar-read-only .theia-mini-browser-url-field .theia-input {
+  grid-area: 1 / 1;
+  width: 100%;
+  min-width: 0;
+  line-height: var(--theia-private-mini-browser-height);
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.theia-mini-browser-toolbar .theia-mini-browser-url-field .theia-input {
+  padding-inline-end: calc(var(--qaap-url-go-width) + var(--qaap-url-go-inset) + var(--qaap-url-go-gap));
+}
+
+.theia-mini-browser-url-field .theia-mini-browser-url-field-go {
+  grid-area: 1 / 1;
+  z-index: 1;
+  justify-self: end;
+  align-self: center;
+  flex-shrink: 0;
+  margin-inline-end: var(--qaap-url-go-inset);
+  height: calc(100% - 6px);
+  max-height: calc(var(--theia-private-mini-browser-height, 22px) - 2px);
+  min-height: 20px;
+  padding: 0 0.5em;
+  border: none;
+  border-radius: 2px;
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--theia-button-foreground);
+  background: var(--theia-button-background);
+  cursor: pointer;
+}
+
+.theia-mini-browser-url-field .theia-mini-browser-url-field-go:hover {
+  background: var(--theia-button-hoverBackground);
+}
+
+.theia-mini-browser-url-field .theia-mini-browser-url-field-go:active {
+  background: var(--theia-button-activeBackground);
+}
+
+@container (max-width: 220px) {
+  .theia-mini-browser-toolbar .theia-mini-browser-url-field {
+    --qaap-url-go-width: 2.25em;
+  }
+
+  .theia-mini-browser-url-field .theia-mini-browser-url-field-go {
+    padding: 0 0.35em;
+    font-size: calc(var(--theia-ui-font-size0) * 0.92);
+  }
+}
+
+.theia-mini-browser-workbench-controls {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+
+.theia-mini-browser-workbench-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  color: var(--theia-icon-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.theia-mini-browser-workbench-button:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}

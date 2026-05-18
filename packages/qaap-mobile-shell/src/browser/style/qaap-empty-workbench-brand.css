@@ -1,0 +1,168 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Responsive empty workbench wallpaper (breakpoint 767px = MOBILE_NARROW_VIEWPORT_MEDIA_QUERY). */
+
+html.theia-splash-branded {
+  --qaap-empty-brand-gap: clamp(16px, 4vmin, 28px);
+  --qaap-empty-brand-logo-size: clamp(96px, min(36vmin, 28vh), 180px);
+  --qaap-empty-brand-shortcuts-max: min(360px, calc(100% - 32px));
+  --qaap-empty-brand-pad-inline: clamp(16px, 5vw, 28px);
+}
+
+html.theia-splash-branded #theia-main-content-panel {
+  position: relative;
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--qaap-empty-brand-gap);
+  padding: clamp(12px, 3vmin, 24px) var(--qaap-empty-brand-pad-inline) clamp(16px, 4vmin, 32px);
+  pointer-events: none;
+  background-color: var(--theia-editor-background);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Desktop / wide: inside main editor dock. */
+@media (min-width: 768px) {
+  html.theia-splash-branded #theia-main-content-panel > .qaap-empty-workbench-brand {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+}
+
+/* Narrow viewport: fixed layer between top bar and bottom chrome (host = #theia-app-shell). */
+@media (max-width: 767px) {
+  html.theia-splash-branded #theia-app-shell > .qaap-empty-workbench-brand {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + var(--theia-private-menubar-height, 40px));
+    left: env(safe-area-inset-left, 0px);
+    right: env(safe-area-inset-right, 0px);
+    bottom: calc(
+      var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+        var(--theia-mobile-keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)
+    );
+    z-index: 9000;
+    width: auto;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html.theia-splash-branded {
+    --qaap-empty-brand-logo-size: clamp(80px, min(44vmin, 24vh), 140px);
+  }
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand .qaap-empty-workbench-brand-logo {
+  flex: 0 0 auto;
+  width: var(--qaap-empty-brand-logo-size);
+  height: var(--qaap-empty-brand-logo-size);
+  max-width: 180px;
+  max-height: 180px;
+  background-image: var(--theia-workbench-brand-logo-url);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand > .qaap-empty-workbench-brand-shortcuts {
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: var(--qaap-empty-brand-shortcuts-max);
+  pointer-events: auto;
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .qaap-watermark-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: clamp(2px, 0.6vmin, 4px) 0;
+  padding: clamp(3px, 1vmin, 4px) clamp(4px, 1.5vw, 6px);
+  color: var(--vscode-descriptionForeground, var(--theia-descriptionForeground, var(--theia-foreground)));
+  font-size: clamp(0.75rem, 2.8vw, 0.8125rem);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.1s ease;
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .qaap-watermark-entry dt {
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+  letter-spacing: 0.04em;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .qaap-watermark-entry dd {
+  flex: 0 0 auto;
+  margin: 0;
+  margin-inline-start: clamp(8px, 3vw, 24px);
+}
+
+html.theia-splash-branded .qaap-watermark-entry:hover,
+html.theia-splash-branded .qaap-watermark-entry:focus-visible {
+  background-color: var(--theia-list-hoverBackground, rgba(128, 128, 128, 0.12));
+  outline: none;
+}
+
+html.theia-splash-branded .qaap-watermark-entry:active {
+  background-color: var(--theia-list-activeSelectionBackground, rgba(128, 128, 128, 0.2));
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .monaco-keybinding {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  line-height: 10px;
+  gap: 2px;
+}
+
+html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .monaco-keybinding-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12px;
+  padding: 3px 5px;
+  margin: 0 1px;
+  border: 1px solid var(--theia-widget-border, rgba(128, 128, 128, 0.35));
+  border-radius: 3px;
+  font-size: clamp(10px, 2.5vw, 11px);
+  line-height: 1;
+  color: var(--theia-foreground);
+  background: var(--theia-editorWidget-background, rgba(128, 128, 128, 0.15));
+  box-shadow: inset 0 -1px 0 var(--theia-widget-shadow, rgba(0, 0, 0, 0.2));
+}
+
+/* Short viewport (landscape phone, small laptop window). */
+@media (max-height: 560px) {
+  html.theia-splash-branded .qaap-empty-workbench-brand {
+    justify-content: flex-start;
+    padding-top: 10px;
+  }
+
+  html.theia-splash-branded {
+    --qaap-empty-brand-gap: clamp(8px, 2vmin, 16px);
+    --qaap-empty-brand-logo-size: clamp(64px, min(24vmin, 18vh), 112px);
+  }
+}
+
+/* Legacy duplicate hosts */
+html.theia-splash-branded .qaap-mobile-empty-brand {
+  display: none !important;
+}

@@ -28,7 +28,6 @@ import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY, MOBILE_ONE_COLUMN_LAYOUT_CLASS } fr
 import { hasQaapLeftRightSplitPanel } from '@theia/qaap-shell/lib/browser/qaap-shell-layout';
 import { MobileHaptics } from './mobile-haptics';
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
 import { MobileProjectEntry } from './mobile-projects-types';
@@ -81,8 +80,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     @inject(MobileProjectsService)
     protected readonly projectsService: MobileProjectsService;
 
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
@@ -275,7 +272,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         this.projectsPanel = new MobileProjectsPanel(
             this.projectsService,
-            this.workspaceService,
             this.commands,
             {
                 onProjectOpen: (project: MobileProjectEntry) => { void this.onProjectsPanelOpen(project); },

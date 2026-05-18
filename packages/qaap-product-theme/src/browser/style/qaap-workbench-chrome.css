@@ -6,7 +6,8 @@
 
 /*-----------------------------------------------------------------------------
 | Global workbench chrome (product): splash, preload, editor watermark.
-| Replaces drift formerly in `@theia/core` `style/index.css`.
+| Do NOT override watermark layout (display/height/position) — Monaco hides it when
+| tabs are open; forcing flex/height:100% was covering editors and previews.
 |----------------------------------------------------------------------------*/
 
 :root {
@@ -28,10 +29,17 @@
   display: none;
 }
 
-html.theia-splash-branded .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .letterpress,
-html.theia-splash-branded .monaco-workbench .editor-group-watermark .letterpress {
-  background-image: var(--theia-workbench-brand-logo-url) !important;
-  background-size: min(40vmin, 256px) min(40vmin, 256px);
+html.theia-splash-branded #theia-main-content-panel {
+  background-image: none !important;
+}
+
+html.theia-splash-branded #theia\:icon.theia-icon,
+html.theia-splash-branded .theia-icon {
+  background-image: var(--theia-workbench-brand-logo-url);
   background-position: center;
   background-repeat: no-repeat;
+  background-size: contain;
+  width: 28px;
+  height: 28px;
+  margin: 4px 6px 4px 8px;
 }

@@ -377,8 +377,24 @@ export class QaapToolbarAwareTabBar extends QaapScrollableTabBar {
 
     protected async updateBreadcrumbs(): Promise<void> {
         const current = this.currentTitle?.owner;
+        if (this.shouldHideBreadcrumbsForWidget(current)) {
+            await this.breadcrumbsRenderer.refresh(undefined);
+            return;
+        }
         const uri = NavigatableWidget.is(current) ? current.getResourceUri() : undefined;
         await this.breadcrumbsRenderer.refresh(uri);
+    }
+
+    /** Preview tabs use the in-widget URL bar; breadcrumbs add a second row and push tabs down. */
+    protected shouldHideBreadcrumbsForWidget(widget: Widget | null | undefined): boolean {
+        if (!widget) {
+            return false;
+        }
+        if (widget.id.startsWith('mini-browser:')) {
+            return true;
+        }
+        const uri = NavigatableWidget.is(widget) ? widget.getResourceUri() : undefined;
+        return uri?.scheme === '__minibrowser__preview__';
     }
 
     protected override onAfterAttach(msg: Message): void {

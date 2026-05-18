@@ -1,0 +1,219 @@
+/* *****************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ * *****************************************************************************/
+
+body.qaap-login-active {
+    overflow: hidden;
+}
+
+body.qaap-login-active .theia-ApplicationShell {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+body.qaap-login-active .theia-preload {
+    display: none !important;
+}
+
+#qaap-login-host {
+    --qaap-login-ink: #1a1a1a;
+    --qaap-login-surface: #ffffff;
+    --qaap-login-muted: #6b6b6b;
+    --qaap-login-border: #e2e2e2;
+    --qaap-login-link: #0969da;
+
+    position: fixed;
+    inset: 0;
+    z-index: 2147483646;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+@media (prefers-color-scheme: dark) {
+    #qaap-login-host {
+        --qaap-login-ink: #f5f5f5;
+        --qaap-login-surface: #1e1e1e;
+        --qaap-login-muted: #a0a0a0;
+        --qaap-login-border: #3c3c3c;
+        --qaap-login-link: #58a6ff;
+    }
+}
+
+.qaap-login-overlay {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 32px 24px 24px;
+    background: var(--qaap-login-surface);
+    color: var(--qaap-login-ink);
+    font-family: var(--theia-ui-font-family, system-ui, -apple-system, sans-serif);
+    box-sizing: border-box;
+}
+
+.qaap-login-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.qaap-login-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(1px 1.5px 2px rgb(0 0 0 / 25%));
+}
+
+.qaap-login-title {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    color: var(--qaap-login-ink);
+}
+
+.qaap-login-tagline {
+    margin: 0;
+    max-width: 280px;
+    font-size: 14px;
+    line-height: 1.45;
+    text-align: center;
+    color: var(--qaap-login-muted);
+}
+
+.qaap-login-spacer {
+    flex: 1;
+    min-height: 24px;
+}
+
+.qaap-login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.qaap-login-btn {
+    width: 100%;
+    height: 48px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: opacity 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qaap-login-btn:hover:not(:disabled) {
+    opacity: 0.92;
+}
+
+.qaap-login-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.qaap-login-btn:focus-visible {
+    outline: 2px solid var(--qaap-login-link);
+    outline-offset: 2px;
+}
+
+.qaap-login-btn:disabled,
+.qaap-login-btn--loading {
+    cursor: wait;
+    opacity: 0.85;
+}
+
+.qaap-login-btn--primary {
+    border: none;
+    background: var(--qaap-login-ink);
+    color: var(--qaap-login-surface);
+}
+
+.qaap-login-btn--primary .qaap-login-provider-svg {
+    color: var(--qaap-login-surface);
+}
+
+.qaap-login-btn--secondary {
+    height: 44px;
+    border: 1px solid var(--qaap-login-border);
+    background: transparent;
+    color: var(--qaap-login-ink);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.qaap-login-btn-icon-slot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.qaap-login-provider-svg {
+    display: block;
+}
+
+.qaap-login-spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+    border-top-color: currentColor;
+    animation: qaap-login-spin 0.8s linear infinite;
+}
+
+.qaap-login-footer {
+    margin-top: 20px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--qaap-login-muted);
+}
+
+.qaap-login-footer a {
+    color: var(--qaap-login-link);
+    text-decoration: none;
+}
+
+.qaap-login-footer a:hover {
+    text-decoration: underline;
+}
+
+@keyframes qaap-login-halo-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.55;
+    }
+    100% {
+        transform: scale(1.35);
+        opacity: 0;
+    }
+}
+
+@keyframes qaap-login-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 767px) {
+    .qaap-login-overlay {
+        padding: 24px 20px 20px;
+    }
+
+    .qaap-login-brand {
+        margin-top: 12px;
+    }
+}

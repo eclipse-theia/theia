@@ -5,6 +5,8 @@
 
 /** Product toolbar chrome for {@link QaapMiniBrowserContent} (not in upstream mini-browser). */
 export namespace QaapMiniBrowserContentStyle {
+    export const URL_FIELD = 'theia-mini-browser-url-field';
+    export const GO_BUTTON = 'theia-mini-browser-url-field-go';
     export const WORKBENCH_CONTROLS = 'theia-mini-browser-workbench-controls';
     export const WORKBENCH_BUTTON = 'theia-mini-browser-workbench-button';
     export const OPEN = 'theia-mini-browser-open';

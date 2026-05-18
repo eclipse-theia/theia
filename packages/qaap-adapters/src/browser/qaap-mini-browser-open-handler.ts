@@ -10,11 +10,13 @@ import { codicon } from '@theia/core/lib/browser';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
+import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MiniBrowser } from '@theia/mini-browser/lib/browser/mini-browser';
 import { MiniBrowserOpenHandler, MiniBrowserCommands } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import { MiniBrowserOpenerOptions } from '@theia/mini-browser/lib/browser/mini-browser-opener-options';
 import { normalizeMiniBrowserOpenUrl } from '@theia/mini-browser/lib/browser/mini-browser-url-utils';
+import { isMiniBrowserPreviewPlaceholderUrl } from './qaap-mini-browser-defaults';
 
 /**
  * Qaap mobile / URL preview behavior for mini-browser open handler.
@@ -57,27 +59,45 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
     }
 
     protected override async openUrl(urlFromCommand?: string): Promise<void> {
-        let url = urlFromCommand ? normalizeMiniBrowserOpenUrl(urlFromCommand) : '';
+        const url = urlFromCommand ? normalizeMiniBrowserOpenUrl(urlFromCommand) : '';
         if (!url) {
-            if (this.quickInputService) {
-                const raw = await this.quickInputService.input({
-                    prompt: nls.localizeByDefault('URL to open'),
-                    placeHolder: nls.localize('theia/mini-browser/typeUrl', 'Type a URL'),
-                    ignoreFocusLost: true
-                });
-                url = raw ? normalizeMiniBrowserOpenUrl(raw) : '';
-            } else {
-                this.messages.warn(nls.localize(
-                    'theia/mini-browser/quickInputUnavailable',
-                    'Cannot prompt for a URL because quick input is not available. Open the Preview from the editor toolbar or configure Quick Input.'
-                ));
-                return;
-            }
-        }
-        if (!url) {
+            await this.openEmptyPreview();
             return;
         }
         await this.openPreviewForProduct(url);
+    }
+
+    protected override async options(
+        uri?: URI,
+        options?: MiniBrowserOpenerOptions
+    ): Promise<MiniBrowserOpenerOptions & { widgetOptions: ApplicationShell.WidgetOptions }> {
+        if (uri?.isEqual(MiniBrowserOpenHandler.PREVIEW_URI)) {
+            let result = await this.defaultOptions();
+            if (options) {
+                result = { ...result, ...options };
+            }
+            if (isMiniBrowserPreviewPlaceholderUrl(result.startPage)) {
+                const { startPage: _removed, ...withoutPlaceholder } = result;
+                result = withoutPlaceholder;
+            }
+            return result;
+        }
+        return super.options(uri, options);
+    }
+
+    /** Opens preview with toolbar URL input; no quick-input prompt. */
+    protected async openEmptyPreview(): Promise<MiniBrowser | undefined> {
+        const props: MiniBrowserOpenerOptions = {
+            name: nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY),
+            toolbar: 'show',
+            widgetOptions: {
+                area: this.isMobileOneColumn() ? 'main' : 'right'
+            },
+            resetBackground: false,
+            iconClass: codicon('preview'),
+            openFor: 'preview'
+        };
+        return this.open(MiniBrowserOpenHandler.PREVIEW_URI, props);
     }
 
     protected async openPreviewForProduct(startPage: string): Promise<MiniBrowser | undefined> {

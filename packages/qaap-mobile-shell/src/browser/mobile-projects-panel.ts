@@ -6,13 +6,13 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     MOBILE_PROJECT_STATUS_COLORS,
     MobileProjectEntry,
     MobileProjectFilter,
 } from './mobile-projects-types';
 import { MobileProjectsService } from './mobile-projects-service';
+import { markMobileProjectReadmeForOpen } from './mobile-projects-open';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -43,7 +43,6 @@ export class MobileProjectsPanel {
 
     constructor(
         protected readonly projectsService: MobileProjectsService,
-        protected readonly workspaceService: WorkspaceService,
         protected readonly commands: CommandRegistry,
         protected readonly delegate: MobileProjectsPanelDelegate,
     ) {
@@ -118,6 +117,7 @@ export class MobileProjectsPanel {
     protected async onNewClick(): Promise<void> {
         const openFolder = WorkspaceCommands.OPEN_FOLDER.id;
         if (this.commands.getCommand(openFolder) && this.commands.isEnabled(openFolder)) {
+            markMobileProjectReadmeForOpen();
             await this.commands.executeCommand(openFolder);
         }
     }
@@ -504,11 +504,12 @@ export class MobileProjectsPanel {
                 this.delegate.onDismiss();
                 return;
             }
-            this.workspaceService.open(project.uri);
+            this.projectsService.openInCurrentWindow(project);
             return;
         }
         const openFolder = WorkspaceCommands.OPEN_FOLDER.id;
         if (this.commands.getCommand(openFolder)) {
+            markMobileProjectReadmeForOpen();
             await this.commands.executeCommand(openFolder);
         }
     }

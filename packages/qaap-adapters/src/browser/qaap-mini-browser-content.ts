@@ -26,6 +26,7 @@ import {
 import { buildElementBridgeScript, buildElementPickerScript } from '@theia/qaap-element-inspector/lib/browser/element-picker-script';
 import { ELEMENT_INSPECTOR_REVEAL_COMMAND_ID, ELEMENT_INSPECTOR_TOGGLE_COMMAND_ID } from '@theia/qaap-element-inspector/lib/browser/element-inspector-contribution';
 import { QaapMiniBrowserContentStyle } from './qaap-mini-browser-content-style';
+import { isMiniBrowserPreviewPlaceholderUrl, QAAP_DEFAULT_PREVIEW_INPUT_URL } from './qaap-mini-browser-defaults';
 /**
  * Qaap mini-browser preview: element inspector, workbench toolbar, read-only URL editing.
  */
@@ -58,20 +59,29 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
                 this.transparentOverlay.style.display = 'none';
             }
         }));
-        const { startPage } = this.props;
+        const startPage = this.effectiveStartPage();
         if (startPage) {
             void this.listenOnContentChange(startPage);
-            void this.go(startPage.trim());
+            void this.go(startPage);
+        } else {
+            this.setInput(QAAP_DEFAULT_PREVIEW_INPUT_URL);
         }
+    }
+
+    protected effectiveStartPage(): string | undefined {
+        const raw = this.props.startPage?.trim();
+        if (!raw || isMiniBrowserPreviewPlaceholderUrl(raw)) {
+            return undefined;
+        }
+        return raw;
     }
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        const { startPage } = this.props;
-        if (!startPage) {
+        const url = this.effectiveStartPage();
+        if (!url) {
             return;
         }
-        const url = startPage.trim();
         queueMicrotask(() => {
             const src = this.frame.src || '';
             const blankish = !src || src === 'about:blank';
@@ -99,6 +109,30 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
         } catch {
             /* not a workspace file URL — skip watching */
         }
+    }
+
+    protected override createInput(parent: HTMLElement): HTMLInputElement {
+        const field = document.createElement('div');
+        field.classList.add(QaapMiniBrowserContentStyle.URL_FIELD);
+        parent.appendChild(field);
+        const input = super.createInput(field);
+        if (this.getToolbarProps() === 'show') {
+            const goButton = document.createElement('button');
+            goButton.type = 'button';
+            goButton.classList.add(QaapMiniBrowserContentStyle.GO_BUTTON);
+            goButton.textContent = nls.localize('theia/mini-browser/go', 'Go');
+            goButton.title = nls.localize('theia/mini-browser/goToUrl', 'Go to URL');
+            this.toDispose.push(addEventListener(goButton, 'click', () => this.submitUrlFromInput()));
+            field.appendChild(goButton);
+        }
+        return input;
+    }
+
+    protected submitUrlFromInput(): void {
+        if (this.getToolbarProps() !== 'show' || !this.input.value.trim()) {
+            return;
+        }
+        void this.mapLocation(this.input.value).then(location => this.submitInputEmitter.fire(location));
     }
 
     protected override createToolbar(parent: HTMLElement): HTMLDivElement & Readonly<{ input: HTMLInputElement }> {
