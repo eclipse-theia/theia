@@ -26,7 +26,7 @@ import { TreeViewWelcomeWidget } from '@theia/core/lib/browser/tree/tree-view-we
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { MenuModelRegistry, CompoundMenuNode, MenuPath, CommandMenu } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
-import { ContextMenuRenderer, LabelProvider, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
+import { ApplicationShell, ContextMenuRenderer, LabelProvider, DiffUris, ACTION_ITEM, Widget } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { EditorWidget, EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
@@ -60,6 +60,7 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
     @inject(ColorRegistry) protected readonly colors: ColorRegistry;
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     // TODO: Make TreeWidget generic to better type those fields.
     override readonly model: ScmTreeModel;
@@ -166,6 +167,7 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
                 labelProvider={this.labelProvider}
                 corePreferences={this.corePreferences}
                 caption={caption}
+                collapseContainingPanel={() => this.collapseContainingPanel()}
                 {...{
                     ...this.props,
                     parentPath,
@@ -453,6 +455,18 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
         return standaloneEditor;
     }
 
+    protected collapseContainingPanel(): void {
+        let widget: Widget | null = this;
+        while (widget) {
+            const area = this.shell.getAreaFor(widget);
+            if (area === 'left' || area === 'right') {
+                this.shell.collapsePanel(area);
+                return;
+            }
+            widget = widget.parent;
+        }
+    }
+
     protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.viewMode === 'list') {
             if (props.depth === 1) {
@@ -615,7 +629,9 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
     protected open = () => {
         const resource = this.props.model.getResourceFromNode(this.props.treeNode);
         if (resource) {
-            resource.open();
+            resource.open()
+                .then(() => this.props.collapseContainingPanel())
+                .catch(e => console.error('Failed to open a SCM resource', e));
         }
     };
 
@@ -676,7 +692,8 @@ export namespace ScmResourceComponent {
         sourceUri: string;
         decoration: Decoration | undefined;
         colors: ColorRegistry;
-        isLightTheme: boolean
+        isLightTheme: boolean;
+        collapseContainingPanel: () => void;
     }
 }
 

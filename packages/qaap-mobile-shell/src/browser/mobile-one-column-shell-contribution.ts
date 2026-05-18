@@ -36,6 +36,7 @@ import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
 import { MobileProjectEntry } from './mobile-projects-types';
+import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -67,7 +68,7 @@ const EDIT_CHAT_SESSION_SETTINGS_COMMAND = 'chat:widget:session-settings';
 /** Shell class toggled while the bottom (terminal) panel is expanded on mobile. */
 const MOBILE_BOTTOM_OPEN_CLASS = 'theia-mod-mobile-bottom-open';
 
-type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'plan' | 'diff' | 'tasks' | 'skills' | 'terminal';
+type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'plan' | 'pr' | 'diff' | 'tasks' | 'skills' | 'terminal';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -116,6 +117,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected snapRaf = 0;
     protected shellHooked = false;
     protected projectsPanel: MobileProjectsPanel | undefined;
+    protected pullRequestPanel: MobilePullRequestPanel | undefined;
     protected projectsCount = 0;
 
     protected leftEdgeTouchStartX = 0;
@@ -399,6 +401,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.projectsPanel.node.parentElement.removeChild(this.projectsPanel.node);
         }
         this.projectsPanel = undefined;
+        this.hidePullRequestPanel();
+        if (this.pullRequestPanel?.node.parentElement) {
+            this.pullRequestPanel.node.parentElement.removeChild(this.pullRequestPanel.node);
+        }
+        this.pullRequestPanel = undefined;
         this.shell.node.classList.remove(MOBILE_BOTTOM_OPEN_CLASS);
     }
 
@@ -443,6 +450,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.keyboardHelper.install();
         }
         this.ensureProjectsPanel();
+        this.ensurePullRequestPanel();
         void this.refreshProjectsCount();
         this.refreshBottomBar();
         this.updateBackdropVisibility();
@@ -464,6 +472,16 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.shell.node.appendChild(this.projectsPanel.node);
     }
 
+    protected ensurePullRequestPanel(): void {
+        if (this.pullRequestPanel) {
+            return;
+        }
+        this.pullRequestPanel = new MobilePullRequestPanel({
+            onDismiss: () => this.scheduleSnapAndUiRefresh(),
+        });
+        this.shell.node.appendChild(this.pullRequestPanel.node);
+    }
+
     protected async refreshProjectsCount(): Promise<void> {
         try {
             const projects = await this.projectsService.loadProjects();
@@ -477,6 +495,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.projectsPanel?.hide();
     }
 
+    protected hidePullRequestPanel(): void {
+        this.pullRequestPanel?.hide();
+    }
+
     protected async toggleProjectsPanel(): Promise<void> {
         this.ensureProjectsPanel();
         const panel = this.projectsPanel;
@@ -488,11 +510,32 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.scheduleSnapAndUiRefresh();
             return;
         }
+        this.hidePullRequestPanel();
         await this.dismissSheetsAsync();
         if (this.shell.isExpanded('bottom')) {
             await this.shell.collapsePanel('bottom');
         }
         await panel.show();
+        this.refreshBottomBar();
+    }
+
+    protected async togglePullRequestPanel(): Promise<void> {
+        this.ensurePullRequestPanel();
+        const panel = this.pullRequestPanel;
+        if (!panel) {
+            return;
+        }
+        if (panel.isVisible()) {
+            panel.hide();
+            this.scheduleSnapAndUiRefresh();
+            return;
+        }
+        this.hideProjectsPanel();
+        await this.dismissSheetsAsync();
+        if (this.shell.isExpanded('bottom')) {
+            await this.shell.collapsePanel('bottom');
+        }
+        panel.show();
         this.refreshBottomBar();
     }
 
@@ -812,6 +855,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
             { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
             { id: 'plan', label: nls.localize('theia/core/mobileBottomBar/plan', 'Plan'), icon: 'codicon-checklist' },
+            { id: 'pr', label: nls.localize('qaap/mobileBottomBar/pr', 'PR'), icon: 'codicon-git-pull-request' },
             { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
             { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
             { id: 'skills', label: nls.localize('theia/core/mobileBottomBar/skills', 'Skills'), icon: 'codicon-extensions' },
@@ -823,6 +867,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         switch (id) {
             case 'projects':
                 return !!this.projectsPanel?.isVisible();
+            case 'pr':
+                return !!this.pullRequestPanel?.isVisible();
             case 'agent':
                 return this.isMobileAgentSheetVisible();
             case 'preview':
@@ -920,8 +966,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             await this.toggleProjectsPanel();
             return;
         }
+        if (def.id === 'pr') {
+            await this.togglePullRequestPanel();
+            return;
+        }
         if (def.id === 'terminal') {
             this.hideProjectsPanel();
+            this.hidePullRequestPanel();
             await this.collapseMobileSidePanels();
             await this.toggleTerminalBottomPanel();
             await this.collapseMobileSidePanels();
@@ -929,24 +980,29 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             return;
         }
         if (def.id === 'agent') {
+            this.hidePullRequestPanel();
             await this.toggleMobileAgentSheet();
             return;
         }
         if (def.id === 'preview') {
+            this.hidePullRequestPanel();
             await this.toggleMobilePreview();
             return;
         }
         if (def.id === 'plan') {
+            this.hidePullRequestPanel();
             await this.openMobileSideSheet('left', EXPLORER_VIEW_CONTAINER_ID);
             this.scheduleSnapAndUiRefresh();
             return;
         }
         if (def.id === 'skills') {
+            this.hidePullRequestPanel();
             await this.openMobileSideSheet('left', VSX_EXTENSIONS_VIEW_CONTAINER_ID);
             this.scheduleSnapAndUiRefresh();
             return;
         }
         this.hideProjectsPanel();
+        this.hidePullRequestPanel();
         // Main-area actions: collapse side sheets first so preview / quick input are visible.
         if (this.shouldDismissSheetsForButton(def.id)) {
             await this.dismissSheetsAsync();
@@ -964,6 +1020,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected async toggleMobileAgentSheet(): Promise<void> {
         this.hideProjectsPanel();
+        this.hidePullRequestPanel();
         if (this.isMobileAgentSheetVisible()) {
             await this.collapseMobileSidePanels();
             this.scheduleSnapAndUiRefresh();
@@ -987,6 +1044,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected async toggleMobilePreview(): Promise<void> {
         this.hideProjectsPanel();
+        this.hidePullRequestPanel();
         const activePreview = this.getActivePreviewWidget();
         if (activePreview) {
             activePreview.close();
@@ -1014,6 +1072,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected async openMobileSideSheet(side: 'left' | 'right', widgetId: string): Promise<void> {
         const other: 'left' | 'right' = side === 'left' ? 'right' : 'left';
         this.hideProjectsPanel();
+        this.hidePullRequestPanel();
         if (this.shell.isExpanded(other)) {
             await this.shell.collapsePanel(other);
         }
@@ -1040,7 +1099,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         // Agent lives in the right-side panel by design, so keep that sheet open. Projects uses its
         // own overlay. All other actions target the main editor area, the bottom panel, or a global
         // prompt; the side sheets must be closed so the result is visible.
-        return id !== 'agent' && id !== 'projects';
+        return id !== 'agent' && id !== 'projects' && id !== 'pr';
     }
 
     /** Collapse expanded side sheets and await layout so follow-up UI (e.g. quick input) is stable. */

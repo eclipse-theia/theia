@@ -1848,6 +1848,439 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
 }
 
 /*-----------------------------------------------------------------------------
+| Mobile pull request review (swipeable diff cards).
+|-----------------------------------------------------------------------------*/
+
+#theia-app-shell.theia-mod-mobile-one-column .theia-mobile-pr {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  bottom: calc(
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+      var(--theia-mobile-keyboard-inset, 0px)
+  );
+  z-index: 9560;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  box-sizing: border-box;
+  transform: translateY(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column .theia-mobile-pr.theia-mod-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.theia-mobile-pr-header {
+  flex: 0 0 auto;
+  padding: 14px 16px 11px;
+  border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.28));
+}
+
+.theia-mobile-pr-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+
+.theia-mobile-pr-authored {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--theia-activityBarBadge-background, #d97757) 18%, transparent);
+  color: var(--theia-activityBarBadge-background, #d97757);
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.theia-mobile-pr-authored .codicon {
+  font-size: 10px;
+}
+
+.theia-mobile-pr-branch {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--theia-descriptionForeground);
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 11px;
+}
+
+.theia-mobile-pr-title {
+  margin: 0;
+  color: var(--theia-foreground);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.theia-mobile-pr-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 8px;
+  color: var(--theia-descriptionForeground);
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 11px;
+}
+
+.theia-mobile-pr-stats .theia-mod-add,
+.theia-mobile-pr-file-add,
+.theia-mobile-pr-count.theia-mod-approve,
+.theia-mobile-pr-diff-line.theia-mod-add {
+  color: var(--theia-testing-iconPassed, #2f7d4a);
+}
+
+.theia-mobile-pr-stats .theia-mod-del,
+.theia-mobile-pr-file-del,
+.theia-mobile-pr-count.theia-mod-reject,
+.theia-mobile-pr-diff-line.theia-mod-del {
+  color: var(--theia-testing-iconFailed, #c72e0f);
+}
+
+.theia-mobile-pr-stats .theia-mod-tests {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--theia-testing-iconPassed, #2f7d4a);
+}
+
+.theia-mobile-pr-progress {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.24));
+}
+
+.theia-mobile-pr-progress-label,
+.theia-mobile-pr-count {
+  flex: 0 0 auto;
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 11px;
+}
+
+.theia-mobile-pr-progress-label {
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-pr-progress-track {
+  flex: 1;
+  min-width: 48px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--theia-toolbar-hoverBackground, rgba(128, 128, 128, 0.18));
+  overflow: hidden;
+}
+
+.theia-mobile-pr-progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--theia-activityBarBadge-background, #d97757);
+  transition: width 180ms ease;
+}
+
+.theia-mobile-pr-hints {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px 0;
+  color: var(--theia-descriptionForeground);
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.theia-mobile-pr-stack {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 16px;
+}
+
+.theia-mobile-pr-card-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+}
+
+.theia-mobile-pr-card,
+.theia-mobile-pr-backdrop {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+}
+
+.theia-mobile-pr-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.32));
+  background: var(--theia-sideBar-background, var(--theia-editor-background));
+  color: var(--theia-foreground);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-pr-card.theia-mod-top {
+  cursor: grab;
+}
+
+.theia-mobile-pr-card.theia-mod-next {
+  opacity: 0.62;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+.theia-mobile-pr-backdrop {
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+  padding: 0 24px;
+  box-sizing: border-box;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.theia-mobile-pr-backdrop > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theia-mobile-pr-backdrop.theia-mod-approve {
+  justify-content: flex-end;
+  background: color-mix(in srgb, var(--theia-testing-iconPassed, #2f7d4a) 18%, var(--theia-editor-background));
+  color: var(--theia-testing-iconPassed, #2f7d4a);
+}
+
+.theia-mobile-pr-backdrop.theia-mod-reject {
+  justify-content: flex-start;
+  background: color-mix(in srgb, var(--theia-testing-iconFailed, #c72e0f) 18%, var(--theia-editor-background));
+  color: var(--theia-testing-iconFailed, #c72e0f);
+}
+
+.theia-mobile-pr-card-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.28));
+}
+
+.theia-mobile-pr-file-glyph {
+  flex: 0 0 auto;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theia-toolbar-hoverBackground, rgba(128, 128, 128, 0.16));
+  color: var(--theia-descriptionForeground);
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.theia-mobile-pr-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.theia-mobile-pr-file-add,
+.theia-mobile-pr-file-del {
+  flex: 0 0 auto;
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 11px;
+}
+
+.theia-mobile-pr-diff {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 0;
+  background: color-mix(in srgb, var(--theia-toolbar-hoverBackground, rgba(128, 128, 128, 0.12)) 48%, transparent);
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 11.5px;
+  line-height: 1.6;
+  -webkit-overflow-scrolling: touch;
+}
+
+.theia-mobile-pr-card:not(.theia-mod-expanded) .theia-mobile-pr-diff {
+  overflow: hidden;
+}
+
+.theia-mobile-pr-diff-line {
+  display: flex;
+  min-width: max-content;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-pr-diff-line.theia-mod-add {
+  background: color-mix(in srgb, var(--theia-testing-iconPassed, #2f7d4a) 14%, transparent);
+}
+
+.theia-mobile-pr-diff-line.theia-mod-del {
+  background: color-mix(in srgb, var(--theia-testing-iconFailed, #c72e0f) 14%, transparent);
+}
+
+.theia-mobile-pr-diff-number {
+  flex: 0 0 36px;
+  padding-right: 8px;
+  text-align: right;
+  color: var(--theia-descriptionForeground);
+  opacity: 0.72;
+}
+
+.theia-mobile-pr-diff-marker {
+  flex: 0 0 14px;
+}
+
+.theia-mobile-pr-diff-source {
+  white-space: pre;
+  padding-right: 14px;
+}
+
+.theia-mobile-pr-done {
+  height: 100%;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-pr-done-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--theia-testing-iconPassed, #2f7d4a) 16%, transparent);
+  color: var(--theia-testing-iconPassed, #2f7d4a);
+  font-size: 28px;
+}
+
+.theia-mobile-pr-done strong {
+  color: var(--theia-foreground);
+  font-size: 18px;
+}
+
+.theia-mobile-pr-secondary {
+  margin-top: 4px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.35));
+  background: transparent;
+  color: var(--theia-foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.theia-mobile-pr-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.28));
+}
+
+.theia-mobile-pr-action {
+  min-width: 0;
+  height: 44px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-pr-action .codicon {
+  flex: 0 0 auto;
+  font-size: 16px;
+}
+
+.theia-mobile-pr-action span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theia-mobile-pr-action.theia-mod-primary,
+.theia-mobile-pr-action.theia-mod-secondary {
+  flex: 1;
+}
+
+.theia-mobile-pr-action.theia-mod-primary {
+  border: 1px solid var(--theia-foreground);
+  background: var(--theia-foreground);
+  color: var(--theia-editor-background);
+}
+
+.theia-mobile-pr-action.theia-mod-secondary,
+.theia-mobile-pr-action.theia-mod-ghost {
+  border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.35));
+  background: transparent;
+  color: var(--theia-foreground);
+}
+
+.theia-mobile-pr-action.theia-mod-ghost {
+  flex: 0 0 72px;
+}
+
+.theia-mobile-pr-action:disabled {
+  opacity: var(--theia-mod-disabled-opacity, 0.45);
+  cursor: default;
+}
+
+/*-----------------------------------------------------------------------------
 | Desktop status bar: horizontal scroll when entries overflow (thin scrollbar).
 |-----------------------------------------------------------------------------*/
 
