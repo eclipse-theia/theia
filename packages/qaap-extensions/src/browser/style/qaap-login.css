@@ -7,11 +7,7 @@ body.qaap-login-active {
     overflow: hidden;
 }
 
-body.qaap-login-active .theia-ApplicationShell {
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
+/* Cover the workbench with the login layer only — do not hide the shell (breaks Lumino layout). */
 body.qaap-login-active .theia-preload {
     display: none !important;
 }

@@ -4,6 +4,23 @@
  * *****************************************************************************/
 
 /*-----------------------------------------------------------------------------
+| Desktop welcome page — keep title and body inside the editor tab.
+|-----------------------------------------------------------------------------*/
+
+.gs-container {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+}
+
+.gs-header h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+/*-----------------------------------------------------------------------------
 | Mobile / narrow viewport layout.
 |
 | Desktop renders the welcome page using `.flex-grid` (row) columns; at 360 px

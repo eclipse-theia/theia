@@ -4,113 +4,106 @@
 // *****************************************************************************
 
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import * as React from '@theia/core/shared/react';
-import { createRoot, Root } from 'react-dom/client';
-import { startGithubOAuth } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
-import { readQaapSignedIn, writeQaapAuthSession } from './qaap-login-storage';
-import { QaapLoginProvider, QaapLoginView } from './qaap-login-view';
-
-/** Simulated OAuth delay for providers without a server OAuth flow yet. */
-const AUTH_PLACEHOLDER_MS = 1200;
+import { ensureQaapGithubOAuthReturnHandled } from '@theia/qaap-adapters/lib/browser/qaap-auth-oauth-bootstrap';
+import {
+    QAAP_REQUIRE_LOGIN_EVENT,
+    fetchQaapAuthConfig,
+    peekQaapOAuthReturnFromUrl,
+    revealQaapWorkbenchAfterAuth,
+    syncQaapAuthSessionFromServer,
+} from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
+import { placeholderQaapAuthUser, writeQaapAuthSession } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
+import { dismissQaapLoginGate, isQaapLoginGateMounted, presentQaapLoginGate } from './qaap-login-gate';
+import { readQaapAuthUser, readQaapSignedIn } from './qaap-login-storage';
 
 /**
- * Fallback gate if {@link QaapLoginPreloadContribution} did not run (e.g. secondary window).
+ * Shows the login gate when there is no session (e.g. after sign-out) and hides it when signed in.
+ * Complements {@link QaapLoginPreloadContribution} on first load and {@link qaap-login-gate.js}.
  */
 @injectable()
 export class QaapLoginContribution implements FrontendApplicationContribution {
 
-    static readonly BODY_CLASS = 'qaap-login-active';
+    @inject(MessageService)
+    protected readonly messages: MessageService;
 
-    @inject(StorageService)
-    protected readonly storage: StorageService;
+    protected readonly onAuthSessionChanged = (): void => {
+        void this.syncLoginGateWithSession();
+    };
 
-    protected host: HTMLElement | undefined;
-    protected root: Root | undefined;
-    protected app: FrontendApplication | undefined;
-    protected loading: QaapLoginProvider | undefined;
+    protected readonly onRequireLogin = (): void => {
+        void this.syncLoginGateWithSession();
+    };
 
-    async onDidInitializeLayout(app: FrontendApplication): Promise<void> {
-        this.app = app;
-        if (readQaapSignedIn() || document.getElementById('qaap-login-host')) {
+    async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
+        window.addEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
+        window.addEventListener(QAAP_REQUIRE_LOGIN_EVENT, this.onRequireLogin);
+
+        const oauthResult = await ensureQaapGithubOAuthReturnHandled();
+        if (oauthResult === 'github') {
+            this.messages.info(nls.localize('qaap/auth/githubConnected', 'Connected to GitHub.'));
+            this.requestWorkbenchLayoutRefresh();
+        } else if (oauthResult === 'error') {
+            this.messages.error(nls.localize('qaap/auth/githubConnectFailed', 'GitHub sign-in failed.'));
+        }
+
+        await this.syncLoginGateWithSession();
+    }
+
+    protected requestWorkbenchLayoutRefresh(): void {
+        window.requestAnimationFrame(() => {
+            window.dispatchEvent(new Event('resize'));
+        });
+    }
+
+    onStop(): void {
+        window.removeEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
+        window.removeEventListener(QAAP_REQUIRE_LOGIN_EVENT, this.onRequireLogin);
+    }
+
+    protected shouldBypassLoginGate(config?: { githubOAuth?: boolean; skipAuth?: boolean }): boolean {
+        if (config?.skipAuth && !config.githubOAuth) {
+            return true;
+        }
+        return false;
+    }
+
+    protected async syncLoginGateWithSession(): Promise<void> {
+        if (peekQaapOAuthReturnFromUrl() === 'github') {
             return;
         }
-        document.body.classList.add(QaapLoginContribution.BODY_CLASS);
-        this.hideWorkbench();
-        this.mountLogin();
-    }
-
-    protected hideWorkbench(): void {
-        const shellNode = this.app?.shell?.node;
-        if (shellNode) {
-            shellNode.style.visibility = 'hidden';
-            shellNode.style.pointerEvents = 'none';
-        }
-    }
-
-    protected showWorkbench(): void {
-        const shellNode = this.app?.shell?.node;
-        if (shellNode) {
-            shellNode.style.visibility = '';
-            shellNode.style.pointerEvents = '';
-        }
-        document.body.classList.remove(QaapLoginContribution.BODY_CLASS);
-    }
-
-    protected getDisplayApplicationName(): string {
-        if (typeof document !== 'undefined') {
-            const meta = document.querySelector('meta[name="application-name"]');
-            const fromMeta = meta?.getAttribute('content')?.trim();
-            if (fromMeta) {
-                return fromMeta;
+        if (!readQaapSignedIn() || !this.hasStoredRealUser()) {
+            try {
+                const config = await fetchQaapAuthConfig();
+                if (this.shouldBypassLoginGate(config)) {
+                    writeQaapAuthSession('gitlab', placeholderQaapAuthUser('gitlab'));
+                } else {
+                    await syncQaapAuthSessionFromServer();
+                }
+            } catch {
+                if (this.shouldBypassLoginGate()) {
+                    writeQaapAuthSession('gitlab', placeholderQaapAuthUser('gitlab'));
+                } else {
+                    await syncQaapAuthSessionFromServer();
+                }
             }
         }
-        return FrontendApplicationConfigProvider.get().applicationName;
-    }
-
-    protected mountLogin(): void {
-        if (this.host) {
+        if (readQaapSignedIn()) {
+            dismissQaapLoginGate();
+            revealQaapWorkbenchAfterAuth();
+            this.requestWorkbenchLayoutRefresh();
             return;
         }
-        this.host = document.createElement('div');
-        this.host.id = 'qaap-login-host';
-        document.body.appendChild(this.host);
-        this.root = createRoot(this.host);
-        this.renderLogin();
+        if (!isQaapLoginGateMounted()) {
+            presentQaapLoginGate();
+        }
     }
 
-    protected renderLogin(): void {
-        this.root?.render(
-            React.createElement(QaapLoginView, {
-                appName: this.getDisplayApplicationName(),
-                loading: this.loading,
-                onSignIn: provider => this.handleSignIn(provider),
-            })
-        );
-    }
-
-    protected async handleSignIn(provider: QaapLoginProvider): Promise<void> {
-        if (this.loading) {
-            return;
-        }
-        if (provider === 'github') {
-            startGithubOAuth();
-            return;
-        }
-        this.loading = provider;
-        this.renderLogin();
-        await new Promise<void>(resolve => window.setTimeout(resolve, AUTH_PLACEHOLDER_MS));
-        writeQaapAuthSession(provider);
-        await this.storage.setData('qaap.auth.signedIn', true);
-        await this.storage.setData('qaap.auth.provider', provider);
-        this.loading = undefined;
-        this.root?.unmount();
-        this.host?.remove();
-        this.host = undefined;
-        this.root = undefined;
-        this.showWorkbench();
+    protected hasStoredRealUser(): boolean {
+        const user = readQaapAuthUser();
+        return !!user?.login && user.login !== 'github-user' && user.login !== 'gitlab-user';
     }
 }

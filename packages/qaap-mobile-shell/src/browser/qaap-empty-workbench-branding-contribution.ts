@@ -167,30 +167,35 @@ export class QaapEmptyWorkbenchBrandingContribution implements FrontendApplicati
         if (!this.isMainAreaEmpty()) {
             return false;
         }
+        const projects = document.querySelector('.theia-mobile-projects.theia-mod-visible');
+        if (projects) {
+            return false;
+        }
+        if (!this.isMobileLayout()) {
+            // Desktop: sidebar may stay expanded; still show the empty-editor watermark in main.
+            return true;
+        }
         if (this.shell.isExpanded('left') || this.shell.isExpanded('right') || this.shell.isExpanded('bottom')) {
             return false;
         }
         if (this.isMobileSideSheetDomVisible()) {
             return false;
         }
-        const projects = document.querySelector('.theia-mobile-projects.theia-mod-visible');
-        if (projects) {
-            return false;
-        }
         return true;
     }
 
-    /** DOM-visible sheet (expansion state can lag behind the slide transform on mobile). */
+    /** True when a side sheet is expanded in shell state and not slid off-screen. */
     protected isMobileSideSheetDomVisible(): boolean {
-        for (const id of ['theia-left-content-panel', 'theia-right-content-panel'] as const) {
+        for (const side of ['left', 'right'] as const) {
+            if (!this.shell.isExpanded(side)) {
+                continue;
+            }
+            const id = side === 'left' ? 'theia-left-content-panel' : 'theia-right-content-panel';
             const panel = document.getElementById(id);
             if (!panel || panel.classList.contains('theia-mod-collapsed') || panel.classList.contains('lm-mod-hidden')) {
                 continue;
             }
-            const rect = panel.getBoundingClientRect();
-            if (rect.width > 80 && rect.height > 120) {
-                return true;
-            }
+            return true;
         }
         return false;
     }

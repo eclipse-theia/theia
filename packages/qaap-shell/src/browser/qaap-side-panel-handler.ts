@@ -15,13 +15,11 @@ import {
 } from '@theia/core/lib/browser/shell/side-panel-handler';
 import { SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from '@theia/core/lib/browser/shell/tab-bars';
 import { SplitPositionOptions } from '@theia/core/lib/browser/shell/split-panels';
+import { MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { QaapSideTabBar } from './qaap-tab-bars';
 import { QaapActivityBarCloseButton } from './qaap-activity-bar-close-button';
 
 const COLLAPSED_CLASS = 'theia-mod-collapsed';
-
-/** Collapsed sidebar width; must match `--theia-private-sidebar-tab-width` in product `qaap-sidepanel.css`. */
-const SIDEBAR_COLLAPSED_STRIP_WIDTH = 48;
 
 /**
  * Qaap side panel: horizontal activity strip, left-panel collapse behavior, resize relayout.
@@ -152,7 +150,13 @@ export class QaapSidePanelHandler extends SidePanelHandler {
             }
             this.lastObservedWidth = width;
             this.lastObservedHeight = height;
-            if (width <= 0 || height <= 0 || this.container.isHidden) {
+            if (this.container.isHidden) {
+                return;
+            }
+            if (width <= 0 || height <= 0) {
+                if (this.isMobileOneColumnSheetOpen()) {
+                    this.scheduleContentRelayout();
+                }
                 return;
             }
             this.scheduleContentRelayout();
@@ -168,6 +172,47 @@ export class QaapSidePanelHandler extends SidePanelHandler {
             this.resizeRelayoutFrame = undefined;
             this.relayoutContent();
         });
+    }
+
+    /** Lumino may measure 0×0 while the sheet uses split width 0; force a refit when the sheet is open. */
+    relayoutForMobileSheet(): void {
+        this.scheduleContentRelayout();
+        if (typeof window !== 'undefined') {
+            window.requestAnimationFrame(() => this.relayoutContent());
+        }
+    }
+
+    /** Apply an explicit side panel width (e.g. after leaving mobile layout). */
+    applyPanelSize(size: number): Promise<void> {
+        return this.setPanelSize(size);
+    }
+
+    protected isMobileOneColumnSheetOpen(): boolean {
+        const shellNode = this.container.node.closest('#theia-app-shell');
+        return !!shellNode?.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS)
+            && !this.container.hasClass(COLLAPSED_CLASS)
+            && !this.container.isHidden;
+    }
+
+    protected isMobileOneColumnShell(): boolean {
+        const shellNode = this.container.node.closest('#theia-app-shell');
+        return !!shellNode?.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
+    }
+
+    /**
+     * On mobile one-column layout, sheets are `position: fixed` and split width is 0 — core
+     * {@link SidePanelHandler.collapse} must still clear the tab selection and run {@link refresh}
+     * so `theia-mod-collapsed` / off-screen transforms apply.
+     */
+    override collapse(): Promise<void> {
+        if (this.isMobileOneColumnShell() && this.tabBar.currentIndex >= 0) {
+            this.tabBar.currentIndex = -1;
+        }
+        const result = super.collapse();
+        if (this.isMobileOneColumnShell()) {
+            this.scheduleContentRelayout();
+        }
+        return result;
     }
 
     protected relayoutContent(): void {
@@ -212,17 +257,14 @@ export class QaapSidePanelHandler extends SidePanelHandler {
                 }
             }
             this.state.expansion = SidePanel.ExpansionState.collapsed;
-            if (this.side === 'left') {
-                void this.setPanelSize(0);
-            } else if (!isEmpty) {
-                void this.setPanelSize(SIDEBAR_COLLAPSED_STRIP_WIDTH);
-            }
+            void this.setPanelSize(0);
         } else {
             container.removeClass(COLLAPSED_CLASS);
-            if (this.side === 'left') {
-                container.setHidden(false);
-                tabBar.setHidden(false);
-            }
+            container.setHidden(false);
+            tabBar.setHidden(false);
+            this.activityScrollHost?.setHidden(false);
+            this.bottomMenu?.setHidden(false);
+            this.activityCloseButton?.setHidden(false);
             let size: number | undefined;
             if (this.state.expansion !== SidePanel.ExpansionState.expanded) {
                 if (this.state.lastPanelSize) {
@@ -245,7 +287,7 @@ export class QaapSidePanelHandler extends SidePanelHandler {
                 this.state.expansion = SidePanel.ExpansionState.expanded;
             }
         }
-        if (this.side === 'left') {
+        if (this.side === 'left' || hideDockPanel) {
             container.setHidden(hideDockPanel);
             tabBar.setHidden(hideDockPanel);
             this.activityScrollHost?.setHidden(hideDockPanel);

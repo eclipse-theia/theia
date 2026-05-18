@@ -8,6 +8,12 @@ import { CommandRegistry, DisposableCollection, nls } from '@theia/core/lib/comm
 import { ApplicationShell, CommonCommands, Widget } from '@theia/core/lib/browser';
 import { Message } from '@theia/core/lib/browser/widgets/widget';
 import { collapseLeftPanelIfMobileOneColumn, matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import {
+    qaapAuthUserInitials,
+    readQaapAuthUser,
+    readQaapSignedIn,
+} from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
+import { buildQaapAccountMenuEntries, dismissQaapAccountMenu, toggleQaapAccountMenu } from './qaap-workbench-account-menu';
 
 const WORKBENCH_NAV_GO_BACK = 'textEditor.commands.go.back';
 const WORKBENCH_NAV_GO_FORWARD = 'textEditor.commands.go.forward';
@@ -93,7 +99,9 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
     protected readonly toDispose = new DisposableCollection();
     protected readonly terminalBtn: HTMLButtonElement;
     protected readonly aiChatBtn: HTMLButtonElement;
-    protected readonly settingsBtn: HTMLButtonElement;
+    protected readonly accountBtn: HTMLButtonElement;
+    protected readonly accountAvatar: HTMLSpanElement;
+    protected readonly onAuthSessionChanged = (): void => this.updateAccountVisual();
 
     constructor(
         protected readonly commands: CommandRegistry,
@@ -107,19 +115,26 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
             'codicon codicon-terminal',
             nls.localize('theia/core/workbenchBar/toggleTerminal', 'Toggle Terminal')
         );
+        this.terminalBtn.classList.add('theia-workbench-in-mobile-bottom-bar');
         this.terminalBtn.setAttribute('role', 'switch');
         this.aiChatBtn = QaapWorkbenchRightControlsWidget.createBtn(
             'codicon codicon-comment-discussion',
             nls.localize('theia/core/workbenchBar/openAiChat', 'Open AI Chat')
         );
-        this.settingsBtn = QaapWorkbenchRightControlsWidget.createBtn(
-            'codicon codicon-gear',
-            CommonCommands.OPEN_PREFERENCES.label ?? nls.localizeByDefault('Open Settings')
-        );
-        node.append(this.terminalBtn, this.aiChatBtn, this.settingsBtn);
+        this.aiChatBtn.classList.add('theia-workbench-in-mobile-bottom-bar');
+        this.accountBtn = document.createElement('button');
+        this.accountBtn.type = 'button';
+        this.accountBtn.className = 'theia-workbench-nav-btn theia-workbench-account-btn';
+        this.accountBtn.title = nls.localize('qaap/accountMenu/title', 'Account');
+        this.accountBtn.setAttribute('aria-haspopup', 'menu');
+        this.accountAvatar = document.createElement('span');
+        this.accountAvatar.className = 'theia-workbench-account-avatar';
+        this.accountAvatar.setAttribute('aria-hidden', 'true');
+        this.accountBtn.appendChild(this.accountAvatar);
+        node.append(this.terminalBtn, this.aiChatBtn, this.accountBtn);
         this.terminalBtn.addEventListener('click', this.onTerminalClick);
         this.aiChatBtn.addEventListener('click', this.onAiChatClick);
-        this.settingsBtn.addEventListener('click', this.onSettingsClick);
+        this.accountBtn.addEventListener('click', this.onAccountClick);
         const refresh = (): void => this.updateEnabledStates();
         this.toDispose.push(this.commands.onDidExecuteCommand(refresh));
         this.toDispose.push(this.commands.onCommandsChanged(refresh));
@@ -150,11 +165,22 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         }
         this.runIfEnabled(WORKBENCH_AI_CHAT_TOGGLE);
     };
-    protected readonly onSettingsClick = (): void => this.runIfEnabled(CommonCommands.OPEN_PREFERENCES.id);
+    protected readonly onAccountClick = (): void => {
+        const signedIn = readQaapSignedIn();
+        toggleQaapAccountMenu(this.accountBtn, this.commands, buildQaapAccountMenuEntries(signedIn));
+    };
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
+        window.addEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
         this.updateEnabledStates();
+        this.updateAccountVisual();
+    }
+
+    protected override onBeforeDetach(msg: Message): void {
+        dismissQaapAccountMenu();
+        window.removeEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
+        super.onBeforeDetach(msg);
     }
 
     override dispose(): void {
@@ -162,9 +188,11 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
             return;
         }
         this.toDispose.dispose();
+        dismissQaapAccountMenu();
+        window.removeEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
         this.terminalBtn.removeEventListener('click', this.onTerminalClick);
         this.aiChatBtn.removeEventListener('click', this.onAiChatClick);
-        this.settingsBtn.removeEventListener('click', this.onSettingsClick);
+        this.accountBtn.removeEventListener('click', this.onAccountClick);
         super.dispose();
     }
 
@@ -180,9 +208,48 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         const canOpenTerminal = this.commands.isEnabled(WORKBENCH_TOGGLE_TERMINAL);
         this.terminalBtn.disabled = !canToggleBottom && !canOpenTerminal;
         this.aiChatBtn.disabled = !this.commands.isEnabled(WORKBENCH_AI_CHAT_TOGGLE);
-        this.settingsBtn.disabled = !this.commands.isEnabled(CommonCommands.OPEN_PREFERENCES.id);
         this.updateTerminalSwitchVisual();
         this.updateAiChatSwitchVisual();
+        this.updateAccountVisual();
+    }
+
+    protected updateAccountVisual(): void {
+        this.accountBtn.hidden = false;
+        this.accountBtn.style.display = '';
+        const signedIn = readQaapSignedIn();
+        if (!signedIn) {
+            this.accountAvatar.replaceChildren();
+            const icon = document.createElement('span');
+            icon.className = 'codicon codicon-account theia-workbench-account-fallback-icon';
+            icon.setAttribute('aria-hidden', 'true');
+            this.accountAvatar.appendChild(icon);
+            this.accountBtn.title = nls.localize('qaap/accountMenu/signInGithub', 'Sign in with GitHub');
+            return;
+        }
+        const user = readQaapAuthUser();
+        this.accountAvatar.replaceChildren();
+        if (!user) {
+            const icon = document.createElement('span');
+            icon.className = 'codicon codicon-account theia-workbench-account-fallback-icon';
+            icon.setAttribute('aria-hidden', 'true');
+            this.accountAvatar.appendChild(icon);
+            this.accountBtn.title = nls.localize('qaap/accountMenu/title', 'Account');
+            return;
+        }
+        this.accountBtn.title = user.name || user.login;
+        if (user.avatarUrl) {
+            const img = document.createElement('img');
+            img.src = user.avatarUrl;
+            img.alt = '';
+            img.draggable = false;
+            img.referrerPolicy = 'no-referrer';
+            this.accountAvatar.appendChild(img);
+            return;
+        }
+        const initials = document.createElement('span');
+        initials.className = 'theia-workbench-account-initials';
+        initials.textContent = qaapAuthUserInitials(user);
+        this.accountAvatar.appendChild(initials);
     }
 
     protected updateTerminalSwitchVisual(): void {

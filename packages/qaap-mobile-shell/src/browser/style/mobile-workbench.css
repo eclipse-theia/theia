@@ -24,7 +24,10 @@
   html,
   body {
     height: 100%;
+    height: 100dvh;
     min-height: 100dvh;
+    overflow: hidden;
+    background: var(--theia-editor-background);
   }
 
   /* Monaco quick input lives on `document.body`; keep it above side sheets / backdrops (~10k). */
@@ -32,14 +35,26 @@
     z-index: 2147483000 !important;
   }
 
-  /* Same as `@theia/qaap-product-theme` `qaap-menus-narrow-viewport.css` — duplicated here so the
-     rule ships with the mobile shell even if extension CSS order differs in the bundle. */
-  #theia-top-panel .lm-MenuBar,
-  #theia-top-panel [id='theia:menubar'] {
+  /* Hide desktop menubar only in one-column mobile shell (bottom activity strip replaces it). */
+  #theia-app-shell.theia-mod-mobile-one-column #theia-top-panel .lm-MenuBar,
+  #theia-app-shell.theia-mod-mobile-one-column #theia-top-panel [id='theia:menubar'] {
     display: none !important;
   }
 
-  #theia-app-shell.theia-ApplicationShell {
+  /* Terminal and Agent live in the bottom activity bar on mobile; keep settings in the top bar. */
+  #theia-app-shell.theia-mod-mobile-one-column
+    .theia-workbench-right-controls
+    .theia-workbench-nav-btn.theia-workbench-in-mobile-bottom-bar {
+    display: none !important;
+  }
+
+  #theia-app-shell.theia-mod-mobile-one-column .theia-workbench-right-controls {
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+  }
+
+  #theia-app-shell.theia-ApplicationShell:not(.theia-mod-mobile-one-column) {
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-right: env(safe-area-inset-right, 0px);
@@ -59,6 +74,9 @@
        Defined here so `document.body` descendants (e.g. `.theia-notifications-overlay`)
        inherit it — shell-only variables do not apply outside `#theia-app-shell`. */
     --theia-mobile-bottom-bar-height: 56px;
+    --theia-mobile-status-chrome-height: calc(
+      var(--theia-statusBar-height, 34px) + env(safe-area-inset-bottom, 0px)
+    );
     --theia-ui-font-size1: 15px;
     --theia-content-font-size: 15px;
     --theia-content-line-height: 24px;
@@ -94,7 +112,7 @@
     min-height: 44px;
   }
 
-  .theia-workbench-nav-btn {
+  .theia-workbench-nav-btn:not(.theia-workbench-account-btn) {
     min-width: 40px;
     min-height: 36px;
     width: auto;
@@ -107,13 +125,92 @@
     font-size: var(--theia-icon-size, 18px);
   }
 
+  .theia-workbench-right-controls .theia-workbench-nav-btn.theia-workbench-account-btn {
+    box-sizing: border-box;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    margin: 0 2px;
+    padding: 0 !important;
+    border: none;
+    border-radius: 50%;
+    overflow: hidden;
+    flex: 0 0 32px;
+    flex-shrink: 0;
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px !important;
+    height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    background: var(--theia-badge-background, var(--theia-activityBarBadge-background));
+    color: var(--theia-badge-foreground, var(--theia-activityBarBadge-foreground));
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar img {
+    display: block;
+    width: 26px !important;
+    height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar .codicon,
+  .theia-workbench-right-controls .theia-workbench-account-avatar .theia-workbench-account-fallback-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+    color: var(--theia-activityBar-foreground, var(--theia-icon-foreground));
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar .theia-workbench-account-initials {
+    font-size: 11px;
+  }
+
+  #theia-statusBar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #theia-statusBar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   #theia-statusBar .theia-statusBar-track {
     min-height: var(--theia-statusBar-height);
+    width: max-content;
+    min-width: 100%;
+    flex-wrap: nowrap;
   }
 
   #theia-statusBar .area .element {
     min-width: 36px;
     min-height: var(--theia-statusBar-height);
+    flex-shrink: 0;
   }
 
   #theia-statusBar .area .element .codicon {
@@ -228,9 +325,28 @@
 |-----------------------------------------------------------------------------*/
 
 @media (max-width: 767px) and (pointer: coarse) {
-  .theia-workbench-nav-btn {
+  .theia-workbench-nav-btn:not(.theia-workbench-account-btn) {
     min-width: 48px;
     min-height: 48px;
+  }
+
+  .theia-workbench-right-controls .theia-workbench-nav-btn.theia-workbench-account-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    flex: 0 0 36px;
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar,
+  .theia-workbench-right-controls .theia-workbench-account-avatar img {
+    width: 28px !important;
+    height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    font-size: 12px;
   }
 
   #theia-statusBar .area .element {
@@ -248,14 +364,219 @@
 | toggled with max-width: 767px by MobileOneColumnShellContribution).
 |-----------------------------------------------------------------------------*/
 
-#theia-app-shell.theia-mod-mobile-one-column {
+#theia-app-shell.theia-ApplicationShell.theia-mod-mobile-one-column {
   --theia-mobile-bottom-bar-height: 56px;
   /* Horizontal space reserved on the activity strip so fixed close control does not cover icons. */
   --theia-mobile-sheet-close-reserve: 48px;
+  box-sizing: border-box;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  /* Fill viewport; bottom chrome is pinned to body (not in shell flow). */
+  height: 100svh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-bottom: calc(
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+      var(--theia-mobile-keyboard-inset, 0px) + env(safe-area-inset-bottom, 0px)
+  );
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-right-split-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-bottom-split-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  /* Stay above collapsed off-screen sheets so Welcome / editors are never fully obscured. */
+  z-index: 1;
+}
+
+/* Editor / preview widgets must fill the dock content area (not only the tab bar). */
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .lm-DockPanel-widget {
+  min-height: 0;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .theia-mini-browser,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .theia-mini-browser-content-area,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .theia-mini-browser-content-area iframe,
+#theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel .monaco-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Narrow viewport without one-column class yet: still stretch editor stack. */
+@media (max-width: 767px) {
+  #theia-main-content-panel,
+  #theia-bottom-split-panel,
+  #theia-left-right-split-panel {
+    min-height: 0;
+    height: 100%;
+  }
+}
+
+/* Bottom chrome host (activity strip + status bar) — appended to `document.body` on mobile. */
+.theia-mobile-bottom-chrome-host {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--theia-mobile-keyboard-inset, 0px);
+  z-index: 9300;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar,
+.theia-mobile-bottom-chrome-host > #theia-statusBar {
+  pointer-events: auto;
+  position: relative !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+/* Widget node is the <nav> itself (id + .theia-mobile-bottom-activity-bar on one element). */
+.theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar.theia-mobile-bottom-activity-bar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  height: var(--theia-mobile-bottom-bar-height, 56px) !important;
+  min-height: var(--theia-mobile-bottom-bar-height, 56px);
+  max-height: var(--theia-mobile-bottom-bar-height, 56px);
+  box-sizing: border-box;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar.theia-mobile-bottom-activity-bar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.theia-mobile-bottom-chrome-host > #theia-statusBar {
+  background: var(--theia-statusBar-background);
+  color: var(--theia-statusBar-foreground);
+  border-top: var(--theia-border-width, 1px) solid var(--theia-statusBar-border, transparent);
+  height: var(--theia-mobile-status-chrome-height) !important;
+  min-height: var(--theia-mobile-status-chrome-height);
+  max-height: var(--theia-mobile-status-chrome-height);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  box-sizing: border-box;
+}
+
+.theia-mobile-bottom-chrome-host > #theia-statusBar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.theia-mobile-bottom-chrome-host > #theia-statusBar .theia-statusBar-track {
+  height: var(--theia-statusBar-height, 34px);
+  min-height: var(--theia-statusBar-height, 34px);
+  max-height: var(--theia-statusBar-height, 34px);
+  width: max-content;
+  min-width: 100%;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+}
+
+/* Touch devices: reinforce native pan-scroll (JS fallback in `mobile-horizontal-touch-scroll.ts`). */
+@media (max-width: 767px), (pointer: coarse) {
+  .theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar.theia-mobile-bottom-activity-bar,
+  .theia-mobile-bottom-chrome-host > #theia-statusBar {
+    overflow-x: scroll !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x !important;
+    overscroll-behavior-x: contain;
+  }
+
+  .theia-mobile-bottom-chrome-host
+    > #theia-mobile-bottom-bar.theia-mobile-bottom-activity-bar
+    .theia-mobile-bottom-activity-btn {
+    touch-action: pan-x !important;
+  }
 }
 
 #theia-app-shell.theia-mod-mobile-one-column #theia-left-right-split-panel > .lm-SplitPanel-handle {
   display: none !important;
+}
+
+/*
+ * Side sheets are position:fixed overlays — they must not consume horizontal split space.
+ * Without this, Lumino keeps ~50% width for a sheet and the editor is crushed to a thin strip.
+ */
+#theia-app-shell.theia-mod-mobile-one-column
+  #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"]
+  > #theia-left-content-panel,
+#theia-app-shell.theia-mod-mobile-one-column
+  #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"]
+  > #theia-right-content-panel {
+  flex-basis: 0 !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column
+  #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"]
+  > #theia-bottom-split-panel {
+  flex: 1 1 100% !important;
+  flex-grow: 1 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
 }
 
 /* Full-width editor stack; side panels overlay as full-bleed sheets.
@@ -263,25 +584,19 @@
    can run on collapse/expand. `!important` is required because Lumino's BoxLayout writes inline
    `position/top/left/width/height` to layout children on every fit.
 
-   Sheets render with a rounded top edge + soft drop-shadow + (when supported) a backdrop-blur
-   so the user perceives them as a layered "bottom-sheet" surface, in line with current iOS /
-   Material 3 conventions. Browsers without `backdrop-filter` fall back to a fully opaque
-   sideBar background (declared on the base rule below), so legibility is preserved everywhere. */
+   Sheets keep an opaque sideBar background so their content stays readable without needing a
+   global backdrop that would block the file tree or bottom navigation. */
 #theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel,
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel {
   position: fixed !important;
   z-index: 9600;
   /* Full viewport height under the top safe-area only; menubar strip is not reserved so the sheet gains vertical space. */
   top: env(safe-area-inset-top, 0px) !important;
-  /* The sheet runs all the way to the bottom of the viewport, overlaying both
-     `#theia-mobile-bottom-bar` and `#theia-statusBar`. While a sheet is open
-     the user reaches the bottom-bar actions by dismissing it (backdrop tap,
-     drag-handle swipe, back gesture). Only the OS safe-area inset and the
-     virtual-keyboard inset (`--theia-mobile-keyboard-inset`, set by
-     `MobileKeyboardHelper`) are reserved so the panel content remains visible
-     above the on-screen keyboard. */
+  /* Keep sheet content above the fixed bottom navigation and status chrome. */
   bottom: calc(
-    env(safe-area-inset-bottom, 0px) + var(--theia-mobile-keyboard-inset, 0px)
+    var(--theia-mobile-bottom-bar-height, 56px) +
+    var(--theia-mobile-status-chrome-height, 34px) +
+    var(--theia-mobile-keyboard-inset, 0px)
   ) !important;
   left: 0 !important;
   right: 0 !important;
@@ -307,13 +622,9 @@
 @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
   #theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel,
   #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel {
-    background: color-mix(
-      in srgb,
-      var(--theia-sideBar-background, var(--theia-editor-background)) 78%,
-      transparent
-    );
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    backdrop-filter: blur(18px) saturate(140%);
+    background: var(--theia-sideBar-background, var(--theia-editor-background));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -354,10 +665,6 @@
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .theia-app-activity-bar-row {
   padding-inline-end: var(--theia-mobile-sheet-close-reserve, 48px);
   box-sizing: border-box;
-}
-
-#theia-app-shell.theia-mod-mobile-one-column .theia-activity-bar-close-btn {
-  display: none;
 }
 
 /* Hide the side panel's inner Lumino `DockPanel` TabBar entirely on mobile.
@@ -403,6 +710,34 @@
   transform: translate3d(0, 0, 0);
   visibility: visible;
   pointer-events: auto;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column
+  #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"]
+  > #theia-left-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden),
+#theia-app-shell.theia-mod-mobile-one-column
+  #theia-left-right-split-panel.lm-SplitPanel[data-orientation="horizontal"]
+  > #theia-right-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden) {
+  width: 100vw !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Side sheet body must fill space between activity row and viewport bottom (Lumino often keeps 0 height). */
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden) > .lm-Panel,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel:not(.theia-mod-collapsed):not(.lm-mod-hidden) > .lm-Panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .lm-DockPanel,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .lm-DockPanel,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .theia-side-panel,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .theia-side-panel {
+  min-height: 0;
+  height: 100%;
 }
 
 /* Floating close button (one shared instance, appended to `document.body`). Visible whenever a
@@ -501,14 +836,19 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
    main tab row horizontally scrollable with touch pan, proximity scroll snap, and scrollbars
    hidden so the strip does not grow vertically for a scrollbar rail. */
 
-/* Dimmed overlay behind sheets (appended to `document.body`). Opacity-based fade is required so
-   the timing matches the sheet's transform animation. A subtle backdrop-blur (where supported)
-   produces the modern "frosted glass" sheet effect without affecting the sheet's own opacity. */
+/* Legacy backdrop is kept inert for restored DOM from older sessions; sheets no longer create it. */
 .theia-mobile-sheet-backdrop {
   position: fixed;
-  inset: 0;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  /* Do not cover the bottom activity bar — users switch panels from there while a sheet is open. */
+  bottom: calc(
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+      env(safe-area-inset-bottom, 0px)
+  );
   z-index: 9500;
-  background: rgba(0, 0, 0, 0.42);
+  background: rgba(0, 0, 0, 0.18);
   opacity: 0;
   pointer-events: none;
   transition: opacity 220ms ease;
@@ -517,29 +857,32 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
 
 @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
   .theia-mobile-sheet-backdrop {
-    background: rgba(0, 0, 0, 0.28);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.14);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
 .theia-mobile-sheet-backdrop.theia-mod-visible {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* Agent-first bottom bar (Lumino widget inserted into the shell box layout right above #theia-statusBar).
-   Visually fused with the status bar below: shares its background/foreground tokens. When the
+/* Agent-first bottom bar (Lumino widget in the shell layout, pinned with `position: fixed` in
+   `.theia-mod-mobile-one-column`). Visually fused with the status bar below: shares its background/foreground tokens. When the
    browser supports `backdrop-filter`, we replace the opaque background with a translucent token
    + blur so the bar feels like a floating glass surface above the editor — matching the same
    frosted look applied to side sheets. */
 .theia-mobile-bottom-activity-bar {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   align-items: stretch;
   min-height: var(--theia-mobile-bottom-bar-height, 56px);
   max-height: var(--theia-mobile-bottom-bar-height, 56px);
+  min-width: 0;
+  max-width: 100%;
   padding: 4px 6px;
   background: var(--theia-statusBar-background);
   color: var(--theia-statusBar-foreground);
@@ -552,6 +895,7 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
+  overscroll-behavior-x: contain;
 }
 
 @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
@@ -573,7 +917,8 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
 }
 
 .theia-mobile-bottom-activity-btn {
-  flex: 1 0 64px;
+  flex: 0 0 auto;
+  flex-shrink: 0;
   min-width: 64px;
   margin: 0;
   padding: 4px 6px 2px;
@@ -588,6 +933,7 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   gap: 2px;
   position: relative;
   cursor: pointer;
+  touch-action: pan-x;
   transition: background-color 120ms ease, color 120ms ease;
 }
 
@@ -652,8 +998,8 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + var(--theia-private-menubar-height, 40px));
   bottom: calc(
-    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-statusBar-height, 34px) +
-      env(safe-area-inset-bottom, 0px) + var(--theia-mobile-keyboard-inset, 0px)
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+      var(--theia-mobile-keyboard-inset, 0px)
   );
   width: 20px;
   z-index: 9650;
@@ -972,8 +1318,8 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   left: 0;
   right: 0;
   bottom: calc(
-    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-statusBar-height, 34px) +
-      env(safe-area-inset-bottom, 0px) + var(--theia-mobile-keyboard-inset, 0px)
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+      var(--theia-mobile-keyboard-inset, 0px)
   );
   z-index: 9550;
   display: flex;
@@ -1214,7 +1560,7 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   cursor: default;
 }
 
-.theia-mobile-projects-card-body::before {
+.theia-mobile-projects-card.theia-mod-featured .theia-mobile-projects-card-body::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1222,18 +1568,8 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   border-radius: 12px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--qaap-mobile-project-accent, #d4a896) 32%, transparent) 0%,
-    color-mix(in srgb, var(--qaap-mobile-project-accent, #d4a896) 8%, transparent) 45%,
-    transparent 62%
-  );
-}
-
-.theia-mobile-projects-card.theia-mod-current .theia-mobile-projects-card-body::before {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--qaap-mobile-project-accent, #d4a896) 42%, transparent) 0%,
-    color-mix(in srgb, var(--qaap-mobile-project-accent, #d4a896) 12%, transparent) 48%,
-    transparent 58%
+    color-mix(in srgb, var(--theia-activityBarBadge-background, #d97757) 28%, transparent) 0%,
+    transparent 60%
   );
 }
 
@@ -1251,8 +1587,7 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--qaap-mobile-project-accent, #d4a896) 55%, #ffffff 45%);
-  color: color-mix(in srgb, var(--theia-foreground) 65%, #000000 35%);
+  color: #fff;
   font-family: var(--theia-code-font-family, monospace);
   font-size: 14px;
   font-weight: 700;
@@ -1284,12 +1619,6 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
 .theia-mobile-projects-pin {
   font-size: 11px;
   color: var(--theia-activityBarBadge-background, #d97757);
-}
-
-.theia-mobile-projects-card-menu-separator {
-  height: 1px;
-  margin: 4px 6px;
-  background: var(--theia-panel-border, rgba(128, 128, 128, 0.35));
 }
 
 .theia-mobile-projects-time {
@@ -1390,8 +1719,8 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
 .theia-mobile-projects-progress-fill {
   display: block;
   height: 100%;
-  background: color-mix(in srgb, var(--qaap-mobile-project-accent, #d4a896) 70%, #ffffff 30%);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--qaap-mobile-project-accent, #d4a896) 50%, transparent);
+  background: var(--theia-activityBarBadge-background, #d97757);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--theia-activityBarBadge-background, #d97757) 45%, transparent);
 }
 
 .theia-mobile-projects-add {
@@ -1411,3 +1740,41 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   gap: 8px;
 }
 
+/*-----------------------------------------------------------------------------
+| Desktop status bar: horizontal scroll when entries overflow (thin scrollbar).
+|-----------------------------------------------------------------------------*/
+
+@media (min-width: 768px) {
+  #theia-statusBar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theia-scrollbarSlider-background, rgba(128, 128, 128, 0.45)) transparent;
+  }
+
+  #theia-statusBar .theia-statusBar-track {
+    width: max-content;
+    min-width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  #theia-statusBar .area .element {
+    flex-shrink: 0;
+  }
+
+  #theia-statusBar::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+    width: auto;
+  }
+
+  #theia-statusBar::-webkit-scrollbar-thumb {
+    background: var(--theia-scrollbarSlider-background, rgba(128, 128, 128, 0.45));
+    border-radius: 3px;
+  }
+
+  #theia-statusBar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

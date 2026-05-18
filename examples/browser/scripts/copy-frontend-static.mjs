@@ -11,6 +11,7 @@ import resolvePackagePath from 'resolve-package-path';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const libFrontend = path.join(root, 'lib', 'frontend');
 const srcIndex = path.join(root, 'src-gen', 'frontend', 'index.html');
+const srcManifest = path.join(root, 'src-gen', 'frontend', 'manifest.webmanifest');
 
 function copyIfExists(from, to) {
     if (fs.existsSync(from)) {
@@ -26,6 +27,7 @@ fs.mkdirSync(libFrontend, { recursive: true });
 if (!copyIfExists(srcIndex, path.join(libFrontend, 'index.html'))) {
     console.warn('[qaap] src-gen/frontend/index.html missing — run: npx theia generate');
 }
+copyIfExists(srcManifest, path.join(libFrontend, 'manifest.webmanifest'));
 
 try {
     const qaapRoot = path.dirname(resolvePackagePath('@theia/qaap-product', root));

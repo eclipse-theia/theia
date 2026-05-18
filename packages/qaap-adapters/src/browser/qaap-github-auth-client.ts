@@ -19,6 +19,8 @@ import {
 
 const FETCH_INIT: RequestInit = { credentials: 'include' };
 
+export const QAAP_REQUIRE_LOGIN_EVENT = 'qaap-require-login';
+
 export async function fetchQaapAuthConfig(): Promise<QaapAuthConfigResponse> {
     const response = await fetch(`${QAAP_AUTH_API_PATH}/config`, FETCH_INIT);
     if (!response.ok) {
@@ -66,6 +68,64 @@ export async function syncQaapAuthSessionFromServer(): Promise<boolean> {
     }
     writeQaapAuthSession(session.user.provider as QaapAuthProvider, session.user, session.sessionId);
     return true;
+}
+
+/** True while the URL still carries OAuth return params (before {@link consumeQaapOAuthReturnFromUrl}). */
+export function peekQaapOAuthReturnFromUrl(): 'github' | 'error' | undefined {
+    if (typeof window === 'undefined') {
+        return undefined;
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('qaap_oauth_error')) {
+        return 'error';
+    }
+    if (params.get('qaap_oauth') === 'github') {
+        return 'github';
+    }
+    return undefined;
+}
+
+/** Remove login gate DOM/CSS so the workbench is visible again. */
+export function revealQaapWorkbenchAfterAuth(): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    document.body.classList.remove('qaap-login-active');
+    document.getElementById('qaap-login-host')?.remove();
+}
+
+/**
+ * Clean OAuth query params from the URL. When `clearHash` is true (fresh GitHub sign-in),
+ * drop the hash so Theia does not boot into a stale workspace route before the shell is ready.
+ */
+export function stripQaapOAuthParamsFromUrl(clearHash = false, forceEmptyWindow = false): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.delete('qaap_oauth');
+    url.searchParams.delete('qaap_oauth_error');
+    if (forceEmptyWindow) {
+        url.hash = '!empty';
+    } else if (clearHash) {
+        url.hash = '';
+    }
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+}
+
+/** Sync session after GitHub redirect; reveal IDE and normalize the URL when successful. */
+export async function completeQaapGithubOAuthReturn(): Promise<boolean> {
+    if (peekQaapOAuthReturnFromUrl() !== 'github') {
+        return false;
+    }
+    const ok = await syncQaapAuthSessionFromServer();
+    consumeQaapOAuthReturnFromUrl();
+    if (ok) {
+        revealQaapWorkbenchAfterAuth();
+        // Keep #!empty from the OAuth redirect; only strip query params so workspace restore stays stable.
+        stripQaapOAuthParamsFromUrl(false);
+    }
+    return ok;
 }
 
 export function consumeQaapOAuthReturnFromUrl(): 'github' | 'error' | undefined {

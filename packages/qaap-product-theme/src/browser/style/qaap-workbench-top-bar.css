@@ -61,6 +61,55 @@
   font-size: var(--theia-icon-size, 14px);
 }
 
+.theia-workbench-right-controls .theia-workbench-nav-btn.theia-workbench-account-btn {
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  max-width: 26px;
+  max-height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: 0 0 26px;
+  flex-shrink: 0;
+}
+
+.theia-workbench-right-controls .theia-workbench-account-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  background: var(--theia-badge-background, var(--theia-activityBarBadge-background));
+  color: var(--theia-badge-foreground, var(--theia-activityBarBadge-foreground));
+}
+
+.theia-workbench-right-controls .theia-workbench-account-avatar img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.theia-workbench-account-avatar .codicon {
+  font-size: 14px;
+  line-height: 1;
+}
+
 .theia-workbench-right-controls {
   display: flex;
   flex-direction: row;
@@ -70,4 +119,11 @@
   margin-right: 6px;
   height: 100%;
   gap: 0;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+#theia-top-panel .theia-workbench-right-controls {
+  position: relative;
+  z-index: 3;
 }

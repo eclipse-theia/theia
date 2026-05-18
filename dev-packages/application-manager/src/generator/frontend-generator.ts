@@ -21,6 +21,25 @@ import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
 import { BundlerGenerator } from './bundler-generator';
 
+interface WebAppManifestIcon {
+    readonly src: string;
+    readonly sizes: string;
+    readonly type?: string;
+    readonly purpose?: string;
+}
+
+interface PwaManifestConfig {
+    readonly name?: string;
+    readonly shortName?: string;
+    readonly display?: string;
+    readonly startUrl?: string;
+    readonly scope?: string;
+    readonly themeColor?: string;
+    readonly backgroundColor?: string;
+    readonly icons?: readonly WebAppManifestIcon[];
+    readonly preferRelatedApplications?: boolean;
+}
+
 export class FrontendGenerator extends AbstractGenerator {
 
     /** Browser/OS chrome color when `prefers-color-scheme: dark` (VS Code editor background). */
@@ -77,11 +96,12 @@ export class FrontendGenerator extends AbstractGenerator {
         const appName = this.pck.props.frontend.config.applicationName;
         const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
         const isWebTarget = this.pck.isBrowser() || this.pck.isBrowserOnly();
-        const iconLines = appIcon
+        const appleTouchIcon = this.resolveAppleTouchIcon(appIcon);
+        const iconLines = appIcon || appleTouchIcon
             ? `
-  <meta name="application-icon" content="${this.escapeHtmlAttribute(appIcon)}">
-  <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">
-  <link rel="apple-touch-icon" href="${this.escapeHtmlAttribute(appIcon)}">`
+  ${appIcon ? `<meta name="application-icon" content="${this.escapeHtmlAttribute(appIcon)}">
+  <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">` : ''}
+  ${appleTouchIcon ? `<link rel="apple-touch-icon" href="${this.escapeHtmlAttribute(appleTouchIcon)}">` : ''}`
             : '';
         const splashBranding = appIcon ? this.compileSplashBrandingScript() : '';
         const pwaHead = isWebTarget ? this.compilePwaHeadFragment() : '';
@@ -94,22 +114,28 @@ export class FrontendGenerator extends AbstractGenerator {
     }
 
     /**
-     * Web App Manifest for installable PWA (browser targets only). Icons reuse `applicationIcon`.
+     * Web App Manifest for installable PWA (browser targets only).
      */
     protected compileWebAppManifest(): string {
-        const appName = this.pck.props.frontend.config.applicationName;
+        const pwaConfig = this.getPwaManifestConfig();
+        const appName = pwaConfig?.name ?? this.pck.props.frontend.config.applicationName;
         const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
-        const shortName = appName.length > 12 ? appName.slice(0, 12).trimEnd() : appName;
+        const shortName = pwaConfig?.shortName ?? (appName.length > 12 ? appName.slice(0, 12).trimEnd() : appName);
         const manifest: Record<string, unknown> = {
             name: appName,
             short_name: shortName,
-            display: 'standalone',
-            start_url: './',
-            scope: './',
-            theme_color: FrontendGenerator.PWA_THEME_COLOR_DARK,
-            background_color: FrontendGenerator.PWA_THEME_COLOR_DARK
+            display: pwaConfig?.display ?? 'standalone',
+            start_url: pwaConfig?.startUrl ?? './',
+            scope: pwaConfig?.scope ?? './',
+            theme_color: pwaConfig?.themeColor ?? FrontendGenerator.PWA_THEME_COLOR_DARK,
+            background_color: pwaConfig?.backgroundColor ?? FrontendGenerator.PWA_THEME_COLOR_DARK
         };
-        if (appIcon) {
+        if (pwaConfig?.preferRelatedApplications !== undefined) {
+            manifest.prefer_related_applications = pwaConfig.preferRelatedApplications;
+        }
+        if (pwaConfig?.icons?.length) {
+            manifest.icons = pwaConfig.icons;
+        } else if (appIcon) {
             const mime = this.inferImageMimeType(appIcon);
             const iconEntry: { src: string; sizes: string; type?: string; purpose: string } = {
                 src: appIcon,
@@ -122,6 +148,16 @@ export class FrontendGenerator extends AbstractGenerator {
             manifest.icons = [iconEntry];
         }
         return JSON.stringify(manifest, undefined, 4) + '\n';
+    }
+
+    protected getPwaManifestConfig(): PwaManifestConfig | undefined {
+        return this.pck.props.frontend.config.pwa as PwaManifestConfig | undefined;
+    }
+
+    protected resolveAppleTouchIcon(appIcon: string | undefined): string | undefined {
+        const icons = this.getPwaManifestConfig()?.icons;
+        const pngIcon = icons?.find(icon => icon.type === 'image/png' && /(?:^|\s)(180x180|192x192|512x512)(?:\s|$)/.test(icon.sizes));
+        return pngIcon?.src ?? appIcon;
     }
 
     protected inferImageMimeType(iconPath: string): string | undefined {

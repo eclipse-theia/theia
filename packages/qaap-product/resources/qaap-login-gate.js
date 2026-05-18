@@ -7,6 +7,8 @@
 
     var SIGNED_IN_SUFFIX = 'qaap.auth.signedIn';
     var PROVIDER_SUFFIX = 'qaap.auth.provider';
+    var USER_SUFFIX = 'qaap.auth.user';
+    var SESSION_ID_SUFFIX = 'qaap.auth.sessionId';
     var AUTH_MS = 1200;
 
     function storagePrefix() {
@@ -34,10 +36,16 @@
         return false;
     }
 
-    function writeSignedIn(provider) {
+    function writeSignedIn(provider, user, sessionId) {
         var prefix = storagePrefix();
         localStorage.setItem(prefix + SIGNED_IN_SUFFIX, JSON.stringify(true));
         localStorage.setItem(prefix + PROVIDER_SUFFIX, JSON.stringify(provider));
+        if (user) {
+            localStorage.setItem(prefix + USER_SUFFIX, JSON.stringify(user));
+        }
+        if (sessionId) {
+            localStorage.setItem(prefix + SESSION_ID_SUFFIX, JSON.stringify(sessionId));
+        }
     }
 
     function loadBundle() {
@@ -122,9 +130,9 @@
             '<div class="qaap-login-spacer"></div>' +
             '<div class="qaap-login-actions">' +
             '<button type="button" id="qaap-login-github" class="qaap-login-btn qaap-login-btn--primary">' +
-            '<span class="qaap-login-btn-icon">' + GITHUB_SVG + '</span>Continue with GitHub</button>' +
+            '<span class="qaap-login-btn-icon">' + GITHUB_SVG + '</span>Iniciar con GitHub</button>' +
             '<button type="button" id="qaap-login-gitlab" class="qaap-login-btn qaap-login-btn--secondary">' +
-            '<span class="qaap-login-btn-icon">' + GITLAB_SVG + '</span>Continue with GitLab</button>' +
+            '<span class="qaap-login-btn-icon">' + GITLAB_SVG + '</span>Iniciar con GitLab</button>' +
             '</div>' +
             '<footer class="qaap-login-footer">By continuing you agree to the terms &amp; privacy.</footer>' +
             '</div>';
@@ -141,6 +149,9 @@
                 return;
             }
             if (provider === 'github') {
+            try {
+                window.history.replaceState({}, '', window.location.pathname + window.location.search);
+            } catch (e) { /* ignore */ }
                 window.location.href = '/qaap/oauth/github/start';
                 return;
             }
@@ -193,7 +204,33 @@
 
     function resumeAfterOAuthOrSession() {
         if (window.location.search.indexOf('qaap_oauth=github') !== -1) {
-            loadBundle();
+            fetch('/qaap/api/auth/session', { credentials: 'include' })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('session');
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data && data.signedIn && data.user && data.user.provider) {
+                        writeSignedIn(data.user.provider, data.user, data.sessionId);
+                    }
+                    document.body.classList.remove('qaap-login-active');
+                    var host = document.getElementById('qaap-login-host');
+                    if (host) {
+                        host.remove();
+                    }
+                    var next = new URL(window.location.href);
+                    next.searchParams.delete('qaap_oauth');
+                    next.searchParams.delete('qaap_oauth_error');
+                    var clean = next.pathname + next.search + (next.hash || '');
+                    window.history.replaceState({}, '', clean);
+                    loadBundle();
+                })
+                .catch(function () {
+                    document.body.classList.remove('qaap-login-active');
+                    loadBundle();
+                });
             return;
         }
         fetch('/qaap/api/auth/session', { credentials: 'include' })
@@ -205,7 +242,7 @@
             })
             .then(function (data) {
                 if (data && data.signedIn && data.user && data.user.provider) {
-                    writeSignedIn(data.user.provider);
+                    writeSignedIn(data.user.provider, data.user, data.sessionId);
                     loadBundle();
                     return;
                 }

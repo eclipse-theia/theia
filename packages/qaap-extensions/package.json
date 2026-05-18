@@ -22,6 +22,12 @@
   },
   "theiaExtensions": [
     {
+      "frontendPreload": "lib/browser/qaap-login-preload-module"
+    },
+    {
+      "frontend": "lib/browser/qaap-login-frontend-module"
+    },
+    {
       "frontend": "lib/browser/qaap-extensions-frontend-module"
     }
   ],
