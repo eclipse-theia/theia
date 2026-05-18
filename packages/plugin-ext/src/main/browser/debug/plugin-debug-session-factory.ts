@@ -14,52 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { injectable, inject, interfaces } from '@theia/core/shared/inversify';
 import { DefaultDebugSessionFactory } from '@theia/debug/lib/browser/debug-session-contribution';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/common/debug-preferences';
-import { DebugConfigurationSessionOptions, TestRunReference } from '@theia/debug/lib/browser/debug-session-options';
-import { DebugSession } from '@theia/debug/lib/browser/debug-session';
+import { DebugConfigurationSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
+import { DebugSession, DebugSessionData } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
-import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginChannel } from '../../../common/connection';
-import { TestService } from '@theia/test/lib/browser/test-service';
-import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { CommandService } from '@theia/core';
 
+export const PluginTerminalOptionsExt = Symbol('PluginTerminalOptionsExt');
+
+@injectable()
 export class PluginDebugSession extends DebugSession {
-    constructor(
-        override readonly id: string,
-        override readonly options: DebugConfigurationSessionOptions,
-        override readonly parentSession: DebugSession | undefined,
-        testService: TestService,
-        testRun: TestRunReference | undefined,
-        sessionManager: DebugSessionManager,
-        protected override readonly connection: DebugSessionConnection,
-        protected override readonly terminalServer: TerminalService,
-        protected override readonly editorManager: EditorManager,
-        protected override readonly breakpoints: BreakpointManager,
-        protected override readonly labelProvider: LabelProvider,
-        protected override readonly messages: MessageClient,
-        protected override readonly fileService: FileService,
-        protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
-        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
-        protected override readonly workspaceService: WorkspaceService,
-        debugPreferences: DebugPreferences,
-        protected override readonly commandService: CommandService) {
-        super(id, options, parentSession, testService, testRun, sessionManager, connection, terminalServer, editorManager, breakpoints,
-            labelProvider, messages, fileService, debugContributionProvider,
-            workspaceService, debugPreferences, commandService);
+
+    static override createContainer(
+        parent: interfaces.Container, data: DebugSessionData, connection: DebugSessionConnection, terminalOptionsExt?: TerminalOptionsExt
+    ): interfaces.Container {
+        const child = DebugSession.createContainer(parent, data, connection);
+        child.rebind(DebugSession).to(PluginDebugSession);
+        child.bind(PluginTerminalOptionsExt).toConstantValue(terminalOptionsExt);
+        return child;
     }
+
+    @inject(PluginTerminalOptionsExt)
+    protected readonly terminalOptionsExt: TerminalOptionsExt | undefined;
 
     protected override async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
         terminalWidgetOptions = Object.assign({}, terminalWidgetOptions, this.terminalOptionsExt);
@@ -73,49 +54,28 @@ export class PluginDebugSession extends DebugSession {
  */
 export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
     constructor(
-        protected override readonly terminalService: TerminalService,
-        protected override readonly editorManager: EditorManager,
-        protected override readonly breakpoints: BreakpointManager,
-        protected override readonly labelProvider: LabelProvider,
-        protected override readonly messages: MessageClient,
-        protected override readonly outputChannelManager: OutputChannelManager,
-        protected override readonly debugPreferences: DebugPreferences,
         protected readonly connectionFactory: (sessionId: string) => Promise<PluginChannel>,
-        protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
-        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
-        protected override readonly testService: TestService,
-        protected override readonly workspaceService: WorkspaceService,
-        protected override readonly commandService: CommandService,
+        container: interfaces.Container,
     ) {
         super();
+        this.setContainer(container);
+        this.outputChannelManager = container.get(OutputChannelManager);
+        this.debugPreferences = container.get(DebugPreferences);
     }
 
-    override get(manager: DebugSessionManager, sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
+    override createSession(sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             this.connectionFactory,
             this.getTraceOutputChannel());
-
-        return new PluginDebugSession(
-            sessionId,
+        const data: DebugSessionData = {
+            id: sessionId,
             options,
             parentSession,
-            this.testService,
-            options.testRun,
-            manager,
-            connection,
-            this.terminalService,
-            this.editorManager,
-            this.breakpoints,
-            this.labelProvider,
-            this.messages,
-            this.fileService,
-            this.terminalOptionsExt,
-            this.debugContributionProvider,
-            this.workspaceService,
-            this.debugPreferences,
-            this.commandService
-        );
+            testRun: options.testRun,
+        };
+        const child = PluginDebugSession.createContainer(this.parentContainer, data, connection, this.terminalOptionsExt);
+        return child.get(DebugSession);
     }
 }
