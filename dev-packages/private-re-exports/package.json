@@ -28,7 +28,7 @@
     "mustache": "^4.2.0",
     "semver": "^7.7.4",
     "tslib": "^2.8.1",
-    "yargs": "^15.4.1"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",
