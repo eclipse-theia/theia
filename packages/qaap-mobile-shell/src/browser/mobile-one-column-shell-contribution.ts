@@ -61,6 +61,8 @@ const MINI_BROWSER_OPEN_URL = 'mini-browser.openUrl';
 const GETTING_STARTED_WIDGET_COMMAND = 'getting.started.widget';
 const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
 const VSX_EXTENSIONS_VIEW_CONTAINER_ID = 'vsx-extensions-view-container';
+const OPEN_AI_CONFIGURATION_COMMAND = 'aiConfiguration:open';
+const EDIT_CHAT_SESSION_SETTINGS_COMMAND = 'chat:widget:session-settings';
 
 /** Shell class toggled while the bottom (terminal) panel is expanded on mobile. */
 const MOBILE_BOTTOM_OPEN_CLASS = 'theia-mod-mobile-bottom-open';
@@ -203,6 +205,14 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.toDispose.push(shell.onDidRemoveWidget(widget => {
             if (this.mobileActive && shell.getAreaFor(widget) === 'bottom') {
                 this.scheduleSnapAndUiRefresh();
+            }
+        }));
+        this.toDispose.push(this.commands.onWillExecuteCommand(event => {
+            if (!this.mobileActive) {
+                return;
+            }
+            if (event.commandId === OPEN_AI_CONFIGURATION_COMMAND || event.commandId === EDIT_CHAT_SESSION_SETTINGS_COMMAND) {
+                void this.dismissMobileSideSheets();
             }
         }));
     }
@@ -696,8 +706,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.refreshBottomBar();
                 this.updateBackdropVisibility();
                 this.requestSheetRelayout();
-                this.resetSheetScroll('left');
-                this.resetSheetScroll('right');
             };
             void Promise.all([
                 this.shell.leftPanelHandler.state.pendingUpdate,
@@ -1022,6 +1030,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             const handler = side === 'left' ? this.shell.leftPanelHandler : this.shell.rightPanelHandler;
             await handler.state.pendingUpdate;
             this.relayoutMobileSidePanelHandler(side);
+            this.resetSheetScroll(side);
         } catch (e) {
             console.error(`[qaap-mobile-shell] openMobileSideSheet(${side}, ${widgetId})`, e);
         }

@@ -58,6 +58,7 @@ export class MobileKeyboardHelper implements Disposable {
      */
     protected stableLayoutViewportHeight = 0;
     protected focusNudgeHandles: number[] = [];
+    protected editableFocusCount = 0;
 
     constructor(shellNode: HTMLElement) {
         this.shellNode = shellNode;
@@ -85,6 +86,7 @@ export class MobileKeyboardHelper implements Disposable {
         // Variable lives on :root so position: fixed nodes appended to document.body
         // (sheet backdrops, accessory bar, edge swipe zones) inherit it.
         document.documentElement.style.removeProperty('--theia-mobile-keyboard-inset');
+        document.documentElement.style.removeProperty('--theia-mobile-visual-viewport-height');
         this.shellNode.classList.remove('theia-mod-mobile-keyboard-open');
         this.lastEditorTarget = undefined;
         this.lastInsetPx = 0;
@@ -162,6 +164,7 @@ export class MobileKeyboardHelper implements Disposable {
         }
 
         const inset = occluded >= MobileKeyboardHelper.KEYBOARD_INSET_THRESHOLD_PX ? Math.round(occluded) : 0;
+        document.documentElement.style.setProperty('--theia-mobile-visual-viewport-height', `${Math.round(vv.height)}px`);
         if (inset === this.lastInsetPx) {
             this.updateAccessoryPosition();
             return;
@@ -173,6 +176,10 @@ export class MobileKeyboardHelper implements Disposable {
         } else {
             document.documentElement.style.removeProperty('--theia-mobile-keyboard-inset');
             this.shellNode.classList.remove('theia-mod-mobile-keyboard-open');
+            if (this.editableFocusCount <= 0) {
+                this.stableLayoutViewportHeight = Math.round(Math.max(innerH, vvExtent));
+                this.restoreViewportScroll();
+            }
         }
         this.updateAccessoryVisibility();
     }
@@ -195,6 +202,7 @@ export class MobileKeyboardHelper implements Disposable {
     protected onFocusIn(e: FocusEvent): void {
         const target = e.target;
         if (this.isEditableForViewportKeyboard(target)) {
+            this.editableFocusCount++;
             this.nudgeViewportAfterFocus();
         }
         if (!(target instanceof HTMLTextAreaElement)) {
@@ -246,6 +254,10 @@ export class MobileKeyboardHelper implements Disposable {
 
     protected onFocusOut(e: FocusEvent): void {
         const target = e.target;
+        if (this.isEditableForViewportKeyboard(target)) {
+            this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
+            this.nudgeViewportAfterBlur();
+        }
         if (target !== this.lastEditorTarget) {
             return;
         }
@@ -258,6 +270,33 @@ export class MobileKeyboardHelper implements Disposable {
                 this.updateAccessoryVisibility();
             }
         });
+    }
+
+    /**
+     * Mobile browsers can report one stale visualViewport frame after the keyboard closes.
+     * Rechecking a few times prevents QAAP from staying in a shrunken / lifted state.
+     */
+    protected nudgeViewportAfterBlur(): void {
+        this.scheduleViewportUpdate();
+        for (const delay of [80, 180, 360, 720]) {
+            this.focusNudgeHandles.push(window.setTimeout(() => {
+                if (!this.hasEditableFocus()) {
+                    this.editableFocusCount = 0;
+                }
+                this.scheduleViewportUpdate();
+            }, delay));
+        }
+    }
+
+    protected hasEditableFocus(): boolean {
+        return this.isEditableForViewportKeyboard(document.activeElement);
+    }
+
+    protected restoreViewportScroll(): void {
+        if (window.scrollX === 0 && window.scrollY === 0) {
+            return;
+        }
+        window.requestAnimationFrame(() => window.scrollTo(0, 0));
     }
 
     /**

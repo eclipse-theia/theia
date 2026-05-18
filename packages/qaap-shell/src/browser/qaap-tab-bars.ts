@@ -34,6 +34,19 @@ export interface TabBarPrivateMethods {
     _releaseMouse(): void;
 }
 
+interface MobileTabPointerGesture {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    scrollLeft: number;
+    tabIndex: number;
+    longPress: boolean;
+    moved: boolean;
+    delegated: boolean;
+    timeout: number;
+    downEvent: PointerEvent;
+}
+
 /**
  * A specialized tab bar for the main and bottom areas.
  */
@@ -66,6 +79,7 @@ export class QaapScrollableTabBar extends TabBar<Widget> {
     protected readonly toDispose = new DisposableCollection();
     protected openTabsContainer: HTMLDivElement;
     protected openTabsRoot: Root;
+    protected mobileTabGesture?: MobileTabPointerGesture;
 
     constructor(options?: TabBar.IOptions<Widget>, protected readonly scrollbarOptions?: PerfectScrollbar.Options, dynamicTabOptions?: QaapScrollableTabBar.Options) {
         super(options);
@@ -110,6 +124,7 @@ export class QaapScrollableTabBar extends TabBar<Widget> {
         if (this.isDisposed) {
             return;
         }
+        this.clearMobileTabGesture();
         super.dispose();
         this.toDispose.dispose();
     }
@@ -125,6 +140,130 @@ export class QaapScrollableTabBar extends TabBar<Widget> {
         this.contentNode.removeEventListener('dblclick', this);
         this.contentNode.removeEventListener('keydown', this);
         this.doReleaseMouse();
+        this.clearMobileTabGesture();
+    }
+
+    override handleEvent(event: Event): void {
+        if (event instanceof PointerEvent && this.handleMobileTabPointerEvent(event)) {
+            return;
+        }
+        super.handleEvent(event);
+    }
+
+    protected handleMobileTabPointerEvent(event: PointerEvent): boolean {
+        if (!this.shouldUseMobileTabPan(event)) {
+            return false;
+        }
+        if (event.type !== 'pointerdown') {
+            return false;
+        }
+        const tabIndex = this.indexOfTabForEvent(event);
+        if (tabIndex < 0) {
+            return false;
+        }
+        this.clearMobileTabGesture();
+        const gesture: MobileTabPointerGesture = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            scrollLeft: this.contentContainer.scrollLeft,
+            tabIndex,
+            longPress: false,
+            moved: false,
+            delegated: false,
+            timeout: window.setTimeout(() => {
+                gesture.longPress = true;
+            }, 420),
+            downEvent: event,
+        };
+        this.mobileTabGesture = gesture;
+        document.addEventListener('pointermove', this.onMobileTabPointerMove, { capture: true, passive: false });
+        document.addEventListener('pointerup', this.onMobileTabPointerUp, { capture: true });
+        document.addEventListener('pointercancel', this.onMobileTabPointerCancel, { capture: true });
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return true;
+    }
+
+    protected shouldUseMobileTabPan(event: PointerEvent): boolean {
+        return this.orientation === 'horizontal'
+            && !!this.narrowViewportMq?.matches
+            && (event.pointerType === 'touch' || event.pointerType === 'pen')
+            && !(event.target instanceof Element && event.target.closest('.lm-TabBar-tabCloseIcon'));
+    }
+
+    protected indexOfTabForEvent(event: PointerEvent): number {
+        if (!(event.target instanceof Element)) {
+            return -1;
+        }
+        const tab = event.target.closest('.lm-TabBar-tab');
+        if (!tab) {
+            return -1;
+        }
+        return ArrayExt.findFirstIndex(Array.from(this.contentNode.children), child => child === tab);
+    }
+
+    protected readonly onMobileTabPointerMove = (event: PointerEvent): void => this.doMobileTabPointerMove(event);
+    protected readonly onMobileTabPointerUp = (event: PointerEvent): void => this.doMobileTabPointerUp(event);
+    protected readonly onMobileTabPointerCancel = (event: PointerEvent): void => this.doMobileTabPointerCancel(event);
+
+    protected doMobileTabPointerMove(event: PointerEvent): void {
+        const gesture = this.mobileTabGesture;
+        if (!gesture || event.pointerId !== gesture.pointerId) {
+            return;
+        }
+        const dx = event.clientX - gesture.startX;
+        const dy = event.clientY - gesture.startY;
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+        if (!gesture.longPress && (absX > 5 || absY > 5)) {
+            gesture.moved = true;
+        }
+        if (!gesture.longPress && absX > absY) {
+            this.contentContainer.scrollLeft = gesture.scrollLeft - dx;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+        if (gesture.longPress && !gesture.delegated) {
+            gesture.delegated = true;
+            super.handleEvent(gesture.downEvent);
+        }
+        if (gesture.delegated) {
+            super.handleEvent(event);
+        }
+    }
+
+    protected doMobileTabPointerUp(event: PointerEvent): void {
+        const gesture = this.mobileTabGesture;
+        if (!gesture || event.pointerId !== gesture.pointerId) {
+            return;
+        }
+        if (!gesture.delegated && !gesture.moved) {
+            this.currentIndex = gesture.tabIndex;
+        } else if (gesture.delegated) {
+            super.handleEvent(event);
+        }
+        event.stopImmediatePropagation();
+        this.clearMobileTabGesture();
+    }
+
+    protected doMobileTabPointerCancel(event: PointerEvent): void {
+        const gesture = this.mobileTabGesture;
+        if (gesture?.delegated) {
+            super.handleEvent(event);
+        }
+        this.clearMobileTabGesture();
+    }
+
+    protected clearMobileTabGesture(): void {
+        if (this.mobileTabGesture) {
+            window.clearTimeout(this.mobileTabGesture.timeout);
+            this.mobileTabGesture = undefined;
+        }
+        document.removeEventListener('pointermove', this.onMobileTabPointerMove, true);
+        document.removeEventListener('pointerup', this.onMobileTabPointerUp, true);
+        document.removeEventListener('pointercancel', this.onMobileTabPointerCancel, true);
     }
 
     protected doReleaseMouse(): void {

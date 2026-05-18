@@ -250,6 +250,8 @@
   #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
   #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container {
     touch-action: pan-x;
+    user-select: none;
+    -webkit-user-select: none;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     overflow-x: auto !important;
@@ -738,6 +740,27 @@
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .theia-side-panel {
   min-height: 0;
   height: 100%;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget .theia-TreeContainer,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget .treeContainer,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget .theia-Tree,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget .theia-TreeNodeSegment,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget {
+  min-height: 0;
+}
+
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget .body,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget .ps,
+#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget [data-virtuoso-scroller="true"] {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
 
 /* Floating close button (one shared instance, appended to `document.body`). Visible whenever a
