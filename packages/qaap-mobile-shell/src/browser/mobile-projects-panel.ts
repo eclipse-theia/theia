@@ -498,6 +498,10 @@ export class MobileProjectsPanel {
     }
 
     async openProject(project: MobileProjectEntry): Promise<void> {
+        if (project.github) {
+            this.projectsService.openInCurrentWindow(project);
+            return;
+        }
         if (project.uri) {
             if (project.isCurrent) {
                 this.hide();

@@ -9,6 +9,7 @@ import {
     QAAP_GITHUB_OAUTH_START_PATH,
     type QaapAuthConfigResponse,
     type QaapAuthSessionResponse,
+    type QaapGithubOpenRepositoryResponse,
     type QaapGithubRepositoriesResponse,
 } from '../common/qaap-github-api-types';
 import {
@@ -44,6 +45,16 @@ export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositor
         throw new Error(body.error || `Failed to load GitHub repositories (${response.status})`);
     }
     return response.json() as Promise<QaapGithubRepositoriesResponse>;
+}
+
+export async function openQaapGithubRepository(owner: string, name: string): Promise<QaapGithubOpenRepositoryResponse> {
+    const url = `${QAAP_GITHUB_API_PATH}/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/open`;
+    const response = await fetch(url, FETCH_INIT);
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error || `Failed to open GitHub repository (${response.status})`);
+    }
+    return response.json() as Promise<QaapGithubOpenRepositoryResponse>;
 }
 
 export function startGithubOAuth(): void {

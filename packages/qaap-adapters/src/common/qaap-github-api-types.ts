@@ -47,3 +47,8 @@ export interface QaapGithubRepositorySummary {
 export interface QaapGithubRepositoriesResponse {
     repositories: QaapGithubRepositorySummary[];
 }
+
+export interface QaapGithubOpenRepositoryResponse {
+    repository: QaapGithubRepositorySummary;
+    workspaceUri: string;
+}

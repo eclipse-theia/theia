@@ -10,6 +10,8 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { nls } from '@theia/core/lib/common/nls';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { fetchQaapGithubRepositories, openQaapGithubRepository } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
+import type { QaapGithubRepositorySummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     MobileProjectEntry,
     MobileProjectFilter,
@@ -150,7 +152,7 @@ export class MobileProjectsService {
     }
 
     canOpenInNewWindow(project: MobileProjectEntry): boolean {
-        return !!project.uri;
+        return !!project.uri || !!project.github;
     }
 
     protected workspacePathFromUri(uri: URI): string {
@@ -167,13 +169,20 @@ export class MobileProjectsService {
     }
 
     openInCurrentWindow(project: MobileProjectEntry): void {
-        if (!project.uri) {
+        if (project.github) {
+            void this.openGithubProject(project);
             return;
         }
-        this.openWorkspaceUri(project.uri);
+        if (project.uri) {
+            this.openWorkspaceUri(project.uri);
+        }
     }
 
     openInNewWindow(project: MobileProjectEntry): void {
+        if (project.github) {
+            void this.openGithubProject(project, true);
+            return;
+        }
         if (!project.uri) {
             return;
         }
@@ -181,6 +190,22 @@ export class MobileProjectsService {
         const url = new URL(window.location.href);
         url.hash = encodeURI(this.workspacePathFromUri(project.uri));
         this.windowService.openNewWindow(url.toString());
+    }
+
+    protected async openGithubProject(project: MobileProjectEntry, newWindow = false): Promise<void> {
+        if (!project.github) {
+            return;
+        }
+        markMobileProjectReadmeForOpen();
+        const result = await openQaapGithubRepository(project.github.owner, project.github.name);
+        const uri = new URI(result.workspaceUri);
+        if (newWindow) {
+            const url = new URL(window.location.href);
+            url.hash = encodeURI(this.workspacePathFromUri(uri));
+            this.windowService.openNewWindow(url.toString());
+            return;
+        }
+        this.openWorkspaceUri(uri);
     }
 
     protected readDisplayNames(): Record<string, string> {
@@ -354,6 +379,12 @@ export class MobileProjectsService {
             this.writeHiddenProjectIds(hidden);
             return true;
         }
+        if (project.github) {
+            const hidden = this.readHiddenProjectIds();
+            hidden.add(project.id);
+            this.writeHiddenProjectIds(hidden);
+            return true;
+        }
         if (project.uri) {
             await this.workspaceService.removeRecentWorkspace(project.uri.toString());
             return true;
@@ -370,6 +401,11 @@ export class MobileProjectsService {
     }
 
     async loadProjects(): Promise<MobileProjectEntry[]> {
+        const githubProjects = await this.loadGithubProjects();
+        if (githubProjects.length > 0) {
+            return githubProjects;
+        }
+
         const entries: MobileProjectEntry[] = [];
         const seen = new Set<string>();
         const hiddenIds = this.readHiddenProjectIds();
@@ -456,6 +492,67 @@ export class MobileProjectsService {
         }
 
         return entries.filter(p => !hiddenIds.has(p.id));
+    }
+
+    protected async loadGithubProjects(): Promise<MobileProjectEntry[]> {
+        try {
+            const response = await fetchQaapGithubRepositories();
+            const hiddenIds = this.readHiddenProjectIds();
+            const pinnedIds = this.readPinnedProjectIds();
+            return response.repositories
+                .map(repo => this.githubRepositoryToProject(repo, pinnedIds))
+                .filter(project => !hiddenIds.has(project.id));
+        } catch {
+            return [];
+        }
+    }
+
+    protected githubRepositoryToProject(repo: QaapGithubRepositorySummary, pinnedIds: Set<string>): MobileProjectEntry {
+        const id = `github:${repo.fullName}`;
+        const name = this.resolveDisplayName(id, repo.fullName);
+        return {
+            id,
+            name,
+            color: mobileProjectColorForName(repo.fullName),
+            branch: repo.defaultBranch,
+            status: 'idle',
+            task: repo.description?.trim()
+                || (repo.private
+                    ? nls.localize('qaap/mobileProjects/privateGithubRepo', 'Private GitHub repository')
+                    : nls.localize('qaap/mobileProjects/githubRepo', 'GitHub repository')),
+            progress: 0,
+            agents: [],
+            lastActive: this.relativeUpdatedAt(repo.updatedAt),
+            tokens: '—',
+            cost: '—',
+            pinned: this.isPinned(id, pinnedIds, false),
+            github: {
+                owner: repo.owner,
+                name: repo.name,
+                fullName: repo.fullName,
+                htmlUrl: repo.htmlUrl,
+                private: repo.private,
+            },
+            isCurrent: false,
+        };
+    }
+
+    protected relativeUpdatedAt(value: string): string {
+        const updated = Date.parse(value);
+        if (!Number.isFinite(updated)) {
+            return '—';
+        }
+        const diff = Math.max(0, Date.now() - updated);
+        const minute = 60 * 1000;
+        const hour = 60 * minute;
+        const day = 24 * hour;
+        if (diff < hour) {
+            return nls.localize('qaap/mobileProjects/updatedMinutes', '{0} min', String(Math.max(1, Math.round(diff / minute))));
+        }
+        if (diff < day) {
+            return nls.localize('qaap/mobileProjects/updatedHours', '{0} h', String(Math.round(diff / hour)));
+        }
+        return nls.localize('qaap/mobileProjects/updatedDays', '{0} d', String(Math.round(diff / day)));
     }
 
     filterProjects(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[] {

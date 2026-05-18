@@ -26,6 +26,13 @@ export interface MobileProjectEntry {
     cost: string;
     pinned: boolean;
     uri?: URI;
+    github?: {
+        owner: string;
+        name: string;
+        fullName: string;
+        htmlUrl: string;
+        private: boolean;
+    };
     isCurrent: boolean;
 }
 

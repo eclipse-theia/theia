@@ -5,7 +5,10 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Application, Request, Response } from '@theia/core/shared/express';
-import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { BackendApplicationContribution, FileUri } from '@theia/core/lib/node';
+import { spawn } from 'child_process';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import {
     QAAP_AUTH_API_PATH,
     QAAP_AUTH_SESSION_COOKIE,
@@ -20,6 +23,7 @@ import { QaapGithubSessionStore } from './qaap-github-session-store';
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const GITHUB_OAUTH_SCOPE = 'read:user repo';
 const THEIA_EMPTY_WINDOW_HASH = '!empty';
+const QAAP_REPOS_ROOT = process.env.QAAP_REPOS_ROOT || '/workspace/repos';
 
 @injectable()
 export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
@@ -34,6 +38,7 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         app.get(`${QAAP_AUTH_API_PATH}/session`, (req, res) => this.handleAuthSession(req, res));
         app.post(`${QAAP_AUTH_API_PATH}/signout`, (req, res) => this.handleSignOut(req, res));
         app.get(`${QAAP_GITHUB_API_PATH}/repositories`, (req, res) => this.handleGithubRepositories(req, res));
+        app.get(`${QAAP_GITHUB_API_PATH}/repositories/:owner/:repo/open`, (req, res) => this.handleOpenGithubRepository(req, res));
     }
 
     protected handleOAuthStart(_req: Request, res: Response): void {
@@ -120,6 +125,110 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
             const message = err instanceof Error ? err.message : 'Failed to load repositories';
             res.status(502).json({ error: message });
         }
+    }
+
+    protected async handleOpenGithubRepository(req: Request, res: Response): Promise<void> {
+        const stored = this.sessions.getSession(this.readSessionId(req));
+        if (!stored) {
+            res.status(401).json({ error: 'Not signed in' });
+            return;
+        }
+        const owner = this.cleanGithubPathSegment(req.params.owner);
+        const repoName = this.cleanGithubPathSegment(req.params.repo);
+        if (!owner || !repoName) {
+            res.status(400).json({ error: 'Invalid repository path' });
+            return;
+        }
+        try {
+            const repositories = await fetchGithubRepositories(stored.accessToken);
+            const repository = repositories.find(repo =>
+                repo.owner.toLowerCase() === owner.toLowerCase()
+                && repo.name.toLowerCase() === repoName.toLowerCase()
+            );
+            if (!repository) {
+                res.status(404).json({ error: 'Repository not available for this GitHub session' });
+                return;
+            }
+            const workspacePath = await this.ensureRepositoryWorkspace(repository, stored.accessToken);
+            res.json({
+                repository,
+                workspaceUri: FileUri.create(workspacePath).toString(),
+            });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to prepare repository workspace';
+            res.status(502).json({ error: message });
+        }
+    }
+
+    protected cleanGithubPathSegment(value: string | undefined): string | undefined {
+        const decoded = typeof value === 'string' ? decodeURIComponent(value).trim() : '';
+        if (!/^[A-Za-z0-9_.-]+$/.test(decoded)) {
+            return undefined;
+        }
+        return decoded;
+    }
+
+    protected async ensureRepositoryWorkspace(repository: { owner: string; name: string; cloneUrl: string }, accessToken: string): Promise<string> {
+        const ownerDir = this.safePathSegment(repository.owner);
+        const repoDir = this.safePathSegment(repository.name);
+        const target = path.join(QAAP_REPOS_ROOT, ownerDir, repoDir);
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        if (await this.isGitRepository(target)) {
+            await this.runGit(['-C', target, 'fetch', '--all', '--prune'], accessToken);
+            await this.runGit(['-C', target, 'pull', '--ff-only'], accessToken);
+            return target;
+        }
+        if (await this.pathExists(target)) {
+            const entries = await fs.readdir(target);
+            if (entries.length > 0) {
+                throw new Error(`Workspace path already exists and is not a Git repository: ${target}`);
+            }
+        }
+        await this.runGit(['clone', repository.cloneUrl, target], accessToken);
+        return target;
+    }
+
+    protected safePathSegment(value: string): string {
+        return value.replace(/[^A-Za-z0-9_.-]/g, '_');
+    }
+
+    protected async isGitRepository(target: string): Promise<boolean> {
+        try {
+            const stat = await fs.stat(path.join(target, '.git'));
+            return stat.isDirectory() || stat.isFile();
+        } catch {
+            return false;
+        }
+    }
+
+    protected async pathExists(target: string): Promise<boolean> {
+        try {
+            await fs.access(target);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    protected runGit(args: string[], accessToken: string): Promise<void> {
+        const encoded = Buffer.from(`x-access-token:${accessToken}`).toString('base64');
+        const header = `AUTHORIZATION: basic ${encoded}`;
+        const gitArgs = ['-c', `http.https://github.com/.extraheader=${header}`, ...args];
+        return new Promise((resolve, reject) => {
+            const child = spawn('git', gitArgs, { stdio: ['ignore', 'ignore', 'pipe'] });
+            let stderr = '';
+            child.stderr.on('data', chunk => {
+                stderr += String(chunk);
+            });
+            child.on('error', reject);
+            child.on('close', code => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(stderr.trim() || `git exited with status ${code}`));
+                }
+            });
+        });
     }
 
     protected redirectAfterOAuth(res: Response, publicUrl: string, success: boolean): void {

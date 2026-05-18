@@ -80,7 +80,7 @@ export async function fetchGithubRepositories(accessToken: string): Promise<Qaap
     const repos: QaapGithubRepositorySummary[] = [];
     let page = 1;
     const perPage = 100;
-    while (page <= 5) {
+    while (true) {
         const url = new URL('https://api.github.com/user/repos');
         url.searchParams.set('per_page', String(perPage));
         url.searchParams.set('page', String(page));
