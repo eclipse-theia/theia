@@ -163,9 +163,7 @@ export class MobileProjectsService {
 
     openWorkspaceUri(uri: URI): void {
         markMobileProjectReadmeForOpen();
-        const url = new URL(window.location.href);
-        url.hash = encodeURI(this.workspacePathFromUri(uri));
-        window.location.replace(url.toString());
+        this.workspaceService.open(uri, { preserveWindow: true });
     }
 
     openInCurrentWindow(project: MobileProjectEntry): void {
