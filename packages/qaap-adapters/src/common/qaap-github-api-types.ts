@@ -52,3 +52,13 @@ export interface QaapGithubOpenRepositoryResponse {
     repository: QaapGithubRepositorySummary;
     workspaceUri: string;
 }
+
+export interface QaapGithubCreateRepositoryRequest {
+    name: string;
+    private?: boolean;
+    description?: string;
+}
+
+export interface QaapGithubOpenRepositoryRequest {
+    repository: string;
+}

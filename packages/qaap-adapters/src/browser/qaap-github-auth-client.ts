@@ -9,7 +9,9 @@ import {
     QAAP_GITHUB_OAUTH_START_PATH,
     type QaapAuthConfigResponse,
     type QaapAuthSessionResponse,
+    type QaapGithubCreateRepositoryRequest,
     type QaapGithubOpenRepositoryResponse,
+    type QaapGithubOpenRepositoryRequest,
     type QaapGithubRepositoriesResponse,
 } from '../common/qaap-github-api-types';
 import {
@@ -53,6 +55,35 @@ export async function openQaapGithubRepository(owner: string, name: string): Pro
     if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error || `Failed to open GitHub repository (${response.status})`);
+    }
+    return response.json() as Promise<QaapGithubOpenRepositoryResponse>;
+}
+
+export async function createQaapGithubRepository(request: QaapGithubCreateRepositoryRequest): Promise<QaapGithubOpenRepositoryResponse> {
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories`, {
+        ...FETCH_INIT,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error || `Failed to create GitHub repository (${response.status})`);
+    }
+    return response.json() as Promise<QaapGithubOpenRepositoryResponse>;
+}
+
+export async function cloneQaapGithubRepository(repository: string): Promise<QaapGithubOpenRepositoryResponse> {
+    const request: QaapGithubOpenRepositoryRequest = { repository };
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories/open`, {
+        ...FETCH_INIT,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error || `Failed to clone GitHub repository (${response.status})`);
     }
     return response.json() as Promise<QaapGithubOpenRepositoryResponse>;
 }

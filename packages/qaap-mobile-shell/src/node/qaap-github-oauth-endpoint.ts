@@ -5,6 +5,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Application, Request, Response } from '@theia/core/shared/express';
+import { json } from 'body-parser';
 import { BackendApplicationContribution, FileUri } from '@theia/core/lib/node';
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
@@ -15,8 +16,11 @@ import {
     QAAP_GITHUB_API_PATH,
     QAAP_GITHUB_OAUTH_CALLBACK_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
+    type QaapGithubCreateRepositoryRequest,
+    type QaapGithubOpenRepositoryRequest,
+    type QaapGithubRepositorySummary,
 } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
-import { exchangeGithubCode, fetchGithubRepositories, fetchGithubUser } from './qaap-github-api';
+import { createGithubRepository, exchangeGithubCode, fetchGithubRepositories, fetchGithubRepository, fetchGithubUser } from './qaap-github-api';
 import { readQaapGithubOAuthConfig } from './qaap-github-oauth-config';
 import { QaapGithubSessionStore } from './qaap-github-session-store';
 
@@ -32,12 +36,15 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
     protected readonly sessions: QaapGithubSessionStore;
 
     configure(app: Application): void {
+        app.use(json());
         app.get(QAAP_GITHUB_OAUTH_START_PATH, (req, res) => this.handleOAuthStart(req, res));
         app.get(QAAP_GITHUB_OAUTH_CALLBACK_PATH, (req, res) => this.handleOAuthCallback(req, res));
         app.get(`${QAAP_AUTH_API_PATH}/config`, (req, res) => this.handleAuthConfig(req, res));
         app.get(`${QAAP_AUTH_API_PATH}/session`, (req, res) => this.handleAuthSession(req, res));
         app.post(`${QAAP_AUTH_API_PATH}/signout`, (req, res) => this.handleSignOut(req, res));
         app.get(`${QAAP_GITHUB_API_PATH}/repositories`, (req, res) => this.handleGithubRepositories(req, res));
+        app.post(`${QAAP_GITHUB_API_PATH}/repositories`, (req, res) => this.handleCreateGithubRepository(req, res));
+        app.post(`${QAAP_GITHUB_API_PATH}/repositories/open`, (req, res) => this.handleCloneGithubRepository(req, res));
         app.get(`${QAAP_GITHUB_API_PATH}/repositories/:owner/:repo/open`, (req, res) => this.handleOpenGithubRepository(req, res));
     }
 
@@ -160,6 +167,64 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         }
     }
 
+    protected async handleCreateGithubRepository(req: Request, res: Response): Promise<void> {
+        const stored = this.sessions.getSession(this.readSessionId(req));
+        if (!stored) {
+            res.status(401).json({ error: 'Not signed in' });
+            return;
+        }
+        const body = (req.body ?? {}) as Partial<QaapGithubCreateRepositoryRequest>;
+        const name = typeof body.name === 'string' ? body.name.trim() : '';
+        if (!this.isValidRepositoryName(name)) {
+            res.status(400).json({ error: 'Invalid repository name' });
+            return;
+        }
+        try {
+            const repository = await createGithubRepository(stored.accessToken, {
+                name,
+                private: body.private ?? true,
+                description: typeof body.description === 'string' ? body.description.trim() : undefined,
+            });
+            const workspacePath = await this.ensureRepositoryWorkspace(repository, stored.accessToken);
+            res.json({
+                repository,
+                workspaceUri: FileUri.create(workspacePath).toString(),
+            });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to create GitHub repository';
+            res.status(502).json({ error: message });
+        }
+    }
+
+    protected async handleCloneGithubRepository(req: Request, res: Response): Promise<void> {
+        const stored = this.sessions.getSession(this.readSessionId(req));
+        if (!stored) {
+            res.status(401).json({ error: 'Not signed in' });
+            return;
+        }
+        const body = (req.body ?? {}) as Partial<QaapGithubOpenRepositoryRequest>;
+        const parsed = this.parseGithubRepositoryInput(typeof body.repository === 'string' ? body.repository : '');
+        if (!parsed) {
+            res.status(400).json({ error: 'Enter a GitHub repository as owner/name or URL' });
+            return;
+        }
+        try {
+            const repositories = await fetchGithubRepositories(stored.accessToken);
+            const repository = repositories.find(repo =>
+                repo.owner.toLowerCase() === parsed.owner.toLowerCase()
+                && repo.name.toLowerCase() === parsed.name.toLowerCase()
+            ) ?? await fetchGithubRepository(stored.accessToken, parsed.owner, parsed.name);
+            const workspacePath = await this.ensureRepositoryWorkspace(repository, stored.accessToken);
+            res.json({
+                repository,
+                workspaceUri: FileUri.create(workspacePath).toString(),
+            });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to clone GitHub repository';
+            res.status(502).json({ error: message });
+        }
+    }
+
     protected cleanGithubPathSegment(value: string | undefined): string | undefined {
         const decoded = typeof value === 'string' ? decodeURIComponent(value).trim() : '';
         if (!/^[A-Za-z0-9_.-]+$/.test(decoded)) {
@@ -168,7 +233,38 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         return decoded;
     }
 
-    protected async ensureRepositoryWorkspace(repository: { owner: string; name: string; cloneUrl: string }, accessToken: string): Promise<string> {
+    protected isValidRepositoryName(value: string): boolean {
+        return /^[A-Za-z0-9_.-]+$/.test(value) && !value.startsWith('.') && value.length <= 100;
+    }
+
+    protected parseGithubRepositoryInput(value: string): { owner: string; name: string } | undefined {
+        const trimmed = value.trim().replace(/\.git$/, '');
+        if (!trimmed) {
+            return undefined;
+        }
+        let candidate = trimmed;
+        try {
+            const url = new URL(trimmed);
+            if (url.hostname.toLowerCase() !== 'github.com') {
+                return undefined;
+            }
+            candidate = url.pathname.replace(/^\/+/, '');
+        } catch {
+            /* owner/name input */
+        }
+        const [owner, name, ...rest] = candidate.split('/').filter(Boolean);
+        if (rest.length > 0) {
+            return undefined;
+        }
+        const cleanOwner = this.cleanGithubPathSegment(owner);
+        const cleanName = this.cleanGithubPathSegment(name);
+        if (!cleanOwner || !cleanName) {
+            return undefined;
+        }
+        return { owner: cleanOwner, name: cleanName };
+    }
+
+    protected async ensureRepositoryWorkspace(repository: Pick<QaapGithubRepositorySummary, 'owner' | 'name' | 'cloneUrl'>, accessToken: string): Promise<string> {
         const ownerDir = this.safePathSegment(repository.owner);
         const repoDir = this.safePathSegment(repository.name);
         const target = path.join(QAAP_REPOS_ROOT, ownerDir, repoDir);

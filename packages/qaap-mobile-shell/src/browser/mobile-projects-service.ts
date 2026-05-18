@@ -9,8 +9,14 @@ import { LabelProvider } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { nls } from '@theia/core/lib/common/nls';
+import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { fetchQaapGithubRepositories, openQaapGithubRepository } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
+import {
+    cloneQaapGithubRepository,
+    createQaapGithubRepository,
+    fetchQaapGithubRepositories,
+    openQaapGithubRepository,
+} from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
 import type { QaapGithubRepositorySummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     MobileProjectEntry,
@@ -72,6 +78,9 @@ export class MobileProjectsService {
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     protected filter: MobileProjectFilter = 'all';
 
@@ -204,6 +213,62 @@ export class MobileProjectsService {
             return;
         }
         this.openWorkspaceUri(uri);
+    }
+
+    async createGithubProject(): Promise<MobileProjectEntry[] | undefined> {
+        const dialog = new SingleTextInputDialog({
+            title: nls.localize('qaap/mobileProjects/createGithubRepo', 'Create GitHub repository'),
+            placeholder: nls.localize('qaap/mobileProjects/createGithubRepoPlaceholder', 'repository-name'),
+            validate: (value, mode) => {
+                const name = value.trim();
+                if (mode !== 'preview' && !name) {
+                    return nls.localize('qaap/mobileProjects/createGithubRepoRequired', 'Enter a repository name');
+                }
+                if (name && (!/^[A-Za-z0-9_.-]+$/.test(name) || name.startsWith('.'))) {
+                    return nls.localize('qaap/mobileProjects/createGithubRepoInvalid', 'Use letters, numbers, dashes, underscores, or dots');
+                }
+                return true;
+            },
+        });
+        const name = (await dialog.open())?.trim();
+        if (!name) {
+            return undefined;
+        }
+        try {
+            const result = await createQaapGithubRepository({ name, private: true });
+            await this.messageService.info(nls.localize('qaap/mobileProjects/repoCreated', 'Created {0}', result.repository.fullName));
+            this.openWorkspaceUri(new URI(result.workspaceUri));
+            return this.loadGithubProjects();
+        } catch (err) {
+            await this.messageService.error(err instanceof Error ? err.message : String(err));
+            return undefined;
+        }
+    }
+
+    async cloneGithubProject(): Promise<MobileProjectEntry[] | undefined> {
+        const dialog = new SingleTextInputDialog({
+            title: nls.localize('qaap/mobileProjects/cloneGithubRepo', 'Clone GitHub repository'),
+            placeholder: nls.localize('qaap/mobileProjects/cloneGithubRepoPlaceholder', 'owner/repo or https://github.com/owner/repo'),
+            validate: (value, mode) => {
+                if (mode !== 'preview' && !value.trim()) {
+                    return nls.localize('qaap/mobileProjects/cloneGithubRepoRequired', 'Enter a GitHub repository');
+                }
+                return true;
+            },
+        });
+        const repository = (await dialog.open())?.trim();
+        if (!repository) {
+            return undefined;
+        }
+        try {
+            const result = await cloneQaapGithubRepository(repository);
+            await this.messageService.info(nls.localize('qaap/mobileProjects/repoCloned', 'Cloned {0}', result.repository.fullName));
+            this.openWorkspaceUri(new URI(result.workspaceUri));
+            return this.loadGithubProjects();
+        } catch (err) {
+            await this.messageService.error(err instanceof Error ? err.message : String(err));
+            return undefined;
+        }
     }
 
     protected readDisplayNames(): Record<string, string> {
@@ -356,7 +421,7 @@ export class MobileProjectsService {
     }
 
     canRemove(project: MobileProjectEntry): boolean {
-        return !project.isCurrent;
+        return !project.isCurrent && !project.github;
     }
 
     async removeProject(project: MobileProjectEntry): Promise<boolean> {
@@ -372,12 +437,6 @@ export class MobileProjectsService {
             return true;
         }
         if (project.id.startsWith('demo-')) {
-            const hidden = this.readHiddenProjectIds();
-            hidden.add(project.id);
-            this.writeHiddenProjectIds(hidden);
-            return true;
-        }
-        if (project.github) {
             const hidden = this.readHiddenProjectIds();
             hidden.add(project.id);
             this.writeHiddenProjectIds(hidden);
@@ -495,35 +554,47 @@ export class MobileProjectsService {
     protected async loadGithubProjects(): Promise<MobileProjectEntry[]> {
         try {
             const response = await fetchQaapGithubRepositories();
-            const hiddenIds = this.readHiddenProjectIds();
             const pinnedIds = this.readPinnedProjectIds();
+            const currentFullName = this.currentGithubRepositoryFullName();
             return response.repositories
-                .map(repo => this.githubRepositoryToProject(repo, pinnedIds))
-                .filter(project => !hiddenIds.has(project.id));
+                .map(repo => this.githubRepositoryToProject(repo, pinnedIds, currentFullName));
         } catch {
             return [];
         }
     }
 
-    protected githubRepositoryToProject(repo: QaapGithubRepositorySummary, pinnedIds: Set<string>): MobileProjectEntry {
+    protected currentGithubRepositoryFullName(): string | undefined {
+        const current = this.workspaceService.workspace?.resource;
+        const segments = current?.path.toString().split('/').filter(Boolean) ?? [];
+        const reposIndex = segments.lastIndexOf('repos');
+        if (reposIndex < 0 || segments.length <= reposIndex + 2) {
+            return undefined;
+        }
+        return `${segments[reposIndex + 1]}/${segments[reposIndex + 2]}`.toLowerCase();
+    }
+
+    protected githubRepositoryToProject(repo: QaapGithubRepositorySummary, pinnedIds: Set<string>, currentFullName?: string): MobileProjectEntry {
         const id = `github:${repo.fullName}`;
         const name = this.resolveDisplayName(id, repo.fullName);
+        const isCurrent = repo.fullName.toLowerCase() === currentFullName;
         return {
             id,
             name,
             color: mobileProjectColorForName(repo.fullName),
             branch: repo.defaultBranch,
-            status: 'idle',
-            task: repo.description?.trim()
+            status: isCurrent ? 'working' : 'idle',
+            task: isCurrent
+                ? nls.localize('qaap/mobileProjects/currentGithubTask', 'Open in this QAAP workspace')
+                : repo.description?.trim()
                 || (repo.private
                     ? nls.localize('qaap/mobileProjects/privateGithubRepo', 'Private GitHub repository')
                     : nls.localize('qaap/mobileProjects/githubRepo', 'GitHub repository')),
-            progress: 0,
-            agents: [],
+            progress: isCurrent ? 0.35 : 0,
+            agents: isCurrent ? [{ role: 'ai', color: '#3B6FA0' }] : [],
             lastActive: this.relativeUpdatedAt(repo.updatedAt),
             tokens: '—',
             cost: '—',
-            pinned: this.isPinned(id, pinnedIds, false),
+            pinned: this.isPinned(id, pinnedIds, isCurrent),
             github: {
                 owner: repo.owner,
                 name: repo.name,
@@ -531,7 +602,7 @@ export class MobileProjectsService {
                 htmlUrl: repo.htmlUrl,
                 private: repo.private,
             },
-            isCurrent: false,
+            isCurrent,
         };
     }
 

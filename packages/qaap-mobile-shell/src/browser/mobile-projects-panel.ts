@@ -26,7 +26,9 @@ export class MobileProjectsPanel {
     protected readonly scroll: HTMLElement;
     protected readonly subtitleEl: HTMLElement;
     protected readonly filterRow: HTMLElement;
+    protected readonly searchInput: HTMLInputElement;
     protected filter: MobileProjectFilter = 'all';
+    protected query = '';
     protected projects: MobileProjectEntry[] = [];
     protected visible = false;
     protected openMenu: HTMLElement | undefined;
@@ -65,13 +67,46 @@ export class MobileProjectsPanel {
         this.subtitleEl.className = 'theia-mobile-projects-subtitle';
         titleBlock.append(title, this.subtitleEl);
 
+        const actions = document.createElement('div');
+        actions.className = 'theia-mobile-projects-header-actions';
+
+        const refreshBtn = document.createElement('button');
+        refreshBtn.type = 'button';
+        refreshBtn.className = 'theia-mobile-projects-icon-btn codicon codicon-refresh';
+        refreshBtn.title = nls.localize('qaap/mobileProjects/refresh', 'Refresh repositories');
+        refreshBtn.setAttribute('aria-label', refreshBtn.title);
+        refreshBtn.addEventListener('click', () => { void this.refreshProjects(); });
+
+        const cloneBtn = document.createElement('button');
+        cloneBtn.type = 'button';
+        cloneBtn.className = 'theia-mobile-projects-clone-btn';
+        cloneBtn.innerHTML = '<span class="codicon codicon-repo-clone" aria-hidden="true"></span> ' +
+            nls.localize('qaap/mobileProjects/clone', 'Clone');
+        cloneBtn.addEventListener('click', () => { void this.onCloneClick(); });
+
         const newBtn = document.createElement('button');
         newBtn.type = 'button';
         newBtn.className = 'theia-mobile-projects-new-btn';
         newBtn.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span> ' +
             nls.localize('qaap/mobileProjects/new', 'New');
         newBtn.addEventListener('click', () => { void this.onNewClick(); });
-        header.append(titleBlock, newBtn);
+        actions.append(refreshBtn, cloneBtn, newBtn);
+        header.append(titleBlock, actions);
+
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'theia-mobile-projects-search';
+        const searchIcon = document.createElement('span');
+        searchIcon.className = 'codicon codicon-search';
+        searchIcon.setAttribute('aria-hidden', 'true');
+        this.searchInput = document.createElement('input');
+        this.searchInput.type = 'search';
+        this.searchInput.className = 'theia-mobile-projects-search-input';
+        this.searchInput.placeholder = nls.localize('qaap/mobileProjects/searchPlaceholder', 'Search repositories');
+        this.searchInput.addEventListener('input', () => {
+            this.query = this.searchInput.value.trim().toLowerCase();
+            this.renderList();
+        });
+        searchWrap.append(searchIcon, this.searchInput);
 
         this.filterRow = document.createElement('div');
         this.filterRow.className = 'theia-mobile-projects-filters';
@@ -80,7 +115,7 @@ export class MobileProjectsPanel {
         this.scroll = document.createElement('div');
         this.scroll.className = 'theia-mobile-projects-scroll';
 
-        this.root.append(header, this.filterRow, this.scroll);
+        this.root.append(header, searchWrap, this.filterRow, this.scroll);
     }
 
     get node(): HTMLElement {
@@ -115,10 +150,31 @@ export class MobileProjectsPanel {
     }
 
     protected async onNewClick(): Promise<void> {
-        const openFolder = WorkspaceCommands.OPEN_FOLDER.id;
-        if (this.commands.getCommand(openFolder) && this.commands.isEnabled(openFolder)) {
-            markMobileProjectReadmeForOpen();
-            await this.commands.executeCommand(openFolder);
+        const nextProjects = await this.projectsService.createGithubProject();
+        if (nextProjects) {
+            this.projects = nextProjects;
+            this.render();
+            this.delegate.onProjectsChanged?.();
+        }
+    }
+
+    protected async onCloneClick(): Promise<void> {
+        const nextProjects = await this.projectsService.cloneGithubProject();
+        if (nextProjects) {
+            this.projects = nextProjects;
+            this.render();
+            this.delegate.onProjectsChanged?.();
+        }
+    }
+
+    protected async refreshProjects(): Promise<void> {
+        this.root.classList.add('theia-mod-loading');
+        try {
+            this.projects = await this.projectsService.loadProjects();
+            this.render();
+            this.delegate.onProjectsChanged?.();
+        } finally {
+            this.root.classList.remove('theia-mod-loading');
         }
     }
 
@@ -126,7 +182,7 @@ export class MobileProjectsPanel {
         const activeCount = this.projectsService.countActive(this.projects);
         this.subtitleEl.textContent = nls.localize(
             'qaap/mobileProjects/subtitle',
-            '{0} · {1} active',
+            '{0} repositories · {1} active',
             String(this.projects.length),
             String(activeCount)
         );
@@ -170,9 +226,13 @@ export class MobileProjectsPanel {
     protected renderList(): void {
         this.closeCardMenu();
         this.scroll.replaceChildren();
-        const filtered = this.projectsService.filterProjects(this.projects, this.filter);
+        const filtered = this.applySearch(this.projectsService.filterProjects(this.projects, this.filter));
         const working = filtered.filter(p => p.status === 'working');
         const others = filtered.filter(p => p.status !== 'working');
+
+        if (filtered.length === 0) {
+            this.scroll.append(this.createEmptyState());
+        }
 
         if (this.filter === 'all' && working.length > 0) {
             this.scroll.append(this.createSectionLabel(
@@ -205,10 +265,39 @@ export class MobileProjectsPanel {
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.className = 'theia-mobile-projects-add';
-        addBtn.innerHTML = '<span class="codicon codicon-add" aria-hidden="true"></span> ' +
-            nls.localize('qaap/mobileProjects/openFolder', 'Clone repo or open a folder');
-        addBtn.addEventListener('click', () => { void this.onNewClick(); });
+        addBtn.innerHTML = '<span class="codicon codicon-repo-clone" aria-hidden="true"></span> ' +
+            nls.localize('qaap/mobileProjects/openFolder', 'Clone another GitHub repo');
+        addBtn.addEventListener('click', () => { void this.onCloneClick(); });
         this.scroll.append(addBtn);
+    }
+
+    protected applySearch(projects: MobileProjectEntry[]): MobileProjectEntry[] {
+        if (!this.query) {
+            return projects;
+        }
+        return projects.filter(project =>
+            project.name.toLowerCase().includes(this.query)
+            || project.branch.toLowerCase().includes(this.query)
+            || project.task.toLowerCase().includes(this.query)
+            || project.github?.fullName.toLowerCase().includes(this.query)
+        );
+    }
+
+    protected createEmptyState(): HTMLElement {
+        const empty = document.createElement('div');
+        empty.className = 'theia-mobile-projects-empty';
+        const icon = document.createElement('span');
+        icon.className = 'codicon codicon-repo';
+        const title = document.createElement('strong');
+        title.textContent = this.query
+            ? nls.localize('qaap/mobileProjects/noSearchResults', 'No matching repositories')
+            : nls.localize('qaap/mobileProjects/noRepositories', 'No repositories yet');
+        const body = document.createElement('span');
+        body.textContent = this.query
+            ? nls.localize('qaap/mobileProjects/noSearchResultsBody', 'Try another name, branch, or owner.')
+            : nls.localize('qaap/mobileProjects/noRepositoriesBody', 'Create or clone a GitHub repository to start working.');
+        empty.append(icon, title, body);
+        return empty;
     }
 
     protected createSectionLabel(text: string, withDot: boolean): HTMLElement {
@@ -295,7 +384,9 @@ export class MobileProjectsPanel {
             label: nls.localize('qaap/mobileProjects/remove', 'Remove'),
             danger: true,
             disabled: !canRemove,
-            title: !canRemove
+            title: !canRemove && project.github
+                ? nls.localize('qaap/mobileProjects/removeGithubDisabled', 'GitHub repositories stay visible in Projects')
+                : !canRemove
                 ? nls.localize('qaap/mobileProjects/removeCurrentDisabled', 'Cannot remove the active workspace')
                 : undefined,
             onSelect: () => { void this.onRemoveProject(project); },
