@@ -77,7 +77,15 @@ export class ChangeSetFileService {
     getAdditionalInfo(uri: URI): string | undefined {
         const wsUri = this.wsService.getWorkspaceRootUri(uri);
         if (wsUri) {
+            const isMultiRoot = this.wsService.tryGetRoots().length > 1;
             const wsRelative = wsUri.relative(uri);
+            if (isMultiRoot) {
+                const rootName = wsUri.path.base;
+                if (wsRelative?.hasDir) {
+                    return `${rootName} · ${wsRelative.dir.toString()}`;
+                }
+                return rootName;
+            }
             if (wsRelative?.hasDir) {
                 return wsRelative.dir.toString();
             }
