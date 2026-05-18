@@ -744,7 +744,6 @@ export class GetWorkspaceFileList implements ToolProvider {
             description: 'Lists files and directories within a specified workspace directory. ' +
                 'Returns a JSON object mapping each immediate child name to its type ("directory" or "file"), ' +
                 'e.g., {"src": "directory", "package.json": "file", "README.md": "file"}. ' +
-                'Each key is a sibling of every other key; none are nested under another. ' +
                 'Use "" or "." to list the workspace top-level directories. ' +
                 'Use this to explore directory structure step by step. ' +
                 'For finding specific files by pattern, use findFilesByPattern instead. ' +

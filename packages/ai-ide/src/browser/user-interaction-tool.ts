@@ -247,11 +247,9 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     async openLink(link: UserInteractionLink): Promise<void> {
-        const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-
         if (link.rightRef !== undefined) {
-            const resolvedLeftUri = await this.resolveDiffSideUri(link.ref, workspaceRoot);
-            const resolvedRightUri = await this.resolveDiffSideUri(link.rightRef, workspaceRoot);
+            const resolvedLeftUri = await this.resolveDiffSideUri(link.ref);
+            const resolvedRightUri = await this.resolveDiffSideUri(link.rightRef);
             const left = resolveContentRef(link.ref);
             const right = resolveContentRef(link.rightRef);
             const diffLabel = link.label || buildDiffLabel(left, right);
@@ -269,7 +267,7 @@ export class UserInteractionTool implements ToolProvider {
             }
             const left = resolveContentRef(link.ref) as PathContentRef;
             if (left.gitRef) {
-                const uri = this.resolveUri(left, workspaceRoot);
+                const uri = this.resolveUri(left);
                 let targetUri: URI;
                 if (uri === undefined) {
                     targetUri = this.errorContentUri(left.path, left.gitRef);
@@ -282,8 +280,7 @@ export class UserInteractionTool implements ToolProvider {
                 }
                 await open(this.openerService, targetUri);
             } else {
-                const fileUri = workspaceRoot.resolve(left.path);
-                this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
+                const fileUri = this.workspaceScope.resolveRelativePath(left.path);
                 if (!(await this.canResolveUri(fileUri))) {
                     await open(this.openerService, this.fileNotFoundUri(left.path));
                     return;
@@ -297,11 +294,9 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     protected resolveUri(
-        ref: PathContentRef,
-        workspaceRoot: URI
+        ref: PathContentRef
     ): URI | undefined {
-        const fileUri = workspaceRoot.resolve(ref.path);
-        this.workspaceScope.ensureWithinWorkspace(fileUri, workspaceRoot);
+        const fileUri = this.workspaceScope.resolveRelativePath(ref.path);
         if (ref.gitRef) {
             const repo = this.scmService.findRepository(fileUri);
             if (repo) {
@@ -365,12 +360,12 @@ export class UserInteractionTool implements ToolProvider {
         }
     }
 
-    protected async resolveDiffSideUri(ref: ContentRef, workspaceRoot: URI): Promise<URI> {
+    protected async resolveDiffSideUri(ref: ContentRef): Promise<URI> {
         if (isEmptyContentRef(ref)) {
             return this.emptyContentUri(ref.label || '');
         }
         const resolved = resolveContentRef(ref) as PathContentRef;
-        const uri = this.resolveUri(resolved, workspaceRoot);
+        const uri = this.resolveUri(resolved);
         if (uri === undefined) {
             // No SCM provider could resolve the gitRef — surface as an actionable error.
             return this.errorContentUri(resolved.path, resolved.gitRef!);
