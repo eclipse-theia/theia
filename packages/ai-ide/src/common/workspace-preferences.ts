@@ -24,6 +24,7 @@ export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTem
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 export const TASK_CONTEXT_STORAGE_DIRECTORY_PREF = 'ai-features.promptTemplates.taskContextStorageDirectory';
 export const FILE_CONTENT_MAX_SIZE_KB_PREF = 'ai-features.workspaceFunctions.fileContentMaxSizeKB';
+export const ALLOWED_EXTERNAL_PATHS_PREF = 'ai-features.workspaceFunctions.allowedExternalPaths';
 
 const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files \
 (highest) > workspace directories > global directories (lowest).';
@@ -102,6 +103,19 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
                 'When using offset and limit, only the requested range is checked against this limit.'),
             default: 256,
             minimum: 1
+        },
+        [ALLOWED_EXTERNAL_PATHS_PREF]: {
+            type: 'array',
+            title: nls.localize('theia/ai/workspace/allowedExternalPaths/title', 'Allowed External Paths'),
+            description: nls.localize('theia/ai/workspace/allowedExternalPaths/description',
+                'List of absolute paths or file URIs (directories or files) outside the workspace that AI tools may read. ' +
+                'Supports `~` to refer to the user home directory. Empty by default; opt-in only. ' +
+                'Honored by getFileContent, findFilesByPattern, getWorkspaceFileList, and getWorkspaceDirectoryStructure. ' +
+                'Workspace-scoped values are ignored when the workspace is not trusted.'),
+            default: [],
+            items: {
+                type: 'string'
+            }
         }
     }
 };
