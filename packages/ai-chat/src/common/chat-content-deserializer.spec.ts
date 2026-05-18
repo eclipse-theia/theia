@@ -32,6 +32,7 @@ import {
     QuestionResponseContentImpl,
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
+    ToolCallChatResponseContent,
     ToolCallChatResponseContentImpl
 } from './chat-model';
 
@@ -213,6 +214,31 @@ describe('Chat Content Serialization', () => {
 
             const deserialized = await registry.deserialize(withFallback);
             expect(deserialized.kind).to.equal('toolCall');
+        });
+
+        it('should mark an unfinished tool call as interrupted when restored', async () => {
+            const original = new ToolCallChatResponseContentImpl('id', 'toolName', '{}', false);
+
+            const serialized = original.toSerializable?.();
+            const withFallback = { ...serialized!, fallbackMessage: '' };
+            const deserialized = await registry.deserialize(withFallback) as ToolCallChatResponseContentImpl;
+
+            expect(deserialized.finished).to.be.true;
+            expect(ToolCallChatResponseContent.isErrorResult(deserialized.result)).to.be.true;
+            expect(ToolCallChatResponseContent.getErrorMessage(deserialized.result)).to.include('interrupted');
+            const [, toolResultMessage] = deserialized.toLanguageModelMessage();
+            expect(ToolCallChatResponseContent.isErrorResult(toolResultMessage.content)).to.be.true;
+        });
+
+        it('should preserve a real tool result on restore (not overwrite as interrupted)', async () => {
+            const original = new ToolCallChatResponseContentImpl('id', 'toolName', '{}', true, 'real-result');
+
+            const serialized = original.toSerializable?.();
+            const withFallback = { ...serialized!, fallbackMessage: '' };
+            const deserialized = await registry.deserialize(withFallback) as ToolCallChatResponseContentImpl;
+
+            expect(deserialized.finished).to.be.true;
+            expect(deserialized.result).to.equal('real-result');
         });
     });
 
