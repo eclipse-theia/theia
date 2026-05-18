@@ -16,6 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as path from 'path';
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
@@ -60,7 +61,7 @@ function overrideInternalLoad(): void {
             return internalLoad.apply(this, arguments);
         }
 
-        const plugin = findPlugin(parent.filename);
+        const plugin = findPlugin(plugins, parent.filename);
         if (plugin) {
             const apiImpl = pluginsApiImpl.get(plugin.model.id);
             return apiImpl;
@@ -75,6 +76,15 @@ function overrideInternalLoad(): void {
     };
 }
 
-function findPlugin(filePath: string): Plugin | undefined {
-    return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
+/**
+ * Locate the plugin whose folder contains the given file.
+ *
+ * Matches on folder boundaries, so sibling plugins whose folder names share
+ * a prefix (e.g. `acme.foo` vs. `acme.foo-extras`) are not mismatched.
+ */
+export function findPlugin(pluginList: ReadonlyArray<Plugin>, filePath: string): Plugin | undefined {
+    return pluginList.find(plugin => {
+        const rel = path.relative(plugin.pluginFolder, filePath);
+        return !rel.startsWith('..') && !path.isAbsolute(rel);
+    });
 }
