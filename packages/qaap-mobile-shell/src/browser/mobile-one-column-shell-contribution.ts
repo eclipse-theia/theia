@@ -51,11 +51,10 @@ const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
 const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
 const WORKBENCH_TASKS_RUN = 'workbench.action.tasks.runTask';
-const WORKBENCH_FOCUS_EDITOR = 'workbench.action.focusActiveEditorGroup';
 const WORKBENCH_OPEN_DIFF = 'editor.action.diffReview.next';
 const MINI_BROWSER_OPEN_URL = 'mini-browser.openUrl';
 
-type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'plan' | 'diff' | 'tasks' | 'skills' | 'terminal' | 'editor';
+type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'plan' | 'diff' | 'tasks' | 'skills' | 'terminal';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -555,7 +554,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
             { id: 'skills', label: nls.localize('theia/core/mobileBottomBar/skills', 'Skills'), icon: 'codicon-extensions' },
             { id: 'terminal', label: nls.localize('theia/core/mobileBottomBar/terminal', 'Terminal'), icon: 'codicon-terminal', commandId: WORKBENCH_TOGGLE_TERMINAL },
-            { id: 'editor', label: nls.localize('theia/core/mobileBottomBar/editor', 'Editor'), icon: 'codicon-code', commandId: WORKBENCH_FOCUS_EDITOR },
         ];
     }
 
@@ -573,13 +571,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             }
             case 'terminal':
                 return this.shell.isExpanded('bottom') && !this.shell.bottomPanel.isEmpty;
-            case 'editor': {
-                const active = this.shell.activeWidget;
-                if (!active || this.shell.getAreaFor(active) !== 'main') {
-                    return false;
-                }
-                return !active.id.startsWith('mini-browser:');
-            }
             default:
                 return false;
         }
