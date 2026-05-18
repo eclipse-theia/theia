@@ -589,6 +589,23 @@ export class ApplicationShell extends Widget {
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+        dockPanel.widgetRemoved.connect((_, widget) => {
+            if (widget.id === this.lastActiveWidgetId) {
+                this.lastActiveWidgetId = undefined;
+                const tabBar = this.lastActiveTabBar;
+                this.lastActiveTabBar = undefined;
+
+                // Lumino already auto-selected the next tab when the old one was removed.
+                // We just need to wait for the DOM to update, then force focus onto the new tab.
+                if (tabBar && tabBar.currentTitle) {
+                    const nextWidget = tabBar.currentTitle.owner;
+                    window.requestAnimationFrame(() => {
+                        this.activateWidget(nextWidget.id);
+                        nextWidget.activate();
+                    });
+                }
+            }
+        });
 
         const openUri = async (fileUri: URI) => {
             try {
@@ -1198,7 +1215,8 @@ export class ApplicationShell extends Widget {
     private onCurrentChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
         this.onDidChangeCurrentWidgetEmitter.fire(args);
     }
-
+    protected lastActiveWidgetId: string | undefined;
+    protected lastActiveTabBar: TabBar<Widget> | undefined;
     protected readonly toDisposeOnActiveChanged = new DisposableCollection();
 
     /**
@@ -1207,6 +1225,13 @@ export class ApplicationShell extends Widget {
     private onActiveChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
         this.toDisposeOnActiveChanged.dispose();
         const { newValue, oldValue } = args;
+
+        // Track the active widget and its tab bar before it gets closed
+        if (newValue) {
+            this.lastActiveWidgetId = newValue.id;
+            this.lastActiveTabBar = this.getTabBarFor(newValue) as TabBar<Widget> | undefined;
+        }
+
         if (oldValue) {
             let w: Widget | null = oldValue;
             while (w) {
@@ -1237,27 +1262,6 @@ export class ApplicationShell extends Widget {
                 panel.markAsCurrent(widget!.title);
             }
 
-            // activate another widget if an active widget will be closed
-            const onCloseRequest = newValue['onCloseRequest'];
-            newValue['onCloseRequest'] = msg => {
-                const currentTabBar = this.currentTabBar;
-                if (currentTabBar) {
-                    const recentlyUsedInTabBar = currentTabBar['_previousTitle'] as TabBar<Widget>['currentTitle'];
-                    if (recentlyUsedInTabBar && recentlyUsedInTabBar.owner !== newValue) {
-                        currentTabBar.currentIndex = ArrayExt.firstIndexOf(currentTabBar.titles, recentlyUsedInTabBar);
-                        if (currentTabBar.currentTitle) {
-                            this.activateWidget(currentTabBar.currentTitle.owner.id);
-                        }
-                    } else if (!this.activateNextTabInTabBar(currentTabBar)) {
-                        if (!this.activatePreviousTabBar(currentTabBar)) {
-                            this.activateNextTabBar(currentTabBar);
-                        }
-                    }
-                }
-                newValue['onCloseRequest'] = onCloseRequest;
-                newValue['onCloseRequest'](msg);
-            };
-            this.toDisposeOnActiveChanged.push(Disposable.create(() => newValue['onCloseRequest'] = onCloseRequest));
             if (PreviewableWidget.is(newValue)) {
                 newValue.loaded = true;
             }
