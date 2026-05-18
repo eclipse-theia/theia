@@ -17,6 +17,10 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "3000"
+      QAAP_GITHUB_CLIENT_ID: ${QAAP_GITHUB_CLIENT_ID:-}
+      QAAP_GITHUB_CLIENT_SECRET: ${QAAP_GITHUB_CLIENT_SECRET:-}
+      QAAP_OAUTH_PUBLIC_URL: ${QAAP_OAUTH_PUBLIC_URL:-}
+      QAAP_SKIP_AUTH: ${QAAP_SKIP_AUTH:-false}
       # Optional: mount a host folder as the default workspace
       # THEIA_PLUGINS_DIR: /app/plugins
     volumes:
