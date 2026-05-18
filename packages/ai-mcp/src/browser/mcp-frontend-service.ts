@@ -136,12 +136,25 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                         switch (callContent.type) {
                             case 'image':
                                 return { type: 'image', base64data: callContent.data, mimeType: callContent.mimeType };
-                            case 'text':
-                                return { type: 'text', text: callContent.text };
+                            case 'text': {
+                                const text = callContent.text;
+                                if (text.startsWith('{')) {
+                                    try {
+                                        const parsed = JSON.parse(text);
+                                        if (parsed && parsed.type === 'html' && typeof parsed.html === 'string') {
+                                            return { type: 'html', html: parsed.html, title: parsed.title };
+                                        }
+                                    } catch { /* not JSON, fall through */ }
+                                }
+                                return { type: 'text', text };
+                            }
                             case 'resource': {
                                 return { type: 'text', text: JSON.stringify(callContent.resource) };
                             }
                             default: {
+                                if ('html' in callContent && typeof (callContent as { html: unknown }).html === 'string') {
+                                    return { type: 'html', html: (callContent as { html: string }).html, title: (callContent as { title?: string }).title };
+                                }
                                 return { type: 'text', text: JSON.stringify(callContent) };
                             }
                         }
