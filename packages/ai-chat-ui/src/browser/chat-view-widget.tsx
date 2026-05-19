@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatRequest, ChatRequestModel, ChatService, ChatSession, ChatSessionSettings, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia/ai-core';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
@@ -26,6 +26,7 @@ import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { AIChatNavigationService } from './ai-chat-navigation-service';
+import { ChatSessionInputDrafts } from './chat-session-input-drafts';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -68,6 +69,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected readonly navigationService: AIChatNavigationService;
 
     protected chatSession: ChatSession;
+    protected readonly sessionInputDrafts = new ChatSessionInputDrafts();
+    protected readonly openTabSessionIds = new Set<string>();
+    protected readonly tabBarNode = document.createElement('div');
 
     protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
@@ -88,6 +92,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.title.iconClass = codicon('comment-discussion');
         this.title.closable = true;
         this.node.classList.add('chat-view-widget');
+        this.tabBarNode.classList.add('theia-AIChatTabs');
+        this.tabBarNode.setAttribute('role', 'tablist');
         this.update();
     }
 
@@ -103,12 +109,14 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             })
         ]);
         const layout = this.layout = new PanelLayout();
+        this.node.appendChild(this.tabBarNode);
 
         this.treeWidget.node.classList.add('chat-tree-view-widget');
         layout.addWidget(this.treeWidget);
         this.inputWidget.node.classList.add('chat-input-widget');
         layout.addWidget(this.inputWidget);
         this.chatSession = this.chatService.createSession();
+        this.openTabSessionIds.add(this.chatSession.id);
 
         this.inputWidget.onQuery = this.onQuery.bind(this);
         this.inputWidget.onUnpin = this.onUnpin.bind(this);
@@ -119,6 +127,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
         this.treeWidget.onScrollLockChange = this.onScrollLockChange.bind(this);
+        this.renderSessionTabs();
 
         this.initListeners();
 
@@ -180,17 +189,22 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected initListeners(): void {
         this.toDispose.pushAll([
             this.chatService.onSessionEvent(event => {
-                if (!isActiveSessionChangedEvent(event)) {
-                    return;
-                }
-                const session = event.sessionId ? this.chatService.getSession(event.sessionId) : this.chatService.createSession();
-                if (session) {
-                    this.chatSession = session;
-                    this.treeWidget.trackChatModel(this.chatSession.model);
-                    this.inputWidget.chatModel = this.chatSession.model;
-                    this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+                if (isActiveSessionChangedEvent(event)) {
+                    const session = event.sessionId ? this.chatService.getSession(event.sessionId) : this.chatService.createSession(ChatAgentLocation.Panel);
+                    if (session && this.isUserVisiblePanelSession(session)) {
+                        this.openTabSessionIds.add(session.id);
+                        this.showSession(session);
+                    } else if (session) {
+                        this.renderSessionTabs();
+                    } else {
+                        console.warn(`Session with ${event.sessionId} not found.`);
+                    }
                 } else {
-                    console.warn(`Session with ${event.sessionId} not found.`);
+                    if (event.type === 'deleted') {
+                        this.sessionInputDrafts.delete(event.sessionId);
+                        this.openTabSessionIds.delete(event.sessionId);
+                    }
+                    this.renderSessionTabs();
                 }
             }),
             // The chat view needs to handle the submission of the edit request
@@ -203,6 +217,84 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.inputWidget.activate();
+    }
+
+    protected getPanelSessions(): ChatSession[] {
+        return this.chatService.getSessions().filter(session => this.isUserVisiblePanelSession(session) && this.openTabSessionIds.has(session.id));
+    }
+
+    protected isUserVisiblePanelSession(session: ChatSession): boolean {
+        return session.model.location === ChatAgentLocation.Panel && session.isUserVisible !== false;
+    }
+
+    protected showSession(session: ChatSession): void {
+        if (this.chatSession?.id === session.id) {
+            this.inputWidget.pinnedAgent = session.pinnedAgent;
+            this.renderSessionTabs();
+            return;
+        }
+        this.storeCurrentInputDraft();
+        this.chatSession = session;
+        this.treeWidget.trackChatModel(this.chatSession.model);
+        this.inputWidget.chatModel = this.chatSession.model;
+        this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+        this.inputWidget.setInputValue(this.sessionInputDrafts.get(this.chatSession.id));
+        this.renderSessionTabs();
+    }
+
+    protected storeCurrentInputDraft(): void {
+        if (this.chatSession) {
+            this.sessionInputDrafts.set(this.chatSession.id, this.inputWidget.getInputValue());
+        }
+    }
+
+    protected renderSessionTabs(): void {
+        this.tabBarNode.replaceChildren();
+        const sessions = this.getPanelSessions();
+        sessions.forEach((session, index) => {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.classList.add('theia-AIChatTab');
+            if (session.id === this.chatSession?.id) {
+                tab.classList.add('theia-AIChatTab-active');
+            }
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-selected', String(session.id === this.chatSession?.id));
+            const label = session.title ?? nls.localize('theia/ai/chat-ui/chatTabDefaultTitle', 'Chat {0}', index + 1);
+            const labelNode = document.createElement('span');
+            labelNode.classList.add('theia-AIChatTabLabel');
+            labelNode.textContent = label;
+            tab.title = label;
+            tab.appendChild(labelNode);
+            tab.onclick = () => this.chatService.setActiveSession(session.id, { focus: true, skipNavigation: true });
+
+            const closeButton = document.createElement('span');
+            closeButton.classList.add('theia-AIChatTabClose', ...codicon('close').split(' '));
+            closeButton.title = nls.localizeByDefault('Close');
+            closeButton.setAttribute('role', 'button');
+            closeButton.setAttribute('aria-label', nls.localizeByDefault('Close'));
+            closeButton.onclick = event => {
+                event.stopPropagation();
+                this.closeTab(session.id);
+            };
+            tab.appendChild(closeButton);
+            this.tabBarNode.appendChild(tab);
+        });
+    }
+
+    protected closeTab(sessionId: string): void {
+        this.storeCurrentInputDraft();
+        this.openTabSessionIds.delete(sessionId);
+        if (this.chatSession?.id === sessionId) {
+            const nextSession = this.getPanelSessions().at(-1);
+            if (nextSession) {
+                this.chatService.setActiveSession(nextSession.id, { focus: true, skipNavigation: true });
+            } else {
+                this.chatService.createSession(ChatAgentLocation.Panel, { focus: true, skipNavigation: true }, this.chatSession?.pinnedAgent);
+            }
+        } else {
+            this.renderSessionTabs();
+        }
     }
 
     storeState(): object {
@@ -245,8 +337,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                 : { ...query, capabilityOverrides, genericCapabilitySelections };
         if (chatRequest.text.length === 0) { return; }
 
-        if (this.chatSession.model.isEmpty()) {
-            this.navigationService.notifyQueryFromWelcomeScreen(this.chatSession.id);
+        const session = this.chatSession;
+        this.sessionInputDrafts.set(session.id, '');
+
+        if (session.model.isEmpty()) {
+            this.navigationService.notifyQueryFromWelcomeScreen(session.id);
         }
 
         // Include all variables (context + pending image attachments) in the request
@@ -257,7 +352,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
         let requestProgress;
         try {
-            requestProgress = await this.chatService.sendRequest(this.chatSession.id, requestWithVariables);
+            requestProgress = await this.chatService.sendRequest(session.id, requestWithVariables);
         } finally {
             // Clear pending image attachments now that they're included in the request
             this.inputWidget.clearPendingImageAttachments();
@@ -268,13 +363,17 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     nls.localize('theia/ai/chat-ui/errorChatInvocation', 'An error occurred during chat service invocation.'));
             }
         }).finally(() => {
-            this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+            if (this.chatSession.id === session.id) {
+                this.inputWidget.pinnedAgent = session.pinnedAgent;
+            }
+            this.renderSessionTabs();
         });
         if (!requestProgress) {
             this.messageService.error(nls.localize('theia/ai/chat-ui/couldNotSendRequestToSession',
-                'Was not able to send request "{0}" to session {1}', chatRequest.text, this.chatSession.id));
+                'Was not able to send request "{0}" to session {1}', chatRequest.text, session.id));
             return;
         }
+        this.renderSessionTabs();
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
     }
 
