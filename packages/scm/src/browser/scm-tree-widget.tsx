@@ -617,7 +617,8 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
                 args: this.contextMenuArgs,
                 contextKeys,
                 model,
-                treeNode
+                treeNode,
+                onDidRunCommand: this.handleInlineCommand
             }}>
                 <div title={tooltip} className={classNames.join(' ')} style={{ color }}>
                     {letter}
@@ -634,6 +635,18 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
                 .catch(e => console.error('Failed to open a SCM resource', e));
         }
     };
+
+    protected handleInlineCommand = (node: CommandMenu) => {
+        if (this.isOpenResourceCommand(node)) {
+            this.props.collapseContainingPanel();
+        }
+    };
+
+    protected isOpenResourceCommand(node: CommandMenu): boolean {
+        return node.id === 'git.openFile'
+            || node.id === 'git.openFile2'
+            || node.id === 'git.openChange';
+    }
 
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
@@ -664,25 +677,14 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
      */
     protected handleClick = (event: React.MouseEvent) => {
         if (!this.hasCtrlCmdOrShiftMask(event)) {
-            // Determine the behavior based on the preference value.
-            const isSingle = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'singleClick';
-            if (isSingle) {
-                this.open();
-            }
+            this.open();
         }
     };
 
     /**
      * Handle the double clicking of nodes present in the widget.
      */
-    protected handleDoubleClick = () => {
-        // Determine the behavior based on the preference value.
-        const isDouble = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'doubleClick';
-        // Nodes should only be opened through double clicking if the correct preference is set.
-        if (isDouble) {
-            this.open();
-        }
-    };
+    protected handleDoubleClick = () => { };
 }
 
 export namespace ScmResourceComponent {
@@ -807,12 +809,12 @@ export namespace ScmResourceFolderElement {
 
 export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
     override render(): React.ReactNode {
-        const { hover, menu, menuPath, args, model, treeNode, contextKeys, children } = this.props;
+        const { hover, menu, menuPath, args, model, treeNode, contextKeys, children, onDidRunCommand } = this.props;
         return <div className='theia-scm-inline-actions-container'>
             <div className='theia-scm-inline-actions'>
                 {hover && menu?.children
                     .map((node, index) => CommandMenu.is(node) &&
-                        <ScmInlineAction key={index} {...{ node, menuPath, args, model, treeNode, contextKeys }} />)}
+                        <ScmInlineAction key={index} {...{ node, menuPath, args, model, treeNode, contextKeys, onDidRunCommand }} />)}
             </div>
             {children}
         </div>;
@@ -828,6 +830,7 @@ export namespace ScmInlineActions {
         contextKeys: ScmContextKeyService;
         args: any[];
         children?: React.ReactNode;
+        onDidRunCommand?: (node: CommandMenu) => void;
     }
 }
 
@@ -851,8 +854,10 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     protected execute = (event: React.MouseEvent) => {
         event.stopPropagation();
 
-        const { node, menuPath, args } = this.props;
-        node.run(menuPath, ...args);
+        const { node, menuPath, args, onDidRunCommand } = this.props;
+        node.run(menuPath, ...args)
+            .then(() => onDidRunCommand?.(node))
+            .catch(e => console.error('Failed to execute a SCM inline action', e));
     };
 }
 export namespace ScmInlineAction {
@@ -863,5 +868,6 @@ export namespace ScmInlineAction {
         treeNode: TreeNode;
         contextKeys: ScmContextKeyService;
         args: any[];
+        onDidRunCommand?: (node: CommandMenu) => void;
     }
 }
