@@ -202,12 +202,15 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
         throw new Error('Unsupported operation');
     };
 
-    const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) =>
-        preferences.get(typeof arg === 'object' ? (arg as { preferenceName: string }).preferenceName : arg as string, {
+    const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) => {
+        const preferenceName = typeof arg === 'object' ? arg.preferenceName : arg;
+        const override = opts.overrideIdentifier || (typeof arg === 'object' ? arg.overrideIdentifier : undefined);
+        return preferences.get(preferenceName as string, {
             fallback: defaultValue,
-            resource: resourceUri || opts.resourceUri,
-            override: opts.overrideIdentifier
+            resource: resourceUri,
+            override,
         });
+    };
 
     const ownKeys: () => string[] = () => {
         const properties = [];

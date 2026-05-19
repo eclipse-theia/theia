@@ -46,18 +46,25 @@ export interface PreferenceGetOptions<T> {
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
  * This means that the value from a more general scope will be used.
  */
-export interface PreferenceChange extends Omit<PreferenceProviderDataChange, 'newValue' | 'oldValue'> {
+export interface PreferenceChange {
+    readonly preferenceName: string;
+    readonly scope: PreferenceScope;
+    /**
+     * URIs of the scopes in which this change applies.
+     */
+    readonly domain?: string[];
+
     /**
      * Tests wether the given resource is affected by the preference change.
      * @param resourceUri the uri of the resource to test.
      */
     affects(resourceUri?: string, overideIdentifier?: string): boolean;
-    readonly affectedOverrides: readonly String[];
+    readonly affectedOverrides: readonly string[];
 }
 
 export class PreferenceChangeImpl implements PreferenceChange {
     protected readonly change: PreferenceProviderDataChange;
-    constructor(change: PreferenceProviderDataChange, readonly affectedOverrides: readonly String[]) {
+    constructor(change: PreferenceProviderDataChange, readonly affectedOverrides: readonly string[]) {
         this.change = deepFreeze(change);
     }
 
@@ -310,7 +317,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         return this._isReady;
     }
 
-    protected getAffectedOverrides(change: PreferenceProviderDataChange): String[] {
+    protected getAffectedOverrides(change: PreferenceProviderDataChange): string[] {
         if (change.overrideIdentifier) { // changes to overrides never affect other overrides
             return [change.overrideIdentifier];
         } else {

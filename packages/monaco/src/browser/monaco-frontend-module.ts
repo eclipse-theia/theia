@@ -296,12 +296,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
                 }
                 for (const change of context.changes) {
                     if (change.preferenceName.startsWith(prefix)) {
-                        if (options?.overrideIdentifier !== undefined) {
-                            if (change.overrideIdentifier !== options?.overrideIdentifier) {
-                                continue;
-                            }
-                        }
-                        if (change.affects(options?.resource?.toString())) {
+                        if (change.affects(options?.resource?.toString(), options?.overrideIdentifier || undefined)) {
                             return true;
                         }
                     }
@@ -323,20 +318,20 @@ export function createMonacoConfigurationService(container: interfaces.Container
             context.changes.push(change);
             source = target;
 
-            let overrideKeys: Set<string> | undefined;
             let key = change.preferenceName;
-            if (change.overrideIdentifier) {
-                overrideKeys = context.overrides.get(change.overrideIdentifier) || new Set<string>();
-                context.overrides.set(change.overrideIdentifier, overrideKeys);
-            }
+            const overrideKeys = new Set<string>();
             while (key) {
-                if (overrideKeys) {
-                    overrideKeys.add(key);
-                }
+                overrideKeys.add(key);
                 context.keys.add(key);
                 context.affectedKeys.add(key);
                 const index = key.lastIndexOf('.');
                 key = key.substring(0, index);
+            }
+
+            for (const override of change.affectedOverrides) {
+                const existingOverrides = context.overrides.get(override) || new Set<string>();
+                context.overrides.set(override, existingOverrides);
+                overrideKeys.forEach(k => existingOverrides.add(k));
             }
         }
         if (source) {

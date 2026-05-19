@@ -196,11 +196,11 @@ describe('Preference Service', () => {
         let changes = await pending;
 
         assert.deepStrictEqual([
-            { preferenceName: 'editor.insertSpaces', overrideIdentifier: undefined },
-            { preferenceName: 'editor.insertSpaces', overrideIdentifier: 'go' },
-        ], Object.values(changes).map((change: PreferenceChange) => ({
+            { preferenceName: 'editor.insertSpaces', affectedOverrides: [] },
+            { preferenceName: 'editor.insertSpaces', affectedOverrides: ['go'] },
+        ], changes.map((change: PreferenceChange) => ({
             preferenceName: change.preferenceName,
-            overrideIdentifier: change.overrideIdentifier
+            affectedOverrides: change.affectedOverrides
         })), 'events before');
         assert.strictEqual(prefService.get('editor.insertSpaces'), true, 'get before');
         assert.strictEqual(prefService.get('editor.insertSpaces', { override: 'go' }), false, 'get before overridden');
@@ -210,20 +210,23 @@ describe('Preference Service', () => {
         changes = await pending;
 
         assert.deepStrictEqual([
-            { preferenceName: 'editor.insertSpaces', overrideIdentifier: undefined },
-            { preferenceName: 'editor.insertSpaces', overrideIdentifier: 'go' },
-        ], Object.values(changes).map((change: PreferenceChange) => ({
+            { preferenceName: 'editor.insertSpaces', affectedOverrides: [] },
+            { preferenceName: 'editor.insertSpaces', affectedOverrides: ['go'] },
+        ], changes.map((change: PreferenceChange) => ({
             preferenceName: change.preferenceName,
-            overrideIdentifier: change.overrideIdentifier
+            affectedOverrides: change.affectedOverrides
         })), 'events after');
         assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
         assert.strictEqual(prefService.get('editor.insertSpaces', { override: 'go' }), false, 'get after overridden');
     });
 
-    function prepareServices(options?: { schema: PreferenceSchema }): {
+    async function prepareServices(options?: { schema: PreferenceSchema }): Promise<{
         preferences: PreferenceServiceImpl;
         schema: PreferenceSchemaService;
-    } {
+    }> {
+        const waitForEvent = new Promise<PreferenceChange>(resolve => {
+            prefService.onPreferenceChanged(event => resolve(event));
+        });
         prefSchema.addSchema(options && options.schema || {
             scope: PreferenceScope.User,
             properties: {
@@ -235,6 +238,8 @@ describe('Preference Service', () => {
                 }
             }
         });
+
+        await waitForEvent;
 
         return { preferences: prefService, schema: prefSchema };
     }
@@ -275,7 +280,7 @@ describe('Preference Service', () => {
         }
 
         it('should modify the narrowest scope.', async () => {
-            const { preferences } = prepareServices();
+            const { preferences } = await prepareServices();
 
             await generateAndCheckValues(preferences, 1, 2, 3);
             await preferences.updateValue(TAB_SIZE, 8, DUMMY_URI);
@@ -291,14 +296,14 @@ describe('Preference Service', () => {
         });
 
         it('defaults to user scope.', async () => {
-            const { preferences } = prepareServices();
+            const { preferences } = await prepareServices();
             checkValues(preferences, undefined, undefined, undefined);
             await preferences.updateValue(TAB_SIZE, 8, DUMMY_URI);
             checkValues(preferences, 8, undefined, undefined, 8);
         });
 
         it('clears all settings when input is undefined.', async () => {
-            const { preferences } = prepareServices();
+            const { preferences } = await prepareServices();
 
             await generateAndCheckValues(preferences, 1, 2, 3);
             await preferences.updateValue(TAB_SIZE, undefined, DUMMY_URI);
@@ -306,7 +311,7 @@ describe('Preference Service', () => {
         });
 
         it('deletes user setting if user is only defined scope and target is default value', async () => {
-            const { preferences } = prepareServices();
+            const { preferences } = await prepareServices();
 
             await generateAndCheckValues(preferences, 8, undefined, undefined);
             await preferences.updateValue(TAB_SIZE, 4, DUMMY_URI);
@@ -314,7 +319,7 @@ describe('Preference Service', () => {
         });
 
         it('does not delete setting in lower scopes, even if target is default', async () => {
-            const { preferences } = prepareServices();
+            const { preferences } = await prepareServices();
 
             await generateAndCheckValues(preferences, undefined, 2, undefined);
             await preferences.updateValue(TAB_SIZE, 4, DUMMY_URI);
@@ -400,8 +405,8 @@ describe('Preference Service', () => {
 
     describe('overridden preferences', () => {
 
-        it('get #0', () => {
-            const { preferences } = prepareServices();
+        it('get #0', async () => {
+            const { preferences } = await prepareServices();
 
             preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
 
@@ -409,8 +414,8 @@ describe('Preference Service', () => {
             expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(2);
         });
 
-        it('get #1', () => {
-            const { preferences, schema } = prepareServices();
+        it('get #1', async () => {
+            const { preferences, schema } = await prepareServices();
             schema.registerOverrideIdentifier('json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
@@ -422,8 +427,8 @@ describe('Preference Service', () => {
             expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(2);
         });
 
-        it('get #2', () => {
-            const { preferences, schema } = prepareServices();
+        it('get #2', async () => {
+            const { preferences, schema } = await prepareServices();
             schema.registerOverrideIdentifier('json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
@@ -435,8 +440,8 @@ describe('Preference Service', () => {
             expect(preferences.get('editor.tabSize', { override: 'json' })).to.equal(2);
         });
 
-        it('has', () => {
-            const { preferences, schema } = prepareServices();
+        it('has', async () => {
+            const { preferences, schema } = await prepareServices();
 
             expect(preferences.has('editor.tabSize')).to.be.true;
             expect(preferences.has('editor.tabSize', undefined, 'json')).to.be.false;
@@ -447,8 +452,8 @@ describe('Preference Service', () => {
             expect(preferences.has('editor.tabSize', undefined, 'json')).to.be.true;
         });
 
-        it('inspect #0', () => {
-            const { preferences, schema } = prepareServices();
+        it('inspect #0', async () => {
+            const { preferences, schema } = await prepareServices();
 
             const expected = {
                 preferenceName: 'editor.tabSize',
@@ -467,8 +472,8 @@ describe('Preference Service', () => {
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
         });
 
-        it('inspect #1', () => {
-            const { preferences, schema } = prepareServices();
+        it('inspect #1', async () => {
+            const { preferences, schema } = await prepareServices();
 
             const expected = {
                 preferenceName: 'editor.tabSize',
@@ -489,8 +494,8 @@ describe('Preference Service', () => {
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize', undefined, 'json'), 'after override with json identifier');
         });
 
-        it('inspect #2', () => {
-            const { preferences, schema } = prepareServices();
+        it('inspect #2', async () => {
+            const { preferences, schema } = await prepareServices();
 
             const expected = {
                 preferenceName: 'editor.tabSize',
@@ -515,23 +520,26 @@ describe('Preference Service', () => {
         });
 
         it('onPreferenceChanged #0', async () => {
-            const { preferences, schema } = prepareServices();
+            const { preferences, schema } = await prepareServices();
 
             const events: PreferenceChange[] = [];
-            preferences.onPreferenceChanged(event => events.push(event));
+            preferences.onPreferenceChanged(event => {
+                console.log('event', event);
+                return events.push(event);
+            });
 
             schema.registerOverrideIdentifier('json');
-            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            await preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
             await preferences.set('editor.tabSize', 3, PreferenceScope.User);
 
             assert.deepStrictEqual([
-                '[json].editor.tabSize',
+                'editor.tabSize',
                 'editor.tabSize'
             ], events.map(e => e.preferenceName));
         });
 
         it('onPreferenceChanged #1', async () => {
-            const { preferences, schema } = prepareServices();
+            const { preferences, schema } = await prepareServices();
 
             const events: PreferenceChange[] = [];
             preferences.onPreferenceChanged(event => events.push(event));
@@ -540,12 +548,12 @@ describe('Preference Service', () => {
             await preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
             assert.deepStrictEqual([
-                { preferenceName: 'editor.tabSize', overrideIdentifier: undefined },
-            ], events.map(e => ({ preferenceName: e.preferenceName, overrideIdentifier: e.overrideIdentifier })));
+                { preferenceName: 'editor.tabSize', affectedOverrides: ['json'] },
+            ], events.map(e => ({ preferenceName: e.preferenceName, affectedOverrides: e.affectedOverrides })));
         });
 
         it('onPreferenceChanged #2', async function (): Promise<void> {
-            const { preferences, schema } = prepareServices();
+            const { preferences, schema } = await prepareServices();
 
             schema.registerOverrideIdentifier('json');
             schema.registerOverrideIdentifier('javascript');
@@ -562,7 +570,7 @@ describe('Preference Service', () => {
         });
 
         it('onPreferenceChanged #3', async () => {
-            const { preferences, schema } = prepareServices();
+            const { preferences, schema } = await prepareServices();
 
             schema.registerOverrideIdentifier('json');
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
@@ -576,8 +584,8 @@ describe('Preference Service', () => {
             assert.deepStrictEqual(['[json].editor.tabSize'], events.map(e => e.preferenceName));
         });
 
-        it('defaultOverrides [go].editor.formatOnSave', () => {
-            const { preferences, schema } = prepareServices({
+        it('defaultOverrides [go].editor.formatOnSave', async () => {
+            const { preferences, schema } = await prepareServices({
                 schema: {
                     scope: PreferenceScope.Folder,
                     properties: {
