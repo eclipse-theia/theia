@@ -62,3 +62,52 @@ export interface QaapGithubCreateRepositoryRequest {
 export interface QaapGithubOpenRepositoryRequest {
     repository: string;
 }
+
+export type QaapGithubPullRequestLineType = 'add' | 'del' | 'ctx';
+
+export interface QaapGithubPullRequestLine {
+    t: QaapGithubPullRequestLineType;
+    n: number;
+    s: string;
+}
+
+export interface QaapGithubPullRequestFile {
+    f: string;
+    ext: string;
+    adds: number;
+    dels: number;
+    preview: QaapGithubPullRequestLine[];
+}
+
+export interface QaapGithubPullRequestSummary {
+    owner: string;
+    repo: string;
+    number: number;
+    title: string;
+    branch: string;
+    base: string;
+    author: string;
+    files: number;
+    adds: number;
+    dels: number;
+    tests: 'passing' | 'failing' | 'pending' | 'unknown';
+    htmlUrl: string;
+    mergeable?: boolean;
+    filesPreview: QaapGithubPullRequestFile[];
+}
+
+export interface QaapGithubPullRequestsResponse {
+    pullRequests: QaapGithubPullRequestSummary[];
+}
+
+export interface QaapGithubMergePullRequestRequest {
+    owner: string;
+    repo: string;
+    number: number;
+}
+
+export interface QaapGithubMergePullRequestResponse {
+    merged: boolean;
+    message: string;
+    sha?: string;
+}

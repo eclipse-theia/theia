@@ -3,7 +3,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { QaapAuthSessionUser, QaapGithubRepositorySummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
+import type {
+    QaapAuthSessionUser,
+    QaapGithubMergePullRequestResponse,
+    QaapGithubPullRequestFile,
+    QaapGithubPullRequestLine,
+    QaapGithubPullRequestSummary,
+    QaapGithubRepositorySummary,
+} from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import type { QaapGithubOAuthConfig } from './qaap-github-oauth-config';
 
 interface GithubTokenResponse {
@@ -32,6 +39,32 @@ interface GithubRepoResponse {
 }
 
 interface GithubCreateRepoResponse extends GithubRepoResponse {
+}
+
+interface GithubPullResponse {
+    number: number;
+    title: string;
+    html_url: string;
+    user?: { login?: string | null } | null;
+    head: { ref: string; sha: string; repo?: { full_name?: string | null } | null };
+    base: { ref: string };
+    changed_files: number;
+    additions: number;
+    deletions: number;
+    mergeable?: boolean | null;
+}
+
+interface GithubPullFileResponse {
+    filename: string;
+    additions: number;
+    deletions: number;
+    patch?: string;
+}
+
+interface GithubMergePullResponse {
+    merged?: boolean;
+    message?: string;
+    sha?: string;
 }
 
 export async function exchangeGithubCode(
@@ -163,6 +196,152 @@ export async function createGithubRepository(
         throw new Error(data.message || `GitHub create repository API failed (${response.status})`);
     }
     return githubRepoToSummary(data);
+}
+
+export async function fetchGithubPullRequests(
+    accessToken: string,
+    repositories: QaapGithubRepositorySummary[],
+): Promise<QaapGithubPullRequestSummary[]> {
+    const pulls: QaapGithubPullRequestSummary[] = [];
+    const reposToScan = repositories.slice(0, 30);
+    for (const repo of reposToScan) {
+        if (pulls.length >= 8) {
+            break;
+        }
+        const url = new URL(`https://api.github.com/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.name)}/pulls`);
+        url.searchParams.set('state', 'open');
+        url.searchParams.set('per_page', '3');
+        const response = await fetch(url.toString(), {
+            headers: githubHeaders(accessToken),
+        });
+        if (!response.ok) {
+            continue;
+        }
+        const batch = await response.json() as GithubPullResponse[];
+        for (const pull of batch) {
+            if (pulls.length >= 8) {
+                break;
+            }
+            const filesPreview = await fetchGithubPullRequestFiles(accessToken, repo.owner, repo.name, pull.number);
+            pulls.push({
+                owner: repo.owner,
+                repo: repo.name,
+                number: pull.number,
+                title: pull.title,
+                branch: pull.head.ref,
+                base: pull.base.ref,
+                author: pull.user?.login || 'unknown',
+                files: pull.changed_files,
+                adds: pull.additions,
+                dels: pull.deletions,
+                tests: 'unknown',
+                htmlUrl: pull.html_url,
+                mergeable: pull.mergeable ?? undefined,
+                filesPreview,
+            });
+        }
+    }
+    return pulls;
+}
+
+export async function mergeGithubPullRequest(
+    accessToken: string,
+    input: { owner: string; repo: string; number: number }
+): Promise<QaapGithubMergePullRequestResponse> {
+    const response = await fetch(
+        `https://api.github.com/repos/${encodeURIComponent(input.owner)}/${encodeURIComponent(input.repo)}/pulls/${input.number}/merge`,
+        {
+            method: 'PUT',
+            headers: {
+                ...githubHeaders(accessToken),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                merge_method: 'merge',
+                commit_title: `Merge pull request #${input.number}`,
+            }),
+        }
+    );
+    const body = await response.json().catch(() => ({})) as GithubMergePullResponse;
+    if (!response.ok) {
+        throw new Error(body.message || `GitHub merge API failed (${response.status})`);
+    }
+    return {
+        merged: body.merged === true,
+        message: body.message || 'Pull request merged.',
+        sha: body.sha,
+    };
+}
+
+async function fetchGithubPullRequestFiles(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    number: number,
+): Promise<QaapGithubPullRequestFile[]> {
+    const url = new URL(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${number}/files`);
+    url.searchParams.set('per_page', '8');
+    const response = await fetch(url.toString(), {
+        headers: githubHeaders(accessToken),
+    });
+    if (!response.ok) {
+        return [];
+    }
+    const files = await response.json() as GithubPullFileResponse[];
+    return files.slice(0, 8).map(file => ({
+        f: file.filename,
+        ext: fileExtension(file.filename),
+        adds: file.additions,
+        dels: file.deletions,
+        preview: parseGithubPatch(file.patch),
+    }));
+}
+
+function parseGithubPatch(patch: string | undefined): QaapGithubPullRequestLine[] {
+    if (!patch) {
+        return [];
+    }
+    const preview: QaapGithubPullRequestLine[] = [];
+    let oldLine = 0;
+    let newLine = 0;
+    for (const line of patch.split('\n')) {
+        if (preview.length >= 16) {
+            break;
+        }
+        const hunk = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+        if (hunk) {
+            oldLine = Number(hunk[1]);
+            newLine = Number(hunk[2]);
+            continue;
+        }
+        if (line.startsWith('+++') || line.startsWith('---')) {
+            continue;
+        }
+        if (line.startsWith('+')) {
+            preview.push({ t: 'add', n: newLine++, s: line.slice(1) });
+        } else if (line.startsWith('-')) {
+            preview.push({ t: 'del', n: oldLine++, s: line.slice(1) });
+        } else {
+            preview.push({ t: 'ctx', n: newLine, s: line.startsWith(' ') ? line.slice(1) : line });
+            oldLine += 1;
+            newLine += 1;
+        }
+    }
+    return preview;
+}
+
+function fileExtension(filename: string): string {
+    const basename = filename.split('/').pop() || filename;
+    const dot = basename.lastIndexOf('.');
+    return dot > 0 ? basename.slice(dot + 1, dot + 5).toLowerCase() : 'file';
+}
+
+function githubHeaders(accessToken: string): Record<string, string> {
+    return {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${accessToken}`,
+        'User-Agent': 'Qaap-Theia',
+    };
 }
 
 function githubRepoToSummary(repo: GithubRepoResponse): QaapGithubRepositorySummary {

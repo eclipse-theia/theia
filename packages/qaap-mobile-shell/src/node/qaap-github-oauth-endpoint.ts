@@ -7,6 +7,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { Application, Request, Response } from '@theia/core/shared/express';
 import { json } from 'body-parser';
 import { BackendApplicationContribution, FileUri } from '@theia/core/lib/node';
+import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -17,10 +18,19 @@ import {
     QAAP_GITHUB_OAUTH_CALLBACK_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
     type QaapGithubCreateRepositoryRequest,
+    type QaapGithubMergePullRequestRequest,
     type QaapGithubOpenRepositoryRequest,
     type QaapGithubRepositorySummary,
 } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
-import { createGithubRepository, exchangeGithubCode, fetchGithubRepositories, fetchGithubRepository, fetchGithubUser } from './qaap-github-api';
+import {
+    createGithubRepository,
+    exchangeGithubCode,
+    fetchGithubPullRequests,
+    fetchGithubRepositories,
+    fetchGithubRepository,
+    fetchGithubUser,
+    mergeGithubPullRequest,
+} from './qaap-github-api';
 import { readQaapGithubOAuthConfig } from './qaap-github-oauth-config';
 import { QaapGithubSessionStore } from './qaap-github-session-store';
 
@@ -35,6 +45,9 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
     @inject(QaapGithubSessionStore)
     protected readonly sessions: QaapGithubSessionStore;
 
+    @inject(WorkspaceServer)
+    protected readonly workspaceServer: WorkspaceServer;
+
     configure(app: Application): void {
         app.use(json());
         app.get(QAAP_GITHUB_OAUTH_START_PATH, (req, res) => this.handleOAuthStart(req, res));
@@ -46,6 +59,8 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         app.post(`${QAAP_GITHUB_API_PATH}/repositories`, (req, res) => this.handleCreateGithubRepository(req, res));
         app.post(`${QAAP_GITHUB_API_PATH}/repositories/open`, (req, res) => this.handleCloneGithubRepository(req, res));
         app.get(`${QAAP_GITHUB_API_PATH}/repositories/:owner/:repo/open`, (req, res) => this.handleOpenGithubRepository(req, res));
+        app.get(`${QAAP_GITHUB_API_PATH}/pull-requests`, (req, res) => this.handleGithubPullRequests(req, res));
+        app.post(`${QAAP_GITHUB_API_PATH}/pull-requests/merge`, (req, res) => this.handleMergeGithubPullRequest(req, res));
     }
 
     protected handleOAuthStart(_req: Request, res: Response): void {
@@ -130,6 +145,57 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
             res.json({ repositories });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to load repositories';
+            res.status(502).json({ error: message });
+        }
+    }
+
+    protected async handleGithubPullRequests(req: Request, res: Response): Promise<void> {
+        const stored = this.sessions.getSession(this.readSessionId(req));
+        if (!stored) {
+            res.status(401).json({ error: 'Not signed in' });
+            return;
+        }
+        try {
+            const repository = await this.getCurrentWorkspaceRepository(stored.accessToken);
+            const pullRequests = repository ? await fetchGithubPullRequests(stored.accessToken, [repository]) : [];
+            res.json({ pullRequests });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to load pull requests';
+            res.status(502).json({ error: message });
+        }
+    }
+
+    protected async handleMergeGithubPullRequest(req: Request, res: Response): Promise<void> {
+        const stored = this.sessions.getSession(this.readSessionId(req));
+        if (!stored) {
+            res.status(401).json({ error: 'Not signed in' });
+            return;
+        }
+        const body = (req.body ?? {}) as Partial<QaapGithubMergePullRequestRequest>;
+        const owner = this.cleanGithubPathSegment(body.owner);
+        const repo = this.cleanGithubPathSegment(body.repo);
+        const number = typeof body.number === 'number' ? body.number : Number(body.number);
+        if (!owner || !repo || !Number.isInteger(number) || number <= 0) {
+            res.status(400).json({ error: 'Invalid pull request' });
+            return;
+        }
+        try {
+            const repository = await this.getCurrentWorkspaceRepository(stored.accessToken);
+            if (!repository) {
+                res.status(409).json({ error: 'Open a GitHub repository workspace before merging a pull request' });
+                return;
+            }
+            if (
+                repository.owner.toLowerCase() !== owner.toLowerCase()
+                || repository.name.toLowerCase() !== repo.toLowerCase()
+            ) {
+                res.status(403).json({ error: 'Pull request does not belong to the open QAAP workspace repository' });
+                return;
+            }
+            const result = await mergeGithubPullRequest(stored.accessToken, { owner, repo, number });
+            res.json(result);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to merge pull request';
             res.status(502).json({ error: message });
         }
     }
@@ -242,6 +308,10 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         if (!trimmed) {
             return undefined;
         }
+        const sshMatch = /^git@github\.com:([^/]+)\/(.+)$/i.exec(trimmed);
+        if (sshMatch) {
+            return this.parseGithubRepositoryInput(`${sshMatch[1]}/${sshMatch[2]}`);
+        }
         let candidate = trimmed;
         try {
             const url = new URL(trimmed);
@@ -262,6 +332,38 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
             return undefined;
         }
         return { owner: cleanOwner, name: cleanName };
+    }
+
+    protected async getCurrentWorkspaceRepository(accessToken: string): Promise<QaapGithubRepositorySummary | undefined> {
+        const workspaceUri = await this.workspaceServer.getMostRecentlyUsedWorkspace();
+        if (!workspaceUri) {
+            return undefined;
+        }
+        const workspacePath = FileUri.fsPath(workspaceUri);
+        const gitRoot = await this.findGitRoot(workspacePath);
+        if (!gitRoot) {
+            return undefined;
+        }
+        const remoteUrl = await this.runGitOutput(['-C', gitRoot, 'remote', 'get-url', 'origin']).catch(() => undefined);
+        const parsed = remoteUrl ? this.parseGithubRepositoryInput(remoteUrl) : undefined;
+        if (!parsed) {
+            return undefined;
+        }
+        return fetchGithubRepository(accessToken, parsed.owner, parsed.name);
+    }
+
+    protected async findGitRoot(workspacePath: string): Promise<string | undefined> {
+        let candidate = workspacePath;
+        try {
+            const stat = await fs.stat(candidate);
+            if (stat.isFile()) {
+                candidate = path.dirname(candidate);
+            }
+        } catch {
+            return undefined;
+        }
+        const output = await this.runGitOutput(['-C', candidate, 'rev-parse', '--show-toplevel']).catch(() => undefined);
+        return output?.trim() || undefined;
     }
 
     protected async ensureRepositoryWorkspace(repository: Pick<QaapGithubRepositorySummary, 'owner' | 'name' | 'cloneUrl'>, accessToken: string): Promise<string> {
@@ -320,6 +422,28 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
             child.on('close', code => {
                 if (code === 0) {
                     resolve();
+                } else {
+                    reject(new Error(stderr.trim() || `git exited with status ${code}`));
+                }
+            });
+        });
+    }
+
+    protected runGitOutput(args: string[]): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const child = spawn('git', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+            let stdout = '';
+            let stderr = '';
+            child.stdout.on('data', chunk => {
+                stdout += String(chunk);
+            });
+            child.stderr.on('data', chunk => {
+                stderr += String(chunk);
+            });
+            child.on('error', reject);
+            child.on('close', code => {
+                if (code === 0) {
+                    resolve(stdout.trim());
                 } else {
                     reject(new Error(stderr.trim() || `git exited with status ${code}`));
                 }

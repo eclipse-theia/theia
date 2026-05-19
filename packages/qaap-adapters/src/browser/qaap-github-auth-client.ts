@@ -10,8 +10,11 @@ import {
     type QaapAuthConfigResponse,
     type QaapAuthSessionResponse,
     type QaapGithubCreateRepositoryRequest,
+    type QaapGithubMergePullRequestRequest,
+    type QaapGithubMergePullRequestResponse,
     type QaapGithubOpenRepositoryResponse,
     type QaapGithubOpenRepositoryRequest,
+    type QaapGithubPullRequestsResponse,
     type QaapGithubRepositoriesResponse,
 } from '../common/qaap-github-api-types';
 import {
@@ -47,6 +50,29 @@ export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositor
         throw new Error(body.error || `Failed to load GitHub repositories (${response.status})`);
     }
     return response.json() as Promise<QaapGithubRepositoriesResponse>;
+}
+
+export async function fetchQaapGithubPullRequests(): Promise<QaapGithubPullRequestsResponse> {
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests`, FETCH_INIT);
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error || `Failed to load GitHub pull requests (${response.status})`);
+    }
+    return response.json() as Promise<QaapGithubPullRequestsResponse>;
+}
+
+export async function mergeQaapGithubPullRequest(request: QaapGithubMergePullRequestRequest): Promise<QaapGithubMergePullRequestResponse> {
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests/merge`, {
+        ...FETCH_INIT,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+    });
+    const body = await response.json().catch(() => ({})) as Partial<QaapGithubMergePullRequestResponse> & { error?: string };
+    if (!response.ok) {
+        throw new Error(body.error || `Failed to merge pull request (${response.status})`);
+    }
+    return body as QaapGithubMergePullRequestResponse;
 }
 
 export async function openQaapGithubRepository(owner: string, name: string): Promise<QaapGithubOpenRepositoryResponse> {
