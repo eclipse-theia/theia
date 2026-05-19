@@ -87,10 +87,15 @@ import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider';
 import { AgentCompletionNotificationService } from './agent-completion-notification-service';
 import { OSNotificationService } from './os-notification-service';
 import { WindowBlinkService } from './window-blink-service';
+import { AgentSessionHookProvider, AgentSessionHookRegistry } from '../common/agent-session-hooks';
+import { AgentSessionHookRegistryImpl } from '../common/agent-session-hooks-impl';
 
 export default new ContainerModule(bind => {
     bindRootContributionProvider(bind, Agent);
     bindRootContributionProvider(bind, LanguageModelProvider);
+    bindRootContributionProvider(bind, AgentSessionHookProvider);
+    bind(AgentSessionHookRegistryImpl).toSelf().inSingletonScope();
+    bind(AgentSessionHookRegistry).toService(AgentSessionHookRegistryImpl);
 
     bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
     bind(FrontendLanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);

@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export * from './claude-code-service';
+export * from './claude-code-hook-types';

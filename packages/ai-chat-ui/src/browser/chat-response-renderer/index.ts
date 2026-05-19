@@ -19,6 +19,7 @@ export * from './command-part-renderer';
 export * from './error-part-renderer';
 export * from './horizontal-layout-part-renderer';
 export * from './markdown-part-renderer';
+export * from './mcp-app-frame';
 export * from './text-part-renderer';
 export * from './toolcall-part-renderer';
 export * from './not-available-toolcall-renderer';
