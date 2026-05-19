@@ -1542,9 +1542,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         };
 
         // Global templates directory
-        await collect(await this.getTemplatesDirectoryURI());
-        // Workspace / additional template directories
+        const templatesDir = await this.getTemplatesDirectoryURI();
+        await collect(templatesDir);
+        // Workspace / additional template directories — skip any that resolve to the global
+        // templates directory to avoid showing the same scope twice in the picker.
+        const templatesPath = templatesDir.path.toString();
         for (const dirPath of this.additionalTemplateDirs) {
+            if (dirPath === templatesPath) {
+                continue;
+            }
             await collect(URI.fromFilePath(dirPath));
         }
         return locations;
