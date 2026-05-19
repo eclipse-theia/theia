@@ -406,9 +406,67 @@ export namespace DirtyDiffModel {
 }
 ```
 
+<a name="di-factory-over-new"></a>
+
+* [5.](#di-factory-over-new) Avoid direct constructor calls (`new XYZImpl()`) in Inversify controlled code paths. Use an injected factory instead.
+
+> Why? A factory can be rebound by adopters to customize the created instance. If a manager directly creates `new XYZImpl()`, adopters have to subclass and rebind the whole manager just to replace the created object.
+
+```ts
+// bad
+const model = new MyModelImpl();
+
+// good
+@inject(MyModelFactory)
+protected readonly modelFactory: MyModelFactory;
+
+const model = this.modelFactory();
+```
+
+For classes that need runtime parameters, pass an options object to the factory. The following simplified example is inspired by the process task runner:
+
+```ts
+export const TaskProcessOptions = Symbol('TaskProcessOptions');
+export interface TaskProcessOptions {
+    label: string;
+    process: Process;
+}
+
+@injectable()
+export class ProcessTask {
+    constructor(@inject(TaskProcessOptions) protected readonly options: TaskProcessOptions) { }
+}
+
+export const TaskFactory = Symbol('TaskFactory');
+export type TaskFactory = (options: TaskProcessOptions) => ProcessTask;
+
+@injectable()
+export class ProcessTaskRunner {
+
+    @inject(TaskFactory)
+    protected readonly taskFactory: TaskFactory;
+
+    protected createTask(task: TaskConfiguration, process: Process): ProcessTask {
+        return this.taskFactory({
+            label: task.label,
+            process
+        });
+    }
+
+}
+
+bind(ProcessTask).toSelf();
+bind(TaskFactory).toFactory(ctx => (options: TaskProcessOptions) => {
+    const child = new Container({ defaultScope: 'Singleton' });
+    child.parent = ctx.container;
+    child.bind(TaskProcessOptions).toConstantValue(options);
+    return child.get(ProcessTask);
+});
+```
+
 <a name="no-multi-inject"></a>
 
-* [5.](#no-multi-inject) Don't use InversifyJS's `@multiInject`, use Theia's utility `ContributionProvider` to inject multiple instances.
+* [6.](#no-multi-inject) Don't use InversifyJS's `@multiInject`, use Theia's utility `ContributionProvider` to inject multiple instances.
 
 > Why?
 >
@@ -419,7 +477,7 @@ export namespace DirtyDiffModel {
 
 <a name="bind-root-contribution-provider"></a>
 
-* [6.](#bind-root-contribution-provider) Use `bindRootContributionProvider` instead of `bindContributionProvider` when binding contribution providers in the main (root) container.
+* [7.](#bind-root-contribution-provider) Use `bindRootContributionProvider` instead of `bindContributionProvider` when binding contribution providers in the main (root) container.
 
 `bindContributionProvider` captures a reference to whichever container first resolves the provider. If that container is a child (e.g. created for a widget or a transient binding), the provider will permanently retain that child container and everything cached in it, causing a memory leak.
 
