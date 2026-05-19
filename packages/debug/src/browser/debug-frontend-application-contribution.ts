@@ -406,12 +406,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.CONTINUE, {
             execute: () => {
-                if (this.manager.state === DebugState.Stopped && this.manager.currentThread) {
-                    this.manager.currentThread.continue();
-                }
-            },
-            // When there is a debug session, F5 should always be captured by this command
-            isEnabled: () => this.manager.state !== DebugState.Inactive
+        if (this.manager.state === DebugState.Stopped && this.manager.currentThread) {
+            this.manager.currentThread.continue();
+        }
+    }
         });
         registry.registerCommand(DebugCommands.PAUSE, {
             execute: () => this.manager.currentThread && this.manager.currentThread.pause(),
@@ -866,12 +864,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         keybindings.registerKeybinding({
             command: DebugCommands.START.id,
             keybinding: 'f5',
-            when: '!inDebugMode'
+            when: 'debugState == inactive'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.START_NO_DEBUG.id,
             keybinding: 'ctrl+f5',
-            when: '!inDebugMode'
+            when: 'debugState == inactive'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.STOP.id,
@@ -902,7 +900,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         keybindings.registerKeybinding({
             command: DebugCommands.CONTINUE.id,
             keybinding: 'f5',
-            when: 'inDebugMode'
+            when: 'debugState == stopped'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.PAUSE.id,

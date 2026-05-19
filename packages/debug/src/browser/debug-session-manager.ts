@@ -70,6 +70,7 @@ export interface DebugSessionCustomEvent {
 @injectable()
 export class DebugSessionManager {
     protected readonly _sessions = new Map<string, DebugSession>();
+    protected _startLock = false;
 
     protected readonly onWillStartDebugSessionEmitter = new Emitter<WillStartDebugSession>();
     readonly onWillStartDebugSession: Event<WillStartDebugSession> = this.onWillStartDebugSessionEmitter.event;
@@ -202,7 +203,20 @@ export class DebugSessionManager {
             const options = this.debugConfigurationManager.find(optionsOrName);
             return !!options && this.start(options);
         }
-        return optionsOrName.configuration ? this.startConfiguration(optionsOrName) : this.startCompound(optionsOrName);
+        if (this._startLock) {
+            return;
+        }
+        this._startLock = true;
+
+        this.inDebugModeKey.set(true);
+        this.debugStateKey.set('running');
+
+        try {
+            return optionsOrName.configuration ? this.startConfiguration(optionsOrName) : this.startCompound(optionsOrName);
+        } finally {
+            this._startLock = false;
+            this.fireDidChange(this.currentSession);
+        }
     }
 
     protected async startConfiguration(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
