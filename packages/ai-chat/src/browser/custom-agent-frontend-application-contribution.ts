@@ -59,10 +59,11 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
                 const migrated = reports.reduce((sum, r) => sum + r.migrated, 0);
                 const failed = reports.reduce((sum, r) => sum + r.failed, 0);
                 const deleted = reports.filter(r => r.yamlDeleted).length;
+                const overrides = reports.reduce((sum, r) => sum + r.promptOverridesMigrated, 0);
                 const message = nls.localize(
                     'theia/ai/chat/customAgents/migrationResult',
-                    'Custom-agent migration: {0} migrated, {1} failed, {2} legacy customAgents.yml removed.',
-                    migrated, failed, deleted
+                    'Custom-agent migration: {0} migrated, {1} failed, {2} legacy customAgents.yml removed, {3} prompt overrides folded into agent.md.',
+                    migrated, failed, deleted, overrides
                 );
                 this.messageService?.info(message);
             }
@@ -71,18 +72,23 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
 
     onStart(): void {
         this.customizationService?.onDidChangeCustomAgents(() => this.refreshCustomAgents());
-        const ready = this.customizationService?.migrateCustomAgentsYaml().catch(e => {
-            console.warn('Custom-agent auto-migration failed; continuing without migration', e);
-        }) ?? Promise.resolve();
-        ready.then(() => this.refreshCustomAgents()).catch(e => {
-            console.error('Failed to load custom agents', e);
-        });
+        this.refreshCustomAgents().catch(e => console.error('Failed to load custom agents', e));
     }
 
     protected async refreshCustomAgents(): Promise<void> {
         if (!this.customizationService) {
             return;
         }
+        // Migration must run on the refresh path (not just at onStart) because the workspace's
+        // additional template directories are populated asynchronously by TemplatePreferenceContribution
+        // after preferences/workspace/trust are ready. Migration is idempotent: if a customAgents.yml has
+        // already been migrated (or never existed), the call is a no-op.
+        try {
+            await this.customizationService.migrateCustomAgentsYaml();
+        } catch (e) {
+            console.warn('Custom-agent auto-migration failed; continuing without migration', e);
+        }
+
         const customAgents = await this.customizationService.getCustomAgents();
         const customAgentsToAdd = customAgents.filter(agent =>
             !this.knownCustomAgents.has(agent.id) || !CustomAgentDescription.equals(this.knownCustomAgents.get(agent.id)!, agent));
@@ -96,7 +102,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
             this.knownCustomAgents.delete(id);
         });
         customAgentsToAdd.forEach(agent => {
-            this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat);
+            this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat, agent.promptVariants);
             this.knownCustomAgents.set(agent.id, agent);
         });
     }

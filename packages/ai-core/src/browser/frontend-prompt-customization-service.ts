@@ -17,7 +17,7 @@
 import { DisposableCollection, URI, Event, Emitter, nls } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
+import { PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
 import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
 import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -1177,14 +1177,118 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             console.debug(`Frontmatter id '${metadata.id}' in ${fileURI.toString()} does not match folder name '${id}'. Skipping.`);
             return undefined;
         }
+        const promptVariants = await this.readCustomAgentPromptVariants(agentFolderURI);
         return {
             id,
             name: metadata.name,
             description: metadata.description,
             prompt: body,
             defaultLLM: metadata.defaultLLM,
-            showInChat: metadata.showInChat
+            showInChat: metadata.showInChat,
+            ...(promptVariants.length > 0 ? { promptVariants } : {})
         };
+    }
+
+    /**
+     * Remove `<scopeDir>/agents/<id>/` directories that contain no `agent.md`. They are usually
+     * the leftover side effect of a previous migration whose `agent.md` write failed after the
+     * parent directory had already been created. Removing them lets the next run re-attempt.
+     */
+    protected async cleanupEmptyAgentFolders(scopeDir: URI): Promise<void> {
+        const agentsDirURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY);
+        let stat;
+        try {
+            stat = await this.fileService.resolve(agentsDirURI);
+        } catch {
+            return;
+        }
+        if (!stat.children?.length) {
+            return;
+        }
+        for (const child of stat.children) {
+            if (!child.isDirectory) {
+                continue;
+            }
+            const agentMdURI = child.resource.resolve(CUSTOM_AGENT_FILE_NAME);
+            if (await this.fileService.exists(agentMdURI)) {
+                continue;
+            }
+            const childStat = await this.fileService.resolve(child.resource).catch(() => undefined);
+            if (childStat?.children?.length) {
+                continue;
+            }
+            try {
+                await this.fileService.delete(child.resource, { recursive: true });
+                console.info(`[ai-core] Removed empty agent folder ${child.resource.toString()} left behind by a previous run.`);
+            } catch (e) {
+                console.warn(`[ai-core] Failed to remove empty agent folder ${child.resource.toString()}: ${e?.message ?? e}`);
+            }
+        }
+    }
+
+    /**
+     * List `.prompttemplate` files directly inside the given scope directory (one level only).
+     * Returns each file's URI along with its filename stem to enable cheap prefix matching
+     * during migration.
+     */
+    protected async listScopeRootPromptTemplates(scopeDir: URI): Promise<Array<{ uri: URI, stem: string }>> {
+        let stat;
+        try {
+            stat = await this.fileService.resolve(scopeDir);
+        } catch {
+            return [];
+        }
+        if (!stat.children?.length) {
+            return [];
+        }
+        const result: Array<{ uri: URI, stem: string }> = [];
+        for (const child of stat.children) {
+            if (!child.isFile) {
+                continue;
+            }
+            if (!this.isPromptTemplateExtension(child.resource.path.ext)) {
+                continue;
+            }
+            result.push({ uri: child.resource, stem: this.removePromptTemplateSuffix(child.resource.path.name) });
+        }
+        return result;
+    }
+
+    /**
+     * Scan an agent folder for sibling `.prompttemplate` files; each becomes a variant
+     * of the agent's prompt. Variant id = filename stem (e.g. `concise.prompttemplate`
+     * yields a variant with id `concise`). Files inside subdirectories are ignored.
+     */
+    protected async readCustomAgentPromptVariants(agentFolderURI: URI): Promise<CustomAgentPromptVariant[]> {
+        let folderStat;
+        try {
+            folderStat = await this.fileService.resolve(agentFolderURI);
+        } catch {
+            return [];
+        }
+        if (!folderStat.children?.length) {
+            return [];
+        }
+        const variants: CustomAgentPromptVariant[] = [];
+        for (const child of folderStat.children) {
+            if (!child.isFile) {
+                continue;
+            }
+            if (!this.isPromptTemplateExtension(child.resource.path.ext)) {
+                continue;
+            }
+            const variantId = this.removePromptTemplateSuffix(child.resource.path.name);
+            try {
+                const variantContent = (await this.fileService.read(child.resource, { encoding: 'utf-8' })).value;
+                const parsed = this.parseTemplateWithMetadata(variantContent);
+                variants.push({ id: variantId, template: parsed.template });
+            } catch (e) {
+                console.debug(`Failed to read prompt variant ${child.resource.toString()}: ${e?.message ?? e}`);
+            }
+        }
+        // Stable order to keep equality checks deterministic between loads.
+        variants.sort((a, b) => a.id.localeCompare(b.id));
+        return variants;
     }
 
     /**
@@ -1310,35 +1414,70 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         if (!(await this.fileService.exists(yamlURI))) {
             return undefined;
         }
+        console.info(`[ai-core] Migrating custom agents from ${yamlURI.toString()}`);
         let entries: CustomAgentDescription[];
         try {
             const fileContent = await this.fileService.read(yamlURI, { encoding: 'utf-8' });
             const doc = load(fileContent.value);
             if (!Array.isArray(doc) || !doc.every(CustomAgentDescription.is)) {
                 console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
-                return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false };
+                return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false, promptOverridesMigrated: 0 };
             }
             entries = doc;
         } catch (e) {
             console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: ${e.message}`);
-            return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false };
+            return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false, promptOverridesMigrated: 0 };
         }
 
         let migrated = 0;
         let alreadyPresent = 0;
         let failed = 0;
+        let promptOverridesMigrated = 0;
+
+        // A previous failed migration may have created `agents/<id>/` directories without an
+        // `agent.md` inside. Remove those empty placeholders so this run can recreate them cleanly.
+        await this.cleanupEmptyAgentFolders(scopeDir);
+
+        // Snapshot scope-root template files once so we can match per agent without re-listing.
+        const scopeRootTemplateFiles = await this.listScopeRootPromptTemplates(scopeDir);
+
         for (const entry of entries) {
-            const targetURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(entry.id).resolve(CUSTOM_AGENT_FILE_NAME);
+            const agentFolderURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(entry.id);
+            const targetURI = agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME);
             if (await this.fileService.exists(targetURI)) {
                 alreadyPresent++;
-                continue;
+            } else {
+                try {
+                    await this.fileService.createFile(
+                        targetURI,
+                        BinaryBuffer.fromString(serializeCustomAgentFile(entry)),
+                        { overwrite: true }
+                    );
+                    migrated++;
+                } catch (e) {
+                    console.warn(`[ai-core] Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e?.message ?? e}`, e);
+                    failed++;
+                    continue;
+                }
             }
-            try {
-                await this.fileService.createFile(targetURI, BinaryBuffer.fromString(serializeCustomAgentFile(entry)));
-                migrated++;
-            } catch (e) {
-                console.warn(`[ai-core] Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e.message}`);
-                failed++;
+
+            // Move any scope-root .prompttemplate files that look like they belong to this agent
+            // (filename stem starts with `<name>_prompt`, followed by EOF or a separator).
+            // They become variants under `<scope>/agents/<id>/`.
+            for (const file of scopeRootTemplateFiles) {
+                if (!matchesAgentPromptPrefix(file.stem, entry.name)) {
+                    continue;
+                }
+                const destURI = agentFolderURI.resolve(file.uri.path.base);
+                if (await this.fileService.exists(destURI)) {
+                    continue;
+                }
+                try {
+                    await this.fileService.move(file.uri, destURI);
+                    promptOverridesMigrated++;
+                } catch (e) {
+                    console.warn(`[ai-core] Failed to move prompt fragment ${file.uri.toString()} into ${destURI.toString()}: ${e?.message ?? e}`);
+                }
             }
         }
 
@@ -1361,7 +1500,12 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             }
         }
 
-        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlDeleted };
+        console.info(
+            `[ai-core] Migration done for ${yamlURI.toString()}: ` +
+            `migrated=${migrated}, alreadyPresent=${alreadyPresent}, failed=${failed}, ` +
+            `yamlDeleted=${yamlDeleted}, promptOverridesMigrated=${promptOverridesMigrated}`
+        );
+        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlDeleted, promptOverridesMigrated };
     }
 
     /**
@@ -1396,6 +1540,24 @@ export interface MigrationReport {
     failed: number;
     /** Whether the original YAML was deleted after a fully-successful migration. */
     yamlDeleted: boolean;
+    /** Number of scope-root prompt customization files (`<name>_prompt.prompttemplate`) folded into agent.md and deleted. */
+    promptOverridesMigrated: number;
+}
+
+/**
+ * Returns true when a filename stem looks like a prompt fragment owned by the named agent —
+ * i.e. it begins with `<name>_prompt` followed by end-of-string or a separator
+ * (`-`, `_`, ` `, `.`). Used to scoop variant files like `Foo_prompt_old.prompttemplate` into
+ * the agent's folder during migration without grabbing unrelated fragments such as
+ * `FooBar_prompt.prompttemplate` for a different agent.
+ */
+function matchesAgentPromptPrefix(stem: string, agentName: string): boolean {
+    const prefix = `${agentName}_prompt`;
+    if (!stem.startsWith(prefix)) {
+        return false;
+    }
+    const next = stem.charAt(prefix.length);
+    return next === '' || next === '-' || next === '_' || next === ' ' || next === '.';
 }
 
 function serializeCustomAgentFile(agent: CustomAgentDescription): string {

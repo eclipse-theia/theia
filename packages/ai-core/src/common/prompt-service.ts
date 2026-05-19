@@ -129,6 +129,31 @@ export interface ResolvedPromptFragment {
 }
 
 /**
+ * One alternative prompt template available for a custom agent. Variants are loaded from
+ * `<scope>/agents/<id>/*.prompttemplate` files (one variant per file; id = filename stem).
+ */
+export interface CustomAgentPromptVariant {
+    id: string;
+    template: string;
+}
+
+export namespace CustomAgentPromptVariant {
+    export function equals(a: CustomAgentPromptVariant, b: CustomAgentPromptVariant): boolean {
+        return a.id === b.id && a.template === b.template;
+    }
+
+    export function arrayEquals(a?: readonly CustomAgentPromptVariant[], b?: readonly CustomAgentPromptVariant[]): boolean {
+        const aArr = a ?? [];
+        const bArr = b ?? [];
+        if (aArr.length !== bArr.length) { return false; }
+        for (let i = 0; i < aArr.length; i++) {
+            if (!equals(aArr[i], bArr[i])) { return false; }
+        }
+        return true;
+    }
+}
+
+/**
  * Describes a custom agent with its properties
  */
 export interface CustomAgentDescription {
@@ -141,7 +166,7 @@ export interface CustomAgentDescription {
     /** Description of the agent's purpose and capabilities */
     description: string;
 
-    /** The prompt text for this agent */
+    /** The prompt text for this agent (the default variant body) */
     prompt: string;
 
     /** The default large language model to use with this agent */
@@ -149,6 +174,12 @@ export interface CustomAgentDescription {
 
     /** Whether this agent should appear in the chat UI (defaults to true if not specified) */
     showInChat?: boolean;
+
+    /**
+     * Optional additional prompt variants for this agent. Loaded from sibling
+     * `.prompttemplate` files in the same `<scope>/agents/<id>/` folder.
+     */
+    promptVariants?: CustomAgentPromptVariant[];
 }
 
 export namespace CustomAgentDescription {
@@ -182,10 +213,16 @@ export namespace CustomAgentDescription {
     }
 
     /**
-     * Compares two CustomAgentDescription objects for equality
+     * Compares two CustomAgentDescription objects for equality (including prompt variants).
      */
     export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
-        return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM && a.showInChat === b.showInChat;
+        return a.id === b.id
+            && a.name === b.name
+            && a.description === b.description
+            && a.prompt === b.prompt
+            && a.defaultLLM === b.defaultLLM
+            && a.showInChat === b.showInChat
+            && CustomAgentPromptVariant.arrayEquals(a.promptVariants, b.promptVariants);
     }
 }
 
@@ -336,6 +373,7 @@ export interface PromptFragmentCustomizationService {
         alreadyPresent: number;
         failed: number;
         yamlDeleted: boolean;
+        promptOverridesMigrated: number;
     }>>;
 
     /**
