@@ -238,6 +238,7 @@ export class ElectronMainApplication {
                     const startupMeasurement = this.stopwatch.start('electron-main-startup');
                     this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
                     this._config = config;
+                    this.setWindowsAppId(config);
                     this.hookApplicationEvents();
                     this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
                     const port = await this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend());
@@ -256,6 +257,23 @@ export class ElectronMainApplication {
                     });
                 },
             ).parse();
+    }
+
+    /**
+     * This is needed to see the Jump List in the Windows menu. It **MUST** be the same as the
+     * "appId" field in the electron-builder config. Default: 'EclipseTheia.TheiaCore'.
+     *
+     * @param config the application configuration
+     */
+    protected setWindowsAppId(config: FrontendApplicationConfig): void {
+        if (!isWindows) {
+            return;
+        }
+        let id: string = 'EclipseTheia.TheiaCore';
+        if (config.electron && ('appUserModelId' in config.electron) && typeof config.electron.appUserModelId === 'string' && config.electron.appUserModelId) {
+            id = config.electron.appUserModelId;
+        }
+        app.setAppUserModelId(id);
     }
 
     protected getTitleBarStyle(config: FrontendApplicationConfig): 'native' | 'custom' {
