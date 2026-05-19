@@ -16,6 +16,9 @@
       "path": "../filesystem"
     },
     {
+      "path": "../mini-browser"
+    },
+    {
       "path": "../preview"
     },
     {
@@ -23,6 +26,9 @@
     },
     {
       "path": "../qaap-shell"
+    },
+    {
+      "path": "../terminal"
     },
     {
       "path": "../workspace"

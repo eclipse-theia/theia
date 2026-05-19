@@ -6,6 +6,7 @@
 
 import '../../src/browser/style/mobile-workbench.css';
 import '../../src/browser/style/qaap-empty-workbench-brand.css';
+import '../../src/browser/style/qaap-project-bootstrap.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
@@ -22,6 +23,9 @@ import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-con
 import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
+import { QaapProjectBootstrapDetector } from './qaap-project-bootstrap-detector';
+import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
+import { QaapProjectBootstrapContribution } from './qaap-project-bootstrap-contribution';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsService).toSelf().inSingletonScope();
@@ -48,4 +52,9 @@ export default new ContainerModule(bind => {
 
     bind(LongPressContextMenuContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(LongPressContextMenuContribution);
+
+    bind(QaapProjectBootstrapDetector).toSelf().inSingletonScope();
+    bind(QaapProjectBootstrapService).toSelf().inSingletonScope();
+    bind(QaapProjectBootstrapContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapProjectBootstrapContribution);
 });

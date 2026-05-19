@@ -1,0 +1,335 @@
+/* *****************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ * ***************************************************************************** */
+
+/**
+ * Bootstrap banner styles — appears as a floating card above the bottom mobile bar (and as a
+ * top-right notification on desktop). Sizing mirrors the snackbar so both share the visual
+ * vocabulary of "ephemeral system message".
+ */
+
+.qaap-project-bootstrap-banner {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(
+        var(--theia-mobile-bottom-bar-height, 64px)
+        + var(--theia-mobile-status-chrome-height, 22px)
+        + var(--theia-mobile-keyboard-inset, 0px)
+        + 16px
+    );
+    min-width: 320px;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--theia-notifications-background);
+    color: var(--theia-notifications-foreground);
+    border: 1px solid var(--theia-notificationCenterHeader-background, var(--theia-contrastBorder, transparent));
+    border-radius: 12px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+    font-family: var(--theia-ui-font-family);
+    font-size: var(--theia-ui-font-size1);
+    z-index: 10500;
+    animation: qaap-project-bootstrap-in 0.18s ease-out;
+}
+
+@media (min-width: 768px) {
+    .qaap-project-bootstrap-banner {
+        left: auto;
+        right: 24px;
+        transform: none;
+        bottom: 24px;
+    }
+}
+
+@keyframes qaap-project-bootstrap-in {
+    from { opacity: 0; transform: translate(-50%, 8px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (min-width: 768px) {
+    @keyframes qaap-project-bootstrap-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
+
+.qaap-project-bootstrap-icon {
+    flex: 0 0 auto;
+    font-size: 20px;
+    color: var(--theia-notificationsInfoIcon-foreground, var(--theia-foreground));
+}
+
+.qaap-project-bootstrap-banner[data-phase="install-failed"] .qaap-project-bootstrap-icon,
+.qaap-project-bootstrap-banner[data-phase="run-failed"] .qaap-project-bootstrap-icon {
+    color: var(--theia-notificationsErrorIcon-foreground, var(--theia-errorForeground));
+}
+
+.qaap-project-bootstrap-banner[data-phase="ready-to-run"] .qaap-project-bootstrap-icon,
+.qaap-project-bootstrap-banner[data-phase="installing"] .qaap-project-bootstrap-icon,
+.qaap-project-bootstrap-banner[data-phase="starting"] .qaap-project-bootstrap-icon {
+    color: var(--theia-progressBar-background, var(--theia-focusBorder, var(--theia-foreground)));
+}
+
+.qaap-project-bootstrap-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.qaap-project-bootstrap-title {
+    font-weight: 600;
+    color: var(--theia-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.qaap-project-bootstrap-subtitle {
+    font-size: var(--theia-ui-font-size0, 11px);
+    color: var(--theia-descriptionForeground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--theia-monospace-font-family, monospace);
+}
+
+.qaap-project-bootstrap-actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 6px;
+}
+
+.qaap-project-bootstrap-action {
+    background: transparent;
+    color: var(--theia-foreground);
+    border: 1px solid var(--theia-input-border, var(--theia-contrastBorder, transparent));
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: var(--theia-ui-font-size0, 11px);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.qaap-project-bootstrap-action:hover {
+    background: var(--theia-list-hoverBackground);
+}
+
+.qaap-project-bootstrap-action.qaap-mod-primary {
+    background: var(--theia-button-background);
+    color: var(--theia-button-foreground);
+    border-color: transparent;
+}
+
+.qaap-project-bootstrap-action.qaap-mod-primary:hover {
+    background: var(--theia-button-hoverBackground);
+}
+
+.qaap-project-bootstrap-action:focus-visible {
+    outline: 2px solid var(--theia-focusBorder);
+    outline-offset: 2px;
+}
+
+/* Codicon spinner — falls back to a CSS keyframe rotation so we do not require the optional
+ * `codicon-modifier-spin` modifier that some Theia builds ship behind a feature flag. */
+.qaap-project-bootstrap-icon.codicon-loading {
+    animation: qaap-project-bootstrap-spin 1.1s linear infinite;
+}
+
+@keyframes qaap-project-bootstrap-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Monorepo chip surfaced inside the banner once an app is selected. Acts like a switcher button. */
+.qaap-project-bootstrap-chip {
+    align-self: flex-start;
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    height: 20px;
+    background: var(--theia-badge-background, rgba(127, 127, 127, 0.18));
+    color: var(--theia-badge-foreground, var(--theia-foreground));
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: var(--theia-ui-font-size0, 11px);
+    font-family: var(--theia-monospace-font-family, monospace);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.qaap-project-bootstrap-chip:hover {
+    background: var(--theia-list-hoverBackground);
+}
+
+.qaap-project-bootstrap-chip .codicon {
+    font-size: 12px;
+}
+
+/* Floating picker (anchored to the chip or to the "Pick app" action). Mirrors the bottom-bar
+ * action sheet aesthetic so users instantly recognize it as a contextual menu. */
+.qaap-project-bootstrap-picker {
+    position: fixed;
+    z-index: 10600;
+    min-width: 260px;
+    max-width: min(360px, calc(100vw - 32px));
+    max-height: min(50vh, 360px);
+    overflow-y: auto;
+    padding: 6px 0;
+    background: var(--theia-menu-background, var(--theia-notifications-background));
+    color: var(--theia-menu-foreground, var(--theia-notifications-foreground));
+    border: 1px solid var(--theia-menu-border, var(--theia-contrastBorder, transparent));
+    border-radius: 10px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.qaap-project-bootstrap-picker.qaap-mod-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.qaap-project-bootstrap-picker-header {
+    padding: 6px 14px 4px;
+    font-size: var(--theia-ui-font-size0, 11px);
+    color: var(--theia-descriptionForeground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.qaap-project-bootstrap-picker-item {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.qaap-project-bootstrap-picker-item:hover,
+.qaap-project-bootstrap-picker-item:focus-visible {
+    background: var(--theia-list-hoverBackground);
+    outline: none;
+}
+
+.qaap-project-bootstrap-picker-name {
+    font-size: var(--theia-ui-font-size1);
+    font-weight: 500;
+    color: var(--theia-foreground);
+}
+
+.qaap-project-bootstrap-picker-detail {
+    font-size: var(--theia-ui-font-size0, 11px);
+    color: var(--theia-descriptionForeground);
+    font-family: var(--theia-monospace-font-family, monospace);
+}
+
+/* Forwarded ports strip: a floating row of pills anchored to the bottom-right. Independent from
+ * the bootstrap banner so it survives the banner closing on `running`, and stays visible for the
+ * entire dev-server lifetime. Scrollable horizontally on narrow screens. */
+.qaap-project-bootstrap-ports.qaap-mod-floating {
+    position: fixed;
+    bottom: 36px;
+    right: 16px;
+    z-index: 1110;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100vw - 32px);
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--theia-editorWidget-background, var(--theia-input-background));
+    border: 1px solid var(--theia-editorWidget-border, var(--theia-input-border, transparent));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: qaap-project-bootstrap-floater-in 180ms ease-out;
+}
+
+@keyframes qaap-project-bootstrap-floater-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Narrow viewport: pin the floater inside the safe area above the mobile bottom bar. */
+@media (max-width: 767px) {
+    .qaap-project-bootstrap-ports.qaap-mod-floating {
+        right: 12px;
+        left: 12px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+        max-width: none;
+        justify-content: flex-start;
+    }
+}
+
+.qaap-project-bootstrap-ports-label {
+    flex: 0 0 auto;
+    font-size: var(--theia-ui-font-size0, 11px);
+    color: var(--theia-descriptionForeground);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding-right: 2px;
+}
+
+.qaap-project-bootstrap-port-pill {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid var(--theia-input-border, var(--theia-contrastBorder, transparent));
+    background: transparent;
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size0, 11px);
+    font-family: var(--theia-monospace-font-family, monospace);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.qaap-project-bootstrap-port-pill:hover {
+    background: var(--theia-list-hoverBackground);
+}
+
+.qaap-project-bootstrap-port-pill.qaap-mod-primary {
+    background: var(--theia-badge-background, rgba(127, 127, 127, 0.18));
+    border-color: transparent;
+}
+
+.qaap-project-bootstrap-port-pill.qaap-mod-open .qaap-project-bootstrap-port-dot {
+    background: var(--theia-charts-green, #6dbe45);
+}
+
+.qaap-project-bootstrap-port-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--theia-descriptionForeground);
+}
+
+.qaap-project-bootstrap-port-pill.qaap-mod-primary .qaap-project-bootstrap-port-dot {
+    background: var(--theia-progressBar-background, var(--theia-focusBorder));
+}
+
+.qaap-project-bootstrap-port-number {
+    font-weight: 500;
+}

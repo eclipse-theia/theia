@@ -39,6 +39,7 @@ import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contr
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
+import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -110,6 +111,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
+
+    @inject(QaapProjectBootstrapService)
+    protected readonly projectBootstrap: QaapProjectBootstrapService;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly mobileMq: MediaQueryList | undefined =
@@ -839,12 +843,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             { id: 'projects', label: nls.localize('qaap/mobileBottomBar/projects', 'Projects'), icon: 'codicon-project' },
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
             { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
+            { id: 'terminal', label: nls.localize('theia/core/mobileBottomBar/terminal', 'Terminal'), icon: 'codicon-terminal' },
             { id: 'explore', label: nls.localize('qaap/mobileBottomBar/explore', 'Explore'), icon: 'codicon-folder-opened' },
             { id: 'pr', label: nls.localize('qaap/mobileBottomBar/pr', 'PR'), icon: 'codicon-git-pull-request' },
             { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
             { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
             { id: 'skills', label: nls.localize('theia/core/mobileBottomBar/skills', 'Skills'), icon: 'codicon-extensions' },
-            { id: 'terminal', label: nls.localize('theia/core/mobileBottomBar/terminal', 'Terminal'), icon: 'codicon-terminal' },
         ];
     }
 
@@ -1206,6 +1210,41 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected getPreviewSecondaryItems(): BottomBarSecondaryItem[] {
         const items: BottomBarSecondaryItem[] = [];
+        const descriptor = this.projectBootstrap.descriptor;
+        const phase = this.projectBootstrap.phase;
+        if (descriptor) {
+            if (phase === 'detected') {
+                items.push({
+                    label: nls.localize('qaap/mobileBottomBar/previewInstall', 'Install dependencies'),
+                    detail: descriptor.installCommand,
+                    icon: 'codicon-cloud-download',
+                    run: () => this.projectBootstrap.runInstall(),
+                });
+            }
+            if (descriptor.devCommand && (phase === 'ready-to-run' || phase === 'detected' || phase === 'run-failed')) {
+                items.push({
+                    label: nls.localize('qaap/mobileBottomBar/previewRunDev', 'Run dev server'),
+                    detail: descriptor.devCommandLabel ?? descriptor.devCommand,
+                    icon: 'codicon-play',
+                    run: () => this.projectBootstrap.runDevServer(),
+                });
+            }
+            if (phase === 'dismissed') {
+                items.push({
+                    label: nls.localize('qaap/mobileBottomBar/previewShowBanner', 'Show project setup'),
+                    icon: 'codicon-rocket',
+                    run: () => this.projectBootstrap.reset(),
+                });
+            }
+            if (this.projectBootstrap.previewUrl) {
+                items.push({
+                    label: nls.localize('qaap/mobileBottomBar/previewFocus', 'Open dev preview'),
+                    detail: this.projectBootstrap.previewUrl,
+                    icon: 'codicon-link-external',
+                    run: () => this.projectBootstrap.focusPreview(),
+                });
+            }
+        }
         const reload = 'mini-browser.reload';
         if (this.commands.getCommand(reload)) {
             items.push({
@@ -1359,6 +1398,28 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         if (this.shouldDismissSheetsForButton('preview')) {
             await this.dismissSheetsAsync();
+        }
+        // Smart path: when a previously detected dev server URL exists, jump straight to it instead
+        // of prompting for a URL. Falls back to the generic Open URL prompt otherwise.
+        if (this.projectBootstrap.previewUrl) {
+            try {
+                await this.projectBootstrap.focusPreview();
+            } catch (e) {
+                console.error('[qaap-mobile-shell] focusPreview failed', e);
+            }
+            this.scheduleSnapAndUiRefresh();
+            return;
+        }
+        const phase = this.projectBootstrap.phase;
+        const descriptor = this.projectBootstrap.descriptor;
+        if (descriptor?.devCommand && (phase === 'ready-to-run' || phase === 'starting')) {
+            try {
+                await this.projectBootstrap.runDevServer();
+            } catch (e) {
+                console.error('[qaap-mobile-shell] runDevServer failed', e);
+            }
+            this.scheduleSnapAndUiRefresh();
+            return;
         }
         const commandId = MINI_BROWSER_OPEN_URL;
         if (this.commands.getCommand(commandId) && this.commands.isEnabled(commandId)) {
