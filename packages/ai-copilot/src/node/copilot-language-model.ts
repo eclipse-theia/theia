@@ -16,6 +16,7 @@
 
 import {
     ImageContent,
+    isToolCallContent,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelParsedResponse,
@@ -23,6 +24,7 @@ import {
     LanguageModelResponse,
     LanguageModelStatus,
     LanguageModelTextResponse,
+    ToolCallResult,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -33,6 +35,18 @@ import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streami
 import { COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
+
+function formatToolCallContent(result: ToolCallResult): string {
+    if (isToolCallContent(result)) {
+        return result.content.map(c => {
+            if (c.type === 'text') { return c.text; }
+            if (c.type === 'html') { return c.html; }
+            if (c.type === 'error') { return c.data; }
+            return JSON.stringify(c);
+        }).join('\n');
+    }
+    return JSON.stringify(result);
+}
 
 /**
  * Language model implementation for GitHub Copilot.
@@ -242,7 +256,7 @@ export class CopilotLanguageModel implements LanguageModel {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContent(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
