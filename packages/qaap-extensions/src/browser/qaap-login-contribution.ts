@@ -12,6 +12,7 @@ import { ensureQaapGithubOAuthReturnHandled } from '@theia/qaap-adapters/lib/bro
 import {
     QAAP_REQUIRE_LOGIN_EVENT,
     fetchQaapAuthConfig,
+    peekQaapOAuthErrorReasonFromUrl,
     peekQaapOAuthReturnFromUrl,
     revealQaapWorkbenchAfterAuth,
     syncQaapAuthSessionFromServer,
@@ -42,12 +43,17 @@ export class QaapLoginContribution implements FrontendApplicationContribution {
         window.addEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
         window.addEventListener(QAAP_REQUIRE_LOGIN_EVENT, this.onRequireLogin);
 
+        const oauthErrorReason = peekQaapOAuthErrorReasonFromUrl();
         const oauthResult = await ensureQaapGithubOAuthReturnHandled();
         if (oauthResult === 'github') {
             this.messages.info(nls.localize('qaap/auth/githubConnected', 'Connected to GitHub.'));
             this.requestWorkbenchLayoutRefresh();
         } else if (oauthResult === 'error') {
-            this.messages.error(nls.localize('qaap/auth/githubConnectFailed', 'GitHub sign-in failed.'));
+            const detail = oauthErrorReason
+                ? nls.localize('qaap/auth/githubConnectFailedWithReason', 'GitHub sign-in failed: {0}', oauthErrorReason)
+                : nls.localize('qaap/auth/githubConnectFailed', 'GitHub sign-in failed.');
+            this.messages.error(detail);
+            console.error('[qaap-auth] OAuth callback returned error.', oauthErrorReason ?? '(no reason)');
         }
 
         await this.syncLoginGateWithSession();

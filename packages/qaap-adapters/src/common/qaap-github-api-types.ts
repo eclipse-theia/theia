@@ -98,6 +98,10 @@ export interface QaapGithubPullRequestSummary {
 
 export interface QaapGithubPullRequestsResponse {
     pullRequests: QaapGithubPullRequestSummary[];
+    /** Repo derived from the currently-open workspace (when detectable). */
+    currentRepository?: QaapGithubRepositorySummary;
+    /** False when the request was rejected because the session is missing/expired. */
+    signedIn: boolean;
 }
 
 export interface QaapGithubMergePullRequestRequest {

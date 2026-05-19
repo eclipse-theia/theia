@@ -1,0 +1,678 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+|| Halo design system — premium minimal palette applied ONLY to the
+|| "Light (Qaap)" / "Dark (Qaap)" built-in themes.
+||
+|| `body.qaap-theme-light` / `body.qaap-theme-dark` are toggled by
+|| `QaapHaloThemeContribution` based on the active theme id; marketplace themes
+|| and High Contrast keep their original colors.
+||
+|| Theia writes `--theia-*` color tokens as inline styles on <html> via
+|| `ColorApplicationContribution`. To win against inline styles we use
+|| `!important` on the variable redefinitions below. Component CSS that reads
+|| these tokens (mobile shell, top bar, status bar, side panel…) picks the new
+|| values without any other edit.
+||----------------------------------------------------------------------------*/
+
+/*-----------------------------------------------------------------------------
+|| Halo design tokens (non-color: radii, motion, shadows, fonts).
+|| Available globally — they don't override anything, they just expose new
+|| utility variables the product can opt into.
+||----------------------------------------------------------------------------*/
+
+:root {
+  --qaap-halo-radius-xs: 6px;
+  --qaap-halo-radius-sm: 8px;
+  --qaap-halo-radius-md: 10px;
+  --qaap-halo-radius-lg: 12px;
+  --qaap-halo-radius-xl: 14px;
+  --qaap-halo-radius-2xl: 16px;
+  --qaap-halo-radius-pill: 999px;
+
+  --qaap-halo-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --qaap-halo-duration-fast: 120ms;
+  --qaap-halo-duration-base: 180ms;
+
+  --qaap-halo-font-sans: 'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --qaap-halo-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/*=============================================================================
+|| Light (Qaap) — minimal, warm, off-white.
+||
+|| Background hierarchy:
+||   bg          #F6F5F1   page chrome (activity bar, side bar, status bar)
+||   surface     #FFFFFF   cards / inputs / editors
+||   surfaceAlt  #FCFBF7   secondary panels (terminal, bottom panel)
+|| Ink:
+||   ink         #111111   primary text
+||   ink2        #3A3A3A   secondary text
+||   muted       #8A8A8A   tertiary / placeholder
+|| Lines:
+||   line        #ECEAE3   hairline (cards, panels)
+||   lineSoft    #F3F1EB   inner dividers
+|| Accent:
+||   amber       #D97757   used sparingly (selection, focus, primary CTA)
+||===========================================================================*/
+
+body.qaap-theme-light {
+  --qaap-halo-bg: #F6F5F1;
+  --qaap-halo-surface: #FFFFFF;
+  --qaap-halo-surface-alt: #FCFBF7;
+  --qaap-halo-ink: #111111;
+  --qaap-halo-ink-2: #3A3A3A;
+  --qaap-halo-muted: #8A8A8A;
+  --qaap-halo-line: #ECEAE3;
+  --qaap-halo-line-soft: #F3F1EB;
+  --qaap-halo-accent: #D97757;
+  --qaap-halo-accent-ink: #854017;
+  --qaap-halo-accent-soft: #FBECDC;
+  --qaap-halo-success: #357A4F;
+  --qaap-halo-danger: #B23D27;
+  --qaap-halo-add-bg: #EEF6EE;
+  --qaap-halo-add-ink: #28663F;
+  --qaap-halo-del-bg: #F8E5DF;
+  --qaap-halo-del-ink: #8E2F1F;
+  --qaap-halo-code: #FCFBF7;
+  --qaap-halo-halo: rgba(217, 119, 87, 0.28);
+
+  --qaap-halo-shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.04), 0 1px 1px rgba(17, 17, 17, 0.03);
+  --qaap-halo-shadow-md: 0 6px 18px rgba(17, 17, 17, 0.06), 0 2px 6px rgba(17, 17, 17, 0.04);
+  --qaap-halo-shadow-lg: 0 18px 40px rgba(17, 17, 17, 0.08), 0 4px 12px rgba(17, 17, 17, 0.05);
+  --qaap-halo-shadow-accent: 0 0 0 3px var(--qaap-halo-halo);
+}
+
+/*=============================================================================
+|| Dark (Qaap) — deep warm black, very low-contrast surfaces, premium feel.
+||
+||   bg          #0E0D0B   editor canvas / page background
+||   surface     #161513   cards / activity bar / status bar / side bar
+||   surfaceAlt  #0E0D0B   bottom panel
+||   ink         #F4F1E8   primary text (warm off-white)
+||   ink2        #C9C4B5   secondary text
+||   muted       #85816F   tertiary
+||   line        #2A2823   hairline
+||   lineSoft    #1F1D19   ultra soft divider
+||   amber       #E58E40   accent (slightly brighter for dark)
+||===========================================================================*/
+
+body.qaap-theme-dark {
+  --qaap-halo-bg: #0E0D0B;
+  --qaap-halo-surface: #161513;
+  --qaap-halo-surface-alt: #0E0D0B;
+  --qaap-halo-ink: #F4F1E8;
+  --qaap-halo-ink-2: #C9C4B5;
+  --qaap-halo-muted: #85816F;
+  --qaap-halo-line: #2A2823;
+  --qaap-halo-line-soft: #1F1D19;
+  --qaap-halo-accent: #E58E40;
+  --qaap-halo-accent-ink: #F5C58F;
+  --qaap-halo-accent-soft: #3A2614;
+  --qaap-halo-success: #67B07F;
+  --qaap-halo-danger: #E6745A;
+  --qaap-halo-add-bg: #1C2A1D;
+  --qaap-halo-add-ink: #8DC79E;
+  --qaap-halo-del-bg: #2E1814;
+  --qaap-halo-del-ink: #E89A8B;
+  --qaap-halo-code: #121110;
+  --qaap-halo-halo: rgba(229, 142, 64, 0.45);
+
+  --qaap-halo-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(0, 0, 0, 0.30);
+  --qaap-halo-shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+  --qaap-halo-shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --qaap-halo-shadow-accent: 0 0 0 3px var(--qaap-halo-halo);
+}
+
+/*=============================================================================
+|| Map Halo tokens onto the Theia color variables, scoped to Qaap themes.
+|| `!important` is required because `ColorApplicationContribution` writes the
+|| `--theia-*` properties as inline styles on `<html>`. Once a user picks
+|| another theme, the `body.qaap-theme-*` class is removed and Theia's inline
+|| styles take over again.
+||
+|| The mapping intentionally stays conservative: text foreground, surfaces,
+|| hairlines, accent / focus / selection. Editor / Monaco syntax tokens are
+|| left to the underlying VS Code theme JSON.
+||===========================================================================*/
+
+body.qaap-theme-light,
+body.qaap-theme-dark {
+  /* Foreground / text */
+  --theia-foreground: var(--qaap-halo-ink) !important;
+  --theia-descriptionForeground: var(--qaap-halo-muted) !important;
+  --theia-disabledForeground: var(--qaap-halo-muted) !important;
+  --theia-icon-foreground: var(--qaap-halo-ink-2) !important;
+
+  /* Editor canvas + side surfaces */
+  --theia-editor-background: var(--qaap-halo-bg) !important;
+  --theia-editor-foreground: var(--qaap-halo-ink) !important;
+  --theia-editor-selectionBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-editor-inactiveSelectionBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-editor-lineHighlightBackground: var(--qaap-halo-line-soft) !important;
+
+  --theia-sideBar-background: var(--qaap-halo-bg) !important;
+  --theia-sideBar-foreground: var(--qaap-halo-ink) !important;
+  --theia-sideBarSectionHeader-background: var(--qaap-halo-bg) !important;
+  --theia-sideBarSectionHeader-foreground: var(--qaap-halo-ink-2) !important;
+  --theia-sideBarTitle-foreground: var(--qaap-halo-ink) !important;
+
+  --theia-activityBar-background: var(--qaap-halo-bg) !important;
+  --theia-activityBar-foreground: var(--qaap-halo-ink) !important;
+  --theia-activityBar-inactiveForeground: var(--qaap-halo-muted) !important;
+  --theia-activityBar-activeBackground: var(--qaap-halo-accent-soft) !important;
+
+  --theia-panel-background: var(--qaap-halo-surface-alt) !important;
+  --theia-panelTitle-activeForeground: var(--qaap-halo-ink) !important;
+  --theia-panelTitle-inactiveForeground: var(--qaap-halo-muted) !important;
+
+  /* Hairline borders everywhere */
+  --theia-panel-border: var(--qaap-halo-line) !important;
+  --theia-panelInput-border: var(--qaap-halo-line) !important;
+  --theia-input-border: var(--qaap-halo-line) !important;
+  --theia-editorWidget-border: var(--qaap-halo-line) !important;
+  --theia-editorGroup-border: var(--qaap-halo-line) !important;
+  --theia-sideBar-border: var(--qaap-halo-line) !important;
+  --theia-sideBarSectionHeader-border: var(--qaap-halo-line-soft) !important;
+  --theia-activityBar-border: var(--qaap-halo-line) !important;
+  --theia-tab-border: var(--qaap-halo-line) !important;
+  --theia-menu-border: var(--qaap-halo-line) !important;
+  --theia-dropdown-border: var(--qaap-halo-line) !important;
+  --theia-contrastBorder: var(--qaap-halo-line) !important;
+  --theia-contrastActiveBorder: var(--qaap-halo-accent) !important;
+
+  /* Surfaces for editor widgets, popovers, dialogs */
+  --theia-editorWidget-background: var(--qaap-halo-surface) !important;
+  --theia-editorWidget-foreground: var(--qaap-halo-ink) !important;
+  --theia-dropdown-background: var(--qaap-halo-surface) !important;
+  --theia-dropdown-foreground: var(--qaap-halo-ink) !important;
+  --theia-menu-background: var(--qaap-halo-surface) !important;
+  --theia-menu-foreground: var(--qaap-halo-ink) !important;
+  --theia-menu-selectionBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-menu-selectionForeground: var(--qaap-halo-accent-ink) !important;
+  --theia-input-background: var(--qaap-halo-surface) !important;
+  --theia-input-foreground: var(--qaap-halo-ink) !important;
+  --theia-input-placeholderForeground: var(--qaap-halo-muted) !important;
+
+  /* Lists / tree */
+  --theia-list-hoverBackground: var(--qaap-halo-line-soft) !important;
+  --theia-list-hoverForeground: var(--qaap-halo-ink) !important;
+  --theia-list-activeSelectionBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-list-activeSelectionForeground: var(--qaap-halo-accent-ink) !important;
+  --theia-list-inactiveSelectionBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-list-inactiveSelectionForeground: var(--qaap-halo-accent-ink) !important;
+  --theia-list-focusBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-list-focusForeground: var(--qaap-halo-accent-ink) !important;
+  --theia-list-highlightForeground: var(--qaap-halo-accent) !important;
+
+  /* Tabs */
+  --theia-tab-activeBackground: var(--qaap-halo-bg) !important;
+  --theia-tab-activeForeground: var(--qaap-halo-ink) !important;
+  --theia-tab-inactiveBackground: var(--qaap-halo-bg) !important;
+  --theia-tab-inactiveForeground: var(--qaap-halo-muted) !important;
+  --theia-tab-activeBorderTop: var(--qaap-halo-accent) !important;
+  --theia-tab-activeBorder: transparent !important;
+  --theia-tab-hoverBackground: var(--qaap-halo-line-soft) !important;
+  --theia-tab-unfocusedActiveForeground: var(--qaap-halo-ink-2) !important;
+  --theia-tab-unfocusedInactiveForeground: var(--qaap-halo-muted) !important;
+
+  /* Accent: focus, buttons, badges, progress */
+  --theia-focusBorder: var(--qaap-halo-accent) !important;
+  --theia-button-background: var(--qaap-halo-accent) !important;
+  --theia-button-foreground: #FFFFFF !important;
+  --theia-button-hoverBackground: var(--qaap-halo-accent-ink) !important;
+  --theia-button-secondaryBackground: var(--qaap-halo-line-soft) !important;
+  --theia-button-secondaryForeground: var(--qaap-halo-ink) !important;
+  --theia-button-secondaryHoverBackground: var(--qaap-halo-line) !important;
+  --theia-activityBarBadge-background: var(--qaap-halo-accent) !important;
+  --theia-activityBarBadge-foreground: #FFFFFF !important;
+  --theia-badge-background: var(--qaap-halo-accent) !important;
+  --theia-badge-foreground: #FFFFFF !important;
+  --theia-progressBar-background: var(--qaap-halo-accent) !important;
+  --theia-panelTitle-activeBorder: var(--qaap-halo-accent) !important;
+  --theia-inputOption-activeBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-inputOption-activeForeground: var(--qaap-halo-accent-ink) !important;
+  --theia-inputOption-activeBorder: var(--qaap-halo-accent) !important;
+
+  /* Status / decorations */
+  --theia-errorForeground: var(--qaap-halo-danger) !important;
+  --theia-editorError-foreground: var(--qaap-halo-danger) !important;
+  --theia-editorWarning-foreground: var(--qaap-halo-accent) !important;
+  --theia-gitDecoration-modifiedResourceForeground: var(--qaap-halo-accent) !important;
+  --theia-gitDecoration-addedResourceForeground: var(--qaap-halo-add-ink) !important;
+  --theia-gitDecoration-deletedResourceForeground: var(--qaap-halo-del-ink) !important;
+
+  /* Toolbar hover (used by many mobile components for chip / button hover) */
+  --theia-toolbar-hoverBackground: var(--qaap-halo-line-soft) !important;
+
+  /* Scrollbar */
+  --theia-scrollbarSlider-background: color-mix(in srgb, var(--qaap-halo-ink) 18%, transparent) !important;
+  --theia-scrollbarSlider-hoverBackground: color-mix(in srgb, var(--qaap-halo-ink) 30%, transparent) !important;
+  --theia-scrollbarSlider-activeBackground: color-mix(in srgb, var(--qaap-halo-ink) 45%, transparent) !important;
+}
+
+/*-----------------------------------------------------------------------------
+|| Status bar in Light (Qaap) is white per upstream defaults — switch to Halo
+|| surface and tone foreground for a calmer minimal look. Status bar in
+|| Dark (Qaap) follows the same hierarchy.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light {
+  --theia-statusBar-background: var(--qaap-halo-surface) !important;
+  --theia-statusBar-foreground: var(--qaap-halo-ink-2) !important;
+  --theia-statusBar-border: var(--qaap-halo-line) !important;
+}
+
+body.qaap-theme-dark {
+  --theia-statusBar-background: var(--qaap-halo-surface) !important;
+  --theia-statusBar-foreground: var(--qaap-halo-ink-2) !important;
+  --theia-statusBar-border: var(--qaap-halo-line) !important;
+}
+
+/*-----------------------------------------------------------------------------
+|| Reusable Halo primitives. Components living anywhere in the workbench can
+|| add `qaap-halo-card` / `qaap-halo-pill` for the canonical premium look.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .qaap-halo-card,
+body.qaap-theme-dark .qaap-halo-card {
+  background: var(--qaap-halo-surface);
+  border: 1px solid var(--qaap-halo-line);
+  border-radius: var(--qaap-halo-radius-2xl);
+  box-shadow: var(--qaap-halo-shadow-sm);
+  color: var(--qaap-halo-ink);
+  font-family: var(--qaap-halo-font-sans);
+  transition: border-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+    box-shadow var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+}
+
+body.qaap-theme-light .qaap-halo-card.qaap-mod-flat,
+body.qaap-theme-dark .qaap-halo-card.qaap-mod-flat {
+  background: var(--qaap-halo-surface-alt);
+  box-shadow: none;
+}
+
+body.qaap-theme-light .qaap-halo-pill,
+body.qaap-theme-dark .qaap-halo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--qaap-halo-radius-pill);
+  border: 1px solid var(--qaap-halo-line);
+  background: var(--qaap-halo-surface);
+  color: var(--qaap-halo-ink-2);
+  font-family: var(--qaap-halo-font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 1.4;
+}
+
+body.qaap-theme-light .qaap-halo-pill.qaap-mod-accent,
+body.qaap-theme-dark .qaap-halo-pill.qaap-mod-accent {
+  background: var(--qaap-halo-accent-soft);
+  border-color: transparent;
+  color: var(--qaap-halo-accent-ink);
+}
+
+body.qaap-theme-light .qaap-halo-pill.qaap-mod-success,
+body.qaap-theme-dark .qaap-halo-pill.qaap-mod-success {
+  background: var(--qaap-halo-add-bg);
+  border-color: transparent;
+  color: var(--qaap-halo-add-ink);
+}
+
+body.qaap-theme-light .qaap-halo-pill.qaap-mod-danger,
+body.qaap-theme-dark .qaap-halo-pill.qaap-mod-danger {
+  background: var(--qaap-halo-del-bg);
+  border-color: transparent;
+  color: var(--qaap-halo-del-ink);
+}
+
+/*-----------------------------------------------------------------------------
+|| Refined mobile shell components (Projects panel, PR review, Open Repo sheet)
+|| picking up the Halo radii + soft hairlines. Selectors prefixed with
+|| `body.qaap-theme-*` so they only activate for the branded themes.
+||----------------------------------------------------------------------------*/
+
+@media (max-width: 767px) {
+  body.qaap-theme-light .theia-mobile-projects-card,
+  body.qaap-theme-dark .theia-mobile-projects-card,
+  body.qaap-theme-light .theia-mobile-pr-card,
+  body.qaap-theme-dark .theia-mobile-pr-card {
+    border-color: var(--qaap-halo-line);
+    border-radius: var(--qaap-halo-radius-xl);
+    background: var(--qaap-halo-surface);
+    box-shadow: var(--qaap-halo-shadow-sm);
+    transition: border-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+      box-shadow var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-card:hover,
+  body.qaap-theme-dark .theia-mobile-projects-card:hover,
+  body.qaap-theme-light .theia-mobile-pr-card.theia-mod-top:hover,
+  body.qaap-theme-dark .theia-mobile-pr-card.theia-mod-top:hover {
+    border-color: color-mix(in srgb, var(--qaap-halo-accent) 22%, var(--qaap-halo-line));
+    box-shadow: var(--qaap-halo-shadow-md);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-card-body,
+  body.qaap-theme-dark .theia-mobile-projects-card-body {
+    border-radius: var(--qaap-halo-radius-xl);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-search,
+  body.qaap-theme-dark .theia-mobile-projects-search,
+  body.qaap-theme-light .theia-mobile-open-repo-filter,
+  body.qaap-theme-dark .theia-mobile-open-repo-filter,
+  body.qaap-theme-light .theia-mobile-open-repo-public-input,
+  body.qaap-theme-dark .theia-mobile-open-repo-public-input {
+    background: var(--qaap-halo-surface);
+    border-color: var(--qaap-halo-line);
+    border-radius: var(--qaap-halo-radius-md);
+    color: var(--qaap-halo-ink);
+    transition: border-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+      box-shadow var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-search:focus-within,
+  body.qaap-theme-dark .theia-mobile-projects-search:focus-within,
+  body.qaap-theme-light .theia-mobile-open-repo-filter:focus-within,
+  body.qaap-theme-dark .theia-mobile-open-repo-filter:focus-within {
+    border-color: var(--qaap-halo-accent);
+    box-shadow: var(--qaap-halo-shadow-accent);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-filter-chip,
+  body.qaap-theme-dark .theia-mobile-projects-filter-chip,
+  body.qaap-theme-light .theia-mobile-pr-chip,
+  body.qaap-theme-dark .theia-mobile-pr-chip,
+  body.qaap-theme-light .theia-mobile-pr-picker-tab,
+  body.qaap-theme-dark .theia-mobile-pr-picker-tab,
+  body.qaap-theme-light .theia-mobile-pr-repo,
+  body.qaap-theme-dark .theia-mobile-pr-repo {
+    border-color: var(--qaap-halo-line);
+    color: var(--qaap-halo-ink-2);
+    transition: background-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+      color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+      border-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-filter-chip.theia-mod-active,
+  body.qaap-theme-dark .theia-mobile-projects-filter-chip.theia-mod-active,
+  body.qaap-theme-light .theia-mobile-pr-picker-tab.theia-mod-active,
+  body.qaap-theme-dark .theia-mobile-pr-picker-tab.theia-mod-active {
+    background: var(--qaap-halo-accent-soft);
+    border-color: transparent;
+    color: var(--qaap-halo-accent-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-empty,
+  body.qaap-theme-dark .theia-mobile-projects-empty,
+  body.qaap-theme-light .theia-mobile-projects-add,
+  body.qaap-theme-dark .theia-mobile-projects-add,
+  body.qaap-theme-light .theia-mobile-open-repo-create,
+  body.qaap-theme-dark .theia-mobile-open-repo-create {
+    border-color: var(--qaap-halo-line);
+    border-radius: var(--qaap-halo-radius-lg);
+    color: var(--qaap-halo-muted);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-add:hover,
+  body.qaap-theme-dark .theia-mobile-projects-add:hover,
+  body.qaap-theme-light .theia-mobile-open-repo-create:hover,
+  body.qaap-theme-dark .theia-mobile-open-repo-create:hover {
+    border-color: var(--qaap-halo-accent);
+    color: var(--qaap-halo-accent-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-section-dot,
+  body.qaap-theme-dark .theia-mobile-projects-section-dot,
+  body.qaap-theme-light .theia-mobile-projects-pin,
+  body.qaap-theme-dark .theia-mobile-projects-pin {
+    color: var(--qaap-halo-accent);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-status-pill,
+  body.qaap-theme-dark .theia-mobile-projects-status-pill {
+    border-radius: var(--qaap-halo-radius-xs);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-diff-line.theia-mod-add,
+  body.qaap-theme-dark .theia-mobile-pr-diff-line.theia-mod-add {
+    background: var(--qaap-halo-add-bg);
+    color: var(--qaap-halo-add-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-diff-line.theia-mod-del,
+  body.qaap-theme-dark .theia-mobile-pr-diff-line.theia-mod-del {
+    background: var(--qaap-halo-del-bg);
+    color: var(--qaap-halo-del-ink);
+  }
+
+  /* Primary CTAs on mobile sheets pick the Halo amber instead of the
+     foreground/background swap (which can look too stark). */
+  body.qaap-theme-light .theia-mobile-pr-action.theia-mod-primary,
+  body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-primary,
+  body.qaap-theme-light .theia-mobile-projects-new-btn,
+  body.qaap-theme-dark .theia-mobile-projects-new-btn,
+  body.qaap-theme-light .theia-mobile-open-repo-public-submit,
+  body.qaap-theme-dark .theia-mobile-open-repo-public-submit {
+    border-color: var(--qaap-halo-accent);
+    background: var(--qaap-halo-accent);
+    color: #FFFFFF;
+    box-shadow: var(--qaap-halo-shadow-sm);
+    border-radius: var(--qaap-halo-radius-md);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-action.theia-mod-primary:hover:not(:disabled),
+  body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-primary:hover:not(:disabled),
+  body.qaap-theme-light .theia-mobile-projects-new-btn:hover,
+  body.qaap-theme-dark .theia-mobile-projects-new-btn:hover,
+  body.qaap-theme-light .theia-mobile-open-repo-public-submit:hover:not(:disabled),
+  body.qaap-theme-dark .theia-mobile-open-repo-public-submit:hover:not(:disabled) {
+    background: var(--qaap-halo-accent-ink);
+    border-color: var(--qaap-halo-accent-ink);
+    color: #FFFFFF;
+  }
+
+  /* Bottom-bar long-press action sheet sits on document.body, not under the
+     shell, so it's selected via body alone. */
+  body.qaap-theme-light .theia-mobile-bottom-actionsheet,
+  body.qaap-theme-dark .theia-mobile-bottom-actionsheet {
+    background: var(--qaap-halo-surface);
+    border-color: var(--qaap-halo-line);
+    border-radius: var(--qaap-halo-radius-xl);
+    box-shadow: var(--qaap-halo-shadow-lg);
+    color: var(--qaap-halo-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-toast,
+  body.qaap-theme-dark .theia-mobile-pr-toast {
+    background: var(--qaap-halo-surface);
+    border-color: var(--qaap-halo-line);
+    border-radius: var(--qaap-halo-radius-lg);
+    box-shadow: var(--qaap-halo-shadow-md);
+    color: var(--qaap-halo-ink);
+  }
+}
+
+/*-----------------------------------------------------------------------------
+|| Desktop refinements (Qaap themes only): menus, dialogs, primary buttons,
+|| inputs. Same Halo radii + accent glow on focus.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .lm-Menu,
+body.qaap-theme-dark .lm-Menu,
+body.qaap-theme-light .dialogContent,
+body.qaap-theme-dark .dialogContent,
+body.qaap-theme-light .theia-Dialog,
+body.qaap-theme-dark .theia-Dialog {
+  border-radius: var(--qaap-halo-radius-lg);
+  border-color: var(--qaap-halo-line);
+  box-shadow: var(--qaap-halo-shadow-lg);
+}
+
+body.qaap-theme-light .theia-button.main,
+body.qaap-theme-dark .theia-button.main,
+body.qaap-theme-light .theia-button:not(.secondary):not(:disabled),
+body.qaap-theme-dark .theia-button:not(.secondary):not(:disabled) {
+  border-radius: var(--qaap-halo-radius-sm);
+  transition: background-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+    box-shadow var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+}
+
+body.qaap-theme-light .theia-button.main:hover,
+body.qaap-theme-dark .theia-button.main:hover {
+  box-shadow: var(--qaap-halo-shadow-accent);
+}
+
+body.qaap-theme-light .theia-input,
+body.qaap-theme-dark .theia-input {
+  border-radius: var(--qaap-halo-radius-sm);
+  transition: border-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+    box-shadow var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+}
+
+body.qaap-theme-light .theia-input:focus,
+body.qaap-theme-light .theia-input:focus-visible,
+body.qaap-theme-dark .theia-input:focus,
+body.qaap-theme-dark .theia-input:focus-visible {
+  border-color: var(--qaap-halo-accent);
+  box-shadow: var(--qaap-halo-shadow-accent);
+  outline: none;
+}
+
+/*-----------------------------------------------------------------------------
+|| "Surface card" buttons: white (or dark surface) with a thin hairline border,
+|| not a tinted grey. This is the canonical Halo button-on-page treatment.
+||
+|| Applied to:
+||   - Welcome quick actions (Command Palette, New AI Chat, New Terminal, Color Theme)
+||   - Open GitHub Repo list items (mobile + desktop)
+||   - Any element opting in via the `qaap-halo-surface-btn` class
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .theia-mobile-open-repo-item,
+body.qaap-theme-dark .theia-mobile-open-repo-item,
+body.qaap-theme-light .qaap-halo-surface-btn,
+body.qaap-theme-dark .qaap-halo-surface-btn {
+  background: var(--qaap-halo-surface);
+  border: 1px solid var(--qaap-halo-line);
+  border-radius: var(--qaap-halo-radius-md);
+  color: var(--qaap-halo-ink);
+  box-shadow: var(--qaap-halo-shadow-sm);
+  transition: border-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+    background-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease),
+    box-shadow var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item:hover,
+body.qaap-theme-dark .theia-mobile-open-repo-item:hover,
+body.qaap-theme-light .qaap-halo-surface-btn:hover,
+body.qaap-theme-dark .qaap-halo-surface-btn:hover {
+  background: var(--qaap-halo-surface);
+  border-color: color-mix(in srgb, var(--qaap-halo-accent) 30%, var(--qaap-halo-line));
+  box-shadow: var(--qaap-halo-shadow-md);
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item:active,
+body.qaap-theme-dark .theia-mobile-open-repo-item:active {
+  background: var(--qaap-halo-line-soft);
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item:focus-visible,
+body.qaap-theme-dark .theia-mobile-open-repo-item:focus-visible {
+  outline: none;
+  border-color: var(--qaap-halo-accent);
+  box-shadow: var(--qaap-halo-shadow-accent);
+}
+
+/* Welcome quick-action tiles use a borderless, transparent style for a minimal/clean look —
+   the Halo theme keeps the icon accent but does NOT reintroduce borders, surfaces, or shadows. */
+body.qaap-theme-light .gs-quick-action,
+body.qaap-theme-dark .gs-quick-action {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--qaap-halo-ink);
+  transition: background-color var(--qaap-halo-duration-fast) var(--qaap-halo-ease);
+}
+
+body.qaap-theme-light .gs-quick-action:hover,
+body.qaap-theme-dark .gs-quick-action:hover {
+  background: color-mix(in srgb, var(--qaap-halo-accent) 10%, transparent);
+  border: none;
+  box-shadow: none;
+}
+
+body.qaap-theme-light .gs-quick-action:active,
+body.qaap-theme-dark .gs-quick-action:active {
+  background: color-mix(in srgb, var(--qaap-halo-accent) 16%, transparent);
+}
+
+body.qaap-theme-light .gs-quick-action:focus-visible,
+body.qaap-theme-dark .gs-quick-action:focus-visible {
+  outline: 2px solid var(--qaap-halo-accent);
+  outline-offset: 2px;
+  border: none;
+  box-shadow: none;
+}
+
+/* Icon inside the surface button picks the Halo accent for a single visual
+   anchor; in light mode this is the warm amber, in dark it's the brighter
+   variant. The original rule colored the icon with `focusBorder` so it inherits
+   automatically once `--theia-focusBorder` is mapped, but we restate it here
+   to keep the welcome page legible even if a future tweak changes the focus
+   token. */
+body.qaap-theme-light .gs-quick-action i,
+body.qaap-theme-dark .gs-quick-action i {
+  color: var(--qaap-halo-accent);
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item.theia-mod-current,
+body.qaap-theme-dark .theia-mobile-open-repo-item.theia-mod-current {
+  border-color: var(--qaap-halo-accent);
+  background: var(--qaap-halo-accent-soft);
+  color: var(--qaap-halo-accent-ink);
+  box-shadow: none;
+}
+
+/* Welcome page background: replace the gradient mix that uses `focusBorder`
+   (now Halo amber, which would tint the whole top of the page) with the same
+   surfaceAlt → bg subtle gradient. */
+body.qaap-theme-light .gs-container,
+body.qaap-theme-dark .gs-container {
+  background: linear-gradient(
+    180deg,
+    var(--qaap-halo-surface-alt) 0%,
+    var(--qaap-halo-bg) 240px
+  );
+}
+
+/*-----------------------------------------------------------------------------
+|| Focus halo: replaces the harsh single-pixel ring with a soft amber glow.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light #theia-app-shell :focus-visible,
+body.qaap-theme-dark #theia-app-shell :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--qaap-halo-bg), 0 0 0 4px var(--qaap-halo-halo);
+  border-radius: var(--qaap-halo-radius-sm);
+}
+
+/*-----------------------------------------------------------------------------
+|| Reduced motion.
+||----------------------------------------------------------------------------*/
+
+@media (prefers-reduced-motion: reduce) {
+  body.qaap-theme-light *,
+  body.qaap-theme-dark * {
+    transition: none !important;
+  }
+}

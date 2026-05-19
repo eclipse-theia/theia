@@ -5,6 +5,7 @@
 // *****************************************************************************
 
 import '../../src/browser/style/workbench-cursor-typography.css';
+import '../../src/browser/style/qaap-halo-tokens.css';
 import '../../src/browser/style/qaap-workbench-top-bar.css';
 import '../../src/browser/style/qaap-ai-chat-mobile.css';
 import '../../src/browser/style/qaap-vsx-registry.css';
@@ -22,9 +23,14 @@ import '../../src/browser/style/qaap-getting-started.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { QaapWorkbenchColorContribution } from './qaap-workbench-color-contribution';
+import { QaapHaloThemeContribution } from './qaap-halo-theme-contribution';
 
 export default new ContainerModule(bind => {
     bind(QaapWorkbenchColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(QaapWorkbenchColorContribution);
+
+    bind(QaapHaloThemeContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapHaloThemeContribution);
 });

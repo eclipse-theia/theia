@@ -10,6 +10,7 @@ import { BackendApplicationContribution, FileUri } from '@theia/core/lib/node';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
+import * as os from 'os';
 import * as path from 'path';
 import {
     QAAP_AUTH_API_PATH,
@@ -37,7 +38,10 @@ import { QaapGithubSessionStore } from './qaap-github-session-store';
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const GITHUB_OAUTH_SCOPE = 'read:user repo';
 const THEIA_EMPTY_WINDOW_HASH = '!empty';
-const QAAP_REPOS_ROOT = process.env.QAAP_REPOS_ROOT || '/workspace/repos';
+// Production deployments mount `/workspace` for the container; local dev (macOS/Windows) cannot
+// create folders at the filesystem root, so fall back to a writable per-user directory by default.
+const QAAP_REPOS_ROOT = process.env.QAAP_REPOS_ROOT
+    || (process.env.NODE_ENV === 'production' ? '/workspace/repos' : path.join(os.homedir(), '.qaap', 'workspaces'));
 
 @injectable()
 export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
@@ -85,14 +89,22 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
             return;
         }
         const error = typeof req.query.error === 'string' ? req.query.error : undefined;
+        const errorDescription = typeof req.query.error_description === 'string' ? req.query.error_description : undefined;
         if (error) {
-            this.redirectAfterOAuth(res, config.publicUrl, false);
+            console.error('[qaap-oauth] GitHub returned error on callback:', error, errorDescription ?? '');
+            this.redirectAfterOAuth(res, config.publicUrl, false, errorDescription || error);
             return;
         }
         const code = typeof req.query.code === 'string' ? req.query.code : undefined;
         const state = typeof req.query.state === 'string' ? req.query.state : undefined;
-        if (!code || !this.sessions.consumeOAuthState(state)) {
-            this.redirectAfterOAuth(res, config.publicUrl, false);
+        if (!code) {
+            console.error('[qaap-oauth] Callback missing "code" query parameter');
+            this.redirectAfterOAuth(res, config.publicUrl, false, 'missing_code');
+            return;
+        }
+        if (!this.sessions.consumeOAuthState(state)) {
+            console.error('[qaap-oauth] OAuth state is unknown or expired (backend likely restarted between /start and /callback). state=', state);
+            this.redirectAfterOAuth(res, config.publicUrl, false, 'state_lost');
             return;
         }
         try {
@@ -100,9 +112,12 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
             const user = await fetchGithubUser(accessToken);
             const sessionId = this.sessions.createSession({ accessToken, user });
             this.setSessionCookie(res, sessionId);
+            console.info('[qaap-oauth] GitHub sign-in OK for user', user.login);
             this.redirectAfterOAuth(res, config.publicUrl, true);
-        } catch {
-            this.redirectAfterOAuth(res, config.publicUrl, false);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error('[qaap-oauth] Token exchange or user fetch failed:', message);
+            this.redirectAfterOAuth(res, config.publicUrl, false, message);
         }
     }
 
@@ -152,16 +167,16 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
     protected async handleGithubPullRequests(req: Request, res: Response): Promise<void> {
         const stored = this.sessions.getSession(this.readSessionId(req));
         if (!stored) {
-            res.status(401).json({ error: 'Not signed in' });
+            res.status(401).json({ error: 'Not signed in', signedIn: false, pullRequests: [] });
             return;
         }
         try {
             const repository = await this.getCurrentWorkspaceRepository(stored.accessToken);
             const pullRequests = repository ? await fetchGithubPullRequests(stored.accessToken, [repository]) : [];
-            res.json({ pullRequests });
+            res.json({ pullRequests, currentRepository: repository, signedIn: true });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to load pull requests';
-            res.status(502).json({ error: message });
+            res.status(502).json({ error: message, signedIn: true, pullRequests: [] });
         }
     }
 
@@ -451,12 +466,15 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         });
     }
 
-    protected redirectAfterOAuth(res: Response, publicUrl: string, success: boolean): void {
+    protected redirectAfterOAuth(res: Response, publicUrl: string, success: boolean, reason?: string): void {
         const target = new URL(publicUrl + '/');
         if (success) {
             target.searchParams.set('qaap_oauth', 'github');
         } else {
             target.searchParams.set('qaap_oauth_error', '1');
+            if (reason) {
+                target.searchParams.set('qaap_oauth_reason', reason.slice(0, 200));
+            }
         }
         // Theia restores the most recent workspace when there is no hash. Use
         // the explicit empty-window hash to avoid reopening a stale workspace.

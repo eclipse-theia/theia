@@ -26,6 +26,11 @@ export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
     onDismiss(): void;
     onProjectsChanged?(): void;
+    /**
+     * Invoked when the user taps the project that already matches the active workspace.
+     * The shell uses it to surface the README in the editor instead of triggering a no-op reload.
+     */
+    onCurrentProjectActivated?(project: MobileProjectEntry): void | Promise<void>;
 }
 
 export class MobileProjectsPanel {
@@ -649,16 +654,19 @@ export class MobileProjectsPanel {
     }
 
     async openProject(project: MobileProjectEntry): Promise<void> {
+        if (project.isCurrent) {
+            // Tapping the active workspace must not trigger a reload (which would close any open
+            // editors). Instead, dismiss the panel and let the shell surface the README in-place.
+            this.hide();
+            this.delegate.onDismiss();
+            await this.delegate.onCurrentProjectActivated?.(project);
+            return;
+        }
         if (project.github) {
             this.projectsService.openInCurrentWindow(project);
             return;
         }
         if (project.uri) {
-            if (project.isCurrent) {
-                this.hide();
-                this.delegate.onDismiss();
-                return;
-            }
             this.projectsService.openInCurrentWindow(project);
             return;
         }

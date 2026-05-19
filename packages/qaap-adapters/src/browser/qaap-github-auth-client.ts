@@ -54,11 +54,19 @@ export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositor
 
 export async function fetchQaapGithubPullRequests(): Promise<QaapGithubPullRequestsResponse> {
     const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests`, FETCH_INIT);
+    if (response.status === 401) {
+        return { pullRequests: [], signedIn: false };
+    }
     if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error || `Failed to load GitHub pull requests (${response.status})`);
     }
-    return response.json() as Promise<QaapGithubPullRequestsResponse>;
+    const body = await response.json() as Partial<QaapGithubPullRequestsResponse>;
+    return {
+        pullRequests: Array.isArray(body.pullRequests) ? body.pullRequests : [],
+        currentRepository: body.currentRepository,
+        signedIn: body.signedIn !== false,
+    };
 }
 
 export async function mergeQaapGithubPullRequest(request: QaapGithubMergePullRequestRequest): Promise<QaapGithubMergePullRequestResponse> {
@@ -196,6 +204,15 @@ export async function completeQaapGithubOAuthReturn(): Promise<boolean> {
     return ok;
 }
 
+/** Backend-provided machine-readable reason for the last failed OAuth callback. */
+export function peekQaapOAuthErrorReasonFromUrl(): string | undefined {
+    if (typeof window === 'undefined') {
+        return undefined;
+    }
+    const reason = new URLSearchParams(window.location.search).get('qaap_oauth_reason');
+    return reason && reason.length > 0 ? reason : undefined;
+}
+
 export function consumeQaapOAuthReturnFromUrl(): 'github' | 'error' | undefined {
     if (typeof window === 'undefined') {
         return undefined;
@@ -204,6 +221,7 @@ export function consumeQaapOAuthReturnFromUrl(): 'github' | 'error' | undefined 
     if (params.has('qaap_oauth_error')) {
         const next = new URL(window.location.href);
         next.searchParams.delete('qaap_oauth_error');
+        next.searchParams.delete('qaap_oauth_reason');
         window.history.replaceState({}, '', next.pathname + next.search + next.hash);
         return 'error';
     }

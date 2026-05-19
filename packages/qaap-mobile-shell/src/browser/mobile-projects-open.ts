@@ -12,6 +12,14 @@ export function markMobileProjectReadmeForOpen(): void {
     }
 }
 
+/** Check the README-open request without consuming it; survives premature workspace events. */
+export function peekMobileProjectReadmeOpenRequest(): boolean {
+    if (typeof sessionStorage === 'undefined') {
+        return false;
+    }
+    return sessionStorage.getItem(QAAP_MOBILE_PROJECTS_OPEN_README_KEY) === '1';
+}
+
 export function consumeMobileProjectReadmeOpenRequest(): boolean {
     if (typeof sessionStorage === 'undefined') {
         return false;
@@ -21,4 +29,10 @@ export function consumeMobileProjectReadmeOpenRequest(): boolean {
     }
     sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_OPEN_README_KEY);
     return true;
+}
+
+export function clearMobileProjectReadmeOpenRequest(): void {
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_OPEN_README_KEY);
+    }
 }

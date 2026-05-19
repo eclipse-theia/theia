@@ -35,6 +35,7 @@ import { installMobileHorizontalTouchScroll } from './mobile-horizontal-touch-sc
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
+import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
@@ -69,7 +70,7 @@ const EDIT_CHAT_SESSION_SETTINGS_COMMAND = 'chat:widget:session-settings';
 /** Shell class toggled while the bottom (terminal) panel is expanded on mobile. */
 const MOBILE_BOTTOM_OPEN_CLASS = 'theia-mod-mobile-bottom-open';
 
-type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'files' | 'pr' | 'diff' | 'tasks' | 'skills' | 'terminal';
+type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'explore' | 'pr' | 'diff' | 'tasks' | 'skills' | 'terminal';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -103,6 +104,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MobileProjectsService)
     protected readonly projectsService: MobileProjectsService;
+
+    @inject(MobileProjectsReadmeContribution)
+    protected readonly projectsReadme: MobileProjectsReadmeContribution;
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
@@ -479,6 +483,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 onProjectOpen: (project: MobileProjectEntry) => { void this.onProjectsPanelOpen(project); },
                 onDismiss: () => this.scheduleSnapAndUiRefresh(),
                 onProjectsChanged: () => { void this.refreshProjectsCount().then(() => this.refreshBottomBar()); },
+                onCurrentProjectActivated: () => this.onCurrentProjectActivated(),
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
@@ -559,6 +564,26 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         await panel.openProject(project);
         panel.hide();
         this.scheduleSnapAndUiRefresh();
+    }
+
+    /**
+     * Called when the user taps the project that already matches the active workspace.
+     * Brings the README to the editor (or falls back to any existing main widget) instead of
+     * reloading the window.
+     */
+    protected async onCurrentProjectActivated(): Promise<void> {
+        const opened = await this.projectsReadme.openReadmeForCurrentWorkspace();
+        if (opened) {
+            return;
+        }
+        // No README to show: focus an existing editor if any, so the user lands in the editor area.
+        const widgets = toArray(this.shell.mainPanel.widgets());
+        const target = this.shell.activeWidget && widgets.includes(this.shell.activeWidget)
+            ? this.shell.activeWidget
+            : widgets[0];
+        if (target) {
+            void this.shell.activateWidget(target.id);
+        }
     }
 
     /**
@@ -814,7 +839,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             { id: 'projects', label: nls.localize('qaap/mobileBottomBar/projects', 'Projects'), icon: 'codicon-project' },
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
             { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
-            { id: 'files', label: nls.localize('qaap/mobileBottomBar/files', 'Files'), icon: 'codicon-files' },
+            { id: 'explore', label: nls.localize('qaap/mobileBottomBar/explore', 'Explore'), icon: 'codicon-folder-opened' },
             { id: 'pr', label: nls.localize('qaap/mobileBottomBar/pr', 'PR'), icon: 'codicon-git-pull-request' },
             { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
             { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
@@ -833,8 +858,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 return this.isMobileAgentSheetVisible();
             case 'preview':
                 return !!this.getActivePreviewWidget();
-            case 'files':
-                return this.isMobileFilesSheetVisible();
+            case 'explore':
+                return this.isMobileExploreSheetVisible();
             case 'terminal':
                 return this.isTerminalBottomPanelOpen();
             default:
@@ -1073,8 +1098,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 return this.getPullRequestSecondaryItems();
             case 'preview':
                 return this.getPreviewSecondaryItems();
-            case 'files':
-                return this.getFilesSecondaryItems();
+            case 'explore':
+                return this.getExploreSecondaryItems();
             default:
                 return [];
         }
@@ -1192,7 +1217,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         return items;
     }
 
-    protected getFilesSecondaryItems(): BottomBarSecondaryItem[] {
+    protected getExploreSecondaryItems(): BottomBarSecondaryItem[] {
         const items: BottomBarSecondaryItem[] = [];
         const newFile = 'file.newFile';
         if (this.commands.getCommand(newFile)) {
@@ -1251,9 +1276,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             await this.toggleMobilePreview();
             return;
         }
-        if (def.id === 'files') {
+        if (def.id === 'explore') {
             this.hidePullRequestPanel();
-            await this.toggleMobileFilesSheet();
+            await this.toggleMobileExploreSheet();
             return;
         }
         if (def.id === 'skills') {
@@ -1295,10 +1320,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         return this.shell.isExpanded('right') && !this.isSidePanelSheetCollapsedInDom('right');
     }
 
-    protected async toggleMobileFilesSheet(): Promise<void> {
+    protected async toggleMobileExploreSheet(): Promise<void> {
         this.hideProjectsPanel();
         this.hidePullRequestPanel();
-        if (this.isMobileFilesSheetVisible()) {
+        if (this.isMobileExploreSheetVisible()) {
             await this.collapseMobileSidePanels();
             this.scheduleSnapAndUiRefresh();
             return;
@@ -1307,7 +1332,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.scheduleSnapAndUiRefresh();
     }
 
-    protected isMobileFilesSheetVisible(): boolean {
+    protected isMobileExploreSheetVisible(): boolean {
         if (!this.shell.isExpanded('left') || this.isSidePanelSheetCollapsedInDom('left')) {
             return false;
         }

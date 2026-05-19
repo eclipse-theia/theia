@@ -239,7 +239,7 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
                 title: nls.localize('theia/core/mobile/onboarding/bottomBar/title', 'Bottom bar — agent-first'),
                 body: nls.localize(
                     'theia/core/mobile/onboarding/bottomBar/body',
-                    'The bar at the bottom is your primary workspace on mobile: Agent, Preview, Files, Diff, Tasks, Skills, Terminal and Editor — always one tap away.'
+                    'The bar at the bottom is your primary workspace on mobile: Agent, Preview, Explore, Diff, Tasks, Skills, Terminal and Editor — always one tap away.'
                 ),
                 target: () => document.getElementById('theia-mobile-bottom-bar') ?? undefined,
                 placement: 'top',

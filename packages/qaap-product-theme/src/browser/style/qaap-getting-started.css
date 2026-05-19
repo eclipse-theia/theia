@@ -51,19 +51,21 @@
   gap: 10px;
   min-width: 0;
   min-height: 50px;
-  padding: 0 14px;
-  border: 1px solid var(--theia-dropdown-border, var(--theia-panel-border));
+  padding: 0 12px;
+  /* Borderless, transparent background for a minimal/clean look — only the icon and label show. */
+  border: none;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theia-sideBar-background) 88%, var(--theia-editor-foreground) 12%);
+  background: transparent;
   color: var(--theia-editor-foreground);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background-color 120ms ease;
 }
 
 .gs-quick-action:hover {
-  border-color: var(--theia-focusBorder);
-  background: color-mix(in srgb, var(--theia-toolbar-hoverBackground) 74%, var(--theia-sideBar-background) 26%);
+  /* Subtle hover affordance without reintroducing a visible border. */
+  background: color-mix(in srgb, var(--theia-toolbar-hoverBackground) 55%, transparent);
 }
 
 .gs-quick-action:focus-visible {
@@ -73,7 +75,7 @@
 
 .gs-quick-action i {
   flex: 0 0 auto;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--theia-focusBorder);
 }
 
@@ -212,8 +214,7 @@
 
   .gs-quick-action {
     min-height: 48px;
-    padding: 0 10px;
-    border-radius: 7px;
+    padding: 0 8px;
   }
 
   .gs-workbench-grid {

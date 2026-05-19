@@ -22,7 +22,6 @@ import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-con
 import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
-import { MobileQuickActionsFabContribution } from './mobile-quick-actions-fab';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsService).toSelf().inSingletonScope();
@@ -49,7 +48,4 @@ export default new ContainerModule(bind => {
 
     bind(LongPressContextMenuContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(LongPressContextMenuContribution);
-
-    bind(MobileQuickActionsFabContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(MobileQuickActionsFabContribution);
 });

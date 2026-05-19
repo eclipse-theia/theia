@@ -26,7 +26,7 @@ import {
     mobileProjectInitials,
     StoredMobileProject,
 } from './mobile-projects-types';
-import { markMobileProjectReadmeForOpen } from './mobile-projects-open';
+import { clearMobileProjectReadmeOpenRequest, markMobileProjectReadmeForOpen } from './mobile-projects-open';
 
 const HIDDEN_PROJECT_IDS_STORAGE_KEY = 'qaap.mobileProjects.hiddenIds';
 const PINNED_PROJECT_IDS_STORAGE_KEY = 'qaap.mobileProjects.pinnedIds';
@@ -205,15 +205,30 @@ export class MobileProjectsService {
             return;
         }
         markMobileProjectReadmeForOpen();
-        const result = await openQaapGithubRepository(project.github.owner, project.github.name);
-        const uri = new URI(result.workspaceUri);
-        if (newWindow) {
-            const url = new URL(window.location.href);
-            url.hash = encodeURI(this.workspacePathFromUri(uri));
-            this.windowService.openNewWindow(url.toString());
-            return;
+        try {
+            const result = await openQaapGithubRepository(project.github.owner, project.github.name);
+            const uri = new URI(result.workspaceUri);
+            if (newWindow) {
+                const url = new URL(window.location.href);
+                url.hash = encodeURI(this.workspacePathFromUri(uri));
+                this.windowService.openNewWindow(url.toString());
+                return;
+            }
+            this.openWorkspaceUri(uri);
+        } catch (err) {
+            // Without this, the backend error (e.g. failed clone, missing workspace root) is silently
+            // dropped on the floor and the user sees the project tap as a no-op.
+            clearMobileProjectReadmeOpenRequest();
+            const detail = err instanceof Error ? err.message : String(err);
+            await this.messageService.error(
+                nls.localize(
+                    'qaap/mobileProjects/openGithubFailed',
+                    'Could not open {0}: {1}',
+                    project.github.fullName,
+                    detail
+                )
+            );
         }
-        this.openWorkspaceUri(uri);
     }
 
     async createGithubProject(): Promise<MobileProjectEntry[] | undefined> {

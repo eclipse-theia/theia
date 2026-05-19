@@ -8,11 +8,13 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import {
     fetchQaapGithubPullRequests,
     mergeQaapGithubPullRequest,
+    startGithubOAuth,
 } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
 import type {
     QaapGithubPullRequestFile,
     QaapGithubPullRequestLine,
     QaapGithubPullRequestSummary,
+    QaapGithubRepositorySummary,
 } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     createMobileSheetGrabber,
@@ -48,99 +50,6 @@ export interface MobilePullRequestPanelDelegate {
 
 const QAAP_MOBILE_PR_STORAGE_PREFIX = 'qaap.mobilePr.review.';
 
-const DEMO_PR: QaapGithubPullRequestSummary = {
-    owner: 'qaap',
-    repo: 'demo',
-    number: 284,
-    title: 'Add Google OAuth sign-in with NextAuth',
-    branch: 'feat/oauth-google',
-    base: 'main',
-    author: 'Halo',
-    files: 5,
-    adds: 67,
-    dels: 5,
-    tests: 'passing',
-    htmlUrl: 'https://github.com/qaap/demo/pull/284',
-    mergeable: true,
-    filesPreview: [
-        {
-            f: 'app/api/auth/[...nextauth]/route.ts',
-            ext: 'ts',
-            adds: 47,
-            dels: 0,
-            preview: [
-                { t: 'add', n: 1, s: "import NextAuth from 'next-auth';" },
-                { t: 'add', n: 2, s: "import Google from 'next-auth/providers/google';" },
-                { t: 'add', n: 3, s: '' },
-                { t: 'add', n: 4, s: 'export const handler = NextAuth({' },
-                { t: 'add', n: 5, s: '  providers: [' },
-                { t: 'add', n: 6, s: '    Google({' },
-                { t: 'add', n: 7, s: '      clientId: process.env.GOOGLE_CLIENT_ID!,' },
-                { t: 'add', n: 8, s: '      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,' },
-                { t: 'add', n: 9, s: '    }),' },
-                { t: 'add', n: 10, s: '  ],' },
-            ],
-        },
-        {
-            f: 'app/auth/components/SignInButton.tsx',
-            ext: 'tsx',
-            adds: 12,
-            dels: 3,
-            preview: [
-                { t: 'ctx', n: 12, s: 'export default function SignInButton() {' },
-                { t: 'del', n: 14, s: "  <Button onClick={() => signIn('email')}>" },
-                { t: 'del', n: 15, s: '    Continue with email' },
-                { t: 'add', n: 14, s: '  <div className="flex flex-col gap-2">' },
-                { t: 'add', n: 15, s: "    <Button onClick={() => signIn('google')}>" },
-                { t: 'add', n: 16, s: '      <GoogleIcon /> Continue with Google' },
-                { t: 'add', n: 17, s: '    </Button>' },
-                { t: 'add', n: 18, s: "    <Button onClick={() => signIn('email')}>" },
-                { t: 'add', n: 19, s: '      Continue with email' },
-                { t: 'add', n: 20, s: '    </Button>' },
-            ],
-        },
-        {
-            f: 'app/auth/components/AuthLayout.tsx',
-            ext: 'tsx',
-            adds: 4,
-            dels: 2,
-            preview: [
-                { t: 'ctx', n: 8, s: 'export function AuthLayout({ children }) {' },
-                { t: 'del', n: 10, s: '  return <div className="auth">{children}</div>;' },
-                { t: 'add', n: 10, s: '  return (' },
-                { t: 'add', n: 11, s: '    <div className="auth flex flex-col items-center">' },
-                { t: 'add', n: 12, s: '      {children}' },
-                { t: 'add', n: 13, s: '    </div>' },
-                { t: 'add', n: 14, s: '  );' },
-            ],
-        },
-        {
-            f: '.env.example',
-            ext: 'env',
-            adds: 2,
-            dels: 0,
-            preview: [
-                { t: 'ctx', n: 12, s: 'NEXT_PUBLIC_API_URL=' },
-                { t: 'ctx', n: 13, s: 'STRIPE_KEY=' },
-                { t: 'add', n: 14, s: 'GOOGLE_CLIENT_ID=' },
-                { t: 'add', n: 15, s: 'GOOGLE_CLIENT_SECRET=' },
-            ],
-        },
-        {
-            f: 'package.json',
-            ext: 'json',
-            adds: 2,
-            dels: 0,
-            preview: [
-                { t: 'ctx', n: 14, s: '    "next": "14.2.0",' },
-                { t: 'add', n: 15, s: '    "next-auth": "^4.24.7",' },
-                { t: 'add', n: 16, s: '    "@auth/google": "^1.2.0",' },
-                { t: 'ctx', n: 17, s: '    "react": "18.3.1",' },
-            ],
-        },
-    ],
-};
-
 export class MobilePullRequestPanel {
 
     protected readonly root: HTMLElement;
@@ -156,14 +65,15 @@ export class MobilePullRequestPanel {
     protected readonly toast: HTMLElement;
     protected pullRequests: QaapGithubPullRequestSummary[] = [];
     protected activePullRequest: QaapGithubPullRequestSummary | undefined;
+    protected currentRepository: QaapGithubRepositorySummary | undefined;
     protected queue: QaapGithubPullRequestFile[] = [];
     protected decisions = new Map<string, PullRequestReview>();
     protected history: PullRequestHistoryEntry[] = [];
     protected visible = false;
     protected loaded = false;
     protected loading = false;
-    protected empty = false;
-    protected demoMode = false;
+    protected signedOut = false;
+    protected errorMessage: string | undefined;
     protected confirmingMerge = false;
     protected dragStartX = 0;
     protected dragStartY = 0;
@@ -232,7 +142,6 @@ export class MobilePullRequestPanel {
         this.toast.hidden = true;
 
         this.root.append(this.header, progress, this.hintRow, this.stack, this.ctaRow, this.toast);
-        this.useDemoPullRequest(false);
         this.render();
 
         this.dragDismissDispose = installMobileSheetDragDismiss({
@@ -302,43 +211,54 @@ export class MobilePullRequestPanel {
 
     protected async loadPullRequests(): Promise<void> {
         this.loading = true;
-        this.empty = false;
+        this.errorMessage = undefined;
+        this.signedOut = false;
         this.render();
         try {
             const response = await fetchQaapGithubPullRequests();
             this.loaded = true;
             this.loading = false;
-            if (response.pullRequests.length === 0) {
-                this.empty = true;
-                this.activePullRequest = undefined;
-                this.queue = [];
-                this.decisions.clear();
-                this.history = [];
+            this.currentRepository = response.currentRepository;
+            this.signedOut = !response.signedIn;
+            this.pullRequests = response.pullRequests;
+            if (!response.signedIn) {
+                this.clearActivePullRequest();
+            } else if (response.pullRequests.length === 0) {
+                this.clearActivePullRequest();
             } else {
-                this.pullRequests = response.pullRequests;
-                this.usePullRequest(response.pullRequests[0], false);
+                const previousNumber = this.activePullRequest?.number;
+                const previous = previousNumber !== undefined
+                    ? response.pullRequests.find(pr => pr.number === previousNumber)
+                    : undefined;
+                this.usePullRequest(previous ?? response.pullRequests[0]);
             }
-        } catch {
+        } catch (err) {
             this.loaded = true;
             this.loading = false;
-            this.useDemoPullRequest(true);
-            this.showToast(nls.localize('qaap/mobilePr/demoFallback', 'Showing demo PR until GitHub pull requests are available.'));
+            this.errorMessage = err instanceof Error ? err.message : nls.localize('qaap/mobilePr/loadError', 'Failed to load pull requests.');
+            this.clearActivePullRequest();
         }
         this.render();
     }
 
-    protected useDemoPullRequest(showDemoBadge: boolean): void {
-        this.demoMode = showDemoBadge;
-        this.empty = false;
-        this.usePullRequest(DEMO_PR, showDemoBadge);
+    protected clearActivePullRequest(): void {
+        this.clearMergeTimer();
+        this.activePullRequest = undefined;
+        this.queue = [];
+        this.decisions.clear();
+        this.history = [];
+        this.confirmingMerge = false;
+        this.mergeState = 'idle';
+        this.mergeError = undefined;
     }
 
-    protected usePullRequest(pullRequest: QaapGithubPullRequestSummary, demoMode: boolean): void {
+    protected usePullRequest(pullRequest: QaapGithubPullRequestSummary): void {
         this.clearMergeTimer();
         this.activePullRequest = pullRequest;
-        this.demoMode = demoMode;
         this.confirmingMerge = false;
         this.mergeError = undefined;
+        this.expanded = false;
+        this.dragX = 0;
         this.restoreReviewState();
     }
 
@@ -372,14 +292,28 @@ export class MobilePullRequestPanel {
 
     protected render(): void {
         this.renderHeader();
-        if (this.loading) {
+        if (this.loading && !this.activePullRequest) {
             this.renderProgress(0, 0, 0, 0, 0);
             this.hintRow.hidden = true;
             this.stack.replaceChildren(this.createBusyState());
             this.ctaRow.replaceChildren();
             return;
         }
-        if (this.empty) {
+        if (this.signedOut) {
+            this.renderProgress(0, 0, 0, 0, 0);
+            this.hintRow.hidden = true;
+            this.stack.replaceChildren(this.createSignInState());
+            this.renderSignInActions();
+            return;
+        }
+        if (this.errorMessage && !this.activePullRequest) {
+            this.renderProgress(0, 0, 0, 0, 0);
+            this.hintRow.hidden = true;
+            this.stack.replaceChildren(this.createErrorState());
+            this.renderErrorActions();
+            return;
+        }
+        if (!this.activePullRequest) {
             this.renderProgress(0, 0, 0, 0, 0);
             this.hintRow.hidden = true;
             this.stack.replaceChildren(this.createEmptyState());
@@ -402,45 +336,132 @@ export class MobilePullRequestPanel {
     protected renderHeader(): void {
         this.header.replaceChildren();
         const pullRequest = this.activePullRequest;
+        const repoLabel = this.repositoryLabel();
         const top = document.createElement('div');
         top.className = 'theia-mobile-pr-meta-row';
-        const authored = document.createElement('span');
-        authored.className = 'theia-mobile-pr-authored';
-        authored.append(
-            this.createIcon(this.demoMode ? 'codicon-beaker' : 'codicon-github'),
-            document.createTextNode(` ${this.demoMode ? 'Demo' : pullRequest?.author ?? 'GitHub'}`)
+
+        const repoChip = document.createElement('span');
+        repoChip.className = 'theia-mobile-pr-repo';
+        repoChip.append(
+            this.createIcon('codicon-github'),
+            this.createTextSpan(repoLabel)
         );
-        const branch = document.createElement('span');
-        branch.className = 'theia-mobile-pr-branch';
-        branch.textContent = pullRequest
-            ? `${pullRequest.owner}/${pullRequest.repo} #${pullRequest.number} - ${pullRequest.branch} -> ${pullRequest.base}`
-            : nls.localize('qaap/mobilePr/noActive', 'No active pull request');
+
+        const spacer = document.createElement('span');
+        spacer.className = 'theia-mobile-pr-spacer';
+
+        top.append(repoChip, spacer);
+
+        if (pullRequest) {
+            const externalLink = document.createElement('a');
+            externalLink.className = 'theia-mobile-pr-icon-btn theia-mod-link codicon codicon-link-external';
+            externalLink.href = pullRequest.htmlUrl;
+            externalLink.target = '_blank';
+            externalLink.rel = 'noopener noreferrer';
+            externalLink.title = nls.localize('qaap/mobilePr/openOnGithub', 'Open on GitHub');
+            externalLink.setAttribute('aria-label', externalLink.title);
+            top.append(externalLink);
+        }
+
         const refresh = document.createElement('button');
         refresh.type = 'button';
         refresh.className = 'theia-mobile-pr-icon-btn codicon codicon-refresh';
         refresh.title = nls.localize('qaap/mobilePr/refresh', 'Refresh pull requests');
         refresh.setAttribute('aria-label', refresh.title);
+        if (this.loading) {
+            refresh.classList.add('codicon-modifier-spin');
+        }
         refresh.disabled = this.loading || this.mergeState === 'merging' || this.mergeState === 'deploying';
         refresh.addEventListener('click', () => { void this.loadPullRequests(); });
-        top.append(authored, branch, refresh);
+        top.append(refresh);
 
-        const title = document.createElement('h1');
-        title.className = 'theia-mobile-pr-title';
-        title.textContent = pullRequest?.title ?? nls.localize('qaap/mobilePr/title', 'Pull requests');
+        this.header.append(top);
 
-        const stats = document.createElement('div');
-        stats.className = 'theia-mobile-pr-stats';
+        if (this.pullRequests.length > 1 && pullRequest) {
+            this.header.append(this.createPullRequestPicker(pullRequest));
+        }
+
         if (pullRequest) {
+            const titleRow = document.createElement('div');
+            titleRow.className = 'theia-mobile-pr-title-row';
+            const number = document.createElement('span');
+            number.className = 'theia-mobile-pr-number';
+            number.textContent = `#${pullRequest.number}`;
+            const title = document.createElement('h1');
+            title.className = 'theia-mobile-pr-title';
+            title.textContent = pullRequest.title;
+            titleRow.append(number, title);
+
+            const branchRow = document.createElement('div');
+            branchRow.className = 'theia-mobile-pr-branchrow';
+            branchRow.append(
+                this.createIcon('codicon-git-branch'),
+                this.createClassedTextSpan('theia-mobile-pr-branch-name', pullRequest.branch),
+                this.createIcon('codicon-arrow-right'),
+                this.createClassedTextSpan('theia-mobile-pr-branch-name theia-mod-base', pullRequest.base),
+                this.createClassedTextSpan('theia-mobile-pr-author', `@${pullRequest.author}`)
+            );
+
+            const stats = document.createElement('div');
+            stats.className = 'theia-mobile-pr-stats';
             stats.append(
-                this.createTextSpan(`${nls.localize('qaap/mobilePr/files', 'files')} ${pullRequest.files}`),
+                this.createStatChip('codicon-file', `${pullRequest.files} ${nls.localize('qaap/mobilePr/files', 'files')}`),
                 this.createClassedTextSpan('theia-mod-add', `+${pullRequest.adds}`),
                 this.createClassedTextSpan('theia-mod-del', `-${pullRequest.dels}`),
                 this.createTestsPill(pullRequest.tests)
             );
-        } else {
-            stats.appendChild(this.createTextSpan(nls.localize('qaap/mobilePr/emptySubtitle', 'No open pull requests found.')));
+
+            this.header.append(titleRow, branchRow, stats);
         }
-        this.header.append(top, title, stats);
+    }
+
+    protected createPullRequestPicker(pullRequest: QaapGithubPullRequestSummary): HTMLElement {
+        const picker = document.createElement('div');
+        picker.className = 'theia-mobile-pr-picker';
+        picker.setAttribute('role', 'tablist');
+        picker.setAttribute('aria-label', nls.localize('qaap/mobilePr/pickerLabel', 'Select pull request'));
+        for (const candidate of this.pullRequests) {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'theia-mobile-pr-picker-tab';
+            tab.setAttribute('role', 'tab');
+            const active = candidate.number === pullRequest.number;
+            if (active) {
+                tab.classList.add('theia-mod-active');
+                tab.setAttribute('aria-selected', 'true');
+            } else {
+                tab.setAttribute('aria-selected', 'false');
+            }
+            tab.title = candidate.title;
+            const number = document.createElement('span');
+            number.className = 'theia-mobile-pr-picker-num';
+            number.textContent = `#${candidate.number}`;
+            const label = document.createElement('span');
+            label.className = 'theia-mobile-pr-picker-title';
+            label.textContent = candidate.title;
+            tab.append(number, label);
+            tab.addEventListener('click', () => {
+                if (candidate.number === this.activePullRequest?.number) {
+                    return;
+                }
+                this.usePullRequest(candidate);
+                this.render();
+            });
+            picker.appendChild(tab);
+        }
+        return picker;
+    }
+
+    protected repositoryLabel(): string {
+        const pr = this.activePullRequest;
+        if (pr) {
+            return `${pr.owner}/${pr.repo}`;
+        }
+        const repo = this.currentRepository;
+        if (repo) {
+            return repo.fullName;
+        }
+        return nls.localize('qaap/mobilePr/noRepo', 'No repository open');
     }
 
     protected renderProgress(reviewed: number, total: number, approved: number, rejected: number, commented: number): void {
@@ -540,17 +561,57 @@ export class MobilePullRequestPanel {
     protected createBusyState(): HTMLElement {
         const busy = document.createElement('div');
         busy.className = 'theia-mobile-pr-empty';
-        busy.append(this.createIcon('codicon-sync codicon-modifier-spin'), this.createTextSpan(nls.localize('qaap/mobilePr/loading', 'Loading pull requests...')));
+        busy.append(
+            this.createIcon('codicon-sync codicon-modifier-spin'),
+            this.createTextSpan(nls.localize('qaap/mobilePr/loading', 'Loading pull requests...')),
+            this.createClassedTextSpan('theia-mobile-pr-empty-hint', this.repositoryLabel())
+        );
         return busy;
+    }
+
+    protected createSignInState(): HTMLElement {
+        const state = document.createElement('div');
+        state.className = 'theia-mobile-pr-empty theia-mod-signin';
+        state.append(
+            this.createIcon('codicon-github'),
+            this.createTextSpan(nls.localize('qaap/mobilePr/signInTitle', 'Sign in to review pull requests')),
+            this.createClassedTextSpan(
+                'theia-mobile-pr-empty-hint',
+                nls.localize('qaap/mobilePr/signInDetail', 'Connect your GitHub account to load the open PRs for the current repository.')
+            )
+        );
+        return state;
+    }
+
+    protected createErrorState(): HTMLElement {
+        const state = document.createElement('div');
+        state.className = 'theia-mobile-pr-empty theia-mod-error';
+        state.append(
+            this.createIcon('codicon-warning'),
+            this.createTextSpan(nls.localize('qaap/mobilePr/loadFailed', 'Could not load pull requests')),
+            this.createClassedTextSpan('theia-mobile-pr-empty-hint', this.errorMessage ?? '')
+        );
+        return state;
     }
 
     protected createEmptyState(): HTMLElement {
         const empty = document.createElement('div');
         empty.className = 'theia-mobile-pr-empty';
+        const repoLabel = this.repositoryLabel();
+        const hasRepo = !!this.currentRepository;
         empty.append(
             this.createIcon('codicon-git-pull-request'),
-            this.createTextSpan(nls.localize('qaap/mobilePr/noPulls', 'No open pull requests')),
-            this.createTextSpan(nls.localize('qaap/mobilePr/noPullsDetail', 'Open PRs from the current repository will appear here.'))
+            this.createTextSpan(
+                hasRepo
+                    ? nls.localize('qaap/mobilePr/noPullsForRepo', 'No open pull requests in {0}', repoLabel)
+                    : nls.localize('qaap/mobilePr/noPulls', 'No open pull requests')
+            ),
+            this.createClassedTextSpan(
+                'theia-mobile-pr-empty-hint',
+                hasRepo
+                    ? nls.localize('qaap/mobilePr/noPullsHint', 'Open a PR on GitHub or pull a branch into this workspace to start reviewing here.')
+                    : nls.localize('qaap/mobilePr/noPullsDetail', 'Open a GitHub repository workspace to see its open pull requests.')
+            )
         );
         return empty;
     }
@@ -698,13 +759,54 @@ export class MobilePullRequestPanel {
     protected renderEmptyActions(): void {
         const buttonRow = document.createElement('div');
         buttonRow.className = 'theia-mobile-pr-button-row';
-        const refresh = this.createActionButton('secondary', nls.localize('qaap/mobilePr/refresh', 'Refresh'), 'codicon-refresh', () => { void this.loadPullRequests(); });
-        const demo = this.createActionButton('primary', nls.localize('qaap/mobilePr/useDemo', 'Use demo PR'), 'codicon-beaker', () => {
-            this.empty = false;
-            this.useDemoPullRequest(true);
-            this.render();
-        });
-        buttonRow.append(refresh, demo);
+        const refresh = this.createActionButton(
+            'primary',
+            nls.localize('qaap/mobilePr/refresh', 'Refresh'),
+            this.loading ? 'codicon-sync codicon-modifier-spin' : 'codicon-refresh',
+            () => { void this.loadPullRequests(); }
+        );
+        refresh.disabled = this.loading;
+        buttonRow.append(refresh);
+        const repo = this.currentRepository;
+        if (repo) {
+            const open = document.createElement('a');
+            open.className = 'theia-mobile-pr-action theia-mod-secondary';
+            open.href = `${repo.htmlUrl}/pulls`;
+            open.target = '_blank';
+            open.rel = 'noopener noreferrer';
+            open.append(
+                this.createIcon('codicon-link-external'),
+                this.createTextSpan(nls.localize('qaap/mobilePr/openPullsOnGithub', 'Open PRs on GitHub'))
+            );
+            buttonRow.append(open);
+        }
+        this.ctaRow.append(buttonRow);
+    }
+
+    protected renderErrorActions(): void {
+        const buttonRow = document.createElement('div');
+        buttonRow.className = 'theia-mobile-pr-button-row';
+        const retry = this.createActionButton(
+            'primary',
+            nls.localize('qaap/mobilePr/retry', 'Retry'),
+            this.loading ? 'codicon-sync codicon-modifier-spin' : 'codicon-debug-restart',
+            () => { void this.loadPullRequests(); }
+        );
+        retry.disabled = this.loading;
+        buttonRow.append(retry);
+        this.ctaRow.append(buttonRow);
+    }
+
+    protected renderSignInActions(): void {
+        const buttonRow = document.createElement('div');
+        buttonRow.className = 'theia-mobile-pr-button-row';
+        const signIn = this.createActionButton(
+            'primary',
+            nls.localize('qaap/mobilePr/signIn', 'Sign in with GitHub'),
+            'codicon-github',
+            () => startGithubOAuth()
+        );
+        buttonRow.append(signIn);
         this.ctaRow.append(buttonRow);
     }
 
@@ -746,6 +848,13 @@ export class MobilePullRequestPanel {
         button.append(this.createIcon(icon), this.createTextSpan(label));
         button.addEventListener('click', onClick);
         return button;
+    }
+
+    protected createStatChip(icon: string, text: string): HTMLElement {
+        const span = document.createElement('span');
+        span.className = 'theia-mobile-pr-stat-chip';
+        span.append(this.createIcon(icon), this.createTextSpan(text));
+        return span;
     }
 
     protected onPointerDown(event: PointerEvent, card: HTMLElement): void {
@@ -864,17 +973,13 @@ export class MobilePullRequestPanel {
         this.mergeState = 'merging';
         this.render();
         try {
-            if (!this.demoMode) {
-                const result = await mergeQaapGithubPullRequest({
-                    owner: pr.owner,
-                    repo: pr.repo,
-                    number: pr.number,
-                });
-                if (!result.merged) {
-                    throw new Error(result.message);
-                }
-            } else {
-                await this.delay(700);
+            const result = await mergeQaapGithubPullRequest({
+                owner: pr.owner,
+                repo: pr.repo,
+                number: pr.number,
+            });
+            if (!result.merged) {
+                throw new Error(result.message);
             }
             this.mergeState = 'deploying';
             this.render();

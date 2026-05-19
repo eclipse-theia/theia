@@ -203,6 +203,13 @@
     }
 
     function resumeAfterOAuthOrSession() {
+        if (window.location.search.indexOf('qaap_oauth_error=1') !== -1) {
+            try {
+                var errParams = new URLSearchParams(window.location.search);
+                var reason = errParams.get('qaap_oauth_reason');
+                console.error('[Qaap] GitHub OAuth callback failed.', reason ? 'Reason: ' + reason : '(no reason provided by backend)');
+            } catch (e) { /* ignore */ }
+        }
         if (window.location.search.indexOf('qaap_oauth=github') !== -1) {
             fetch('/qaap/api/auth/session', { credentials: 'include' })
                 .then(function (response) {

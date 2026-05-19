@@ -355,8 +355,13 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             this.optimalWidth = this.getOptimalWidth();
             this.optimalHeight = this.getOptimalHeight(Math.max(this.state.dimensions.width, this.optimalWidth));
         }
+        // A fixed overlay (e.g. the mobile bottom navigation chrome) may cover the lower part of the
+        // shell area. Treat its top edge as the effective shell bottom so the dropdown is not
+        // rendered behind it, and the invert logic kicks in when there is not enough room below.
+        const shellBottom = shellArea.top + shellArea.height;
+        const effectiveShellBottom = Math.min(shellBottom, this.getOverlayClipBottom(shellBottom));
         const availableTop = this.state.dimensions.top - shellArea.top;
-        const availableBottom = shellArea.top + shellArea.height - this.state.dimensions.bottom;
+        const availableBottom = effectiveShellBottom - this.state.dimensions.bottom;
         // prefer rendering to the bottom unless there is not enough space and more content can be shown to the top
         const invert = availableBottom < this.optimalHeight && (availableBottom - this.optimalHeight) < (availableTop - this.optimalHeight);
 
@@ -383,17 +388,37 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             }
         }
 
+        const maxHeight = invert
+            ? this.state.dimensions.top - shellArea.top
+            : effectiveShellBottom - this.state.dimensions.bottom;
         return <div key="dropdown" className="theia-select-component-dropdown" style={{
             top: invert ? 'none' : this.state.dimensions.bottom,
             bottom: invert ? shellArea.top - this.state.dimensions.top : 'none',
             left: this.alignLeft ? this.state.dimensions.left : 'none',
             right: this.alignLeft ? 'none' : shellArea.width - this.state.dimensions.right,
             width: Math.min(Math.max(this.state.dimensions.width, this.optimalWidth), maxWidth),
-            maxHeight: shellArea.height - (invert ? shellArea.height - this.state.dimensions.bottom : this.state.dimensions.top) - this.state.dimensions.height,
+            maxHeight,
             position: 'absolute'
         }} ref={this.dropdownRef}>
             {items}
         </div>;
+    }
+
+    /**
+     * Returns the viewport-relative Y coordinate at which a fixed bottom overlay (e.g. the mobile
+     * bottom navigation chrome) starts obscuring the shell area, or `fallbackBottom` when no such
+     * overlay is present. The dropdown should not be rendered below this line.
+     */
+    protected getOverlayClipBottom(fallbackBottom: number): number {
+        const overlay = document.querySelector<HTMLElement>('.theia-mobile-bottom-chrome-host');
+        if (!overlay) {
+            return fallbackBottom;
+        }
+        const rect = overlay.getBoundingClientRect();
+        if (rect.height <= 0 || rect.top >= fallbackBottom) {
+            return fallbackBottom;
+        }
+        return rect.top;
     }
 
     protected renderOption(index: number, option: SelectOption): React.ReactNode {
