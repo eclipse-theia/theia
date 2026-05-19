@@ -44,6 +44,7 @@ interface RemoteMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
     serverAuthToken?: string;
     serverAuthTokenHeader?: string;
     headers?: { [key: string]: string };
+    headersHelper?: string;
 }
 
 type MCPServersPreferenceValue = LocalMCPServerPreferenceValue | RemoteMCPServerPreferenceValue;
@@ -63,7 +64,8 @@ namespace MCPServersPreference {
             (!('serverUrl' in obj) || typeof obj.serverUrl === 'string') &&
             (!('serverAuthToken' in obj) || typeof obj.serverAuthToken === 'string') &&
             (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string') &&
-            (!('headers' in obj) || !!obj.headers && typeof obj.headers === 'object' && Object.values(obj.headers).every(value => typeof value === 'string'));
+            (!('headers' in obj) || !!obj.headers && typeof obj.headers === 'object' && Object.values(obj.headers).every(value => typeof value === 'string')) &&
+            (!('headersHelper' in obj) || typeof obj.headersHelper === 'string');
     }
 }
 
@@ -117,6 +119,13 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                 await this.updateWorkspaceRoots(false);
             });
 
+            // Push the resolved workspace trust level down to the backend so
+            // that MCPToolFilter contributions see a real value in their
+            // context. The backend can't resolve trust itself (the canonical
+            // WorkspaceTrustService is browser-only) so the frontend is the
+            // source of truth.
+            await this.pushWorkspaceTrustLevel(await this.workspaceTrustService.getWorkspaceTrust());
+
             await this.autoStartServers(this.prevServers);
 
             this.preferenceService.onPreferenceChanged(async event => {
@@ -130,6 +139,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             this.workspaceTrustService.onDidChangeWorkspaceTrust(async trusted => {
                 try {
+                    await this.pushWorkspaceTrustLevel(trusted);
                     if (trusted) {
                         await this.startPreviouslyBlockedServers();
                     } else {
@@ -201,6 +211,14 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
     protected updateBlockedServersStatusBar(): void {
         this.workspaceTrustService.refreshRestrictedModeIndicator();
+    }
+
+    protected async pushWorkspaceTrustLevel(trusted: boolean): Promise<void> {
+        try {
+            await this.frontendMCPService.setWorkspaceTrustLevel(trusted ? 'trusted' : 'restricted');
+        } catch (error) {
+            console.error('Failed to push workspace trust level to MCP backend', error);
+        }
     }
 
     getRestrictions(): WorkspaceRestriction[] {
@@ -290,13 +308,14 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             if ('serverUrl' in description) {
                 // Create RemoteMCPServerDescription by picking only remote-specific properties
-                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, autostart } = description;
+                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, headersHelper, autostart } = description;
                 filteredDescription = {
                     name,
                     serverUrl,
                     ...(serverAuthToken && { serverAuthToken }),
                     ...(serverAuthTokenHeader && { serverAuthTokenHeader }),
                     ...(headers && { headers }),
+                    ...(headersHelper && { headersHelper }),
                     autostart: autostart ?? true,
                 };
             } else {
