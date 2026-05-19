@@ -111,7 +111,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected get bottomBar(): HTMLElement | undefined { return this.bottomBarWidget?.node; }
     protected leftEdge: HTMLElement | undefined;
     protected rightEdge: HTMLElement | undefined;
-    protected closeButton: HTMLButtonElement | undefined;
     protected keyboardHelper: MobileKeyboardHelper | undefined;
     protected mobileActive = false;
     protected snapRaf = 0;
@@ -393,7 +392,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.rightEdge.parentElement.removeChild(this.rightEdge);
         }
         this.rightEdge = undefined;
-        this.removeCloseButton();
         this.keyboardHelper?.dispose();
         this.keyboardHelper = undefined;
         this.hideProjectsPanel();
@@ -444,7 +442,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.rightEdge.addEventListener('touchend', this.onRightEdgeTouchEnd, { passive: true });
             document.body.appendChild(this.rightEdge);
         }
-        this.ensureCloseButton();
         if (!this.keyboardHelper) {
             this.keyboardHelper = new MobileKeyboardHelper(this.shell.node);
             this.keyboardHelper.install();
@@ -675,59 +672,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
     };
 
-    /**
-     * Floating close button rendered into `document.body` and visible whenever any side sheet is
-     * expanded. Positioned at the top-trailing corner of the viewport (CSS) so it aligns with the
-     * full-height sheet; the activity strip reserves `--theia-mobile-sheet-close-reserve` so icons
-     * are not covered. A single instance handles both sides — tapping collapses whichever sheet is
-     * currently open (left, right, or both).
-     */
-    protected ensureCloseButton(): void {
-        if (this.closeButton?.isConnected) {
-            this.updateCloseButtonVisibility();
-            return;
-        }
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'theia-mobile-sheet-close-btn';
-        button.setAttribute('aria-label', nls.localize('theia/core/mobileSheetClose', 'Close panel'));
-        const icon = document.createElement('span');
-        icon.className = 'theia-mobile-sheet-close-btn-icon codicon codicon-close';
-        icon.setAttribute('aria-hidden', 'true');
-        button.appendChild(icon);
-        button.addEventListener('click', this.onCloseButtonClick);
-        document.body.appendChild(button);
-        this.closeButton = button;
-        this.updateCloseButtonVisibility();
-    }
-
-    protected removeCloseButton(): void {
-        if (this.closeButton) {
-            this.closeButton.removeEventListener('click', this.onCloseButtonClick);
-            this.closeButton.parentElement?.removeChild(this.closeButton);
-            this.closeButton = undefined;
-        }
-    }
-
-    protected updateCloseButtonVisibility(): void {
-        if (!this.closeButton) {
-            return;
-        }
-        const anySide = this.isAnyMobileSideSheetVisible();
-        this.closeButton.classList.toggle('theia-mod-visible', anySide);
-        this.closeButton.setAttribute('aria-hidden', anySide ? 'false' : 'true');
-        // Tab-focus only when visible so the button doesn't end up in the focus order while hidden.
-        this.closeButton.tabIndex = anySide ? 0 : -1;
-    }
-
-    protected readonly onCloseButtonClick = (): void => {
-        MobileHaptics.fire(MobileHaptics.MEDIUM);
-        void this.dismissMobileSideSheets();
-    };
-
     protected async dismissMobileSideSheets(): Promise<void> {
         await this.collapseMobileSideSheets();
-        this.updateCloseButtonVisibility();
         this.updateBackdropVisibility();
         if (this.mobileActive) {
             this.scheduleSnapAndUiRefresh();
@@ -834,7 +780,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected updateBackdropVisibility(): void {
         const anySide = this.isAnyMobileSideSheetVisible();
         this.removeBackdrop();
-        this.updateCloseButtonVisibility();
         if (anySide) {
             window.requestAnimationFrame(() => {
                 this.requestSheetRelayout();
@@ -1137,7 +1082,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         this.markMobileSidePanelCollapsed('left');
         this.markMobileSidePanelCollapsed('right');
-        this.updateCloseButtonVisibility();
         this.updateBackdropVisibility();
     }
 

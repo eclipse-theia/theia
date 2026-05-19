@@ -11,13 +11,160 @@
   box-sizing: border-box;
   height: 100%;
   overflow: auto;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theia-editor-background) 92%, var(--theia-focusBorder) 8%) 0%, var(--theia-editor-background) 220px);
+}
+
+.gs-content-container {
+  box-sizing: border-box;
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 28px 28px 72px;
+}
+
+.gs-header {
+  margin-bottom: 18px;
 }
 
 .gs-header h1 {
   margin: 0 0 8px;
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.25;
   font-weight: 600;
+  color: var(--theia-editor-foreground);
+}
+
+.gs-sub-header {
+  color: var(--theia-descriptionForeground);
+}
+
+.gs-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.gs-quick-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--theia-dropdown-border, var(--theia-panel-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theia-sideBar-background) 88%, var(--theia-editor-foreground) 12%);
+  color: var(--theia-editor-foreground);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gs-quick-action:hover {
+  border-color: var(--theia-focusBorder);
+  background: color-mix(in srgb, var(--theia-toolbar-hoverBackground) 74%, var(--theia-sideBar-background) 26%);
+}
+
+.gs-quick-action:focus-visible {
+  outline: 2px solid var(--theia-focusBorder);
+  outline-offset: 2px;
+}
+
+.gs-quick-action i {
+  flex: 0 0 auto;
+  font-size: 16px;
+  color: var(--theia-focusBorder);
+}
+
+.gs-quick-action span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gs-workbench-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.85fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.gs-workbench-main,
+.gs-workbench-side {
+  min-width: 0;
+}
+
+.gs-section {
+  margin-bottom: 26px;
+}
+
+.gs-section--primary .gs-action-container:first-of-type a {
+  color: var(--theia-button-foreground);
+  background: var(--theia-button-background);
+  border-color: var(--theia-button-background);
+}
+
+.gs-section--primary .gs-action-container:first-of-type a:hover {
+  background: var(--theia-button-hoverBackground);
+}
+
+.gs-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: var(--theia-ui-font-size2, 16px);
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.gs-section-header i {
+  color: var(--theia-focusBorder);
+}
+
+.gs-section .gs-action-container {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  margin: 5px 0;
+}
+
+.gs-section .gs-action-container a {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--theia-textLink-foreground);
+  text-decoration: none;
+}
+
+.gs-section .gs-action-container a:hover {
+  background: var(--theia-toolbar-hoverBackground);
+  color: var(--theia-textLink-activeForeground, var(--theia-textLink-foreground));
+}
+
+.gs-section .gs-action-container a:focus-visible {
+  outline: 2px solid var(--theia-focusBorder);
+  outline-offset: 2px;
+}
+
+.gs-action-details {
+  min-width: 0;
+  padding-top: 8px;
+  overflow: hidden;
+  color: var(--theia-descriptionForeground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gs-no-recent {
+  margin: 0;
+  color: var(--theia-descriptionForeground);
 }
 
 /*-----------------------------------------------------------------------------
@@ -29,6 +176,10 @@
 |-----------------------------------------------------------------------------*/
 
 @media (max-width: 767px) {
+  .gs-container {
+    background: var(--theia-editor-background);
+  }
+
   .flex-grid {
     flex-direction: column;
   }
@@ -39,7 +190,8 @@
   }
 
   .gs-content-container {
-    padding: 16px 16px 24px;
+    width: 100%;
+    padding: 18px 14px 84px;
   }
 
   .gs-header h1 {
@@ -52,6 +204,22 @@
     margin-top: 2px;
   }
 
+  .gs-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .gs-quick-action {
+    min-height: 48px;
+    padding: 0 10px;
+    border-radius: 7px;
+  }
+
+  .gs-workbench-grid {
+    display: block;
+  }
+
   .gs-section .gs-action-container {
     display: flex;
     align-items: center;
@@ -61,8 +229,12 @@
 
   .gs-section .gs-action-container a {
     flex: 1;
-    padding: 10px 0;
+    padding: 10px 8px;
     font-size: var(--theia-ui-font-size1, 15px);
+  }
+
+  .gs-action-details {
+    display: none;
   }
 
   .gs-section-header {
@@ -75,5 +247,9 @@
 @media (max-width: 360px) {
   .gs-content-container {
     padding: 14px 12px 20px;
+  }
+
+  .gs-quick-actions {
+    grid-template-columns: 1fr;
   }
 }

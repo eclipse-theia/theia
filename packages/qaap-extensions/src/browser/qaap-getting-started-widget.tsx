@@ -16,15 +16,18 @@
 
 import { codicon, CommonCommands, Key, KeyCode, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { quickCommand } from '@theia/core/lib/browser/quick-input/quick-command-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CommandRegistry, environment, isOSX, Path, PreferenceService } from '@theia/core/lib/common';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { nls } from '@theia/core/lib/common/nls';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
+import { TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 /**
  * Default implementation of the `QaapGettingStartedWidget`.
@@ -132,29 +135,37 @@ export class QaapGettingStartedWidget extends ReactWidget {
         return <div className='gs-container'>
             <div className='gs-content-container'>
                 {this.renderHeader()}
-                <hr className='gs-hr' />
-                <div className='flex-grid'>
-                    <div className='col'>
-                        {this.renderStart()}
-                    </div>
+                <div className='gs-quick-actions' aria-label={nls.localize('theia/qaap/welcome/quickActions', 'Quick actions')}>
+                    {this.renderCommandTile({
+                        commandId: quickCommand.id,
+                        icon: 'list-selection',
+                        label: nls.localizeByDefault('Command Palette')
+                    })}
+                    {this.renderCommandTile({
+                        commandId: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
+                        icon: 'sparkle',
+                        label: nls.localize('theia/qaap/welcome/newAiChat', 'New AI Chat')
+                    })}
+                    {this.renderCommandTile({
+                        commandId: TerminalCommands.NEW_ACTIVE_WORKSPACE.id,
+                        fallbackCommandId: TerminalCommands.NEW.id,
+                        icon: 'terminal',
+                        label: nls.localizeByDefault('New Terminal')
+                    })}
+                    {this.renderCommandTile({
+                        commandId: CommonCommands.SELECT_COLOR_THEME.id,
+                        icon: 'color-mode',
+                        label: nls.localizeByDefault('Color Theme')
+                    })}
                 </div>
-                <div className='flex-grid'>
-                    <div className='col'>
+                <div className='gs-workbench-grid'>
+                    <div className='gs-workbench-main'>
+                        {this.renderStart()}
                         {this.renderRecentWorkspaces()}
                     </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
+                    <div className='gs-workbench-side'>
                         {this.renderSettings()}
-                    </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
                         {this.renderHelp()}
-                    </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
                         {this.renderVersion()}
                     </div>
                 </div>
@@ -163,6 +174,31 @@ export class QaapGettingStartedWidget extends ReactWidget {
                 {this.renderPreferences()}
             </div>
         </div>;
+    }
+
+    protected renderCommandTile(options: { commandId: string; fallbackCommandId?: string; icon: string; label: string }): React.ReactNode {
+        const commandId = this.getAvailableCommandId(options.commandId, options.fallbackCommandId);
+        if (!commandId) {
+            return undefined;
+        }
+        return <button
+            key={options.commandId}
+            className='gs-quick-action'
+            type='button'
+            onClick={() => this.commandRegistry.executeCommand(commandId)}>
+            <i className={codicon(options.icon)}></i>
+            <span>{options.label}</span>
+        </button>;
+    }
+
+    protected getAvailableCommandId(commandId: string, fallbackCommandId?: string): string | undefined {
+        if (this.commandRegistry.getCommand(commandId)) {
+            return commandId;
+        }
+        if (fallbackCommandId && this.commandRegistry.getCommand(fallbackCommandId)) {
+            return fallbackCommandId;
+        }
+        return undefined;
     }
 
     /**
@@ -247,7 +283,7 @@ export class QaapGettingStartedWidget extends ReactWidget {
             </a>
         );
 
-        return <div className='gs-section'>
+        return <div className='gs-section gs-section--primary'>
             <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>{nls.localizeByDefault('Start')}</h3>
             {createFile}
             {open}

@@ -368,8 +368,6 @@
 
 #theia-app-shell.theia-ApplicationShell.theia-mod-mobile-one-column {
   --theia-mobile-bottom-bar-height: 56px;
-  /* Horizontal space reserved on the activity strip so fixed close control does not cover icons. */
-  --theia-mobile-sheet-close-reserve: 48px;
   box-sizing: border-box;
   position: fixed !important;
   top: 0 !important;
@@ -662,13 +660,6 @@
   border-radius: 0 !important;
 }
 
-/* Keep trailing activity-bar controls clear of the fixed close button (floating X on mobile). */
-#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .theia-app-activity-bar-row,
-#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .theia-app-activity-bar-row {
-  padding-inline-end: var(--theia-mobile-sheet-close-reserve, 48px);
-  box-sizing: border-box;
-}
-
 /* Hide the side panel's inner Lumino `DockPanel` TabBar entirely on mobile.
    The dock panel is created in `single-document` mode and the activity strip already lets the
    user switch between views; this TabBar would duplicate the same tabs (Explorer / Search /
@@ -761,98 +752,6 @@
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   overscroll-behavior-y: contain;
-}
-
-/* Floating close button (one shared instance, appended to `document.body`). Visible whenever a
-   side sheet is expanded. Fixed to the top-trailing corner of the viewport (same as the sheet’s
-   top edge now that the sheet is full-height); the activity row uses `--theia-mobile-sheet-close-reserve`
-   so scrollable and pinned strip icons are not covered. */
-.theia-mobile-sheet-close-btn {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 2px);
-  inset-inline-end: calc(env(safe-area-inset-right, 0px) + 4px);
-  inset-inline-start: auto;
-  transform: translateY(-4px);
-  width: 44px;
-  height: 44px;
-  margin: 0;
-  padding: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  background-color: var(--theia-activityBar-background, var(--theia-sideBar-background));
-  color: var(--theia-activityBar-inactiveForeground, var(--theia-foreground));
-  cursor: pointer;
-  z-index: 9750;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  pointer-events: none;
-  opacity: 0;
-  box-shadow: none;
-  transition:
-    opacity 200ms ease,
-    transform 200ms cubic-bezier(.2, .8, .2, 1),
-    background-color 150ms ease;
-}
-
-.theia-mobile-sheet-close-btn.theia-mod-visible {
-  display: inline-flex;
-  pointer-events: auto;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.theia-mobile-sheet-close-btn-icon {
-  font-size: 24px;
-  line-height: 1;
-  color: inherit;
-}
-
-.theia-mobile-sheet-close-btn:hover,
-.theia-mobile-sheet-close-btn:focus-visible {
-  background-color: var(--theia-activityBar-activeBackground, var(--theia-sideBar-background));
-  color: var(--theia-activityBar-foreground, var(--theia-foreground));
-}
-
-.theia-mobile-sheet-close-btn:hover .theia-mobile-sheet-close-btn-icon,
-.theia-mobile-sheet-close-btn:focus-visible .theia-mobile-sheet-close-btn-icon {
-  color: inherit;
-}
-
-.theia-mobile-sheet-close-btn:active {
-  transform: scale(0.92);
-  background-color: var(--theia-activityBar-activeBackground, var(--theia-sideBar-background));
-}
-
-.theia-mobile-sheet-close-btn:active .theia-mobile-sheet-close-btn-icon {
-  transform: scale(0.94);
-}
-
-.theia-mobile-sheet-close-btn:focus {
-  outline: none;
-}
-
-.theia-mobile-sheet-close-btn:focus-visible {
-  outline: 2px solid var(--theia-focusBorder, rgba(120, 200, 255, 0.95));
-  outline-offset: 2px;
-  border-radius: 50%;
-}
-
-/* Light theme: same solid activity-bar tokens (no transparent halo). */
-.theia-light .theia-mobile-sheet-close-btn,
-body.theia-light .theia-mobile-sheet-close-btn {
-  background-color: var(--theia-activityBar-background, var(--theia-sideBar-background));
-  color: var(--theia-activityBar-inactiveForeground, rgba(20, 20, 24, 0.95));
-}
-
-.theia-light .theia-mobile-sheet-close-btn:hover,
-body.theia-light .theia-mobile-sheet-close-btn:hover,
-.theia-light .theia-mobile-sheet-close-btn:focus-visible,
-body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
-  background-color: var(--theia-activityBar-activeBackground, var(--theia-sideBar-background));
-  color: var(--theia-activityBar-foreground, rgba(20, 20, 24, 1));
 }
 
 /* Editor tabs: show every open tab; the narrow-viewport rules above (max-width: 767px) make the

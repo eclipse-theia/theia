@@ -10,8 +10,10 @@ import resolvePackagePath from 'resolve-package-path';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const libFrontend = path.join(root, 'lib', 'frontend');
-const srcIndex = path.join(root, 'src-gen', 'frontend', 'index.html');
-const srcManifest = path.join(root, 'src-gen', 'frontend', 'manifest.webmanifest');
+const srcFrontend = path.join(root, 'src-gen', 'frontend');
+const srcIndex = path.join(srcFrontend, 'index.html');
+const srcManifest = path.join(srcFrontend, 'manifest.webmanifest');
+const srcServiceWorker = path.join(srcFrontend, 'service-worker.js');
 
 function copyIfExists(from, to) {
     if (fs.existsSync(from)) {
@@ -28,6 +30,8 @@ if (!copyIfExists(srcIndex, path.join(libFrontend, 'index.html'))) {
     console.warn('[qaap] src-gen/frontend/index.html missing — run: npx theia generate');
 }
 copyIfExists(srcManifest, path.join(libFrontend, 'manifest.webmanifest'));
+// Service worker must sit at the same scope as index.html so it can control the whole app.
+copyIfExists(srcServiceWorker, path.join(libFrontend, 'service-worker.js'));
 
 try {
     const qaapRoot = path.dirname(resolvePackagePath('@theia/qaap-product', root));

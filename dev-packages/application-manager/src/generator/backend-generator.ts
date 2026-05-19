@@ -145,7 +145,26 @@ container.load(loggerBackendModule);
 ${this.emitStartupLog('container created')}
 
 function defaultServeStatic(app) {
-    app.use(express.static(path.resolve(__dirname, '../../lib/frontend')))
+    const frontendDir = path.resolve(__dirname, '../../lib/frontend');
+    app.use(express.static(frontendDir, {
+        setHeaders: (res, filePath) => {
+            const base = path.basename(filePath);
+            // The service worker controls a wider scope than its own location and must not be
+            // cached by the browser for long - users would otherwise be stuck on stale workers.
+            if (base === 'service-worker.js') {
+                res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.setHeader('Service-Worker-Allowed', '/');
+                res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+            } else if (base === 'manifest.webmanifest') {
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+            } else if (base === 'index.html' || base === 'secondary-window.html') {
+                // The shell HTML is small and version-pinned by query strings on bundle URLs - never
+                // cache it long-term, otherwise stale shells will reference deleted bundle hashes.
+                res.setHeader('Cache-Control', 'no-cache');
+            }
+        }
+    }))
 }
 
 function load(raw) {
