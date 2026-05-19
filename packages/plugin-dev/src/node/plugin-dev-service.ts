@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { PluginDebugConfiguration, PluginDevServer, PluginDevClient } from '../common/plugin-dev-protocol';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, preDestroy } from '@theia/core/shared/inversify';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import URI from '@theia/core/lib/common/uri';
@@ -38,6 +38,7 @@ export class PluginDevServerImpl implements PluginDevServer {
     @inject(HostedPluginSupport)
     private readonly hostedPlugin: HostedPluginSupport;
 
+    @preDestroy()
     dispose(): void {
         // Terminate the hosted instance if it is currently running.
         if (this.hostedInstanceManager.isRunning()) {
