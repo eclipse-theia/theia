@@ -63,6 +63,7 @@ export interface PluginPackage {
     extensionPack?: string[];
     l10n?: string;
     icon?: string;
+    type?: 'module' | 'commonjs';
     extensionKind?: Array<'ui' | 'workspace'>;
     capabilities?: {
         untrustedWorkspaces?: {
