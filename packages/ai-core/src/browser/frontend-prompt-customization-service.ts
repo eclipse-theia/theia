@@ -19,6 +19,7 @@ import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
 import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
+import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
@@ -27,6 +28,44 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { dump, load } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
+
+/**
+ * Subdirectory (relative to a prompt-templates scope) holding one folder per custom agent.
+ */
+export const CUSTOM_AGENTS_DIRECTORY = 'agents';
+
+/**
+ * Filename of the per-agent definition file (frontmatter + prompt body) inside `agents/<id>/`.
+ */
+export const CUSTOM_AGENT_FILE_NAME = 'agent.md';
+
+interface CustomAgentFrontmatter {
+    name: string;
+    description: string;
+    defaultLLM: string;
+    showInChat?: boolean;
+    /** Allowed but ignored when present; if set, must match the folder name. */
+    id?: string;
+}
+
+namespace CustomAgentFrontmatter {
+    export function is(value: unknown): value is CustomAgentFrontmatter {
+        if (!value || typeof value !== 'object') {
+            return false;
+        }
+        const entry = value as Record<string, unknown>;
+        if (typeof entry.name !== 'string' || typeof entry.description !== 'string' || typeof entry.defaultLLM !== 'string') {
+            return false;
+        }
+        if ('showInChat' in entry && typeof entry.showInChat !== 'boolean') {
+            return false;
+        }
+        if ('id' in entry && typeof entry.id !== 'string') {
+            return false;
+        }
+        return true;
+    }
+}
 
 /**
  * Default template entry for creating custom agents
@@ -590,7 +629,11 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 return;
             }
 
-            if (event.changes.some(change => change.resource.toString().endsWith('customAgents.yml'))) {
+            const agentsDirSegment = `/${CUSTOM_AGENTS_DIRECTORY}/`;
+            if (event.changes.some(change => {
+                const path = change.resource.toString();
+                return path.endsWith('customAgents.yml') || path.includes(agentsDirSegment);
+            })) {
                 this.onDidChangeCustomAgentsEmitter.fire();
             }
 
@@ -1071,19 +1114,83 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         // First, process additional (workspace) template directories to give them precedence
         for (const dirPath of this.additionalTemplateDirs) {
             const dirURI = URI.fromFilePath(dirPath);
+            await this.loadCustomAgentsFromAgentsDirectory(dirURI, agentsById);
             await this.loadCustomAgentsFromDirectory(dirURI, agentsById);
         }
         // Then process global templates directory (only adding agents that don't conflict)
         const globalTemplatesDir = await this.getTemplatesDirectoryURI();
+        await this.loadCustomAgentsFromAgentsDirectory(globalTemplatesDir, agentsById);
         await this.loadCustomAgentsFromDirectory(globalTemplatesDir, agentsById);
         // Return the merged list of agents
         return Array.from(agentsById.values());
     }
 
     /**
-     * Load custom agents from a specific directory
-     * @param directoryURI The URI of the directory to load from
-     * @param agentsById Map to store the loaded agents by ID
+     * Load custom agents from `<parentDirectory>/agents/<id>/agent.md`. Each immediate
+     * subdirectory under `agents/` defines one custom agent: the folder name is the
+     * agent id (single source of truth), the file's YAML frontmatter holds the metadata,
+     * and the body is the prompt text. Folders without a readable `agent.md` are skipped.
+     */
+    protected async loadCustomAgentsFromAgentsDirectory(
+        parentDirectory: URI,
+        agentsById: Map<string, CustomAgentDescription>
+    ): Promise<void> {
+        const agentsDirURI = parentDirectory.resolve(CUSTOM_AGENTS_DIRECTORY);
+        let directoryStat;
+        try {
+            directoryStat = await this.fileService.resolve(agentsDirURI);
+        } catch {
+            return;
+        }
+        if (!directoryStat.isDirectory || !directoryStat.children?.length) {
+            return;
+        }
+        for (const child of directoryStat.children) {
+            if (!child.isDirectory) {
+                continue;
+            }
+            const agent = await this.readCustomAgentFile(child.resource);
+            if (!agent) {
+                continue;
+            }
+            if (!agentsById.has(agent.id)) {
+                agentsById.set(agent.id, agent);
+            }
+        }
+    }
+
+    protected async readCustomAgentFile(agentFolderURI: URI): Promise<CustomAgentDescription | undefined> {
+        const id = agentFolderURI.path.base;
+        const fileURI = agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME);
+        let content: string;
+        try {
+            content = (await this.fileService.read(fileURI, { encoding: 'utf-8' })).value;
+        } catch {
+            return undefined;
+        }
+        const { metadata, body } = parseFrontmatter<CustomAgentFrontmatter>(content, { isValid: CustomAgentFrontmatter.is });
+        if (!metadata) {
+            console.debug(`Invalid or missing frontmatter in ${fileURI.toString()}`);
+            return undefined;
+        }
+        if (metadata.id !== undefined && metadata.id !== id) {
+            console.debug(`Frontmatter id '${metadata.id}' in ${fileURI.toString()} does not match folder name '${id}'. Skipping.`);
+            return undefined;
+        }
+        return {
+            id,
+            name: metadata.name,
+            description: metadata.description,
+            prompt: body,
+            defaultLLM: metadata.defaultLLM,
+            showInChat: metadata.showInChat
+        };
+    }
+
+    /**
+     * @deprecated Reads legacy `customAgents.yml` files. New agents should live under
+     * `<scope>/agents/<id>/agent.md`. Kept as a fallback until existing files have been
+     * auto-migrated; loader logs a one-time warning per scope when it finds one.
      */
     protected async loadCustomAgentsFromDirectory(
         directoryURI: URI,
@@ -1094,6 +1201,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         if (!yamlExists) {
             return;
         }
+        this.warnOnceLegacyYaml(customAgentYamlUri);
 
         try {
             const fileContent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
@@ -1117,33 +1225,149 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         }
     }
 
+    private readonly warnedLegacyYamlUris = new Set<string>();
+    protected warnOnceLegacyYaml(uri: URI): void {
+        const key = uri.toString();
+        if (this.warnedLegacyYamlUris.has(key)) {
+            return;
+        }
+        this.warnedLegacyYamlUris.add(key);
+        console.warn(
+            `[ai-core] Loading custom agents from legacy '${key}'. ` +
+            `Files in this format are auto-migrated to the '${CUSTOM_AGENTS_DIRECTORY}/' folder on startup. ` +
+            'If migration did not run, invoke the command \'AI: Re-run custom-agent migration\'.'
+        );
+    }
+
     /**
-     * Returns all locations of existing customAgents.yml files and potential locations where
-     * new customAgents.yml files could be created.
-     *
-     * @returns An array of objects containing the URI and whether the file exists
+     * Returns all locations of existing customAgents.yml files and `agents/` directories,
+     * plus the canonical locations where new agents would be created (one per scope).
      */
     async getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]> {
         const locations: { uri: URI, exists: boolean }[] = [];
-        // Check global templates directory
-        const globalTemplatesDir = await this.getTemplatesDirectoryURI();
-        const globalAgentsUri = globalTemplatesDir.resolve('customAgents.yml');
-        const globalExists = await this.fileService.exists(globalAgentsUri);
-        locations.push({ uri: globalAgentsUri, exists: globalExists });
-        // Check additional (workspace) template directories
+
+        const collect = async (parentDir: URI): Promise<void> => {
+            const agentsDirURI = parentDir.resolve(CUSTOM_AGENTS_DIRECTORY);
+            locations.push({ uri: agentsDirURI, exists: await this.fileService.exists(agentsDirURI) });
+            const yamlURI = parentDir.resolve('customAgents.yml');
+            locations.push({ uri: yamlURI, exists: await this.fileService.exists(yamlURI) });
+        };
+
+        // Global templates directory
+        await collect(await this.getTemplatesDirectoryURI());
+        // Workspace / additional template directories
         for (const dirPath of this.additionalTemplateDirs) {
-            const dirURI = URI.fromFilePath(dirPath);
-            const agentsUri = dirURI.resolve('customAgents.yml');
-            const exists = await this.fileService.exists(agentsUri);
-            locations.push({ uri: agentsUri, exists: exists });
+            await collect(URI.fromFilePath(dirPath));
         }
         return locations;
     }
 
     /**
-     * Opens an existing customAgents.yml file at the given URI, or creates a new one if it doesn't exist.
+     * Creates `<parentDirectory>/agents/<id>/agent.md` from a `CustomAgentDescription` and opens it.
+     * The agent id determines the folder name; the prompt body is written verbatim under the YAML frontmatter.
+     */
+    async createCustomAgentFile(parentDirectory: URI, agent: CustomAgentDescription): Promise<URI> {
+        const fileURI = parentDirectory.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(agent.id).resolve(CUSTOM_AGENT_FILE_NAME);
+        const content = serializeCustomAgentFile(agent);
+        if (!(await this.fileService.exists(fileURI))) {
+            await this.fileService.createFile(fileURI, BinaryBuffer.fromString(content));
+        } else {
+            await this.fileService.writeFile(fileURI, BinaryBuffer.fromString(content));
+        }
+        const openHandler = await this.openerService.getOpener(fileURI);
+        openHandler.open(fileURI);
+        return fileURI;
+    }
+
+    /**
+     * Auto-migrate every legacy `customAgents.yml` reachable from the configured scopes to the new
+     * `agents/<id>/agent.md` layout. The original YAML is deleted only after every entry has been
+     * written successfully; on partial failure the YAML is renamed to `customAgents.yml.bak` so the
+     * loader can still serve agents from it on the next run.
      *
-     * @param uri The URI of the customAgents.yml file to open or create
+     * Idempotent: rerunning never overwrites an already-migrated agent file.
+     */
+    async migrateCustomAgentsYaml(): Promise<MigrationReport[]> {
+        const scopes: URI[] = [await this.getTemplatesDirectoryURI()];
+        for (const dirPath of this.additionalTemplateDirs) {
+            scopes.push(URI.fromFilePath(dirPath));
+        }
+        const reports: MigrationReport[] = [];
+        for (const scope of scopes) {
+            const report = await this.migrateSingleScope(scope);
+            if (report) {
+                reports.push(report);
+            }
+        }
+        if (reports.some(r => r.migrated > 0)) {
+            this.onDidChangeCustomAgentsEmitter.fire();
+        }
+        return reports;
+    }
+
+    protected async migrateSingleScope(scopeDir: URI): Promise<MigrationReport | undefined> {
+        const yamlURI = scopeDir.resolve('customAgents.yml');
+        if (!(await this.fileService.exists(yamlURI))) {
+            return undefined;
+        }
+        let entries: CustomAgentDescription[];
+        try {
+            const fileContent = await this.fileService.read(yamlURI, { encoding: 'utf-8' });
+            const doc = load(fileContent.value);
+            if (!Array.isArray(doc) || !doc.every(CustomAgentDescription.is)) {
+                console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
+                return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false };
+            }
+            entries = doc;
+        } catch (e) {
+            console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: ${e.message}`);
+            return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false };
+        }
+
+        let migrated = 0;
+        let alreadyPresent = 0;
+        let failed = 0;
+        for (const entry of entries) {
+            const targetURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(entry.id).resolve(CUSTOM_AGENT_FILE_NAME);
+            if (await this.fileService.exists(targetURI)) {
+                alreadyPresent++;
+                continue;
+            }
+            try {
+                await this.fileService.createFile(targetURI, BinaryBuffer.fromString(serializeCustomAgentFile(entry)));
+                migrated++;
+            } catch (e) {
+                console.warn(`[ai-core] Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e.message}`);
+                failed++;
+            }
+        }
+
+        let yamlDeleted = false;
+        if (failed === 0) {
+            try {
+                await this.fileService.delete(yamlURI);
+                yamlDeleted = true;
+            } catch (e) {
+                console.warn(`[ai-core] Migrated ${migrated} agents but failed to delete ${yamlURI.toString()}: ${e.message}`);
+            }
+        } else {
+            const backupURI = scopeDir.resolve('customAgents.yml.bak');
+            try {
+                if (!(await this.fileService.exists(backupURI))) {
+                    await this.fileService.move(yamlURI, backupURI);
+                }
+            } catch (e) {
+                console.warn(`[ai-core] Failed to back up ${yamlURI.toString()} to ${backupURI.toString()}: ${e.message}`);
+            }
+        }
+
+        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlDeleted };
+    }
+
+    /**
+     * @deprecated Use {@link createCustomAgentFile} to author agents in the new
+     * `<scope>/agents/<id>/agent.md` layout. Retained so existing UI affordances keep
+     * working until they are migrated.
      */
     async openCustomAgentYaml(uri: URI): Promise<void> {
         const content = dump([newCustomAgentEntry]);
@@ -1156,4 +1380,32 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         const openHandler = await this.openerService.getOpener(uri);
         openHandler.open(uri);
     }
+}
+
+/**
+ * Outcome of attempting to migrate one scope's `customAgents.yml`.
+ */
+export interface MigrationReport {
+    scope: URI;
+    yamlURI: URI;
+    /** Number of agents written to `agents/<id>/agent.md`. */
+    migrated: number;
+    /** Number of agents skipped because an `agent.md` already existed (idempotency). */
+    alreadyPresent: number;
+    /** Number of agents whose new file failed to write. */
+    failed: number;
+    /** Whether the original YAML was deleted after a fully-successful migration. */
+    yamlDeleted: boolean;
+}
+
+function serializeCustomAgentFile(agent: CustomAgentDescription): string {
+    const metadata: Record<string, unknown> = {
+        name: agent.name,
+        description: agent.description,
+        defaultLLM: agent.defaultLLM,
+    };
+    if (agent.showInChat !== undefined) {
+        metadata.showInChat = agent.showInChat;
+    }
+    return serializeFrontmatter(metadata, agent.prompt);
 }

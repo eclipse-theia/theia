@@ -15,13 +15,24 @@
 // *****************************************************************************
 
 import { AgentService, CustomAgentDescription, PromptFragmentCustomizationService } from '@theia/ai-core';
+import { Command, CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '../common';
 import { CustomAgentFactory } from './custom-agent-factory';
 
+export const RERUN_CUSTOM_AGENT_MIGRATION_COMMAND: Command = Command.toLocalizedCommand(
+    {
+        id: 'ai-chat.customAgents.rerunMigration',
+        label: 'Re-run custom-agent migration',
+        category: 'AI'
+    },
+    'theia/ai/chat/customAgents/rerunMigration',
+    'theia/ai/chat/category'
+);
+
 @injectable()
-export class AICustomAgentsFrontendApplicationContribution implements FrontendApplicationContribution {
+export class AICustomAgentsFrontendApplicationContribution implements FrontendApplicationContribution, CommandContribution {
     @inject(CustomAgentFactory)
     protected readonly customAgentFactory: CustomAgentFactory;
 
@@ -34,37 +45,59 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
     @inject(ChatAgentService)
     private readonly chatAgentService: ChatAgentService;
 
+    @inject(MessageService) @optional()
+    protected readonly messageService?: MessageService;
+
     private knownCustomAgents: Map<string, CustomAgentDescription> = new Map();
+
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(RERUN_CUSTOM_AGENT_MIGRATION_COMMAND, {
+            isEnabled: () => !!this.customizationService,
+            execute: async () => {
+                if (!this.customizationService) { return; }
+                const reports = await this.customizationService.migrateCustomAgentsYaml();
+                const migrated = reports.reduce((sum, r) => sum + r.migrated, 0);
+                const failed = reports.reduce((sum, r) => sum + r.failed, 0);
+                const deleted = reports.filter(r => r.yamlDeleted).length;
+                const message = nls.localize(
+                    'theia/ai/chat/customAgents/migrationResult',
+                    'Custom-agent migration: {0} migrated, {1} failed, {2} legacy customAgents.yml removed.',
+                    migrated, failed, deleted
+                );
+                this.messageService?.info(message);
+            }
+        });
+    }
+
     onStart(): void {
-        this.customizationService?.getCustomAgents().then(customAgents => {
-            customAgents.forEach(agent => {
-                this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat);
-                this.knownCustomAgents.set(agent.id, agent);
-            });
-        }).catch(e => {
+        this.customizationService?.onDidChangeCustomAgents(() => this.refreshCustomAgents());
+        const ready = this.customizationService?.migrateCustomAgentsYaml().catch(e => {
+            console.warn('Custom-agent auto-migration failed; continuing without migration', e);
+        }) ?? Promise.resolve();
+        ready.then(() => this.refreshCustomAgents()).catch(e => {
             console.error('Failed to load custom agents', e);
         });
-        this.customizationService?.onDidChangeCustomAgents(() => {
-            this.customizationService?.getCustomAgents().then(customAgents => {
-                const customAgentsToAdd = customAgents.filter(agent =>
-                    !this.knownCustomAgents.has(agent.id) || !CustomAgentDescription.equals(this.knownCustomAgents.get(agent.id)!, agent));
-                const customAgentIdsToRemove = [...this.knownCustomAgents.values()].filter(agent =>
-                    !customAgents.find(a => CustomAgentDescription.equals(a, agent))).map(a => a.id);
+    }
 
-                // delete first so we don't have to deal with the case where we add and remove the same agentId
-                customAgentIdsToRemove.forEach(id => {
-                    this.chatAgentService.unregisterChatAgent(id);
-                    this.agentService.unregisterAgent(id);
-                    this.knownCustomAgents.delete(id);
-                });
-                customAgentsToAdd
-                    .forEach(agent => {
-                        this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat);
-                        this.knownCustomAgents.set(agent.id, agent);
-                    });
-            }).catch(e => {
-                console.error('Failed to load custom agents', e);
-            });
+    protected async refreshCustomAgents(): Promise<void> {
+        if (!this.customizationService) {
+            return;
+        }
+        const customAgents = await this.customizationService.getCustomAgents();
+        const customAgentsToAdd = customAgents.filter(agent =>
+            !this.knownCustomAgents.has(agent.id) || !CustomAgentDescription.equals(this.knownCustomAgents.get(agent.id)!, agent));
+        const customAgentIdsToRemove = [...this.knownCustomAgents.values()].filter(agent =>
+            !customAgents.find(a => CustomAgentDescription.equals(a, agent))).map(a => a.id);
+
+        // delete first so we don't have to deal with the case where we add and remove the same agentId
+        customAgentIdsToRemove.forEach(id => {
+            this.chatAgentService.unregisterChatAgent(id);
+            this.agentService.unregisterAgent(id);
+            this.knownCustomAgents.delete(id);
+        });
+        customAgentsToAdd.forEach(agent => {
+            this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat);
+            this.knownCustomAgents.set(agent.id, agent);
         });
     }
 

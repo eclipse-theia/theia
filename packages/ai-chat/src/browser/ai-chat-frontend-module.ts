@@ -155,7 +155,9 @@ export default new ContainerModule(bind => {
 
             return agent;
         });
-    bind(FrontendApplicationContribution).to(AICustomAgentsFrontendApplicationContribution).inSingletonScope();
+    bind(AICustomAgentsFrontendApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(AICustomAgentsFrontendApplicationContribution);
+    bind(CommandContribution).toService(AICustomAgentsFrontendApplicationContribution);
 
     bind(ContextVariableLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(ContextVariableLabelProvider);

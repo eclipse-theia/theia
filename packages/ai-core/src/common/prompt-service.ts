@@ -315,6 +315,34 @@ export interface PromptFragmentCustomizationService {
     getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]>;
 
     /**
+     * Creates a per-agent file at `<parentDirectory>/agents/<agent.id>/agent.md` from the given
+     * description, then opens it. Replaces a previously existing `agent.md` for the same id.
+     *
+     * @param parentDirectory The prompt-templates scope (e.g. workspace `.prompts/` or the global templates dir)
+     * @param agent The agent description to serialize
+     * @returns The URI of the created file
+     */
+    createCustomAgentFile(parentDirectory: URI, agent: CustomAgentDescription): Promise<URI>;
+
+    /**
+     * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout.
+     * On full success the YAML is deleted; on partial failure it is renamed to `customAgents.yml.bak`.
+     * Idempotent — rerunning never overwrites an already-migrated agent file.
+     */
+    migrateCustomAgentsYaml(): Promise<Array<{
+        scope: URI;
+        yamlURI: URI;
+        migrated: number;
+        alreadyPresent: number;
+        failed: number;
+        yamlDeleted: boolean;
+    }>>;
+
+    /**
+     * @deprecated Use {@link createCustomAgentFile} to author agents in the new
+     * `<scope>/agents/<id>/agent.md` layout. Kept so legacy callers continue to work
+     * until they are migrated.
+     *
      * Opens an existing customAgents.yml file at the given URI, or creates a new one if it doesn't exist.
      *
      * @param uri The URI of the customAgents.yml file to open or create
