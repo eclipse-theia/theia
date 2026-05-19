@@ -363,7 +363,8 @@ export interface PromptFragmentCustomizationService {
 
     /**
      * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout.
-     * On full success the YAML is deleted; on partial failure it is renamed to `customAgents.yml.bak`.
+     * In all cases the YAML is renamed to `customAgents.yml.bak` rather than deleted, preserving
+     * the user's original content. On partial failure an existing `.bak` is not overwritten.
      * Idempotent — rerunning never overwrites an already-migrated agent file.
      */
     migrateCustomAgentsYaml(): Promise<Array<{
@@ -372,7 +373,7 @@ export interface PromptFragmentCustomizationService {
         migrated: number;
         alreadyPresent: number;
         failed: number;
-        yamlDeleted: boolean;
+        yamlBackedUp: boolean;
         promptOverridesMigrated: number;
     }>>;
 

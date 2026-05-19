@@ -218,6 +218,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     readonly onDidChangePromptFragmentCustomization: Event<string[]> = this.onDidChangePromptFragmentCustomizationEmitter.event;
 
     protected readonly onDidChangeCustomAgentsEmitter = new Emitter<void>();
+
+    /**
+     * In-flight migration promise used to serialize {@link migrateCustomAgentsYaml} calls.
+     * Multiple sources (initial onStart, onDidChangeCustomAgents events from async template-dir
+     * population) can request migration before the first run finishes; without serialization
+     * they race on the same `customAgents.yml`, causing one rename to succeed and the others
+     * to fail with ENOENT while concurrently moving fragment files clobber each other.
+     */
+    protected migrationInFlight: Promise<MigrationReport[]> | undefined;
     readonly onDidChangeCustomAgents: Event<void> = this.onDidChangeCustomAgentsEmitter.event;
 
     @postConstruct()
@@ -1560,15 +1569,34 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     /**
      * Auto-migrate every legacy `customAgents.yml` reachable from the configured scopes to the new
-     * `agents/<id>/agent.md` layout. The original YAML is deleted only after every entry has been
-     * written successfully; on partial failure the YAML is renamed to `customAgents.yml.bak` so the
-     * loader can still serve agents from it on the next run.
+     * `agents/<id>/agent.md` layout. The original YAML is renamed to `customAgents.yml.bak` only
+     * after every entry has been written successfully; on partial failure it is also renamed to
+     * `customAgents.yml.bak` (without overwriting an existing backup) so the user can inspect what
+     * failed and the loader can still serve agents from it on the next run.
      *
      * Idempotent: rerunning never overwrites an already-migrated agent file.
      */
     async migrateCustomAgentsYaml(): Promise<MigrationReport[]> {
+        // Coalesce concurrent calls. refreshCustomAgents() can re-fire during startup when
+        // additionalTemplateDirs is populated asynchronously; without this guard each call
+        // launches a parallel migration that races on the same `customAgents.yml` and on
+        // sibling `*_prompt*.prompttemplate` files.
+        if (this.migrationInFlight) {
+            return this.migrationInFlight;
+        }
+        this.migrationInFlight = this.doMigrateCustomAgentsYaml().finally(() => {
+            this.migrationInFlight = undefined;
+        });
+        return this.migrationInFlight;
+    }
+
+    protected async doMigrateCustomAgentsYaml(): Promise<MigrationReport[]> {
         const scopes: URI[] = [await this.getTemplatesDirectoryURI()];
+        const templatesPath = scopes[0].path.toString();
         for (const dirPath of this.additionalTemplateDirs) {
+            if (dirPath === templatesPath) {
+                continue;
+            }
             scopes.push(URI.fromFilePath(dirPath));
         }
         const reports: MigrationReport[] = [];
@@ -1596,12 +1624,12 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             const doc = load(fileContent.value);
             if (!Array.isArray(doc) || !doc.every(CustomAgentDescription.is)) {
                 console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
-                return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false, promptOverridesMigrated: 0 };
+                return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
             }
             entries = doc;
         } catch (e) {
             console.warn(`[ai-core] Skipping migration of ${yamlURI.toString()}: ${e.message}`);
-            return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlDeleted: false, promptOverridesMigrated: 0 };
+            return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
         }
 
         let migrated = 0;
@@ -1656,16 +1684,16 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             }
         }
 
-        let yamlDeleted = false;
+        let yamlBackedUp = false;
+        const backupURI = scopeDir.resolve('customAgents.yml.bak');
         if (failed === 0) {
             try {
-                await this.fileService.delete(yamlURI);
-                yamlDeleted = true;
+                await this.fileService.move(yamlURI, backupURI, { overwrite: true });
+                yamlBackedUp = true;
             } catch (e) {
-                console.warn(`[ai-core] Migrated ${migrated} agents but failed to delete ${yamlURI.toString()}: ${e.message}`);
+                console.warn(`[ai-core] Migrated ${migrated} agents but failed to back up ${yamlURI.toString()}: ${e.message}`);
             }
         } else {
-            const backupURI = scopeDir.resolve('customAgents.yml.bak');
             try {
                 if (!(await this.fileService.exists(backupURI))) {
                     await this.fileService.move(yamlURI, backupURI);
@@ -1678,9 +1706,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         console.info(
             `[ai-core] Migration done for ${yamlURI.toString()}: ` +
             `migrated=${migrated}, alreadyPresent=${alreadyPresent}, failed=${failed}, ` +
-            `yamlDeleted=${yamlDeleted}, promptOverridesMigrated=${promptOverridesMigrated}`
+            `yamlBackedUp=${yamlBackedUp}, promptOverridesMigrated=${promptOverridesMigrated}`
         );
-        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlDeleted, promptOverridesMigrated };
+        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlBackedUp, promptOverridesMigrated };
     }
 
     /**
@@ -1713,8 +1741,8 @@ export interface MigrationReport {
     alreadyPresent: number;
     /** Number of agents whose new file failed to write. */
     failed: number;
-    /** Whether the original YAML was deleted after a fully-successful migration. */
-    yamlDeleted: boolean;
+    /** Whether the original YAML was renamed to `customAgents.yml.bak` after a fully-successful migration. */
+    yamlBackedUp: boolean;
     /** Number of scope-root prompt customization files (`<name>_prompt.prompttemplate`) folded into agent.md and deleted. */
     promptOverridesMigrated: number;
 }

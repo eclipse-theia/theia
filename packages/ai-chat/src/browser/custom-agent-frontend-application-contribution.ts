@@ -58,12 +58,12 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
                 const reports = await this.customizationService.migrateCustomAgentsYaml();
                 const migrated = reports.reduce((sum, r) => sum + r.migrated, 0);
                 const failed = reports.reduce((sum, r) => sum + r.failed, 0);
-                const deleted = reports.filter(r => r.yamlDeleted).length;
+                const backedUp = reports.filter(r => r.yamlBackedUp).length;
                 const overrides = reports.reduce((sum, r) => sum + r.promptOverridesMigrated, 0);
                 const message = nls.localize(
                     'theia/ai/chat/customAgents/migrationResult',
-                    'Custom-agent migration: {0} migrated, {1} failed, {2} legacy customAgents.yml removed, {3} prompt overrides folded into agent.md.',
-                    migrated, failed, deleted, overrides
+                    'Custom-agent migration: {0} migrated, {1} failed, {2} legacy customAgents.yml backed up to .bak, {3} prompt overrides folded into agent.md.',
+                    migrated, failed, backedUp, overrides
                 );
                 this.messageService?.info(message);
             }
