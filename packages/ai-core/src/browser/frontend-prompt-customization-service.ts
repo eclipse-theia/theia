@@ -39,6 +39,14 @@ export const CUSTOM_AGENTS_DIRECTORY = 'agents';
  */
 export const CUSTOM_AGENT_FILE_NAME = 'agent.md';
 
+/**
+ * Filename stem (without extension) reserved for the customization of a custom agent's
+ * default prompt. Lives at `<scope>/agents/<id>/prompt.prompttemplate` and maps to
+ * fragment id `<agent-name>_prompt`. Excluded from the variant loader so it doesn't double
+ * as an extra variant.
+ */
+export const CUSTOM_AGENT_DEFAULT_PROMPT_STEM = 'prompt';
+
 interface CustomAgentFrontmatter {
     name: string;
     description: string;
@@ -196,6 +204,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     /** Maps URI strings to WatchedFileInfo objects for individually watched template files. */
     protected watchedFiles = new Map<string, WatchedFileInfo>();
 
+    /**
+     * For each known custom-agent prompt fragment id (i.e. `<name>_prompt`), the URI of the
+     * agent's folder (`<scope>/agents/<id>/`). Populated as agents are loaded and used to
+     * route customization writes/reads into the agent folder.
+     */
+    protected customAgentFolderByFragmentId = new Map<string, URI>();
+
     /** Collection of disposable resources for cleanup when the service updates or is disposed. */
     protected toDispose = new DisposableCollection();
 
@@ -232,8 +247,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         await this.processTemplateDirectory(
             activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, templatesURI, 1, CustomizationSource.CUSTOMIZED); // Priority 1 for customized fragments
 
-        // Process additional template directories (medium priority)
+        // Process additional template directories (medium priority). Skip any directory that
+        // is identical to the main templates directory — a user can set both prefs to the same
+        // path; re-processing the same dir overwrites the priority-1 entries with priority-2,
+        // which then hides them from `editBuiltIn`'s priority-1-only lookup.
+        const templatesPath = templatesURI.path.toString();
         for (const dirPath of this.additionalTemplateDirs) {
+            if (dirPath === templatesPath) {
+                continue;
+            }
             const dirURI = URI.fromFilePath(dirPath);
             await this.processTemplateDirectory(
                 activeCustomizationsCopy, trackedTemplateURIsCopy, allCustomizationsCopy, dirURI, 2, CustomizationSource.FOLDER); // Priority 2 for folder fragments
@@ -556,10 +578,123 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 priority,
                 customizationSource
             );
+            await this.processCustomAgentFolders(
+                activeCustomizationsCopy,
+                trackedTemplateURIsCopy,
+                allCustomizationsCopy,
+                dirURI,
+                priority,
+                customizationSource
+            );
         }
 
         // Set up file watching for the directory (works for both existing and non-existing directories)
         this.setupDirectoryWatcher(dirURI, priority, customizationSource);
+    }
+
+    /**
+     * Scan `<dirURI>/agents/<id>/*.prompttemplate` files and register each as a customized
+     * prompt fragment so they appear in the Prompt Fragments configuration view and so
+     * `editPromptFragmentCustomization` / `removePromptFragmentCustomization` can find their
+     * source URIs.
+     *
+     * The reserved filename `prompt.prompttemplate` maps to the agent's default-variant
+     * fragment id (`<agent-name>_prompt` read from the sibling `agent.md`'s frontmatter).
+     * Any other `.prompttemplate` file uses its filename stem as the fragment id (matching
+     * how variants are registered via {@link readCustomAgentPromptVariants}).
+     */
+    protected async processCustomAgentFolders(
+        activeCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        trackedTemplateURIsCopy: Set<string>,
+        allCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        scopeDir: URI,
+        priority: number,
+        customizationSource: CustomizationSource
+    ): Promise<void> {
+        const agentsDirURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY);
+        let agentsStat;
+        try {
+            agentsStat = await this.fileService.resolve(agentsDirURI);
+        } catch {
+            return;
+        }
+        if (!agentsStat.isDirectory || !agentsStat.children?.length) {
+            return;
+        }
+        for (const agentChild of agentsStat.children) {
+            if (!agentChild.isDirectory) {
+                continue;
+            }
+            const defaultFragmentId = await this.readCustomAgentDefaultFragmentId(agentChild.resource);
+            if (defaultFragmentId) {
+                this.customAgentFolderByFragmentId.set(defaultFragmentId, agentChild.resource);
+            }
+            const folderStat = await this.fileService.resolve(agentChild.resource).catch(() => undefined);
+            if (!folderStat?.children?.length) {
+                continue;
+            }
+            for (const file of folderStat.children) {
+                if (!file.isFile || !this.isPromptTemplateExtension(file.resource.path.ext)) {
+                    continue;
+                }
+                const stem = this.removePromptTemplateSuffix(file.resource.path.name);
+                const fragmentId = stem === CUSTOM_AGENT_DEFAULT_PROMPT_STEM ? defaultFragmentId : stem;
+                if (!fragmentId) {
+                    continue;
+                }
+                trackedTemplateURIsCopy.add(file.resource.toString());
+                try {
+                    const fileContent = await this.fileService.read(file.resource);
+                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
+                    this.addTemplate(
+                        activeCustomizationsCopy,
+                        fragmentId,
+                        parsed.template,
+                        file.resource.toString(),
+                        allCustomizationsCopy,
+                        priority,
+                        customizationSource,
+                        parsed.metadata
+                    );
+                } catch (e) {
+                    console.debug(`Failed to load custom-agent customization ${file.resource.toString()}: ${e?.message ?? e}`);
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the parent URI when `resource` lives in `<scopeDirURI>/agents/<id>/`; otherwise
+     * undefined. Used to decide whether a newly-added file should be processed as a
+     * custom-agent prompt customization.
+     */
+    protected matchesCustomAgentFolder(resource: URI, scopeDirURI: URI): URI | undefined {
+        const parent = resource.parent;
+        const grandParent = parent.parent;
+        if (!grandParent) {
+            return undefined;
+        }
+        if (grandParent.path.base !== CUSTOM_AGENTS_DIRECTORY) {
+            return undefined;
+        }
+        if (!grandParent.parent.isEqual(scopeDirURI)) {
+            return undefined;
+        }
+        return parent;
+    }
+
+    /**
+     * Read `<agentFolderURI>/agent.md`'s frontmatter and return the implied default
+     * fragment id (`<name>_prompt`). Returns undefined if the file is missing or invalid.
+     */
+    protected async readCustomAgentDefaultFragmentId(agentFolderURI: URI): Promise<string | undefined> {
+        try {
+            const content = (await this.fileService.read(agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME), { encoding: 'utf-8' })).value;
+            const { metadata } = parseFrontmatter<CustomAgentFrontmatter>(content, { isValid: CustomAgentFrontmatter.is });
+            return metadata ? `${metadata.name}_prompt` : undefined;
+        } catch {
+            return undefined;
+        }
     }
 
     /**
@@ -662,7 +797,11 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 if (this.trackedTemplateURIs.has(uriString)) {
                     const fileContent = await this.fileService.read(updatedFile.resource);
                     const parsed = this.parseTemplateWithMetadata(fileContent.value);
-                    const fragmentId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
+                    // Prefer the already-tracked fragment id over the filename stem so that
+                    // `<scope>/agents/<id>/prompt.prompttemplate` keeps mapping to `<name>_prompt`
+                    // instead of becoming a fragment called `prompt`.
+                    const fragmentId = this.allCustomizations.get(uriString)?.id
+                        ?? this.removePromptTemplateSuffix(updatedFile.resource.path.name);
                     this.addTemplate(
                         this.activeCustomizations,
                         fragmentId,
@@ -679,25 +818,41 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
             // Handle new templates
             for (const addedFile of event.getAdded()) {
-                if (addedFile.resource.parent.toString() === dirURI.toString() &&
-                    this.isPromptTemplateExtension(addedFile.resource.path.ext)) {
-                    const uriString = addedFile.resource.toString();
-                    this.trackedTemplateURIs.add(uriString);
-                    const fileContent = await this.fileService.read(addedFile.resource);
-                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
-                    const fragmentId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
-                    this.addTemplate(
-                        this.activeCustomizations,
-                        fragmentId,
-                        parsed.template,
-                        uriString,
-                        this.allCustomizations,
-                        priority,
-                        customizationSource,
-                        parsed.metadata
-                    );
-                    changedFragmentIds.add(fragmentId);
+                if (!this.isPromptTemplateExtension(addedFile.resource.path.ext)) {
+                    continue;
                 }
+                const isScopeRoot = addedFile.resource.parent.toString() === dirURI.toString();
+                const agentFolderURI = this.matchesCustomAgentFolder(addedFile.resource, dirURI);
+                if (!isScopeRoot && !agentFolderURI) {
+                    continue;
+                }
+                const uriString = addedFile.resource.toString();
+                this.trackedTemplateURIs.add(uriString);
+                const fileContent = await this.fileService.read(addedFile.resource);
+                const parsed = this.parseTemplateWithMetadata(fileContent.value);
+                let fragmentId: string | undefined;
+                if (agentFolderURI) {
+                    const stem = this.removePromptTemplateSuffix(addedFile.resource.path.name);
+                    fragmentId = stem === CUSTOM_AGENT_DEFAULT_PROMPT_STEM
+                        ? await this.readCustomAgentDefaultFragmentId(agentFolderURI)
+                        : stem;
+                } else {
+                    fragmentId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
+                }
+                if (!fragmentId) {
+                    continue;
+                }
+                this.addTemplate(
+                    this.activeCustomizations,
+                    fragmentId,
+                    parsed.template,
+                    uriString,
+                    this.allCustomizations,
+                    priority,
+                    customizationSource,
+                    parsed.metadata
+                );
+                changedFragmentIds.add(fragmentId);
             }
 
             const changedFragmentIdsArray = Array.from(changedFragmentIds);
@@ -792,6 +947,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      * @returns URI for the template file
      */
     protected async getTemplateURI(fragmentId: string): Promise<URI> {
+        // Custom-agent default prompts live inside their own folder under the reserved filename
+        // `prompt.prompttemplate`. Variants and other fragments fall back to scope-root behavior
+        // (where filename = fragment id), matching how Theia tracks all other customizations.
+        const agentFolder = this.customAgentFolderByFragmentId.get(fragmentId);
+        if (agentFolder) {
+            return agentFolder.resolve(`${CUSTOM_AGENT_DEFAULT_PROMPT_STEM}${PROMPT_TEMPLATE_EXTENSION}`);
+        }
         return (await this.getTemplatesDirectoryURI()).resolve(`${fragmentId}${PROMPT_TEMPLATE_EXTENSION}`);
     }
 
@@ -1121,7 +1283,11 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         const globalTemplatesDir = await this.getTemplatesDirectoryURI();
         await this.loadCustomAgentsFromAgentsDirectory(globalTemplatesDir, agentsById);
         await this.loadCustomAgentsFromDirectory(globalTemplatesDir, agentsById);
-        // Return the merged list of agents
+        // Note: customAgentFolderByFragmentId is intentionally not cleared here. It grows
+        // monotonically — stale entries (renamed/removed agents) at worst point at a folder
+        // that no longer exists, which the file-create path mkdirps if needed. Clearing it
+        // up front would create a race where a concurrent `getTemplateURI` call sees an empty
+        // map and falls back to the scope root.
         return Array.from(agentsById.values());
     }
 
@@ -1178,6 +1344,8 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             return undefined;
         }
         const promptVariants = await this.readCustomAgentPromptVariants(agentFolderURI);
+        const fragmentId = `${metadata.name}_prompt`;
+        this.customAgentFolderByFragmentId.set(fragmentId, agentFolderURI);
         return {
             id,
             name: metadata.name,
@@ -1258,6 +1426,10 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      * Scan an agent folder for sibling `.prompttemplate` files; each becomes a variant
      * of the agent's prompt. Variant id = filename stem (e.g. `concise.prompttemplate`
      * yields a variant with id `concise`). Files inside subdirectories are ignored.
+     *
+     * The reserved filename `prompt.prompttemplate` is excluded: it represents the
+     * default-variant customization (overrides `agent.md`'s body), not an extra variant,
+     * and is registered by the prompt-fragment customization scan instead.
      */
     protected async readCustomAgentPromptVariants(agentFolderURI: URI): Promise<CustomAgentPromptVariant[]> {
         let folderStat;
@@ -1278,6 +1450,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 continue;
             }
             const variantId = this.removePromptTemplateSuffix(child.resource.path.name);
+            if (variantId === CUSTOM_AGENT_DEFAULT_PROMPT_STEM) {
+                continue;
+            }
             try {
                 const variantContent = (await this.fileService.read(child.resource, { encoding: 'utf-8' })).value;
                 const parsed = this.parseTemplateWithMetadata(variantContent);
