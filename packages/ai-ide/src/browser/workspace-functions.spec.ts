@@ -340,6 +340,7 @@ describe('FileContentFunction handler', () => {
                 if (optionsOrFallback === undefined) {
                     return undefined;
                 }
+                // eslint-disable-next-line no-null/no-null
                 if (typeof optionsOrFallback === 'object' && optionsOrFallback !== null && !Array.isArray(optionsOrFallback) && 'fallback' in optionsOrFallback) {
                     return (optionsOrFallback as { fallback?: T }).fallback;
                 }
