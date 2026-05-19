@@ -506,7 +506,7 @@ export class AIChatInputWidget extends ReactWidget {
      */
     protected async refreshCapabilities(): Promise<void> {
         if (this.receivingAgent) {
-            await this.updateCapabilitiesForAgent(this.receivingAgent.agentId, this.receivingAgent.currentModeId);
+            await this.updateCapabilitiesForAgent(this.receivingAgent.agentId, this.receivingAgent.currentModeId, true);
         }
     }
 
