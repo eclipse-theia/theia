@@ -408,19 +408,40 @@ export namespace DirtyDiffModel {
 
 <a name="di-factory-over-new"></a>
 
-* [5.](#di-factory-over-new) Avoid direct constructor calls (`new XYZImpl()`) in Inversify controlled code paths. Use an injected factory instead.
+* [5.](#di-factory-over-new) In injectable classes, avoid direct constructor calls for objects that are reasonable to customize. Use an injected factory instead.
 
 > Why? A factory can be rebound by adopters to customize the created instance. If a manager directly creates `new XYZImpl()`, adopters have to subclass and rebind the whole manager just to replace the created object.
 
+Use a factory when an `@injectable()` class creates another object that is meant to be customized. This keeps the created object inside the dependency injection graph.
+
+Direct construction is still fine for local implementation details: simple values, collections, and helper objects that do not participate in dependency injection, for example `new Map()` used as local state.
+
 ```ts
 // bad
-const model = new MyModelImpl();
+@injectable()
+export class MyManager {
+
+    protected createModel(): MyModelImpl {
+        return new MyModelImpl();
+    }
+
+}
 
 // good
-@inject(MyModelFactory)
-protected readonly modelFactory: MyModelFactory;
+export const MyModelFactory = Symbol('MyModelFactory');
+export type MyModelFactory = () => MyModel;
 
-const model = this.modelFactory();
+@injectable()
+export class MyManager {
+
+    @inject(MyModelFactory)
+    protected readonly modelFactory: MyModelFactory;
+
+    protected createModel(): MyModel {
+        return this.modelFactory();
+    }
+
+}
 ```
 
 For classes that need runtime parameters, pass an options object to the factory. The following simplified example is inspired by the process task runner:
