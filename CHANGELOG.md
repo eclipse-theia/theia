@@ -10,6 +10,7 @@
 
 - [ai-chat] the `'*'` magic key inside `ai-features.chat.toolConfirmation` is no longer honored; migrate to the new `ai-features.chat.defaultToolConfirmation` preference [#17452](https://github.com/eclipse-theia/theia/pull/17452)
 - [native-webpack-plugin] The `@theia/native-webpack-plugin` package has been renamed to `@theia/bundle-plugin` [#14414](https://github.com/eclipse-theia/theia/pull/14414).
+- [core] `BackendApplicationContribution.onStop()` is now dispatched from `gracefulShutdown()` before the root Inversify container is unbound, instead of from `process.on('exit')`. Hooks are dispatched in parallel and may now return `Promise<void>` to participate in the (timeout-bounded) asynchronous shutdown; existing synchronous implementations remain valid. Contributions that somehow relied on a particular synchronous cross-contribution ordering will observe different behaviour (the new parallel contract matches `initialize`/`configure`). The synchronous `process.on('exit')` fallback still runs `onStop` for code paths that bypass `gracefulShutdown` and continues to discard any returned promise. [#17477](https://github.com/eclipse-theia/theia/pull/17477)
 
 ## 1.71.0 - 4/30/2026
 
