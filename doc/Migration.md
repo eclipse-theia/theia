@@ -28,7 +28,7 @@ The generated ESBuild configuration includes a `sourceMapPathsPlugin` that rewri
 }
 ```
 
-is sufficient to bind breakpoints in the original sources. If you have an existing `esbuild.mjs` that pins a previous version of the generated file, regenerate it (delete `esbuild.mjs` and rerun `theia build`) or add `sourceMapPathsPlugin()` from `@theia/bundle-plugin` to the `plugins` array of each build target. The plugin is a no-op when source maps are disabled (production builds).
+is sufficient to bind breakpoints in the original sources. If you have a customized `esbuild.mjs` that is not automatically regenerated (because the `gen-esbuild` import was removed), either regenerate it (delete `esbuild.mjs` and rerun `theia build`) or manually add `sourceMapPathsPlugin()` from `@theia/bundle-plugin` to the `plugins` array of each build target. The plugin is a no-op when source maps are disabled (production builds).
 
 _Builtin Extension Pack_:
 
