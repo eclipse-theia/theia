@@ -7,6 +7,7 @@ import { nls } from '@theia/core/lib/common/nls';
 
 type PullRequestDecision = 'approved' | 'rejected';
 type PullRequestLineType = 'add' | 'del' | 'ctx';
+type PullRequestMergeState = 'idle' | 'merging' | 'merged';
 
 interface PullRequestMeta {
     number: number;
@@ -152,6 +153,8 @@ export class MobilePullRequestPanel {
     protected pointerId: number | undefined;
     protected animating = false;
     protected expanded = false;
+    protected mergeState: PullRequestMergeState = 'idle';
+    protected mergeTimer: number | undefined;
 
     constructor(protected readonly delegate: MobilePullRequestPanelDelegate) {
         this.root = document.createElement('div');
@@ -371,17 +374,31 @@ export class MobilePullRequestPanel {
     protected createDoneState(approved: number, rejected: number): HTMLElement {
         const done = document.createElement('div');
         done.className = 'theia-mobile-pr-done';
+        if (this.mergeState === 'merged') {
+            done.classList.add('theia-mod-merged');
+        } else if (this.mergeState === 'merging') {
+            done.classList.add('theia-mod-merging');
+        }
         const icon = this.createIcon('codicon-check');
         icon.classList.add('theia-mobile-pr-done-icon');
         const title = document.createElement('strong');
-        title.textContent = nls.localize('qaap/mobilePr/allReviewed', 'All reviewed');
+        title.textContent = this.mergeState === 'merged'
+            ? nls.localize('qaap/mobilePr/deployedTitle', 'Merged & deployed')
+            : this.mergeState === 'merging'
+                ? nls.localize('qaap/mobilePr/deployingTitle', 'Deploying')
+                : nls.localize('qaap/mobilePr/allReviewed', 'All reviewed');
         const summary = document.createElement('span');
-        summary.textContent = `${approved} approved - ${rejected} rejected`;
+        summary.textContent = this.mergeState === 'merged'
+            ? nls.localize('qaap/mobilePr/deployedSummary', 'PR #{0} landed on {1}.', String(PR_META.number), PR_META.base)
+            : this.mergeState === 'merging'
+                ? nls.localize('qaap/mobilePr/deployingSummary', 'Merging approved files and starting deploy.')
+                : `${approved} approved - ${rejected} rejected`;
         done.append(icon, title, summary);
         const reset = document.createElement('button');
         reset.type = 'button';
         reset.className = 'theia-mobile-pr-secondary';
         reset.textContent = nls.localize('qaap/mobilePr/reviewAgain', 'Review again');
+        reset.disabled = this.mergeState === 'merging';
         reset.addEventListener('click', () => this.reset());
         done.appendChild(reset);
         return done;
@@ -391,14 +408,22 @@ export class MobilePullRequestPanel {
         this.ctaRow.replaceChildren();
         if (allReviewed) {
             const undo = this.createActionButton('secondary', nls.localize('qaap/mobilePr/undo', 'Undo'), 'codicon-discard', () => this.undo());
-            undo.disabled = this.history.length === 0;
+            undo.disabled = this.history.length === 0 || this.mergeState !== 'idle';
+            const mergeLabel = this.mergeState === 'merged'
+                ? nls.localize('qaap/mobilePr/deployed', 'Deployed')
+                : this.mergeState === 'merging'
+                    ? nls.localize('qaap/mobilePr/deploying', 'Deploying...')
+                    : rejected > 0
+                        ? nls.localize('qaap/mobilePr/resolveFirst', 'Resolve rejections first')
+                        : nls.localize('qaap/mobilePr/merge', 'Merge & deploy');
+            const mergeIcon = this.mergeState === 'merging' ? 'codicon-sync codicon-modifier-spin' : 'codicon-git-merge';
             const merge = this.createActionButton(
                 'primary',
-                rejected > 0 ? nls.localize('qaap/mobilePr/resolveFirst', 'Resolve rejections first') : nls.localize('qaap/mobilePr/merge', 'Merge & deploy'),
-                'codicon-git-merge',
-                () => undefined
+                mergeLabel,
+                mergeIcon,
+                () => this.mergeAndDeploy()
             );
-            merge.disabled = rejected > 0;
+            merge.disabled = rejected > 0 || this.mergeState !== 'idle';
             this.ctaRow.append(undo, merge);
             return;
         }
@@ -477,8 +502,26 @@ export class MobilePullRequestPanel {
             this.dragX = 0;
             this.animating = false;
             this.expanded = false;
+            this.mergeState = 'idle';
             this.render();
         }, 220);
+    }
+
+    protected mergeAndDeploy(): void {
+        if (this.queue.length > 0 || this.mergeState !== 'idle') {
+            return;
+        }
+        if ([...this.decisions.values()].some(value => value === 'rejected')) {
+            return;
+        }
+        this.clearMergeTimer();
+        this.mergeState = 'merging';
+        this.render();
+        this.mergeTimer = window.setTimeout(() => {
+            this.mergeTimer = undefined;
+            this.mergeState = 'merged';
+            this.render();
+        }, 900);
     }
 
     protected undo(): void {
@@ -486,20 +529,31 @@ export class MobilePullRequestPanel {
         if (!last) {
             return;
         }
+        this.clearMergeTimer();
         this.decisions.delete(last.file.f);
         this.queue = [last.file, ...this.queue.filter(file => file.f !== last.file.f)];
         this.dragX = 0;
         this.expanded = false;
+        this.mergeState = 'idle';
         this.render();
     }
 
     protected reset(): void {
+        this.clearMergeTimer();
         this.queue = [...PR_FILES];
         this.decisions.clear();
         this.history = [];
         this.dragX = 0;
         this.expanded = false;
+        this.mergeState = 'idle';
         this.render();
+    }
+
+    protected clearMergeTimer(): void {
+        if (this.mergeTimer !== undefined) {
+            window.clearTimeout(this.mergeTimer);
+            this.mergeTimer = undefined;
+        }
     }
 
     protected applyDragStyles(host: Element | null, animate = false): void {

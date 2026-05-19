@@ -2201,6 +2201,15 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   font-size: 28px;
 }
 
+.theia-mobile-pr-done.theia-mod-merged .theia-mobile-pr-done-icon {
+  background: var(--theia-testing-iconPassed, #2f7d4a);
+  color: var(--theia-editor-background);
+}
+
+.theia-mobile-pr-done.theia-mod-merging .theia-mobile-pr-done-icon {
+  animation: qaap-mobile-pr-pulse 900ms ease-in-out infinite;
+}
+
 .theia-mobile-pr-done strong {
   color: var(--theia-foreground);
   font-size: 18px;
@@ -2216,6 +2225,10 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
   color: var(--theia-foreground);
   font-size: 13px;
   font-weight: 600;
+}
+
+.theia-mobile-pr-secondary:disabled {
+  opacity: var(--theia-mod-disabled-opacity, 0.45);
 }
 
 .theia-mobile-pr-actions {
@@ -2278,6 +2291,17 @@ body.theia-light .theia-mobile-sheet-close-btn:focus-visible {
 .theia-mobile-pr-action:disabled {
   opacity: var(--theia-mod-disabled-opacity, 0.45);
   cursor: default;
+}
+
+@keyframes qaap-mobile-pr-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.06);
+  }
 }
 
 /*-----------------------------------------------------------------------------
