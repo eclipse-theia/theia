@@ -53,7 +53,7 @@ export class ThemeService {
             this.validateActiveTheme();
             this.updateColorThemePreference();
             this.preferences.onPreferencesChanged(changes => {
-                if (COLOR_THEME_PREFERENCE_KEY in changes) {
+                if (changes.some(change => change.preferenceName === COLOR_THEME_PREFERENCE_KEY)) {
                     this.validateActiveTheme();
                 }
             });
