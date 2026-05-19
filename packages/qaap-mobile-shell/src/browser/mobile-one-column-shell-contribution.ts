@@ -68,7 +68,7 @@ const EDIT_CHAT_SESSION_SETTINGS_COMMAND = 'chat:widget:session-settings';
 /** Shell class toggled while the bottom (terminal) panel is expanded on mobile. */
 const MOBILE_BOTTOM_OPEN_CLASS = 'theia-mod-mobile-bottom-open';
 
-type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'plan' | 'pr' | 'diff' | 'tasks' | 'skills' | 'terminal';
+type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'files' | 'pr' | 'diff' | 'tasks' | 'skills' | 'terminal';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -799,7 +799,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             { id: 'projects', label: nls.localize('qaap/mobileBottomBar/projects', 'Projects'), icon: 'codicon-project' },
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
             { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
-            { id: 'plan', label: nls.localize('theia/core/mobileBottomBar/plan', 'Plan'), icon: 'codicon-checklist' },
+            { id: 'files', label: nls.localize('qaap/mobileBottomBar/files', 'Files'), icon: 'codicon-files' },
             { id: 'pr', label: nls.localize('qaap/mobileBottomBar/pr', 'PR'), icon: 'codicon-git-pull-request' },
             { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
             { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
@@ -818,6 +818,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 return this.isMobileAgentSheetVisible();
             case 'preview':
                 return !!this.getActivePreviewWidget();
+            case 'files':
+                return this.isMobileFilesSheetVisible();
             case 'terminal':
                 return this.isTerminalBottomPanelOpen();
             default:
@@ -934,10 +936,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             await this.toggleMobilePreview();
             return;
         }
-        if (def.id === 'plan') {
+        if (def.id === 'files') {
             this.hidePullRequestPanel();
-            await this.openMobileSideSheet('left', EXPLORER_VIEW_CONTAINER_ID);
-            this.scheduleSnapAndUiRefresh();
+            await this.toggleMobileFilesSheet();
             return;
         }
         if (def.id === 'skills') {
@@ -977,6 +978,26 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected isMobileAgentSheetVisible(): boolean {
         return this.shell.isExpanded('right') && !this.isSidePanelSheetCollapsedInDom('right');
+    }
+
+    protected async toggleMobileFilesSheet(): Promise<void> {
+        this.hideProjectsPanel();
+        this.hidePullRequestPanel();
+        if (this.isMobileFilesSheetVisible()) {
+            await this.collapseMobileSidePanels();
+            this.scheduleSnapAndUiRefresh();
+            return;
+        }
+        await this.openMobileSideSheet('left', EXPLORER_VIEW_CONTAINER_ID);
+        this.scheduleSnapAndUiRefresh();
+    }
+
+    protected isMobileFilesSheetVisible(): boolean {
+        if (!this.shell.isExpanded('left') || this.isSidePanelSheetCollapsedInDom('left')) {
+            return false;
+        }
+        const currentTitle = this.shell.leftPanelHandler.tabBar.currentTitle;
+        return currentTitle?.owner?.id === EXPLORER_VIEW_CONTAINER_ID;
     }
 
     protected getActivePreviewWidget(): LuminoWidget | undefined {

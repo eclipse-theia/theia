@@ -36,6 +36,12 @@ interface PwaShortcut {
     readonly icons?: readonly WebAppManifestIcon[];
 }
 
+interface AppleTouchIcon {
+    readonly src: string;
+    /** Optional `<link sizes="..."/>` value (e.g. `180x180`). iOS Safari uses this to pick the best icon. */
+    readonly sizes?: string;
+}
+
 interface PwaManifestConfig {
     readonly name?: string;
     readonly shortName?: string;
@@ -51,6 +57,12 @@ interface PwaManifestConfig {
     readonly themeColor?: string;
     readonly backgroundColor?: string;
     readonly icons?: readonly WebAppManifestIcon[];
+    /**
+     * iOS Safari-specific icons emitted as `<link rel="apple-touch-icon" sizes="...">`. iOS does NOT
+     * read the manifest icons reliably for the home-screen icon - the highest-priority cue is the
+     * `apple-touch-icon` link. Provide 180x180 (iPhone) and optionally 167x167 (iPad Pro) entries.
+     */
+    readonly appleTouchIcons?: readonly AppleTouchIcon[];
     readonly shortcuts?: readonly PwaShortcut[];
     readonly categories?: readonly string[];
     readonly preferRelatedApplications?: boolean;
@@ -122,18 +134,17 @@ export class FrontendGenerator extends AbstractGenerator {
         const appName = this.pck.props.frontend.config.applicationName;
         const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
         const isWebTarget = this.pck.isBrowser() || this.pck.isBrowserOnly();
-        const appleTouchIcon = this.resolveAppleTouchIcon(appIcon);
+        const appleTouchIconTags = this.compileAppleTouchIconLinks(appIcon);
         const pwaConfig = this.getPwaManifestConfig();
         const description = pwaConfig?.description?.trim();
         const appleTitle = pwaConfig?.shortName?.trim() || appName;
         const descriptionTag = description
             ? `\n  <meta name="description" content="${this.escapeHtmlAttribute(description)}">`
             : '';
-        const iconLines = appIcon || appleTouchIcon
+        const iconLines = appIcon || appleTouchIconTags
             ? `
   ${appIcon ? `<meta name="application-icon" content="${this.escapeHtmlAttribute(appIcon)}">
-  <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">` : ''}
-  ${appleTouchIcon ? `<link rel="apple-touch-icon" href="${this.escapeHtmlAttribute(appleTouchIcon)}">` : ''}`
+  <link rel="icon" href="${this.escapeHtmlAttribute(appIcon)}">` : ''}${appleTouchIconTags}`
             : '';
         const splashBranding = appIcon ? this.compileSplashBrandingScript() : '';
         const pwaHead = isWebTarget ? this.compilePwaHeadFragment(appleTitle) : '';
@@ -256,23 +267,26 @@ export class FrontendGenerator extends AbstractGenerator {
     }
 
     /**
-     * Inline script registering the PWA service worker. Kept tiny and synchronous-friendly so it
-     * doesn't delay the splash. Runs only when the page is served over a secure context with
-     * `navigator.serviceWorker` available.
+     * Inline script registering the PWA service worker. Kept tiny and runs as early as possible so
+     * the SW is active before user interaction (Chromium's installability heuristic prefers SWs
+     * that activated quickly). The browser itself enforces secure-context requirements - we don't
+     * second-guess it with a hostname check so that `http://` LAN previews still attempt registration
+     * (the navigator will reject it cleanly and our `.catch` swallows the warning).
      */
     protected compileServiceWorkerRegistration(): string {
         const js = [
             '(function(){',
             'if(!(\'serviceWorker\' in navigator))return;',
-            'if(location.protocol!=="https:"&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&location.hostname!=="[::1]")return;',
             'var swUrl="./service-worker.js";',
             'var register=function(){',
             'navigator.serviceWorker.register(swUrl,{scope:"./"}).then(function(reg){',
             // Periodically poll for updates so long-lived IDE sessions pick up new builds.
             'try{setInterval(function(){reg.update().catch(function(){});},60*60*1000);}catch(_){}}',
-            ').catch(function(err){console.warn("[pwa] service worker registration failed",err);});',
+            ').catch(function(err){console.warn("[pwa] service worker registration failed (likely insecure context)",err&&err.message||err);});',
             '};',
-            'if(document.readyState==="complete"){register();}else{window.addEventListener("load",register,{once:true});}',
+            // Register ASAP - waiting for `load` delays SW activation, which hurts Chromium's
+            // "installability" heuristic (the install banner won't appear until the SW controls the page).
+            'if(document.readyState!=="loading"){register();}else{document.addEventListener("DOMContentLoaded",register,{once:true});}',
             // Reload once when a new SW takes over so the page is consistent with cached assets.
             'var reloaded=false;',
             'navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded)return;reloaded=true;try{location.reload();}catch(_){}});',
@@ -432,10 +446,36 @@ async function staleWhileRevalidate(req) {
 `;
     }
 
-    protected resolveAppleTouchIcon(appIcon: string | undefined): string | undefined {
-        const icons = this.getPwaManifestConfig()?.icons;
-        const pngIcon = icons?.find(icon => icon.type === 'image/png' && /(?:^|\s)(180x180|192x192|512x512)(?:\s|$)/.test(icon.sizes));
-        return pngIcon?.src ?? appIcon;
+    /**
+     * Emits the `<link rel="apple-touch-icon">` tags that iOS Safari uses for the home-screen icon.
+     * Priority order:
+     *   1. Explicit `pwa.appleTouchIcons` array (preferred — emits one tag per entry, with `sizes`).
+     *   2. PNG entry in `pwa.icons` whose `sizes` exactly contains `180x180` (iPhone size).
+     *   3. Any 192x192 or 512x512 PNG in `pwa.icons`.
+     *   4. The generic `applicationIcon` as a last resort.
+     *
+     * Returns an HTML fragment (possibly empty) ready to splice into the `<head>`.
+     */
+    protected compileAppleTouchIconLinks(appIcon: string | undefined): string {
+        const pwaConfig = this.getPwaManifestConfig();
+        const explicit = pwaConfig?.appleTouchIcons;
+        if (explicit?.length) {
+            return '\n  ' + explicit.map(entry => {
+                const sizes = entry.sizes?.trim();
+                const sizesAttr = sizes ? ` sizes="${this.escapeHtmlAttribute(sizes)}"` : '';
+                return `<link rel="apple-touch-icon"${sizesAttr} href="${this.escapeHtmlAttribute(entry.src)}">`;
+            }).join('\n  ');
+        }
+        const icons = pwaConfig?.icons ?? [];
+        const candidate = icons.find(i => i.type === 'image/png' && / 180x180(?:$|\s)/.test(' ' + i.sizes))
+            ?? icons.find(i => i.type === 'image/png' && /(?:^|\s)(192x192|512x512)(?:\s|$)/.test(i.sizes))
+            ?? (appIcon ? { src: appIcon, sizes: '' } as AppleTouchIcon : undefined);
+        if (!candidate) {
+            return '';
+        }
+        const sizes = (candidate.sizes ?? '').trim().split(/\s+/).find(s => /^\d+x\d+$/.test(s));
+        const sizesAttr = sizes ? ` sizes="${this.escapeHtmlAttribute(sizes)}"` : '';
+        return `\n  <link rel="apple-touch-icon"${sizesAttr} href="${this.escapeHtmlAttribute(candidate.src)}">`;
     }
 
     protected inferImageMimeType(iconPath: string): string | undefined {

@@ -13,6 +13,7 @@ import {
 } from './mobile-projects-types';
 import { MobileProjectsService } from './mobile-projects-service';
 import { markMobileProjectReadmeForOpen } from './mobile-projects-open';
+import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -32,6 +33,7 @@ export class MobileProjectsPanel {
     protected projects: MobileProjectEntry[] = [];
     protected visible = false;
     protected openMenu: HTMLElement | undefined;
+    protected openRepoDialog: MobileOpenRepositoryDialog | undefined;
     protected readonly onDocumentPointerDown = (ev: PointerEvent): void => {
         if (!this.openMenu) {
             return;
@@ -142,6 +144,7 @@ export class MobileProjectsPanel {
             return;
         }
         this.closeCardMenu();
+        this.openRepoDialog?.hide();
         document.removeEventListener('pointerdown', this.onDocumentPointerDown, true);
         this.visible = false;
         this.root.hidden = true;
@@ -150,12 +153,17 @@ export class MobileProjectsPanel {
     }
 
     protected async onNewClick(): Promise<void> {
-        const nextProjects = await this.projectsService.createGithubProject();
-        if (nextProjects) {
-            this.projects = nextProjects;
-            this.render();
-            this.delegate.onProjectsChanged?.();
+        if (!this.openRepoDialog) {
+            this.openRepoDialog = new MobileOpenRepositoryDialog(this.projectsService, {
+                onProjectsChanged: nextProjects => {
+                    this.projects = nextProjects;
+                    this.render();
+                    this.delegate.onProjectsChanged?.();
+                },
+            });
+            this.root.append(this.openRepoDialog.node);
         }
+        await this.openRepoDialog.show();
     }
 
     protected async onCloneClick(): Promise<void> {

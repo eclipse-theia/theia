@@ -13,6 +13,10 @@
           "description": "Qaap — a mobile-friendly IDE for reading, reviewing and writing code on the go.",
           "lang": "en",
           "categories": ["productivity", "developer", "utilities"],
+          "appleTouchIcons": [
+            { "src": "./media/qaap-apple-touch-icon-180.png", "sizes": "180x180" },
+            { "src": "./media/qaap-icon-192.png", "sizes": "192x192" }
+          ],
           "icons": [
             {
               "src": "./media/qaap-icon-192.png",

@@ -17,6 +17,7 @@ import {
     fetchQaapGithubRepositories,
     openQaapGithubRepository,
 } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
+import { readQaapAuthUser, type QaapAuthUser } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import type { QaapGithubRepositorySummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     MobileProjectEntry,
@@ -260,8 +261,17 @@ export class MobileProjectsService {
         if (!repository) {
             return undefined;
         }
+        return this.cloneGithubProjectByRepository(repository);
+    }
+
+    /** Clone/open `owner/repo` or a github.com URL without prompting for input. */
+    async cloneGithubProjectByRepository(repository: string): Promise<MobileProjectEntry[] | undefined> {
+        const trimmed = repository.trim();
+        if (!trimmed) {
+            return undefined;
+        }
         try {
-            const result = await cloneQaapGithubRepository(repository);
+            const result = await cloneQaapGithubRepository(trimmed);
             await this.messageService.info(nls.localize('qaap/mobileProjects/repoCloned', 'Cloned {0}', result.repository.fullName));
             this.openWorkspaceUri(new URI(result.workspaceUri));
             return this.loadGithubProjects();
@@ -269,6 +279,16 @@ export class MobileProjectsService {
             await this.messageService.error(err instanceof Error ? err.message : String(err));
             return undefined;
         }
+    }
+
+    /** Profile of the currently signed-in GitHub user, when known. */
+    getConnectedUser(): QaapAuthUser | undefined {
+        return readQaapAuthUser();
+    }
+
+    /** Public access to the list of GitHub repositories visible to the signed-in user. */
+    async listGithubRepositories(): Promise<MobileProjectEntry[]> {
+        return this.loadGithubProjects();
     }
 
     protected readDisplayNames(): Record<string, string> {
