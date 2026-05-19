@@ -412,9 +412,7 @@ export namespace DirtyDiffModel {
 
 > Why? A factory can be rebound by adopters to customize the created instance. If a manager directly creates `new XYZImpl()`, adopters have to subclass and rebind the whole manager just to replace the created object.
 
-Use a factory when an `@injectable()` class creates another object that is meant to be customized. This keeps the created object inside the dependency injection graph.
-
-Direct construction is still fine for local implementation details: simple values, collections, and helper objects that do not participate in dependency injection, for example `new Map()` used as local state.
+Direct construction is still fine for implementation details, for example for simple values, collections, and helper objects like `new Map()`.
 
 ```ts
 // bad
