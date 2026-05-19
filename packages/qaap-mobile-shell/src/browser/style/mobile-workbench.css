@@ -2889,3 +2889,357 @@
     background: transparent;
   }
 }
+
+/*-----------------------------------------------------------------------------
+| Mobile snackbar (`mobile-snackbar.ts`).
+|
+| Single live region used by gestures with otherwise invisible side-effects
+| (two-finger swipe between editor tabs, pull-to-refresh on sheets, …). Sits
+| above the bottom activity bar / keyboard accessory so it stays readable.
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+      var(--theia-mobile-keyboard-inset, 0px) + 12px
+  );
+  transform: translate(-50%, 12px);
+  z-index: 10500;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(92vw, 540px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--theia-notifications-background, var(--theia-editorWidget-background, #202020));
+  color: var(--theia-notifications-foreground, var(--theia-foreground));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 220ms cubic-bezier(.18,.89,.32,1.12), opacity 200ms ease;
+}
+
+.theia-mobile-snackbar.theia-mod-visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.theia-mobile-snackbar.theia-mod-kind-success {
+  background: var(--theia-debugConsole-infoForeground, #2c844a);
+  color: #fff;
+}
+
+.theia-mobile-snackbar.theia-mod-kind-warning {
+  background: var(--theia-editorWarning-foreground, #cca700);
+  color: #1f1f1f;
+}
+
+.theia-mobile-snackbar-message {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-mobile-snackbar-action {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.theia-mobile-snackbar-action:active {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theia-mobile-snackbar {
+    transition: opacity 100ms linear;
+  }
+}
+
+/*-----------------------------------------------------------------------------
+| Bottom-sheet grabber (drag handle) + drag-to-dismiss visual.
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-sheet-grabber {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding-top: 6px;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-sheet-grabber:active {
+  cursor: grabbing;
+}
+
+.theia-mobile-sheet-grabber-handle {
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--theia-foreground);
+  opacity: 0.28;
+  transition: opacity 120ms ease, width 120ms ease;
+}
+
+.theia-mobile-sheet-grabber:active .theia-mobile-sheet-grabber-handle,
+.theia-mobile-sheet-grabber:focus-within .theia-mobile-sheet-grabber-handle {
+  opacity: 0.5;
+  width: 56px;
+}
+
+/*-----------------------------------------------------------------------------
+| Pull-to-refresh indicator (rendered inside the sheet root).
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-pull-refresh {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--theia-editorWidget-background, rgba(0, 0, 0, 0.4));
+  color: var(--theia-foreground);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transform: translate3d(-50%, -32px, 0);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.theia-mobile-pull-refresh-spinner {
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.4;
+  transition: opacity 100ms linear;
+}
+
+.theia-mobile-pull-refresh.theia-mod-armed {
+  background: var(--theia-button-background, var(--theia-foreground));
+  color: var(--theia-button-foreground, var(--theia-editor-background));
+}
+
+.theia-mobile-pull-refresh.theia-mod-armed .theia-mobile-pull-refresh-spinner {
+  opacity: 1;
+}
+
+.theia-mobile-pull-refresh.theia-mod-refreshing .theia-mobile-pull-refresh-spinner {
+  animation: theia-mobile-pull-refresh-spin 0.9s linear infinite;
+}
+
+@keyframes theia-mobile-pull-refresh-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/*-----------------------------------------------------------------------------
+| Keyboard accessory bar — paged variant (code / symbols / nav).
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-keyboard-accessory-pages {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.theia-mobile-keyboard-accessory-page {
+  flex: 0 0 100%;
+  min-width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  padding: 0 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.theia-mobile-keyboard-accessory-page::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.theia-mobile-keyboard-accessory-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+.theia-mobile-keyboard-accessory-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--theia-foreground);
+  opacity: 0.3;
+  cursor: pointer;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.theia-mobile-keyboard-accessory-dot.theia-mod-active {
+  opacity: 0.9;
+  transform: scale(1.25);
+}
+
+/*-----------------------------------------------------------------------------
+| Bottom-bar long-press action sheet (secondary actions for Projects, Terminal,
+| Agent, PR, Preview, Files).
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-bottom-actionsheet {
+  position: fixed;
+  z-index: 10800;
+  min-width: 200px;
+  max-width: min(86vw, 360px);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--theia-menu-background, var(--theia-editorWidget-background, #202020));
+  color: var(--theia-menu-foreground, var(--theia-foreground));
+  border: 1px solid var(--theia-menu-border, var(--theia-panel-border, rgba(255, 255, 255, 0.08)));
+  border-radius: 14px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.theia-mobile-bottom-actionsheet.theia-mod-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.theia-mobile-bottom-actionsheet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 40px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-bottom-actionsheet-item:active {
+  background: var(--theia-menu-selectionBackground, var(--theia-list-activeSelectionBackground, rgba(255, 255, 255, 0.1)));
+}
+
+.theia-mobile-bottom-actionsheet-item .codicon {
+  font-size: 18px;
+  flex-shrink: 0;
+  opacity: 0.86;
+}
+
+.theia-mobile-bottom-actionsheet-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theia-mobile-bottom-actionsheet-detail {
+  flex-shrink: 0;
+  font-size: 11px;
+  opacity: 0.62;
+  font-family: var(--theia-code-font-family, monospace);
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*-----------------------------------------------------------------------------
+| Floating action button (Quick Open / Command Palette) — `mobile-quick-actions-fab.ts`.
+|-----------------------------------------------------------------------------*/
+
+.theia-mobile-quick-fab {
+  position: fixed;
+  right: calc(env(safe-area-inset-right, 0px) + 16px);
+  bottom: calc(
+    var(--theia-mobile-bottom-bar-height, 56px) + var(--theia-mobile-status-chrome-height, 34px) +
+      var(--theia-mobile-keyboard-inset, 0px) + 16px
+  );
+  z-index: 9620;
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theia-button-background, var(--theia-foreground));
+  color: var(--theia-button-foreground, var(--theia-editor-background));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 2px 4px rgba(0, 0, 0, 0.16);
+  opacity: 0;
+  transform: translateY(20px) scale(0.94);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 220ms cubic-bezier(.18,.89,.32,1.12), background 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-quick-fab.theia-mod-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.theia-mobile-quick-fab:active {
+  transform: translateY(0) scale(0.95);
+  background: var(--theia-button-hoverBackground, var(--theia-button-background));
+}
+
+.theia-mobile-quick-fab .codicon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theia-mobile-quick-fab {
+    transition: opacity 100ms linear;
+  }
+}
+
+/* When the bottom-bar action sheet is open, dim the FAB so it does not compete
+   visually with the floating menu. */
+body:has(.theia-mobile-bottom-actionsheet.theia-mod-visible) .theia-mobile-quick-fab {
+  opacity: 0.35;
+}

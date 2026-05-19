@@ -353,47 +353,211 @@ export class MobileKeyboardHelper implements Disposable {
     // ---------------------------------------------------------------------------
 
     /**
-     * Order matters: it is the on-screen left-to-right layout. Single chars dispatch
-     * `insertText`; named keys dispatch a synthesized `KeyboardEvent` on the textarea.
+     * Three pages of code-accessory keys. Each page is a horizontal row that scrolls
+     * inline (native overflow-x), and the user swipes between pages by panning
+     * across the bar past the boundary (handled in `installAccessoryPaging`).
+     *
+     *  - code: the original quick keys (brackets, punctuation, arrows).
+     *  - symbols: operators / dollar / template (`=>`, `==`, `!==`, `&&`, …).
+     *  - nav: navigation keys + select-line shortcuts (Home/End, PgUp/PgDn).
+     *
+     * Single chars dispatch `insertText`; named keys synthesize a `KeyboardEvent`.
      */
-    protected static readonly ACCESSORY_KEYS: ReadonlyArray<AccessoryKey> = [
-        { type: 'key', label: 'Tab', key: 'Tab', code: 'Tab', keyCode: 9 },
-        { type: 'key', label: 'Esc', key: 'Escape', code: 'Escape', keyCode: 27 },
-        { type: 'char', label: '{', char: '{' },
-        { type: 'char', label: '}', char: '}' },
-        { type: 'char', label: '(', char: '(' },
-        { type: 'char', label: ')', char: ')' },
-        { type: 'char', label: ';', char: ';' },
-        { type: 'char', label: ':', char: ':' },
-        { type: 'char', label: '/', char: '/' },
-        { type: 'key', label: '\u2190', key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
-        { type: 'key', label: '\u2191', key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
-        { type: 'key', label: '\u2193', key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
-        { type: 'key', label: '\u2192', key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+    protected static readonly ACCESSORY_PAGES: ReadonlyArray<AccessoryPage> = [
+        {
+            id: 'code',
+            keys: [
+                { type: 'key', label: 'Tab', key: 'Tab', code: 'Tab', keyCode: 9 },
+                { type: 'key', label: 'Esc', key: 'Escape', code: 'Escape', keyCode: 27 },
+                { type: 'char', label: '{', char: '{' },
+                { type: 'char', label: '}', char: '}' },
+                { type: 'char', label: '(', char: '(' },
+                { type: 'char', label: ')', char: ')' },
+                { type: 'char', label: ';', char: ';' },
+                { type: 'char', label: ':', char: ':' },
+                { type: 'char', label: '/', char: '/' },
+                { type: 'key', label: '\u2190', key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
+                { type: 'key', label: '\u2191', key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
+                { type: 'key', label: '\u2193', key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
+                { type: 'key', label: '\u2192', key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+            ],
+        },
+        {
+            id: 'symbols',
+            keys: [
+                { type: 'char', label: '=', char: '=' },
+                { type: 'char', label: '==', char: '==' },
+                { type: 'char', label: '===', char: '===' },
+                { type: 'char', label: '!=', char: '!=' },
+                { type: 'char', label: '=>', char: '=>' },
+                { type: 'char', label: '&&', char: '&&' },
+                { type: 'char', label: '||', char: '||' },
+                { type: 'char', label: '[', char: '[' },
+                { type: 'char', label: ']', char: ']' },
+                { type: 'char', label: '<', char: '<' },
+                { type: 'char', label: '>', char: '>' },
+                { type: 'char', label: '`', char: '`' },
+                { type: 'char', label: '$', char: '$' },
+                { type: 'char', label: '|', char: '|' },
+                { type: 'char', label: '&', char: '&' },
+                { type: 'char', label: '!', char: '!' },
+                { type: 'char', label: '?', char: '?' },
+                { type: 'char', label: '+', char: '+' },
+                { type: 'char', label: '-', char: '-' },
+                { type: 'char', label: '*', char: '*' },
+            ],
+        },
+        {
+            id: 'nav',
+            keys: [
+                { type: 'key', label: 'Home', key: 'Home', code: 'Home', keyCode: 36 },
+                { type: 'key', label: 'End', key: 'End', code: 'End', keyCode: 35 },
+                { type: 'key', label: 'PgUp', key: 'PageUp', code: 'PageUp', keyCode: 33 },
+                { type: 'key', label: 'PgDn', key: 'PageDown', code: 'PageDown', keyCode: 34 },
+                { type: 'key', label: 'Bksp', key: 'Backspace', code: 'Backspace', keyCode: 8 },
+                { type: 'key', label: 'Del', key: 'Delete', code: 'Delete', keyCode: 46 },
+                { type: 'key', label: 'Enter', key: 'Enter', code: 'Enter', keyCode: 13 },
+                { type: 'char', label: 'Indent', char: '    ' },
+                { type: 'char', label: '#', char: '#' },
+                { type: 'char', label: '_', char: '_' },
+                { type: 'char', label: '@', char: '@' },
+                { type: 'char', label: '~', char: '~' },
+                { type: 'char', label: '\\', char: '\\' },
+                { type: 'char', label: '%', char: '%' },
+                { type: 'char', label: '^', char: '^' },
+            ],
+        },
     ];
+
+    protected accessoryActivePage = 0;
 
     protected ensureAccessory(): HTMLElement {
         if (this.accessory) {
             return this.accessory;
         }
-        const bar = document.createElement('div');
-        bar.className = 'theia-mobile-keyboard-accessory';
-        bar.setAttribute('role', 'toolbar');
-        bar.setAttribute(
+        const wrapper = document.createElement('div');
+        wrapper.className = 'theia-mobile-keyboard-accessory';
+        wrapper.setAttribute('role', 'toolbar');
+        wrapper.setAttribute(
             'aria-label',
             nls.localize('theia/core/mobileKeyboardAccessory', 'Code keys')
         );
+
         // Prevent focus theft from any interaction in the bar (taps, scroll-to-tap).
         const swallowFocusSteal = (e: Event): void => { e.preventDefault(); };
-        bar.addEventListener('mousedown', swallowFocusSteal);
-        bar.addEventListener('pointerdown', swallowFocusSteal);
-        bar.addEventListener('touchstart', swallowFocusSteal, { passive: false });
-        for (const def of MobileKeyboardHelper.ACCESSORY_KEYS) {
-            bar.appendChild(this.createAccessoryButton(def));
+        wrapper.addEventListener('mousedown', swallowFocusSteal);
+        wrapper.addEventListener('pointerdown', swallowFocusSteal);
+        wrapper.addEventListener('touchstart', swallowFocusSteal, { passive: false });
+
+        const pages = document.createElement('div');
+        pages.className = 'theia-mobile-keyboard-accessory-pages';
+        for (const page of MobileKeyboardHelper.ACCESSORY_PAGES) {
+            const pageEl = document.createElement('div');
+            pageEl.className = 'theia-mobile-keyboard-accessory-page';
+            pageEl.dataset.pageId = page.id;
+            for (const key of page.keys) {
+                pageEl.appendChild(this.createAccessoryButton(key));
+            }
+            pages.appendChild(pageEl);
         }
-        document.body.appendChild(bar);
-        this.accessory = bar;
-        return bar;
+        wrapper.appendChild(pages);
+
+        const dots = document.createElement('div');
+        dots.className = 'theia-mobile-keyboard-accessory-dots';
+        for (let i = 0; i < MobileKeyboardHelper.ACCESSORY_PAGES.length; i++) {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.tabIndex = -1;
+            dot.className = 'theia-mobile-keyboard-accessory-dot';
+            dot.setAttribute(
+                'aria-label',
+                nls.localize('theia/core/mobileKeyboardAccessoryPage', 'Show key page {0}', String(i + 1))
+            );
+            const pressDot = (e: Event): void => {
+                e.preventDefault();
+                this.setAccessoryActivePage(i, true);
+            };
+            dot.addEventListener('pointerup', pressDot);
+            dot.addEventListener('click', pressDot);
+            dots.appendChild(dot);
+        }
+        wrapper.appendChild(dots);
+
+        this.installAccessoryPaging(pages);
+
+        document.body.appendChild(wrapper);
+        this.accessory = wrapper;
+        this.setAccessoryActivePage(0, false);
+        return wrapper;
+    }
+
+    protected installAccessoryPaging(pages: HTMLElement): void {
+        let startX = 0;
+        let trackedId: number | undefined;
+        let captured = false;
+        const SWIPE_THRESHOLD = 60;
+        const SWIPE_MAX_DY = 24;
+        let startY = 0;
+        const onStart = (ev: TouchEvent): void => {
+            if (ev.touches.length !== 1) {
+                trackedId = undefined;
+                return;
+            }
+            startX = ev.touches[0].clientX;
+            startY = ev.touches[0].clientY;
+            trackedId = ev.touches[0].identifier;
+            captured = false;
+        };
+        const onMove = (ev: TouchEvent): void => {
+            if (trackedId === undefined) {
+                return;
+            }
+            const touch = Array.from(ev.touches).find(t => t.identifier === trackedId);
+            if (!touch) {
+                return;
+            }
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+            if (captured || Math.abs(dy) > SWIPE_MAX_DY) {
+                return;
+            }
+            if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+                captured = true;
+                const dir = dx < 0 ? 1 : -1;
+                const next = this.accessoryActivePage + dir;
+                if (next >= 0 && next < MobileKeyboardHelper.ACCESSORY_PAGES.length) {
+                    this.setAccessoryActivePage(next, true);
+                }
+            }
+        };
+        const onEnd = (): void => {
+            trackedId = undefined;
+            captured = false;
+        };
+        pages.addEventListener('touchstart', onStart, { passive: true });
+        pages.addEventListener('touchmove', onMove, { passive: true });
+        pages.addEventListener('touchend', onEnd, { passive: true });
+        pages.addEventListener('touchcancel', onEnd, { passive: true });
+    }
+
+    protected setAccessoryActivePage(index: number, animate: boolean): void {
+        if (!this.accessory) {
+            return;
+        }
+        const pageCount = MobileKeyboardHelper.ACCESSORY_PAGES.length;
+        if (index < 0 || index >= pageCount) {
+            return;
+        }
+        this.accessoryActivePage = index;
+        const pages = this.accessory.querySelector<HTMLElement>('.theia-mobile-keyboard-accessory-pages');
+        if (pages) {
+            pages.style.transition = animate ? 'transform 220ms ease' : '';
+            pages.style.transform = `translateX(-${index * 100}%)`;
+        }
+        const dots = this.accessory.querySelectorAll<HTMLElement>('.theia-mobile-keyboard-accessory-dot');
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('theia-mod-active', i === index);
+        });
     }
 
     protected removeAccessory(): void {
@@ -515,3 +679,8 @@ interface CharKey {
 }
 
 type AccessoryKey = NamedKey | CharKey;
+
+interface AccessoryPage {
+    id: 'code' | 'symbols' | 'nav';
+    keys: ReadonlyArray<AccessoryKey>;
+}

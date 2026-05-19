@@ -17,9 +17,12 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { CommonCommands } from '@theia/core/lib/browser/common-commands';
+import { nls } from '@theia/core/lib/common/nls';
 import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { MobileHaptics } from './mobile-haptics';
+import { MobileSnackbar } from './mobile-snackbar';
 
 /** Monaco's built-in editor commands; safe as string IDs to avoid hard-depending on monaco-editor here. */
 const MONACO_FONT_ZOOM_IN = 'editor.action.fontZoomIn';
@@ -61,6 +64,9 @@ export class MobileEditorGestureContribution implements FrontendApplicationContr
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     protected mobileMq: MediaQueryList | undefined;
     protected coarseMq: MediaQueryList | undefined;
@@ -222,15 +228,38 @@ export class MobileEditorGestureContribution implements FrontendApplicationContr
                 if (e.cancelable) {
                     e.preventDefault();
                 }
-                if (dx0 < 0) {
+                const nextDirection: 'next' | 'previous' = dx0 < 0 ? 'next' : 'previous';
+                if (nextDirection === 'next') {
                     this.executeIfAvailable(CommonCommands.NEXT_TAB_IN_GROUP.id);
                 } else {
                     this.executeIfAvailable(CommonCommands.PREVIOUS_TAB_IN_GROUP.id);
                 }
                 MobileHaptics.fire(MobileHaptics.MEDIUM);
+                window.setTimeout(() => this.showTabSwitchFeedback(nextDirection), 60);
             }
         }
     };
+
+    /**
+     * Surface a short toast naming the newly active editor so the user knows the
+     * swipe gesture landed where they expected. Falls back to a generic message
+     * when the active widget has no label.
+     */
+    protected showTabSwitchFeedback(direction: 'next' | 'previous'): void {
+        const active = this.shell.activeWidget ?? this.shell.currentWidget;
+        const label = active?.title?.label?.trim();
+        if (label && label.length > 0) {
+            const arrow = direction === 'next' ? '\u2192' : '\u2190';
+            MobileSnackbar.show(`${arrow} ${label}`, { duration: 1100 });
+            return;
+        }
+        MobileSnackbar.show(
+            direction === 'next'
+                ? nls.localize('qaap/mobileEditor/nextTab', 'Next tab')
+                : nls.localize('qaap/mobileEditor/previousTab', 'Previous tab'),
+            { duration: 900 }
+        );
+    }
 
     protected readonly onTouchEnd = (_e: TouchEvent): void => {
         this.resetGesture();

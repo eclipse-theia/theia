@@ -37,6 +37,7 @@ import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
+import { MobileSnackbar } from './mobile-snackbar';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -75,6 +76,13 @@ interface MobileBottomButton {
     label: string;
     icon: string;
     commandId?: string;
+}
+
+interface BottomBarSecondaryItem {
+    label: string;
+    icon?: string;
+    detail?: string;
+    run: () => Promise<void> | void;
 }
 
 /**
@@ -377,6 +385,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected teardownMobileUi(): void {
+        this.removeBottomBarSecondaryMenu();
         this.removeBackdrop();
         this.unpinBottomChromeFromBody();
         this.detachBottomBarFromShell();
@@ -395,13 +404,19 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.keyboardHelper?.dispose();
         this.keyboardHelper = undefined;
         this.hideProjectsPanel();
-        if (this.projectsPanel?.node.parentElement) {
-            this.projectsPanel.node.parentElement.removeChild(this.projectsPanel.node);
+        if (this.projectsPanel) {
+            this.projectsPanel.dispose();
+            if (this.projectsPanel.node.parentElement) {
+                this.projectsPanel.node.parentElement.removeChild(this.projectsPanel.node);
+            }
         }
         this.projectsPanel = undefined;
         this.hidePullRequestPanel();
-        if (this.pullRequestPanel?.node.parentElement) {
-            this.pullRequestPanel.node.parentElement.removeChild(this.pullRequestPanel.node);
+        if (this.pullRequestPanel) {
+            this.pullRequestPanel.dispose();
+            if (this.pullRequestPanel.node.parentElement) {
+                this.pullRequestPanel.node.parentElement.removeChild(this.pullRequestPanel.node);
+            }
         }
         this.pullRequestPanel = undefined;
         this.shell.node.classList.remove(MOBILE_BOTTOM_OPEN_CLASS);
@@ -904,7 +919,307 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             btn.setAttribute('aria-pressed', 'false');
         }
         btn.addEventListener('click', () => { void this.onMobileBottomButtonClick(def); });
+        this.installBottomBarLongPress(btn, def);
         return btn;
+    }
+
+    /**
+     * Touch long-press on a bottom-bar button surfaces a secondary action sheet
+     * (e.g. "New terminal", "Refresh projects"). Pointer chains: a long-press
+     * raises the menu and we swallow the subsequent `click` so the primary
+     * action does not also fire.
+     */
+    protected installBottomBarLongPress(btn: HTMLButtonElement, def: MobileBottomButton): void {
+        let timer: number | undefined;
+        let startX = 0;
+        let startY = 0;
+        let fired = false;
+        const LONG_PRESS_MS = 480;
+        const MOVE_THRESHOLD = 12;
+        const cancel = (): void => {
+            if (timer !== undefined) {
+                window.clearTimeout(timer);
+                timer = undefined;
+            }
+        };
+        btn.addEventListener('touchstart', ev => {
+            if (ev.touches.length !== 1) {
+                cancel();
+                return;
+            }
+            const touch = ev.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            fired = false;
+            cancel();
+            timer = window.setTimeout(() => {
+                timer = undefined;
+                fired = true;
+                MobileHaptics.fire(MobileHaptics.MEDIUM);
+                void this.showBottomBarSecondaryMenu(btn, def);
+            }, LONG_PRESS_MS);
+        }, { passive: true });
+        btn.addEventListener('touchmove', ev => {
+            if (timer === undefined) {
+                return;
+            }
+            const touch = ev.touches[0];
+            if (!touch) {
+                cancel();
+                return;
+            }
+            if (Math.abs(touch.clientX - startX) > MOVE_THRESHOLD
+                || Math.abs(touch.clientY - startY) > MOVE_THRESHOLD) {
+                cancel();
+            }
+        }, { passive: true });
+        btn.addEventListener('touchend', ev => {
+            cancel();
+            if (fired && ev.cancelable) {
+                ev.preventDefault();
+            }
+        });
+        btn.addEventListener('touchcancel', () => cancel(), { passive: true });
+        btn.addEventListener('click', ev => {
+            if (fired) {
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
+                fired = false;
+            }
+        }, true);
+    }
+
+    protected async showBottomBarSecondaryMenu(anchor: HTMLElement, def: MobileBottomButton): Promise<void> {
+        const items = await this.getBottomBarSecondaryItems(def);
+        if (items.length === 0) {
+            MobileSnackbar.show(def.label, { duration: 800 });
+            return;
+        }
+        this.removeBottomBarSecondaryMenu();
+        const menu = document.createElement('div');
+        menu.className = 'theia-mobile-bottom-actionsheet';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', def.label);
+        for (const item of items) {
+            const itemBtn = document.createElement('button');
+            itemBtn.type = 'button';
+            itemBtn.className = 'theia-mobile-bottom-actionsheet-item';
+            itemBtn.setAttribute('role', 'menuitem');
+            if (item.icon) {
+                const ic = document.createElement('span');
+                ic.className = `codicon ${item.icon}`;
+                ic.setAttribute('aria-hidden', 'true');
+                itemBtn.appendChild(ic);
+            }
+            const lbl = document.createElement('span');
+            lbl.className = 'theia-mobile-bottom-actionsheet-label';
+            lbl.textContent = item.label;
+            itemBtn.appendChild(lbl);
+            if (item.detail) {
+                const det = document.createElement('span');
+                det.className = 'theia-mobile-bottom-actionsheet-detail';
+                det.textContent = item.detail;
+                itemBtn.appendChild(det);
+            }
+            itemBtn.addEventListener('click', () => {
+                this.removeBottomBarSecondaryMenu();
+                MobileHaptics.fire(MobileHaptics.LIGHT);
+                void item.run();
+            });
+            menu.appendChild(itemBtn);
+        }
+        document.body.appendChild(menu);
+        const rect = anchor.getBoundingClientRect();
+        const menuRect = menu.getBoundingClientRect();
+        let left = rect.left + rect.width / 2 - menuRect.width / 2;
+        const minLeft = 8;
+        const maxLeft = window.innerWidth - menuRect.width - 8;
+        if (left < minLeft) { left = minLeft; }
+        if (left > maxLeft) { left = maxLeft; }
+        menu.style.left = `${Math.round(left)}px`;
+        menu.style.bottom = `calc(${Math.round(window.innerHeight - rect.top + 8)}px)`;
+        menu.classList.add('theia-mod-visible');
+
+        const onDocPointer = (ev: PointerEvent): void => {
+            if (menu.contains(ev.target as Node)) {
+                return;
+            }
+            this.removeBottomBarSecondaryMenu();
+        };
+        document.addEventListener('pointerdown', onDocPointer, { capture: true, once: false });
+        this.bottomBarMenuCleanup = () => {
+            document.removeEventListener('pointerdown', onDocPointer, true);
+        };
+    }
+
+    protected bottomBarMenuCleanup: (() => void) | undefined;
+
+    protected removeBottomBarSecondaryMenu(): void {
+        const existing = document.querySelector('.theia-mobile-bottom-actionsheet');
+        existing?.parentElement?.removeChild(existing);
+        this.bottomBarMenuCleanup?.();
+        this.bottomBarMenuCleanup = undefined;
+    }
+
+    protected async getBottomBarSecondaryItems(def: MobileBottomButton): Promise<BottomBarSecondaryItem[]> {
+        switch (def.id) {
+            case 'projects':
+                return this.getProjectsSecondaryItems();
+            case 'terminal':
+                return this.getTerminalSecondaryItems();
+            case 'agent':
+                return this.getAgentSecondaryItems();
+            case 'pr':
+                return this.getPullRequestSecondaryItems();
+            case 'preview':
+                return this.getPreviewSecondaryItems();
+            case 'files':
+                return this.getFilesSecondaryItems();
+            default:
+                return [];
+        }
+    }
+
+    protected async getProjectsSecondaryItems(): Promise<BottomBarSecondaryItem[]> {
+        const items: BottomBarSecondaryItem[] = [];
+        let projects: MobileProjectEntry[] = [];
+        try {
+            projects = await this.projectsService.loadProjects();
+        } catch {
+            projects = [];
+        }
+        const switchable = projects.filter(p => !p.isCurrent).slice(0, 4);
+        for (const project of switchable) {
+            items.push({
+                label: project.name,
+                detail: project.github?.fullName ?? project.branch,
+                icon: 'codicon-repo',
+                run: () => this.onProjectsPanelOpen(project),
+            });
+        }
+        if (items.length > 0) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/projectsAll', 'All projects'),
+                icon: 'codicon-list-unordered',
+                run: () => this.toggleProjectsPanel(),
+            });
+        }
+        items.push({
+            label: nls.localize('qaap/mobileBottomBar/projectsRefresh', 'Refresh'),
+            icon: 'codicon-refresh',
+            run: async () => {
+                await this.refreshProjectsCount();
+                this.refreshBottomBar();
+                MobileSnackbar.show(
+                    nls.localize('qaap/mobileBottomBar/projectsRefreshed', 'Projects refreshed'),
+                    { kind: 'success', duration: 1200 }
+                );
+            },
+        });
+        return items;
+    }
+
+    protected getTerminalSecondaryItems(): BottomBarSecondaryItem[] {
+        const items: BottomBarSecondaryItem[] = [];
+        const newTerminal = 'terminal:new';
+        if (this.commands.getCommand(newTerminal)) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/newTerminal', 'New terminal'),
+                icon: 'codicon-add',
+                run: () => this.executeAndDismiss(newTerminal),
+            });
+        }
+        const killAll = 'terminal:kill-all';
+        if (this.commands.getCommand(killAll)) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/closeAllTerminals', 'Close all terminals'),
+                icon: 'codicon-trash',
+                run: () => this.executeAndDismiss(killAll),
+            });
+        }
+        if (this.isTerminalBottomPanelOpen()) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/collapseTerminal', 'Collapse panel'),
+                icon: 'codicon-chevron-down',
+                run: async () => { await this.shell.collapsePanel('bottom'); this.scheduleSnapAndUiRefresh(); },
+            });
+        }
+        return items;
+    }
+
+    protected getAgentSecondaryItems(): BottomBarSecondaryItem[] {
+        const items: BottomBarSecondaryItem[] = [];
+        if (this.commands.getCommand(EDIT_CHAT_SESSION_SETTINGS_COMMAND)) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/agentSettings', 'Session settings'),
+                icon: 'codicon-settings',
+                run: () => this.executeAndDismiss(EDIT_CHAT_SESSION_SETTINGS_COMMAND),
+            });
+        }
+        if (this.commands.getCommand(OPEN_AI_CONFIGURATION_COMMAND)) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/agentConfig', 'AI configuration'),
+                icon: 'codicon-extensions',
+                run: () => this.executeAndDismiss(OPEN_AI_CONFIGURATION_COMMAND),
+            });
+        }
+        return items;
+    }
+
+    protected getPullRequestSecondaryItems(): BottomBarSecondaryItem[] {
+        return [{
+            label: nls.localize('qaap/mobileBottomBar/prRefresh', 'Refresh pull requests'),
+            icon: 'codicon-refresh',
+            run: async () => {
+                this.ensurePullRequestPanel();
+                this.hideProjectsPanel();
+                this.pullRequestPanel?.show();
+                this.refreshBottomBar();
+            },
+        }];
+    }
+
+    protected getPreviewSecondaryItems(): BottomBarSecondaryItem[] {
+        const items: BottomBarSecondaryItem[] = [];
+        const reload = 'mini-browser.reload';
+        if (this.commands.getCommand(reload)) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/previewReload', 'Reload preview'),
+                icon: 'codicon-refresh',
+                run: () => this.executeAndDismiss(reload),
+            });
+        }
+        return items;
+    }
+
+    protected getFilesSecondaryItems(): BottomBarSecondaryItem[] {
+        const items: BottomBarSecondaryItem[] = [];
+        const newFile = 'file.newFile';
+        if (this.commands.getCommand(newFile)) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/newFile', 'New file'),
+                icon: 'codicon-new-file',
+                run: () => this.executeAndDismiss(newFile),
+            });
+        }
+        const newFolder = 'file.newFolder';
+        if (this.commands.getCommand(newFolder)) {
+            items.push({
+                label: nls.localize('qaap/mobileBottomBar/newFolder', 'New folder'),
+                icon: 'codicon-new-folder',
+                run: () => this.executeAndDismiss(newFolder),
+            });
+        }
+        return items;
+    }
+
+    protected async executeAndDismiss(commandId: string): Promise<void> {
+        try {
+            await this.commands.executeCommand(commandId);
+        } catch (e) {
+            console.error(`[qaap-mobile-shell] secondary action failed: ${commandId}`, e);
+        }
+        this.scheduleSnapAndUiRefresh();
     }
 
     protected async onMobileBottomButtonClick(def: MobileBottomButton): Promise<void> {

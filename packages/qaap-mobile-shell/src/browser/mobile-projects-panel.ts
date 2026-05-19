@@ -5,6 +5,7 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import { CommandRegistry } from '@theia/core/lib/common/command';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import {
     MOBILE_PROJECT_STATUS_COLORS,
@@ -14,6 +15,12 @@ import {
 import { MobileProjectsService } from './mobile-projects-service';
 import { markMobileProjectReadmeForOpen } from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
+import {
+    createMobileSheetGrabber,
+    installMobilePullToRefresh,
+    installMobileSheetDragDismiss,
+} from './mobile-sheet-gestures';
+import { MobileSnackbar } from './mobile-snackbar';
 
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
@@ -34,6 +41,9 @@ export class MobileProjectsPanel {
     protected visible = false;
     protected openMenu: HTMLElement | undefined;
     protected openRepoDialog: MobileOpenRepositoryDialog | undefined;
+    protected dragDismissDispose: Disposable = Disposable.NULL;
+    protected pullToRefreshDispose: Disposable = Disposable.NULL;
+    protected lastTitleTap = 0;
     protected readonly onDocumentPointerDown = (ev: PointerEvent): void => {
         if (!this.openMenu) {
             return;
@@ -56,6 +66,8 @@ export class MobileProjectsPanel {
         this.root.setAttribute('aria-modal', 'true');
         this.root.setAttribute('aria-hidden', 'true');
         this.root.hidden = true;
+
+        const grabber = createMobileSheetGrabber();
 
         const header = document.createElement('header');
         header.className = 'theia-mobile-projects-header';
@@ -117,7 +129,40 @@ export class MobileProjectsPanel {
         this.scroll = document.createElement('div');
         this.scroll.className = 'theia-mobile-projects-scroll';
 
-        this.root.append(header, searchWrap, this.filterRow, this.scroll);
+        this.root.append(grabber, header, searchWrap, this.filterRow, this.scroll);
+
+        titleBlock.addEventListener('click', () => this.onTitleTap());
+
+        this.dragDismissDispose = installMobileSheetDragDismiss({
+            target: this.root,
+            grip: grabber,
+            onDismiss: () => {
+                this.hide();
+                this.delegate.onDismiss();
+            },
+        });
+
+        this.pullToRefreshDispose = installMobilePullToRefresh({
+            scroller: this.scroll,
+            host: this.root,
+            onRefresh: async () => {
+                await this.refreshProjects();
+                MobileSnackbar.show(
+                    nls.localize('qaap/mobileProjects/refreshed', 'Projects refreshed'),
+                    { kind: 'success', duration: 1400 }
+                );
+            },
+        });
+    }
+
+    protected onTitleTap(): void {
+        const now = Date.now();
+        if (now - this.lastTitleTap < 320) {
+            this.scroll.scrollTo({ top: 0, behavior: 'smooth' });
+            this.lastTitleTap = 0;
+        } else {
+            this.lastTitleTap = now;
+        }
     }
 
     get node(): HTMLElement {
@@ -126,6 +171,13 @@ export class MobileProjectsPanel {
 
     isVisible(): boolean {
         return this.visible;
+    }
+
+    dispose(): void {
+        this.dragDismissDispose.dispose();
+        this.dragDismissDispose = Disposable.NULL;
+        this.pullToRefreshDispose.dispose();
+        this.pullToRefreshDispose = Disposable.NULL;
     }
 
     async show(): Promise<void> {

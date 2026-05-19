@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import {
     fetchQaapGithubPullRequests,
     mergeQaapGithubPullRequest,
@@ -13,6 +14,12 @@ import type {
     QaapGithubPullRequestLine,
     QaapGithubPullRequestSummary,
 } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
+import {
+    createMobileSheetGrabber,
+    installMobilePullToRefresh,
+    installMobileSheetDragDismiss,
+} from './mobile-sheet-gestures';
+import { MobileSnackbar } from './mobile-snackbar';
 
 type PullRequestDecision = 'approved' | 'rejected' | 'commented';
 type PullRequestMergeState = 'idle' | 'merging' | 'deploying' | 'merged' | 'failed';
@@ -169,6 +176,8 @@ export class MobilePullRequestPanel {
     protected mergeTimer: number | undefined;
     protected toastTimer: number | undefined;
     protected mergeError: string | undefined;
+    protected dragDismissDispose: Disposable = Disposable.NULL;
+    protected pullToRefreshDispose: Disposable = Disposable.NULL;
 
     constructor(protected readonly delegate: MobilePullRequestPanelDelegate) {
         this.root = document.createElement('div');
@@ -177,6 +186,9 @@ export class MobilePullRequestPanel {
         this.root.setAttribute('aria-modal', 'true');
         this.root.setAttribute('aria-hidden', 'true');
         this.root.hidden = true;
+
+        const grabber = createMobileSheetGrabber();
+        this.root.append(grabber);
 
         this.header = document.createElement('header');
         this.header.className = 'theia-mobile-pr-header';
@@ -222,6 +234,32 @@ export class MobilePullRequestPanel {
         this.root.append(this.header, progress, this.hintRow, this.stack, this.ctaRow, this.toast);
         this.useDemoPullRequest(false);
         this.render();
+
+        this.dragDismissDispose = installMobileSheetDragDismiss({
+            target: this.root,
+            grip: grabber,
+            onDismiss: () => this.hide(),
+        });
+
+        this.pullToRefreshDispose = installMobilePullToRefresh({
+            scroller: this.stack,
+            host: this.root,
+            onRefresh: async () => {
+                this.loaded = false;
+                await this.loadPullRequests();
+                MobileSnackbar.show(
+                    nls.localize('qaap/mobilePr/refreshed', 'Pull requests refreshed'),
+                    { kind: 'success', duration: 1400 }
+                );
+            },
+        });
+    }
+
+    dispose(): void {
+        this.dragDismissDispose.dispose();
+        this.dragDismissDispose = Disposable.NULL;
+        this.pullToRefreshDispose.dispose();
+        this.pullToRefreshDispose = Disposable.NULL;
     }
 
     get node(): HTMLElement {

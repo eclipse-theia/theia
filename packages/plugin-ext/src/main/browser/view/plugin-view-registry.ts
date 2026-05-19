@@ -27,7 +27,7 @@ import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widg
 import { SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
-import { EXPLORER_VIEW_CONTAINER_ID, FileNavigatorWidget, FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
+import { EXPLORER_VIEW_CONTAINER_ID, FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -177,18 +177,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         });
         this.widgetManager.onDidCreateWidget(event => {
-            if (event.widget instanceof FileNavigatorWidget) {
-                const disposable = new DisposableCollection();
-                disposable.push(this.registerViewWelcome({
-                    view: 'explorer',
-                    content: nls.localizeByDefault(
-                        'You have not yet opened a folder.\n{0}',
-                        `[${nls.localizeByDefault('Open Folder')}](command:workbench.action.files.openFolder)`
-                    ),
-                    order: 0
-                }));
-                disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
-            }
+            // qaap: "Open Folder" welcome view intentionally omitted — qaap is a cloud IDE,
+            // so opening a local folder is not supported. The "Clone Repository" welcome
+            // contributed at runtime by the built-in Git extension is sufficient.
             if (event.widget instanceof ScmWidget) {
                 const disposable = new DisposableCollection();
                 disposable.push(this.registerViewWelcome({
