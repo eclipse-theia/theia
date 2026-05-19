@@ -344,7 +344,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
         return {
             preferredEncoding,
-            guessEncoding: this.preferenceService.get('files.autoGuessEncoding', false, resource ? resource.toString() : undefined)
+            guessEncoding: this.preferenceService.get('files.autoGuessEncoding', { fallback: false, resource: resource ? resource.toString() : undefined })
         };
     }
 

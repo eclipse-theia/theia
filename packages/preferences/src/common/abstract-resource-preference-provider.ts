@@ -59,6 +59,8 @@ export interface PreferenceStorage extends Disposable {
 export const PreferenceStorageFactory = Symbol('PreferenceStorageFactory');
 export type PreferenceStorageFactory = (uri: URI, scope: PreferenceScope) => PreferenceStorage;
 
+const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
+const OVERRIDE_PROPERTY_PATTERN = new RegExp(OVERRIDE_PROPERTY);
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProviderImpl {
     protected preferenceStorage: PreferenceStorage;
@@ -145,9 +147,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this.valid && this.contains(resourceUri) ? this.preferences : {};
     }
 
-    async setPreference(key: string, value: any, resourceUri?: string): Promise<boolean> {
+    async setPreference(key: string, value: any, resourceUri?: string, overrideIdentifier?: string): Promise<boolean> {
         let path: string[] | undefined;
-        if (this.toDispose.disposed || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
+        if (this.toDispose.disposed || !(path = this.getPath(key, overrideIdentifier)) || !this.contains(resourceUri)) {
             return false;
         }
         return this.doSetPreference(key, path, value);
@@ -157,10 +159,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this.preferenceStorage.writeValue(key, path, value);
     }
 
-    protected getPath(preferenceName: string): string[] | undefined {
-        const asOverride = this.preferenceOverrideService.overriddenPreferenceName(preferenceName);
-        if (asOverride?.overrideIdentifier) {
-            return [this.preferenceOverrideService.markLanguageOverride(asOverride.overrideIdentifier), asOverride.preferenceName];
+    protected getPath(preferenceName: string, overrideIdentifier?: string): string[] | undefined {
+        if (overrideIdentifier) {
+            return [`[${overrideIdentifier}]`, preferenceName];
         }
         return [preferenceName];
     }
@@ -201,21 +202,32 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         const prefNames = new Set([...Object.keys(oldPrefs), ...Object.keys(newPrefs)]);
         const prefChanges: PreferenceProviderDataChange[] = [];
         const uri = this.getUri();
+        let overrideIdentifier: string | undefined;
         for (const prefName of prefNames.values()) {
+            let realName = prefName;
+            const index = prefName.indexOf('.');
+            if (index !== -1) {
+                const matches = prefName.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
+                overrideIdentifier = matches && matches[1] || undefined;
+                if (overrideIdentifier) {
+                    realName = prefName.substring(index + 1);
+                }
+            }
+
             const oldValue = oldPrefs[prefName];
             const newValue = newPrefs[prefName];
-            const schemaProperty = this.schemaProvider.getSchemaProperty(prefName);
+            const schemaProperty = this.schemaProvider.getSchemaProperty(realName);
             if (schemaProperty && schemaProperty.included) {
                 const scope = schemaProperty.scope;
                 // do not emit the change event if the change is made out of the defined preference scope
-                if (!this.schemaProvider.isValidInScope(prefName, this.getScope())) {
-                    console.warn(`Preference ${prefName} in ${uri} can only be defined in scopes: ${PreferenceScope.getScopeNames(scope).join(', ')}.`);
+                if (!this.schemaProvider.isValidInScope(realName, this.getScope())) {
+                    console.warn(`Preference ${realName} in ${uri} can only be defined in scopes: ${PreferenceScope.getScopeNames(scope).join(', ')}.`);
                     continue;
                 }
             }
             if (!PreferenceUtils.deepEqual(newValue, oldValue)) {
                 prefChanges.push({
-                    preferenceName: prefName, newValue, oldValue, scope: this.getScope(), domain: this.getDomain()
+                    preferenceName: realName, newValue, oldValue, scope: this.getScope(), overrideIdentifier, domain: this.getDomain()
                 });
             }
         }

@@ -147,7 +147,7 @@ export class ShellCommandPermissionService {
     }
 
     getAllowlistPatterns(): string[] {
-        return this.preferenceService.get<string[]>(SHELL_COMMAND_ALLOWLIST_PREFERENCE, []);
+        return this.preferenceService.get<string>(SHELL_COMMAND_ALLOWLIST_PREFERENCE, []);
     }
 
     /**
@@ -164,7 +164,7 @@ export class ShellCommandPermissionService {
     }
 
     getDenylistPatterns(): string[] {
-        return this.preferenceService.get<string[]>(SHELL_COMMAND_DENYLIST_PREFERENCE, []);
+        return this.preferenceService.get<string>(SHELL_COMMAND_DENYLIST_PREFERENCE, []);
     }
 
     /**

@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import {
     MenuContribution, CommandContribution, quickInputServicePath, createPreferenceProxy,
-    OVERRIDE_PROPERTY_PATTERN, PreferenceChange, PreferenceScope, PreferenceService,
+    PreferenceChange, PreferenceScope, PreferenceService,
     PreferenceSchemaService
 } from '@theia/core/lib/common';
 import {
@@ -68,7 +68,9 @@ import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access'
 import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry';
-import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration.js';
+import {
+    ConfigurationTarget, IConfigurationChangeEvent, IConfigurationOverrides, IConfigurationService
+} from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration.js';
 import { StandaloneConfigurationService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels.js';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
@@ -224,11 +226,9 @@ export function createMonacoConfigurationService(container: interfaces.Container
     const service = new StandaloneConfigurationService(StandaloneServices.get(ILogService));
     const _configuration: Configuration = service['_configuration'];
 
-    _configuration.getValue = (section, overrides) => {
-        const overrideIdentifier: string | undefined = (overrides && 'overrideIdentifier' in overrides && typeof overrides.overrideIdentifier === 'string')
-            ? overrides['overrideIdentifier']
-            : undefined;
-        const resourceUri: string | undefined = (overrides && 'resource' in overrides && !!overrides['resource']) ? overrides['resource'].toString() : undefined;
+    _configuration.getValue = (section, overrides: IConfigurationOverrides) => {
+        const overrideIdentifier = overrides.overrideIdentifier || undefined;
+        const resourceUri = overrides.resource?.toString();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, preferenceSchemaService.getJSONSchema(PreferenceScope.Folder), {
             resourceUri, overrideIdentifier, style: 'both'
@@ -295,15 +295,8 @@ export function createMonacoConfigurationService(container: interfaces.Container
                     return false;
                 }
                 for (const change of context.changes) {
-                    const overridden = preferences.overriddenPreferenceName(change.preferenceName);
-                    const preferenceName = overridden ? overridden.preferenceName : change.preferenceName;
-                    if (preferenceName.startsWith(prefix)) {
-                        if (options?.overrideIdentifier !== undefined) {
-                            if (overridden && overridden.overrideIdentifier !== options?.overrideIdentifier) {
-                                continue;
-                            }
-                        }
-                        if (change.affects(options?.resource?.toString())) {
+                    if (change.preferenceName.startsWith(prefix)) {
+                        if (change.affects(options?.resource?.toString(), options?.overrideIdentifier || undefined)) {
                             return true;
                         }
                     }
@@ -316,8 +309,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
     preferences.onPreferencesChanged(event => {
         let source: ConfigurationTarget | undefined;
         let context = newFireDidChangeConfigurationContext();
-        for (let key of Object.keys(event)) {
-            const change = event[key];
+        for (const change of event) {
             const target = toTarget(change.scope);
             if (source !== undefined && target !== source) {
                 fireDidChangeConfiguration(source, context);
@@ -326,27 +318,20 @@ export function createMonacoConfigurationService(container: interfaces.Container
             context.changes.push(change);
             source = target;
 
-            let overrideKeys: Set<string> | undefined;
-            if (key.startsWith('[')) {
-                const index = key.indexOf('.');
-                const override = key.substring(0, index);
-                const overrideIdentifier = override.match(OVERRIDE_PROPERTY_PATTERN)?.[1];
-                if (overrideIdentifier) {
-                    context.keys.add(override);
-                    context.affectedKeys.add(override);
-                    overrideKeys = context.overrides.get(overrideIdentifier) || new Set<string>();
-                    context.overrides.set(overrideIdentifier, overrideKeys);
-                    key = key.substring(index + 1);
-                }
-            }
+            let key = change.preferenceName;
+            const overrideKeys = new Set<string>();
             while (key) {
-                if (overrideKeys) {
-                    overrideKeys.add(key);
-                }
+                overrideKeys.add(key);
                 context.keys.add(key);
                 context.affectedKeys.add(key);
                 const index = key.lastIndexOf('.');
                 key = key.substring(0, index);
+            }
+
+            for (const override of change.affectedOverrides) {
+                const existingOverrides = context.overrides.get(override) || new Set<string>();
+                context.overrides.set(override, existingOverrides);
+                overrideKeys.forEach(k => existingOverrides.add(k));
             }
         }
         if (source) {

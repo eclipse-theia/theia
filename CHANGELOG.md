@@ -10,6 +10,8 @@
 
 - [ai-chat] the `'*'` magic key inside `ai-features.chat.toolConfirmation` is no longer honored; migrate to the new `ai-features.chat.defaultToolConfirmation` preference [#17452](https://github.com/eclipse-theia/theia/pull/17452)
 - [native-webpack-plugin] The `@theia/native-webpack-plugin` package has been renamed to `@theia/bundle-plugin` [#14414](https://github.com/eclipse-theia/theia/pull/14414).
+- [core] reworked the preference API to use explicit override identifiers instead of encoding them into preference names (e.g. `[typescript].editor.tabSize`). Adopters that read, write or listen to language-scoped preferences through `PreferenceService`, `PreferenceProvider` or the change events must migrate to the new signatures [#16046](https://github.com/eclipse-theia/theia/issues/16046). Preference change events for
+"override names" like `[typescript]editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
 
 ## 1.71.0 - 4/30/2026
 

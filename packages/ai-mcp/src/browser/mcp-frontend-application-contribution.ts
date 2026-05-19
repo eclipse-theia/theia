@@ -106,7 +106,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         this.preferenceService.ready.then(async () => {
             const servers = filterValidValues(this.preferenceService.get(
                 MCP_SERVERS_PREF,
-                {}
+                { fallback: {} }
             ));
             this.prevServers = this.convertToMap(servers);
             this.syncServers(this.prevServers);
@@ -121,7 +121,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             this.preferenceService.onPreferenceChanged(async event => {
                 if (event.preferenceName === MCP_SERVERS_PREF) {
-                    this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
+                    this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, { fallback: {} })));
                 }
                 if (event.preferenceName === MCP_USE_WORKSPACE_AS_ROOT_PREF) {
                     await this.updateWorkspaceRoots(true);
