@@ -39,8 +39,8 @@ describe('qaap-project-bootstrap-port', () => {
         expect(wrapDevCommandForPort('npm run dev', 3001, 'node-cra')).to.equal('PORT=3001 npm run dev');
     });
 
-    it('wrapDevCommandForPort appends --port for Vite', () => {
-        expect(wrapDevCommandForPort('npm run dev', 5174, 'node-vite')).to.equal('npm run dev -- --port 5174');
+    it('wrapDevCommandForPort sets PORT and --port for Vite (overrides Docker IDE PORT)', () => {
+        expect(wrapDevCommandForPort('npm run dev', 5174, 'node-vite')).to.equal('PORT=5174 npm run dev -- --port 5174');
     });
 
     it('getImplicitDevPort defaults generic Node apps to 3000', () => {

@@ -104,7 +104,8 @@ export function wrapDevCommandForPort(command: string, port: number, kind: QaapP
         case 'node-vite':
         case 'node-astro':
         case 'node-svelte':
-            return appendCliPortFlag(command, port, isWindows);
+            // Vite reads `process.env.PORT` before CLI flags; Docker sets PORT to the IDE port (4873).
+            return appendCliPortFlag(prefixPortEnv(command, port, isWindows), port, isWindows);
         case 'node-next':
             return appendNextDevPort(prefixPortEnv(command, port, isWindows), port, isWindows);
         case 'node-remix':
