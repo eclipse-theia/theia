@@ -16,6 +16,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
+import { pathToFileURL } from 'url';
 import resolvePackagePath = require('resolve-package-path');
 
 import type { Plugin, PluginBuild } from 'esbuild';
@@ -113,6 +114,54 @@ export function exposeModulePlugin(): Plugin {
                 }
                 const exposure = `\n;(globalThis['theia'] = globalThis['theia'] || {})['${moduleName}'] = (typeof module === 'object' && module.exports) || this;\n`;
                 return { contents: source + exposure, loader: 'js' };
+            });
+        }
+    };
+}
+
+/**
+ * Rewrites the `sources` field of emitted source maps so each entry is an
+ * absolute `file://` URL.
+ *
+ * esbuild has no `sourceRoot` option, and by default emits sources as paths
+ * relative to the `.map` file (e.g. `../../../../packages/foo.ts`). Browser
+ * debug adapters resolve those against the served bundle URL, where `..`
+ * cannot traverse above the HTTP host root, so the path collapses and the
+ * debugger can no longer find the original source on disk. Absolute file URLs
+ * work uniformly across both Node and Chrome debug adapters and remove the
+ * need for `sourceMapPathOverrides` in launch configurations.
+ *
+ * No-op when source maps are disabled.
+ */
+export function sourceMapPathsPlugin(): Plugin {
+    return {
+        name: 'theia-source-map-paths',
+        setup(build: PluginBuild): void {
+            const { outdir, sourcemap } = build.initialOptions;
+            if (!outdir || !sourcemap) {
+                return;
+            }
+            build.onEnd(async () => {
+                const entries = await fs.promises.readdir(outdir, { recursive: true });
+                await Promise.all(entries.map(async entry => {
+                    if (!entry.endsWith('.map')) {
+                        return;
+                    }
+                    const mapPath = path.join(outdir, entry);
+                    const raw = await fs.promises.readFile(mapPath, 'utf8');
+                    const map = JSON.parse(raw);
+                    if (!Array.isArray(map.sources)) {
+                        return;
+                    }
+                    const mapDir = path.dirname(mapPath);
+                    map.sources = map.sources.map((source: string) => {
+                        if (source.startsWith('..')) {
+                            return pathToFileURL(path.resolve(mapDir, source)).href;
+                        }
+                        return source;
+                    });
+                    await fs.promises.writeFile(mapPath, JSON.stringify(map));
+                }));
             });
         }
     };
