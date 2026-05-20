@@ -111,7 +111,9 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
                 'List of absolute paths or file URIs (directories or files) outside the workspace that AI tools may read. ' +
                 'Supports `~` to refer to the user home directory. Empty by default; opt-in only. ' +
                 'Honored by getFileContent, findFilesByPattern, getWorkspaceFileList, and getWorkspaceDirectoryStructure. ' +
-                'Workspace-scoped values are ignored when the workspace is not trusted.'),
+                'Workspace-scoped values are ignored when the workspace is not trusted. ' +
+                'Symbolic links inside allow-listed directories are followed and may point to files outside the allow-list; ' +
+                'only add directories whose contents you trust.'),
             default: [],
             items: {
                 type: 'string'

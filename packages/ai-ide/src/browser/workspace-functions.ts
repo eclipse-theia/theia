@@ -165,24 +165,37 @@ export class WorkspaceFunctionScope {
                 return undefined;
             }
         }
-        if (entry === '~' || entry.startsWith('~/') || entry.startsWith('~\\')) {
-            const home = await this.getHomeDirUri();
-            if (!home) {
-                return undefined;
-            }
-            if (entry === '~') {
-                return home;
-            }
-            // Resolve the remainder in URI space to avoid Windows drive-letter
-            // round-tripping issues with URI.fromFilePath.
-            const remainder = Path.normalizePathSeparator(entry.substring(2));
-            return home.resolve(remainder);
-        }
         const normalized = Path.normalizePathSeparator(entry);
+        const tilde = await this.resolveTildePath(normalized);
+        if (tilde) {
+            return tilde;
+        }
         if (!WorkspaceFunctionScope.isAbsolutePath(normalized)) {
             return undefined;
         }
         return URI.fromFilePath(normalized);
+    }
+
+    /**
+     * If the given separator-normalized path is `~` or starts with `~/`,
+     * expands the leading `~` against the user's home directory and returns
+     * the resulting URI. Returns undefined if the path does not start with
+     * `~` or the home directory cannot be resolved. The remainder is
+     * resolved in URI space to avoid Windows drive-letter round-tripping
+     * issues with `URI.fromFilePath`.
+     */
+    protected async resolveTildePath(normalizedPath: string): Promise<URI | undefined> {
+        if (normalizedPath !== '~' && !normalizedPath.startsWith('~/')) {
+            return undefined;
+        }
+        const home = await this.getHomeDirUri();
+        if (!home) {
+            return undefined;
+        }
+        if (normalizedPath === '~') {
+            return home;
+        }
+        return home.resolve(normalizedPath.substring(2));
     }
 
     /**
@@ -271,6 +284,11 @@ export class WorkspaceFunctionScope {
         // percent-encoded `%2e%2e` that bypasses the string-form check).
         if (WorkspaceFunctionScope.hasParentSegment(normalizedPath)) {
             return undefined;
+        }
+
+        const tilde = await this.resolveTildePath(normalizedPath);
+        if (tilde) {
+            return tilde;
         }
 
         if (WorkspaceFunctionScope.isAbsolutePath(normalizedPath)) {

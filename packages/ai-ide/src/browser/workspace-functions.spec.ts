@@ -860,6 +860,25 @@ describe('FileContentFunction external paths', () => {
         expect(result).to.equal('content-of-/home/test/configs/myapp.json');
     });
 
+    it('expands ~ in tool input paths', async () => {
+        allowedPaths = ['/home/test/configs'];
+        const result = await callTool('~/configs/myapp.json');
+        expect(result).to.equal('content-of-/home/test/configs/myapp.json');
+    });
+
+    it('expands ~ in both allow-list entries and tool input paths', async () => {
+        allowedPaths = ['~/configs'];
+        const result = await callTool('~/configs/myapp.json');
+        expect(result).to.equal('content-of-/home/test/configs/myapp.json');
+    });
+
+    it('rejects ~-prefixed tool input that escapes via .. traversal', async () => {
+        allowedPaths = ['/home/test/configs'];
+        const result = await callTool('~/configs/../secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('Invalid file path');
+    });
+
     it('still allows workspace-relative paths', async () => {
         allowedPaths = [];
         const result = await callTool('src/index.ts');
