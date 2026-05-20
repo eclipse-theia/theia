@@ -4,6 +4,8 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
+import { syncQaapAuthSessionFromServer } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
+import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobileProjectsService } from './mobile-projects-service';
 
@@ -37,6 +39,7 @@ export class MobileOpenRepositoryDialog {
     protected visible = false;
     protected loading = false;
     protected repositories: MobileProjectEntry[] = [];
+    protected loadError: string | undefined;
     protected query = '';
     protected readonly onKeyDown = (ev: KeyboardEvent): void => {
         if (ev.key === 'Escape' && this.visible) {
@@ -279,12 +282,19 @@ export class MobileOpenRepositoryDialog {
 
     protected async reloadRepositories(): Promise<void> {
         this.loading = true;
+        this.loadError = undefined;
         this.list.classList.add('theia-mod-loading');
+        this.renderConnectedStatus();
         this.renderList();
+        if (readQaapSignedIn()) {
+            await syncQaapAuthSessionFromServer();
+            this.renderConnectedStatus();
+        }
         try {
             this.repositories = await this.service.listGithubRepositories();
-        } catch {
+        } catch (err) {
             this.repositories = [];
+            this.loadError = err instanceof Error ? err.message : String(err);
         }
         this.loading = false;
         this.list.classList.remove('theia-mod-loading');
@@ -307,11 +317,28 @@ export class MobileOpenRepositoryDialog {
         const filtered = this.applyFilter(this.repositories);
         if (filtered.length === 0) {
             this.emptyState.hidden = false;
-            this.emptyState.textContent = this.query
-                ? nls.localize('qaap/mobileOpenRepo/noFilterResults', 'No repositories match your filter.')
-                : this.service.getConnectedUser()
-                    ? nls.localize('qaap/mobileOpenRepo/noRepositories', 'No repositories yet — paste a public URL above to get started.')
-                    : nls.localize('qaap/mobileOpenRepo/signInHint', 'Sign in with GitHub to see your repositories here.');
+            if (this.loadError) {
+                this.emptyState.textContent = nls.localize(
+                    'qaap/mobileOpenRepo/loadFailed',
+                    'Could not load repositories: {0}. Sign out and sign in again with GitHub.',
+                    this.loadError
+                );
+            } else if (this.query) {
+                this.emptyState.textContent = nls.localize(
+                    'qaap/mobileOpenRepo/noFilterResults',
+                    'No repositories match your filter.'
+                );
+            } else if (this.service.getConnectedUser()) {
+                this.emptyState.textContent = nls.localize(
+                    'qaap/mobileOpenRepo/noRepositories',
+                    'No repositories yet — paste a public URL above to get started.'
+                );
+            } else {
+                this.emptyState.textContent = nls.localize(
+                    'qaap/mobileOpenRepo/signInHint',
+                    'Sign in with GitHub to see your repositories here.'
+                );
+            }
             return;
         }
         this.emptyState.hidden = true;

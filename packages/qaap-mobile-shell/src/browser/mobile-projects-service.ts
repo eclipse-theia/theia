@@ -16,8 +16,9 @@ import {
     createQaapGithubRepository,
     fetchQaapGithubRepositories,
     openQaapGithubRepository,
+    syncQaapAuthSessionFromServer,
 } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
-import { readQaapAuthUser, type QaapAuthUser } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
+import { readQaapAuthUser, readQaapSignedIn, type QaapAuthUser } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import type { QaapGithubRepositorySummary } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     MobileProjectEntry,
@@ -599,13 +600,20 @@ export class MobileProjectsService {
     }
 
     protected async loadGithubProjects(): Promise<MobileProjectEntry[]> {
+        if (readQaapSignedIn()) {
+            await syncQaapAuthSessionFromServer();
+        }
+        if (!readQaapSignedIn()) {
+            return [];
+        }
         try {
             const response = await fetchQaapGithubRepositories();
             const pinnedIds = this.readPinnedProjectIds();
             const currentFullName = this.currentGithubRepositoryFullName();
             return response.repositories
                 .map(repo => this.githubRepositoryToProject(repo, pinnedIds, currentFullName));
-        } catch {
+        } catch (err) {
+            console.warn('[qaap] Failed to load GitHub repositories:', err);
             return [];
         }
     }

@@ -15,6 +15,7 @@ import * as path from 'path';
 import {
     QAAP_AUTH_API_PATH,
     QAAP_AUTH_SESSION_COOKIE,
+    QAAP_AUTH_SESSION_HEADER,
     QAAP_GITHUB_API_PATH,
     QAAP_GITHUB_OAUTH_CALLBACK_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
@@ -482,37 +483,48 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
     }
 
     protected readSessionId(req: Request): string | undefined {
-        const header = req.headers.cookie;
-        if (!header || typeof header !== 'string') {
-            return undefined;
+        const cookieHeader = req.headers.cookie;
+        if (cookieHeader && typeof cookieHeader === 'string') {
+            for (const part of cookieHeader.split(';')) {
+                const trimmed = part.trim();
+                const eq = trimmed.indexOf('=');
+                if (eq <= 0) {
+                    continue;
+                }
+                const name = trimmed.slice(0, eq);
+                if (name === QAAP_AUTH_SESSION_COOKIE) {
+                    const value = trimmed.slice(eq + 1);
+                    if (value) {
+                        return decodeURIComponent(value);
+                    }
+                }
+            }
         }
-        for (const part of header.split(';')) {
-            const trimmed = part.trim();
-            const eq = trimmed.indexOf('=');
-            if (eq <= 0) {
-                continue;
-            }
-            const name = trimmed.slice(0, eq);
-            if (name === QAAP_AUTH_SESSION_COOKIE) {
-                const value = trimmed.slice(eq + 1);
-                return value ? decodeURIComponent(value) : undefined;
-            }
+        const sessionHeader = req.headers[QAAP_AUTH_SESSION_HEADER];
+        if (typeof sessionHeader === 'string' && sessionHeader.length > 0) {
+            return sessionHeader;
         }
         return undefined;
+    }
+
+    protected sessionCookieFlags(): string {
+        const config = readQaapGithubOAuthConfig();
+        const secure = config?.publicUrl.startsWith('https://') ? '; Secure' : '';
+        return `Path=/; HttpOnly; SameSite=Lax${secure}`;
     }
 
     protected setSessionCookie(res: Response, sessionId: string): void {
         const maxAge = 30 * 24 * 60 * 60;
         res.setHeader(
             'Set-Cookie',
-            `${QAAP_AUTH_SESSION_COOKIE}=${encodeURIComponent(sessionId)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`
+            `${QAAP_AUTH_SESSION_COOKIE}=${encodeURIComponent(sessionId)}; ${this.sessionCookieFlags()}; Max-Age=${maxAge}`
         );
     }
 
     protected clearSessionCookie(res: Response): void {
         res.setHeader(
             'Set-Cookie',
-            `${QAAP_AUTH_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
+            `${QAAP_AUTH_SESSION_COOKIE}=; ${this.sessionCookieFlags()}; Max-Age=0`
         );
     }
 }

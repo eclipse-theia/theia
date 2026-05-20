@@ -91,6 +91,19 @@
     height: 100%;
   }
 
+  /*
+   * Extra scroll band at the bottom of the terminal while the virtual keyboard is open
+   * (`--theia-mobile-terminal-scroll-padding` from MobileKeyboardHelper).
+   */
+  #theia-app-shell.theia-mod-mobile-terminal-keyboard
+    #theia-bottom-content-panel
+    .terminal-container
+    .xterm-viewport {
+    box-sizing: border-box;
+    padding-bottom: var(--theia-mobile-terminal-scroll-padding, 0px) !important;
+    scroll-padding-bottom: var(--theia-mobile-terminal-scroll-padding, 0px);
+  }
+
   /* Mini-browser: toolbar fixed height; page scrolls inside iframe. */
   #theia-app-shell .theia-mini-browser {
     min-height: 0;

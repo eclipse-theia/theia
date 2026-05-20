@@ -5,6 +5,7 @@
 
 import {
     QAAP_AUTH_API_PATH,
+    QAAP_AUTH_SESSION_HEADER,
     QAAP_GITHUB_API_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
     type QaapAuthConfigResponse,
@@ -19,16 +20,29 @@ import {
 } from '../common/qaap-github-api-types';
 import {
     clearQaapAuthSession,
+    readQaapAuthSessionId,
     writeQaapAuthSession,
     type QaapAuthProvider,
 } from './qaap-auth-session';
 
-const FETCH_INIT: RequestInit = { credentials: 'include' };
+/** Include session cookie and, when known, the stored session id for VPS/container restarts. */
+export function qaapAuthenticatedFetchInit(extra?: RequestInit): RequestInit {
+    const headers = new Headers(extra?.headers);
+    const sessionId = readQaapAuthSessionId();
+    if (sessionId) {
+        headers.set(QAAP_AUTH_SESSION_HEADER, sessionId);
+    }
+    return {
+        credentials: 'include',
+        ...extra,
+        headers,
+    };
+}
 
 export const QAAP_REQUIRE_LOGIN_EVENT = 'qaap-require-login';
 
 export async function fetchQaapAuthConfig(): Promise<QaapAuthConfigResponse> {
-    const response = await fetch(`${QAAP_AUTH_API_PATH}/config`, FETCH_INIT);
+    const response = await fetch(`${QAAP_AUTH_API_PATH}/config`, qaapAuthenticatedFetchInit());
     if (!response.ok) {
         return { githubOAuth: false };
     }
@@ -36,7 +50,7 @@ export async function fetchQaapAuthConfig(): Promise<QaapAuthConfigResponse> {
 }
 
 export async function fetchQaapAuthSession(): Promise<QaapAuthSessionResponse> {
-    const response = await fetch(`${QAAP_AUTH_API_PATH}/session`, FETCH_INIT);
+    const response = await fetch(`${QAAP_AUTH_API_PATH}/session`, qaapAuthenticatedFetchInit());
     if (!response.ok) {
         return { signedIn: false };
     }
@@ -44,7 +58,7 @@ export async function fetchQaapAuthSession(): Promise<QaapAuthSessionResponse> {
 }
 
 export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositoriesResponse> {
-    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories`, FETCH_INIT);
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories`, qaapAuthenticatedFetchInit());
     if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error || `Failed to load GitHub repositories (${response.status})`);
@@ -53,7 +67,7 @@ export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositor
 }
 
 export async function fetchQaapGithubPullRequests(): Promise<QaapGithubPullRequestsResponse> {
-    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests`, FETCH_INIT);
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests`, qaapAuthenticatedFetchInit());
     if (response.status === 401) {
         return { pullRequests: [], signedIn: false };
     }
@@ -70,12 +84,11 @@ export async function fetchQaapGithubPullRequests(): Promise<QaapGithubPullReque
 }
 
 export async function mergeQaapGithubPullRequest(request: QaapGithubMergePullRequestRequest): Promise<QaapGithubMergePullRequestResponse> {
-    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests/merge`, {
-        ...FETCH_INIT,
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/pull-requests/merge`, qaapAuthenticatedFetchInit({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
-    });
+    }));
     const body = await response.json().catch(() => ({})) as Partial<QaapGithubMergePullRequestResponse> & { error?: string };
     if (!response.ok) {
         throw new Error(body.error || `Failed to merge pull request (${response.status})`);
@@ -85,7 +98,7 @@ export async function mergeQaapGithubPullRequest(request: QaapGithubMergePullReq
 
 export async function openQaapGithubRepository(owner: string, name: string): Promise<QaapGithubOpenRepositoryResponse> {
     const url = `${QAAP_GITHUB_API_PATH}/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/open`;
-    const response = await fetch(url, FETCH_INIT);
+    const response = await fetch(url, qaapAuthenticatedFetchInit());
     if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error || `Failed to open GitHub repository (${response.status})`);
@@ -94,12 +107,11 @@ export async function openQaapGithubRepository(owner: string, name: string): Pro
 }
 
 export async function createQaapGithubRepository(request: QaapGithubCreateRepositoryRequest): Promise<QaapGithubOpenRepositoryResponse> {
-    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories`, {
-        ...FETCH_INIT,
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories`, qaapAuthenticatedFetchInit({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
-    });
+    }));
     if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error || `Failed to create GitHub repository (${response.status})`);
@@ -109,12 +121,11 @@ export async function createQaapGithubRepository(request: QaapGithubCreateReposi
 
 export async function cloneQaapGithubRepository(repository: string): Promise<QaapGithubOpenRepositoryResponse> {
     const request: QaapGithubOpenRepositoryRequest = { repository };
-    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories/open`, {
-        ...FETCH_INIT,
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/repositories/open`, qaapAuthenticatedFetchInit({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
-    });
+    }));
     if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(body.error || `Failed to clone GitHub repository (${response.status})`);
@@ -128,7 +139,7 @@ export function startGithubOAuth(): void {
 
 export async function signOutQaapAuth(): Promise<void> {
     try {
-        await fetch(`${QAAP_AUTH_API_PATH}/signout`, { ...FETCH_INIT, method: 'POST' });
+        await fetch(`${QAAP_AUTH_API_PATH}/signout`, qaapAuthenticatedFetchInit({ method: 'POST' }));
     } catch {
         /* still clear local session */
     }

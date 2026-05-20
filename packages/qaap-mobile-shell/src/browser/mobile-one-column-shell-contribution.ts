@@ -24,7 +24,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { CommonCommands } from '@theia/core/lib/browser/common-commands';
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
-import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { ApplicationShell, MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell/application-shell';
 import { StatusBarImpl } from '@theia/core/lib/browser/status-bar/status-bar';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY, MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
@@ -70,6 +70,11 @@ const EDIT_CHAT_SESSION_SETTINGS_COMMAND = 'chat:widget:session-settings';
 
 /** Shell class toggled while the bottom (terminal) panel is expanded on mobile. */
 const MOBILE_BOTTOM_OPEN_CLASS = 'theia-mod-mobile-bottom-open';
+
+/** {@link ApplicationShell} overlay host for {@link MAXIMIZED_CLASS} bottom panel (not in public API). */
+interface ShellWithMaximizedOverlay {
+    readonly maximizedElement: HTMLElement;
+}
 
 type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'explore' | 'pr' | 'diff' | 'tasks' | 'skills' | 'terminal';
 
@@ -129,6 +134,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected rightEdge: HTMLElement | undefined;
     protected keyboardHelper: MobileKeyboardHelper | undefined;
     protected mobileActive = false;
+    /** When the user restores the split panel, do not auto-maximize again until the panel closes. */
+    protected suppressMobileBottomAutoMaximize = false;
     protected snapRaf = 0;
     protected shellHooked = false;
     protected projectsPanel: MobileProjectsPanel | undefined;
@@ -217,6 +224,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.toDispose.push(shell.onDidAddWidget(widget => {
             if (this.mobileActive && shell.getAreaFor(widget) === 'bottom') {
                 this.scheduleSnapAndUiRefresh();
+                if (this.shell.isExpanded('bottom')) {
+                    void this.applyMobileBottomPanelMaximizedSize();
+                }
             }
         }));
         this.toDispose.push(shell.onDidRemoveWidget(widget => {
@@ -224,12 +234,34 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.scheduleSnapAndUiRefresh();
             }
         }));
+        this.toDispose.push(shell.onDidToggleMaximized(() => {
+            if (!this.mobileActive) {
+                return;
+            }
+            if (!this.shell.bottomPanel.hasClass(MAXIMIZED_CLASS) && this.shell.isExpanded('bottom')) {
+                this.suppressMobileBottomAutoMaximize = true;
+            }
+            this.syncMobileMaximizedOverlayInsets();
+        }));
         this.toDispose.push(this.commands.onWillExecuteCommand(event => {
             if (!this.mobileActive) {
                 return;
             }
             if (event.commandId === OPEN_AI_CONFIGURATION_COMMAND || event.commandId === EDIT_CHAT_SESSION_SETTINGS_COMMAND) {
                 void this.dismissMobileSideSheets();
+            }
+        }));
+        this.toDispose.push(this.commands.onDidExecuteCommand(event => {
+            if (!this.mobileActive) {
+                return;
+            }
+            if (event.commandId === WORKBENCH_TOGGLE_TERMINAL
+                || event.commandId === CommonCommands.TOGGLE_BOTTOM_PANEL.id
+                || event.commandId === 'terminal:new') {
+                this.scheduleSnapAndUiRefresh();
+                if (this.shell.isExpanded('bottom')) {
+                    void this.applyMobileBottomPanelMaximizedSize();
+                }
             }
         }));
     }
@@ -270,6 +302,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             return;
         }
         this.mobileActive = false;
+        this.restoreMobileBottomPanelFromMaximized();
         this.shell.node.classList.remove(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
         this.teardownMobileUi();
         this.restoreDesktopSplitLayout();
@@ -347,19 +380,76 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Vertical split between main editor and terminal panel inside the center column. */
     protected syncMobileBottomSplit(): void {
+        if (this.shell.bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+            return;
+        }
         const split = this.getBottomAreaSplitPanel();
         if (!split) {
             return;
         }
         try {
             if (this.shell.isExpanded('bottom')) {
-                split.setRelativeSizes([0.52, 0.48]);
+                split.setRelativeSizes([0, 1]);
             } else {
                 split.setRelativeSizes([1, 0]);
             }
         } catch {
             /* layout not ready */
         }
+    }
+
+    /**
+     * Mobile default: same as the panel "maximize" chevron — detach the bottom dock into the shell
+     * overlay so the terminal fills the workspace above the bottom activity bar.
+     */
+    protected async applyMobileBottomPanelMaximizedSize(): Promise<void> {
+        if (!this.mobileActive || !this.shell.isExpanded('bottom') || this.suppressMobileBottomAutoMaximize) {
+            return;
+        }
+        await this.getBottomPanelPendingUpdate();
+        await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+        const bottomPanel = this.shell.bottomPanel;
+        if (!this.shell.isExpanded('bottom') || bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+            return;
+        }
+        bottomPanel.toggleMaximized();
+        this.syncMobileMaximizedOverlayInsets();
+    }
+
+    protected restoreMobileBottomPanelFromMaximized(): void {
+        const bottomPanel = this.shell.bottomPanel;
+        if (bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+            bottomPanel.toggleMaximized();
+        }
+        this.clearMobileMaximizedOverlayInsets();
+    }
+
+    protected getMaximizedOverlayElement(): HTMLElement | undefined {
+        return (this.shell as unknown as ShellWithMaximizedOverlay).maximizedElement;
+    }
+
+    /** Keep the maximized terminal above the pinned mobile bottom chrome (activity bar + status). */
+    protected syncMobileMaximizedOverlayInsets(): void {
+        const overlay = this.getMaximizedOverlayElement();
+        if (!overlay || !this.mobileActive) {
+            return;
+        }
+        if (!this.shell.bottomPanel.hasClass(MAXIMIZED_CLASS)) {
+            this.clearMobileMaximizedOverlayInsets();
+            return;
+        }
+        overlay.style.bottom = [
+            'calc(',
+            'var(--theia-mobile-bottom-bar-height, 56px)',
+            '+ var(--theia-mobile-status-chrome-height, 34px)',
+            '+ var(--theia-mobile-keyboard-inset, 0px)',
+            '+ env(safe-area-inset-bottom, 0px)',
+            ')',
+        ].join(' ');
+    }
+
+    protected clearMobileMaximizedOverlayInsets(): void {
+        this.getMaximizedOverlayElement()?.style.removeProperty('bottom');
     }
 
     protected updateMobileShellStateClasses(): void {
@@ -885,10 +975,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     /** Show or hide the bottom terminal panel (same behavior as the workbench top-bar terminal control). */
     protected async toggleTerminalBottomPanel(): Promise<void> {
         if (this.isTerminalBottomPanelOpen()) {
+            this.suppressMobileBottomAutoMaximize = false;
+            this.restoreMobileBottomPanelFromMaximized();
             await this.shell.collapsePanel('bottom');
             this.scheduleSnapAndUiRefresh();
             return;
         }
+        this.suppressMobileBottomAutoMaximize = false;
         const toggleBottom = CommonCommands.TOGGLE_BOTTOM_PANEL.id;
         if (this.commands.getCommand(toggleBottom) && this.commands.isEnabled(toggleBottom)) {
             try {
@@ -903,6 +996,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 console.error(`[qaap-mobile-shell] bottom bar command failed: ${WORKBENCH_TOGGLE_TERMINAL}`, e);
             }
         }
+        await this.applyMobileBottomPanelMaximizedSize();
         this.scheduleSnapAndUiRefresh();
     }
 

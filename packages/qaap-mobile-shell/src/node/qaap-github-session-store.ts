@@ -24,6 +24,19 @@ const PERSIST_DEBOUNCE_MS = 100;
 const STORE_FILE_MODE = 0o600;
 const STORE_DIR_MODE = 0o700;
 
+/** Docker/VPS: persist next to cloned repos on the mounted /workspace volume. */
+export function resolveQaapAuthStorePath(): string {
+    if (process.env.QAAP_AUTH_STORE_PATH?.trim()) {
+        return process.env.QAAP_AUTH_STORE_PATH.trim();
+    }
+    const reposRoot = process.env.QAAP_REPOS_ROOT?.trim()
+        || (process.env.NODE_ENV === 'production' ? '/workspace/repos' : path.join(os.homedir(), '.qaap', 'workspaces'));
+    if (reposRoot.endsWith(`${path.sep}repos`)) {
+        return path.join(path.dirname(reposRoot), '.qaap', 'auth', 'sessions.json');
+    }
+    return path.join(os.homedir(), '.qaap', 'auth', 'sessions.json');
+}
+
 /**
  * In-memory sessions + OAuth state map persisted to `~/.qaap/auth/sessions.json`.
  *
@@ -37,7 +50,7 @@ export class QaapGithubSessionStore {
 
     protected readonly sessions = new Map<string, QaapGithubStoredSession>();
     protected readonly oauthStates = new Map<string, number>();
-    protected readonly storePath: string = path.join(os.homedir(), '.qaap', 'auth', 'sessions.json');
+    protected readonly storePath: string = resolveQaapAuthStorePath();
     protected persistTimer: NodeJS.Timeout | undefined;
     protected loaded = false;
 

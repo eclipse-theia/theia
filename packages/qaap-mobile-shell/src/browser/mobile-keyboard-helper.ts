@@ -38,16 +38,31 @@ export class MobileKeyboardHelper implements Disposable {
      * Min keyboard height (px) before we treat the viewport delta as a real keyboard.
      * Browser chrome (URL bar collapse) typically produces deltas under this threshold.
      */
-    protected static readonly KEYBOARD_INSET_THRESHOLD_PX = 80;
+    /** Open when occluded height crosses this (px). */
+    protected static readonly KEYBOARD_INSET_OPEN_THRESHOLD_PX = 80;
+    /** Close only below this (px) so inset does not flap during keyboard animation. */
+    protected static readonly KEYBOARD_INSET_CLOSE_THRESHOLD_PX = 48;
+
+    /** Min ms between programmatic Quick Input refocus attempts (avoids keyboard open/close loops). */
+    protected static readonly QUICK_INPUT_REFOCUS_COOLDOWN_MS = 900;
+    protected static readonly QUICK_INPUT_MAX_REFOCUS_ATTEMPTS = 2;
+    protected static readonly QUICK_INPUT_REFOCUS_DELAY_MS = 380;
 
     /** Selector for an editor textarea where the code accessory bar makes sense. */
     protected static readonly EDITOR_INPUT_SELECTOR = '.monaco-editor textarea.inputarea';
+
+    /** xterm's hidden textarea — focus target when typing in the integrated terminal. */
+    protected static readonly TERMINAL_INPUT_SELECTOR = '.terminal-container .xterm .xterm-helper-textarea';
+
+    /** Extra scroll room below the last terminal line while the virtual keyboard is open. */
+    protected static readonly TERMINAL_SCROLL_PADDING_EXTRA_PX = 32;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly shellNode: HTMLElement;
 
     protected accessory: HTMLElement | undefined;
     protected lastEditorTarget: HTMLTextAreaElement | undefined;
+    protected lastTerminalTarget: HTMLTextAreaElement | undefined;
     protected lastInsetPx = 0;
     protected viewportRaf = 0;
     /**
@@ -57,8 +72,11 @@ export class MobileKeyboardHelper implements Disposable {
      * baseline recovers the occluded band so `--theia-mobile-keyboard-inset` still applies.
      */
     protected stableLayoutViewportHeight = 0;
+    protected keyboardInsetConsideredOpen = false;
     protected focusNudgeHandles: number[] = [];
     protected quickInputFocusRecoveryHandle = 0;
+    protected quickInputRefocusAttempts = 0;
+    protected lastQuickInputRefocusAt = 0;
     protected editableFocusCount = 0;
 
     constructor(shellNode: HTMLElement) {
@@ -92,10 +110,16 @@ export class MobileKeyboardHelper implements Disposable {
         // (sheet backdrops, accessory bar, edge swipe zones) inherit it.
         document.documentElement.style.removeProperty('--theia-mobile-keyboard-inset');
         document.documentElement.style.removeProperty('--theia-mobile-visual-viewport-height');
+        document.documentElement.style.removeProperty('--theia-mobile-terminal-scroll-padding');
         this.shellNode.classList.remove('theia-mod-mobile-keyboard-open');
+        this.shellNode.classList.remove('theia-mod-mobile-terminal-keyboard');
         this.lastEditorTarget = undefined;
+        this.lastTerminalTarget = undefined;
         this.lastInsetPx = 0;
         this.stableLayoutViewportHeight = 0;
+        this.keyboardInsetConsideredOpen = false;
+        this.quickInputRefocusAttempts = 0;
+        this.lastQuickInputRefocusAt = 0;
         this.toDispose.dispose();
     }
 
@@ -152,26 +176,27 @@ export class MobileKeyboardHelper implements Disposable {
 
         const vvExtent = vv.offsetTop + vv.height;
         const layoutViewportGuess = Math.max(innerH, vvExtent);
-        if (occluded < MobileKeyboardHelper.KEYBOARD_INSET_THRESHOLD_PX) {
+        if (occluded < MobileKeyboardHelper.KEYBOARD_INSET_OPEN_THRESHOLD_PX) {
             this.stableLayoutViewportHeight = Math.max(
                 this.stableLayoutViewportHeight,
                 Math.round(layoutViewportGuess)
             );
         }
-        if (occluded < MobileKeyboardHelper.KEYBOARD_INSET_THRESHOLD_PX && this.stableLayoutViewportHeight > 0) {
+        if (occluded < MobileKeyboardHelper.KEYBOARD_INSET_OPEN_THRESHOLD_PX && this.stableLayoutViewportHeight > 0) {
             const fromStable = Math.max(
                 0,
                 this.stableLayoutViewportHeight - vv.height - vv.offsetTop
             );
-            if (fromStable >= MobileKeyboardHelper.KEYBOARD_INSET_THRESHOLD_PX) {
+            if (fromStable >= MobileKeyboardHelper.KEYBOARD_INSET_OPEN_THRESHOLD_PX) {
                 occluded = fromStable;
             }
         }
 
-        const inset = occluded >= MobileKeyboardHelper.KEYBOARD_INSET_THRESHOLD_PX ? Math.round(occluded) : 0;
+        const inset = this.resolveKeyboardInsetPx(occluded);
         document.documentElement.style.setProperty('--theia-mobile-visual-viewport-height', `${Math.round(vv.height)}px`);
         if (inset === this.lastInsetPx) {
             this.updateAccessoryPosition();
+            this.updateTerminalScrollPadding();
             return;
         }
         this.lastInsetPx = inset;
@@ -187,6 +212,23 @@ export class MobileKeyboardHelper implements Disposable {
             }
         }
         this.updateAccessoryVisibility();
+        this.updateTerminalScrollPadding();
+    }
+
+    /** Hysteresis avoids padding/inset toggling while the OS keyboard animates. */
+    protected resolveKeyboardInsetPx(occluded: number): number {
+        if (this.keyboardInsetConsideredOpen) {
+            if (occluded >= MobileKeyboardHelper.KEYBOARD_INSET_CLOSE_THRESHOLD_PX) {
+                return Math.round(occluded);
+            }
+            this.keyboardInsetConsideredOpen = false;
+            return 0;
+        }
+        if (occluded >= MobileKeyboardHelper.KEYBOARD_INSET_OPEN_THRESHOLD_PX) {
+            this.keyboardInsetConsideredOpen = true;
+            return Math.round(occluded);
+        }
+        return 0;
     }
 
     // ---------------------------------------------------------------------------
@@ -206,11 +248,19 @@ export class MobileKeyboardHelper implements Disposable {
 
     protected onFocusIn(e: FocusEvent): void {
         const target = e.target;
+        if (target instanceof HTMLElement && target.closest('#quick-input-container')) {
+            this.cancelQuickInputFocusRecovery();
+        }
         if (this.isEditableForViewportKeyboard(target)) {
             this.editableFocusCount++;
             this.nudgeViewportAfterFocus();
         }
         if (!(target instanceof HTMLTextAreaElement)) {
+            return;
+        }
+        if (target.matches(MobileKeyboardHelper.TERMINAL_INPUT_SELECTOR)) {
+            this.lastTerminalTarget = target;
+            this.updateTerminalScrollPadding();
             return;
         }
         if (!target.matches(MobileKeyboardHelper.EDITOR_INPUT_SELECTOR)) {
@@ -266,6 +316,15 @@ export class MobileKeyboardHelper implements Disposable {
                 this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
                 this.nudgeViewportAfterBlur();
             }
+        }
+        if (target === this.lastTerminalTarget) {
+            const previousTerminal = this.lastTerminalTarget;
+            queueMicrotask(() => {
+                if (this.lastTerminalTarget === previousTerminal) {
+                    this.lastTerminalTarget = undefined;
+                    this.updateTerminalScrollPadding();
+                }
+            });
         }
         if (target !== this.lastEditorTarget) {
             return;
@@ -326,35 +385,73 @@ export class MobileKeyboardHelper implements Disposable {
         return Boolean(widget && widget.style.display !== 'none');
     }
 
-    protected scheduleQuickInputFocusRecovery(): void {
+    protected cancelQuickInputFocusRecovery(): void {
         if (this.quickInputFocusRecoveryHandle) {
             window.clearTimeout(this.quickInputFocusRecoveryHandle);
+            this.quickInputFocusRecoveryHandle = 0;
+        }
+        this.quickInputRefocusAttempts = 0;
+    }
+
+    /**
+     * Quick Input may blur for one frame when the virtual keyboard animates. Keep inset
+     * state without repeatedly calling `focus()` — that fights the OS and loops the keyboard.
+     */
+    protected scheduleQuickInputFocusRecovery(): void {
+        if (this.quickInputFocusRecoveryHandle) {
+            return;
         }
         this.scheduleViewportUpdate();
         this.quickInputFocusRecoveryHandle = window.setTimeout(() => {
             this.quickInputFocusRecoveryHandle = 0;
-            if (!this.isQuickInputVisible()) {
-                if (this.editableFocusCount > 0) {
-                    this.editableFocusCount = 0;
-                    this.nudgeViewportAfterBlur();
-                }
-                return;
+            this.tryQuickInputFocusRecovery();
+        }, MobileKeyboardHelper.QUICK_INPUT_REFOCUS_DELAY_MS);
+    }
+
+    protected tryQuickInputFocusRecovery(): void {
+        if (!this.isQuickInputVisible()) {
+            if (this.editableFocusCount > 0) {
+                this.editableFocusCount = 0;
+                this.nudgeViewportAfterBlur();
             }
-            const input = document.querySelector<HTMLInputElement>(
-                '#quick-input-container .quick-input-and-message input, #quick-input-container .quick-input-box input'
-            );
-            if (input && document.activeElement !== input) {
-                input.focus({ preventScroll: true });
-            }
-            if (this.isEditableForViewportKeyboard(document.activeElement)) {
-                return;
-            }
+            this.cancelQuickInputFocusRecovery();
+            return;
+        }
+        const input = this.getQuickInputFilterElement();
+        if (!input) {
             this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
             this.nudgeViewportAfterBlur();
-        }, 120);
+            return;
+        }
+        if (document.activeElement === input) {
+            return;
+        }
+        if (this.quickInputRefocusAttempts >= MobileKeyboardHelper.QUICK_INPUT_MAX_REFOCUS_ATTEMPTS) {
+            return;
+        }
+        const now = Date.now();
+        if (now - this.lastQuickInputRefocusAt < MobileKeyboardHelper.QUICK_INPUT_REFOCUS_COOLDOWN_MS) {
+            return;
+        }
+        this.lastQuickInputRefocusAt = now;
+        this.quickInputRefocusAttempts++;
+        input.focus({ preventScroll: true });
+        if (!this.isEditableForViewportKeyboard(document.activeElement)) {
+            this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
+            this.nudgeViewportAfterBlur();
+        }
+    }
+
+    protected getQuickInputFilterElement(): HTMLInputElement | undefined {
+        return document.querySelector<HTMLInputElement>(
+            '#quick-input-container .quick-input-and-message input, #quick-input-container .quick-input-box input'
+        ) ?? undefined;
     }
 
     protected restoreViewportScroll(): void {
+        if (this.isQuickInputVisible()) {
+            return;
+        }
         if (window.scrollX === 0 && window.scrollY === 0) {
             return;
         }
@@ -667,6 +764,38 @@ export class MobileKeyboardHelper implements Disposable {
             return;
         }
         this.accessory.style.bottom = `${this.lastInsetPx}px`;
+    }
+
+    /**
+     * Lets the xterm viewport scroll past the last line while the OS keyboard covers the bottom
+     * of the screen so the prompt stays readable above the keyboard.
+     */
+    protected updateTerminalScrollPadding(): void {
+        const terminalFocused = this.lastTerminalTarget !== undefined
+            && document.contains(this.lastTerminalTarget);
+        const active = terminalFocused && this.lastInsetPx > 0;
+        this.shellNode.classList.toggle('theia-mod-mobile-terminal-keyboard', active);
+        if (!active) {
+            document.documentElement.style.removeProperty('--theia-mobile-terminal-scroll-padding');
+            return;
+        }
+        const paddingPx = this.lastInsetPx + MobileKeyboardHelper.TERMINAL_SCROLL_PADDING_EXTRA_PX;
+        document.documentElement.style.setProperty('--theia-mobile-terminal-scroll-padding', `${paddingPx}px`);
+        this.nudgeTerminalViewportScroll();
+    }
+
+    protected nudgeTerminalViewportScroll(): void {
+        const textarea = this.lastTerminalTarget;
+        if (!textarea || !document.contains(textarea)) {
+            return;
+        }
+        const viewport = textarea.closest('.terminal-container')?.querySelector<HTMLElement>('.xterm-viewport');
+        if (!viewport) {
+            return;
+        }
+        requestAnimationFrame(() => {
+            viewport.scrollTop = viewport.scrollHeight;
+        });
     }
 
     protected dispatchAccessoryKey(def: AccessoryKey): void {

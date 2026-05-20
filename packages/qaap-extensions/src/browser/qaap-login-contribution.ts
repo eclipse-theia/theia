@@ -81,20 +81,23 @@ export class QaapLoginContribution implements FrontendApplicationContribution {
         if (peekQaapOAuthReturnFromUrl() === 'github') {
             return;
         }
-        if (!readQaapSignedIn() || !this.hasStoredRealUser()) {
-            try {
-                const config = await fetchQaapAuthConfig();
-                if (this.shouldBypassLoginGate(config)) {
+        try {
+            const config = await fetchQaapAuthConfig();
+            if (this.shouldBypassLoginGate(config)) {
+                if (!readQaapSignedIn()) {
                     writeQaapAuthSession('gitlab', placeholderQaapAuthUser('gitlab'));
-                } else {
-                    await syncQaapAuthSessionFromServer();
                 }
-            } catch {
-                if (this.shouldBypassLoginGate()) {
+            } else {
+                // Reconcile localStorage with the backend (VPS/container restarts can drop server sessions).
+                await syncQaapAuthSessionFromServer();
+            }
+        } catch {
+            if (this.shouldBypassLoginGate()) {
+                if (!readQaapSignedIn()) {
                     writeQaapAuthSession('gitlab', placeholderQaapAuthUser('gitlab'));
-                } else {
-                    await syncQaapAuthSessionFromServer();
                 }
+            } else {
+                await syncQaapAuthSessionFromServer();
             }
         }
         if (readQaapSignedIn()) {

@@ -31,12 +31,24 @@ export class QaapMobileQuickInputContribution implements FrontendApplicationCont
 
     onStart(): void {
         this.patchControllerIgnoreFocusOut();
+        this.quickInput.onShow(() => this.applyMobileQuickInputFocusOut());
     }
 
     protected patchControllerIgnoreFocusOut(): void {
         const host = this.quickInput.controller as unknown as QuickInputControllerOptionsHost;
         const original = host.options.ignoreFocusOut;
         host.options.ignoreFocusOut = () => this.isMobileQuickInputContext() || original();
+    }
+
+    /** `QuickInputController#pick` resets `ui.ignoreFocusOut` on each show; re-apply on mobile. */
+    protected applyMobileQuickInputFocusOut(): void {
+        if (!this.isMobileQuickInputContext()) {
+            return;
+        }
+        const ui = (this.quickInput.controller as unknown as { getUI?: () => { ignoreFocusOut: boolean } }).getUI?.();
+        if (ui) {
+            ui.ignoreFocusOut = true;
+        }
     }
 
     protected isMobileQuickInputContext(): boolean {

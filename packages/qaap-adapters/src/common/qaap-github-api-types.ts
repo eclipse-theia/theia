@@ -10,6 +10,8 @@ export const QAAP_GITHUB_OAUTH_START_PATH = '/qaap/oauth/github/start';
 export const QAAP_GITHUB_OAUTH_CALLBACK_PATH = '/qaap/oauth/github/callback';
 
 export const QAAP_AUTH_SESSION_COOKIE = 'qaap_sid';
+/** Fallback when HttpOnly cookies are dropped (e.g. after a container restart with a stale browser cookie). */
+export const QAAP_AUTH_SESSION_HEADER = 'x-qaap-session-id';
 export const QAAP_AUTH_SESSION_ID_STORAGE_KEY = 'qaap.auth.sessionId';
 
 export interface QaapAuthConfigResponse {
