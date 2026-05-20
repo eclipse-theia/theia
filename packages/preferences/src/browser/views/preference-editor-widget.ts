@@ -138,6 +138,8 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
 
         if (e.source === PreferenceFilterChangeSource.Search) {
             this.handleSearchChange(isFiltered, leavesAreVisible);
+        } else if (e.source === PreferenceFilterChangeSource.Category) {
+            this.handleCategoryChange(isFiltered, leavesAreVisible);
         } else if (e.source === PreferenceFilterChangeSource.Scope) {
             this.handleScopeChange(isFiltered);
         } else if (e.source === PreferenceFilterChangeSource.Schema) {
@@ -158,7 +160,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     }
 
     protected getScrollTarget(source: PreferenceFilterChangeSource): string | undefined {
-        if (source !== PreferenceFilterChangeSource.Search) {
+        if (source !== PreferenceFilterChangeSource.Search && source !== PreferenceFilterChangeSource.Category) {
             return this.firstVisibleChildID;
         }
         if (!this.model.isFiltered && this.lastFocusedRendererNodeId && this.isRendererInViewport(this.lastFocusedRendererNodeId)) {
@@ -239,6 +241,14 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                 if (!isHidden) {
                     renderer.handleSearchChange?.(isFiltered);
                 }
+            }
+        }
+    }
+
+    protected handleCategoryChange(isFiltered: boolean, leavesAreVisible: boolean): void {
+        if (leavesAreVisible) {
+            for (const [, renderer] of this.allRenderers()) {
+                this.hideIfFailsFilters(renderer, isFiltered);
             }
         }
     }

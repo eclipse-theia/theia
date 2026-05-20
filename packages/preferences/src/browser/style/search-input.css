@@ -72,3 +72,27 @@
 .theia-settings-container .settings-search-container .enabled {
   opacity: 1;
 }
+
+.theia-settings-container .theia-settings-breadcrumb {
+  padding: 4px 12px 0;
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-foreground);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.4;
+}
+
+.theia-settings-container .theia-settings-breadcrumb-segment {
+  color: var(--theia-foreground);
+}
+
+.theia-settings-container .theia-settings-breadcrumb-segment:last-child {
+  font-weight: 600;
+}
+
+.theia-settings-container .theia-settings-breadcrumb-separator {
+  color: var(--theia-descriptionForeground);
+  margin: 0 2px;
+}

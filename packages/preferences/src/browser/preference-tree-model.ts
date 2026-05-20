@@ -46,6 +46,7 @@ export enum PreferenceFilterChangeSource {
     Schema,
     Search,
     Scope,
+    Category,
 }
 export interface PreferenceFilterChangeEvent {
     source: PreferenceFilterChangeSource
@@ -71,6 +72,12 @@ export class PreferenceTreeModel extends TreeModelImpl {
     protected _currentRows: Map<string, PreferenceTreeNodeRow> = new Map();
     protected _totalVisibleLeaves = 0;
     private _suppressSelection = false;
+    protected _categoryFilterId: string | undefined;
+    protected _initialSelectionApplied = false;
+
+    get categoryFilterId(): string | undefined {
+        return this._categoryFilterId;
+    }
 
     get currentRows(): Readonly<Map<string, PreferenceTreeNodeRow>> {
         return this._currentRows;
@@ -104,6 +111,14 @@ export class PreferenceTreeModel extends TreeModelImpl {
     protected async doInit(): Promise<void> {
         super.init();
         this.toDispose.pushAll([
+            this.onSelectionChanged(selectionEvent => {
+                const node = selectionEvent[0];
+                const newId = node ? this.categoryIdForSelection(node) : undefined;
+                if (newId !== this._categoryFilterId) {
+                    this._categoryFilterId = newId;
+                    this.updateFilteredRows(PreferenceFilterChangeSource.Category);
+                }
+            }),
             this.treeGenerator.onSchemaChanged(newTree => this.handleNewSchema(newTree)),
             this.scopeTracker.onScopeChanged(scopeDetails => {
                 this._currentScope = scopeDetails.scope;
@@ -115,6 +130,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 this.lastSearchedLiteral = newSearchTermWithoutTags;
                 this.lastSearchedFuzzy = newSearchTermWithoutTags.replace(/\s/g, '');
                 this._isFiltered = newSearchTerm.length > 2;
+                if (this._isFiltered) {
+                    this._categoryFilterId = undefined;
+                }
                 if (this.isFiltered) {
                     this.expandAll();
                 } else if (CompositeTreeNode.is(this.root)) {
@@ -126,6 +144,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
             }),
             this.onFilterChanged(() => {
                 this.filterInput.updateResultsCount(this._totalVisibleLeaves);
+                this.filterInput.updateBreadcrumb(this.computeBreadcrumbLabels(this._categoryFilterId));
             }),
             this.onTreeFilterChangedEmitter,
         ]);
@@ -135,10 +154,33 @@ export class PreferenceTreeModel extends TreeModelImpl {
 
     private handleNewSchema(newRoot: CompositeTreeNode): void {
         this.root = newRoot;
+        if (this._categoryFilterId && !this.getNode(this._categoryFilterId)) {
+            this._categoryFilterId = undefined;
+        }
         if (this.isFiltered) {
             this.expandAll();
         }
         this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
+        this.applyInitialSelection();
+    }
+
+    protected applyInitialSelection(): void {
+        if (this._initialSelectionApplied) {
+            return;
+        }
+        this._initialSelectionApplied = true;
+        if (this.selectedNodes.length > 0) {
+            return; // restoreState already selected something
+        }
+        if (!CompositeTreeNode.is(this.root)) {
+            return;
+        }
+        const commonlyUsed = this.root.children.find(
+            child => Preference.TreeNode.is(child) && child.id.startsWith(COMMONLY_USED_SECTION_PREFIX),
+        );
+        if (commonlyUsed && SelectableTreeNode.is(commonlyUsed)) {
+            this.selectNode(commonlyUsed);
+        }
     }
 
     protected updateRows(): void {
@@ -176,6 +218,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
 
     protected passesCurrentFilters(node: Preference.LeafNode, prefID: string): boolean {
         if (!this.schemaProvider.isValidInScope(prefID, this._currentScope)) {
+            return false;
+        }
+        if (this._categoryFilterId && !this.isDescendantOfCategory(node, this._categoryFilterId)) {
             return false;
         }
         if (!this._isFiltered) {
@@ -259,6 +304,52 @@ export class PreferenceTreeModel extends TreeModelImpl {
     getNodeFromPreferenceId(id: string): Preference.TreeNode | undefined {
         const node = this.getNode(this.treeGenerator.getNodeId(id));
         return node && Preference.TreeNode.is(node) ? node : undefined;
+    }
+
+    protected isDescendantOfCategory(node: TreeNode, categoryId: string): boolean {
+        let current: TreeNode | undefined = node.parent;
+        while (current) {
+            if (current.id === categoryId) {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the id of the nearest composite (category) ancestor of `node`,
+     * inclusive of `node` itself. Returns `undefined` if no category ancestor is found.
+     */
+    protected categoryIdForSelection(node: TreeNode): string | undefined {
+        let current: TreeNode | undefined = node;
+        while (current) {
+            if (Preference.TreeNode.is(current) && Preference.CompositeTreeNode.is(current)) {
+                return current.id;
+            }
+            current = current.parent;
+        }
+        return undefined;
+    }
+
+    protected computeBreadcrumbLabels(categoryId: string | undefined): string[] {
+        if (!categoryId) {
+            return [];
+        }
+        const node = this.getNode(categoryId);
+        if (!node) {
+            return [];
+        }
+        const labels: string[] = [];
+        let current: TreeNode | undefined = node;
+        while (current && current !== this.root) {
+            if (Preference.TreeNode.is(current) && Preference.CompositeTreeNode.is(current)) {
+                const label = current.label ?? current.name ?? current.id;
+                labels.unshift(label);
+            }
+            current = current.parent;
+        }
+        return labels;
     }
 
     /**
