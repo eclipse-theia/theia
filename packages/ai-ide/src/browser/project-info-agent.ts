@@ -26,7 +26,7 @@ export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
     id = 'ProjectInfo';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'default/code',
+        identifier: 'default/fast',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
