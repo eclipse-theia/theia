@@ -7,6 +7,8 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/common/file-uri';
+import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -174,7 +176,7 @@ export class QaapProjectBootstrapService {
                     const terminal = await this.spawnCommand({
                         title: 'qaap-probe',
                         command,
-                        cwd: '/tmp',
+                        cwd: URI.fromFilePath('/tmp'),
                     });
                     const code = await this.waitForExit(terminal);
                     return { code, elapsedMs: Date.now() - t0 };
@@ -263,7 +265,7 @@ export class QaapProjectBootstrapService {
             const terminal = await this.spawnCommand({
                 title: `Install (${descriptor.packageManager})`,
                 command: descriptor.installCommand,
-                cwd: descriptor.rootUri.path.toString(),
+                cwd: descriptor.rootUri,
             });
             this.installTerminal = terminal;
             const exitCode = await this.waitForExit(terminal);
@@ -301,7 +303,7 @@ export class QaapProjectBootstrapService {
         if (!plan || !descriptor || this._phase === 'starting' || this._phase === 'running') {
             return;
         }
-        this.shutdownBootstrapSession();
+        this.beginDevRun();
         this.clearForwardedPorts();
         this._portConflictDetected = false;
         this._portConflictPort = undefined;
@@ -323,7 +325,7 @@ export class QaapProjectBootstrapService {
             const terminal = await this.spawnCommand({
                 title: `Dev (${label})`,
                 command: spawnPlan.command,
-                cwd: plan.cwd.path.toString(),
+                cwd: plan.cwd,
             });
             if (runId !== this.devRunGeneration) {
                 return;
@@ -365,7 +367,8 @@ export class QaapProjectBootstrapService {
             if (runId !== this.devRunGeneration) {
                 return;
             }
-            await this.failDevRun(e instanceof Error ? e.message : String(e), plan, runId);
+            const raw = e instanceof Error ? e.message : String(e);
+            await this.failDevRun(this.toUserFacingDevError(raw), plan, runId);
         }
     }
 
@@ -415,7 +418,7 @@ export class QaapProjectBootstrapService {
      * not flash the banner after the user already accepted/skipped.
      */
     async refreshFromCurrentWorkspace(): Promise<void> {
-        this.shutdownBootstrapSession();
+        this.resetBootstrapSessionForWorkspace();
         this.clearForwardedPorts();
         const roots = await this.workspaceService.roots;
         const first = roots[0];
@@ -723,7 +726,7 @@ export class QaapProjectBootstrapService {
         const conflictPort = this.activeDevPortHint ?? plan.expectedPort;
         this._error = portConflict && conflictPort
             ? `Port :${conflictPort} is already in use. Another terminal may already be serving the app.`
-            : message;
+            : this.toUserFacingDevError(message);
         this.setPhase('run-failed');
     }
 
@@ -746,7 +749,7 @@ export class QaapProjectBootstrapService {
         }
     }
 
-    protected async spawnCommand(options: { title: string; command: string; cwd: string }): Promise<TerminalWidget> {
+    protected async spawnCommand(options: { title: string; command: string; cwd: URI }): Promise<TerminalWidget> {
         // Spawn the command DIRECTLY (no interactive shell wrapper) so the process actually exits
         // when the command completes. We use a login shell so the user's `node` / `pnpm` / `npm`
         // resolve from `~/.nvm`, `/opt/homebrew/bin`, etc. Without `-l` the PATH would be the
@@ -754,14 +757,29 @@ export class QaapProjectBootstrapService {
         const { shellPath, shellArgs } = this.buildShellInvocation(options.command);
         const terminal = await this.terminalService.newTerminal({
             title: options.title,
-            cwd: options.cwd,
+            cwd: FileUri.fsPath(options.cwd.toString()),
             shellPath,
             shellArgs,
             destroyTermOnClose: true,
         });
         await terminal.start();
-        this.terminalService.open(terminal, { mode: 'reveal' });
+        // On mobile, revealing the bottom terminal panel can dispose/recreate widgets mid-start.
+        this.terminalService.open(terminal, { mode: matchesMobileNarrowViewport() ? 'open' : 'reveal' });
         return terminal;
+    }
+
+    /** Maps low-level terminal backend errors to actionable copy for the bootstrap banner. */
+    protected toUserFacingDevError(message: string): string {
+        if (/terminal "[\d]+" does not exist/i.test(message)) {
+            return 'The dev terminal was interrupted. Tap Retry once — avoid double-tapping Preview.';
+        }
+        if (/ENOENT|no such file or directory/i.test(message)) {
+            return 'Project folder not found on the server. Re-open the repo from Projects.';
+        }
+        if (/command not found|not found:/i.test(message)) {
+            return 'Node/npm not available in the server shell. Install Node in the Docker image or run Install first.';
+        }
+        return message;
     }
 
     /** Picks the right shell wrapper for the host platform. */
@@ -803,10 +821,16 @@ export class QaapProjectBootstrapService {
         });
     }
 
-    protected shutdownBootstrapSession(): void {
+    /** Stops listeners/timers and the current dev terminal before a new dev run (keeps other Dev tabs). */
+    protected beginDevRun(): void {
         this.devRunGeneration++;
         this.cancelDevPreviewFallbacks();
         this.cleanupDevTerminal();
+    }
+
+    /** Full reset when switching workspace or reloading bootstrap state. */
+    protected resetBootstrapSessionForWorkspace(): void {
+        this.beginDevRun();
         this.disposeBootstrapTerminal(this.installTerminal);
         this.installTerminal = undefined;
         this.disposeOrphanBootstrapTerminals();

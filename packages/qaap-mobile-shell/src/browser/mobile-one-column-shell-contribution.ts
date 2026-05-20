@@ -1412,11 +1412,20 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         const phase = this.projectBootstrap.phase;
         const descriptor = this.projectBootstrap.descriptor;
-        if (descriptor?.devCommand && (phase === 'ready-to-run' || phase === 'starting')) {
+        if (descriptor?.devCommand && (phase === 'ready-to-run' || phase === 'starting' || phase === 'run-failed')) {
             try {
                 await this.projectBootstrap.runDevServer();
             } catch (e) {
                 console.error('[qaap-mobile-shell] runDevServer failed', e);
+            }
+            this.scheduleSnapAndUiRefresh();
+            return;
+        }
+        if (phase === 'detected' && descriptor?.installCommand) {
+            try {
+                await this.projectBootstrap.runInstall();
+            } catch (e) {
+                console.error('[qaap-mobile-shell] runInstall failed', e);
             }
             this.scheduleSnapAndUiRefresh();
             return;
