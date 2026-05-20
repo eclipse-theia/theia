@@ -144,7 +144,6 @@ export class PreferenceTreeModel extends TreeModelImpl {
             }),
             this.onFilterChanged(() => {
                 this.filterInput.updateResultsCount(this._totalVisibleLeaves);
-                this.filterInput.updateBreadcrumb(this.computeBreadcrumbLabels(this._categoryFilterId));
             }),
             this.onTreeFilterChangedEmitter,
         ]);
@@ -320,6 +319,19 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     /**
+     * @returns `true` if `node` is a strict composite ancestor of the category with id
+     * `categoryId` — i.e. the category itself sits somewhere in `node`'s subtree.
+     * Used to keep parent category headers visible above the selected category.
+     */
+    isCompositeAncestorOfCategory(node: TreeNode, categoryId: string): boolean {
+        if (!CompositeTreeNode.is(node) || node.id === categoryId) {
+            return false;
+        }
+        const category = this.getNode(categoryId);
+        return !!category && this.isDescendantOfCategory(category, node.id);
+    }
+
+    /**
      * Returns the id of the nearest composite (category) ancestor of `node`,
      * inclusive of `node` itself. Returns `undefined` if no category ancestor is found.
      */
@@ -332,26 +344,6 @@ export class PreferenceTreeModel extends TreeModelImpl {
             current = current.parent;
         }
         return undefined;
-    }
-
-    protected computeBreadcrumbLabels(categoryId: string | undefined): string[] {
-        if (!categoryId) {
-            return [];
-        }
-        const node = this.getNode(categoryId);
-        if (!node) {
-            return [];
-        }
-        const labels: string[] = [];
-        let current: TreeNode | undefined = node;
-        while (current && current !== this.root) {
-            if (Preference.TreeNode.is(current) && Preference.CompositeTreeNode.is(current)) {
-                const label = current.label ?? current.name ?? current.id;
-                labels.unshift(label);
-            }
-            current = current.parent;
-        }
-        return labels;
     }
 
     /**

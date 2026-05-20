@@ -152,6 +152,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
             this.showInTree(scrollTarget);
         }
         this.resetScroll(scrollTarget);
+        this.pinCategoryHeaders();
 
         if (e.source === PreferenceFilterChangeSource.Search) {
             // Reset focus if search context changes.
@@ -277,15 +278,20 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     }
 
     /**
-     * Returns true if a category filter is active and `node` is neither the selected category itself
-     * nor a descendant of it. Keeps the left tree intact (filtering is applied here, not in the model).
+     * Returns true if a category filter is active and `node` is outside the visible slice:
+     * not the selected category itself, not a descendant of it, and not one of its
+     * composite ancestors (whose headers we keep visible above the selected category).
+     * Keeps the left tree intact (filtering is applied here, not in the model).
      */
     protected isOutsideSelectedCategory(node: Preference.TreeNode): boolean {
         const categoryId = this.model.categoryFilterId;
         if (!categoryId) {
             return false;
         }
-        return node.id !== categoryId && !this.model.isDescendantOfCategory(node, categoryId);
+        if (node.id === categoryId || this.model.isDescendantOfCategory(node, categoryId)) {
+            return false;
+        }
+        return !this.model.isCompositeAncestorOfCategory(node, categoryId);
     }
 
     /**
@@ -300,6 +306,33 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
             renderer.show();
             return false;
         }
+    }
+
+    /**
+     * Pins ancestor + selected-category header rows to the top of the scroll container
+     * via stacked `position: sticky`, so scrolling moves only the items list below.
+     * Clears the styles when no category filter is active.
+     */
+    protected pinCategoryHeaders(): void {
+        requestAnimationFrame(() => {
+            const pinned = !!this.model.categoryFilterId;
+            let cumulativeTop = 0;
+            for (const [, renderer] of this.allRenderers()) {
+                const node = this.model.getNode(renderer.nodeId);
+                if (!CompositeTreeNode.is(node)) {
+                    continue;
+                }
+                const wrapper = renderer.node;
+                if (pinned && renderer.visible) {
+                    wrapper.classList.add('theia-settings-pinned-category-header');
+                    wrapper.style.top = `${cumulativeTop}px`;
+                    cumulativeTop += wrapper.offsetHeight;
+                } else {
+                    wrapper.classList.remove('theia-settings-pinned-category-header');
+                    wrapper.style.top = '';
+                }
+            }
+        });
     }
 
     protected resetScroll(nodeIDToScrollTo?: string): void {
@@ -348,7 +381,13 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected findFirstVisibleChildID(): string | undefined {
         const { scrollTop } = this.scrollContainer;
         for (const [, renderer] of this.allRenderers()) {
-            const { offsetTop, offsetHeight } = renderer.node;
+            const { offsetTop, offsetHeight, offsetParent } = renderer.node;
+            // Skip hidden renderers (display:none) — they report offsetTop/offsetHeight 0
+            // and would otherwise match scrollTop===0, hijacking the selection back to
+            // the first hidden category.
+            if (offsetParent === null) {
+                continue;
+            }
             if (Math.abs(offsetTop - scrollTop) <= offsetHeight / 2) {
                 return renderer.nodeId;
             }

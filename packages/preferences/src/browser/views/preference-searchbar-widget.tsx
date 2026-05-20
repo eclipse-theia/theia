@@ -36,7 +36,6 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
 
     protected searchbarRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
     protected resultsCount: number = 0;
-    protected breadcrumb: string[] = [];
 
     constructor(@unmanaged() options?: Widget.IOptions) {
         super(options);
@@ -75,23 +74,6 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
             this.update();
         }
     };
-
-    /**
-     * Renders the breadcrumb path of the currently selected category.
-     */
-    protected renderBreadcrumb(): React.ReactNode {
-        if (this.breadcrumb.length === 0) {
-            return undefined;
-        }
-        const parts: React.ReactNode[] = [];
-        this.breadcrumb.forEach((label, index) => {
-            if (index > 0) {
-                parts.push(<span key={`sep-${index}-${label}`} className="theia-settings-breadcrumb-separator" aria-hidden="true">›</span>);
-            }
-            parts.push(<span key={`crumb-${index}-${label}`} className="theia-settings-breadcrumb-segment">{label}</span>);
-        });
-        return <nav className="theia-settings-breadcrumb" aria-label={nls.localizeByDefault('Settings')}>{parts}</nav>;
-    }
 
     /**
      * Renders all search bar options.
@@ -166,10 +148,8 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
 
     render(): React.ReactNode {
         const optionContainer = this.renderOptionContainer();
-        const breadcrumb = this.renderBreadcrumb();
         return (
             <div className='settings-header'>
-                {breadcrumb}
                 <div className="settings-search-container" ref={this.focus}>
                     <input
                         type="text"
@@ -192,15 +172,6 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
      */
     updateResultsCount(count: number): void {
         this.resultsCount = count;
-        this.update();
-    }
-
-    /**
-     * Updates the breadcrumb labels (root → selected category).
-     * Pass an empty array to hide the breadcrumb.
-     */
-    updateBreadcrumb(labels: string[]): void {
-        this.breadcrumb = labels;
         this.update();
     }
 
