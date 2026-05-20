@@ -431,13 +431,20 @@ After successful creation, update the prepared comment statuses to "Added to pen
 
 ## Phase 10: Cleanup
 
-If Checkout was enabled and recorded an original branch, restore the user's original working tree state:
+If Checkout was enabled and recorded an original branch, ask the user whether to restore their original working tree state before switching branches. Use ~{${USER_INTERACTION_FUNCTION_ID}} with a **single-step** wizard:
+- \`title\`: "Restore Workspace"
+- \`message\`: Explain that the PR review is complete and that restoring will switch back to the original branch. Mention that staying on the PR branch keeps the workspace available for inspection.
+- \`options\`: \`[{"text": "Restore the original branch and any stashed user changes now", "buttonLabel": "Restore workspace", "value": "restore"}, {"text": "Stay on the PR branch so I can keep inspecting it", "buttonLabel": "Stay on PR branch", "value": "stay"}]\`
+
+If the user chooses \`"restore"\`, restore the user's original working tree state:
 
 1. Stash the latest review plan: \`git stash push -u -m "pr-review-plan-final-<number>" -- <plan-path>\`. This carries the final plan back to the original branch.
 2. Check out the original branch: \`git checkout <original-branch>\` (recorded in Phase 2).
 3. Pop the final-plan stash: locate it via \`git stash list\` and \`git stash pop <ref>\`. The latest review plan is now in the user's original branch working tree.
 4. If a user-changes stash was created in Phase 2: locate it via \`git stash list\` and \`git stash pop <ref>\`.
 5. Confirm to the user that their workspace has been restored.
+
+If the user chooses \`"stay"\`, cancels, or makes no selection, do not switch branches and do not pop the user-changes stash. Update the review plan with "Cleanup deferred — user chose to stay on the PR branch" and leave the recorded original branch and stash details in the plan for later manual restoration.
 
 If Checkout was disabled, no branch restoration is needed. Leave the review plan in the current workspace.
 

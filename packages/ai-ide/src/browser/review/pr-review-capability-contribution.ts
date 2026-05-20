@@ -171,7 +171,7 @@ Store this value for the review plan:
     protected buildCodebaseExplorationTemplate(): string {
         const name = nls.localize('theia/ai/ide/prReview/capability/codebaseExploration/name', 'Delegated Exploration');
         const description = nls.localize('theia/ai/ide/prReview/capability/codebaseExploration/description',
-            'Delegates focused architecture, usage, convention, and tests exploration to the Explore agent; when disabled, the PR reviewer explores with its own tools.');
+            'Delegates focused architecture, usage, convention, and tests exploration to the Explore agent. When disabled, the PR reviewer explores with its own tools.');
 
         return `---
 name: ${name}
