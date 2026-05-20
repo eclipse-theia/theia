@@ -277,11 +277,23 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     }
 
     /**
+     * Returns true if a category filter is active and `node` is neither the selected category itself
+     * nor a descendant of it. Keeps the left tree intact (filtering is applied here, not in the model).
+     */
+    protected isOutsideSelectedCategory(node: Preference.TreeNode): boolean {
+        const categoryId = this.model.categoryFilterId;
+        if (!categoryId) {
+            return false;
+        }
+        return node.id !== categoryId && !this.model.isDescendantOfCategory(node, categoryId);
+    }
+
+    /**
      * @returns true if the renderer is hidden, false otherwise.
      */
     protected hideIfFailsFilters(renderer: GeneralPreferenceNodeRenderer, isFiltered: boolean): boolean {
         const row = this.model.currentRows.get(renderer.nodeId);
-        if (!row || (CompositeTreeNode.is(row.node) && (isFiltered || row.visibleChildren === 0))) {
+        if (!row || (CompositeTreeNode.is(row.node) && (isFiltered || row.visibleChildren === 0)) || this.isOutsideSelectedCategory(row.node)) {
             renderer.hide();
             return true;
         } else {

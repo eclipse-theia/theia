@@ -220,9 +220,6 @@ export class PreferenceTreeModel extends TreeModelImpl {
         if (!this.schemaProvider.isValidInScope(prefID, this._currentScope)) {
             return false;
         }
-        if (this._categoryFilterId && !this.isDescendantOfCategory(node, this._categoryFilterId)) {
-            return false;
-        }
         if (!this._isFiltered) {
             return true;
         }
@@ -306,7 +303,12 @@ export class PreferenceTreeModel extends TreeModelImpl {
         return node && Preference.TreeNode.is(node) ? node : undefined;
     }
 
-    protected isDescendantOfCategory(node: TreeNode, categoryId: string): boolean {
+    /**
+     * @returns `true` if any ancestor of `node` has id `categoryId`. The check is
+     * **strict** — `node === category` returns `false`. Callers that should treat the
+     * selected category itself as "inside" must check `node.id === categoryId` first.
+     */
+    isDescendantOfCategory(node: TreeNode, categoryId: string): boolean {
         let current: TreeNode | undefined = node.parent;
         while (current) {
             if (current.id === categoryId) {

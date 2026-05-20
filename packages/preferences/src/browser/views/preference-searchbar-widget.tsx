@@ -86,11 +86,11 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
         const parts: React.ReactNode[] = [];
         this.breadcrumb.forEach((label, index) => {
             if (index > 0) {
-                parts.push(<span key={`sep-${index}-${label}`} className="theia-settings-breadcrumb-separator">›</span>);
+                parts.push(<span key={`sep-${index}-${label}`} className="theia-settings-breadcrumb-separator" aria-hidden="true">›</span>);
             }
             parts.push(<span key={`crumb-${index}-${label}`} className="theia-settings-breadcrumb-segment">{label}</span>);
         });
-        return <div className="theia-settings-breadcrumb">{parts}</div>;
+        return <nav className="theia-settings-breadcrumb" aria-label={nls.localizeByDefault('Settings')}>{parts}</nav>;
     }
 
     /**
