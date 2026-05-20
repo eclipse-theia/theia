@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VariableRegistry, VariableResolverService } from '@theia/variable-resolver/lib/browser';
@@ -108,7 +109,9 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
                     const newName = (mapping.name && mapping.name.trim() !== '') ? mapping.name : variable.name;
                     const newDescription = (mapping.description && mapping.description.trim() !== '') ? mapping.description
                         : (variable.description && variable.description.trim() !== '' ? variable.description
-                            : nls.localize('theia/ai/core/variable-contribution/builtInVariable', 'Theia Built-in Variable'));
+                            : nls.localize('theia/ai/core/variable-contribution/builtInVariable',
+                            '{0} Built-in Variable',
+                            FrontendApplicationConfigProvider.get().applicationName));
 
                     // For multiple mappings of the same variable, add a suffix to the ID to make it unique
                     const idSuffix = mappings.length > 1 ? `-${index}` : '';

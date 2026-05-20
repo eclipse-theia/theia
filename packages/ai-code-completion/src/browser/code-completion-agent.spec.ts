@@ -45,6 +45,7 @@ describe('CodeCompletionAgentImpl', () => {
 
     before(() => {
         disableJSDOM = enableJSDOM();
+        FrontendApplicationConfigProvider.set({});
     });
 
     beforeEach(() => {
