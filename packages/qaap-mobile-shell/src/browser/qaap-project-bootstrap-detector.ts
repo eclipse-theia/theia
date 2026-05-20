@@ -8,6 +8,11 @@ import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { buildBootstrapInstallCommand } from './qaap-project-bootstrap-install';
 import {
+    parseDeclaredPackageManager,
+    parseNpmrcPackageManager,
+    parsePnpmWorkspaceYaml,
+} from './qaap-project-bootstrap-pm-detect';
+import {
     QAAP_THEIA_DEV_PORT,
     QaapMonorepoAppCandidate,
     QaapMonorepoFlavor,
@@ -91,10 +96,8 @@ export class QaapProjectBootstrapDetector {
             devCommandLabel = devCommand;
         }
 
-        const hasNodeModulesDir = await this.fileService.exists(rootUri.resolve('node_modules'));
-        const nodeModulesPresent = hasNodeModulesDir && await this.isDevToolingPresent(rootUri, kind);
-
         const { flavor, apps } = await this.detectMonorepo(rootUri, pkg, packageManager);
+        const nodeModulesPresent = await this.resolveNodeModulesPresent(rootUri, kind, packageManager, apps);
 
         return {
             rootUri,
@@ -166,17 +169,22 @@ export class QaapProjectBootstrapDetector {
         if (await this.fileService.exists(pnpmWorkspace)) {
             try {
                 const content = await this.fileService.read(pnpmWorkspace);
-                return { flavor: 'pnpm-workspace', patterns: this.parsePnpmWorkspaceYaml(content.value || '') };
+                let patterns = parsePnpmWorkspaceYaml(content.value || '');
+                if (patterns.length === 0) {
+                    patterns = this.parseNpmWorkspacesField(pkg.workspaces);
+                }
+                if (patterns.length === 0) {
+                    patterns = await this.implicitMonorepoPatterns(rootUri);
+                }
+                return { flavor: 'pnpm-workspace', patterns };
             } catch {
                 /* fall through */
             }
         }
         if (Array.isArray(pkg.workspaces) || (pkg.workspaces && typeof pkg.workspaces === 'object')) {
             const patterns = this.parseNpmWorkspacesField(pkg.workspaces);
-            // The flavor depends on whether yarn.lock or package-lock.json is present. We pick the
-            // most common: yarn → "yarn-workspaces", anything else → "npm-workspaces".
-            const yarnPresent = await this.fileService.exists(rootUri.resolve('yarn.lock'));
-            return { flavor: yarnPresent ? 'yarn-workspaces' : 'npm-workspaces', patterns };
+            const flavor = await this.workspacesFlavorFromLockfiles(rootUri);
+            return { flavor, patterns };
         }
         const lernaJson = rootUri.resolve('lerna.json');
         if (await this.fileService.exists(lernaJson)) {
@@ -200,43 +208,28 @@ export class QaapProjectBootstrapDetector {
         if (await this.fileService.exists(nxJson)) {
             return { flavor: 'nx', patterns: ['apps/*', 'packages/*', 'libs/*'] };
         }
-        // No explicit marker — check for implicit `apps/` / `packages/` directories.
+        const implicitPatterns = await this.implicitMonorepoPatterns(rootUri);
+        return { flavor: implicitPatterns.length ? 'implicit' : undefined, patterns: implicitPatterns };
+    }
+
+    protected async implicitMonorepoPatterns(rootUri: URI): Promise<string[]> {
         const implicitPatterns: string[] = [];
         for (const dir of IMPLICIT_MONOREPO_DIRS) {
             if (await this.fileService.exists(rootUri.resolve(dir))) {
                 implicitPatterns.push(`${dir}/*`);
             }
         }
-        return { flavor: implicitPatterns.length ? 'implicit' : undefined, patterns: implicitPatterns };
+        return implicitPatterns;
     }
 
-    /**
-     * Minimal YAML reader for `pnpm-workspace.yaml`. We only need the `packages` list of strings —
-     * a full YAML parser would be overkill and adds a runtime dependency just for this.
-     */
-    protected parsePnpmWorkspaceYaml(content: string): string[] {
-        const lines = content.split(/\r?\n/);
-        const patterns: string[] = [];
-        let inPackages = false;
-        for (const rawLine of lines) {
-            const line = rawLine.replace(/#.*$/, '').trimEnd();
-            if (!line.trim()) {
-                continue;
-            }
-            const topLevel = /^([A-Za-z_][\w-]*):\s*$/.exec(line);
-            if (topLevel) {
-                inPackages = topLevel[1] === 'packages';
-                continue;
-            }
-            if (!inPackages) {
-                continue;
-            }
-            const item = /^\s*-\s*["']?([^"'\s]+)["']?\s*$/.exec(line);
-            if (item) {
-                patterns.push(item[1]);
-            }
+    protected async workspacesFlavorFromLockfiles(rootUri: URI): Promise<QaapMonorepoFlavor> {
+        if (await this.fileService.exists(rootUri.resolve('pnpm-lock.yaml'))) {
+            return 'pnpm-workspace';
         }
-        return patterns;
+        if (await this.fileService.exists(rootUri.resolve('yarn.lock'))) {
+            return 'yarn-workspaces';
+        }
+        return 'npm-workspaces';
     }
 
     protected parseNpmWorkspacesField(field: unknown): string[] {
@@ -367,18 +360,53 @@ export class QaapProjectBootstrapDetector {
     }
 
     protected async detectPackageManager(rootUri: URI, pkg: PackageJsonShape): Promise<QaapPackageManager> {
-        const declared = typeof pkg.packageManager === 'string' ? pkg.packageManager : '';
-        if (declared.startsWith('pnpm@')) { return 'pnpm'; }
-        if (declared.startsWith('yarn@')) { return 'yarn'; }
-        if (declared.startsWith('bun@')) { return 'bun'; }
-        if (declared.startsWith('npm@')) { return 'npm'; }
-
+        if (typeof pkg.packageManager === 'string') {
+            const fromField = parseDeclaredPackageManager(pkg.packageManager);
+            if (fromField) {
+                return fromField;
+            }
+        }
+        const npmrcUri = rootUri.resolve('.npmrc');
+        if (await this.fileService.exists(npmrcUri)) {
+            try {
+                const npmrc = await this.fileService.read(npmrcUri);
+                const fromNpmrc = parseNpmrcPackageManager(npmrc.value || '');
+                if (fromNpmrc) {
+                    return fromNpmrc;
+                }
+            } catch {
+                /* ignore unreadable .npmrc */
+            }
+        }
         for (const [lockfile, pm] of LOCKFILE_TO_PM) {
             if (await this.fileService.exists(rootUri.resolve(lockfile))) {
                 return pm;
             }
         }
         return 'npm';
+    }
+
+    protected async resolveNodeModulesPresent(
+        rootUri: URI,
+        kind: QaapProjectKind,
+        pm: QaapPackageManager,
+        apps: QaapMonorepoAppCandidate[],
+    ): Promise<boolean> {
+        const hasRootModules = await this.fileService.exists(rootUri.resolve('node_modules'));
+        if (!hasRootModules) {
+            return false;
+        }
+        if (pm === 'pnpm' && await this.fileService.exists(rootUri.resolve('node_modules/.pnpm'))) {
+            return true;
+        }
+        if (apps.length > 0) {
+            for (const app of apps) {
+                if (await this.isDevToolingPresent(app.rootUri, app.kind)) {
+                    return true;
+                }
+            }
+        }
+        return this.isDevToolingPresent(rootUri, kind);
     }
 
     /**

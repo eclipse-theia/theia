@@ -131,31 +131,43 @@
     display: none !important;
   }
 
-  /* Project name: leading edge. History: dead center. Account: trailing. */
-  #theia-top-panel > #theia\:workbench-nav {
-    position: relative;
-    z-index: 3;
-    flex: 0 1 auto;
-    min-width: 0;
-    max-width: calc(50% - 56px);
-    margin-right: 0;
-    margin-left: 8px;
-  }
-
-  .theia-workbench-nav-controls .theia-workbench-current-project-name {
-    max-width: min(42vw, 200px);
-    margin-left: 0;
-  }
-
+  /* Back / forward: leading edge. Project name: dead center. Account: trailing. */
   #theia-top-panel > #theia\:workbench-history-nav {
+    position: absolute;
+    left: calc(env(safe-area-inset-left, 0px) + 6px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    order: unset;
+    flex: 0 0 auto;
+    pointer-events: auto;
+  }
+
+  #theia-top-panel > #theia\:workbench-nav {
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
-    order: unset;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: min(52vw, calc(100% - 140px));
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  #theia-top-panel > #theia\:workbench-nav .theia-workbench-current-project-name {
     pointer-events: auto;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name {
+    max-width: 100%;
+    margin-left: 0;
+    text-align: center;
   }
 
   #theia-top-panel > #theia\:workbench-right-controls {

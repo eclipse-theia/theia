@@ -6,6 +6,7 @@
 
 import '../../src/browser/style/qaap-mini-browser-content.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { DefaultMiniBrowserOpenHook, MiniBrowserOpenHook } from '@theia/mini-browser/lib/browser/mini-browser-open-hook';
 import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import { MonacoQuickInputLayout } from '@theia/monaco/lib/browser/monaco-quick-input-layout';
@@ -18,6 +19,7 @@ import { QaapMiniBrowserLifecycle } from './qaap-mini-browser-lifecycle';
 import { QaapMiniBrowserOpenHookBridge } from './qaap-mini-browser-open-hook-bridge';
 import { QaapMonacoQuickInputAdapter } from './qaap-monaco-quick-input-adapter';
 import { QaapMonacoQuickInputLayoutBridge } from './qaap-monaco-quick-input-layout-bridge';
+import { QaapMobileQuickInputContribution } from './qaap-mobile-quick-input-contribution';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(DefaultQaapMiniBrowserLifecycle).toSelf().inSingletonScope();
@@ -27,6 +29,8 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
 
     bind(QaapMiniBrowserOpenHookBridge).toSelf().inSingletonScope();
     bind(QaapMonacoQuickInputLayoutBridge).toSelf().inSingletonScope();
+    bind(QaapMobileQuickInputContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapMobileQuickInputContribution);
 
     if (!isBound(MiniBrowserOpenHook)) {
         bind(DefaultMiniBrowserOpenHook).toSelf().inSingletonScope();

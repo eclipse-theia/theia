@@ -8,6 +8,14 @@ export const DEV_INSTALL_NEEDED_REGEX = /ERR_MODULE_NOT_FOUND|Cannot find (?:mod
 
 export const PORT_IN_USE_REGEX = /EADDRINUSE|address already in use/i;
 
+/** Next.js refuses a second `next dev` while `.next/dev/lock` is held. */
+export const NEXT_DEV_LOCK_REGEX = /Unable to acquire lock|another instance of next dev running/i;
+
+/** Next.js log when it picks another port, e.g. `using available port 3001 instead`. */
+export const NEXT_ALT_PORT_REGEX = /using available port (\d{2,5}) instead/gi;
+
+const DEV_OUTPUT_URL_PORT_REGEX = /\bhttps?:\/\/(?:localhost|127\.0\.0\.1):(\d{2,5})\b/gi;
+
 const ANSI_REGEX = /\u001b\[[0-9;?]*[ -/]*[@-~]/g;
 
 export function terminalOutputNeedsInstall(output: string): boolean {
@@ -16,6 +24,23 @@ export function terminalOutputNeedsInstall(output: string): boolean {
 
 export function terminalOutputPortInUse(output: string): boolean {
     return PORT_IN_USE_REGEX.test(output);
+}
+
+export function terminalOutputNextDevLock(output: string): boolean {
+    return NEXT_DEV_LOCK_REGEX.test(output);
+}
+
+/** Ports mentioned in dev-server stdout (Next alternate port, Local: URLs, …). */
+export function extractDevOutputProbePorts(output: string): number[] {
+    const clean = output.replace(ANSI_REGEX, '');
+    const ports: number[] = [];
+    for (const match of clean.matchAll(NEXT_ALT_PORT_REGEX)) {
+        ports.push(Number(match[1]));
+    }
+    for (const match of clean.matchAll(DEV_OUTPUT_URL_PORT_REGEX)) {
+        ports.push(Number(match[1]));
+    }
+    return [...new Set(ports.filter(p => Number.isFinite(p) && p > 0 && p < 65536))];
 }
 
 export function isTerminalDoesNotExistError(message: string): boolean {
@@ -29,6 +54,11 @@ export function extractTerminalFailureLine(output: string, fallback: string): st
     }
     if (terminalOutputPortInUse(output)) {
         return 'Dev port is already in use. Close the other process or use Preview again so Qaap picks another port.';
+    }
+    if (terminalOutputNextDevLock(output)) {
+        const ports = extractDevOutputProbePorts(output);
+        const hint = ports.length > 0 ? ` Try Open preview · :${ports[0]}.` : ' Stop the other Next dev or remove .next/dev/lock, then retry.';
+        return `Next.js is already running in this project.${hint}`;
     }
     const clean = output.replace(ANSI_REGEX, '');
     const lines = clean.split('\n').map(line => line.trim()).filter(line => line.length > 0);

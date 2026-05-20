@@ -396,6 +396,9 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
                 }
                 return nls.localize('qaap/projectBootstrap/running', '{0} running', framework);
             case 'run-failed':
+                if (state.portInUse && state.error?.includes('Next.js is already running')) {
+                    return nls.localize('qaap/projectBootstrap/nextAlreadyRunning', 'Next.js already running');
+                }
                 if (state.portInUse) {
                     return nls.localize('qaap/projectBootstrap/portInUse', 'Port already in use');
                 }

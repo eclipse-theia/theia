@@ -9,7 +9,13 @@ import '../../src/browser/style/qaap-mobile-touch-scroll.css';
 import '../../src/browser/style/qaap-empty-workbench-brand.css';
 import '../../src/browser/style/qaap-project-bootstrap.css';
 
+import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import {
+    QaapBootstrapOpenPreviewTool,
+    QaapBootstrapRunDevTool,
+    QaapBootstrapStatusTool,
+} from './qaap-bootstrap-tool-providers';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
@@ -62,4 +68,8 @@ export default new ContainerModule(bind => {
 
     bind(QaapProjectBootstrapContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapProjectBootstrapContribution);
+
+    bindToolProvider(QaapBootstrapStatusTool, bind);
+    bindToolProvider(QaapBootstrapRunDevTool, bind);
+    bindToolProvider(QaapBootstrapOpenPreviewTool, bind);
 });

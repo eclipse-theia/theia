@@ -43,6 +43,32 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         await app.page.close();
     });
 
+    test('shows project bootstrap banner for a Node dev workspace', async ({ playwright, browser }) => {
+        const ws = new TheiaWorkspace([path.resolve(__dirname, './resources/qaap-bootstrap-fixture')]);
+        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
+        await app.waitForShellAndInitialized();
+
+        const banner = app.page.locator('.qaap-project-bootstrap-banner');
+        await expect(banner).toBeVisible({ timeout: 15_000 });
+        await expect(banner).toHaveAttribute('data-phase', /detected|ready-to-run/);
+
+        await app.page.close();
+    });
+
+    test('opens Agent chat from the mobile bottom bar', async ({ playwright, browser }) => {
+        const app = await TheiaAppLoader.load({ playwright, browser });
+        await app.waitForShellAndInitialized();
+
+        const agentBtn = app.page.locator('#theia-mobile-bottom-bar .theia-mobile-bottom-activity-btn[data-action-id="agent"]');
+        await expect(agentBtn).toBeVisible();
+        await agentBtn.click();
+
+        await expect(app.page.locator('.chat-view-widget')).toBeVisible({ timeout: 15_000 });
+        await expect(app.page.locator('body')).toHaveClass(/theia-mod-mobile-ai-chat-fullwidth/);
+
+        await app.page.close();
+    });
+
     test('getting started uses single-column layout on narrow viewport', async ({ playwright, browser }) => {
         const app = await TheiaAppLoader.load({ playwright, browser });
         await app.waitForShellAndInitialized();

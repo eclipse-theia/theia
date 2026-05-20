@@ -15,7 +15,7 @@ import { MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mo
 import { MiniBrowser } from '@theia/mini-browser/lib/browser/mini-browser';
 import { MiniBrowserOpenHandler, MiniBrowserCommands } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import { MiniBrowserOpenerOptions } from '@theia/mini-browser/lib/browser/mini-browser-opener-options';
-import { normalizeMiniBrowserOpenUrl } from '@theia/mini-browser/lib/browser/mini-browser-url-utils';
+import { formatMiniBrowserNavigateError, normalizeMiniBrowserOpenUrl } from '@theia/mini-browser/lib/browser/mini-browser-url-utils';
 import { isMiniBrowserPreviewPlaceholderUrl } from './qaap-mini-browser-defaults';
 
 /**
@@ -113,7 +113,7 @@ export class QaapMiniBrowserOpenHandler extends MiniBrowserOpenHandler {
             this.messages.error(nls.localize(
                 'theia/mini-browser/urlMapFailed',
                 'Could not resolve that URL: {0}',
-                String(err)
+                formatMiniBrowserNavigateError(err)
             ));
             return undefined;
         }

@@ -25,8 +25,10 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { BaseWidget, addEventListener, codiconArray } from '@theia/core/lib/browser/widgets/widget';
+import { nls } from '@theia/core/lib/common/nls';
 import { LocationMapperService } from './location-mapper-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
+import { formatMiniBrowserNavigateError, isMiniBrowserUriParseError, normalizeMiniBrowserOpenUrl } from './mini-browser-url-utils';
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { MiniBrowserContentStyle } from './mini-browser-content-style';
@@ -225,7 +227,7 @@ export class MiniBrowserContent extends BaseWidget {
      * Re-run navigation (e.g. after the shell has laid out the target area). Safe to call multiple times.
      */
     forceNavigate(url: string): Promise<void> {
-        return this.go(url.trim());
+        return this.go(normalizeMiniBrowserOpenUrl(url));
     }
 
     @postConstruct()
@@ -429,7 +431,7 @@ export class MiniBrowserContent extends BaseWidget {
         let location: string | undefined = this.props.startPage;
         // Use the the location from the `input`.
         if (this.input && this.input.value) {
-            location = this.input.value;
+            location = normalizeMiniBrowserOpenUrl(this.input.value);
         }
         try {
             const { contentDocument } = this.frame;
@@ -479,9 +481,30 @@ export class MiniBrowserContent extends BaseWidget {
         if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() === 'show') {
             const { target } = e;
             if (target instanceof HTMLInputElement) {
-                this.mapLocation(target.value).then(location => this.submitInputEmitter.fire(location));
+                this.navigateFromUrlBar(target.value);
             }
         }
+    }
+
+    /**
+     * Normalizes the URL bar value and navigates. Subclasses may override {@link onUrlBarNavigateFailed}.
+     */
+    protected navigateFromUrlBar(raw?: string): void {
+        const location = normalizeMiniBrowserOpenUrl(raw ?? this.input.value);
+        if (!location) {
+            this.onUrlBarNavigateFailed(nls.localize('theia/mini-browser/emptyUrl', 'Please enter a URL.'));
+            return;
+        }
+        if (location !== this.input.value) {
+            this.setInput(location);
+        }
+        void this.go(location, {
+            preserveFocus: false
+        });
+    }
+
+    protected onUrlBarNavigateFailed(message: string): void {
+        this.showErrorBar(message);
     }
 
     protected createPrevious(parent: HTMLElement): HTMLElement {
@@ -628,8 +651,14 @@ export class MiniBrowserContent extends BaseWidget {
             } catch (e) {
                 clearTimeout(this.frameLoadTimeout);
                 this.hideLoadIndicator();
-                this.showErrorBar(String(e));
-                console.log(e);
+                const message = isMiniBrowserUriParseError(e)
+                    ? nls.localize(
+                        'theia/mini-browser/invalidUrl',
+                        'Invalid URL. Remove extra spaces or fix the address, then try again.'
+                    )
+                    : formatMiniBrowserNavigateError(e);
+                this.onUrlBarNavigateFailed(message);
+                this.logger.error('mini-browser navigation failed', e);
             }
         }
     }

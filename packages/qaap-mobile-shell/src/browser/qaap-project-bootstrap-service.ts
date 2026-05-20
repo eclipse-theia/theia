@@ -32,9 +32,11 @@ import {
     wrapDevCommandForPort,
 } from './qaap-project-bootstrap-port';
 import {
+    extractDevOutputProbePorts,
     extractTerminalFailureLine,
     isTerminalDoesNotExistError,
     terminalOutputNeedsInstall,
+    terminalOutputNextDevLock,
 } from './qaap-project-bootstrap-dev-errors';
 
 /** Terminal titles created by {@link QaapProjectBootstrapService.spawnCommand}. */
@@ -210,6 +212,11 @@ export class QaapProjectBootstrapService {
     get previewUrl(): string | undefined { return this._previewUrl; }
     get selectedApp(): QaapMonorepoAppCandidate | undefined { return this._selectedApp; }
     get lastPort(): number | undefined { return this._lastPort; }
+
+    /** Current bootstrap state for UI contributions and AI tools. */
+    getStateSnapshot(): QaapBootstrapStateChange {
+        return this.buildStateChange(this._phase);
+    }
 
     /**
      * Returns the dev command + cwd that should be spawned. For monorepos this is the selected
@@ -529,6 +536,12 @@ export class QaapProjectBootstrapService {
             }
             void this.tryAttachToExistingServer(this.collectProbePorts(plan));
         }
+        for (const port of extractDevOutputProbePorts(clean)) {
+            if (this._portConflictPort === undefined) {
+                this._portConflictPort = port;
+            }
+            void this.tryAttachToExistingServer(this.collectProbePorts(plan));
+        }
         this.scanForDevUrl(clean);
     }
 
@@ -667,6 +680,9 @@ export class QaapProjectBootstrapService {
         if (this._lastPort !== undefined) {
             ports.push(this._lastPort);
         }
+        for (const port of extractDevOutputProbePorts(this.devOutputTail)) {
+            ports.push(port);
+        }
         return [...new Set(ports.filter(p => p > 0 && p < 65536 && p !== idePort))];
     }
 
@@ -747,15 +763,20 @@ export class QaapProjectBootstrapService {
             this.cleanupDevTerminal();
             return;
         }
-        const attached = await this.tryAttachToExistingServer(this.collectProbePorts(plan));
+        const probePorts = this.collectProbePorts(plan);
+        const attached = await this.tryAttachToExistingServer(probePorts);
         if (attached || this._previewUrl) {
             this._error = undefined;
             this._portConflictDetected = false;
             this.cleanupDevTerminal();
             return;
         }
-        const portConflict = this._portConflictDetected || PORT_IN_USE_REGEX.test(message);
-        const conflictPort = this.activeDevPortHint ?? plan.expectedPort;
+        const nextLock = terminalOutputNextDevLock(this.devOutputTail);
+        const portConflict = this._portConflictDetected || PORT_IN_USE_REGEX.test(message) || nextLock;
+        const conflictPort = this._portConflictPort
+            ?? extractDevOutputProbePorts(this.devOutputTail)[0]
+            ?? this.activeDevPortHint
+            ?? plan.expectedPort;
         this._needsInstall = terminalOutputNeedsInstall(this.devOutputTail);
         this._error = portConflict && conflictPort
             ? `Port :${conflictPort} is already in use. Another terminal may already be serving the app.`
@@ -875,7 +896,8 @@ export class QaapProjectBootstrapService {
             return 'Project folder not found on the server. Re-open the repo from Projects.';
         }
         if (/command not found|not found:/i.test(message)) {
-            return 'Node/npm not available in the server shell. Install Node in the Docker image or run Install first.';
+            const pm = this._descriptor?.packageManager ?? 'npm';
+            return `Node/${pm} not available in the server shell. Install Node and ${pm} in the Docker image or run Install first.`;
         }
         return message;
     }
@@ -980,12 +1002,15 @@ export class QaapProjectBootstrapService {
         this.forwardedPortsEmitter.fire([]);
     }
 
-    protected setPhase(phase: QaapBootstrapPhase): void {
-        this._phase = phase;
+    protected buildStateChange(phase: QaapBootstrapPhase): QaapBootstrapStateChange {
         const portInUse = phase === 'run-failed'
-            && (this._portConflictDetected || PORT_IN_USE_REGEX.test(this._error ?? ''));
-        const existingServerPort = this._portConflictPort ?? this._lastPort;
-        this.stateEmitter.fire({
+            && (this._portConflictDetected
+                || PORT_IN_USE_REGEX.test(this._error ?? '')
+                || terminalOutputNextDevLock(this.devOutputTail));
+        const existingServerPort = this._portConflictPort
+            ?? extractDevOutputProbePorts(this.devOutputTail)[0]
+            ?? this._lastPort;
+        return {
             phase,
             descriptor: this._descriptor,
             previewUrl: this._previewUrl,
@@ -995,7 +1020,12 @@ export class QaapProjectBootstrapService {
             lastPort: this._lastPort,
             portInUse: portInUse || undefined,
             existingServerPort: portInUse ? existingServerPort : undefined,
-        });
+        };
+    }
+
+    protected setPhase(phase: QaapBootstrapPhase): void {
+        this._phase = phase;
+        this.stateEmitter.fire(this.buildStateChange(phase));
     }
 
     protected persistPhase(phase: QaapBootstrapPhase, selectedApp?: QaapMonorepoAppCandidate): void {

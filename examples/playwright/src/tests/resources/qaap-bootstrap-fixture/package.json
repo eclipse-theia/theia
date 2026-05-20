@@ -1,0 +1,11 @@
+{
+  "name": "qaap-bootstrap-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

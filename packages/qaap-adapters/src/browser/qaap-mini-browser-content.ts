@@ -122,17 +122,15 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
             goButton.classList.add(QaapMiniBrowserContentStyle.GO_BUTTON);
             goButton.textContent = nls.localize('theia/mini-browser/go', 'Go');
             goButton.title = nls.localize('theia/mini-browser/goToUrl', 'Go to URL');
-            this.toDispose.push(addEventListener(goButton, 'click', () => this.submitUrlFromInput()));
+            this.toDispose.push(addEventListener(goButton, 'click', () => this.navigateFromUrlBar()));
             field.appendChild(goButton);
         }
         return input;
     }
 
-    protected submitUrlFromInput(): void {
-        if (this.getToolbarProps() !== 'show' || !this.input.value.trim()) {
-            return;
-        }
-        void this.mapLocation(this.input.value).then(location => this.submitInputEmitter.fire(location));
+    protected override onUrlBarNavigateFailed(message: string): void {
+        super.onUrlBarNavigateFailed(message);
+        this.messageService.warn(message);
     }
 
     protected override createToolbar(parent: HTMLElement): HTMLDivElement & Readonly<{ input: HTMLInputElement }> {
