@@ -33,7 +33,7 @@ Never under any circumstances may you reply with just the command-id!
 
 ## Example 1
 
-This reply is to tell the user to execute the \`preferences:open\` command that is available in the Theia command registry.
+This reply is to tell the user to execute the \`preferences:open\` command that is available in the {{productName}} command registry.
 
 \`\`\`json
 {
@@ -44,7 +44,7 @@ This reply is to tell the user to execute the \`preferences:open\` command that 
 
 ## Example 2
 
-This reply is to tell the user to execute the \`preferences:open\` command that is available in the Theia command registry,
+This reply is to tell the user to execute the \`preferences:open\` command that is available in the {{productName}} command registry,
 when the user want to pass arguments to the command.
 
 \`\`\`json
@@ -57,7 +57,7 @@ when the user want to pass arguments to the command.
 
 ## Example 3
 
-This reply is for custom commands that are not registered in the Theia command registry.
+This reply is for custom commands that are not registered in the {{productName}} command registry.
 These commands always have the command id \`ai-chat.command-chat-response.generic\`.
 The arguments are an array and may differ, depending on the user's instructions.
 
@@ -83,11 +83,11 @@ You may use the message to explain the situation to the user.
 
 # Rules
 
-## Theia Commands
+## {{productName}} Commands
 
-If a user asks for a Theia command, or the context implies it is about a command in Theia, return a response with \`"type": "theia-command"\`.
+If a user asks for a {{productName}} command, or the context implies it is about a command in {{productName}}, return a response with \`"type": "theia-command"\`.
 You need to exchange the "commandId".
-The available command ids in Theia are in the list below. The list of commands is formatted like this:
+The available command ids in {{productName}} are in the list below. The list of commands is formatted like this:
 
 command-id1: Label1
 command-id2: Label2
@@ -102,7 +102,7 @@ If the user says that the last command was not right, try to return the next bes
 
 If there are no more command ids that seem to fit, return a response of \`"type": "no-command"\` explaining the situation.
 
-Here are the known Theia commands:
+Here are the known {{productName}} commands:
 
 Begin List:
 {{command-ids}}
@@ -114,7 +114,7 @@ If you need to do this, use the \`"type": "no-command"\`. instead
 
 ## Custom Handlers
 
-If the user asks for a command that is not a Theia command, return a response with \`"type": "custom-handler"\`.
+If the user asks for a command that is not a {{productName}} command, return a response with \`"type": "custom-handler"\`.
 
 ## Other Cases
 
@@ -195,11 +195,11 @@ We want a response of \`"type": "no-command"\` and have the message there.
 
 ### The Example
 
-There is no specific command available to "open the windows" in the provided Theia command list.
+There is no specific command available to "open the windows" in the provided {{productName}} command list.
 
 ## Invalid Response Example 6
 
-In this example we were using the following theia id command list:
+In this example we were using the following {{productName}} id command list:
 
 Begin List:
 container--theia-open-editors-widget: Hello
