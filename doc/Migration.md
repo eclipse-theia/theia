@@ -17,6 +17,19 @@ In case you have added your own bundling instructions to the `webpack.config.js`
 
 Note that as a part of this change, the `@theia/native-webpack-plugin` dependency has been renamed to `@theia/bundle-plugin`.
 
+The generated ESBuild configuration includes a `sourceMapPathsPlugin` that rewrites the `sources` field of emitted source maps to absolute `file://` URLs. This makes browser and Node debug launch configurations work without any custom `webRoot` or `sourceMapPathOverrides`: a minimal Chrome launch like
+
+```json
+{
+    "name": "Launch Browser Frontend",
+    "type": "chrome",
+    "request": "launch",
+    "url": "http://localhost:3000/"
+}
+```
+
+is sufficient to bind breakpoints in the original sources. If you have a customized `esbuild.mjs` that is not automatically regenerated (because the `gen-esbuild` import was removed), either regenerate it (delete `esbuild.mjs` and rerun `theia build`) or manually add `sourceMapPathsPlugin()` from `@theia/bundle-plugin` to the `plugins` array of each build target. The plugin is a no-op when source maps are disabled (production builds).
+
 _Builtin Extension Pack_:
 
 If you are using the [`eclipse-theia.builtin-extension-pack@1.79.0`](https://open-vsx.org/extension/eclipse-theia/builtin-extension-pack) extension pack you may need to include the [`ms-vscode.js-debug`](https://open-vsx.org/extension/ms-vscode/js-debug) and [`ms-vscode.js-debug-companion`](https://open-vsx.org/extension/ms-vscode/js-debug-companion) plugins for JavaScript debug support.

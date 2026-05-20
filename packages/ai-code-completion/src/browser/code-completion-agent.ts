@@ -89,6 +89,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 settings: {
                     stream: false
                 },
+                // Inline completion is a one-shot text replacement; reasoning/thinking adds latency
+                // and can cause models (e.g. Anthropic adaptive thinking) to emit no text at all.
+                reasoning: { level: 'off' },
                 agentId: this.id,
                 sessionId,
                 requestId,
