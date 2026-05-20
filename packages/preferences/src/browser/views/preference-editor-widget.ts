@@ -385,7 +385,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
             // Skip hidden renderers (display:none) — they report offsetTop/offsetHeight 0
             // and would otherwise match scrollTop===0, hijacking the selection back to
             // the first hidden category.
-            if (offsetParent === null) {
+            if (!offsetParent) {
                 continue;
             }
             if (Math.abs(offsetTop - scrollTop) <= offsetHeight / 2) {
