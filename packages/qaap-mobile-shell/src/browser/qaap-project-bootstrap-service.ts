@@ -238,7 +238,9 @@ export class QaapProjectBootstrapService {
         }
         const app = this._selectedApp;
         if (app) {
-            return { command: app.devCommand, cwd: app.rootUri, expectedPort: app.expectedPort, kind: app.kind };
+            // pnpm workspaces: filter commands run from the workspace root, not the package folder.
+            const cwd = descriptor.packageManager === 'pnpm' ? descriptor.rootUri : app.rootUri;
+            return { command: app.devCommand, cwd, expectedPort: app.expectedPort, kind: app.kind };
         }
         if (descriptor.devCommand) {
             return {
@@ -936,6 +938,9 @@ export class QaapProjectBootstrapService {
         }
         if (/command not found|not found:/i.test(message)) {
             const pm = this._descriptor?.packageManager ?? 'npm';
+            if (pm === 'pnpm' && /pnpm/.test(message)) {
+                return 'pnpm is not available in this environment. Rebuild the Qaap Docker image (Corepack + pnpm) or run Install from a terminal with pnpm in PATH.';
+            }
             return `Node/${pm} not available in the server shell. Install Node and ${pm} in the Docker image or run Install first.`;
         }
         return message;

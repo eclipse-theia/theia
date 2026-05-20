@@ -335,15 +335,15 @@ export class QaapProjectBootstrapDetector {
             return undefined;
         }
         const { kind, expectedPort } = this.guessFramework(pkg);
-        const devCommand = this.buildRunCommand(rootPm, devScriptKey);
-        const name = typeof pkg.name === 'string' && pkg.name.trim().length > 0
+        const pkgName = typeof pkg.name === 'string' && pkg.name.trim().length > 0
             ? pkg.name.trim()
             : appUri.path.base || 'app';
-        const relativePath = this.relativePathFromRoot(rootUri, appUri) ?? name;
+        const devCommand = this.buildMonorepoDevCommand(rootPm, devScriptKey, pkgName);
+        const relativePath = this.relativePathFromRoot(rootUri, appUri) ?? pkgName;
         return {
             rootUri: appUri,
             relativePath,
-            name,
+            name: pkgName,
             kind,
             devCommand,
             devCommandLabel: devCommand,
@@ -460,6 +460,18 @@ export class QaapProjectBootstrapDetector {
             case 'bun': return `bun run ${script}`;
             default: return `npm run ${script}`;
         }
+    }
+
+    /**
+     * pnpm workspaces must run from the repo root via `--filter`, not `pnpm run dev` inside the
+     * package folder (Docker/VPS often only has pnpm via Corepack at the workspace root).
+     */
+    protected buildMonorepoDevCommand(pm: QaapPackageManager, script: string, packageName: string): string {
+        if (pm === 'pnpm') {
+            const quoted = packageName.replace(/'/g, `'\\''`);
+            return `pnpm --filter '${quoted}' ${script}`;
+        }
+        return this.buildRunCommand(pm, script);
     }
 
     protected pickDevScript(scripts: Record<string, unknown>): string | undefined {
