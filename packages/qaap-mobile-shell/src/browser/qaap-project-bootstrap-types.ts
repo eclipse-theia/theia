@@ -50,6 +50,9 @@ export interface QaapMonorepoAppCandidate {
     readonly expectedPort?: number;
 }
 
+/** Default HTTP port for `@theia/*` example apps (`theia start`). */
+export const QAAP_THEIA_DEV_PORT = 3000;
+
 /**
  * Layout hint inferred from the lockfile / config files. We only need the marker presence at this
  * level — the detector enumerates the actual sub-packages separately.

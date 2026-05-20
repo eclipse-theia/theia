@@ -23,6 +23,8 @@ In `examples/browser` or `examples/electron` `package.json`:
 
 Do **not** list each `@theia/qaap-*` package unless you need a direct import.
 
+Do **not** add `@theia/ai-copilot` by default — Qaap uses its own agentic AI. The built-in Copilot status bar and provider stay disabled (`ai-features.copilot.enabled: false`) unless you opt in or install a GitHub Copilot VSX extension.
+
 ## Upstream sync
 
 - Merge `upstream/master` on a branch; resolve conflicts in **core seams** (`WorkbenchTopBarFactory`, `mobile-layout-state`, mini-browser/monaco hooks).

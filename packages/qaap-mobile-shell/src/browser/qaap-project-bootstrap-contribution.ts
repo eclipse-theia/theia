@@ -396,6 +396,9 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
                 }
                 return nls.localize('qaap/projectBootstrap/running', '{0} running', framework);
             case 'run-failed':
+                if (state.portInUse) {
+                    return nls.localize('qaap/projectBootstrap/portInUse', 'Port already in use');
+                }
                 return nls.localize('qaap/projectBootstrap/runFailed', 'Dev server stopped');
             default:
                 return descriptor.name;
@@ -506,7 +509,29 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
                         run: () => this.bootstrap.skip(),
                     },
                 ];
-            case 'run-failed':
+            case 'run-failed': {
+                const recoveryPort = state.existingServerPort ?? state.lastPort;
+                if (state.portInUse && recoveryPort) {
+                    return [
+                        {
+                            label: nls.localize(
+                                'qaap/projectBootstrap/openExistingPreview',
+                                'Open preview · :{0}',
+                                recoveryPort
+                            ),
+                            primary: true,
+                            run: () => this.bootstrap.openExistingPreview(),
+                        },
+                        {
+                            label: nls.localize('qaap/projectBootstrap/retry', 'Retry'),
+                            run: () => this.bootstrap.runDevServer(),
+                        },
+                        {
+                            label: nls.localize('qaap/projectBootstrap/dismiss', 'Dismiss'),
+                            run: () => this.bootstrap.skip(),
+                        },
+                    ];
+                }
                 return [
                     {
                         label: nls.localize('qaap/projectBootstrap/retry', 'Retry'),
@@ -518,6 +543,7 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
                         run: () => this.bootstrap.skip(),
                     },
                 ];
+            }
             case 'running':
                 return [
                     {

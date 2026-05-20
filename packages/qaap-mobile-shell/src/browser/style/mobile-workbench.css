@@ -112,13 +112,68 @@
     min-height: 44px;
   }
 
-  .theia-workbench-nav-btn:not(.theia-workbench-account-btn) {
+  .theia-workbench-nav-btn:not(.theia-workbench-account-btn):not(.theia-workbench-history-nav-btn) {
     min-width: 40px;
     min-height: 36px;
     width: auto;
     height: auto;
     margin: 0 2px;
     padding: 0 6px;
+  }
+
+  #theia-top-panel {
+    position: relative;
+    align-items: center;
+  }
+
+  /* Left panel toggle is redundant with the bottom bar Explore action. */
+  .theia-workbench-nav-controls .theia-workbench-nav-btn.codicon-layout-sidebar-left {
+    display: none !important;
+  }
+
+  /* Project name: leading edge. History: dead center. Account: trailing. */
+  #theia-top-panel > #theia\:workbench-nav {
+    position: relative;
+    z-index: 3;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: calc(50% - 56px);
+    margin-right: 0;
+    margin-left: 8px;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name {
+    max-width: min(42vw, 200px);
+    margin-left: 0;
+  }
+
+  #theia-top-panel > #theia\:workbench-history-nav {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    order: unset;
+    flex: 0 0 auto;
+    pointer-events: auto;
+  }
+
+  #theia-top-panel > #theia\:workbench-right-controls {
+    position: relative;
+    z-index: 3;
+    margin-left: auto;
+  }
+
+  .theia-workbench-history-nav-group .theia-workbench-history-nav-btn {
+    align-self: center;
+    width: clamp(36px, var(--theia-private-menubar-height, 40px), 100%);
+    height: clamp(36px, var(--theia-private-menubar-height, 40px), 100%);
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0 2px;
+    padding: 0;
   }
 
   .theia-workbench-nav-btn.codicon::before {
@@ -327,9 +382,16 @@
 |-----------------------------------------------------------------------------*/
 
 @media (max-width: 767px) and (pointer: coarse) {
-  .theia-workbench-nav-btn:not(.theia-workbench-account-btn) {
+  .theia-workbench-nav-btn:not(.theia-workbench-account-btn):not(.theia-workbench-history-nav-btn) {
     min-width: 48px;
     min-height: 48px;
+  }
+
+  .theia-workbench-history-nav-group .theia-workbench-history-nav-btn {
+    width: clamp(44px, var(--theia-private-menubar-height, 40px), 100%);
+    height: clamp(44px, var(--theia-private-menubar-height, 40px), 100%);
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .theia-workbench-right-controls .theia-workbench-nav-btn.theia-workbench-account-btn {
@@ -402,6 +464,8 @@
   width: 100% !important;
   max-width: 100% !important;
 }
+
+/* Bottom panel layout + terminal scroll: see qaap-mobile-touch-scroll.css */
 
 #theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel {
   flex: 1 1 auto;
@@ -733,6 +797,9 @@
   height: 100%;
 }
 
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .theia-Tree,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .theia-TreeContainer,
+#theia-app-shell.theia-mod-mobile-one-column #theia-left-content-panel .treeContainer,
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget,
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget .theia-TreeContainer,
 #theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget .treeContainer,
@@ -742,17 +809,7 @@
   min-height: 0;
 }
 
-#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-view-widget,
-#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget,
-#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget .body,
-#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget .ps,
-#theia-app-shell.theia-mod-mobile-one-column #theia-right-content-panel .chat-tree-view-widget [data-virtuoso-scroller="true"] {
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  overscroll-behavior-y: contain;
-}
+/* Vertical touch scroll: see qaap-mobile-touch-scroll.css */
 
 /* Editor tabs: show every open tab; the narrow-viewport rules above (max-width: 767px) make the
    main tab row horizontally scrollable with touch pan, proximity scroll snap, and scrollbars

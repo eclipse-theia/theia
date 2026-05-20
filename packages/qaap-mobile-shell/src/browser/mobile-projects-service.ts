@@ -484,6 +484,18 @@ export class MobileProjectsService {
         return false;
     }
 
+    /** Display name for the active workspace (matches the Projects panel entry). */
+    getCurrentWorkspaceDisplayName(): string | undefined {
+        const current = this.workspaceService.workspace;
+        if (!current) {
+            return undefined;
+        }
+        const uri = current.resource;
+        const id = `ws:${uri.toString()}`;
+        const name = this.labelProvider.getName(uri);
+        return this.resolveDisplayName(id, name);
+    }
+
     getFilter(): MobileProjectFilter {
         return this.filter;
     }

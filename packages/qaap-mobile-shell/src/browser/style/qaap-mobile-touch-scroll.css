@@ -1,0 +1,142 @@
+/********************************************************************************
+ * Copyright (C) 2026 theia-ide and others.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Mobile / coarse-pointer: native vertical touch scroll everywhere it matters.
+|
+| PerfectScrollbar sets `overflow: hidden` on hosts; on iOS nested scroll breaks
+| when `html/body { overflow: hidden }` unless we force native overflow + pan-y.
+| Horizontal strips (tab rows, bottom nav, status bar) stay pan-x only.
+| Breakpoint matches MOBILE_NARROW_VIEWPORT_MEDIA_QUERY (767px).
+|-----------------------------------------------------------------------------*/
+
+@media (max-width: 767px), (pointer: coarse) {
+  /*
+   * Flex / Lumino height chain — scroll hosts need a bounded height before
+   * overflow-y can engage (file tree, AI chat, output, terminal, mini-browser).
+   */
+  #theia-app-shell #theia-left-content-panel .lm-DockPanel-widget,
+  #theia-app-shell #theia-right-content-panel .lm-DockPanel-widget,
+  #theia-app-shell #theia-bottom-content-panel .lm-DockPanel-widget,
+  #theia-app-shell #theia-left-content-panel .theia-Tree,
+  #theia-app-shell #theia-right-content-panel .theia-Tree,
+  #theia-app-shell #theia-bottom-content-panel .terminal-container,
+  #theia-app-shell #theia-main-content-panel .theia-mini-browser,
+  #theia-app-shell #theia-main-content-panel .theia-mini-browser-content-area,
+  #theia-app-shell .chat-view-widget,
+  #theia-app-shell .chat-tree-view-widget {
+    min-height: 0;
+  }
+
+  #theia-app-shell.theia-mod-mobile-one-column #theia-bottom-content-panel {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #theia-app-shell.theia-mod-mobile-one-column #theia-bottom-content-panel .terminal-container {
+    height: 100%;
+  }
+
+  #theia-app-shell .theia-mini-browser-content-area iframe {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100% !important;
+    width: 100% !important;
+    border: none;
+    touch-action: auto;
+  }
+
+  /* --- Vertical scroll hosts (native overflow; PS rails hidden below) --- */
+  #theia-app-shell .theia-Tree,
+  #theia-app-shell .theia-TreeContainer,
+  #theia-app-shell .treeContainer,
+  #theia-app-shell .body.ps,
+  #theia-app-shell .ps[tabindex],
+  #theia-app-shell [data-virtuoso-scroller="true"],
+  #theia-app-shell .chat-view-widget,
+  #theia-app-shell .chat-tree-view-widget,
+  #theia-app-shell .chat-tree-view-widget .body,
+  #theia-app-shell .terminal-container .xterm-viewport,
+  #theia-app-shell .theia-property-view-widget .treeContainer,
+  #theia-app-shell #outputView,
+  #theia-app-shell .theia-output .monaco-editor .overflow-guard,
+  #theia-app-shell #debug-console .theia-Tree,
+  #theia-app-shell .gs-container,
+  .theia-mobile-projects-scroll,
+  .theia-mobile-pr-stack,
+  .theia-mobile-pr-picker,
+  .theia-mobile-pr-quick-row,
+  .theia-mobile-onboarding-body,
+  .theia-mobile-bottom-actionsheet,
+  .theia-mobile-open-repo-list,
+  .qaap-project-bootstrap-picker {
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Terminal: xterm viewport is absolute; host must stay bounded. */
+  #theia-app-shell .terminal-container {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #theia-app-shell .terminal-container .xterm {
+    height: 100%;
+  }
+
+  /* Mini-browser: toolbar fixed height; page scrolls inside iframe. */
+  #theia-app-shell .theia-mini-browser {
+    min-height: 0;
+  }
+
+  #theia-app-shell .theia-mini-browser-content-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    touch-action: auto;
+  }
+
+  /* Monaco manages its own overflow; only enable touch pan. */
+  #theia-app-shell .monaco-editor .overflow-guard {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /*
+   * PerfectScrollbar vertical rails are redundant once native overflow is active
+   * and can intercept touch on some WebKit builds.
+   */
+  #theia-app-shell .ps__rail-y {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /*
+   * Do NOT override horizontal-only strips (tab rows, bottom nav, status bar,
+   * keyboard accessory pages).
+   */
+  #theia-app-shell .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
+  #theia-app-shell .theia-mobile-bottom-activity-bar,
+  #theia-app-shell .theia-mobile-bottom-chrome-host > #theia-mobile-bottom-bar,
+  #theia-app-shell .theia-mobile-bottom-chrome-host > #theia-statusBar,
+  #theia-app-shell .theia-mobile-keyboard-accessory-page,
+  #theia-app-shell .theia-statusBar-track {
+    touch-action: pan-x !important;
+    overflow-y: hidden !important;
+  }
+
+  #theia-app-shell .theia-mobile-sheet-grabber {
+    touch-action: none;
+  }
+
+  #theia-app-shell .theia-mobile-edgeSwipeZone {
+    touch-action: none;
+  }
+}

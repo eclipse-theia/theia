@@ -13,7 +13,9 @@ import {
     readQaapAuthUser,
     readQaapSignedIn,
 } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { buildQaapAccountMenuEntries, dismissQaapAccountMenu, toggleQaapAccountMenu } from './qaap-workbench-account-menu';
+import { MobileProjectsService } from './mobile-projects-service';
 
 const WORKBENCH_NAV_GO_BACK = 'textEditor.commands.go.back';
 const WORKBENCH_NAV_GO_FORWARD = 'textEditor.commands.go.forward';
@@ -21,31 +23,112 @@ const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
 const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
 
+function createWorkbenchNavBtn(iconClasses: string, title: string): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `theia-workbench-nav-btn ${iconClasses}`;
+    btn.title = title;
+    return btn;
+}
+
+function createWorkbenchHistoryNavBtn(iconClasses: string, title: string): HTMLButtonElement {
+    const btn = createWorkbenchNavBtn(iconClasses, title);
+    btn.classList.add('theia-workbench-history-nav-btn');
+    return btn;
+}
+
 export class QaapWorkbenchNavControlsWidget extends Widget {
     protected readonly toDispose = new DisposableCollection();
     protected readonly toggleBtn: HTMLButtonElement;
+    protected readonly projectNameEl: HTMLSpanElement;
+
+    constructor(
+        protected readonly commands: CommandRegistry,
+        protected readonly projectsService: MobileProjectsService,
+        protected readonly workspaceService: WorkspaceService
+    ) {
+        const node = document.createElement('motion.div');
+        node.classList.add('theia-workbench-nav-controls');
+        super({ node });
+        this.id = 'theia:workbench-nav';
+        this.toggleBtn = createWorkbenchNavBtn(
+            'codicon codicon-layout-sidebar-left',
+            CommonCommands.TOGGLE_LEFT_PANEL.label ?? 'Toggle Left Panel'
+        );
+        this.projectNameEl = document.createElement('span');
+        this.projectNameEl.className = 'theia-workbench-current-project-name';
+        this.projectNameEl.setAttribute('aria-hidden', 'true');
+        node.append(this.toggleBtn, this.projectNameEl);
+        this.toggleBtn.addEventListener('click', this.onToggleClick);
+        const refresh = (): void => this.updateEnabledStates();
+        this.toDispose.push(this.commands.onDidExecuteCommand(refresh));
+        this.toDispose.push(this.commands.onCommandsChanged(refresh));
+        this.toDispose.push(this.workspaceService.onWorkspaceChanged(() => this.updateProjectName()));
+        this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => this.updateProjectName()));
+    }
+
+    protected readonly onToggleClick = (): void => this.runIfEnabled(CommonCommands.TOGGLE_LEFT_PANEL.id);
+
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.updateEnabledStates();
+        this.updateProjectName();
+    }
+
+    override dispose(): void {
+        if (this.isDisposed) {
+            return;
+        }
+        this.toDispose.dispose();
+        this.toggleBtn.removeEventListener('click', this.onToggleClick);
+        super.dispose();
+    }
+
+    protected runIfEnabled(commandId: string): void {
+        if (!this.commands.isEnabled(commandId)) {
+            return;
+        }
+        void this.commands.executeCommand(commandId).catch(() => undefined);
+    }
+
+    protected updateEnabledStates(): void {
+        this.toggleBtn.disabled = !this.commands.isEnabled(CommonCommands.TOGGLE_LEFT_PANEL.id);
+    }
+
+    protected updateProjectName(): void {
+        const name = this.projectsService.getCurrentWorkspaceDisplayName();
+        if (name) {
+            this.projectNameEl.textContent = name;
+            this.projectNameEl.title = name;
+            this.projectNameEl.hidden = false;
+        } else {
+            this.projectNameEl.textContent = '';
+            this.projectNameEl.title = '';
+            this.projectNameEl.hidden = true;
+        }
+    }
+}
+
+/** Editor back / forward; separate top-panel child so mobile CSS can center it in the bar. */
+export class QaapWorkbenchHistoryNavWidget extends Widget {
+    protected readonly toDispose = new DisposableCollection();
     protected readonly backBtn: HTMLButtonElement;
     protected readonly forwardBtn: HTMLButtonElement;
 
     constructor(protected readonly commands: CommandRegistry) {
-        const node = document.createElement('div');
-        node.classList.add('theia-workbench-nav-controls');
+        const node = document.createElement('motion.div');
+        node.classList.add('theia-workbench-history-nav-group');
         super({ node });
-        this.id = 'theia:workbench-nav';
-        this.toggleBtn = QaapWorkbenchNavControlsWidget.createBtn(
-            'codicon codicon-layout-sidebar-left',
-            CommonCommands.TOGGLE_LEFT_PANEL.label ?? 'Toggle Left Panel'
-        );
-        this.backBtn = QaapWorkbenchNavControlsWidget.createBtn(
+        this.id = 'theia:workbench-history-nav';
+        this.backBtn = createWorkbenchHistoryNavBtn(
             'codicon codicon-arrow-left',
             nls.localizeByDefault('Go Back')
         );
-        this.forwardBtn = QaapWorkbenchNavControlsWidget.createBtn(
+        this.forwardBtn = createWorkbenchHistoryNavBtn(
             'codicon codicon-arrow-right',
             nls.localizeByDefault('Go Forward')
         );
-        node.append(this.toggleBtn, this.backBtn, this.forwardBtn);
-        this.toggleBtn.addEventListener('click', this.onToggleClick);
+        node.append(this.backBtn, this.forwardBtn);
         this.backBtn.addEventListener('click', this.onBackClick);
         this.forwardBtn.addEventListener('click', this.onForwardClick);
         const refresh = (): void => this.updateEnabledStates();
@@ -53,15 +136,6 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
         this.toDispose.push(this.commands.onCommandsChanged(refresh));
     }
 
-    protected static createBtn(iconClasses: string, title: string): HTMLButtonElement {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `theia-workbench-nav-btn ${iconClasses}`;
-        btn.title = title;
-        return btn;
-    }
-
-    protected readonly onToggleClick = (): void => this.runIfEnabled(CommonCommands.TOGGLE_LEFT_PANEL.id);
     protected readonly onBackClick = (): void => this.runIfEnabled(WORKBENCH_NAV_GO_BACK);
     protected readonly onForwardClick = (): void => this.runIfEnabled(WORKBENCH_NAV_GO_FORWARD);
 
@@ -75,7 +149,6 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
             return;
         }
         this.toDispose.dispose();
-        this.toggleBtn.removeEventListener('click', this.onToggleClick);
         this.backBtn.removeEventListener('click', this.onBackClick);
         this.forwardBtn.removeEventListener('click', this.onForwardClick);
         super.dispose();
@@ -89,7 +162,6 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
     }
 
     protected updateEnabledStates(): void {
-        this.toggleBtn.disabled = !this.commands.isEnabled(CommonCommands.TOGGLE_LEFT_PANEL.id);
         this.backBtn.disabled = !this.commands.isEnabled(WORKBENCH_NAV_GO_BACK);
         this.forwardBtn.disabled = !this.commands.isEnabled(WORKBENCH_NAV_GO_FORWARD);
     }
@@ -107,17 +179,17 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         protected readonly commands: CommandRegistry,
         protected readonly shell: ApplicationShell
     ) {
-        const node = document.createElement('div');
+        const node = document.createElement('motion.div');
         node.classList.add('theia-workbench-right-controls');
         super({ node });
         this.id = 'theia:workbench-right-controls';
-        this.terminalBtn = QaapWorkbenchRightControlsWidget.createBtn(
+        this.terminalBtn = createWorkbenchNavBtn(
             'codicon codicon-terminal',
             nls.localize('theia/core/workbenchBar/toggleTerminal', 'Toggle Terminal')
         );
         this.terminalBtn.classList.add('theia-workbench-in-mobile-bottom-bar');
         this.terminalBtn.setAttribute('role', 'switch');
-        this.aiChatBtn = QaapWorkbenchRightControlsWidget.createBtn(
+        this.aiChatBtn = createWorkbenchNavBtn(
             'codicon codicon-comment-discussion',
             nls.localize('theia/core/workbenchBar/openAiChat', 'Open AI Chat')
         );
@@ -142,14 +214,6 @@ export class QaapWorkbenchRightControlsWidget extends Widget {
         this.toDispose.push(this.shell.onDidChangeCurrentWidget(refresh));
         this.toDispose.push(this.shell.onDidAddWidget(refresh));
         this.toDispose.push(this.shell.onDidRemoveWidget(refresh));
-    }
-
-    protected static createBtn(iconClasses: string, title: string): HTMLButtonElement {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `theia-workbench-nav-btn ${iconClasses}`;
-        btn.title = title;
-        return btn;
     }
 
     protected readonly onTerminalClick = (): void => {

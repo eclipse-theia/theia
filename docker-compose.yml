@@ -19,6 +19,7 @@ services:
       PORT: "3000"
       QAAP_GITHUB_CLIENT_ID: ${QAAP_GITHUB_CLIENT_ID:-}
       QAAP_GITHUB_CLIENT_SECRET: ${QAAP_GITHUB_CLIENT_SECRET:-}
+      # Set to your public IDE URL, e.g. http://178.105.136.93:3000 (used for OAuth + dev preview links)
       QAAP_OAUTH_PUBLIC_URL: ${QAAP_OAUTH_PUBLIC_URL:-}
       QAAP_SKIP_AUTH: ${QAAP_SKIP_AUTH:-false}
       # Optional: mount a host folder as the default workspace

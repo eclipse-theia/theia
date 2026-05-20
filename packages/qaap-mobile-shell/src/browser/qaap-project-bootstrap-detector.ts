@@ -7,6 +7,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import {
+    QAAP_THEIA_DEV_PORT,
     QaapMonorepoAppCandidate,
     QaapMonorepoFlavor,
     QaapPackageManager,
@@ -415,6 +416,14 @@ export class QaapProjectBootstrapDetector {
             if (dep in allDeps) {
                 return { kind, expectedPort: port };
             }
+        }
+        if ('@theia/core' in allDeps || '@theia/cli' in allDeps) {
+            return { kind: 'node-generic', expectedPort: QAAP_THEIA_DEV_PORT };
+        }
+        const scripts = pkg.scripts && typeof pkg.scripts === 'object' ? pkg.scripts : {};
+        const start = scripts.start;
+        if (typeof start === 'string' && /\btheia\s+start\b/.test(start)) {
+            return { kind: 'node-generic', expectedPort: QAAP_THEIA_DEV_PORT };
         }
         return { kind: 'node-generic' };
     }

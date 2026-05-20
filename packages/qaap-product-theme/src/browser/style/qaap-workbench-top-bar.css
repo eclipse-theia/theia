@@ -10,11 +10,30 @@
 
 #theia-top-panel {
   align-items: stretch;
+  display: flex;
+  flex-direction: row;
 }
 
-#theia-top-panel > .lm-MenuBar {
+/* Leading cluster: sidebar toggle, then editor history (DOM order is toggle, menu, history, trailing). */
+#theia-top-panel > #theia\:workbench-nav {
+  order: 1;
+  flex: 0 0 auto;
+}
+
+#theia-top-panel > #theia\:workbench-history-nav {
+  order: 2;
+  flex: 0 0 auto;
+}
+
+#theia-top-panel > .lm-MenuBar,
+#theia-top-panel > [id='theia:menubar'] {
+  order: 3;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+#theia-top-panel > #theia\:workbench-right-controls {
+  order: 4;
 }
 
 .theia-workbench-nav-controls {
@@ -25,7 +44,25 @@
   height: 100%;
   gap: 0;
   width: auto;
-  min-width: auto;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+
+.theia-workbench-current-project-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: 6px;
+  padding-right: 4px;
+  font-size: var(--theia-ui-font-size1, 13px);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--theia-titleBar-activeForeground, var(--theia-foreground));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
 }
 
 .theia-workbench-nav-btn {
@@ -59,6 +96,34 @@
 
 .theia-workbench-nav-btn.codicon::before {
   font-size: var(--theia-icon-size, 14px);
+}
+
+.theia-workbench-history-nav-group {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0;
+}
+
+/* Back / forward only: stay vertically centered as the top bar height changes. */
+.theia-workbench-history-nav-group .theia-workbench-history-nav-btn {
+  align-self: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: clamp(24px, var(--theia-private-menubar-height, 32px), 100%);
+  height: clamp(20px, var(--theia-private-menubar-height, 32px), 100%);
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 24px;
+  min-height: 20px;
+  margin-top: auto;
+  margin-bottom: auto;
+  padding: 0;
+}
+
+.theia-workbench-history-nav-group .theia-workbench-history-nav-btn.codicon::before {
+  line-height: 1;
 }
 
 .theia-workbench-right-controls .theia-workbench-nav-btn.theia-workbench-account-btn {

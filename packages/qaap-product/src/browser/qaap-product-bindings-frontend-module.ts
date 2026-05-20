@@ -8,6 +8,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { AboutDialogProps } from '@theia/core/lib/browser/about-dialog';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { QaapBuiltinThemeBrandingContribution } from './qaap-builtin-theme-branding-contribution';
+import { QaapCopilotDefaultsContribution } from './qaap-copilot-defaults-contribution';
 import { QaapCorePreferenceBrandingContribution } from './qaap-core-preference-branding-contribution';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
@@ -16,6 +17,9 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
 
     bind(QaapCorePreferenceBrandingContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapCorePreferenceBrandingContribution);
+
+    bind(QaapCopilotDefaultsContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapCopilotDefaultsContribution);
 
     if (isBound(AboutDialogProps)) {
         rebind(AboutDialogProps).toDynamicValue(() => ({

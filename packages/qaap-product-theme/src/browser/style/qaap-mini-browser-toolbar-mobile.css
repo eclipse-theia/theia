@@ -74,6 +74,14 @@
     min-width: 1.25rem;
   }
 
+  /* Editor back/forward live in the workbench top bar on mobile; hide iframe duplicates. */
+  .theia-mini-browser-toolbar > .theia-mini-browser-previous,
+  .theia-mini-browser-toolbar > .theia-mini-browser-next,
+  .theia-mini-browser-toolbar-read-only > .theia-mini-browser-previous,
+  .theia-mini-browser-toolbar-read-only > .theia-mini-browser-next {
+    display: none !important;
+  }
+
   .theia-mini-browser-toolbar .theia-input,
   .theia-mini-browser-toolbar-read-only .theia-input {
     flex: 1 1 0;

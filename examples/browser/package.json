@@ -47,7 +47,8 @@
         "preferences": {
           "files.enableTrash": false,
           "security.workspace.trust.enabled": false,
-          "workspace.preserveWindow": true
+          "workspace.preserveWindow": true,
+          "ai-features.copilot.enabled": false
         },
         "reloadOnReconnect": true
       }
@@ -66,7 +67,6 @@
     "@theia/ai-claude-code": "1.71.0",
     "@theia/ai-code-completion": "1.71.0",
     "@theia/ai-codex": "1.71.0",
-    "@theia/ai-copilot": "1.71.0",
     "@theia/ai-core": "1.71.0",
     "@theia/ai-core-ui": "1.71.0",
     "@theia/ai-editor": "1.71.0",

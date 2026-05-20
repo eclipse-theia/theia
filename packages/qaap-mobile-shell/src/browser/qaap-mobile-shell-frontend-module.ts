@@ -5,6 +5,7 @@
 // *****************************************************************************
 
 import '../../src/browser/style/mobile-workbench.css';
+import '../../src/browser/style/qaap-mobile-touch-scroll.css';
 import '../../src/browser/style/qaap-empty-workbench-brand.css';
 import '../../src/browser/style/qaap-project-bootstrap.css';
 
@@ -26,6 +27,7 @@ import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contr
 import { QaapProjectBootstrapDetector } from './qaap-project-bootstrap-detector';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapProjectBootstrapContribution } from './qaap-project-bootstrap-contribution';
+import { MobileTouchScrollContribution } from './mobile-touch-scroll-contribution';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsService).toSelf().inSingletonScope();
@@ -55,6 +57,9 @@ export default new ContainerModule(bind => {
 
     bind(QaapProjectBootstrapDetector).toSelf().inSingletonScope();
     bind(QaapProjectBootstrapService).toSelf().inSingletonScope();
+    bind(MobileTouchScrollContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MobileTouchScrollContribution);
+
     bind(QaapProjectBootstrapContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapProjectBootstrapContribution);
 });

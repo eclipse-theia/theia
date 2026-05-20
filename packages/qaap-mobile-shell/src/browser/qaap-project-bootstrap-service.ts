@@ -18,8 +18,21 @@ import {
     QaapForwardedPort,
     QaapMonorepoAppCandidate,
     QaapProjectDescriptor,
+    QaapProjectKind,
     isMonorepoDescriptor,
 } from './qaap-project-bootstrap-types';
+import { probeQaapDevPreviewPort, toProxiedDevPreviewUrl } from './qaap-dev-preview-client';
+import {
+    getImplicitDevPort,
+    getQaapIdeListenPort,
+    isReservedIdePort,
+    resolveBootstrapDevPort,
+    wrapDevCommandForPort,
+} from './qaap-project-bootstrap-port';
+
+/** Terminal titles created by {@link QaapProjectBootstrapService.spawnCommand}. */
+const BOOTSTRAP_DEV_TERMINAL_TITLE_PREFIX = 'Dev (';
+const BOOTSTRAP_INSTALL_TERMINAL_TITLE_PREFIX = 'Install (';
 
 /** Storage key used to remember per-workspace user intent (skip / installed). */
 const STORAGE_KEY = 'qaap.projectBootstrap.state.v1';
@@ -35,6 +48,15 @@ const DEV_URL_REGEX = /\b(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::(\
 /** Strip ANSI escape sequences so URL detection works against raw xterm output. */
 const ANSI_REGEX = /\u001b\[[0-9;?]*[ -/]*[@-~]/g;
 
+/** Node / Theia emit this when the dev port is already bound by another process. */
+const PORT_IN_USE_REGEX = /EADDRINUSE|address already in use/i;
+
+/** Extracts `127.0.0.1:3000` / `localhost:5173` from an `EADDRINUSE` line. */
+const PORT_IN_USE_ADDR_REGEX = /(?:127\.0\.0\.1|localhost|0\.0\.0\.0|\[::1\]|::1):(\d{2,5})/i;
+
+/** After this delay, open the hinted preview URL even when stdout never prints a parseable URL. */
+const DEV_PREVIEW_FALLBACK_MS = 6000;
+
 export interface QaapBootstrapStateChange {
     readonly phase: QaapBootstrapPhase;
     readonly descriptor?: QaapProjectDescriptor;
@@ -42,6 +64,10 @@ export interface QaapBootstrapStateChange {
     readonly previewUrl?: string;
     /** Optional error message; populated for `install-failed` / `run-failed`. */
     readonly error?: string;
+    /** True when the last run failed because the dev port was already taken. */
+    readonly portInUse?: boolean;
+    /** Port we believe is already serving the app (for "Open preview" recovery). */
+    readonly existingServerPort?: number;
     /** The monorepo app currently selected, when applicable. */
     readonly selectedApp?: QaapMonorepoAppCandidate;
     /**
@@ -106,10 +132,18 @@ export class QaapProjectBootstrapService {
     protected _selectedApp: QaapMonorepoAppCandidate | undefined;
     /** Primary port the dev server last bound to. Used to label "resume preview" once we restore. */
     protected _lastPort: number | undefined;
+    /** Set when stdout mentions `EADDRINUSE` so failure handlers can offer recovery. */
+    protected _portConflictDetected = false;
+    protected _portConflictPort: number | undefined;
+    /** Invalidates stale terminal exit/close callbacks when a new dev run starts. */
+    protected devRunGeneration = 0;
+    /** Port we asked the dev server to bind to (may differ from the framework default when Qaap uses :3000). */
+    protected activeDevPortHint: number | undefined;
     /** Tracks the in-flight install/dev terminals so we can clean up on workspace switch. */
     protected installTerminal: TerminalWidget | undefined;
     protected devTerminal: TerminalWidget | undefined;
     protected devTerminalListener = Disposable.NULL;
+    protected devPreviewFallbackTimers: number[] = [];
 
     @postConstruct()
     protected init(): void {
@@ -160,19 +194,48 @@ export class QaapProjectBootstrapService {
      * app's command (running inside the app's folder). For single-package projects it is the
      * descriptor-level dev command at the workspace root.
      */
-    protected resolveDevPlan(): { command: string; cwd: URI; expectedPort?: number } | undefined {
+    protected resolveDevPlan(): { command: string; cwd: URI; expectedPort?: number; kind: QaapProjectKind } | undefined {
         const descriptor = this._descriptor;
         if (!descriptor) {
             return undefined;
         }
         const app = this._selectedApp;
         if (app) {
-            return { command: app.devCommand, cwd: app.rootUri, expectedPort: app.expectedPort };
+            return { command: app.devCommand, cwd: app.rootUri, expectedPort: app.expectedPort, kind: app.kind };
         }
         if (descriptor.devCommand) {
-            return { command: descriptor.devCommand, cwd: descriptor.rootUri, expectedPort: descriptor.expectedPort };
+            return {
+                command: descriptor.devCommand,
+                cwd: descriptor.rootUri,
+                expectedPort: descriptor.expectedPort,
+                kind: descriptor.kind,
+            };
         }
         return undefined;
+    }
+
+    /**
+     * Builds the shell command and target port for a dev run, shifting off the IDE port when needed
+     * so `next dev` / CRA do not kill the Qaap backend on :3000.
+     */
+    protected buildDevSpawnPlan(plan: {
+        command: string;
+        expectedPort?: number;
+        kind: QaapProjectKind;
+    }): { command: string; targetPort?: number } {
+        const idePort = getQaapIdeListenPort();
+        const frameworkPort = plan.expectedPort ?? getImplicitDevPort(plan.kind);
+        const targetPort = resolveBootstrapDevPort(frameworkPort, idePort);
+        if (targetPort === undefined) {
+            return { command: plan.command, targetPort: undefined };
+        }
+        if (frameworkPort !== undefined && targetPort !== frameworkPort) {
+            return {
+                command: wrapDevCommandForPort(plan.command, targetPort, plan.kind),
+                targetPort,
+            };
+        }
+        return { command: plan.command, targetPort };
     }
 
     /** Select a monorepo app; updates the dev plan that {@link runDevServer} will use. */
@@ -238,34 +301,55 @@ export class QaapProjectBootstrapService {
         if (!plan || !descriptor || this._phase === 'starting' || this._phase === 'running') {
             return;
         }
+        this.shutdownBootstrapSession();
         this.clearForwardedPorts();
+        this._portConflictDetected = false;
+        this._portConflictPort = undefined;
+        this._error = undefined;
+        this.activeDevPortHint = undefined;
+        const runId = ++this.devRunGeneration;
         this.setPhase('starting');
+
+        const spawnPlan = this.buildDevSpawnPlan(plan);
+        this.activeDevPortHint = spawnPlan.targetPort;
+
+        // Another terminal may already be serving this app (common when `watch` + bootstrap both run).
+        if (await this.tryAttachToExistingServer(this.collectProbePorts({ expectedPort: spawnPlan.targetPort }))) {
+            return;
+        }
+
         try {
             const label = this._selectedApp?.name ?? descriptor.name;
             const terminal = await this.spawnCommand({
                 title: `Dev (${label})`,
-                command: plan.command,
+                command: spawnPlan.command,
                 cwd: plan.cwd.path.toString(),
             });
+            if (runId !== this.devRunGeneration) {
+                return;
+            }
             this.devTerminal = terminal;
             this.devTerminalListener.dispose();
-            const onOutput = terminal.onOutput(data => this.scanForDevUrl(data));
+            const onOutput = terminal.onOutput(data => {
+                this.scanDevOutput(data, { expectedPort: spawnPlan.targetPort });
+            });
             // Process exit is broadcast through TerminalWatcher (not via onTerminalDidClose, which
             // only fires when the *widget* is disposed). We filter by terminalId so a parallel
             // install terminal exiting doesn't accidentally flip the dev phase.
             const onProcessExit = this.terminalWatcher.onTerminalExit(event => {
-                if (event.terminalId !== terminal.terminalId) {
+                if (event.terminalId !== terminal.terminalId || runId !== this.devRunGeneration) {
                     return;
                 }
                 if (this._phase === 'starting' || this._phase === 'running') {
-                    this._error = `Dev server exited with code ${event.code ?? '?'}`;
-                    this.setPhase('run-failed');
+                    void this.failDevRun(`Dev server exited with code ${event.code ?? '?'}`, plan, runId);
                 }
             });
             const onWidgetClose = terminal.onTerminalDidClose(() => {
+                if (runId !== this.devRunGeneration) {
+                    return;
+                }
                 if (this._phase === 'starting' || this._phase === 'running') {
-                    this._error = 'Dev server tab closed.';
-                    this.setPhase('run-failed');
+                    void this.failDevRun('Dev server tab closed.', plan, runId);
                 }
             });
             this.devTerminalListener = new DisposableCollection(onOutput, onProcessExit, onWidgetClose);
@@ -274,17 +358,14 @@ export class QaapProjectBootstrapService {
             // Fallback: if the user has a known framework we already know the default port; route
             // through the port-forwarding machinery so the fallback shows up in the strip just like
             // a stdout-detected URL would.
-            if (plan.expectedPort) {
-                window.setTimeout(() => {
-                    if (this._phase === 'starting' && this._forwardedPorts.length === 0) {
-                        const fallback = `http://localhost:${plan.expectedPort}`;
-                        this.recordForwardedPort(plan.expectedPort!, fallback);
-                    }
-                }, 4500);
+            if (spawnPlan.targetPort) {
+                this.scheduleDevPreviewFallback(runId, spawnPlan.targetPort);
             }
         } catch (e) {
-            this._error = e instanceof Error ? e.message : String(e);
-            this.setPhase('run-failed');
+            if (runId !== this.devRunGeneration) {
+                return;
+            }
+            await this.failDevRun(e instanceof Error ? e.message : String(e), plan, runId);
         }
     }
 
@@ -312,11 +393,29 @@ export class QaapProjectBootstrapService {
     }
 
     /**
+     * When the dev port is already bound, probe common ports and open the preview against the
+     * server that is already listening instead of asking the user to free the port first.
+     */
+    async openExistingPreview(): Promise<void> {
+        const plan = this.resolveDevPlan();
+        const attached = await this.tryAttachToExistingServer(this.collectProbePorts(plan));
+        if (attached) {
+            this._error = undefined;
+            this._portConflictDetected = false;
+            this._portConflictPort = undefined;
+            this.cleanupDevTerminal();
+            return;
+        }
+        this._error = 'No dev server responded on the expected port.';
+        this.setPhase('run-failed');
+    }
+
+    /**
      * Re-runs detection on the current workspace root, honoring the persisted decision so we do
      * not flash the banner after the user already accepted/skipped.
      */
     async refreshFromCurrentWorkspace(): Promise<void> {
-        this.cleanupDevTerminal();
+        this.shutdownBootstrapSession();
         this.clearForwardedPorts();
         const roots = await this.workspaceService.roots;
         const first = roots[0];
@@ -333,6 +432,8 @@ export class QaapProjectBootstrapService {
         this._error = undefined;
         this._selectedApp = undefined;
         this._lastPort = undefined;
+        this._portConflictDetected = false;
+        this._portConflictPort = undefined;
         if (!descriptor) {
             this.setPhase('idle');
             return;
@@ -343,8 +444,10 @@ export class QaapProjectBootstrapService {
         if (persisted?.selectedAppPath) {
             this._selectedApp = descriptor.apps.find(app => app.relativePath === persisted.selectedAppPath);
         }
-        if (persisted?.lastPort) {
-            this._lastPort = persisted.lastPort;
+        if (persisted?.lastPort !== undefined) {
+            this._lastPort = isReservedIdePort(persisted.lastPort)
+                ? undefined
+                : persisted.lastPort;
         }
         if (!this._selectedApp && isMonorepoDescriptor(descriptor) && descriptor.apps.length === 1) {
             // Only one runnable app — pick it implicitly so the user gets one-tap "Run & Preview".
@@ -378,6 +481,22 @@ export class QaapProjectBootstrapService {
         }
     }
 
+    protected scanDevOutput(data: string, plan: { expectedPort?: number }): void {
+        if (this._phase !== 'starting' && this._phase !== 'running') {
+            return;
+        }
+        const clean = data.replace(ANSI_REGEX, '');
+        if (PORT_IN_USE_REGEX.test(clean)) {
+            this._portConflictDetected = true;
+            const fromLog = this.extractPortFromInUseMessage(clean);
+            if (fromLog !== undefined) {
+                this._portConflictPort = fromLog;
+            }
+            void this.tryAttachToExistingServer(this.collectProbePorts(plan));
+        }
+        this.scanForDevUrl(clean);
+    }
+
     protected scanForDevUrl(data: string): void {
         if (this._phase !== 'starting' && this._phase !== 'running') {
             return;
@@ -393,7 +512,13 @@ export class QaapProjectBootstrapService {
             if (port === undefined) {
                 continue;
             }
-            this.recordForwardedPort(port, url);
+            const effectivePort = isReservedIdePort(port) && this.activeDevPortHint !== undefined
+                ? this.activeDevPortHint
+                : port;
+            if (isReservedIdePort(effectivePort)) {
+                continue;
+            }
+            this.recordForwardedPort(effectivePort, toProxiedDevPreviewUrl(effectivePort));
         }
     }
 
@@ -430,6 +555,9 @@ export class QaapProjectBootstrapService {
      * still surfacing all the auxiliary endpoints (websockets, admin UI, mock APIs, …).
      */
     protected recordForwardedPort(port: number, url: string): void {
+        if (isReservedIdePort(port)) {
+            return;
+        }
         const existing = this._forwardedPorts.find(p => p.port === port);
         if (existing) {
             return;
@@ -484,6 +612,119 @@ export class QaapProjectBootstrapService {
         if (changed) {
             this.forwardedPortsEmitter.fire(this.forwardedPorts);
         }
+    }
+
+    /**
+     * Ports to probe when attaching to an already-running dev server, most specific first.
+     */
+    protected collectProbePorts(plan?: { expectedPort?: number }): number[] {
+        const idePort = getQaapIdeListenPort();
+        const ports: number[] = [];
+        if (this._portConflictPort !== undefined) {
+            ports.push(this._portConflictPort);
+        }
+        if (plan?.expectedPort !== undefined) {
+            ports.push(plan.expectedPort);
+        }
+        if (this.activeDevPortHint !== undefined) {
+            ports.push(this.activeDevPortHint);
+        }
+        if (this._lastPort !== undefined) {
+            ports.push(this._lastPort);
+        }
+        return [...new Set(ports.filter(p => p > 0 && p < 65536 && p !== idePort))];
+    }
+
+    protected extractPortFromInUseMessage(text: string): number | undefined {
+        const match = PORT_IN_USE_ADDR_REGEX.exec(text);
+        if (!match) {
+            return undefined;
+        }
+        const port = Number(match[1]);
+        return Number.isFinite(port) ? port : undefined;
+    }
+
+    /**
+     * Opens the preview on the port we asked the dev server to bind to when stdout never prints a
+     * URL (common when logs still mention :3000 while the process listens on :3001).
+     */
+    protected scheduleDevPreviewFallback(runId: number, port: number): void {
+        const tryOpen = async (): Promise<void> => {
+            if (runId !== this.devRunGeneration) {
+                return;
+            }
+            if (this._phase !== 'starting' || this._previewUrl) {
+                return;
+            }
+            if (this._forwardedPorts.some(p => p.port === port)) {
+                return;
+            }
+            await this.tryAttachToExistingServer([port]);
+        };
+        this.devPreviewFallbackTimers.push(
+            window.setTimeout(() => {
+                void tryOpen();
+            }, 4500),
+            window.setTimeout(() => {
+                void tryOpen();
+            }, DEV_PREVIEW_FALLBACK_MS),
+        );
+    }
+
+    /**
+     * Returns true when a user dev server (not the Qaap IDE) is listening and the preview was opened.
+     */
+    protected async tryAttachToExistingServer(ports: number[]): Promise<boolean> {
+        if (ports.length === 0 || this._previewUrl) {
+            return !!this._previewUrl;
+        }
+        for (const port of ports) {
+            if (isReservedIdePort(port)) {
+                continue;
+            }
+            const probe = await probeQaapDevPreviewPort(port);
+            if (!probe.ready) {
+                continue;
+            }
+            this._portConflictPort = port;
+            this.recordForwardedPort(port, probe.previewUrl);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * On dev failure, try to attach to an already-running server (port conflict / tab closed while
+     * another terminal still serves the app) before surfacing `run-failed`.
+     */
+    protected async failDevRun(
+        message: string,
+        plan: { expectedPort?: number },
+        runId: number,
+    ): Promise<void> {
+        if (runId !== this.devRunGeneration) {
+            return;
+        }
+        if (this._phase !== 'starting' && this._phase !== 'running') {
+            return;
+        }
+        if (this._previewUrl) {
+            this.cleanupDevTerminal();
+            return;
+        }
+        const attached = await this.tryAttachToExistingServer(this.collectProbePorts(plan));
+        if (attached || this._previewUrl) {
+            this._error = undefined;
+            this._portConflictDetected = false;
+            this.cleanupDevTerminal();
+            return;
+        }
+        const portConflict = this._portConflictDetected || PORT_IN_USE_REGEX.test(message);
+        const conflictPort = this.activeDevPortHint ?? plan.expectedPort;
+        this._error = portConflict && conflictPort
+            ? `Port :${conflictPort} is already in use. Another terminal may already be serving the app.`
+            : message;
+        this.setPhase('run-failed');
     }
 
     protected async openPreview(url: string, isPrimary: boolean = true): Promise<void> {
@@ -562,10 +803,51 @@ export class QaapProjectBootstrapService {
         });
     }
 
+    protected shutdownBootstrapSession(): void {
+        this.devRunGeneration++;
+        this.cancelDevPreviewFallbacks();
+        this.cleanupDevTerminal();
+        this.disposeBootstrapTerminal(this.installTerminal);
+        this.installTerminal = undefined;
+        this.disposeOrphanBootstrapTerminals();
+    }
+
+    protected cancelDevPreviewFallbacks(): void {
+        for (const timerId of this.devPreviewFallbackTimers) {
+            window.clearTimeout(timerId);
+        }
+        this.devPreviewFallbackTimers = [];
+    }
+
     protected cleanupDevTerminal(): void {
         this.devTerminalListener.dispose();
         this.devTerminalListener = Disposable.NULL;
+        this.disposeBootstrapTerminal(this.devTerminal);
         this.devTerminal = undefined;
+    }
+
+    protected disposeBootstrapTerminal(terminal: TerminalWidget | undefined): void {
+        if (!terminal) {
+            return;
+        }
+        try {
+            if (!terminal.isDisposed) {
+                terminal.dispose();
+            }
+        } catch {
+            /* widget may already be gone after a full page reload */
+        }
+    }
+
+    /** Dev/install terminals survive a frontend reload; stop them so they cannot reclaim :3000. */
+    protected disposeOrphanBootstrapTerminals(): void {
+        for (const terminal of this.terminalService.all) {
+            const title = terminal.title.label ?? '';
+            if (title.startsWith(BOOTSTRAP_DEV_TERMINAL_TITLE_PREFIX)
+                || title.startsWith(BOOTSTRAP_INSTALL_TERMINAL_TITLE_PREFIX)) {
+                this.disposeBootstrapTerminal(terminal);
+            }
+        }
     }
 
     protected clearForwardedPorts(): void {
@@ -578,6 +860,9 @@ export class QaapProjectBootstrapService {
 
     protected setPhase(phase: QaapBootstrapPhase): void {
         this._phase = phase;
+        const portInUse = phase === 'run-failed'
+            && (this._portConflictDetected || PORT_IN_USE_REGEX.test(this._error ?? ''));
+        const existingServerPort = this._portConflictPort ?? this._lastPort;
         this.stateEmitter.fire({
             phase,
             descriptor: this._descriptor,
@@ -585,6 +870,8 @@ export class QaapProjectBootstrapService {
             error: this._error,
             selectedApp: this._selectedApp,
             lastPort: this._lastPort,
+            portInUse: portInUse || undefined,
+            existingServerPort: portInUse ? existingServerPort : undefined,
         });
     }
 
