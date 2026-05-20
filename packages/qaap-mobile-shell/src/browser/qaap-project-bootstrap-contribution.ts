@@ -532,6 +532,23 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
                         },
                     ];
                 }
+                if (state.needsInstall) {
+                    return [
+                        {
+                            label: nls.localize('qaap/projectBootstrap/install', 'Install'),
+                            primary: true,
+                            run: () => this.bootstrap.runInstall(),
+                        },
+                        {
+                            label: nls.localize('qaap/projectBootstrap/retry', 'Retry'),
+                            run: () => this.bootstrap.runDevServer(),
+                        },
+                        {
+                            label: nls.localize('qaap/projectBootstrap/dismiss', 'Dismiss'),
+                            run: () => this.bootstrap.skip(),
+                        },
+                    ];
+                }
                 return [
                     {
                         label: nls.localize('qaap/projectBootstrap/retry', 'Retry'),

@@ -31,6 +31,11 @@ import {
     resolveBootstrapDevPort,
     wrapDevCommandForPort,
 } from './qaap-project-bootstrap-port';
+import {
+    extractTerminalFailureLine,
+    isTerminalDoesNotExistError,
+    terminalOutputNeedsInstall,
+} from './qaap-project-bootstrap-dev-errors';
 
 /** Terminal titles created by {@link QaapProjectBootstrapService.spawnCommand}. */
 const BOOTSTRAP_DEV_TERMINAL_TITLE_PREFIX = 'Dev (';
@@ -53,6 +58,14 @@ const ANSI_REGEX = /\u001b\[[0-9;?]*[ -/]*[@-~]/g;
 /** Node / Theia emit this when the dev port is already bound by another process. */
 const PORT_IN_USE_REGEX = /EADDRINUSE|address already in use/i;
 
+/** Keep only the tail of dev stdout so we can surface the last error line on fast exit. */
+const DEV_OUTPUT_TAIL_MAX = 12_000;
+
+/** Retries when mobile UI disposes the terminal widget before the backend session is ready. */
+const TERMINAL_SPAWN_MAX_ATTEMPTS = 3;
+const TERMINAL_SPAWN_RETRY_DELAY_MS = 450;
+const TERMINAL_READY_DELAY_MS = 120;
+
 /** Extracts `127.0.0.1:3000` / `localhost:5173` from an `EADDRINUSE` line. */
 const PORT_IN_USE_ADDR_REGEX = /(?:127\.0\.0\.1|localhost|0\.0\.0\.0|\[::1\]|::1):(\d{2,5})/i;
 
@@ -66,6 +79,8 @@ export interface QaapBootstrapStateChange {
     readonly previewUrl?: string;
     /** Optional error message; populated for `install-failed` / `run-failed`. */
     readonly error?: string;
+    /** When true, run Install (not another bare dev retry) to recover. */
+    readonly needsInstall?: boolean;
     /** True when the last run failed because the dev port was already taken. */
     readonly portInUse?: boolean;
     /** Port we believe is already serving the app (for "Open preview" recovery). */
@@ -131,6 +146,8 @@ export class QaapProjectBootstrapService {
     protected _descriptor: QaapProjectDescriptor | undefined;
     protected _previewUrl: string | undefined;
     protected _error: string | undefined;
+    /** Set when dev stdout indicates missing devDependencies (typical on NODE_ENV=production hosts). */
+    protected _needsInstall = false;
     protected _selectedApp: QaapMonorepoAppCandidate | undefined;
     /** Primary port the dev server last bound to. Used to label "resume preview" once we restore. */
     protected _lastPort: number | undefined;
@@ -146,6 +163,8 @@ export class QaapProjectBootstrapService {
     protected devTerminal: TerminalWidget | undefined;
     protected devTerminalListener = Disposable.NULL;
     protected devPreviewFallbackTimers: number[] = [];
+    /** Rolling tail of the current dev terminal output for failure diagnostics. */
+    protected devOutputTail = '';
 
     @postConstruct()
     protected init(): void {
@@ -186,6 +205,7 @@ export class QaapProjectBootstrapService {
     }
 
     get phase(): QaapBootstrapPhase { return this._phase; }
+    get needsInstall(): boolean { return this._needsInstall; }
     get descriptor(): QaapProjectDescriptor | undefined { return this._descriptor; }
     get previewUrl(): string | undefined { return this._previewUrl; }
     get selectedApp(): QaapMonorepoAppCandidate | undefined { return this._selectedApp; }
@@ -231,13 +251,13 @@ export class QaapProjectBootstrapService {
         if (targetPort === undefined) {
             return { command: plan.command, targetPort: undefined };
         }
-        if (frameworkPort !== undefined && targetPort !== frameworkPort) {
+        if (targetPort !== undefined) {
             return {
                 command: wrapDevCommandForPort(plan.command, targetPort, plan.kind),
                 targetPort,
             };
         }
-        return { command: plan.command, targetPort };
+        return { command: plan.command, targetPort: undefined };
     }
 
     /** Select a monorepo app; updates the dev plan that {@link runDevServer} will use. */
@@ -262,10 +282,11 @@ export class QaapProjectBootstrapService {
         }
         this.setPhase('installing');
         try {
-            const terminal = await this.spawnCommand({
+            const terminal = await this.spawnCommandWithRetry({
                 title: `Install (${descriptor.packageManager})`,
                 command: descriptor.installCommand,
                 cwd: descriptor.rootUri,
+                reveal: false,
             });
             this.installTerminal = terminal;
             const exitCode = await this.waitForExit(terminal);
@@ -273,10 +294,14 @@ export class QaapProjectBootstrapService {
             // a missing code as a successful exit so a working install doesn't get flagged as
             // failed just because the kernel didn't surface the exit syscall value.
             if (exitCode !== undefined && exitCode !== 0) {
-                this._error = `Install exited with code ${exitCode}`;
+                const tail = this.readTerminalTail(terminal);
+                this._needsInstall = terminalOutputNeedsInstall(tail);
+                this._error = extractTerminalFailureLine(tail, `Install exited with code ${exitCode}`);
                 this.setPhase('install-failed');
                 return;
             }
+            this._needsInstall = false;
+            await this.refreshDescriptorAfterInstall();
             this.persistPhase('ready-to-run');
             this.setPhase('ready-to-run');
             // Auto-chain to dev server when a runnable plan is available (single-package script or a
@@ -286,7 +311,8 @@ export class QaapProjectBootstrapService {
                 await this.runDevServer();
             }
         } catch (e) {
-            this._error = e instanceof Error ? e.message : String(e);
+            const raw = e instanceof Error ? e.message : String(e);
+            this._error = this.toUserFacingDevError(raw);
             this.setPhase('install-failed');
         } finally {
             this.installTerminal = undefined;
@@ -308,6 +334,8 @@ export class QaapProjectBootstrapService {
         this._portConflictDetected = false;
         this._portConflictPort = undefined;
         this._error = undefined;
+        this._needsInstall = false;
+        this.devOutputTail = '';
         this.activeDevPortHint = undefined;
         const runId = ++this.devRunGeneration;
         this.setPhase('starting');
@@ -322,17 +350,21 @@ export class QaapProjectBootstrapService {
 
         try {
             const label = this._selectedApp?.name ?? descriptor.name;
-            const terminal = await this.spawnCommand({
+            const spawnOptions = {
                 title: `Dev (${label})`,
                 command: spawnPlan.command,
                 cwd: plan.cwd,
-            });
+            };
+            const terminal = matchesMobileNarrowViewport()
+                ? await this.spawnCommandWithRetry(spawnOptions)
+                : await this.spawnCommand(spawnOptions);
             if (runId !== this.devRunGeneration) {
                 return;
             }
             this.devTerminal = terminal;
             this.devTerminalListener.dispose();
             const onOutput = terminal.onOutput(data => {
+                this.appendDevOutput(data);
                 this.scanDevOutput(data, { expectedPort: spawnPlan.targetPort });
             });
             // Process exit is broadcast through TerminalWatcher (not via onTerminalDidClose, which
@@ -724,10 +756,68 @@ export class QaapProjectBootstrapService {
         }
         const portConflict = this._portConflictDetected || PORT_IN_USE_REGEX.test(message);
         const conflictPort = this.activeDevPortHint ?? plan.expectedPort;
+        this._needsInstall = terminalOutputNeedsInstall(this.devOutputTail);
         this._error = portConflict && conflictPort
             ? `Port :${conflictPort} is already in use. Another terminal may already be serving the app.`
-            : this.toUserFacingDevError(message);
+            : extractTerminalFailureLine(this.devOutputTail, this.toUserFacingDevError(message));
         this.setPhase('run-failed');
+    }
+
+    protected appendDevOutput(data: string): void {
+        this.devOutputTail = (this.devOutputTail + data).slice(-DEV_OUTPUT_TAIL_MAX);
+    }
+
+    protected readTerminalTail(terminal: TerminalWidget, maxLines: number = 40): string {
+        try {
+            const length = terminal.buffer.length;
+            const start = Math.max(0, length - maxLines);
+            return terminal.buffer.getLines(start, length - start, true).join('\n');
+        } catch {
+            return '';
+        }
+    }
+
+    protected async spawnCommandWithRetry(options: {
+        title: string;
+        command: string;
+        cwd: URI;
+        reveal?: boolean;
+    }): Promise<TerminalWidget> {
+        let lastError: unknown;
+        for (let attempt = 0; attempt < TERMINAL_SPAWN_MAX_ATTEMPTS; attempt++) {
+            if (attempt > 0) {
+                await this.delay(TERMINAL_SPAWN_RETRY_DELAY_MS * attempt);
+            }
+            try {
+                const terminal = await this.spawnCommand(options);
+                await this.delay(TERMINAL_READY_DELAY_MS);
+                return terminal;
+            } catch (e) {
+                lastError = e;
+                const message = e instanceof Error ? e.message : String(e);
+                if (!isTerminalDoesNotExistError(message)) {
+                    throw e;
+                }
+            }
+        }
+        throw lastError instanceof Error ? lastError : new Error(String(lastError));
+    }
+
+    protected delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /** Re-scan `node_modules` / dev tooling after a successful install. */
+    protected async refreshDescriptorAfterInstall(): Promise<void> {
+        const roots = await this.workspaceService.roots;
+        const root = roots[0]?.resource;
+        if (!root) {
+            return;
+        }
+        const descriptor = await this.detector.detect(root);
+        if (descriptor) {
+            this._descriptor = descriptor;
+        }
     }
 
     protected async openPreview(url: string, isPrimary: boolean = true): Promise<void> {
@@ -749,7 +839,13 @@ export class QaapProjectBootstrapService {
         }
     }
 
-    protected async spawnCommand(options: { title: string; command: string; cwd: URI }): Promise<TerminalWidget> {
+    protected async spawnCommand(options: {
+        title: string;
+        command: string;
+        cwd: URI;
+        /** When false, skip `terminalService.open` (avoids mobile races during long installs). */
+        reveal?: boolean;
+    }): Promise<TerminalWidget> {
         // Spawn the command DIRECTLY (no interactive shell wrapper) so the process actually exits
         // when the command completes. We use a login shell so the user's `node` / `pnpm` / `npm`
         // resolve from `~/.nvm`, `/opt/homebrew/bin`, etc. Without `-l` the PATH would be the
@@ -763,14 +859,16 @@ export class QaapProjectBootstrapService {
             destroyTermOnClose: true,
         });
         await terminal.start();
-        // On mobile, revealing the bottom terminal panel can dispose/recreate widgets mid-start.
-        this.terminalService.open(terminal, { mode: matchesMobileNarrowViewport() ? 'open' : 'reveal' });
+        if (options.reveal !== false) {
+            // On mobile, revealing the bottom terminal panel can dispose/recreate widgets mid-start.
+            this.terminalService.open(terminal, { mode: matchesMobileNarrowViewport() ? 'open' : 'reveal' });
+        }
         return terminal;
     }
 
     /** Maps low-level terminal backend errors to actionable copy for the bootstrap banner. */
     protected toUserFacingDevError(message: string): string {
-        if (/terminal "[\d]+" does not exist/i.test(message)) {
+        if (isTerminalDoesNotExistError(message)) {
             return 'The dev terminal was interrupted. Tap Retry once — avoid double-tapping Preview.';
         }
         if (/ENOENT|no such file or directory/i.test(message)) {
@@ -892,6 +990,7 @@ export class QaapProjectBootstrapService {
             descriptor: this._descriptor,
             previewUrl: this._previewUrl,
             error: this._error,
+            needsInstall: this._needsInstall || undefined,
             selectedApp: this._selectedApp,
             lastPort: this._lastPort,
             portInUse: portInUse || undefined,

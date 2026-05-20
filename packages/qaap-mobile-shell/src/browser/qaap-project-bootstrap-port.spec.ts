@@ -26,7 +26,13 @@ describe('qaap-project-bootstrap-port', () => {
 
     it('isReservedIdePort treats matching IDE port as reserved', () => {
         expect(isReservedIdePort(3000, 3000)).to.equal(true);
+        expect(isReservedIdePort(3000, undefined)).to.equal(true);
+        expect(isReservedIdePort(3000, 3001)).to.equal(false);
         expect(isReservedIdePort(3001, 3000)).to.equal(false);
+    });
+
+    it('resolveBootstrapDevPort shifts Next off :3000 even without browser ide port', () => {
+        expect(resolveBootstrapDevPort(3000, undefined)).to.equal(3001);
     });
 
     it('wrapDevCommandForPort uses PORT= for CRA-style stacks', () => {
@@ -43,6 +49,6 @@ describe('qaap-project-bootstrap-port', () => {
     });
 
     it('wrapDevCommandForPort passes -p to Next after PORT=', () => {
-        expect(wrapDevCommandForPort('npm run dev', 3001, 'node-next')).to.equal('PORT=3001 npm run dev -- --port 3001');
+        expect(wrapDevCommandForPort('npm run dev', 3001, 'node-next')).to.equal('PORT=3001 npm run dev -- -p 3001');
     });
 });

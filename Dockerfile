@@ -49,17 +49,18 @@ WORKDIR /app/examples/browser
 
 COPY --from=build /app /app
 
+ARG QAAP_IDE_PORT=4873
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
-    PORT=3000 \
+    PORT=${QAAP_IDE_PORT} \
     THEIA_PLUGINS_DIR=/app/plugins
 
-EXPOSE 3000
+EXPOSE ${QAAP_IDE_PORT}
 
 VOLUME ["/workspace"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
-    CMD node -e "const p=process.env.PORT||3000;require('http').get('http://127.0.0.1:'+p+'/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+    CMD node -e "const p=process.env.PORT||4873;require('http').get('http://127.0.0.1:'+p+'/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
 
 CMD ["sh", "-c", "exec node src-gen/backend/main.js /workspace \
     --hostname=${HOST} \

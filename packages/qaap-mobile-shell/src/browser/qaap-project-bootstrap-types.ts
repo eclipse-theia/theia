@@ -84,7 +84,7 @@ export interface QaapProjectDescriptor {
     readonly devCommandLabel?: string;
     /** Optional hint to seed port detection if stdout parsing fails. */
     readonly expectedPort?: number;
-    /** True when `node_modules` already exists in the root (install can be skipped). */
+    /** True when dev tooling shims exist under `node_modules/.bin` (not just an empty tree). */
     readonly nodeModulesPresent: boolean;
     /** Workspace layout flavor, when the project is a monorepo. */
     readonly monorepoFlavor?: QaapMonorepoFlavor;

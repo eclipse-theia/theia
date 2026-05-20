@@ -1,25 +1,30 @@
 # Local or VPS deployment (Hetzner, Contabo, etc.).
 #
+#   cp .env.docker.example .env   # set QAAP_OAUTH_PUBLIC_URL + GitHub OAuth callback
 #   docker compose up --build -d
-#   open http://localhost:3000
+#   open http://localhost:4873
 #
-# Railway / Fly.io: point the service at this Dockerfile (root context).
-# They inject PORT; the image reads ${PORT} at runtime.
+# Default IDE port is 4873 (not 3000) so Next/Vite dev servers can use :3000 inside the container.
+# See packages/qaap-mobile-shell/src/common/qaap-ide-port.ts (QAAP_DOCKER_IDE_PORT).
 
 services:
   theia:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        QAAP_IDE_PORT: ${THEIA_PORT:-4873}
     ports:
-      - "${THEIA_PORT:-3000}:3000"
+      - "${THEIA_PORT:-4873}:${THEIA_PORT:-4873}"
     environment:
+      # Theia backend runs in production mode; project bootstrap install uses
+      # NODE_ENV=development / npm --include=dev so Vite/Next devDependencies are installed.
       NODE_ENV: production
       HOST: 0.0.0.0
-      PORT: "3000"
+      PORT: "${THEIA_PORT:-4873}"
       QAAP_GITHUB_CLIENT_ID: ${QAAP_GITHUB_CLIENT_ID:-}
       QAAP_GITHUB_CLIENT_SECRET: ${QAAP_GITHUB_CLIENT_SECRET:-}
-      # Set to your public IDE URL, e.g. http://178.105.136.93:3000 (used for OAuth + dev preview links)
+      # Public IDE URL, e.g. http://178.105.136.93:4873 (OAuth + dev preview /qaap-dev/<port>/)
       QAAP_OAUTH_PUBLIC_URL: ${QAAP_OAUTH_PUBLIC_URL:-}
       QAAP_SKIP_AUTH: ${QAAP_SKIP_AUTH:-false}
       # Optional: mount a host folder as the default workspace

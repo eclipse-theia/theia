@@ -45,9 +45,19 @@ export function getQaapIdeListenPort(): number | undefined {
     return undefined;
 }
 
-/** True when `port` is where the IDE itself is listening. */
+/**
+ * True when `port` would collide with the IDE listener inside the workspace host.
+ * When the browser port is unknown (reverse proxy) or matches the default Theia port, treat
+ * {@link QAAP_THEIA_DEV_PORT} as reserved — on Docker/VPS the backend still listens there.
+ */
 export function isReservedIdePort(port: number, idePort: number | undefined = getQaapIdeListenPort()): boolean {
-    return idePort !== undefined && port === idePort;
+    if (idePort !== undefined && port === idePort) {
+        return true;
+    }
+    if (port === QAAP_THEIA_DEV_PORT && (idePort === undefined || idePort === QAAP_THEIA_DEV_PORT)) {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -96,6 +106,7 @@ export function wrapDevCommandForPort(command: string, port: number, kind: QaapP
         case 'node-svelte':
             return appendCliPortFlag(command, port, isWindows);
         case 'node-next':
+            return appendNextDevPort(prefixPortEnv(command, port, isWindows), port, isWindows);
         case 'node-remix':
             return appendCliPortFlag(prefixPortEnv(command, port, isWindows), port, isWindows);
         default:
@@ -115,4 +126,12 @@ function appendCliPortFlag(command: string, port: number, isWindows: boolean): s
         return `${command} -- --port ${port}`;
     }
     return `${command} -- --port ${port}`;
+}
+
+/** Next.js reads `-p` / `--port` on `next dev`; keep explicit flags in addition to `PORT=`. */
+function appendNextDevPort(command: string, port: number, isWindows: boolean): string {
+    if (isWindows) {
+        return `${command} -- -p ${port}`;
+    }
+    return `${command} -- -p ${port}`;
 }

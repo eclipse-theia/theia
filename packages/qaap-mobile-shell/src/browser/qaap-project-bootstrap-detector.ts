@@ -6,6 +6,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { buildBootstrapInstallCommand } from './qaap-project-bootstrap-install';
 import {
     QAAP_THEIA_DEV_PORT,
     QaapMonorepoAppCandidate,
@@ -77,7 +78,7 @@ export class QaapProjectBootstrapDetector {
             : rootUri.path.base || 'project';
 
         const packageManager = await this.detectPackageManager(rootUri, pkg);
-        const installCommand = this.buildInstallCommand(packageManager);
+        const installCommand = buildBootstrapInstallCommand(packageManager);
 
         const scripts = pkg.scripts && typeof pkg.scripts === 'object' ? pkg.scripts : {};
         const devScriptKey = this.pickDevScript(scripts);
@@ -90,7 +91,8 @@ export class QaapProjectBootstrapDetector {
             devCommandLabel = devCommand;
         }
 
-        const nodeModulesPresent = await this.fileService.exists(rootUri.resolve('node_modules'));
+        const hasNodeModulesDir = await this.fileService.exists(rootUri.resolve('node_modules'));
+        const nodeModulesPresent = hasNodeModulesDir && await this.isDevToolingPresent(rootUri, kind);
 
         const { flavor, apps } = await this.detectMonorepo(rootUri, pkg, packageManager);
 
@@ -379,12 +381,35 @@ export class QaapProjectBootstrapDetector {
         return 'npm';
     }
 
-    protected buildInstallCommand(pm: QaapPackageManager): string {
-        switch (pm) {
-            case 'pnpm': return 'pnpm install';
-            case 'yarn': return 'yarn install';
-            case 'bun': return 'bun install';
-            default: return 'npm install';
+    /**
+     * `node_modules` alone is not enough on Docker (NODE_ENV=production installs omit devDependencies).
+     * Require the CLI shim the dev script needs when we can infer it.
+     */
+    protected async isDevToolingPresent(rootUri: URI, kind: QaapProjectKind): Promise<boolean> {
+        const bin = this.devToolBinaryForKind(kind);
+        if (!bin) {
+            return true;
+        }
+        return this.fileService.exists(rootUri.resolve(`node_modules/.bin/${bin}`));
+    }
+
+    protected devToolBinaryForKind(kind: QaapProjectKind): string | undefined {
+        switch (kind) {
+            case 'node-vite':
+            case 'node-svelte':
+                return 'vite';
+            case 'node-next':
+                return 'next';
+            case 'node-nuxt':
+                return 'nuxt';
+            case 'node-astro':
+                return 'astro';
+            case 'node-remix':
+                return 'remix';
+            case 'node-cra':
+                return 'react-scripts';
+            default:
+                return undefined;
         }
     }
 
