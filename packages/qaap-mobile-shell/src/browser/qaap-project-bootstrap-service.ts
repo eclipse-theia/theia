@@ -158,6 +158,9 @@ export class QaapProjectBootstrapService {
     protected _portConflictPort: number | undefined;
     /** Invalidates stale terminal exit/close callbacks when a new dev run starts. */
     protected devRunGeneration = 0;
+    /** Invalidates in-flight install when the workspace session is reset. */
+    protected installGeneration = 0;
+    protected refreshDebounceTimer: number | undefined;
     /** Port we asked the dev server to bind to (may differ from the framework default when Qaap uses :3000). */
     protected activeDevPortHint: number | undefined;
     /** Tracks the in-flight install/dev terminals so we can clean up on workspace switch. */
@@ -171,10 +174,15 @@ export class QaapProjectBootstrapService {
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.workspaceService.onWorkspaceChanged(() => {
-            void this.refreshFromCurrentWorkspace();
+            this.scheduleRefreshFromCurrentWorkspace();
         }));
         this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => {
-            void this.refreshFromCurrentWorkspace();
+            this.scheduleRefreshFromCurrentWorkspace();
+        }));
+        this.toDispose.push(Disposable.create(() => {
+            if (typeof window !== 'undefined' && this.refreshDebounceTimer !== undefined) {
+                window.clearTimeout(this.refreshDebounceTimer);
+            }
         }));
         // Debug surface (used by integration tests and power users). Exposes the bare minimum to
         // simulate dev-server output and inspect state without hand-injecting through Inversify.
@@ -287,6 +295,7 @@ export class QaapProjectBootstrapService {
         if (!descriptor || this._phase === 'installing') {
             return;
         }
+        const installId = ++this.installGeneration;
         this.setPhase('installing');
         try {
             const terminal = await this.spawnCommandWithRetry({
@@ -295,8 +304,15 @@ export class QaapProjectBootstrapService {
                 cwd: descriptor.rootUri,
                 reveal: false,
             });
+            if (installId !== this.installGeneration) {
+                this.disposeBootstrapTerminal(terminal);
+                return;
+            }
             this.installTerminal = terminal;
             const exitCode = await this.waitForExit(terminal);
+            if (installId !== this.installGeneration || terminal.isDisposed) {
+                return;
+            }
             // node-pty / Theia can emit `code: undefined` on clean exits (see node-pty#751); treat
             // a missing code as a successful exit so a working install doesn't get flagged as
             // failed just because the kernel didn't surface the exit syscall value.
@@ -453,14 +469,37 @@ export class QaapProjectBootstrapService {
     }
 
     /**
-     * Re-runs detection on the current workspace root, honoring the persisted decision so we do
-     * not flash the banner after the user already accepted/skipped.
+     * Debounce workspace churn so we do not tear down install/dev terminals mid-flight.
+     * {@link refreshFromCurrentWorkspace} re-runs detection and honors persisted user decisions.
      */
+    protected scheduleRefreshFromCurrentWorkspace(): void {
+        if (typeof window === 'undefined') {
+            void this.refreshFromCurrentWorkspace();
+            return;
+        }
+        if (this.refreshDebounceTimer !== undefined) {
+            window.clearTimeout(this.refreshDebounceTimer);
+        }
+        this.refreshDebounceTimer = window.setTimeout(() => {
+            this.refreshDebounceTimer = undefined;
+            void this.refreshFromCurrentWorkspace();
+        }, 450);
+    }
+
     async refreshFromCurrentWorkspace(): Promise<void> {
-        this.resetBootstrapSessionForWorkspace();
-        this.clearForwardedPorts();
         const roots = await this.workspaceService.roots;
         const first = roots[0];
+        const nextRootKey = first?.resource.toString() ?? '';
+        const currentRootKey = this._descriptor?.rootUri.toString() ?? '';
+        if (
+            (this._phase === 'installing' || this._phase === 'starting')
+            && nextRootKey.length > 0
+            && nextRootKey === currentRootKey
+        ) {
+            return;
+        }
+        this.resetBootstrapSessionForWorkspace();
+        this.clearForwardedPorts();
         if (!first) {
             this._descriptor = undefined;
             this._previewUrl = undefined;
@@ -890,7 +929,7 @@ export class QaapProjectBootstrapService {
     /** Maps low-level terminal backend errors to actionable copy for the bootstrap banner. */
     protected toUserFacingDevError(message: string): string {
         if (isTerminalDoesNotExistError(message)) {
-            return 'The dev terminal was interrupted. Tap Retry once — avoid double-tapping Preview.';
+            return 'The install/dev terminal was closed too early (often a double tap on Preview or a workspace refresh). Wait a moment, then tap Retry once.';
         }
         if (/ENOENT|no such file or directory/i.test(message)) {
             return 'Project folder not found on the server. Re-open the repo from Projects.';
@@ -950,6 +989,7 @@ export class QaapProjectBootstrapService {
 
     /** Full reset when switching workspace or reloading bootstrap state. */
     protected resetBootstrapSessionForWorkspace(): void {
+        this.installGeneration++;
         this.beginDevRun();
         this.disposeBootstrapTerminal(this.installTerminal);
         this.installTerminal = undefined;

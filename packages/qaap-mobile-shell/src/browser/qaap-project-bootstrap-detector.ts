@@ -34,7 +34,7 @@ interface PackageJsonShape {
 const MAX_MONOREPO_APPS = 32;
 
 /** Fallback directories scanned when no explicit workspaces config exists ("implicit" layout). */
-const IMPLICIT_MONOREPO_DIRS = ['apps', 'packages', 'examples', 'sites', 'services'];
+const IMPLICIT_MONOREPO_DIRS = ['apps', 'packages', 'examples', 'sites', 'services', 'artifacts'];
 
 /** Scripts the detector will pick up as a "dev server" entry point, in priority order. */
 const DEV_SCRIPT_PRIORITY = ['dev', 'start', 'serve', 'develop'];
@@ -401,24 +401,36 @@ export class QaapProjectBootstrapDetector {
         }
         if (apps.length > 0) {
             for (const app of apps) {
-                if (await this.isDevToolingPresent(app.rootUri, app.kind)) {
+                if (await this.isDevToolingPresent(app.rootUri, app.kind, rootUri)) {
                     return true;
                 }
             }
         }
-        return this.isDevToolingPresent(rootUri, kind);
+        return this.isDevToolingPresent(rootUri, kind, rootUri);
     }
 
     /**
      * `node_modules` alone is not enough on Docker (NODE_ENV=production installs omit devDependencies).
      * Require the CLI shim the dev script needs when we can infer it.
+     * Monorepo apps often hoist binaries to the workspace root (pnpm/npm workspaces).
      */
-    protected async isDevToolingPresent(rootUri: URI, kind: QaapProjectKind): Promise<boolean> {
+    protected async isDevToolingPresent(
+        packageRootUri: URI,
+        kind: QaapProjectKind,
+        workspaceRootUri?: URI,
+    ): Promise<boolean> {
         const bin = this.devToolBinaryForKind(kind);
         if (!bin) {
             return true;
         }
-        return this.fileService.exists(rootUri.resolve(`node_modules/.bin/${bin}`));
+        if (await this.fileService.exists(packageRootUri.resolve(`node_modules/.bin/${bin}`))) {
+            return true;
+        }
+        const workspaceRoot = workspaceRootUri ?? packageRootUri;
+        if (workspaceRoot.toString() !== packageRootUri.toString()) {
+            return this.fileService.exists(workspaceRoot.resolve(`node_modules/.bin/${bin}`));
+        }
+        return false;
     }
 
     protected devToolBinaryForKind(kind: QaapProjectKind): string | undefined {
