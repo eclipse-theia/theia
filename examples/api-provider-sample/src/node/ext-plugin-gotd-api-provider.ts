@@ -13,18 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import * as path from 'path';
 import { injectable } from '@theia/core/shared/inversify';
 import { ExtPluginApi, ExtPluginApiProvider } from '@theia/plugin-ext-headless';
 
 @injectable()
 export class ExtPluginGotdApiProvider implements ExtPluginApiProvider {
     provideApi(): ExtPluginApi {
-        // We can support both backend plugins and headless plugins, so we have only one
-        // entry-point script. Moreover, the application build packages that script in
-        // the `../backend/` directory from its source `../plugin/` location, alongside
-        // the scripts for all other plugin API providers.
-        const universalInitPath = path.join(__dirname, '../backend/gotd-api-init');
+        // Resolve beside this file so bundling under lib/backend/ cannot break __dirname.
+        const universalInitPath = require.resolve('../plugin/gotd-api-init');
         return {
             backendInitPath: universalInitPath,
             headlessInitPath: universalInitPath

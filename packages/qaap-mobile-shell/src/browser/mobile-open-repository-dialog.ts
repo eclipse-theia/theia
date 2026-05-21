@@ -12,6 +12,8 @@ import { MobileProjectsService } from './mobile-projects-service';
 export interface MobileOpenRepositoryDialogDelegate {
     /** Refresh the projects panel after a successful open / create. */
     onProjectsChanged?(nextProjects: MobileProjectEntry[]): void;
+    /** Open / clone / create finished and the IDE workspace was switched. */
+    onWorkspaceOpened?(): void;
 }
 
 const GITHUB_URL_OR_SLUG = /^(?:https?:\/\/(?:www\.)?github\.com\/)?([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)\/([A-Za-z0-9._-]+?)(?:\.git)?(?:\/.*)?$/;
@@ -441,6 +443,7 @@ export class MobileOpenRepositoryDialog {
                 this.repositories = next;
                 this.delegate.onProjectsChanged?.(next);
                 this.hide();
+                this.delegate.onWorkspaceOpened?.();
             }
         } finally {
             this.setBusy(false);

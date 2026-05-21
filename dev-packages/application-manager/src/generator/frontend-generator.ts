@@ -151,7 +151,7 @@ export class FrontendGenerator extends AbstractGenerator {
         const swRegister = isWebTarget && this.isServiceWorkerEnabled() ? this.compileServiceWorkerRegistration() : '';
         return `
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">${descriptionTag}${pwaHead}
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">${descriptionTag}${pwaHead}
   <meta name="application-name" content="${this.escapeHtmlAttribute(appName)}">${iconLines}${splashBranding}${swRegister}
   ${preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : ''}
   <title>${this.escapeHtmlAttribute(appName)}</title>`;

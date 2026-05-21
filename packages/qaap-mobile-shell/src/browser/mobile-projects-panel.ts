@@ -25,6 +25,8 @@ import { MobileSnackbar } from './mobile-snackbar';
 export interface MobileProjectsPanelDelegate {
     onProjectOpen(project: MobileProjectEntry): void;
     onDismiss(): void;
+    /** Clone/create/open from the projects UI finished and switched the IDE workspace. */
+    onWorkspaceOpened?(): void;
     onProjectsChanged?(): void;
     /**
      * Invoked when the user taps the project that already matches the active workspace.
@@ -217,6 +219,7 @@ export class MobileProjectsPanel {
                     this.render();
                     this.delegate.onProjectsChanged?.();
                 },
+                onWorkspaceOpened: () => this.delegate.onWorkspaceOpened?.(),
             });
             this.root.append(this.openRepoDialog.node);
         }
@@ -224,11 +227,18 @@ export class MobileProjectsPanel {
     }
 
     protected async onCloneClick(): Promise<void> {
-        const nextProjects = await this.projectsService.cloneGithubProject();
-        if (nextProjects) {
+        this.root.classList.add('theia-mod-loading');
+        try {
+            const nextProjects = await this.projectsService.cloneGithubProject();
+            if (!nextProjects) {
+                return;
+            }
             this.projects = nextProjects;
             this.render();
             this.delegate.onProjectsChanged?.();
+            this.delegate.onWorkspaceOpened?.();
+        } finally {
+            this.root.classList.remove('theia-mod-loading');
         }
     }
 

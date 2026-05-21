@@ -27,7 +27,12 @@ import {
     mobileProjectInitials,
     StoredMobileProject,
 } from './mobile-projects-types';
-import { clearMobileProjectReadmeOpenRequest, markMobileProjectReadmeForOpen } from './mobile-projects-open';
+import {
+    clearMobileProjectReadmeOpenRequest,
+    markMobileProjectReadmeForOpen,
+    requestMobileProjectsPanelDismiss,
+} from './mobile-projects-open';
+import { MobileSnackbar } from './mobile-snackbar';
 
 const HIDDEN_PROJECT_IDS_STORAGE_KEY = 'qaap.mobileProjects.hiddenIds';
 const PINNED_PROJECT_IDS_STORAGE_KEY = 'qaap.mobileProjects.pinnedIds';
@@ -173,8 +178,25 @@ export class MobileProjectsService {
     }
 
     openWorkspaceUri(uri: URI): void {
+        requestMobileProjectsPanelDismiss();
         markMobileProjectReadmeForOpen();
         this.workspaceService.open(uri, { preserveWindow: true });
+    }
+
+    protected formatRepositoryLabel(repository: string): string {
+        const trimmed = repository.trim().replace(/\.git$/, '');
+        try {
+            const url = new URL(trimmed);
+            if (url.hostname.toLowerCase() === 'github.com') {
+                const segments = url.pathname.replace(/^\/+/, '').split('/').filter(Boolean);
+                if (segments.length >= 2) {
+                    return `${segments[0]}/${segments[1]}`;
+                }
+            }
+        } catch {
+            /* owner/repo */
+        }
+        return trimmed;
     }
 
     openInCurrentWindow(project: MobileProjectEntry): void {
@@ -206,17 +228,28 @@ export class MobileProjectsService {
             return;
         }
         markMobileProjectReadmeForOpen();
+        const label = project.github.fullName;
+        MobileSnackbar.show(
+            nls.localize('qaap/mobileProjects/openingRepo', 'Opening {0}…', label),
+            { kind: 'loading' }
+        );
         try {
             const result = await openQaapGithubRepository(project.github.owner, project.github.name);
             const uri = new URI(result.workspaceUri);
             if (newWindow) {
+                MobileSnackbar.dismiss();
                 const url = new URL(window.location.href);
                 url.hash = encodeURI(this.workspacePathFromUri(uri));
                 this.windowService.openNewWindow(url.toString());
                 return;
             }
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/repoOpened', 'Opened {0}', result.repository.fullName),
+                { kind: 'success', duration: 2400 }
+            );
             this.openWorkspaceUri(uri);
         } catch (err) {
+            MobileSnackbar.dismiss();
             // Without this, the backend error (e.g. failed clone, missing workspace root) is silently
             // dropped on the floor and the user sees the project tap as a no-op.
             clearMobileProjectReadmeOpenRequest();
@@ -251,12 +284,20 @@ export class MobileProjectsService {
         if (!name) {
             return undefined;
         }
+        MobileSnackbar.show(
+            nls.localize('qaap/mobileProjects/creatingRepo', 'Creating {0}…', name),
+            { kind: 'loading' }
+        );
         try {
             const result = await createQaapGithubRepository({ name, private: true });
-            await this.messageService.info(nls.localize('qaap/mobileProjects/repoCreated', 'Created {0}', result.repository.fullName));
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/repoCreated', 'Created {0}', result.repository.fullName),
+                { kind: 'success', duration: 2400 }
+            );
             this.openWorkspaceUri(new URI(result.workspaceUri));
             return this.loadGithubProjects();
         } catch (err) {
+            MobileSnackbar.dismiss();
             await this.messageService.error(err instanceof Error ? err.message : String(err));
             return undefined;
         }
@@ -286,12 +327,21 @@ export class MobileProjectsService {
         if (!trimmed) {
             return undefined;
         }
+        const label = this.formatRepositoryLabel(trimmed);
+        MobileSnackbar.show(
+            nls.localize('qaap/mobileProjects/cloningRepo', 'Cloning {0}…', label),
+            { kind: 'loading' }
+        );
         try {
             const result = await cloneQaapGithubRepository(trimmed);
-            await this.messageService.info(nls.localize('qaap/mobileProjects/repoCloned', 'Cloned {0}', result.repository.fullName));
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/repoCloned', 'Cloned {0}', result.repository.fullName),
+                { kind: 'success', duration: 2400 }
+            );
             this.openWorkspaceUri(new URI(result.workspaceUri));
             return this.loadGithubProjects();
         } catch (err) {
+            MobileSnackbar.dismiss();
             await this.messageService.error(err instanceof Error ? err.message : String(err));
             return undefined;
         }

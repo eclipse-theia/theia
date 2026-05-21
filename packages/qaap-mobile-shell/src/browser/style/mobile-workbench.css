@@ -1293,7 +1293,8 @@
     .theia-input,
     input.theia-input,
     select.theia-input,
-    textarea.theia-input {
+    textarea.theia-input,
+    #quick-input-container .monaco-inputbox > .ibwrapper > .input {
       font-size: 16px;
     }
   }
@@ -3196,6 +3197,17 @@
 .theia-mobile-snackbar.theia-mod-kind-warning {
   background: var(--theia-editorWarning-foreground, #cca700);
   color: #1f1f1f;
+}
+
+.theia-mobile-snackbar.theia-mod-kind-loading {
+  background: var(--theia-notifications-background, var(--theia-editorWidget-background, #202020));
+  color: var(--theia-notifications-foreground, var(--theia-foreground));
+}
+
+.theia-mobile-snackbar-spinner {
+  flex-shrink: 0;
+  font-size: 16px;
+  opacity: 0.9;
 }
 
 .theia-mobile-snackbar-message {

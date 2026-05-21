@@ -158,7 +158,7 @@ var FrontendGenerator = /** @class */ (function (_super) {
                             : '';
                         splashBranding = appIcon ? this.compileSplashBrandingScript() : '';
                         pwaHead = isWebTarget ? this.compilePwaHeadFragment() : '';
-                        return [2 /*return*/, "\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">".concat(pwaHead, "\n  <meta name=\"application-name\" content=\"").concat(this.escapeHtmlAttribute(appName), "\">").concat(iconLines).concat(splashBranding, "\n  ").concat(preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : '', "\n  <title>").concat(this.escapeHtmlAttribute(appName), "</title>")];
+                        return [2 /*return*/, "\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content\">".concat(pwaHead, "\n  <meta name=\"application-name\" content=\"").concat(this.escapeHtmlAttribute(appName), "\">").concat(iconLines).concat(splashBranding, "\n  ").concat(preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : '', "\n  <title>").concat(this.escapeHtmlAttribute(appName), "</title>")];
                 }
             });
         });

@@ -23,12 +23,15 @@
  */
 export namespace MobileSnackbar {
 
-    export type Kind = 'default' | 'success' | 'warning';
+    export type Kind = 'default' | 'success' | 'warning' | 'loading';
 
     export interface ShowOptions {
         /** Visual variant. Defaults to `default`. */
         kind?: Kind;
-        /** Display duration in ms. Defaults to `1800` (short / Material `LENGTH_SHORT`). */
+        /**
+         * Display duration in ms. Defaults to `1800` (short / Material `LENGTH_SHORT`).
+         * Use `0` with `kind: 'loading'` to keep the toast until the next `show()` / `dismiss()`.
+         */
         duration?: number;
         /** Optional action text. When provided, an inline button is shown. */
         actionLabel?: string;
@@ -59,15 +62,26 @@ export namespace MobileSnackbar {
             return;
         }
         const node = ensureHost();
-        const duration = Math.max(800, Math.min(8000, options.duration ?? 1800));
-        node.classList.remove('theia-mod-kind-success', 'theia-mod-kind-warning');
+        const isLoading = options.kind === 'loading';
+        const duration = isLoading
+            ? 0
+            : Math.max(800, Math.min(8000, options.duration ?? 1800));
+        node.classList.remove('theia-mod-kind-success', 'theia-mod-kind-warning', 'theia-mod-kind-loading');
         if (options.kind === 'success') {
             node.classList.add('theia-mod-kind-success');
         } else if (options.kind === 'warning') {
             node.classList.add('theia-mod-kind-warning');
+        } else if (isLoading) {
+            node.classList.add('theia-mod-kind-loading');
         }
 
         node.replaceChildren();
+        if (isLoading) {
+            const spinner = document.createElement('span');
+            spinner.className = 'theia-mobile-snackbar-spinner codicon codicon-loading';
+            spinner.setAttribute('aria-hidden', 'true');
+            node.appendChild(spinner);
+        }
         const label = document.createElement('span');
         label.className = 'theia-mobile-snackbar-message';
         label.textContent = message;
@@ -95,8 +109,11 @@ export namespace MobileSnackbar {
 
         if (timer !== undefined) {
             window.clearTimeout(timer);
+            timer = undefined;
         }
-        timer = window.setTimeout(dismiss, duration);
+        if (duration > 0) {
+            timer = window.setTimeout(dismiss, duration);
+        }
     }
 
     export function dismiss(): void {

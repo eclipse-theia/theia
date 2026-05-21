@@ -70,10 +70,17 @@
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
   }
 
-  /* Larger touch targets for the input box. */
+  /* Larger touch targets; 16px avoids iOS Safari zoom-on-focus (breaks keyboard/focus). */
   .quick-input-widget .quick-input-box .monaco-inputbox > .ibwrapper > .input,
-  .quick-input-widget .quick-input-and-message input {
+  .quick-input-widget .quick-input-and-message input,
+  .quick-input-widget .quick-input-and-message .monaco-inputbox > .ibwrapper > .input {
     min-height: 44px !important;
-    font-size: var(--theia-ui-font-size1) !important;
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+
+  #quick-input-container .monaco-inputbox > .ibwrapper > .input {
+    -webkit-user-select: text;
+    user-select: text;
   }
 }

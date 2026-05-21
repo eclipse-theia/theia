@@ -69,6 +69,23 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         await app.page.close();
     });
 
+    test('command palette filter accepts text on mobile viewport', async ({ playwright, browser }) => {
+        const app = await TheiaAppLoader.load({ playwright, browser });
+        await app.waitForShellAndInitialized();
+
+        await app.quickCommandPalette.open();
+        const input = app.page.locator(
+            '#quick-input-container .monaco-inputbox .input, #quick-input-container .quick-input-and-message input'
+        );
+        await expect(input).toBeVisible();
+        await input.focus();
+        await input.pressSequentially('about', { delay: 40 });
+        await expect(input).toHaveValue(/about/i);
+
+        await app.quickCommandPalette.hide();
+        await app.page.close();
+    });
+
     test('getting started uses single-column layout on narrow viewport', async ({ playwright, browser }) => {
         const app = await TheiaAppLoader.load({ playwright, browser });
         await app.waitForShellAndInitialized();

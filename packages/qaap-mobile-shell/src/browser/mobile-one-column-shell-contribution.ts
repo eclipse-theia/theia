@@ -39,6 +39,10 @@ import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contr
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
+import {
+    consumeMobileProjectsPanelDismiss,
+    QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
+} from './mobile-projects-open';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 
 class MobileBottomBarWidget extends LuminoWidget {
@@ -145,9 +149,14 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected leftEdgeTouchStartX = 0;
     protected rightEdgeTouchStartX = 0;
 
+    protected readonly onDismissProjectsPanelEvent = (): void => {
+        this.onProjectsWorkspaceOpened();
+    };
+
     onStart(_app: FrontendApplication): void {
         this.mobileMq?.addEventListener('change', this.onMediaChange);
         window.addEventListener('resize', this.onWindowResize);
+        window.addEventListener(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT, this.onDismissProjectsPanelEvent);
         if (this.mobileMq?.matches) {
             window.requestAnimationFrame(() => this.onMediaChange());
         }
@@ -159,6 +168,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (this.mobileActive) {
             void this.collapseMobileSideSheets().then(() => {
                 void this.ensureWelcomeInMainArea();
+                this.applyMobileProjectsPanelDismissAfterReload();
                 this.scheduleSnapAndUiRefresh();
             });
         } else {
@@ -170,6 +180,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     onStop(_app: FrontendApplication): void {
         this.mobileMq?.removeEventListener('change', this.onMediaChange);
         window.removeEventListener('resize', this.onWindowResize);
+        window.removeEventListener(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT, this.onDismissProjectsPanelEvent);
         this.teardownMobileUi();
         this.toDispose.dispose();
     }
@@ -561,9 +572,18 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         this.ensureProjectsPanel();
         this.ensurePullRequestPanel();
+        this.applyMobileProjectsPanelDismissAfterReload();
         void this.refreshProjectsCount();
         this.refreshBottomBar();
         this.updateBackdropVisibility();
+    }
+
+    /** After clone/open the page reloads; keep the projects sheet closed on the new workspace. */
+    protected applyMobileProjectsPanelDismissAfterReload(): void {
+        if (!consumeMobileProjectsPanelDismiss()) {
+            return;
+        }
+        this.hideProjectsPanel();
     }
 
     protected ensureProjectsPanel(): void {
@@ -576,6 +596,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             {
                 onProjectOpen: (project: MobileProjectEntry) => { void this.onProjectsPanelOpen(project); },
                 onDismiss: () => this.scheduleSnapAndUiRefresh(),
+                onWorkspaceOpened: () => this.onProjectsWorkspaceOpened(),
                 onProjectsChanged: () => { void this.refreshProjectsCount().then(() => this.refreshBottomBar()); },
                 onCurrentProjectActivated: () => this.onCurrentProjectActivated(),
             }
@@ -657,6 +678,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         await panel.openProject(project);
         panel.hide();
+        this.scheduleSnapAndUiRefresh();
+    }
+
+    /** Dismiss the projects sheet after clone/create/open so the IDE workspace is visible. */
+    protected onProjectsWorkspaceOpened(): void {
+        this.hideProjectsPanel();
         this.scheduleSnapAndUiRefresh();
     }
 

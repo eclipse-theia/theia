@@ -43,11 +43,6 @@ export class MobileKeyboardHelper implements Disposable {
     /** Close only below this (px) so inset does not flap during keyboard animation. */
     protected static readonly KEYBOARD_INSET_CLOSE_THRESHOLD_PX = 48;
 
-    /** Min ms between programmatic Quick Input refocus attempts (avoids keyboard open/close loops). */
-    protected static readonly QUICK_INPUT_REFOCUS_COOLDOWN_MS = 900;
-    protected static readonly QUICK_INPUT_MAX_REFOCUS_ATTEMPTS = 2;
-    protected static readonly QUICK_INPUT_REFOCUS_DELAY_MS = 380;
-
     /** Selector for an editor textarea where the code accessory bar makes sense. */
     protected static readonly EDITOR_INPUT_SELECTOR = '.monaco-editor textarea.inputarea';
 
@@ -74,9 +69,6 @@ export class MobileKeyboardHelper implements Disposable {
     protected stableLayoutViewportHeight = 0;
     protected keyboardInsetConsideredOpen = false;
     protected focusNudgeHandles: number[] = [];
-    protected quickInputFocusRecoveryHandle = 0;
-    protected quickInputRefocusAttempts = 0;
-    protected lastQuickInputRefocusAt = 0;
     protected editableFocusCount = 0;
 
     constructor(shellNode: HTMLElement) {
@@ -101,10 +93,6 @@ export class MobileKeyboardHelper implements Disposable {
             cancelAnimationFrame(this.viewportRaf);
             this.viewportRaf = 0;
         }
-        if (this.quickInputFocusRecoveryHandle) {
-            window.clearTimeout(this.quickInputFocusRecoveryHandle);
-            this.quickInputFocusRecoveryHandle = 0;
-        }
         this.removeAccessory();
         // Variable lives on :root so position: fixed nodes appended to document.body
         // (sheet backdrops, accessory bar, edge swipe zones) inherit it.
@@ -118,8 +106,6 @@ export class MobileKeyboardHelper implements Disposable {
         this.lastInsetPx = 0;
         this.stableLayoutViewportHeight = 0;
         this.keyboardInsetConsideredOpen = false;
-        this.quickInputRefocusAttempts = 0;
-        this.lastQuickInputRefocusAt = 0;
         this.toDispose.dispose();
     }
 
@@ -248,9 +234,6 @@ export class MobileKeyboardHelper implements Disposable {
 
     protected onFocusIn(e: FocusEvent): void {
         const target = e.target;
-        if (target instanceof HTMLElement && target.closest('#quick-input-container')) {
-            this.cancelQuickInputFocusRecovery();
-        }
         if (this.isEditableForViewportKeyboard(target)) {
             this.editableFocusCount++;
             this.nudgeViewportAfterFocus();
@@ -311,7 +294,7 @@ export class MobileKeyboardHelper implements Disposable {
         const target = e.target;
         if (this.isEditableForViewportKeyboard(target)) {
             if (this.shouldRetainQuickInputEditableFocus(e)) {
-                this.scheduleQuickInputFocusRecovery();
+                this.scheduleViewportUpdate();
             } else {
                 this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
                 this.nudgeViewportAfterBlur();
@@ -383,69 +366,6 @@ export class MobileKeyboardHelper implements Disposable {
         }
         const widget = container.querySelector<HTMLElement>('.quick-input-widget');
         return Boolean(widget && widget.style.display !== 'none');
-    }
-
-    protected cancelQuickInputFocusRecovery(): void {
-        if (this.quickInputFocusRecoveryHandle) {
-            window.clearTimeout(this.quickInputFocusRecoveryHandle);
-            this.quickInputFocusRecoveryHandle = 0;
-        }
-        this.quickInputRefocusAttempts = 0;
-    }
-
-    /**
-     * Quick Input may blur for one frame when the virtual keyboard animates. Keep inset
-     * state without repeatedly calling `focus()` — that fights the OS and loops the keyboard.
-     */
-    protected scheduleQuickInputFocusRecovery(): void {
-        if (this.quickInputFocusRecoveryHandle) {
-            return;
-        }
-        this.scheduleViewportUpdate();
-        this.quickInputFocusRecoveryHandle = window.setTimeout(() => {
-            this.quickInputFocusRecoveryHandle = 0;
-            this.tryQuickInputFocusRecovery();
-        }, MobileKeyboardHelper.QUICK_INPUT_REFOCUS_DELAY_MS);
-    }
-
-    protected tryQuickInputFocusRecovery(): void {
-        if (!this.isQuickInputVisible()) {
-            if (this.editableFocusCount > 0) {
-                this.editableFocusCount = 0;
-                this.nudgeViewportAfterBlur();
-            }
-            this.cancelQuickInputFocusRecovery();
-            return;
-        }
-        const input = this.getQuickInputFilterElement();
-        if (!input) {
-            this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
-            this.nudgeViewportAfterBlur();
-            return;
-        }
-        if (document.activeElement === input) {
-            return;
-        }
-        if (this.quickInputRefocusAttempts >= MobileKeyboardHelper.QUICK_INPUT_MAX_REFOCUS_ATTEMPTS) {
-            return;
-        }
-        const now = Date.now();
-        if (now - this.lastQuickInputRefocusAt < MobileKeyboardHelper.QUICK_INPUT_REFOCUS_COOLDOWN_MS) {
-            return;
-        }
-        this.lastQuickInputRefocusAt = now;
-        this.quickInputRefocusAttempts++;
-        input.focus({ preventScroll: true });
-        if (!this.isEditableForViewportKeyboard(document.activeElement)) {
-            this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
-            this.nudgeViewportAfterBlur();
-        }
-    }
-
-    protected getQuickInputFilterElement(): HTMLInputElement | undefined {
-        return document.querySelector<HTMLInputElement>(
-            '#quick-input-container .quick-input-and-message input, #quick-input-container .quick-input-box input'
-        ) ?? undefined;
     }
 
     protected restoreViewportScroll(): void {

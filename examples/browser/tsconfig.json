@@ -225,9 +225,6 @@
       "path": "../../packages/workspace"
     },
     {
-      "path": "../api-provider-sample"
-    },
-    {
       "path": "../api-samples"
     }
   ]

@@ -17,22 +17,29 @@ export class DefaultQaapMonacoQuickInputAdapter implements QaapMonacoQuickInputA
         const mobile = matchesMobileNarrowViewport()
             || shell.node.classList.contains(MOBILE_ONE_COLUMN_LAYOUT_CLASS);
         if (mobile) {
-            this.clearMobileInlineStyles(container);
+            this.stabilizeMobileLayout(container);
             queueMicrotask(() => {
-                this.clearMobileInlineStyles(container);
-                requestAnimationFrame(() => this.clearMobileInlineStyles(container));
+                this.stabilizeMobileLayout(container);
+                requestAnimationFrame(() => this.stabilizeMobileLayout(container));
             });
         } else {
             defaultSync();
         }
     }
 
+    stabilizeMobileLayout(container: HTMLElement): void {
+        this.clearMobileInlineStyles(container);
+    }
+
     protected clearMobileInlineStyles(container: HTMLElement): void {
         container.style.removeProperty('top');
+        container.style.removeProperty('left');
+        container.style.removeProperty('width');
         const inner = container.querySelector<HTMLElement>('.quick-input-widget');
         if (inner) {
             inner.style.removeProperty('top');
             inner.style.removeProperty('left');
+            inner.style.removeProperty('width');
             inner.style.removeProperty('transform');
         }
     }

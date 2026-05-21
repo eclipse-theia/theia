@@ -10,4 +10,6 @@ export const QaapMonacoQuickInputAdapter = Symbol('QaapMonacoQuickInputAdapter')
 
 export interface QaapMonacoQuickInputAdapter {
     synchronize(shell: ApplicationShell, container: HTMLElement, defaultSync: () => void): void;
+    /** Strip desktop picker geometry after Monaco `layout()` on narrow viewports. */
+    stabilizeMobileLayout(container: HTMLElement): void;
 }
