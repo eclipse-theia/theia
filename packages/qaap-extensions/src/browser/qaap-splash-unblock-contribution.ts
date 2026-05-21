@@ -5,13 +5,21 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 
-const SPLASH_STUCK_MS = 12_000;
+/** Hard cap from DI instantiation: fires even if onStart() of an earlier contribution hangs. */
+const HARD_CAP_MS = 20_000;
+/** Shorter window once onStart() confirms contributions are running. */
+const STUCK_MS = 10_000;
 
 /**
  * Safety net: if startup hangs before {@link FrontendApplication.revealShell}, hide the preload
  * splash so the user is not stuck on the logo until the tab crashes (common on mobile).
+ *
+ * Two-layer protection:
+ *  - `@postConstruct` arms a hard cap (20 s) from DI instantiation time, before any `onStart`
+ *    runs — catches hangs in earlier contributions.
+ *  - `onStart` arms a shorter window (10 s) once we know contributions are actually executing.
  */
 @injectable()
 export class QaapSplashUnblockContribution implements FrontendApplicationContribution {
@@ -19,8 +27,24 @@ export class QaapSplashUnblockContribution implements FrontendApplicationContrib
     @inject(FrontendApplicationStateService)
     protected readonly appState: FrontendApplicationStateService;
 
+    private hardCapHandle: number | undefined;
+
+    @postConstruct()
+    protected init(): void {
+        this.hardCapHandle = window.setTimeout(() => {
+            this.hardCapHandle = undefined;
+            this.forceHideSplashIfStuck();
+        }, HARD_CAP_MS);
+    }
+
     onStart(): void {
-        window.setTimeout(() => this.forceHideSplashIfStuck(), SPLASH_STUCK_MS);
+        // onStart running means contributions have started — cancel the hard cap and use a
+        // tighter window now that we know the DI container is alive.
+        if (this.hardCapHandle !== undefined) {
+            window.clearTimeout(this.hardCapHandle);
+            this.hardCapHandle = undefined;
+        }
+        window.setTimeout(() => this.forceHideSplashIfStuck(), STUCK_MS);
         this.appState.reachedState('initialized_layout').then(() => {
             window.setTimeout(() => this.forceHideSplashIfStuck(), 3000);
         }).catch(() => undefined);

@@ -23,7 +23,7 @@ import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribu
 import { WorkspaceFrontendContribution } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
 import { WorkspaceTrustDialogFactory } from '@theia/workspace/lib/browser/workspace-trust-dialog-factory';
 import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
-import { QaapAiPreferenceBrandingContribution } from './qaap-ai-preference-branding-contribution';
+import { QaapAiPreferenceBrandingContribution, QaapAiPreferenceBrandingStartup } from './qaap-ai-preference-branding-contribution';
 import { QaapHubActionsContribution } from './qaap-hub-actions-contribution';
 import { QaapHubChatSyncContribution } from './qaap-hub-chat-sync-contribution';
 import { QaapMobileAppTesterContribution } from './qaap-mobile-app-tester-contribution';
@@ -69,8 +69,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     rebind(CodeCompletionAgent).toService(QaapCodeCompletionAgentImpl);
 
     bind(QaapAiPreferenceBrandingContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(QaapAiPreferenceBrandingContribution);
     bind(PreferenceContribution).toService(QaapAiPreferenceBrandingContribution);
+    bind(QaapAiPreferenceBrandingStartup).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapAiPreferenceBrandingStartup);
 
     bind(QaapHubActionsContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(QaapHubActionsContribution);

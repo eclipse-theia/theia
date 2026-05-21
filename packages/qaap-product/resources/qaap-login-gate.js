@@ -64,11 +64,84 @@
         }
     }
 
+    // Watchdog: if bundle.js never loads (network error, stale SW chunk mismatch)
+    // show an error + retry UI so the user is never stuck on a blank spinner.
     var bundleLoadWatchdog = window.setTimeout(function () {
         if (!window.__qaapBundleLoaded) {
             console.warn('[Qaap] bundle.js slow or failed — check network / console');
+            showStartupError('bundle');
         }
-    }, 60000);
+    }, 30000);
+
+    // Startup watchdog: bundle loaded but Theia DI/startup never completed.
+    // Arms after bundle.js executes; fires if the splash is still visible 30s later.
+    var startupWatchdog = null;
+
+    function armStartupWatchdog() {
+        if (startupWatchdog) { return; }
+        startupWatchdog = window.setTimeout(function () {
+            var preload = document.querySelector('.theia-preload');
+            var isVisible = preload && preload.style.display !== 'none' &&
+                !preload.classList.contains('theia-hidden') &&
+                preload.offsetParent !== null;
+            if (isVisible) {
+                console.warn('[Qaap] Theia startup timed out — showing retry UI');
+                showStartupError('startup');
+            }
+        }, 30000);
+    }
+
+    function showStartupError(kind) {
+        // Don't show if login gate is already visible or IDE already loaded.
+        if (document.getElementById('qaap-login-host') ||
+            document.getElementById('qaap-startup-error')) { return; }
+
+        var name = appName();
+        var msg = kind === 'bundle'
+            ? 'El bundle de la aplicación no pudo cargarse. Comprueba tu conexión.'
+            : 'La aplicación tardó demasiado en arrancar.';
+
+        injectErrorStyles();
+        var host = document.createElement('div');
+        host.id = 'qaap-startup-error';
+        host.innerHTML =
+            '<div class="qaap-err-overlay">' +
+            '<div class="qaap-err-box">' +
+            '<div class="qaap-err-icon" aria-hidden="true">&#9888;</div>' +
+            '<p class="qaap-err-name">' + escapeHtml(name) + '</p>' +
+            '<p class="qaap-err-msg">' + escapeHtml(msg) + '</p>' +
+            '<button type="button" id="qaap-err-retry" class="qaap-err-btn">Reintentar</button>' +
+            '</div></div>';
+        document.body.appendChild(host);
+
+        var btn = document.getElementById('qaap-err-retry');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                window.location.reload();
+            });
+        }
+    }
+
+    function injectErrorStyles() {
+        if (document.getElementById('qaap-err-styles')) { return; }
+        var style = document.createElement('style');
+        style.id = 'qaap-err-styles';
+        style.textContent =
+            '#qaap-startup-error{position:fixed;inset:0;z-index:2147483646;display:flex;' +
+            'align-items:center;justify-content:center;background:rgba(0,0,0,.55)}' +
+            '.qaap-err-overlay{display:flex;align-items:center;justify-content:center;width:100%;height:100%}' +
+            '.qaap-err-box{background:#fff;border-radius:14px;padding:32px 28px;max-width:320px;width:90%;' +
+            'text-align:center;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 8px 40px rgba(0,0,0,.25)}' +
+            '@media(prefers-color-scheme:dark){.qaap-err-box{background:#1e1e1e;color:#f5f5f5}}' +
+            '.qaap-err-icon{font-size:40px;margin-bottom:12px}' +
+            '.qaap-err-name{margin:0 0 6px;font-size:18px;font-weight:700}' +
+            '.qaap-err-msg{margin:0 0 20px;font-size:14px;line-height:1.45;color:#666}' +
+            '@media(prefers-color-scheme:dark){.qaap-err-msg{color:#a0a0a0}}' +
+            '.qaap-err-btn{width:100%;height:44px;border-radius:10px;border:none;cursor:pointer;' +
+            'background:#0969da;color:#fff;font-size:15px;font-weight:600;font-family:inherit}' +
+            '.qaap-err-btn:active{opacity:.85}';
+        document.head.appendChild(style);
+    }
 
     function loadBundle() {
         if (window.__qaapBundleLoading || window.__qaapBundleLoaded) {
@@ -82,10 +155,12 @@
         script.onload = function () {
             window.__qaapBundleLoaded = true;
             window.clearTimeout(bundleLoadWatchdog);
+            armStartupWatchdog();
         };
         script.onerror = function () {
             window.__qaapBundleLoading = false;
             console.error('[Qaap] Failed to load application bundle.');
+            showStartupError('bundle');
         };
         document.body.appendChild(script);
     }

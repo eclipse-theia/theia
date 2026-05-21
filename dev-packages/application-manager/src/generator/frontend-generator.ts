@@ -316,7 +316,8 @@ export class FrontendGenerator extends AbstractGenerator {
      * browsers. Strategy:
      *  - Precache a tiny app shell (HTML, manifest, icons, login gate) on `install`.
      *  - Navigation requests: network-first, fall back to cached shell when offline (SPA behaviour).
-     *  - Static asset requests (`bundle.js`, `bundle.css`, workers, fonts, media): stale-while-revalidate.
+     *  - Application code (`bundle.js`, webpack chunks, `bundle.css`): network-first, cache as offline fallback.
+     *  - Other static assets (workers, fonts, media, icons, wasm): stale-while-revalidate.
      *  - Everything else (WebSocket upgrades, plugin endpoints, file streaming, auth, APIs, sourcemaps,
      *    non-GET, Range requests) is passed through to the network untouched.
      *  - Old version caches are evicted on `activate`.
@@ -350,7 +351,8 @@ export class FrontendGenerator extends AbstractGenerator {
  *   - install: precache the app shell (index.html, manifest, branding icons).
  *   - activate: evict caches that don't match the current version.
  *   - navigations: network-first with an offline fallback to the cached shell.
- *   - static assets (js/css/wasm/fonts/media/workers): stale-while-revalidate, same-origin only.
+ *   - application code (js/css): network-first so a redeploy is always served consistently.
+ *   - other static assets (wasm/fonts/media/icons): stale-while-revalidate, same-origin only.
  *   - non-GET, Range requests, WebSocket-adjacent and plugin/file/api endpoints: pass-through.
  */
 'use strict';
@@ -379,9 +381,16 @@ const BYPASS_PATHS = [
     /\\.map$/
 ];
 
-const STATIC_EXT = /\\.(?:js|css|woff2?|ttf|otf|eot|svg|png|jpg|jpeg|gif|webp|ico|wasm)(?:$|\\?)/i;
+// Application code: bundle.js, webpack chunks and bundle.css. Served network-first so a fresh
+// deploy is always picked up as a consistent whole.
+const SCRIPT_EXT = /\\.(?:js|css)(?:$|\\?)/i;
+// Immutable-ish assets: safe to serve stale while revalidating.
+const ASSET_EXT = /\\.(?:woff2?|ttf|otf|eot|svg|png|jpg|jpeg|gif|webp|ico|wasm)(?:$|\\?)/i;
 
 self.addEventListener('install', event => {
+    // Take over as soon as installed so a redeployed build reaches open tabs without
+    // waiting for every tab to close (otherwise stale assets linger for the whole session).
+    self.skipWaiting();
     event.waitUntil((async () => {
         const cache = await caches.open(SHELL_CACHE);
         await Promise.all(SHELL_ASSETS.map(async url => {
@@ -431,10 +440,31 @@ self.addEventListener('fetch', event => {
         event.respondWith(handleNavigate(event));
         return;
     }
-    if (STATIC_EXT.test(url.pathname)) {
+    if (SCRIPT_EXT.test(url.pathname)) {
+        event.respondWith(networkFirst(req));
+        return;
+    }
+    if (ASSET_EXT.test(url.pathname)) {
         event.respondWith(staleWhileRevalidate(req));
     }
 });
+
+// Network-first for application code. A stale bundle.js references webpack chunk names that a
+// newer deploy no longer serves; that mismatch fails chunk loading and hangs the IDE on the
+// splash screen forever. The cache is only an offline fallback here.
+async function networkFirst(req) {
+    const cache = await caches.open(RUNTIME_CACHE);
+    try {
+        const res = await fetch(req);
+        if (res && res.ok && (res.type === 'basic' || res.type === 'default')) {
+            cache.put(req, res.clone()).catch(() => {});
+        }
+        return res;
+    } catch (_) {
+        const cached = await cache.match(req);
+        return cached || new Response('', { status: 504, statusText: 'Gateway Timeout' });
+    }
+}
 
 async function handleNavigate(event) {
     const req = event.request;

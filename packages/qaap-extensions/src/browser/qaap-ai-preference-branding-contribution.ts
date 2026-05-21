@@ -37,11 +37,24 @@ export const qaapAiPreferenceSchema: PreferenceSchema = {
 const HOST_MACHINE_FROM = 'on the machine running Theia.';
 const HOST_MACHINE_TO = 'on the machine running this application.';
 
-/** Re-label API-key preference warnings without forking each AI provider package. */
+/**
+ * Provides the Qaap AI preference schema.
+ *
+ * Pure {@link PreferenceContribution}: it injects no services. Injecting `PreferenceSchemaService`
+ * into a `PreferenceContribution` recurses infinitely — `PreferenceSchemaServiceImpl.init()`
+ * collects every `PreferenceContribution`, so constructing one that depends back on the service
+ * re-enters `init()`. The re-branding side that does need the service lives in
+ * {@link QaapAiPreferenceBrandingStartup}.
+ */
 @injectable()
-export class QaapAiPreferenceBrandingContribution implements FrontendApplicationContribution, PreferenceContribution {
+export class QaapAiPreferenceBrandingContribution implements PreferenceContribution {
 
     readonly schema = qaapAiPreferenceSchema;
+}
+
+/** Re-label API-key preference warnings without forking each AI provider package. */
+@injectable()
+export class QaapAiPreferenceBrandingStartup implements FrontendApplicationContribution {
 
     @inject(PreferenceSchemaService)
     protected readonly schemaService: PreferenceSchemaService;
