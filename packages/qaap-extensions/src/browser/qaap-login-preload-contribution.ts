@@ -7,6 +7,7 @@ import { PreloadContribution } from '@theia/core/lib/browser/preload/preloader';
 import { injectable } from '@theia/core/shared/inversify';
 import { ensureQaapGithubOAuthReturnHandled } from '@theia/qaap-adapters/lib/browser/qaap-auth-oauth-bootstrap';
 import {
+    QAAP_REQUIRE_LOGIN_EVENT,
     fetchQaapAuthConfig,
     peekQaapOAuthReturnFromUrl,
     syncQaapAuthSessionFromServer,
@@ -16,8 +17,8 @@ import { isQaapLoginGateMounted, presentQaapLoginGate } from './qaap-login-gate'
 import { readQaapSignedIn } from './qaap-login-storage';
 
 /**
- * Blocks frontend startup until the user signs in with GitHub or GitLab.
- * Uses plain DOM so it runs before React / the workbench exist.
+ * Reconciles auth during preload. The HTML login gate ({@link qaap-login-gate.js}) runs before
+ * bundle.js; preload must not block startup on stale localStorage after a VPS container restart.
  */
 @injectable()
 export class QaapLoginPreloadContribution implements PreloadContribution {
@@ -35,7 +36,8 @@ export class QaapLoginPreloadContribution implements PreloadContribution {
             void this.reconcileSessionInBackground();
             return;
         }
-        return this.bootstrapAuth();
+        void this.bootstrapAuth();
+        return;
     }
 
     protected async reconcileSessionInBackground(): Promise<void> {
@@ -46,7 +48,8 @@ export class QaapLoginPreloadContribution implements PreloadContribution {
             }
             const ok = await syncQaapAuthSessionFromServer();
             if (!ok) {
-                await this.bootstrapAuth();
+                // Server session gone (VPS container restart) — show login without blocking preload.
+                window.dispatchEvent(new Event(QAAP_REQUIRE_LOGIN_EVENT));
             }
         } catch {
             /* keep current session */
@@ -69,9 +72,7 @@ export class QaapLoginPreloadContribution implements PreloadContribution {
                 return;
             }
         }
-        return new Promise<void>(resolve => {
-            presentQaapLoginGate(resolve);
-        });
+        presentQaapLoginGate();
     }
 
     /** Local dev can skip auth only when the backend asks for it and no GitHub OAuth app is configured. */

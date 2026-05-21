@@ -35,6 +35,8 @@ services:
       # THEIA_PLUGINS_DIR: /app/plugins
     volumes:
       - theia-workspace:/workspace
+      # Persist GitHub OAuth sessions across container rebuilds (default: /root/.qaap/auth).
+      - qaap-auth-data:/root/.qaap
     restart: unless-stopped
     deploy:
       resources:
@@ -43,3 +45,4 @@ services:
 
 volumes:
   theia-workspace:
+  qaap-auth-data:

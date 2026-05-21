@@ -36,6 +36,22 @@
         return false;
     }
 
+    function clearStaleAuthLocalStorage() {
+        try {
+            var keysToRemove = [];
+            var k, storageKey;
+            for (k = 0; k < localStorage.length; k++) {
+                storageKey = localStorage.key(k);
+                if (storageKey && storageKey.indexOf('qaap.auth') !== -1) {
+                    keysToRemove.push(storageKey);
+                }
+            }
+            for (k = 0; k < keysToRemove.length; k++) {
+                localStorage.removeItem(keysToRemove[k]);
+            }
+        } catch (e) { /* ignore */ }
+    }
+
     function writeSignedIn(provider, user, sessionId) {
         var prefix = storagePrefix();
         localStorage.setItem(prefix + SIGNED_IN_SUFFIX, JSON.stringify(true));
@@ -251,8 +267,12 @@
                     loadBundle();
                 })
                 .catch(function () {
-                    document.body.classList.remove('qaap-login-active');
-                    loadBundle();
+                    clearStaleAuthLocalStorage();
+                    if (document.body) {
+                        showGate();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', showGate);
+                    }
                 });
             return;
         }
@@ -303,11 +323,49 @@
             });
     }
 
+    function verifyStoredSessionThenLoad() {
+        fetchWithTimeout('/qaap/api/auth/session', { credentials: 'include' }, 12000)
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('session');
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                if (data && data.signedIn && data.user && data.user.provider) {
+                    writeSignedIn(data.user.provider, data.user, data.sessionId);
+                    loadBundle();
+                    return;
+                }
+                throw new Error('unsigned');
+            })
+            .catch(function () {
+                if (isSignedIn()) {
+                    clearStaleAuthLocalStorage();
+                }
+                trySkipAuthDevMode().then(function (skipped) {
+                    if (!skipped) {
+                        if (document.body) {
+                            showGate();
+                        } else {
+                            document.addEventListener('DOMContentLoaded', showGate);
+                        }
+                    }
+                }).catch(function () {
+                    if (document.body) {
+                        showGate();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', showGate);
+                    }
+                });
+            });
+    }
+
     if (window.location.search.indexOf('qaap_oauth=github') !== -1
         || window.location.search.indexOf('qaap_oauth_error=1') !== -1) {
         resumeAfterOAuthOrSession();
     } else if (isSignedIn()) {
-        loadBundle();
+        verifyStoredSessionThenLoad();
     } else {
         trySkipAuthDevMode().then(function (skipped) {
             if (!skipped) {
