@@ -26,9 +26,31 @@ function copyIfExists(from, to) {
 
 fs.mkdirSync(libFrontend, { recursive: true });
 
-if (!copyIfExists(srcIndex, path.join(libFrontend, 'index.html'))) {
+const libIndex = path.join(libFrontend, 'index.html');
+if (!copyIfExists(srcIndex, libIndex)) {
     console.warn('[qaap] src-gen/frontend/index.html missing — run: npx theia generate');
 }
+
+const BUNDLE_SCRIPT = '<script type="text/javascript" src="./bundle.js" charset="utf-8"></script>';
+const GATE_SCRIPT = '<script type="text/javascript" src="./qaap-login-gate.js" charset="utf-8"></script>';
+
+function patchIndexForLoginGate(indexPath) {
+    if (!fs.existsSync(indexPath) || !fs.existsSync(path.join(libFrontend, 'qaap-login-gate.js'))) {
+        return;
+    }
+    let html = fs.readFileSync(indexPath, 'utf8');
+    if (html.includes('qaap-login-gate.js')) {
+        return;
+    }
+    if (html.includes(BUNDLE_SCRIPT)) {
+        html = html.replace(BUNDLE_SCRIPT, GATE_SCRIPT);
+    } else {
+        html = html.replace('</body>', `    ${GATE_SCRIPT}\n</body>`);
+    }
+    fs.writeFileSync(indexPath, html, 'utf8');
+}
+
+patchIndexForLoginGate(libIndex);
 copyIfExists(srcManifest, path.join(libFrontend, 'manifest.webmanifest'));
 // Service worker must sit at the same scope as index.html so it can control the whole app.
 copyIfExists(srcServiceWorker, path.join(libFrontend, 'service-worker.js'));

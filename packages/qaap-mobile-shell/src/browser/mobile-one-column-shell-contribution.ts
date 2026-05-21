@@ -584,7 +584,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected readonly onAuthOpenFirstRepo = (): void => {
-        void this.openFirstRepoAfterAuth();
+        // Defer until the shell is ready — avoids racing OAuth return with layout init (mobile OOM).
+        window.setTimeout(() => { void this.openFirstRepoAfterAuth(); }, 1500);
     };
 
     /** Post-OAuth: open the only repo automatically, otherwise show the clone picker. */

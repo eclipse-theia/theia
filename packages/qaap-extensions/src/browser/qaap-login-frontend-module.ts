@@ -8,8 +8,11 @@ import '../../src/browser/style/qaap-login.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { QaapLoginContribution } from './qaap-login-contribution';
+import { QaapSplashUnblockContribution } from './qaap-splash-unblock-contribution';
 
 export default new ContainerModule(bind => {
     bind(QaapLoginContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapLoginContribution);
+    bind(QaapSplashUnblockContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapSplashUnblockContribution);
 });

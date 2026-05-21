@@ -289,7 +289,10 @@ export class FrontendGenerator extends AbstractGenerator {
             'if(document.readyState!=="loading"){register();}else{document.addEventListener("DOMContentLoaded",register,{once:true});}',
             // Reload once when a new SW takes over so the page is consistent with cached assets.
             'var reloaded=false;',
-            'navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded)return;reloaded=true;try{location.reload();}catch(_){}});',
+            'navigator.serviceWorker.addEventListener("controllerchange",function(){',
+            'if(reloaded)return;',
+            'if(window.location.search.indexOf("qaap_oauth=")>=0)return;',
+            'reloaded=true;try{location.reload();}catch(_){}});',
             '})();'
         ].join('');
         return `\n  <script type="text/javascript">${js}</script>`;

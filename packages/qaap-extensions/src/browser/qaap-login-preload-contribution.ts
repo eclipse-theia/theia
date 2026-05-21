@@ -26,8 +26,11 @@ export class QaapLoginPreloadContribution implements PreloadContribution {
         if (peekQaapOAuthReturnFromUrl()) {
             return ensureQaapGithubOAuthReturnHandled().then(() => undefined);
         }
-        if (readQaapSignedIn() || isQaapLoginGateMounted()) {
+        if (isQaapLoginGateMounted()) {
             return;
+        }
+        if (readQaapSignedIn()) {
+            return syncQaapAuthSessionFromServer().then(ok => ok ? undefined : this.bootstrapAuth());
         }
         return this.bootstrapAuth();
     }

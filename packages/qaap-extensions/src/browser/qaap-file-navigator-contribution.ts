@@ -29,8 +29,14 @@ export class QaapFileNavigatorContribution extends FileNavigatorContribution {
     }
 
     async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
-        await this.shell.pendingUpdates;
-        await this.ensureExplorerInLeftPanel(this.shouldActivateExplorerOnStartup());
+        const activate = this.shouldActivateExplorerOnStartup();
+        if (!matchesMobileNarrowViewport()) {
+            await Promise.race([
+                this.shell.pendingUpdates,
+                new Promise<void>(resolve => window.setTimeout(resolve, 4000)),
+            ]);
+        }
+        await this.ensureExplorerInLeftPanel(activate);
     }
 
     /** Register the explorer tab without expanding the mobile side sheet on startup / reload. */

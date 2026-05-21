@@ -13,7 +13,6 @@ import {
     QAAP_REQUIRE_LOGIN_EVENT,
     fetchQaapAuthConfig,
     peekQaapOAuthErrorReasonFromUrl,
-    peekQaapOAuthReturnFromUrl,
     revealQaapWorkbenchAfterAuth,
     syncQaapAuthSessionFromServer,
 } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
@@ -39,10 +38,14 @@ export class QaapLoginContribution implements FrontendApplicationContribution {
         void this.syncLoginGateWithSession();
     };
 
-    async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
+    onDidInitializeLayout(_app: FrontendApplication): void {
         window.addEventListener('qaap-auth-session-changed', this.onAuthSessionChanged);
         window.addEventListener(QAAP_REQUIRE_LOGIN_EVENT, this.onRequireLogin);
+        // Never block revealShell (splash); auth runs after the workbench is visible.
+        void this.runPostLayoutAuth();
+    }
 
+    protected async runPostLayoutAuth(): Promise<void> {
         const oauthErrorReason = peekQaapOAuthErrorReasonFromUrl();
         const oauthResult = await ensureQaapGithubOAuthReturnHandled();
         if (oauthResult === 'github') {
@@ -56,7 +59,6 @@ export class QaapLoginContribution implements FrontendApplicationContribution {
             this.messages.error(detail);
             console.error('[qaap-auth] OAuth callback returned error.', oauthErrorReason ?? '(no reason)');
         }
-
         await this.syncLoginGateWithSession();
     }
 
@@ -79,9 +81,6 @@ export class QaapLoginContribution implements FrontendApplicationContribution {
     }
 
     protected async syncLoginGateWithSession(): Promise<void> {
-        if (peekQaapOAuthReturnFromUrl() === 'github') {
-            return;
-        }
         try {
             const config = await fetchQaapAuthConfig();
             if (this.shouldBypassLoginGate(config)) {

@@ -35,7 +35,7 @@ RUN npm run compile
 RUN npm run download:plugins -- --rate-limit 5
 
 WORKDIR /app/examples/browser
-RUN npm run build:production
+RUN npm run build:production && node scripts/copy-frontend-static.mjs
 
 # --- Runtime -----------------------------------------------------------------
 FROM node:22-bookworm-slim AS runtime

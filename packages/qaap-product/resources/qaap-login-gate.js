@@ -48,6 +48,12 @@
         }
     }
 
+    var bundleLoadWatchdog = window.setTimeout(function () {
+        if (!window.__qaapBundleLoaded) {
+            console.warn('[Qaap] bundle.js slow or failed — check network / console');
+        }
+    }, 60000);
+
     function loadBundle() {
         if (window.__qaapBundleLoading || window.__qaapBundleLoaded) {
             return;
@@ -59,6 +65,7 @@
         script.src = './bundle.js';
         script.onload = function () {
             window.__qaapBundleLoaded = true;
+            window.clearTimeout(bundleLoadWatchdog);
         };
         script.onerror = function () {
             window.__qaapBundleLoading = false;
