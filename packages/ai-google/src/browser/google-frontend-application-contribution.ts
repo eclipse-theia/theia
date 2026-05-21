@@ -56,30 +56,30 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
-            const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+            const apiKey = this.preferenceService.get<string>(API_KEY_PREF);
             this.manager.setApiKey(apiKey);
 
-            this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
-            this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
-            this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
+            this.manager.setMaxRetriesOnErrors(this.preferenceService.get(MAX_RETRIES, 3));
+            this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get(RETRY_DELAY_RATE_LIMIT, 60));
+            this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get(RETRY_DELAY_OTHER_ERRORS, -1));
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+            const models = this.preferenceService.get<string>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createGeminiModelDescription(modelId)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    const newApiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+                    const newApiKey = this.preferenceService.get<string>(API_KEY_PREF);
                     this.manager.setApiKey(newApiKey);
                     this.handleKeyChange(newApiKey);
                 } else if (event.preferenceName === MAX_RETRIES) {
-                    this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
+                    this.manager.setMaxRetriesOnErrors(this.preferenceService.get(MAX_RETRIES, 3));
                 } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
-                    this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
+                    this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get(RETRY_DELAY_RATE_LIMIT, 60));
                 } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
-                    this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
+                    this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get(RETRY_DELAY_OTHER_ERRORS, -1));
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                    this.handleModelChanges(this.preferenceService.get<string>(MODELS_PREF, []));
                 }
             });
         });

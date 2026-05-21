@@ -156,7 +156,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
                 };
 
                 // Use one more than our actual maximum. this way we can determine if we have more results than our maximum and warn the user
-                const maxResultsForTheiaAPI = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30) + 1;
+                const maxResultsForTheiaAPI = this.preferenceService.get(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30) + 1;
                 const options: SearchInWorkspaceOptions = {
                     useRegExp: args.useRegExp,
                     matchCase: false,
@@ -193,7 +193,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             });
 
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
-            const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
+            const maxResults = this.preferenceService.get(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
 
             const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
             const formattedResults = optimizeSearchResults(finalResults, workspaceRoot);

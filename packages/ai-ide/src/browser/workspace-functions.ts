@@ -154,7 +154,7 @@ export class WorkspaceFunctionScope {
 
     async shouldExclude(stat: FileStat): Promise<boolean> {
         const shouldConsiderGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
-        const userExcludePatterns = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
+        const userExcludePatterns = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
 
         if (this.isUserExcluded(stat.resource.path.base, userExcludePatterns)) {
             return true;
@@ -373,7 +373,7 @@ export class FileContentFunction implements ToolProvider {
         }
 
         const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
-        const maxSizeKB = this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
+        const maxSizeKB = this.preferences.get(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
         const isEditorOpen = openEditorValue !== undefined;
         const isPaginated = offset !== undefined || limit !== undefined;
 
@@ -907,7 +907,7 @@ export class FindFilesByPattern implements ToolProvider {
         const patterns: string[] = [];
 
         // Get user exclude patterns from preferences
-        const userExcludePatterns = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
+        const userExcludePatterns = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
         patterns.push(...userExcludePatterns);
 
         // Add gitignore patterns if enabled

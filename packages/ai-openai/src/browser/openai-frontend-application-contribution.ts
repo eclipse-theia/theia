@@ -39,32 +39,32 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
-            const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+            const apiKey = this.preferenceService.get<string>(API_KEY_PREF);
             this.manager.setApiKey(apiKey);
 
-            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            const proxyUri = this.preferenceService.get<string>('http.proxy');
             this.manager.setProxyUrl(proxyUri);
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+            const models = this.preferenceService.get<string>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
             this.prevModels = [...models];
 
-            const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+            const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
             this.prevCustomModels = [...customModels];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF));
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                    this.handleModelChanges(this.preferenceService.get<string>(MODELS_PREF, []));
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-                    this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+                    this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []));
                 } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
                     this.updateAllModels();
                 } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy'));
                     this.updateAllModels();
                 }
             });
@@ -114,17 +114,17 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     }
 
     protected updateAllModels(): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        const models = this.preferenceService.get<string>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
 
-        const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
+        const useResponseApi = this.preferenceService.get(USE_RESPONSE_API_PREF, false);
         return {
             id: id,
             model: modelId,

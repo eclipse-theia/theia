@@ -620,7 +620,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'workbench.startupEditor') {
-                const prefValue = props.preferenceService.get<string>('workbench.startupEditor', 'none');
+                const prefValue = props.preferenceService.get('workbench.startupEditor', 'none');
                 setStartupEditor(prefValue);
             }
         });

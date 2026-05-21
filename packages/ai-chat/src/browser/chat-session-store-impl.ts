@@ -283,7 +283,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     protected async getStorageScope(): Promise<SessionStorageScope> {
         // Wait for preferences to be ready before reading storage configuration
         await this.preferenceService.ready;
-        return this.preferenceService.get<SessionStorageScope>(SESSION_STORAGE_PREF, 'workspace');
+        return this.preferenceService.get<SessionStorageScope>(SESSION_STORAGE_PREF, { fallback: 'workspace' });
     }
 
     protected async getGlobalStorageRoot(): Promise<URI> {
@@ -347,7 +347,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     protected getPersistedSessionLimit(): number {
-        return this.preferenceService.get<number>(PERSISTED_SESSION_LIMIT_PREF, 25);
+        return this.preferenceService.get(PERSISTED_SESSION_LIMIT_PREF, 25);
     }
 
     protected async trimSessions(): Promise<void> {

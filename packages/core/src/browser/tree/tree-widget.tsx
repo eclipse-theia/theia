@@ -306,7 +306,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }),
             this.preferenceService.onPreferenceChanged((event: PreferenceChange) => {
                 if (event.preferenceName === PREFERENCE_NAME_TREE_INDENT) {
-                    this.treeIndent = this.preferenceService.get<number>(PREFERENCE_NAME_TREE_INDENT, 8);
+                    this.treeIndent = this.preferenceService.get(PREFERENCE_NAME_TREE_INDENT, 8);
                     this.update();
                 }
             })

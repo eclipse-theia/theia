@@ -115,7 +115,7 @@ export class IconThemeService {
             this.validateActiveTheme();
             this.updateIconThemePreference();
             this.preferences.onPreferencesChanged(changes => {
-                if (ICON_THEME_PREFERENCE_KEY in changes) {
+                if (changes.some(change => change.preferenceName === ICON_THEME_PREFERENCE_KEY)) {
                     this.validateActiveTheme();
                 }
             });
