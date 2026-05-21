@@ -5,6 +5,7 @@
 
 import { PreloadContribution } from '@theia/core/lib/browser/preload/preloader';
 import { injectable } from '@theia/core/shared/inversify';
+import { ensureQaapGithubOAuthReturnHandled } from '@theia/qaap-adapters/lib/browser/qaap-auth-oauth-bootstrap';
 import {
     fetchQaapAuthConfig,
     peekQaapOAuthReturnFromUrl,
@@ -22,7 +23,10 @@ import { readQaapSignedIn } from './qaap-login-storage';
 export class QaapLoginPreloadContribution implements PreloadContribution {
 
     initialize(): Promise<void> | void {
-        if (readQaapSignedIn() || isQaapLoginGateMounted() || peekQaapOAuthReturnFromUrl()) {
+        if (peekQaapOAuthReturnFromUrl()) {
+            return ensureQaapGithubOAuthReturnHandled().then(() => undefined);
+        }
+        if (readQaapSignedIn() || isQaapLoginGateMounted()) {
             return;
         }
         return this.bootstrapAuth();

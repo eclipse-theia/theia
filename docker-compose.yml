@@ -27,6 +27,10 @@ services:
       # Public IDE URL, e.g. http://178.105.136.93:4873 (OAuth + dev preview /qaap-dev/<port>/)
       QAAP_OAUTH_PUBLIC_URL: ${QAAP_OAUTH_PUBLIC_URL:-}
       QAAP_SKIP_AUTH: ${QAAP_SKIP_AUTH:-false}
+      QAAP_VAPID_PUBLIC_KEY: ${QAAP_VAPID_PUBLIC_KEY:-}
+      QAAP_VAPID_PRIVATE_KEY: ${QAAP_VAPID_PRIVATE_KEY:-}
+      QAAP_VAPID_SUBJECT: ${QAAP_VAPID_SUBJECT:-mailto:qaap@localhost}
+      QAAP_CLOUD_MODE: ${QAAP_CLOUD_MODE:-local}
       # Optional: mount a host folder as the default workspace
       # THEIA_PLUGINS_DIR: /app/plugins
     volumes:

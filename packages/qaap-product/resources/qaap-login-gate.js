@@ -264,7 +264,10 @@
             });
     }
 
-    if (isSignedIn()) {
+    if (window.location.search.indexOf('qaap_oauth=github') !== -1
+        || window.location.search.indexOf('qaap_oauth_error=1') !== -1) {
+        resumeAfterOAuthOrSession();
+    } else if (isSignedIn()) {
         loadBundle();
     } else {
         resumeAfterOAuthOrSession();
