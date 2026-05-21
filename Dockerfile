@@ -32,7 +32,7 @@ RUN npm ci
 # @theia/cli bin/theia.js requires ../lib/theia (built by compile)
 RUN npm run compile
 
-RUN npm run download:plugins -- --rate-limit 5
+RUN npm run download:plugins -- --rate-limit 5 --ignore-errors
 
 WORKDIR /app/examples/browser
 RUN npm run build:production && node scripts/copy-frontend-static.mjs
