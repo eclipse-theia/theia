@@ -109,7 +109,7 @@ export class SomeClass {
   - `markdown-it-emoji` (from [`markdown-it-emoji@^3.0.0`](https://www.npmjs.com/package/markdown-it-emoji))
   - `react` (from [`react@^18.3.1`](https://www.npmjs.com/package/react))
   - `ws` (from [`ws@^8.20.0`](https://www.npmjs.com/package/ws))
-  - `yargs` (from [`yargs@^15.4.1`](https://www.npmjs.com/package/yargs))
+  - `yargs` (from [`yargs@^17.7.2`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
 
