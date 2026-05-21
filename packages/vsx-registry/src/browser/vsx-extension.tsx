@@ -244,7 +244,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get displayName(): string | undefined {
-        return this.getData('displayName') || this.name;
+        return this.getData('displayName') || this.name || this.id;
     }
 
     get description(): string | undefined {
@@ -318,8 +318,21 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\n${nls.localizeByDefault('Publisher: {0}', this.publisher)}`;
-
+        const version = VSXExtension.formatVersion(this.version);
+        let md = `__${this.displayName}__`;
+        if (version) {
+            md += ` ${version}`;
+        }
+        if (this.disabled && this.installed) {
+            md += ` (${nls.localizeByDefault('Disabled')})`;
+        }
+        if (this.description) {
+            md += `\n\n${this.description}`;
+        }
+        md += '\n_____\n\n';
+        if (this.publisher) {
+            md += nls.localizeByDefault('Publisher: {0}', this.publisher);
+        }
         if (this.license) {
             md += `  \r${nls.localize('theia/vsx-registry/license', 'License: {0}', this.license)}`;
         }
