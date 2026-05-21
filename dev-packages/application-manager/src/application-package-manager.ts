@@ -127,6 +127,25 @@ export class ApplicationPackageManager {
         if (await fs.pathExists(appMedia)) {
             await fs.copy(appMedia, this.pck.lib('frontend', 'media'));
         }
+        await this.copyQaapLoginGateScript();
+    }
+
+    /** Copy Qaap pre-bundle auth gate whenever the app depends on @theia/qaap-product. */
+    protected async copyQaapLoginGateScript(): Promise<void> {
+        const deps = this.pck.pck.dependencies ?? {};
+        if (!('@theia/qaap-product' in deps)) {
+            return;
+        }
+        try {
+            const resolvePackagePath = require('resolve-package-path');
+            const qaapProductRoot = path.dirname(resolvePackagePath('@theia/qaap-product', this.pck.projectPath));
+            const gateSource = path.join(qaapProductRoot, 'resources', 'qaap-login-gate.js');
+            if (await fs.pathExists(gateSource)) {
+                await fs.copy(gateSource, this.pck.lib('frontend', 'qaap-login-gate.js'));
+            }
+        } catch {
+            /* optional product layer */
+        }
     }
 
     /**

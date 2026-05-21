@@ -209,6 +209,15 @@
         } catch (e) { /* ignore */ }
     }
 
+    function fetchWithTimeout(url, options, timeoutMs) {
+        return Promise.race([
+            fetch(url, options),
+            new Promise(function (_resolve, reject) {
+                window.setTimeout(function () { reject(new Error('timeout')); }, timeoutMs);
+            }),
+        ]);
+    }
+
     function resumeAfterOAuthOrSession() {
         if (window.location.search.indexOf('qaap_oauth_error=1') !== -1) {
             try {
@@ -218,7 +227,7 @@
             } catch (e) { /* ignore */ }
         }
         if (window.location.search.indexOf('qaap_oauth=github') !== -1) {
-            fetch('/qaap/api/auth/session', { credentials: 'include' })
+            fetchWithTimeout('/qaap/api/auth/session', { credentials: 'include' }, 12000)
                 .then(function (response) {
                     if (!response.ok) {
                         throw new Error('session');
@@ -247,7 +256,7 @@
                 });
             return;
         }
-        fetch('/qaap/api/auth/session', { credentials: 'include' })
+        fetchWithTimeout('/qaap/api/auth/session', { credentials: 'include' }, 12000)
             .then(function (response) {
                 if (!response.ok) {
                     throw new Error('session');
@@ -262,12 +271,35 @@
                 }
                 throw new Error('unsigned');
             })
-            .catch(function () {
+            .catch(function (err) {
+                console.warn('[Qaap] session check failed, showing login gate', err && err.message);
                 if (document.body) {
                     showGate();
                 } else {
                     document.addEventListener('DOMContentLoaded', showGate);
                 }
+            });
+    }
+
+    function trySkipAuthDevMode() {
+        return fetchWithTimeout('/qaap/api/auth/config', { credentials: 'include' }, 8000)
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('config');
+                }
+                return response.json();
+            })
+            .then(function (config) {
+                if (config && config.skipAuth) {
+                    writeSignedIn('gitlab', {
+                        provider: 'gitlab',
+                        login: 'gitlab-user',
+                        name: 'GitLab User',
+                    });
+                    loadBundle();
+                    return true;
+                }
+                return false;
             });
     }
 
@@ -277,6 +309,12 @@
     } else if (isSignedIn()) {
         loadBundle();
     } else {
-        resumeAfterOAuthOrSession();
+        trySkipAuthDevMode().then(function (skipped) {
+            if (!skipped) {
+                resumeAfterOAuthOrSession();
+            }
+        }).catch(function () {
+            resumeAfterOAuthOrSession();
+        });
     }
 })();

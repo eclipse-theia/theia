@@ -112,6 +112,19 @@ export class FrontendGenerator extends AbstractGenerator {
         return template;
     }
 
+    /** Qaap apps load bundle.js via qaap-login-gate.js (auth before IDE startup). */
+    protected usesQaapLoginGate(): boolean {
+        const deps = this.pck.pck.dependencies ?? {};
+        return '@theia/qaap-product' in deps;
+    }
+
+    protected compileIndexScriptTag(): string {
+        if (this.usesQaapLoginGate()) {
+            return '<script type="text/javascript" src="./qaap-login-gate.js" charset="utf-8"></script>';
+        }
+        return '<script type="text/javascript" src="./bundle.js" charset="utf-8"></script>';
+    }
+
     protected async compileIndexHtml(frontendModules: Map<string, string>): Promise<string> {
         const appIcon = this.pck.props.frontend.config.applicationIcon?.trim();
         const htmlSplashClass = appIcon ? ' class="theia-splash-branded"' : '';
@@ -123,7 +136,7 @@ export class FrontendGenerator extends AbstractGenerator {
 
 <body>
     <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
-    <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
+    ${this.compileIndexScriptTag()}
 </body>
 
 </html>`;

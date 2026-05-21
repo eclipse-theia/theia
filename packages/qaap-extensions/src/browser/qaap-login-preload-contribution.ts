@@ -30,9 +30,27 @@ export class QaapLoginPreloadContribution implements PreloadContribution {
             return;
         }
         if (readQaapSignedIn()) {
-            return syncQaapAuthSessionFromServer().then(ok => ok ? undefined : this.bootstrapAuth());
+            // Trust the login gate / local session — do not block IDE startup on /auth/session.
+            // A blocking sync here cleared skip-auth dev sessions and hung the splash forever.
+            void this.reconcileSessionInBackground();
+            return;
         }
         return this.bootstrapAuth();
+    }
+
+    protected async reconcileSessionInBackground(): Promise<void> {
+        try {
+            const config = await fetchQaapAuthConfig();
+            if (config.skipAuth) {
+                return;
+            }
+            const ok = await syncQaapAuthSessionFromServer();
+            if (!ok) {
+                await this.bootstrapAuth();
+            }
+        } catch {
+            /* keep current session */
+        }
     }
 
     protected async bootstrapAuth(): Promise<void> {
@@ -58,9 +76,6 @@ export class QaapLoginPreloadContribution implements PreloadContribution {
 
     /** Local dev can skip auth only when the backend asks for it and no GitHub OAuth app is configured. */
     protected shouldBypassLoginGate(config?: { githubOAuth?: boolean; skipAuth?: boolean }): boolean {
-        if (config?.skipAuth && !config.githubOAuth) {
-            return true;
-        }
-        return false;
+        return config?.skipAuth === true;
     }
 }

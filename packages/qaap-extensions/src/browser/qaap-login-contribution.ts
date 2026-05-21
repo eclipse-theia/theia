@@ -74,10 +74,7 @@ export class QaapLoginContribution implements FrontendApplicationContribution {
     }
 
     protected shouldBypassLoginGate(config?: { githubOAuth?: boolean; skipAuth?: boolean }): boolean {
-        if (config?.skipAuth && !config.githubOAuth) {
-            return true;
-        }
-        return false;
+        return config?.skipAuth === true;
     }
 
     protected async syncLoginGateWithSession(): Promise<void> {

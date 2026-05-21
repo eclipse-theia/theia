@@ -7,7 +7,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
-const SPLASH_STUCK_MS = 45_000;
+const SPLASH_STUCK_MS = 12_000;
 
 /**
  * Safety net: if startup hangs before {@link FrontendApplication.revealShell}, hide the preload
@@ -21,6 +21,9 @@ export class QaapSplashUnblockContribution implements FrontendApplicationContrib
 
     onStart(): void {
         window.setTimeout(() => this.forceHideSplashIfStuck(), SPLASH_STUCK_MS);
+        this.appState.reachedState('initialized_layout').then(() => {
+            window.setTimeout(() => this.forceHideSplashIfStuck(), 3000);
+        }).catch(() => undefined);
         this.appState.reachedState('ready').then(() => {
             this.forceHideSplashIfStuck();
         }).catch(() => undefined);
@@ -30,6 +33,9 @@ export class QaapSplashUnblockContribution implements FrontendApplicationContrib
         const state = this.appState.state;
         if (state === 'ready' || state === 'closing_window') {
             return;
+        }
+        if (state === 'initialized_layout' || state === 'attached_shell' || state === 'started_contributions') {
+            /* still starting — hide splash so the workbench is usable */
         }
         for (const el of document.getElementsByClassName('theia-preload')) {
             const node = el as HTMLElement;
