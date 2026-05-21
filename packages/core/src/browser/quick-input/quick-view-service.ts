@@ -22,6 +22,7 @@ import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
 
 export interface QuickViewItem {
     readonly label: string;
+    readonly description?: string;
     readonly when?: string;
     readonly open: () => void;
 }
@@ -42,6 +43,7 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
     registerItem(item: QuickViewItem): Disposable {
         const quickOpenItem = {
             label: item.label,
+            description: item.description,
             execute: () => item.open(),
             when: item.when
         };
