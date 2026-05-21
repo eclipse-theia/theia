@@ -258,6 +258,19 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
                 placement: 'top',
             },
             {
+                id: 'preview-bootstrap',
+                title: nls.localize('qaap/mobileOnboarding/preview/title', 'Open your first preview'),
+                body: nls.localize(
+                    'qaap/mobileOnboarding/preview/body',
+                    'After cloning a web app, tap Preview in the bottom bar. Qaap installs dependencies, runs the dev server, and opens the live preview — usually under two minutes.'
+                ),
+                target: () => document.querySelector<HTMLElement>(
+                    '#theia-mobile-bottom-bar .theia-mobile-bottom-activity-btn[data-action-id="preview"]'
+                ) ?? undefined,
+                demo: 'tap',
+                placement: 'top',
+            },
+            {
                 id: 'editor-tabs',
                 title: nls.localize('theia/core/mobile/onboarding/tabs/title', 'Scroll the tab bar'),
                 body: nls.localize(

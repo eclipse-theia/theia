@@ -196,11 +196,12 @@ export class QaapMiniBrowserContent extends MiniBrowserContent {
             nls.localize('theia/mini-browser/pickElement', 'Pick an element to send to chat'),
             'inspect'
         );
-        this.toDispose.push(addEventListener(button, 'click', () => this.handleInspect()));
+        this.toDispose.push(addEventListener(button, 'click', () => this.startElementPicker()));
         return button;
     }
 
-    protected handleInspect(): void {
+    /** Starts the in-iframe DOM picker (toolbar button, command, and AI tool). */
+    startElementPicker(): void {
         this.installPickerListener();
         try {
             const doc = this.frame?.contentDocument;

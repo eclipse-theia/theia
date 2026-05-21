@@ -7,6 +7,8 @@
 import '../../src/browser/style/qaap-login.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { PreferenceContribution } from '@theia/core/lib/common/preferences';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { CodeCompletionAgent, CodeCompletionAgentImpl } from '@theia/ai-code-completion/lib/browser/code-completion-agent';
@@ -22,6 +24,13 @@ import { WorkspaceFrontendContribution } from '@theia/workspace/lib/browser/work
 import { WorkspaceTrustDialogFactory } from '@theia/workspace/lib/browser/workspace-trust-dialog-factory';
 import { QaapAiChatMobileContribution } from './qaap-ai-chat-mobile-contribution';
 import { QaapAiPreferenceBrandingContribution } from './qaap-ai-preference-branding-contribution';
+import { QaapHubActionsContribution } from './qaap-hub-actions-contribution';
+import { QaapHubChatSyncContribution } from './qaap-hub-chat-sync-contribution';
+import { QaapMobileAppTesterContribution } from './qaap-mobile-app-tester-contribution';
+import { QaapMissionUndoContribution } from './qaap-mission-undo-contribution';
+import { QaapPushNotificationContribution } from './qaap-push-notification-contribution';
+import { QaapShellCommandPermissionService } from './qaap-shell-command-permission-service';
+import { ShellCommandPermissionService } from '@theia/ai-terminal/lib/browser/shell-command-permission-service';
 import { QaapCodeCompletionAgentImpl } from './qaap-code-completion-agent';
 import { QaapGettingStartedWidget } from './qaap-getting-started-widget';
 import { QaapOutlineMobileContribution } from './qaap-outline-mobile-contribution';
@@ -61,6 +70,25 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapAiPreferenceBrandingContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapAiPreferenceBrandingContribution);
+    bind(PreferenceContribution).toService(QaapAiPreferenceBrandingContribution);
+
+    bind(QaapHubActionsContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapHubActionsContribution);
+
+    bind(QaapMobileAppTesterContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapMobileAppTesterContribution);
+
+    bind(QaapMissionUndoContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapMissionUndoContribution);
+
+    bind(QaapHubChatSyncContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapHubChatSyncContribution);
+
+    bind(QaapPushNotificationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapPushNotificationContribution);
+
+    bind(QaapShellCommandPermissionService).toSelf().inSingletonScope();
+    rebind(ShellCommandPermissionService).toService(QaapShellCommandPermissionService);
 
     bind(QaapWorkspaceFrontendContribution).toSelf().inSingletonScope();
     rebind(WorkspaceFrontendContribution).toService(QaapWorkspaceFrontendContribution);

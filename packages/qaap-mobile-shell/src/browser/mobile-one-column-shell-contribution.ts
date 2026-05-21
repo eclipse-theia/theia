@@ -41,6 +41,7 @@ import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
 import {
     consumeMobileProjectsPanelDismiss,
+    QAAP_AUTH_OPEN_FIRST_REPO_EVENT,
     QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
 } from './mobile-projects-open';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
@@ -576,6 +577,35 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         void this.refreshProjectsCount();
         this.refreshBottomBar();
         this.updateBackdropVisibility();
+        window.addEventListener(QAAP_AUTH_OPEN_FIRST_REPO_EVENT, this.onAuthOpenFirstRepo);
+        this.toDispose.push(Disposable.create(() => {
+            window.removeEventListener(QAAP_AUTH_OPEN_FIRST_REPO_EVENT, this.onAuthOpenFirstRepo);
+        }));
+    }
+
+    protected readonly onAuthOpenFirstRepo = (): void => {
+        void this.openFirstRepoAfterAuth();
+    };
+
+    /** Post-OAuth: open the only repo automatically, otherwise show the clone picker. */
+    protected async openFirstRepoAfterAuth(): Promise<void> {
+        if (!this.mobileMq?.matches) {
+            return;
+        }
+        try {
+            const repos = await this.projectsService.listGithubRepositories();
+            if (repos.length === 1 && repos[0].github) {
+                this.projectsService.openInCurrentWindow(repos[0]);
+                return;
+            }
+        } catch {
+            /* fall through to picker */
+        }
+        this.ensureProjectsPanel();
+        const panel = this.projectsPanel;
+        if (panel) {
+            await panel.showOpenRepositoryDialog();
+        }
     }
 
     /** After clone/open the page reloads; keep the projects sheet closed on the new workspace. */
@@ -599,6 +629,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 onWorkspaceOpened: () => this.onProjectsWorkspaceOpened(),
                 onProjectsChanged: () => { void this.refreshProjectsCount().then(() => this.refreshBottomBar()); },
                 onCurrentProjectActivated: () => this.onCurrentProjectActivated(),
+                onResumePreview: (project) => {
+                    void this.commands.executeCommand('qaap.hub.resumePreview', project);
+                },
+                onOpenAgentOnTask: (project) => {
+                    void this.commands.executeCommand('qaap.hub.openAgentOnTask', project);
+                },
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
@@ -940,18 +976,35 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected updateBackdropVisibility(): void {
         const anySide = this.isAnyMobileSideSheetVisible();
-        this.removeBackdrop();
-        if (anySide) {
-            window.requestAnimationFrame(() => {
-                this.requestSheetRelayout();
-                if (this.shell.isExpanded('left')) {
-                    this.relayoutMobileSidePanelHandler('left');
-                }
-                if (this.shell.isExpanded('right')) {
-                    this.relayoutMobileSidePanelHandler('right');
-                }
-            });
+        if (!anySide) {
+            this.removeBackdrop();
+            return;
         }
+        this.ensureSheetBackdrop();
+        this.backdrop!.classList.add('theia-mod-visible');
+        window.requestAnimationFrame(() => {
+            this.requestSheetRelayout();
+            if (this.shell.isExpanded('left')) {
+                this.relayoutMobileSidePanelHandler('left');
+            }
+            if (this.shell.isExpanded('right')) {
+                this.relayoutMobileSidePanelHandler('right');
+            }
+        });
+    }
+
+    protected ensureSheetBackdrop(): void {
+        if (this.backdrop?.isConnected) {
+            return;
+        }
+        this.removeBackdrop();
+        const el = document.createElement('div');
+        el.className = 'theia-mobile-sheet-backdrop';
+        el.setAttribute('aria-hidden', 'true');
+        el.addEventListener('pointerdown', this.onBackdropClick);
+        el.addEventListener('click', this.onBackdropClick);
+        document.body.appendChild(el);
+        this.backdrop = el;
     }
 
     /** Primary mobile views; Projects first (multi-workspace hub), then agent-first actions. */

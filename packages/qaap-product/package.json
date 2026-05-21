@@ -1,10 +1,12 @@
 {
   "name": "@theia/qaap-product",
   "version": "1.71.0",
-  "description": "Qaap umbrella: add this single dependency to example/browser apps; transitively enables qaap-element-inspector, qaap-mobile-shell, qaap-product-theme. @theia/mini-browser still depends on qaap-element-inspector directly.",
+  "description": "Qaap umbrella: add this single dependency to example/browser apps; transitively enables qaap-ai-config, qaap-element-inspector, qaap-mobile-shell, qaap-product-theme. @theia/mini-browser still depends on qaap-element-inspector directly.",
   "dependencies": {
     "fs-extra": "^11.3.0",
     "@theia/qaap-adapters": "1.71.0",
+    "@theia/qaap-cloud-workspace": "1.71.0",
+    "@theia/qaap-ai-config": "1.71.0",
     "@theia/qaap-extensions": "1.71.0",
     "@theia/qaap-element-inspector": "1.71.0",
     "@theia/qaap-mobile-shell": "1.71.0",

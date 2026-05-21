@@ -47,6 +47,7 @@ export class QaapLoginContribution implements FrontendApplicationContribution {
         const oauthResult = await ensureQaapGithubOAuthReturnHandled();
         if (oauthResult === 'github') {
             this.messages.info(nls.localize('qaap/auth/githubConnected', 'Connected to GitHub.'));
+            window.dispatchEvent(new Event('qaap-auth-open-first-repo'));
             this.requestWorkbenchLayoutRefresh();
         } else if (oauthResult === 'error') {
             const detail = oauthErrorReason

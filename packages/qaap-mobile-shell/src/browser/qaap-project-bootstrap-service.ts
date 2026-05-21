@@ -38,6 +38,7 @@ import {
     terminalOutputNeedsInstall,
     terminalOutputNextDevLock,
 } from './qaap-project-bootstrap-dev-errors';
+import { MobileProjectsService } from './mobile-projects-service';
 
 /** Terminal titles created by {@link QaapProjectBootstrapService.spawnCommand}. */
 const BOOTSTRAP_DEV_TERMINAL_TITLE_PREFIX = 'Dev (';
@@ -133,6 +134,9 @@ export class QaapProjectBootstrapService {
     @inject(MiniBrowserOpenHandler)
     protected readonly miniBrowser: MiniBrowserOpenHandler;
 
+    @inject(MobileProjectsService)
+    protected readonly hubProjects: MobileProjectsService;
+
     protected readonly toDispose = new DisposableCollection();
     protected readonly stateEmitter = new Emitter<QaapBootstrapStateChange>();
     readonly onStateChange: Event<QaapBootstrapStateChange> = this.stateEmitter.event;
@@ -224,6 +228,25 @@ export class QaapProjectBootstrapService {
     /** Current bootstrap state for UI contributions and AI tools. */
     getStateSnapshot(): QaapBootstrapStateChange {
         return this.buildStateChange(this._phase);
+    }
+
+    /**
+     * Readable install/dev failure extracted from terminal output (for AI tools and `#qaap.bootstrap`).
+     */
+    getBootstrapFailureDetail(): { terminalFailure: string; terminalTail?: string } | undefined {
+        const phase = this._phase;
+        if (phase !== 'install-failed' && phase !== 'run-failed') {
+            return undefined;
+        }
+        const terminal = phase === 'install-failed' ? this.installTerminal : this.devTerminal;
+        const tail = terminal && !terminal.isDisposed
+            ? this.readTerminalTail(terminal, 80)
+            : this.devOutputTail;
+        const fallback = this._error ?? (phase === 'install-failed' ? 'Install failed' : 'Dev server failed');
+        return {
+            terminalFailure: extractTerminalFailureLine(tail, fallback),
+            terminalTail: tail.length > 0 ? tail.slice(-1500) : undefined,
+        };
     }
 
     /**
@@ -894,6 +917,10 @@ export class QaapProjectBootstrapService {
             }
             this.persistPhase('running');
             this.setPhase('running');
+            this.syncHubSession('running');
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('qaap-bootstrap-preview-opened', { detail: { url } }));
+            }
         } catch (e) {
             console.error('[qaap-project-bootstrap] failed to open preview', e);
             this._error = e instanceof Error ? e.message : String(e);
@@ -1071,6 +1098,26 @@ export class QaapProjectBootstrapService {
     protected setPhase(phase: QaapBootstrapPhase): void {
         this._phase = phase;
         this.stateEmitter.fire(this.buildStateChange(phase));
+        this.syncHubSession(phase);
+    }
+
+    protected syncHubSession(phase: QaapBootstrapPhase): void {
+        const agentState = phase === 'running' ? 'working'
+            : phase === 'install-failed' || phase === 'run-failed' ? 'review'
+            : phase === 'idle' || phase === 'dismissed' ? 'idle'
+            : 'working';
+        void this.hubProjects.recordProjectSession({
+            bootstrapPhase: phase,
+            previewUrl: this._previewUrl,
+            agentState,
+            lastTask: phase === 'running'
+                ? 'Dev preview running'
+                : phase === 'installing'
+                ? 'Installing dependencies…'
+                : phase === 'starting'
+                ? 'Starting dev server…'
+                : undefined,
+        }).catch(() => undefined);
     }
 
     protected persistPhase(phase: QaapBootstrapPhase, selectedApp?: QaapMonorepoAppCandidate): void {

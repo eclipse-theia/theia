@@ -8,9 +8,16 @@ import * as React from 'react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { codicon, Message } from '@theia/core/lib/browser';
+import { CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 import { ElementInspectorService } from './element-inspector-service';
 import { PickedElement } from './element-inspector-types';
+import {
+    ELEMENT_INSPECTOR_ASK_AGENT_COMMAND_ID,
+    ELEMENT_INSPECTOR_COPY_SELECTOR_COMMAND_ID,
+    ELEMENT_INSPECTOR_GENERATE_VARIANT_COMMAND_ID,
+} from './element-inspector-contribution';
+import { resolveStyleEditTargets } from './qaap-element-style-convention';
 
 @injectable()
 export class ElementInspectorWidget extends ReactWidget {
@@ -20,6 +27,9 @@ export class ElementInspectorWidget extends ReactWidget {
 
     @inject(ElementInspectorService)
     protected readonly service: ElementInspectorService;
+
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
 
     @postConstruct()
     protected init(): void {
@@ -39,7 +49,20 @@ export class ElementInspectorWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
-        return <InspectorPanel service={this.service} />;
+        return (
+            <InspectorPanel
+                service={this.service}
+                onCopySelector={() => this.runCommand(ELEMENT_INSPECTOR_COPY_SELECTOR_COMMAND_ID)}
+                onAskAgent={() => this.runCommand(ELEMENT_INSPECTOR_ASK_AGENT_COMMAND_ID)}
+                onGenerateVariant={() => this.runCommand(ELEMENT_INSPECTOR_GENERATE_VARIANT_COMMAND_ID)}
+            />
+        );
+    }
+
+    protected runCommand(commandId: string): void {
+        if (this.commands.isEnabled(commandId)) {
+            void this.commands.executeCommand(commandId).catch(() => undefined);
+        }
     }
 }
 
@@ -49,9 +72,12 @@ export class ElementInspectorWidget extends ReactWidget {
 
 interface InspectorPanelProps {
     service: ElementInspectorService;
+    onCopySelector: () => void;
+    onAskAgent: () => void;
+    onGenerateVariant: () => void;
 }
 
-const InspectorPanel: React.FC<InspectorPanelProps> = ({ service }) => {
+const InspectorPanel: React.FC<InspectorPanelProps> = ({ service, onCopySelector, onAskAgent, onGenerateVariant }) => {
     const picked = service.state.picked;
     const [tab, setTab] = React.useState<'design' | 'css' | 'html'>('design');
     if (!picked) {
@@ -59,6 +85,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ service }) => {
     }
     return (
         <div className='theia-mini-browser-inspector__root'>
+            <InspectorActions onCopySelector={onCopySelector} onAskAgent={onAskAgent} onGenerateVariant={onGenerateVariant} />
             <ComponentsTree picked={picked} />
             <div className='theia-mini-browser-inspector__tabs' role='tablist'>
                 {(['design', 'css', 'html'] as const).map(id => (
@@ -79,6 +106,24 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ service }) => {
         </div>
     );
 };
+
+const InspectorActions: React.FC<{
+    onCopySelector: () => void;
+    onAskAgent: () => void;
+    onGenerateVariant: () => void;
+}> = ({ onCopySelector, onAskAgent, onGenerateVariant }) => (
+    <div className='theia-mini-browser-inspector__actions' role='toolbar'>
+        <button type='button' className='theia-mini-browser-inspector__action' onClick={onCopySelector}>
+            {nls.localize('qaap/elementInspector/copySelector', 'Copy selector / component path')}
+        </button>
+        <button type='button' className='theia-mini-browser-inspector__action theia-mini-browser-inspector__action--primary' onClick={onAskAgent}>
+            {nls.localize('qaap/elementInspector/askAgent', 'Ask agent about this element')}
+        </button>
+        <button type='button' className='theia-mini-browser-inspector__action' onClick={onGenerateVariant}>
+            {nls.localize('qaap/elementInspector/generateVariant', 'Generate UI variant in repo')}
+        </button>
+    </div>
+);
 
 const InspectorEmpty: React.FC = () => (
     <div className='theia-mini-browser-inspector__empty'>
@@ -537,9 +582,21 @@ const CssTab: React.FC<{ picked: PickedElement; service: ElementInspectorService
         () => Object.keys(picked.computedStyles).sort((a, b) => a.localeCompare(b)),
         [picked.computedStyles, picked.pickedId]
     );
+    const styleTargets = React.useMemo(() => resolveStyleEditTargets(picked), [picked]);
     const selector = formatSelector({ tagName: picked.tagName, id: picked.id, classes: picked.classes });
     return (
         <div className='theia-mini-browser-inspector__css-devtools'>
+            <div className='theia-mini-browser-inspector__css-conventions'>
+                {styleTargets.map(target => (
+                    <div key={`${target.kind}-${target.summary}`} className='theia-mini-browser-inspector__css-convention'>
+                        <span className='theia-mini-browser-inspector__css-convention-kind'>{target.kind}</span>
+                        <span className='theia-mini-browser-inspector__css-convention-text'>{target.summary}</span>
+                        {target.sourceFile ? (
+                            <code className='theia-mini-browser-inspector__css-convention-file'>{target.sourceFile}</code>
+                        ) : undefined}
+                    </div>
+                ))}
+            </div>
             <div className='theia-mini-browser-inspector__css-devtools-head' title={selector}>
                 <span className='theia-mini-browser-inspector__css-devtools-selector'>{selector}</span>
             </div>

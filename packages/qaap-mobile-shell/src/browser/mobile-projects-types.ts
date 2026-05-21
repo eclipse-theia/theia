@@ -34,6 +34,8 @@ export interface MobileProjectEntry {
         private: boolean;
     };
     isCurrent: boolean;
+    /** Last dev preview URL from hub session (when known). */
+    previewUrl?: string;
 }
 
 export type MobileProjectFilter = 'all' | 'active' | 'pinned';

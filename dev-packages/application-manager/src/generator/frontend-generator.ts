@@ -357,6 +357,7 @@ const BYPASS_PATHS = [
     /\\/api(?:\\/|$)/,
     /\\/oauth(?:\\/|$)/,
     /\\/auth(?:\\/|$)/,
+    /\\/qaap(?:\\/|$)/,
     /\\/qaap-(?:github-)?oauth(?:\\/|$)/,
     /\\.hot-update\\./,
     /\\.map$/
@@ -443,6 +444,29 @@ async function staleWhileRevalidate(req) {
     }).catch(() => undefined);
     return cached || (await network) || new Response('', { status: 504, statusText: 'Gateway Timeout' });
 }
+
+// Web Push (Qaap): show notifications when the tab is in the background.
+self.addEventListener('push', event => {
+    let payload = { title: 'Qaap', body: '', tag: 'qaap' };
+    try {
+        payload = event.data ? Object.assign(payload, event.data.json()) : payload;
+    } catch (_) { /* ignore malformed payload */ }
+    const title = payload.title || 'Qaap';
+    const options = { body: payload.body || '', tag: payload.tag || 'qaap', data: payload };
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    event.waitUntil((async () => {
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        if (clients.length > 0) {
+            await clients[0].focus();
+            return;
+        }
+        await self.clients.openWindow('./');
+    })());
+});
 `;
     }
 

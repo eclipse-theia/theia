@@ -3,6 +3,7 @@
   "version": "1.71.0",
   "description": "Qaap adapter layer: rebinds Theia platform hooks (mini-browser, monaco) with product implementations",
   "dependencies": {
+    "@theia/ai-core": "1.71.0",
     "@theia/core": "1.71.0",
     "@theia/mini-browser": "1.71.0",
     "@theia/monaco": "1.71.0",

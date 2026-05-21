@@ -50,6 +50,33 @@
   max-width: 280px;
 }
 
+.theia-mini-browser-inspector__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: var(--tmb-inspector-compact-pad) 10px;
+  border-bottom: 1px solid var(--theia-panel-border);
+  flex: 0 0 auto;
+}
+
+.theia-mini-browser-inspector__action {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px solid var(--theia-button-border, var(--theia-contrastBorder));
+  border-radius: var(--tmb-control-radius);
+  background: var(--theia-button-secondaryBackground, var(--theia-input-background));
+  color: var(--theia-button-secondaryForeground, var(--theia-foreground));
+  font-size: var(--theia-ui-font-size0);
+  cursor: pointer;
+}
+
+.theia-mini-browser-inspector__action--primary {
+  background: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  border-color: transparent;
+}
+
 .theia-mini-browser-inspector__section {
   border-bottom: 1px solid var(--theia-panel-border);
   flex: 0 0 auto;
@@ -497,6 +524,38 @@
   min-height: 0;
   background: var(--theia-editor-background);
   font-size: 11px;
+}
+
+.theia-mini-browser-inspector__css-conventions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--theia-panel-border);
+  background: color-mix(in srgb, var(--theia-sideBar-background) 88%, var(--theia-editor-background));
+}
+
+.theia-mini-browser-inspector__css-convention {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.theia-mini-browser-inspector__css-convention-kind {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: var(--theia-activityBarBadge-background, #d97757);
+}
+
+.theia-mini-browser-inspector__css-convention-file {
+  font-family: var(--theia-monospace-font-family);
+  font-size: 10px;
+  color: var(--theia-descriptionForeground);
 }
 
 .theia-mini-browser-inspector__css-devtools-head {

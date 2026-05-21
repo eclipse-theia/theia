@@ -5,7 +5,9 @@
 // *****************************************************************************
 
 import '../../src/browser/style/qaap-mini-browser-content.css';
+import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { CommandContribution } from '@theia/core/lib/common/command';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { DefaultMiniBrowserOpenHook, MiniBrowserOpenHook } from '@theia/mini-browser/lib/browser/mini-browser-open-hook';
 import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
@@ -20,6 +22,9 @@ import { QaapMiniBrowserOpenHookBridge } from './qaap-mini-browser-open-hook-bri
 import { QaapMonacoQuickInputAdapter } from './qaap-monaco-quick-input-adapter';
 import { QaapMonacoQuickInputLayoutBridge } from './qaap-monaco-quick-input-layout-bridge';
 import { QaapMobileQuickInputContribution } from './qaap-mobile-quick-input-contribution';
+import { QaapElementPickerCommandContribution } from './qaap-element-picker-command-contribution';
+import { QaapElementPickerService } from './qaap-element-picker-service';
+import { QaapPickElementTool } from './qaap-element-picker-tool-provider';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(DefaultQaapMiniBrowserLifecycle).toSelf().inSingletonScope();
@@ -46,4 +51,9 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
 
     bind(QaapMiniBrowserOpenHandler).toSelf().inSingletonScope();
     rebind(MiniBrowserOpenHandler).toService(QaapMiniBrowserOpenHandler);
+
+    bind(QaapElementPickerService).toSelf().inSingletonScope();
+    bind(QaapElementPickerCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapElementPickerCommandContribution);
+    bindToolProvider(QaapPickElementTool, bind);
 });

@@ -4,16 +4,44 @@
 // *****************************************************************************
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences';
 import { PreferenceDataProperty } from '@theia/core/lib/common/preferences';
 import { PreferenceSchemaService } from '@theia/core/lib/common/preferences/preference-schema';
+import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
+
+export const QAAP_CONFIRM_LONG_TERMINAL_PREF = 'qaap.ai.confirmLongTerminal';
+export const QAAP_MOBILE_APP_TESTER_AFTER_PREVIEW_PREF = 'qaap.mobile.appTesterAfterPreview';
+
+export const qaapAiPreferenceSchema: PreferenceSchema = {
+    properties: {
+        [QAAP_CONFIRM_LONG_TERMINAL_PREF]: {
+            type: 'boolean',
+            default: true,
+            description: nls.localize(
+                'qaap/preferences/confirmLongTerminal',
+                'Ask for confirmation before starting long-running terminal commands (install, build, test suites).'
+            ),
+        },
+        [QAAP_MOBILE_APP_TESTER_AFTER_PREVIEW_PREF]: {
+            type: 'boolean',
+            default: true,
+            description: nls.localize(
+                'qaap/preferences/appTesterAfterPreview',
+                'On mobile, delegate a short UI smoke check to AppTester after the dev preview opens.'
+            ),
+        },
+    },
+};
 
 const HOST_MACHINE_FROM = 'on the machine running Theia.';
 const HOST_MACHINE_TO = 'on the machine running this application.';
 
 /** Re-label API-key preference warnings without forking each AI provider package. */
 @injectable()
-export class QaapAiPreferenceBrandingContribution implements FrontendApplicationContribution {
+export class QaapAiPreferenceBrandingContribution implements FrontendApplicationContribution, PreferenceContribution {
+
+    readonly schema = qaapAiPreferenceSchema;
 
     @inject(PreferenceSchemaService)
     protected readonly schemaService: PreferenceSchemaService;

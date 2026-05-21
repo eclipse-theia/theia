@@ -6,20 +6,28 @@ on:
       - master
     paths:
       - 'examples/playwright/**'
+      - 'examples/browser/**'
       - 'packages/qaap-mobile-shell/**'
       - 'packages/qaap-product/**'
       - 'packages/qaap-extensions/**'
       - 'packages/qaap-product-theme/**'
+      - 'packages/qaap-adapters/**'
+      - 'packages/qaap-element-inspector/**'
+      - 'packages/qaap-ai-config/**'
       - 'packages/core/src/browser/shell/mobile-layout-state.ts'
   pull_request:
     branches:
       - master
     paths:
       - 'examples/playwright/**'
+      - 'examples/browser/**'
       - 'packages/qaap-mobile-shell/**'
       - 'packages/qaap-product/**'
       - 'packages/qaap-extensions/**'
       - 'packages/qaap-product-theme/**'
+      - 'packages/qaap-adapters/**'
+      - 'packages/qaap-element-inspector/**'
+      - 'packages/qaap-ai-config/**'
       - 'packages/core/src/browser/shell/mobile-layout-state.ts'
   workflow_dispatch:
 
@@ -42,7 +50,7 @@ jobs:
       - name: Build Browser
         run: npm run build:browser
 
-      - name: Qaap mobile UI tests
+      - name: Qaap mobile UI tests (@qaap-mobile only)
         run: |
           cd examples/playwright
           npm run ui-tests:qaap-mobile

@@ -36,4 +36,31 @@
   body.theia-mod-mobile-ai-chat-fullwidth #theia-right-content-panel .lm-DockPanel-widget {
     max-width: none !important;
   }
+
+  /* Bootstrap status chip (QaapAiChatMobileContribution) */
+  body.theia-mod-mobile-ai-chat-fullwidth .chat-input-widget .qaap-ai-chat-bootstrap-chip {
+    display: block;
+    width: calc(100% - 16px);
+    margin: 8px 8px 0;
+    padding: 6px 10px;
+    border: 1px solid var(--theia-contrastBorder, var(--theia-widget-border));
+    border-radius: 999px;
+    background: var(--theia-badge-background);
+    color: var(--theia-badge-foreground);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth .chat-input-widget .qaap-ai-chat-bootstrap-chip--running {
+    border-color: var(--theia-successBackground, var(--theia-activityBarBadge-background));
+  }
+
+  body.theia-mod-mobile-ai-chat-fullwidth .chat-input-widget .qaap-ai-chat-bootstrap-chip--failed {
+    border-color: var(--theia-errorForeground);
+    color: var(--theia-errorForeground);
+    background: color-mix(in srgb, var(--theia-errorForeground) 12%, var(--theia-badge-background));
+  }
 }

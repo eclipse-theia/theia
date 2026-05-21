@@ -8,6 +8,7 @@ import { syncQaapAuthSessionFromServer } from '@theia/qaap-adapters/lib/browser/
 import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobileProjectsService } from './mobile-projects-service';
+import { QAAP_PROJECT_TEMPLATES } from './qaap-project-templates';
 
 export interface MobileOpenRepositoryDialogDelegate {
     /** Refresh the projects panel after a successful open / create. */
@@ -70,6 +71,7 @@ export class MobileOpenRepositoryDialog {
 
         sheet.append(this.createHeader());
         sheet.append(this.createDescription());
+        sheet.append(this.createTemplatesSection());
         sheet.append(this.createPublicSection());
 
         const replaceWrap = document.createElement('label');
@@ -159,7 +161,6 @@ export class MobileOpenRepositoryDialog {
         document.addEventListener('keydown', this.onKeyDown, true);
         this.renderConnectedStatus();
         await this.reloadRepositories();
-        window.setTimeout(() => this.publicInput.focus({ preventScroll: true }), 80);
     }
 
     hide(): void {
@@ -204,6 +205,42 @@ export class MobileOpenRepositoryDialog {
 
         header.append(titleWrap, closeBtn);
         return header;
+    }
+
+    protected createTemplatesSection(): HTMLElement {
+        const section = document.createElement('section');
+        section.className = 'theia-mobile-open-repo-templates';
+        const label = document.createElement('div');
+        label.className = 'theia-mobile-open-repo-section-label';
+        label.textContent = nls.localize('qaap/mobileOpenRepo/templates', 'Start from a template');
+        section.append(label);
+        const row = document.createElement('div');
+        row.className = 'theia-mobile-open-repo-template-row';
+        for (const template of QAAP_PROJECT_TEMPLATES) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theia-mobile-open-repo-template-btn';
+            btn.innerHTML = `<strong>${template.label}</strong><span>${template.description}</span>`;
+            btn.addEventListener('click', () => { void this.onTemplateClick(template.id); });
+            row.append(btn);
+        }
+        section.append(row);
+        return section;
+    }
+
+    protected async onTemplateClick(templateId: string): Promise<void> {
+        this.root.classList.add('theia-mod-loading');
+        try {
+            const next = await this.service.cloneFromTemplate(templateId);
+            if (!next) {
+                return;
+            }
+            this.delegate.onProjectsChanged?.(next);
+            this.delegate.onWorkspaceOpened?.();
+            this.hide();
+        } finally {
+            this.root.classList.remove('theia-mod-loading');
+        }
     }
 
     protected createDescription(): HTMLElement {

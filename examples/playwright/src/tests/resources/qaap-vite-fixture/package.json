@@ -1,0 +1,12 @@
+{
+  "name": "qaap-vite-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

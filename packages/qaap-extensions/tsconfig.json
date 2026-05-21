@@ -10,6 +10,9 @@
   ],
   "references": [
     {
+      "path": "../ai-chat"
+    },
+    {
       "path": "../ai-chat-ui"
     },
     {
@@ -17,6 +20,15 @@
     },
     {
       "path": "../ai-core"
+    },
+    {
+      "path": "../ai-history"
+    },
+    {
+      "path": "../ai-ide"
+    },
+    {
+      "path": "../ai-terminal"
     },
     {
       "path": "../core"
@@ -38,6 +50,9 @@
     },
     {
       "path": "../preview"
+    },
+    {
+      "path": "../qaap-mobile-shell"
     },
     {
       "path": "../terminal"

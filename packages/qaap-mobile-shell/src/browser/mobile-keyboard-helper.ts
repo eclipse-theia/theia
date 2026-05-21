@@ -43,6 +43,19 @@ export class MobileKeyboardHelper implements Disposable {
     /** Close only below this (px) so inset does not flap during keyboard animation. */
     protected static readonly KEYBOARD_INSET_CLOSE_THRESHOLD_PX = 48;
 
+    /**
+     * Overlays with text fields: do not run heavy viewport nudges — resizing the panel when
+     * `--theia-mobile-keyboard-inset` changes moves inputs and loops the OS keyboard.
+     */
+    protected static readonly MOBILE_TEXT_ENTRY_OVERLAY_SELECTOR = [
+        '#quick-input-container',
+        '.theia-mobile-projects',
+        '.theia-mobile-pr',
+        '.theia-mobile-open-repo',
+        '.lm-Widget.dialogOverlay',
+        '.chat-view-widget',
+    ].join(', ');
+
     /** Selector for an editor textarea where the code accessory bar makes sense. */
     protected static readonly EDITOR_INPUT_SELECTOR = '.monaco-editor textarea.inputarea';
 
@@ -192,7 +205,7 @@ export class MobileKeyboardHelper implements Disposable {
         } else {
             document.documentElement.style.removeProperty('--theia-mobile-keyboard-inset');
             this.shellNode.classList.remove('theia-mod-mobile-keyboard-open');
-            if (this.editableFocusCount <= 0) {
+            if (this.editableFocusCount <= 0 && !this.hasActiveMobileTextEntryOverlay()) {
                 this.stableLayoutViewportHeight = Math.round(Math.max(innerH, vvExtent));
                 this.restoreViewportScroll();
             }
@@ -236,7 +249,11 @@ export class MobileKeyboardHelper implements Disposable {
         const target = e.target;
         if (this.isEditableForViewportKeyboard(target)) {
             this.editableFocusCount++;
-            this.nudgeViewportAfterFocus();
+            if (this.isInMobileTextEntryOverlay(target)) {
+                this.scheduleViewportUpdate();
+            } else {
+                this.nudgeViewportAfterFocus();
+            }
         }
         if (!(target instanceof HTMLTextAreaElement)) {
             return;
@@ -293,10 +310,10 @@ export class MobileKeyboardHelper implements Disposable {
     protected onFocusOut(e: FocusEvent): void {
         const target = e.target;
         if (this.isEditableForViewportKeyboard(target)) {
-            if (this.shouldRetainQuickInputEditableFocus(e)) {
+            this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
+            if (this.isInMobileTextEntryOverlay(target)) {
                 this.scheduleViewportUpdate();
             } else {
-                this.editableFocusCount = Math.max(0, this.editableFocusCount - 1);
                 this.nudgeViewportAfterBlur();
             }
         }
@@ -343,23 +360,24 @@ export class MobileKeyboardHelper implements Disposable {
         return this.isEditableForViewportKeyboard(document.activeElement);
     }
 
-    /**
-     * Quick Input filter fields lose focus briefly when the OS keyboard animates in.
-     * Keep keyboard inset / accessory state until focus returns or the widget closes.
-     */
-    protected shouldRetainQuickInputEditableFocus(event: FocusEvent): boolean {
-        const target = event.target;
-        if (!(target instanceof HTMLElement) || !target.closest('#quick-input-container')) {
-            return false;
-        }
-        const related = event.relatedTarget;
-        if (related instanceof Node && target.closest('#quick-input-container')?.contains(related)) {
-            return true;
-        }
-        return this.isQuickInputVisible();
+    protected isInMobileTextEntryOverlay(node: EventTarget | null): boolean {
+        return node instanceof HTMLElement
+            && Boolean(node.closest(MobileKeyboardHelper.MOBILE_TEXT_ENTRY_OVERLAY_SELECTOR));
     }
 
-    protected isQuickInputVisible(): boolean {
+    protected hasActiveMobileTextEntryOverlay(): boolean {
+        if (this.isInMobileTextEntryOverlay(document.activeElement)) {
+            return true;
+        }
+        if (this.isQuickInputDomVisible()) {
+            return true;
+        }
+        return Boolean(document.querySelector('.theia-mobile-projects.theia-mod-visible'))
+            || Boolean(document.querySelector('.theia-mobile-pr.theia-mod-visible'))
+            || Boolean(document.querySelector('.theia-mobile-open-repo.theia-mod-visible'));
+    }
+
+    protected isQuickInputDomVisible(): boolean {
         const container = document.getElementById('quick-input-container');
         if (!container) {
             return false;
@@ -369,13 +387,24 @@ export class MobileKeyboardHelper implements Disposable {
     }
 
     protected restoreViewportScroll(): void {
-        if (this.isQuickInputVisible()) {
+        if (this.isEditableForViewportKeyboard(document.activeElement)) {
+            return;
+        }
+        if (this.keyboardInsetConsideredOpen || this.lastInsetPx > 0) {
+            return;
+        }
+        if (this.hasActiveMobileTextEntryOverlay()) {
             return;
         }
         if (window.scrollX === 0 && window.scrollY === 0) {
             return;
         }
-        window.requestAnimationFrame(() => window.scrollTo(0, 0));
+        window.requestAnimationFrame(() => {
+            if (this.isEditableForViewportKeyboard(document.activeElement)) {
+                return;
+            }
+            window.scrollTo(0, 0);
+        });
     }
 
     /**

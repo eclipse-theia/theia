@@ -21,7 +21,7 @@
     "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src --fix",
     "playwright:install": "playwright install chromium",
     "ui-tests": "npm run build && playwright test --config=./configs/playwright.config.ts",
-    "ui-tests:qaap-mobile": "npm run build && playwright test --config=./configs/playwright.config.ts --grep @qaap-mobile",
+    "ui-tests:qaap-mobile": "npm run build && playwright test --config=./configs/playwright.qaap-mobile.config.ts --grep @qaap-mobile",
     "ui-tests-electron": "npm run build && cross-env USE_ELECTRON=true playwright test --config=./configs/playwright.config.ts",
     "ui-tests-ci": "npm run build && playwright test --config=./configs/playwright.ci.config.ts",
     "ui-tests-headful": "npm run build && playwright test --config=./configs/playwright.headful.config.ts",

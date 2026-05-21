@@ -1,0 +1,103 @@
+.qaap-cloud-share-preview-btn {
+  position: fixed;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+  z-index: 8500;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.35));
+  background: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.qaap-mobile-env-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.qaap-mobile-env-panel.qaap-mod-visible {
+  pointer-events: auto;
+}
+
+.qaap-mobile-env-panel-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.qaap-mobile-env-panel-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 70vh;
+  margin: 0 8px 8px;
+  padding: 16px;
+  border-radius: 16px 16px 0 0;
+  background: var(--theia-editor-background);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+}
+
+.qaap-mobile-env-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qaap-mobile-env-panel-header h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.qaap-mobile-env-panel-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--theia-descriptionForeground);
+}
+
+.qaap-mobile-env-panel-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  gap: 8px;
+}
+
+.qaap-mobile-env-panel-key,
+.qaap-mobile-env-panel-value {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--theia-panel-border);
+  background: var(--theia-input-background);
+  color: var(--theia-input-foreground);
+  font-size: 13px;
+}
+
+.qaap-mobile-env-panel-add,
+.qaap-mobile-env-panel-save {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.qaap-mobile-env-panel-save {
+  background: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+}
+
+.qaap-mobile-env-panel-add {
+  background: var(--theia-toolbar-hoverBackground);
+  color: var(--theia-foreground);
+}

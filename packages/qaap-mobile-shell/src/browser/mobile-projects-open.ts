@@ -12,6 +12,9 @@ export const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY = 'qaap.mobileProjects.dismi
 /** Dispatched synchronously so the sheet can close before `workspaceService.open` reloads the page. */
 export const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT = 'qaap-mobile-projects-dismiss-panel';
 
+/** After GitHub OAuth, open the repository picker (or auto-open a single repo). */
+export const QAAP_AUTH_OPEN_FIRST_REPO_EVENT = 'qaap-auth-open-first-repo';
+
 export function markMobileProjectsPanelDismiss(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY, '1');

@@ -16,6 +16,12 @@
       "path": "../qaap-adapters"
     },
     {
+      "path": "../qaap-ai-config"
+    },
+    {
+      "path": "../qaap-cloud-workspace"
+    },
+    {
       "path": "../qaap-element-inspector"
     },
     {

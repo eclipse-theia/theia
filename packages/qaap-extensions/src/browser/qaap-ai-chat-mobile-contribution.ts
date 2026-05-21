@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
@@ -12,7 +12,9 @@ import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layo
 import { OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
 import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+import { QaapProjectBootstrapService } from '@theia/qaap-mobile-shell/lib/browser/qaap-project-bootstrap-service';
 import { isQaapNarrowMobileWorkbench, stripRightPanelWidgetsOnMobile } from './qaap-mobile-layout-utils';
+import { QaapAiChatBootstrapChip } from './qaap-ai-chat-bootstrap-chip';
 
 /** Body class for full-width AI chat on narrow viewports (see `qaap-ai-chat-mobile.css`). */
 export const MOBILE_AI_CHAT_FULLWIDTH_BODY_CLASS = 'theia-mod-mobile-ai-chat-fullwidth';
@@ -24,10 +26,20 @@ export const MOBILE_AI_CHAT_FULLWIDTH_BODY_CLASS = 'theia-mod-mobile-ai-chat-ful
 @injectable()
 export class QaapAiChatMobileContribution extends AIChatContribution implements ShellLayoutTransformer {
 
+    @inject(QaapProjectBootstrapService)
+    protected readonly bootstrap: QaapProjectBootstrapService;
+
     protected readonly mobileFullWidthLayoutDisposables = new DisposableCollection();
+    protected readonly bootstrapChip = new QaapAiChatBootstrapChip();
+    protected bootstrapChipHost: HTMLElement | undefined;
 
     override initialize(): void {
         super.initialize();
+        this.mobileFullWidthLayoutDisposables.push(
+            this.bootstrap.onStateChange(state => {
+                this.bootstrapChip.update(state);
+            })
+        );
         this.mobileFullWidthLayoutDisposables.push(
             this.shell.onDidChangeCurrentWidget(() => this.scheduleMobileAiChatFullWidthUpdate())
         );
@@ -41,6 +53,7 @@ export class QaapAiChatMobileContribution extends AIChatContribution implements 
 
     onStop(_app: FrontendApplication): void {
         window.removeEventListener('resize', this.onWindowResizeForMobileChatLayout);
+        this.teardownBootstrapChip();
         this.mobileFullWidthLayoutDisposables.dispose();
         if (typeof document !== 'undefined') {
             document.body.classList.remove(MOBILE_AI_CHAT_FULLWIDTH_BODY_CLASS);
@@ -53,7 +66,52 @@ export class QaapAiChatMobileContribution extends AIChatContribution implements 
 
     protected scheduleMobileAiChatFullWidthUpdate(): void {
         this.updateMobileAiChatFullWidthBodyClass();
-        window.requestAnimationFrame(() => this.updateMobileAiChatFullWidthBodyClass());
+        this.syncBootstrapChip();
+        window.requestAnimationFrame(() => {
+            this.updateMobileAiChatFullWidthBodyClass();
+            this.syncBootstrapChip();
+        });
+    }
+
+    protected syncBootstrapChip(): void {
+        if (!isQaapNarrowMobileWorkbench()) {
+            this.teardownBootstrapChip();
+            return;
+        }
+        const widget = this.tryGetWidget();
+        const inputHost = widget?.inputWidget?.node;
+        if (!inputHost || !widget?.isAttached) {
+            this.teardownBootstrapChip();
+            return;
+        }
+        if (this.bootstrapChipHost !== inputHost) {
+            this.teardownBootstrapChip();
+            this.bootstrapChipHost = inputHost;
+            this.bootstrapChip.mount(inputHost, () => void this.onBootstrapChipClick());
+        }
+        this.bootstrapChip.update(this.bootstrap.getStateSnapshot());
+    }
+
+    protected teardownBootstrapChip(): void {
+        this.bootstrapChip.unmount();
+        this.bootstrapChipHost = undefined;
+    }
+
+    protected async onBootstrapChipClick(): Promise<void> {
+        const state = this.bootstrap.getStateSnapshot();
+        if (state.previewUrl) {
+            await this.bootstrap.focusPreview();
+            return;
+        }
+        if (state.phase === 'running' || state.phase === 'ready-to-run' || state.lastPort !== undefined) {
+            await this.bootstrap.openExistingPreview();
+            return;
+        }
+        if (state.needsInstall || !state.descriptor?.nodeModulesPresent) {
+            await this.bootstrap.runInstall();
+            return;
+        }
+        await this.bootstrap.runDevServer();
     }
 
     protected updateMobileAiChatFullWidthBodyClass(): void {

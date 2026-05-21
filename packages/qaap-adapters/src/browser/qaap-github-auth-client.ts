@@ -7,6 +7,7 @@ import {
     QAAP_AUTH_API_PATH,
     QAAP_AUTH_SESSION_HEADER,
     QAAP_GITHUB_API_PATH,
+    QAAP_TEMPLATES_API_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
     type QaapAuthConfigResponse,
     type QaapAuthSessionResponse,
@@ -17,6 +18,10 @@ import {
     type QaapGithubOpenRepositoryRequest,
     type QaapGithubPullRequestsResponse,
     type QaapGithubRepositoriesResponse,
+    type QaapProjectSessionsResponse,
+    type QaapProjectSessionUpsertRequest,
+    type QaapProjectSessionSummary,
+    type QaapScaffoldTemplateResponse,
 } from '../common/qaap-github-api-types';
 import {
     clearQaapAuthSession,
@@ -55,6 +60,44 @@ export async function fetchQaapAuthSession(): Promise<QaapAuthSessionResponse> {
         return { signedIn: false };
     }
     return response.json() as Promise<QaapAuthSessionResponse>;
+}
+
+export async function fetchQaapProjectSessions(): Promise<QaapProjectSessionsResponse> {
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/project-sessions`, qaapAuthenticatedFetchInit());
+    if (response.status === 401) {
+        return { sessions: [] };
+    }
+    if (!response.ok) {
+        return { sessions: [] };
+    }
+    const body = await response.json() as Partial<QaapProjectSessionsResponse>;
+    return { sessions: Array.isArray(body.sessions) ? body.sessions : [] };
+}
+
+export async function upsertQaapProjectSession(patch: QaapProjectSessionUpsertRequest): Promise<QaapProjectSessionSummary | undefined> {
+    const response = await fetch(`${QAAP_GITHUB_API_PATH}/project-sessions`, qaapAuthenticatedFetchInit({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+    }));
+    if (!response.ok) {
+        return undefined;
+    }
+    const body = await response.json() as { session?: QaapProjectSessionSummary };
+    return body.session;
+}
+
+export async function scaffoldQaapProjectTemplate(templateId: string, projectName?: string): Promise<QaapScaffoldTemplateResponse> {
+    const response = await fetch(`${QAAP_TEMPLATES_API_PATH}/scaffold`, qaapAuthenticatedFetchInit({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateId, projectName }),
+    }));
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `Template scaffold failed (${response.status})`);
+    }
+    return response.json() as Promise<QaapScaffoldTemplateResponse>;
 }
 
 export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositoriesResponse> {

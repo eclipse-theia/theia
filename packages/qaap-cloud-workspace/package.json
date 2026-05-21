@@ -1,0 +1,60 @@
+{
+  "name": "@theia/qaap-cloud-workspace",
+  "version": "1.71.0",
+  "description": "Qaap cloud workspace, public preview share, deploy adapters, and mobile env UI",
+  "dependencies": {
+    "@theia/ai-core": "1.71.0",
+    "@theia/core": "1.71.0",
+    "@theia/filesystem": "1.71.0",
+    "@theia/qaap-adapters": "1.71.0",
+    "@theia/qaap-mobile-shell": "1.71.0",
+    "@theia/terminal": "1.71.0",
+    "@theia/workspace": "1.71.0",
+    "dockerode": "^4.0.12",
+    "tslib": "^2.8.1",
+    "web-push": "^3.6.7"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/qaap-cloud-workspace-frontend-module"
+    },
+    {
+      "backend": "lib/node/qaap-cloud-workspace-backend-module"
+    },
+    {
+      "frontendElectron": "lib/electron-browser/qaap-cloud-workspace-electron-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juancristobalgd1/qaap.git"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/dev-container": "1.71.0",
+    "@theia/ext-scripts": "1.71.0",
+    "@types/dockerode": "^3.3.47",
+    "@types/web-push": "^3.6.4"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

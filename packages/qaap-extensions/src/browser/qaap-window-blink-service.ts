@@ -11,6 +11,19 @@ import { WindowBlinkService } from '@theia/ai-core/lib/browser/window-blink-serv
 @injectable()
 export class QaapWindowBlinkService extends WindowBlinkService {
 
+    /** Agent task completed — tab title + optional system notification (see push contribution). */
+    notifyAgentCompleted(agentName?: string): void {
+        void this.blinkWindow(agentName);
+    }
+
+    /** Bootstrap install/run failed. */
+    notifyBuildFailed(_error?: string): void {
+        if (typeof document !== 'undefined') {
+            const app = FrontendApplicationConfigProvider.get().applicationName;
+            document.title = '⚠ ' + nls.localize('qaap/blink/buildFailed', '{0} — build failed', app);
+        }
+    }
+
     protected override getBlinkAlertTitle(agentName?: string): string {
         const app = FrontendApplicationConfigProvider.get().applicationName;
         return '🔔 ' + (agentName

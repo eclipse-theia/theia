@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
@@ -57,6 +58,9 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
 
     @inject(QaapProjectBootstrapService)
     protected readonly bootstrap: QaapProjectBootstrapService;
+
+    @inject(CommandRegistry) @optional()
+    protected readonly commands: CommandRegistry | undefined;
 
     protected banner: HTMLElement | undefined;
     protected portsFloater: HTMLElement | undefined;
@@ -438,8 +442,20 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
         }
     }
 
+    protected cloudEnvAction(): { label: string; run: () => void | Promise<void> } | undefined {
+        const id = 'qaap.cloud.openEnv';
+        if (!this.commands?.getCommand(id)) {
+            return undefined;
+        }
+        return {
+            label: nls.localize('qaap/projectBootstrap/env', 'Env'),
+            run: () => { void this.commands!.executeCommand(id); },
+        };
+    }
+
     protected actionsFor(state: QaapBootstrapStateChange, descriptor: QaapProjectDescriptor): { label: string; primary?: boolean; run: () => void | Promise<void> }[] {
         const monorepoNeedsPick = descriptor.apps.length > 1 && !state.selectedApp;
+        const envAction = this.cloudEnvAction();
         switch (state.phase) {
             case 'detected':
                 return [
@@ -564,18 +580,23 @@ export class QaapProjectBootstrapContribution implements FrontendApplicationCont
                     },
                 ];
             }
-            case 'running':
-                return [
+            case 'running': {
+                const actions: { label: string; primary?: boolean; run: () => void | Promise<void> }[] = [
                     {
                         label: nls.localize('qaap/projectBootstrap/focusPreview', 'Focus preview'),
                         primary: true,
                         run: () => this.bootstrap.focusPreview(),
                     },
-                    {
-                        label: nls.localize('qaap/projectBootstrap/dismiss', 'Dismiss'),
-                        run: () => this.bootstrap.skip(),
-                    },
                 ];
+                if (envAction) {
+                    actions.push(envAction);
+                }
+                actions.push({
+                    label: nls.localize('qaap/projectBootstrap/dismiss', 'Dismiss'),
+                    run: () => { this.bootstrap.skip(); },
+                });
+                return actions;
+            }
             default:
                 return [];
         }

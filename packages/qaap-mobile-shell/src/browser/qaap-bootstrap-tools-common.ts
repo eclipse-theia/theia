@@ -7,6 +7,7 @@ import type { QaapBootstrapStateChange } from './qaap-project-bootstrap-service'
 import type { QaapForwardedPort } from './qaap-project-bootstrap-types';
 
 export const QAAP_BOOTSTRAP_STATUS_TOOL_ID = 'qaap_bootstrap_status';
+export const QAAP_BOOTSTRAP_INSTALL_TOOL_ID = 'qaap_bootstrap_install';
 export const QAAP_BOOTSTRAP_RUN_DEV_TOOL_ID = 'qaap_bootstrap_run_dev';
 export const QAAP_BOOTSTRAP_OPEN_PREVIEW_TOOL_ID = 'qaap_bootstrap_open_preview';
 
@@ -26,11 +27,16 @@ export interface QaapBootstrapToolSnapshot {
     readonly lastPort?: number;
     readonly selectedAppPath?: string;
     readonly forwardedPorts?: ReadonlyArray<{ readonly port: number; readonly url: string; readonly opened: boolean }>;
+    /** Best single-line failure from install/dev terminal output (install-failed / run-failed). */
+    readonly terminalFailure?: string;
+    /** Tail of terminal output when bootstrap failed (truncated for agents). */
+    readonly terminalTail?: string;
 }
 
 export function serializeQaapBootstrapState(
     state: QaapBootstrapStateChange,
-    forwardedPorts: readonly QaapForwardedPort[] = []
+    forwardedPorts: readonly QaapForwardedPort[] = [],
+    failureDetail?: { terminalFailure: string; terminalTail?: string }
 ): QaapBootstrapToolSnapshot {
     const descriptor = state.descriptor;
     const needsInstall = state.needsInstall
@@ -52,6 +58,8 @@ export function serializeQaapBootstrapState(
         forwardedPorts: forwardedPorts.length > 0
             ? forwardedPorts.map(p => ({ port: p.port, url: p.url, opened: p.previewOpen }))
             : undefined,
+        terminalFailure: failureDetail?.terminalFailure,
+        terminalTail: failureDetail?.terminalTail,
     };
 }
 

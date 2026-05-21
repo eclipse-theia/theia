@@ -10,8 +10,10 @@ import '../../src/browser/style/qaap-empty-workbench-brand.css';
 import '../../src/browser/style/qaap-project-bootstrap.css';
 
 import { bindToolProvider } from '@theia/ai-core/lib/common';
+import { AIVariableContribution } from '@theia/ai-core/lib/common/variable-service';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
+    QaapBootstrapInstallTool,
     QaapBootstrapOpenPreviewTool,
     QaapBootstrapRunDevTool,
     QaapBootstrapStatusTool,
@@ -34,6 +36,7 @@ import { QaapProjectBootstrapDetector } from './qaap-project-bootstrap-detector'
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapProjectBootstrapContribution } from './qaap-project-bootstrap-contribution';
 import { MobileTouchScrollContribution } from './mobile-touch-scroll-contribution';
+import { QaapBootstrapVariableContribution } from './qaap-bootstrap-variable-contribution';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsService).toSelf().inSingletonScope();
@@ -70,6 +73,10 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(QaapProjectBootstrapContribution);
 
     bindToolProvider(QaapBootstrapStatusTool, bind);
+    bindToolProvider(QaapBootstrapInstallTool, bind);
     bindToolProvider(QaapBootstrapRunDevTool, bind);
     bindToolProvider(QaapBootstrapOpenPreviewTool, bind);
+
+    bind(QaapBootstrapVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(QaapBootstrapVariableContribution);
 });

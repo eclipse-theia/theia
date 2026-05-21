@@ -33,6 +33,8 @@ export interface MobileProjectsPanelDelegate {
      * The shell uses it to surface the README in the editor instead of triggering a no-op reload.
      */
     onCurrentProjectActivated?(project: MobileProjectEntry): void | Promise<void>;
+    onResumePreview?(project: MobileProjectEntry): void | Promise<void>;
+    onOpenAgentOnTask?(project: MobileProjectEntry): void | Promise<void>;
 }
 
 export class MobileProjectsPanel {
@@ -535,6 +537,11 @@ export class MobileProjectsPanel {
 
         body.append(top, statusRow, task);
 
+        const quick = this.createQuickActions(project);
+        if (quick) {
+            body.append(quick);
+        }
+
         if (project.progress > 0) {
             const bar = document.createElement('div');
             bar.className = 'theia-mobile-projects-progress';
@@ -547,6 +554,43 @@ export class MobileProjectsPanel {
 
         card.append(body, menuBtn, menu);
         return card;
+    }
+
+    protected createQuickActions(project: MobileProjectEntry): HTMLElement | undefined {
+        const showPreview = !!project.previewUrl || project.isCurrent;
+        const showAgent = !!project.task?.trim() && project.task !== '—';
+        if (!showPreview && !showAgent) {
+            return undefined;
+        }
+        const row = document.createElement('div');
+        row.className = 'theia-mobile-projects-quick';
+        row.addEventListener('click', ev => ev.stopPropagation());
+
+        if (showPreview && this.delegate.onResumePreview) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theia-mobile-projects-quick-btn';
+            btn.innerHTML = '<span class="codicon codicon-preview" aria-hidden="true"></span> ' +
+                nls.localize('qaap/mobileProjects/resumePreview', 'Resume preview');
+            btn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                void this.delegate.onResumePreview?.(project);
+            });
+            row.append(btn);
+        }
+        if (showAgent && this.delegate.onOpenAgentOnTask) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'theia-mobile-projects-quick-btn theia-mod-secondary';
+            btn.innerHTML = '<span class="codicon codicon-comment-discussion" aria-hidden="true"></span> ' +
+                nls.localize('qaap/mobileProjects/openAgent', 'Open agent');
+            btn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                void this.delegate.onOpenAgentOnTask?.(project);
+            });
+            row.append(btn);
+        }
+        return row.childElementCount > 0 ? row : undefined;
     }
 
     protected toggleCardMenu(card: HTMLElement, menu: HTMLElement, menuBtn: HTMLButtonElement): void {
@@ -661,6 +705,10 @@ export class MobileProjectsPanel {
             stack.append(chip);
         });
         return stack;
+    }
+
+    async showOpenRepositoryDialog(): Promise<void> {
+        await this.onNewClick();
     }
 
     async openProject(project: MobileProjectEntry): Promise<void> {

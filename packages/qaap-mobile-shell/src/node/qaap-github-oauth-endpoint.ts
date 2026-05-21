@@ -19,10 +19,12 @@ import {
     QAAP_GITHUB_API_PATH,
     QAAP_GITHUB_OAUTH_CALLBACK_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
+    QAAP_TEMPLATES_API_PATH,
     type QaapGithubCreateRepositoryRequest,
     type QaapGithubMergePullRequestRequest,
     type QaapGithubOpenRepositoryRequest,
     type QaapGithubRepositorySummary,
+    type QaapProjectSessionUpsertRequest,
 } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 import {
     createGithubRepository,
@@ -35,6 +37,9 @@ import {
 } from './qaap-github-api';
 import { readQaapGithubOAuthConfig } from './qaap-github-oauth-config';
 import { QaapGithubSessionStore } from './qaap-github-session-store';
+import { QaapProjectSessionStore } from './qaap-project-session-store';
+import { QaapTemplateScaffold } from './qaap-template-scaffold';
+import type { QaapScaffoldTemplateRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const GITHUB_OAUTH_SCOPE = 'read:user repo';
@@ -50,8 +55,14 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
     @inject(QaapGithubSessionStore)
     protected readonly sessions: QaapGithubSessionStore;
 
+    @inject(QaapProjectSessionStore)
+    protected readonly projectSessions: QaapProjectSessionStore;
+
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
+
+    @inject(QaapTemplateScaffold)
+    protected readonly templateScaffold: QaapTemplateScaffold;
 
     configure(app: Application): void {
         app.use(json());
@@ -66,6 +77,58 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         app.get(`${QAAP_GITHUB_API_PATH}/repositories/:owner/:repo/open`, (req, res) => this.handleOpenGithubRepository(req, res));
         app.get(`${QAAP_GITHUB_API_PATH}/pull-requests`, (req, res) => this.handleGithubPullRequests(req, res));
         app.post(`${QAAP_GITHUB_API_PATH}/pull-requests/merge`, (req, res) => this.handleMergeGithubPullRequest(req, res));
+        app.get(`${QAAP_GITHUB_API_PATH}/project-sessions`, (req, res) => this.handleProjectSessions(req, res));
+        app.post(`${QAAP_GITHUB_API_PATH}/project-sessions`, (req, res) => this.handleUpsertProjectSession(req, res));
+        app.post(`${QAAP_TEMPLATES_API_PATH}/scaffold`, (req, res) => { void this.handleScaffoldTemplate(req, res); });
+    }
+
+    protected async handleScaffoldTemplate(req: Request, res: Response): Promise<void> {
+        const body = (req.body ?? {}) as Partial<QaapScaffoldTemplateRequest>;
+        const templateId = typeof body.templateId === 'string' ? body.templateId.trim() : '';
+        if (!templateId || !this.templateScaffold.isBundledTemplate(templateId)) {
+            res.status(400).json({ error: 'Invalid templateId' });
+            return;
+        }
+        try {
+            const workspaceUri = await this.templateScaffold.scaffold(templateId, body.projectName);
+            res.json({ workspaceUri, templateId });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to scaffold template';
+            res.status(502).json({ error: message });
+        }
+    }
+
+    protected handleProjectSessions(req: Request, res: Response): void {
+        const stored = this.sessions.getSession(this.readSessionId(req));
+        if (!stored) {
+            res.status(401).json({ error: 'Not signed in' });
+            return;
+        }
+        res.json({ sessions: this.projectSessions.listForUser(stored.user.login) });
+    }
+
+    protected handleUpsertProjectSession(req: Request, res: Response): void {
+        const stored = this.sessions.getSession(this.readSessionId(req));
+        if (!stored) {
+            res.status(401).json({ error: 'Not signed in' });
+            return;
+        }
+        const body = (req.body ?? {}) as Partial<QaapProjectSessionUpsertRequest>;
+        if (!body.repoKey || typeof body.repoKey !== 'string') {
+            res.status(400).json({ error: 'repoKey is required' });
+            return;
+        }
+        const session = this.projectSessions.upsertForUser(stored.user.login, {
+            repoKey: body.repoKey,
+            branch: body.branch,
+            tokens: body.tokens,
+            cost: body.cost,
+            agentState: body.agentState,
+            lastTask: body.lastTask,
+            previewUrl: body.previewUrl,
+            bootstrapPhase: body.bootstrapPhase,
+        });
+        res.json({ session });
     }
 
     protected handleOAuthStart(_req: Request, res: Response): void {

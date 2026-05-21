@@ -17,17 +17,11 @@ import { QaapMonacoQuickInputAdapter } from './qaap-monaco-quick-input-adapter';
 type QuickInputControllerOptionsHost = { options: IQuickInputOptions };
 
 /**
- * Mobile Quick Input: keep the palette open on transient blur, preserve top-sheet layout when
- * the virtual keyboard resizes the viewport, and restore filter focus via Monaco (not raw
- * `input.focus()`, which fights the OS and loops the keyboard).
+ * Mobile Quick Input: transient blur when the OS keyboard opens must not close the widget;
+ * taps outside must dismiss. No programmatic refocus (that loops the keyboard on iOS/Android).
  */
 @injectable()
 export class QaapMobileQuickInputContribution implements FrontendApplicationContribution {
-
-    /** Debounced refocus after visualViewport settles (ms). */
-    protected static readonly FILTER_FOCUS_QUIET_MS = 160;
-    /** Min gap between programmatic refocus calls (ms). */
-    protected static readonly FILTER_FOCUS_COOLDOWN_MS = 400;
 
     @inject(MonacoQuickInputImplementation)
     protected readonly quickInput: MonacoQuickInputImplementation;
@@ -40,8 +34,9 @@ export class QaapMobileQuickInputContribution implements FrontendApplicationCont
 
     protected sessionDispose = new DisposableCollection();
     protected quickInputSessionOpen = false;
-    protected viewportQuietHandle = 0;
-    protected lastFilterRefocusAt = 0;
+    protected dismissRequested = false;
+    protected layoutStabilizeRaf = 0;
+    protected backdrop: HTMLElement | undefined;
     protected layoutObserver: MutationObserver | undefined;
 
     onStart(): void {
@@ -55,19 +50,18 @@ export class QaapMobileQuickInputContribution implements FrontendApplicationCont
             return;
         }
         this.quickInputSessionOpen = true;
+        this.dismissRequested = false;
         this.sessionDispose.dispose();
         this.sessionDispose = new DisposableCollection();
         this.applyMobileQuickInputFocusOut();
+        this.ensureBackdrop();
         this.installSessionListeners();
-        this.scheduleInitialFilterFocus();
     }
 
     protected onQuickInputHide(): void {
         this.quickInputSessionOpen = false;
-        if (this.viewportQuietHandle) {
-            window.clearTimeout(this.viewportQuietHandle);
-            this.viewportQuietHandle = 0;
-        }
+        this.dismissRequested = false;
+        this.removeBackdrop();
         this.sessionDispose.dispose();
         this.sessionDispose = new DisposableCollection();
     }
@@ -78,114 +72,116 @@ export class QaapMobileQuickInputContribution implements FrontendApplicationCont
             return;
         }
         this.installLayoutStabilizer(container);
-        this.installViewportFocusGuard();
+        const onOutsidePointer = (e: PointerEvent): void => this.onOutsidePointer(e);
+        document.addEventListener('pointerdown', onOutsidePointer, true);
+        this.sessionDispose.push(Disposable.create(() => document.removeEventListener('pointerdown', onOutsidePointer, true)));
         this.sessionDispose.push(Disposable.create(() => {
+            if (this.layoutStabilizeRaf) {
+                cancelAnimationFrame(this.layoutStabilizeRaf);
+                this.layoutStabilizeRaf = 0;
+            }
             this.layoutObserver?.disconnect();
             this.layoutObserver = undefined;
         }));
     }
 
+    protected onOutsidePointer(event: PointerEvent): void {
+        if (!this.quickInputSessionOpen) {
+            return;
+        }
+        const container = document.getElementById('quick-input-container');
+        if (!container) {
+            return;
+        }
+        const target = event.target;
+        if (target instanceof Node && container.contains(target)) {
+            this.dismissRequested = false;
+            return;
+        }
+        this.requestDismiss();
+    }
+
+    protected requestDismiss(): void {
+        if (!this.quickInputSessionOpen) {
+            return;
+        }
+        this.dismissRequested = true;
+        this.quickInput.hide();
+    }
+
+    protected ensureBackdrop(): void {
+        this.removeBackdrop();
+        const backdrop = document.createElement('div');
+        backdrop.className = 'theia-mobile-quick-input-backdrop';
+        backdrop.setAttribute('aria-hidden', 'true');
+        const dismiss = (): void => this.requestDismiss();
+        backdrop.addEventListener('pointerdown', dismiss);
+        backdrop.addEventListener('click', dismiss);
+        const container = document.getElementById('quick-input-container');
+        if (container?.parentElement) {
+            container.parentElement.insertBefore(backdrop, container);
+        } else {
+            document.body.appendChild(backdrop);
+        }
+        this.backdrop = backdrop;
+        requestAnimationFrame(() => backdrop.classList.add('theia-mod-visible'));
+    }
+
+    protected removeBackdrop(): void {
+        if (this.backdrop?.parentElement) {
+            this.backdrop.parentElement.removeChild(this.backdrop);
+        }
+        this.backdrop = undefined;
+    }
+
     /**
-     * Monaco `QuickInputController#updateLayout` runs on every window resize (keyboard open/close)
-     * and re-applies desktop `top` / `left` / `width`. Clear them immediately on mobile.
+     * Monaco `QuickInputController#updateLayout` runs on every window resize (keyboard) and
+     * re-applies desktop geometry. Clear it on the next frame without refocusing the filter.
      */
     protected installLayoutStabilizer(container: HTMLElement): void {
-        const stabilize = (): void => {
-            if (this.quickInputSessionOpen && this.isMobileQuickInputContext()) {
-                this.quickInputAdapter.stabilizeMobileLayout(container);
+        const scheduleStabilize = (): void => {
+            if (!this.quickInputSessionOpen || !this.isMobileQuickInputContext()) {
+                return;
             }
+            if (this.layoutStabilizeRaf) {
+                cancelAnimationFrame(this.layoutStabilizeRaf);
+            }
+            this.layoutStabilizeRaf = requestAnimationFrame(() => {
+                this.layoutStabilizeRaf = 0;
+                this.quickInputAdapter.stabilizeMobileLayout(container);
+            });
         };
-        stabilize();
-        this.layoutObserver = new MutationObserver(stabilize);
+        scheduleStabilize();
+        this.layoutObserver = new MutationObserver(scheduleStabilize);
         this.layoutObserver.observe(container, { attributes: true, attributeFilter: ['style'] });
         const inner = container.querySelector('.quick-input-widget');
         if (inner) {
             this.layoutObserver.observe(inner, { attributes: true, attributeFilter: ['style'] });
         }
-        const onResize = (): void => stabilize();
+        const onResize = (): void => scheduleStabilize();
         window.addEventListener('resize', onResize);
         const vv = window.visualViewport;
         if (vv) {
             vv.addEventListener('resize', onResize);
-            vv.addEventListener('scroll', onResize);
-            this.sessionDispose.push(Disposable.create(() => {
-                vv.removeEventListener('resize', onResize);
-                vv.removeEventListener('scroll', onResize);
-            }));
+            this.sessionDispose.push(Disposable.create(() => vv.removeEventListener('resize', onResize)));
         }
         this.sessionDispose.push(Disposable.create(() => window.removeEventListener('resize', onResize)));
-    }
-
-    protected installViewportFocusGuard(): void {
-        const onViewportChange = (): void => {
-            if (!this.quickInputSessionOpen) {
-                return;
-            }
-            if (this.viewportQuietHandle) {
-                window.clearTimeout(this.viewportQuietHandle);
-            }
-            this.viewportQuietHandle = window.setTimeout(() => {
-                this.viewportQuietHandle = 0;
-                this.ensureFilterFocusAfterViewportChange();
-            }, QaapMobileQuickInputContribution.FILTER_FOCUS_QUIET_MS);
-        };
-        window.addEventListener('resize', onViewportChange);
-        const vv = window.visualViewport;
-        if (vv) {
-            vv.addEventListener('resize', onViewportChange);
-            vv.addEventListener('scroll', onViewportChange);
-            this.sessionDispose.pushAll([
-                Disposable.create(() => vv.removeEventListener('resize', onViewportChange)),
-                Disposable.create(() => vv.removeEventListener('scroll', onViewportChange)),
-            ]);
-        }
-        this.sessionDispose.push(Disposable.create(() => window.removeEventListener('resize', onViewportChange)));
-    }
-
-    protected scheduleInitialFilterFocus(): void {
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                if (!this.quickInputSessionOpen || !this.isMobileQuickInputContext()) {
-                    return;
-                }
-                this.applyMobileQuickInputFocusOut();
-                this.quickInputAdapter.stabilizeMobileLayout(
-                    document.getElementById('quick-input-container') ?? document.body
-                );
-                this.quickInput.focus();
-            });
-        });
-    }
-
-    protected ensureFilterFocusAfterViewportChange(): void {
-        if (!this.quickInputSessionOpen || !this.isMobileQuickInputContext()) {
-            return;
-        }
-        const container = document.getElementById('quick-input-container');
-        if (!container || !this.isQuickInputVisible()) {
-            return;
-        }
-        this.quickInputAdapter.stabilizeMobileLayout(container);
-        const active = document.activeElement;
-        if (active instanceof HTMLElement && container.contains(active)) {
-            return;
-        }
-        const now = Date.now();
-        if (now - this.lastFilterRefocusAt < QaapMobileQuickInputContribution.FILTER_FOCUS_COOLDOWN_MS) {
-            return;
-        }
-        this.lastFilterRefocusAt = now;
-        this.applyMobileQuickInputFocusOut();
-        this.quickInput.focus();
     }
 
     protected patchControllerIgnoreFocusOut(): void {
         const host = this.quickInput.controller as unknown as QuickInputControllerOptionsHost;
         const original = host.options.ignoreFocusOut;
-        host.options.ignoreFocusOut = () => this.isMobileQuickInputContext() || original();
+        host.options.ignoreFocusOut = () => {
+            if (!this.isMobileQuickInputContext()) {
+                return original();
+            }
+            if (this.dismissRequested) {
+                return false;
+            }
+            return this.quickInputSessionOpen;
+        };
     }
 
-    /** `QuickInputController#pick` resets `ui.ignoreFocusOut` on each show; re-apply on mobile. */
     protected applyMobileQuickInputFocusOut(): void {
         if (!this.isMobileQuickInputContext()) {
             return;
@@ -194,15 +190,6 @@ export class QaapMobileQuickInputContribution implements FrontendApplicationCont
         if (ui) {
             ui.ignoreFocusOut = true;
         }
-    }
-
-    protected isQuickInputVisible(): boolean {
-        const container = document.getElementById('quick-input-container');
-        if (!container) {
-            return false;
-        }
-        const widget = container.querySelector<HTMLElement>('.quick-input-widget');
-        return Boolean(widget && widget.style.display !== 'none');
     }
 
     protected isMobileQuickInputContext(): boolean {

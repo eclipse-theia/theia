@@ -8,6 +8,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import {
     formatBootstrapToolResult,
+    QAAP_BOOTSTRAP_INSTALL_TOOL_ID,
     QAAP_BOOTSTRAP_OPEN_PREVIEW_TOOL_ID,
     QAAP_BOOTSTRAP_RUN_DEV_TOOL_ID,
     QAAP_BOOTSTRAP_STATUS_TOOL_ID,
@@ -16,7 +17,11 @@ import {
 
 function snapshotJson(service: QaapProjectBootstrapService, message?: string): string {
     return formatBootstrapToolResult(
-        serializeQaapBootstrapState(service.getStateSnapshot(), service.forwardedPorts),
+        serializeQaapBootstrapState(
+            service.getStateSnapshot(),
+            service.forwardedPorts,
+            service.getBootstrapFailureDetail()
+        ),
         message
     );
 }
@@ -49,6 +54,46 @@ export class QaapBootstrapStatusTool implements ToolProvider {
 }
 
 @injectable()
+export class QaapBootstrapInstallTool implements ToolProvider {
+
+    @inject(QaapProjectBootstrapService)
+    protected readonly bootstrap: QaapProjectBootstrapService;
+
+    getTool(): ToolRequest {
+        return {
+            id: QAAP_BOOTSTRAP_INSTALL_TOOL_ID,
+            name: QAAP_BOOTSTRAP_INSTALL_TOOL_ID,
+            providerName: 'qaap',
+            description: 'Installs workspace dependencies (npm/pnpm/yarn). May auto-start the dev server when install succeeds. '
+                + 'Use qaap_bootstrap_status to inspect progress.',
+            parameters: {
+                type: 'object',
+                properties: {},
+            },
+            handler: async (_args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                if (ctx?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                const before = this.bootstrap.getStateSnapshot();
+                if (!before.descriptor) {
+                    return snapshotJson(this.bootstrap, 'No installable Node project detected in the workspace.');
+                }
+                if (before.phase === 'installing') {
+                    return snapshotJson(this.bootstrap, 'Install already in progress.');
+                }
+                try {
+                    await this.bootstrap.runInstall();
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    return snapshotJson(this.bootstrap, `Install failed: ${msg}`);
+                }
+                return snapshotJson(this.bootstrap, 'Install started.');
+            },
+        };
+    }
+}
+
+@injectable()
 export class QaapBootstrapRunDevTool implements ToolProvider {
 
     @inject(QaapProjectBootstrapService)
@@ -59,18 +104,13 @@ export class QaapBootstrapRunDevTool implements ToolProvider {
             id: QAAP_BOOTSTRAP_RUN_DEV_TOOL_ID,
             name: QAAP_BOOTSTRAP_RUN_DEV_TOOL_ID,
             providerName: 'qaap',
-            description: 'Installs dependencies (when needed) and starts the workspace dev server, then opens preview '
-                + 'when a URL is detected. Use qaap_bootstrap_status to inspect progress.',
+            description: 'Starts or restarts the workspace dev server (does not install). When needsInstall is true, call '
+                + 'qaap_bootstrap_install first. Use qaap_bootstrap_status to inspect progress.',
             parameters: {
                 type: 'object',
-                properties: {
-                    forceInstall: {
-                        type: 'boolean',
-                        description: 'When true, runs install before dev even if node_modules already exists.',
-                    },
-                },
+                properties: {},
             },
-            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+            handler: async (_args: string, ctx?: ToolInvocationContext): Promise<string> => {
                 if (ctx?.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
@@ -85,31 +125,19 @@ export class QaapBootstrapRunDevTool implements ToolProvider {
                 if (phase === 'running' && before.previewUrl) {
                     return snapshotJson(this.bootstrap, 'Dev server already running; use qaap_bootstrap_open_preview to focus preview.');
                 }
-                let forceInstall = false;
-                if (args.trim().length > 0) {
-                    try {
-                        const parsed = JSON.parse(args) as { forceInstall?: boolean };
-                        forceInstall = parsed.forceInstall === true;
-                    } catch (e) {
-                        return JSON.stringify({ error: `Invalid arguments for ${QAAP_BOOTSTRAP_RUN_DEV_TOOL_ID}: ${e}` });
-                    }
-                }
-                const needsInstall = forceInstall
-                    || before.needsInstall
+                const needsInstall = before.needsInstall === true
                     || !before.descriptor.nodeModulesPresent
-                    || phase === 'install-failed'
-                    || (phase === 'detected' && !before.descriptor.nodeModulesPresent);
+                    || phase === 'install-failed';
+                if (needsInstall) {
+                    return snapshotJson(this.bootstrap, 'Dependencies missing; call qaap_bootstrap_install first.');
+                }
                 try {
-                    if (needsInstall) {
-                        await this.bootstrap.runInstall();
-                    } else {
-                        await this.bootstrap.runDevServer();
-                    }
+                    await this.bootstrap.runDevServer();
                 } catch (e) {
                     const msg = e instanceof Error ? e.message : String(e);
-                    return snapshotJson(this.bootstrap, `Bootstrap run failed: ${msg}`);
+                    return snapshotJson(this.bootstrap, `Dev server start failed: ${msg}`);
                 }
-                return snapshotJson(this.bootstrap, needsInstall ? 'Install/dev started.' : 'Dev server start requested.');
+                return snapshotJson(this.bootstrap, 'Dev server start requested.');
             },
         };
     }

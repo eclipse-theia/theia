@@ -3,16 +3,35 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { execSync } from 'child_process';
 import { expect, test } from '@playwright/test';
+import * as fs from 'fs';
 import * as path from 'path';
 import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaWorkspace } from '../theia-workspace';
 
 const MOBILE_VIEWPORT = { width: 375, height: 812 };
+const KPI_PREVIEW_MS = 120_000;
+
+const RESOURCES = path.resolve(__dirname, './resources');
+const VITE_FIXTURE = path.join(RESOURCES, 'qaap-vite-fixture');
+const NEXT_FIXTURE = path.join(RESOURCES, 'qaap-next-fixture');
+const LEGACY_BOOTSTRAP_FIXTURE = path.join(RESOURCES, 'qaap-bootstrap-fixture');
 
 test.describe('@qaap-mobile Qaap mobile layout', () => {
 
     test.use({ viewport: MOBILE_VIEWPORT });
+
+    test('skips login gate and shows workbench shell', async ({ playwright, browser }) => {
+        const app = await TheiaAppLoader.load({ playwright, browser });
+        await app.waitForShellAndInitialized();
+
+        await expect(app.page.locator('#theia-app-shell')).toBeVisible();
+        await expect(app.page.locator('body')).not.toHaveClass(/qaap-login-active/);
+        await expect(app.page.locator('#qaap-login-host')).toHaveCount(0);
+
+        await app.page.close();
+    });
 
     test('activates one-column shell and bottom activity bar', async ({ playwright, browser }) => {
         const app = await TheiaAppLoader.load({ playwright, browser });
@@ -44,13 +63,25 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
     });
 
     test('shows project bootstrap banner for a Node dev workspace', async ({ playwright, browser }) => {
-        const ws = new TheiaWorkspace([path.resolve(__dirname, './resources/qaap-bootstrap-fixture')]);
+        const ws = new TheiaWorkspace([LEGACY_BOOTSTRAP_FIXTURE]);
         const app = await TheiaAppLoader.load({ playwright, browser }, ws);
         await app.waitForShellAndInitialized();
 
         const banner = app.page.locator('.qaap-project-bootstrap-banner');
         await expect(banner).toBeVisible({ timeout: 15_000 });
         await expect(banner).toHaveAttribute('data-phase', /detected|ready-to-run/);
+
+        await app.page.close();
+    });
+
+    test('detects Next.js workspace in bootstrap banner', async ({ playwright, browser }) => {
+        const ws = new TheiaWorkspace([NEXT_FIXTURE]);
+        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
+        await app.waitForShellAndInitialized();
+
+        const banner = app.page.locator('.qaap-project-bootstrap-banner');
+        await expect(banner).toBeVisible({ timeout: 15_000 });
+        await expect(banner.locator('.qaap-project-bootstrap-title')).toContainText(/Next/i);
 
         await app.page.close();
     });
@@ -95,6 +126,55 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         );
         expect(flexDirections.length).toBeGreaterThan(0);
         expect(flexDirections.every(direction => direction === 'column')).toBe(true);
+
+        await app.page.close();
+    });
+});
+
+test.describe('@qaap-mobile Qaap time to preview', () => {
+
+    test.use({ viewport: MOBILE_VIEWPORT });
+    test.describe.configure({ timeout: 200_000 });
+
+    test.beforeAll(() => {
+        if (!fs.existsSync(path.join(VITE_FIXTURE, 'node_modules'))) {
+            execSync('npm install --no-audit --no-fund', {
+                cwd: VITE_FIXTURE,
+                stdio: 'inherit',
+                timeout: 180_000,
+                env: { ...process.env, NODE_ENV: 'development' },
+            });
+        }
+    });
+
+    test('opens dev preview within KPI window after Run & Preview', async ({ playwright, browser }) => {
+        const ws = new TheiaWorkspace([VITE_FIXTURE]);
+        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
+        await app.waitForShellAndInitialized();
+
+        const started = Date.now();
+        const banner = app.page.locator('.qaap-project-bootstrap-banner');
+        await expect(banner).toBeVisible({ timeout: 30_000 });
+
+        const runBtn = banner.locator('.qaap-project-bootstrap-action.qaap-mod-primary');
+        const installBtn = banner.getByRole('button', { name: /^Install$/i });
+        if (await installBtn.isVisible().catch(() => false)) {
+            await installBtn.click();
+            await expect(banner).toHaveAttribute('data-phase', /ready-to-run|running|starting|installing/, { timeout: 120_000 });
+        }
+        await expect(runBtn).toBeVisible({ timeout: 120_000 });
+        const runLabel = await runBtn.textContent();
+        if (runLabel && /Run|Resume|Preview/i.test(runLabel)) {
+            await runBtn.click();
+        }
+
+        const previewFrame = app.page.locator(
+            '.theia-mini-browser iframe[src*="127.0.0.1"], .theia-mini-browser iframe[src*="localhost"]'
+        );
+        await expect(previewFrame).toBeVisible({ timeout: 120_000 });
+
+        const elapsed = Date.now() - started;
+        expect(elapsed).toBeLessThan(KPI_PREVIEW_MS);
 
         await app.page.close();
     });

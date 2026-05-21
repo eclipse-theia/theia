@@ -60,4 +60,17 @@ describe('serializeQaapBootstrapState', () => {
         const json = serializeQaapBootstrapState(state);
         expect(json.needsInstall).to.equal(true);
     });
+
+    it('includes terminal failure lines for agents', () => {
+        const state: QaapBootstrapStateChange = {
+            phase: 'install-failed',
+            error: 'Install failed',
+        };
+        const json = serializeQaapBootstrapState(state, [], {
+            terminalFailure: 'npm error code 1',
+            terminalTail: 'npm ERR! ...',
+        });
+        expect(json.terminalFailure).to.equal('npm error code 1');
+        expect(json.terminalTail).to.equal('npm ERR! ...');
+    });
 });

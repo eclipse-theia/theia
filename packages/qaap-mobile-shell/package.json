@@ -41,6 +41,7 @@
   },
   "files": [
     "lib",
+    "resources",
     "src"
   ],
   "scripts": {
