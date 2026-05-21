@@ -179,16 +179,19 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get installed(): boolean {
-        return !!this.version && this.model
-            .isInstalledAtSpecificVersion(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
+        return this.model.isInstalled(this.id);
     }
 
     get uninstalled(): boolean {
-        return !!this.version && this.model.isUninstalled(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
+        const installedVersion = this.installedVersion;
+        return !!installedVersion && this.model
+            .isUninstalled(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: installedVersion }));
     }
 
     get deployed(): boolean {
-        return !!this.version && this.model.isDeployed(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
+        const installedVersion = this.installedVersion;
+        return !!installedVersion && this.model
+            .isDeployed(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: installedVersion }));
     }
 
     get disabled(): boolean {
@@ -634,7 +637,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
     override render(): React.ReactNode {
         const {
             builtin, preview, id, iconUrl, publisher, displayName, description, version,
-            averageRating, downloadCount, repository, license, readme, disabledByTrust
+            averageRating, downloadCount, repository, license, readme, disabled, installed, disabledByTrust
         } = this.props.extension;
 
         const sanitizedReadme = !!readme ? DOMPurify.sanitize(readme) : undefined;
@@ -650,6 +653,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         <span title='Extension identifier' className='identifier'>{id}</span>
                         {preview && <span className='preview'>Preview</span>}
                         {builtin && <span className='builtin'>Built-in</span>}
+                        {disabled && installed && <span className='disabled'>{nls.localizeByDefault('Disabled')}</span>}
                         {disabledByTrust && <span className='restricted'>{nls.localizeByDefault('Restricted Mode')}</span>}
                     </div>
                     <div className='subtitle'>
