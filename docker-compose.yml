@@ -30,6 +30,8 @@ services:
       QAAP_VAPID_PUBLIC_KEY: ${QAAP_VAPID_PUBLIC_KEY:-}
       QAAP_VAPID_PRIVATE_KEY: ${QAAP_VAPID_PRIVATE_KEY:-}
       QAAP_VAPID_SUBJECT: ${QAAP_VAPID_SUBJECT:-mailto:qaap@localhost}
+      # Background-agent CLI template for Jobs tasks ({prompt} = task description).
+      QAAP_AGENT_COMMAND: ${QAAP_AGENT_COMMAND:-}
       QAAP_CLOUD_MODE: ${QAAP_CLOUD_MODE:-local}
       # Optional: mount a host folder as the default workspace
       # THEIA_PLUGINS_DIR: /app/plugins

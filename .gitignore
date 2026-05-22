@@ -41,3 +41,5 @@ license-check-summary.txt*
 **/.playwright-cli/
 /.theia/chatSessions
 .tmp.cfg
+# Deployment env — contains secrets (VAPID private key, OAuth secret). Never commit.
+/.env
