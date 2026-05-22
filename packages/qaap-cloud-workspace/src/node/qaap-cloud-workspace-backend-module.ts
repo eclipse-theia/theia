@@ -5,6 +5,8 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { QaapAgentTaskEndpoint } from './qaap-agent-task-endpoint';
+import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 import { QaapCloudOrchestrator } from './qaap-cloud-orchestrator';
 import { QaapCloudWorkspaceEndpoint } from './qaap-cloud-workspace-endpoint';
 import { QaapCloudWorkspaceStore } from './qaap-cloud-workspace-store';
@@ -29,4 +31,7 @@ export default new ContainerModule(bind => {
     bind(QaapCloudWorkspaceEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(QaapCloudWorkspaceEndpoint);
     bind(BackendApplicationContribution).toService(QaapPreviewShareProxyContribution);
+    bind(QaapAgentTaskRunner).toSelf().inSingletonScope();
+    bind(QaapAgentTaskEndpoint).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(QaapAgentTaskEndpoint);
 });
