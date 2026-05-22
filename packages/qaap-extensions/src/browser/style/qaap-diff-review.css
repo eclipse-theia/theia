@@ -1,4 +1,4 @@
-/* Mobile diff-review surface — file list + actions, tuned for one-handed use. */
+/* Mobile diff-review surface — file list + inline hunk view, tuned for one-handed use. */
 
 .qaap-diff-review {
     overflow: hidden;
@@ -13,97 +13,108 @@
     color: var(--theia-foreground);
 }
 
+/* --- header --- */
+
 .qaap-diff-review-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
-    padding: 12px 18px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--theia-editorWidget-border);
     flex: none;
 }
 
 .qaap-diff-review-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 
-.qaap-diff-review-count {
+.qaap-diff-review-sub {
     font-size: 12px;
     color: var(--theia-descriptionForeground);
 }
 
-.qaap-diff-review-list {
+.qaap-diff-review-spacer {
     flex: 1;
-    overflow-y: auto;
-    min-height: 0;
 }
 
-.qaap-diff-review-group-label {
-    padding: 8px 18px 4px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--theia-descriptionForeground);
+.qaap-diff-review-chip {
+    border: 1px solid var(--theia-editorWidget-border);
+    background: var(--theia-editor-background);
+    color: var(--theia-foreground);
+    border-radius: 999px;
+    font-size: 12px;
+    padding: 5px 12px;
+    cursor: pointer;
+}
+
+.qaap-diff-review-chip:active {
+    opacity: 0.8;
+}
+
+.qaap-diff-add {
+    color: var(--theia-gitDecoration-untrackedResourceForeground);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+}
+
+.qaap-diff-del {
+    color: var(--theia-gitDecoration-deletedResourceForeground);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+}
+
+.qaap-diff-review-error {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--theia-errorForeground);
+    background: var(--theia-inputValidation-errorBackground);
+    flex: none;
+}
+
+/* --- file list --- */
+
+.qaap-diff-review-files {
+    flex: none;
+    max-height: 38%;
+    overflow-y: auto;
+    border-bottom: 1px solid var(--theia-editorWidget-border);
 }
 
 .qaap-diff-review-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 11px 14px 11px 18px;
+    gap: 9px;
+    padding: 9px 14px 9px 16px;
     cursor: pointer;
-    border-bottom: 1px solid var(--theia-editorWidget-border);
+    border-left: 2px solid transparent;
 }
 
 .qaap-diff-review-row:active {
     background: var(--theia-list-activeSelectionBackground);
 }
 
-.qaap-diff-review-status {
+.qaap-diff-review-row--selected {
+    background: var(--theia-list-inactiveSelectionBackground);
+    border-left-color: var(--theia-focusBorder);
+}
+
+.qaap-diff-review-glyph {
     flex: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    background: var(--theia-badge-background);
-    color: var(--theia-badge-foreground);
-}
-
-.qaap-diff-review-status--m {
-    background: var(--theia-gitDecoration-modifiedResourceForeground);
-    color: var(--theia-editor-background);
-}
-
-.qaap-diff-review-status--a,
-.qaap-diff-review-status--u {
-    background: var(--theia-gitDecoration-untrackedResourceForeground);
-    color: var(--theia-editor-background);
-}
-
-.qaap-diff-review-status--d {
-    background: var(--theia-gitDecoration-deletedResourceForeground);
-    color: var(--theia-editor-background);
+    font-size: 15px;
+    width: 16px;
+    height: 16px;
+    background-size: 15px;
 }
 
 .qaap-diff-review-name {
-    flex: none;
-    font-size: 13px;
-    font-weight: 500;
-    max-width: 55%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.qaap-diff-review-dir {
     flex: 1;
     min-width: 0;
-    font-size: 11px;
-    color: var(--theia-descriptionForeground);
+    font-family: var(--theia-code-font-family, monospace);
+    font-size: 12px;
+    color: var(--theia-foreground);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -111,11 +122,135 @@
     text-align: left;
 }
 
-.qaap-diff-review-chevron {
+.qaap-diff-review-approved {
     flex: none;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: var(--theia-gitDecoration-untrackedResourceForeground);
+    color: var(--theia-editor-background);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+.qaap-diff-review-open {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: var(--theia-descriptionForeground);
+    cursor: pointer;
+    padding: 4px;
     font-size: 14px;
+}
+
+.qaap-diff-review-open:active {
+    color: var(--theia-foreground);
+}
+
+/* --- diff pane --- */
+
+.qaap-diff-review-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.qaap-diff-review-pane-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--theia-editorWidget-border);
+    flex: none;
+}
+
+.qaap-diff-review-pane-head > i {
+    flex: none;
+    font-size: 15px;
+    width: 16px;
+    height: 16px;
+    background-size: 15px;
+}
+
+.qaap-diff-review-pane-path {
+    font-family: var(--theia-code-font-family, monospace);
+    font-size: 12px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qaap-diff-review-hunks {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    padding: 6px 0;
+    font-family: var(--theia-code-font-family, monospace);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.qaap-diff-review-hunk-header {
+    padding: 3px 16px;
+    color: var(--theia-descriptionForeground);
+    background: var(--theia-editorWidget-background);
+    white-space: pre;
+}
+
+.qaap-diff-review-line {
+    display: flex;
+}
+
+.qaap-diff-review-line--add {
+    background: var(--theia-diffEditor-insertedLineBackground, rgba(0, 160, 0, 0.12));
+}
+
+.qaap-diff-review-line--del {
+    background: var(--theia-diffEditor-removedLineBackground, rgba(200, 0, 0, 0.12));
+}
+
+.qaap-diff-review-gutter {
+    flex: none;
+    width: 40px;
+    padding-right: 8px;
+    text-align: right;
+    color: var(--theia-editorLineNumber-foreground);
+    user-select: none;
+}
+
+.qaap-diff-review-sign {
+    flex: none;
+    width: 14px;
+    text-align: center;
+    user-select: none;
+}
+
+.qaap-diff-review-line--add .qaap-diff-review-sign,
+.qaap-diff-review-line--add .qaap-diff-review-code {
+    color: var(--theia-gitDecoration-untrackedResourceForeground);
+}
+
+.qaap-diff-review-line--del .qaap-diff-review-sign,
+.qaap-diff-review-line--del .qaap-diff-review-code {
+    color: var(--theia-gitDecoration-deletedResourceForeground);
+}
+
+.qaap-diff-review-code {
+    white-space: pre;
+    padding-right: 12px;
+}
+
+.qaap-diff-review-note {
+    padding: 16px;
+    font-size: 12px;
     color: var(--theia-descriptionForeground);
 }
+
+/* --- empty state --- */
 
 .qaap-diff-review-empty {
     flex: 1;
@@ -146,6 +281,8 @@
     max-width: 240px;
 }
 
+/* --- footer --- */
+
 .qaap-diff-review-footer {
     display: flex;
     gap: 8px;
@@ -155,7 +292,6 @@
 }
 
 .qaap-diff-review-btn {
-    flex: 1;
     height: 40px;
     border-radius: 8px;
     font-size: 13px;
