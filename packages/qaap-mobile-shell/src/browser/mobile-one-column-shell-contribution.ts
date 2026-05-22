@@ -66,6 +66,7 @@ const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
 const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
 const WORKBENCH_TASKS_RUN = 'workbench.action.tasks.runTask';
 const WORKBENCH_OPEN_DIFF = 'qaap.diff.openReview';
+const WORKBENCH_OPEN_AGENT_TASKS = 'qaap.agentTasks.open';
 const MINI_BROWSER_OPEN_URL = 'mini-browser.openUrl';
 const GETTING_STARTED_WIDGET_COMMAND = 'getting.started.widget';
 const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
@@ -81,7 +82,7 @@ interface ShellWithMaximizedOverlay {
     readonly maximizedElement: HTMLElement;
 }
 
-type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'explore' | 'pr' | 'diff' | 'tasks' | 'skills' | 'terminal';
+type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'explore' | 'pr' | 'diff' | 'jobs' | 'tasks' | 'skills' | 'terminal';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -997,6 +998,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             { id: 'explore', label: nls.localize('qaap/mobileBottomBar/explore', 'Explore'), icon: 'codicon-folder-opened' },
             { id: 'pr', label: nls.localize('qaap/mobileBottomBar/pr', 'PR'), icon: 'codicon-git-pull-request' },
             { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
+            { id: 'jobs', label: nls.localize('qaap/mobileBottomBar/jobs', 'Jobs'), icon: 'codicon-server-process', commandId: WORKBENCH_OPEN_AGENT_TASKS },
             { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
             { id: 'skills', label: nls.localize('theia/core/mobileBottomBar/skills', 'Skills'), icon: 'codicon-extensions' },
         ];
