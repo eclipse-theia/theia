@@ -73,4 +73,10 @@ export namespace VSXExtensionsCommands {
         label: 'Show Recommended Extensions',
         category: EXTENSIONS_CATEGORY,
     });
+    export const REFRESH = Command.toDefaultLocalizedCommand({
+        id: 'vsxExtension.refresh',
+        label: 'Refresh',
+        category: EXTENSIONS_CATEGORY,
+        iconClass: codicon('refresh')
+    });
 }

@@ -27,6 +27,10 @@ import { VSXExtensionsContribution } from './vsx-extensions-contribution';
 import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { FuzzySearch } from '@theia/core/lib/common/fuzzy-search';
+import { ExtensionsContribution } from './extensions-contribution';
+import { VSXExtensionsContributionAdapter } from './vsx-extensions-contribution-adapter';
 import { VSXExtensionsWidget, VSXExtensionsWidgetOptions } from './vsx-extensions-widget';
 import { VSXExtensionFactory, VSXExtension, VSXExtensionOptions } from './vsx-extension';
 import { VSXExtensionEditor } from './vsx-extension-editor';
@@ -108,6 +112,17 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindViewContribution(bind, VSXExtensionsContribution);
     bind(FrontendApplicationContribution).toService(VSXExtensionsContribution);
     bind(ColorContribution).toService(VSXExtensionsContribution);
+
+    // Extensions view contribution provider: any package can bind an `ExtensionsContribution`
+    // to surface its artifact type (extensions, MCP servers, future skills, ...) in this view.
+    bindRootContributionProvider(bind, ExtensionsContribution);
+    bind(VSXExtensionsContributionAdapter).toSelf().inSingletonScope();
+    bind(ExtensionsContribution).toService(VSXExtensionsContributionAdapter);
+    // FuzzySearch is not bound globally by core — bind it here so the extensions
+    // source can use it to merge search results across contributions.
+    if (!isBound(FuzzySearch)) {
+        bind(FuzzySearch).toSelf().inSingletonScope();
+    }
 
     bindExtensionPreferences(bind);
     bindPreferenceProviderOverrides(bind, unbind);

@@ -447,3 +447,52 @@
 .theia-vsx-extension-action-bar .action.prominent:hover {
   background-color: var(--theia-extensionButton-prominentHoverBackground);
 }
+
+/** Type badge — pill shown next to the version on each entry to indicate which contribution it came from. */
+
+.theia-extensions-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--theia-ui-font-size0);
+  padding: 0 calc(var(--theia-ui-padding) * 4 / 3);
+  border-radius: 8px;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+.theia-extensions-type-badge .codicon {
+  font-size: 12px;
+}
+
+.theia-extensions-type-badge-icon {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.theia-extensions-type-badge-icon--extension {
+  background-image: url("defaultIcon.png");
+}
+
+.theia-extensions-type-badge-label {
+  text-transform: uppercase;
+  font-size: 90%;
+  letter-spacing: 0.02em;
+}
+
+.theia-extensions-type-badge--extension {
+  background-color: var(--theia-extensionBadge-remoteBackground, var(--theia-badge-background));
+  color: var(--theia-extensionBadge-remoteForeground, var(--theia-badge-foreground));
+}
+
+.theia-extensions-type-badge--mcp {
+  background-color: var(--theia-inputValidation-infoBackground, var(--theia-badge-background));
+  color: var(--theia-inputValidation-infoForeground, var(--theia-badge-foreground));
+}

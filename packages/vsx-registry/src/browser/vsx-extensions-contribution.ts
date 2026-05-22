@@ -28,7 +28,7 @@ import { Color } from '@theia/core/lib/common/color';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { OVSXApiFilterProvider, VSXExtensionRaw } from '@theia/ovsx-client';
@@ -42,6 +42,8 @@ import { VSXExtensionsModel } from './vsx-extensions-model';
 import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { ExtensionsContribution } from './extensions-contribution';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace VSXCommands {
@@ -65,6 +67,8 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(ApplicationServer) protected applicationServer: ApplicationServer;
     @inject(QuickInputService) protected quickInput: QuickInputService;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
+    @inject(ContributionProvider) @named(ExtensionsContribution)
+    protected readonly extensionsContributions: ContributionProvider<ExtensionsContribution>;
 
     constructor() {
         super({
@@ -147,6 +151,24 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         commands.registerCommand(VSXExtensionsCommands.SHOW_RECOMMENDATIONS, {
             execute: () => this.showRecommendedExtensions()
         });
+
+        commands.registerCommand(VSXExtensionsCommands.REFRESH, {
+            execute: () => this.refresh()
+        });
+    }
+
+    /** Refreshes every contribution that opts in — e.g. MCP re-fetches its registry JSON. */
+    protected async refresh(): Promise<void> {
+        const failures = await Promise.allSettled(
+            this.extensionsContributions.getContributions()
+                .filter(c => !!c.refresh)
+                .map(c => c.refresh!())
+        );
+        for (const result of failures) {
+            if (result.status === 'rejected') {
+                console.warn('Extensions view refresh failed for one contribution:', result.reason);
+            }
+        }
     }
 
     override registerMenus(menus: MenuModelRegistry): void {

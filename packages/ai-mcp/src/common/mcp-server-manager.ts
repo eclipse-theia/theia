@@ -114,6 +114,28 @@ export interface BaseMCPServerDescription {
      * @returns A promise that resolves to the processed server description
      */
     resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription>;
+
+    /**
+     * If set, identifies the AI registry entry this server was installed from.
+     * Written by `@theia/ai-registry` on install / link / fix; not user-editable.
+     */
+    registryServerId?: string;
+
+    /**
+     * If set, the registry's published version at the time of install / link / fix.
+     * Kept purely for display in the UI; the registry may publish a different version
+     * later, but we don't want to lose the version the user actually installed.
+     * Update detection uses {@link registryConfigHash} instead.
+     */
+    registryVersion?: string;
+
+    /**
+     * If set, a content hash of the registry approval that produced this entry.
+     * Written by `@theia/ai-registry` on install / link / fix / update and used to
+     * detect when the registry has published a new approval for this server.
+     * Do not use {@link registryVersion} for update checks — it is display-only.
+     */
+    registryConfigHash?: string;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {

@@ -28,6 +28,7 @@ import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
+import { TypeBadge } from './type-badge';
 import { CommandRegistry, MenuPath, nls } from '@theia/core/lib/common';
 import { codicon, ConfirmDialog, ContextMenuRenderer, HoverService, TreeWidget } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
@@ -607,8 +608,13 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                 <div className='title'>
                     <div className='noWrapInfo'>
                         <span className='name'>{displayName}</span>&nbsp;
-                        <span className='version'>{VSXExtension.formatVersion(version)}&nbsp;
-                        </span>{disabled && installed && <span className='disabled'>({nls.localizeByDefault('disabled')})</span>}
+                        <span className='version'>{VSXExtension.formatVersion(version)}</span>&nbsp;
+                        <TypeBadge
+                            icon={<i className='theia-extensions-type-badge-icon theia-extensions-type-badge-icon--extension' />}
+                            label={nls.localizeByDefault('Extension')}
+                            variant='extension'
+                        />
+                        {disabled && installed && <span className='disabled'>&nbsp;({nls.localizeByDefault('disabled')})</span>}
                         {disabledByTrust && <span className='disabled' title={nls.localizeByDefault('Disabled in Restricted Mode')}>
                             ({nls.localizeByDefault('Restricted Mode')})
                         </span>}

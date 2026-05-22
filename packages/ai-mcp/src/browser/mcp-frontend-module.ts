@@ -14,8 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '../../src/browser/style/mcp-server-dialog.css';
+import '../../src/browser/style/mcp-configuration-widget.css';
+
+import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, OpenHandler, RemoteConnectionProvider, ServiceConnectionProvider, WidgetFactory } from '@theia/core/lib/browser';
 import {
     MCPFrontendService,
     MCPServerManager,
@@ -30,6 +34,11 @@ import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerS
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { GenericCapabilitiesContribution } from '@theia/ai-core';
 import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-contribution';
+import { MCPServerEditor } from './mcp-server-editor';
+import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
+import { MCPConfigurationCommandContribution } from './mcp-configuration-command-contribution';
+import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
+import { InstallMcpUriHandler } from './install-mcp-uri-handler';
 
 export default new ContainerModule(bind => {
     bind(McpFrontendApplicationContribution).toSelf().inSingletonScope();
@@ -37,6 +46,20 @@ export default new ContainerModule(bind => {
     bind(WorkspaceRestrictionContribution).toService(McpFrontendApplicationContribution);
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
+
+    bind(MCPServerEditor).toSelf().inSingletonScope();
+
+    bind(AIMCPConfigurationWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: AIMCPConfigurationWidget.ID,
+        createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
+    })).inSingletonScope();
+    bind(MCPConfigurationCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(MCPConfigurationCommandContribution);
+
+    bind(MCPInstallUriConfiguration).toSelf().inSingletonScope();
+    bind(InstallMcpUriHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(InstallMcpUriHandler);
 
     bind(MCPGenericCapabilitiesContribution).toSelf().inSingletonScope();
     bind(GenericCapabilitiesContribution).toService(MCPGenericCapabilitiesContribution);
