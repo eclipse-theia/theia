@@ -38,5 +38,6 @@ allure-results
 .claude
 license-check-summary.txt*
 .playwright-mcp/*
+**/.playwright-cli/
 /.theia/chatSessions
 .tmp.cfg
