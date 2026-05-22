@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Resource, ResourceVersion, ResourceResolver, ResourceError, ResourceSaveOptions } from '@theia/core/lib/common/resource';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -26,7 +26,7 @@ import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GENERAL_MAX_FILE_SIZE_MB } from '../common/filesystem-preferences';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { Mutex } from 'async-mutex';
 
@@ -345,6 +345,9 @@ export class FileResourceResolver implements ResourceResolver {
 
     @inject(FrontendApplicationStateService)
     protected readonly applicationState: FrontendApplicationStateService;
+
+    @inject(ILogger) @named('filesystem:FileResourceResolver')
+    protected readonly logger: ILogger;
 
     async resolve(uri: URI): Promise<FileResource> {
         let stat;

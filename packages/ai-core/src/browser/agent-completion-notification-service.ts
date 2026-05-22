@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { nls } from '@theia/core/lib/common/nls';
@@ -32,7 +32,7 @@ import {
     NOTIFICATION_TYPE_MESSAGE,
     NOTIFICATION_TYPE_BLINK,
 } from '../common/notification-types';
-import { PreferenceService } from '@theia/core';
+import { PreferenceService, ILogger } from '@theia/core';
 
 @injectable()
 export class AgentCompletionNotificationService {
@@ -56,6 +56,9 @@ export class AgentCompletionNotificationService {
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
+
+    @inject(ILogger) @named('ai-core:AgentCompletionNotificationService')
+    protected readonly logger: ILogger;
 
     /**
      * Show a completion notification for the specified agent if enabled in preferences.
@@ -82,7 +85,7 @@ export class AgentCompletionNotificationService {
                 notificationType,
             );
         } catch (error) {
-            console.error(
+            this.logger.error(
                 'Failed to show agent completion notification:',
                 error,
             );
@@ -101,7 +104,7 @@ export class AgentCompletionNotificationService {
             const agent = agents.find(a => a.id === agentId);
             return agent?.name || agentId;
         } catch (error) {
-            console.warn(
+            this.logger.warn(
                 `Failed to resolve agent name for ID '${agentId}':`,
                 error,
             );

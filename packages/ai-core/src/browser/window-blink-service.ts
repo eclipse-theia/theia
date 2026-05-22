@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { environment, nls } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { environment, nls, ILogger } from '@theia/core';
 
 /**
  * Result of a window blink attempt
@@ -32,6 +32,9 @@ export interface WindowBlinkResult {
  */
 @injectable()
 export class WindowBlinkService {
+
+    @inject(ILogger) @named('ai-core:WindowBlinkService')
+    protected readonly logger: ILogger;
 
     private isElectron: boolean;
 
@@ -54,7 +57,7 @@ export class WindowBlinkService {
             }
             return { success: true };
         } catch (error) {
-            console.warn('Failed to blink window:', error);
+            this.logger.warn('Failed to blink window:', error);
             try {
                 if (document.hidden) {
                     this.focusWindow();
@@ -81,7 +84,7 @@ export class WindowBlinkService {
                     window.focus();
                 }
             } catch (error) {
-                console.debug('Could not focus hidden window:', error);
+                this.logger.debug('Could not focus hidden window:', error);
             }
         }
     }
@@ -139,7 +142,7 @@ export class WindowBlinkService {
                 }, 100);
             }
         } catch (error) {
-            console.debug('Could not focus window:', error);
+            this.logger.debug('Could not focus window:', error);
         }
     }
 

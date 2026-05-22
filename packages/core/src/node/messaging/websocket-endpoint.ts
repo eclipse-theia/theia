@@ -16,12 +16,13 @@
 import { MessagingService } from './messaging-service';
 import * as http from 'http';
 import * as https from 'https';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { Server, Socket } from 'socket.io';
 import { WsRequestValidator } from '../ws-request-validators';
 import { MessagingListener } from './messaging-listeners';
 import { ConnectionHandlers } from './default-messaging-service';
 import { BackendApplicationContribution } from '../backend-application';
+import { ILogger } from '../../common/logger';
 
 @injectable()
 export class WebsocketEndpoint implements BackendApplicationContribution {
@@ -30,6 +31,9 @@ export class WebsocketEndpoint implements BackendApplicationContribution {
 
     @inject(MessagingListener)
     protected readonly messagingListener: MessagingListener;
+
+    @inject(ILogger) @named('core:WebsocketEndpoint')
+    protected readonly logger: ILogger;
 
     protected checkAliveTimeout = 30000; // 30 seconds
     protected maxHttpBufferSize = 1e8; // 100 MB
@@ -72,7 +76,7 @@ export class WebsocketEndpoint implements BackendApplicationContribution {
     protected async handleConnection(socket: Socket): Promise<void> {
         const pathname = socket.nsp.name;
         if (pathname && !this.wsHandlers.route(pathname, socket)) {
-            console.error('Cannot find a ws handler for the path: ' + pathname);
+            this.logger.error('Cannot find a ws handler for the path: ' + pathname);
         }
     }
 }

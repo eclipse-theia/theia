@@ -15,13 +15,17 @@
 // *****************************************************************************
 
 import * as cp from 'child_process';
-import { injectable } from 'inversify';
+import { injectable, inject, named } from 'inversify';
+import { ILogger } from '../common/logger';
 
 /**
  * `@theia/core` service with some process-related utilities.
  */
 @injectable()
 export class ProcessUtils {
+
+    @inject(ILogger) @named('core:ProcessUtils')
+    protected readonly logger: ILogger;
 
     terminateProcessTree(ppid: number): void {
         if (process.platform === 'win32') {
@@ -43,7 +47,7 @@ export class ProcessUtils {
                 try {
                     process.kill(pid);
                 } catch (error) {
-                    console.error(error);
+                    this.logger.error(error);
                 }
             }
         }

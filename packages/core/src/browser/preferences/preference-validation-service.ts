@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { JSONObject, JSONValue } from '../../../shared/@lumino/coreutils';
-import { inject, injectable } from '../../../shared/inversify';
+import { inject, injectable, named } from '../../../shared/inversify';
 import { IJSONSchema, JsonType } from '../../common/json-schema';
 import { deepClone, unreachable } from '../../common';
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
 import { PreferenceSchemaService, PreferenceScope, PreferenceUtils, PreferenceDataProperty } from '../../common/preferences';
+import { ILogger } from '../../common/logger';
 
 export interface PreferenceValidator<T> {
     name: string;
@@ -40,6 +41,8 @@ type ValidatablePreferenceTuple = IJSONSchema & ({ items: IJSONSchema[] } | { pr
 export class PreferenceValidationService {
     @inject(PreferenceSchemaService) protected readonly schemaService: PreferenceSchemaService;
     @inject(PreferenceLanguageOverrideService) protected readonly languageOverrideService: PreferenceLanguageOverrideService;
+    @inject(ILogger) @named('core:PreferenceValidationService')
+    protected readonly logger: ILogger;
 
     validateOptions(options: Record<string, JSONValue>): Record<string, JSONValue> {
         const valid: Record<string, JSONValue> = {};
@@ -58,7 +61,7 @@ export class PreferenceValidationService {
         const validValue = this.doValidateByName(preferenceName, value);
         // If value is undefined, it means the preference wasn't set, not that a bad value was set.
         if (validValue !== value && value !== undefined) {
-            console.warn(`While validating options, found impermissible value for ${preferenceName}. Using valid value`, validValue, 'instead of configured value', value);
+            this.logger.warn(`While validating options, found impermissible value for ${preferenceName}. Using valid value`, validValue, 'instead of configured value', value);
         }
         return validValue;
     }
@@ -71,7 +74,7 @@ export class PreferenceValidationService {
     validateBySchema(key: string, value: JSONValue, schema: IJSONSchema | undefined): JSONValue {
         try {
             if (!schema) {
-                console.warn('Request to validate preference with no schema registered:', key);
+                this.logger.warn('Request to validate preference with no schema registered:', key);
                 return value;
             }
             if (schema.const !== undefined) {
@@ -87,7 +90,7 @@ export class PreferenceValidationService {
                 return this.validateOneOf(key, value, schema as IJSONSchema & { oneOf: IJSONSchema[] });
             }
             if (schema.type === undefined) {
-                console.warn('Request to validate preference with no type information:', key);
+                this.logger.warn('Request to validate preference with no type information:', key);
                 return value;
             }
             if (Array.isArray(schema.type)) {
@@ -112,7 +115,7 @@ export class PreferenceValidationService {
                     unreachable(schema.type, `Request to validate preference with unknown type in schema: ${key}`);
             }
         } catch (e) {
-            console.error('Encountered an error while validating', key, 'with value', value, 'against schema', schema, e);
+            this.logger.error('Encountered an error while validating', key, 'with value', value, 'against schema', schema, e);
             return value;
         }
     }
@@ -193,7 +196,7 @@ export class PreferenceValidationService {
             return [];
         }
         if (!schema.items && !schema.prefixItems) {
-            console.warn('Requested validation of array without item specification:', key);
+            this.logger.warn('Requested validation of array without item specification:', key);
             return candidate;
         }
         if (Array.isArray(schema.items) || Array.isArray(schema.prefixItems)) {

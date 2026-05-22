@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { Emitter } from '@theia/core';
+import { Emitter, ILogger } from '@theia/core';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandService } from '@theia/core/lib/common/command';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
@@ -92,6 +92,9 @@ export class GitScmProvider implements ScmProvider {
 
     @inject(GitPreferences)
     protected readonly gitPreferences: GitPreferences;
+
+    @inject(ILogger) @named('git:GitScmProvider')
+    protected readonly logger: ILogger;
 
     readonly id = 'git';
     readonly label = nls.localize('vscode.git/package/displayName', 'Git');
@@ -339,7 +342,7 @@ export class GitScmProvider implements ScmProvider {
                 side2State.detail = rebaseOrMergeHead.refNames;
             }
         } catch (error) {
-            console.error(error);
+            this.logger.error(error);
         }
         if (!isRebasing) {
             [side1Uri, side2Uri] = [side2Uri, side1Uri];
@@ -493,7 +496,7 @@ export class GitScmProvider implements ScmProvider {
         try {
             await this.fileService.delete(uri, { recursive: true });
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
     }
 

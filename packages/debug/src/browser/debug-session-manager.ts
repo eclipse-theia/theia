@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandService, DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
+import { CommandService, DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent, ILogger } from '@theia/core';
 import { LabelProvider, ApplicationShell, ConfirmDialog } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
@@ -22,7 +22,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
 import { TaskService, TaskEndedInfo, TaskEndedTypes } from '@theia/task/lib/browser/task-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-common';
 import { DebugError, DebugService } from '../common/debug-service';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
@@ -169,6 +169,9 @@ export class DebugSessionManager {
     @inject(DebugSessionConfigurationLabelProvider)
     protected readonly sessionConfigurationLabelProvider: DebugSessionConfigurationLabelProvider;
 
+    @inject(ILogger) @named('debug:DebugSessionManager')
+    protected readonly logger: ILogger;
+
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
     protected debugStateKey: ContextKey<string>;
@@ -205,7 +208,7 @@ export class DebugSessionManager {
             await this.shell.saveAll();
             return true;
         } catch (error) {
-            console.error('saveAll failed:', error);
+            this.logger.error('saveAll failed:', error);
             return false;
         }
     }
@@ -276,7 +279,7 @@ export class DebugSessionManager {
                 }
 
                 this.messageService.error(nls.localize('theia/debug/errorStartingDebugSession', 'There was an error starting the debug session, check the logs for more details.'));
-                console.error('Error starting the debug session', e);
+                this.logger.error('Error starting the debug session', e);
                 throw e;
             }
         });

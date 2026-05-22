@@ -30,7 +30,8 @@ import * as path from 'path';
 export class FileSearchServiceImpl implements FileSearchService {
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('file-search:FileSearchServiceImpl')
+        protected readonly logger: ILogger,
         /** @deprecated since 1.7.0 */
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
     ) { }
@@ -118,7 +119,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                     }
                 }, token);
             } catch (e) {
-                console.error('Failed to search:', root, e);
+                this.logger.error('Failed to search:', root, e);
             }
         }));
 

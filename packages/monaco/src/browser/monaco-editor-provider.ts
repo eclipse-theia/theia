@@ -25,7 +25,7 @@ import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
 import { MonacoEditorModel, TextDocumentSaveReason } from './monaco-editor-model';
 import { MonacoWorkspace } from './monaco-workspace';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, ILogger } from '@theia/core';
 import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, SaveOptions, FormatType } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
@@ -87,6 +87,9 @@ export class MonacoEditorProvider {
     @inject(FileSystemPreferences)
     protected readonly filePreferences: FileSystemPreferences;
     protected saveParticipants: SaveParticipant[];
+
+    @inject(ILogger) @named('monaco:MonacoEditorProvider')
+    protected readonly logger: ILogger;
 
     protected _current: MonacoEditor | undefined;
     /**
@@ -182,7 +185,7 @@ export class MonacoEditorProvider {
             await open(this.openerService, uri, options);
             return true;
         } catch (e) {
-            console.error(`Fail to open '${uri.toString()}':`, e);
+            this.logger.error(`Fail to open '${uri.toString()}':`, e);
             return false;
         }
     }
@@ -333,7 +336,7 @@ export class MonacoEditorProvider {
             if (obj[name] === undefined) {
                 obj = obj[name] = {};
             } else if (typeof obj[name] !== 'object' || obj[name] === null) { // eslint-disable-line no-null/no-null
-                console.warn(`Preference (diff)editor.${names.join('.')} conflicts with another preference name.`);
+                this.logger.warn(`Preference (diff)editor.${names.join('.')} conflicts with another preference name.`);
                 obj = obj[name] = {};
             } else {
                 obj = obj[name];
@@ -521,7 +524,7 @@ export class MonacoEditorProvider {
             try {
                 await participant.applyChangesOnSave(editor, cancellationToken, options);
             } catch (e) {
-                console.error(e);
+                this.logger.error(e);
                 editor.document.applySnapshot(snapshot);
             }
         }

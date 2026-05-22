@@ -114,7 +114,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             };
         } catch (e) {
             if (!token.isCancellationRequested) {
-                console.error(e.message, e);
+                this.logger.error(e.message, e);
             }
         }
         finally {
@@ -122,9 +122,8 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         }
     }
 
-    @inject(ILogger)
-    @named('code-completion-agent')
-    protected logger: ILogger;
+    @inject(ILogger) @named('ai-code-completion:CodeCompletionAgentImpl')
+    protected readonly logger: ILogger;
 
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
-import { CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
+import { CommandContribution, CommandRegistry, MessageService, nls, ILogger } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { MCPFrontendService, MCPServerStatus } from '@theia/ai-mcp';
 
 export const StartMCPServer = {
@@ -42,6 +42,9 @@ export class MCPCommandContribution implements CommandContribution {
     @inject(MCPFrontendService)
     protected readonly mcpFrontendService: MCPFrontendService;
 
+    @inject(ILogger) @named('ai-mcp-ui:MCPCommandContribution')
+    protected readonly logger: ILogger;
+
     private async getMCPServerSelection(serverNames: string[]): Promise<string | undefined> {
         if (!serverNames || serverNames.length === 0) {
             return undefined;
@@ -66,7 +69,7 @@ export class MCPCommandContribution implements CommandContribution {
                     }
                     await this.mcpFrontendService.stopServer(selection);
                 } catch (error) {
-                    console.error('Error while stopping MCP server:', error);
+                    this.logger.error('Error while stopping MCP server:', error);
                 }
             }
         }));
@@ -106,13 +109,13 @@ export class MCPCommandContribution implements CommandContribution {
                             return;
                         }
                         if (serverDescription.error) {
-                            console.error('Error while starting MCP server:', serverDescription.error);
+                            this.logger.error('Error while starting MCP server:', serverDescription.error);
                         }
                     }
                     this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
                 } catch (error) {
                     this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
-                    console.error('Error while starting MCP server:', error);
+                    this.logger.error('Error while starting MCP server:', error);
                 }
             }
         }));

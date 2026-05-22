@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
-import { CommandMenu, CompoundMenuNode, MenuModelRegistry, MenuPath } from '@theia/core';
+import { inject, postConstruct, injectable, named } from '@theia/core/shared/inversify';
+import { CommandMenu, CompoundMenuNode, MenuModelRegistry, MenuPath, ILogger } from '@theia/core';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
@@ -33,6 +33,8 @@ export class DebugToolBar extends ReactWidget {
     @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
     @inject(DebugViewModel) protected readonly model: DebugViewModel;
+    @inject(ILogger) @named('debug:DebugToolBar')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -69,7 +71,7 @@ export class DebugToolBar extends ReactWidget {
 
     protected debugAction(commandMenuNode: CommandMenu): React.ReactNode {
         const accelerator = this.acceleratorFor(commandMenuNode.id);
-        const run = (effectiveMenuPath: MenuPath) => commandMenuNode.run(effectiveMenuPath).catch(e => console.error(e));
+        const run = (effectiveMenuPath: MenuPath) => commandMenuNode.run(effectiveMenuPath).catch(e => this.logger.error(e));
         return <DebugAction
             key={commandMenuNode.id}
             enabled={commandMenuNode.isEnabled(DebugToolBar.MENU)}

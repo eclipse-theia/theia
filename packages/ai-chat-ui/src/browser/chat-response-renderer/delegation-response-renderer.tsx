@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatRequestInvocation, ChatResponseContent, ChatResponseModel } from '@theia/ai-chat';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import * as React from '@theia/core/shared/react';
@@ -21,13 +21,16 @@ import { DelegationResponseContent, isDelegationResponseContent } from '@theia/a
 import { ResponseNode } from '../chat-tree-view';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
-import { DisposableCollection, nls } from '@theia/core';
+import { DisposableCollection, nls, ILogger } from '@theia/core';
 
 @injectable()
 export class DelegationResponseRenderer implements ChatResponsePartRenderer<DelegationResponseContent> {
 
     @inject(SubChatWidgetFactory)
     subChatWidgetFactory: SubChatWidgetFactory;
+
+    @inject(ILogger) @named('ai-chat-ui:DelegationResponseRenderer')
+    protected readonly logger: ILogger;
 
     canHandle(response: ChatResponseContent): number {
         if (isDelegationResponseContent(response)) {

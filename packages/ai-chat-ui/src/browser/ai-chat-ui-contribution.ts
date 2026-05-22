@@ -59,7 +59,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly editorManager: EditorManager;
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
-    @inject(ILogger) @named('AIChatContribution')
+    @inject(ILogger) @named('ai-chat-ui:AIChatContribution')
     protected readonly logger: ILogger;
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
@@ -256,7 +256,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     // Send the same request again using the chat service
                     await this.chatService.sendRequest(node.sessionId, request.request);
                 } catch (error) {
-                    console.error('Failed to retry chat message:', error);
+                    this.logger.error('Failed to retry chat message:', error);
                     this.messageService.error(nls.localize('theia/ai/chat-ui/failedToRetry', 'Failed to retry message'));
                 }
             }
@@ -481,7 +481,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         const activeSession = this.chatService.getActiveSession();
         if (!activeSession) { return; }
         return this.taskContextService.summarize(activeSession).catch(err => {
-            console.warn('Error while summarizing session:', err);
+            this.logger.warn('Error while summarizing session:', err);
             this.messageService.error(nls.localize('theia/ai/chat-ui/unableToSummarizeCurrentSession',
                 'Unable to summarize current session. Please confirm that the summary agent is not disabled.'));
             return undefined;

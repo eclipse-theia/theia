@@ -18,7 +18,7 @@ import {
     AbstractViewContribution, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon, OnWillStopAction, FrontendApplicationContribution, ConfirmDialog, Dialog
 } from '@theia/core/lib/browser';
 import { TreeElementNode } from '@theia/core/lib/browser/source-tree';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { MenuModelRegistry, CommandRegistry, Command, URI, Event, MessageService, CancellationError } from '@theia/core/lib/common';
 import { waitForEvent } from '@theia/core/lib/common/promise-util';
@@ -68,6 +68,7 @@ import {
     DebugMenus, DebugCommands, DebugThreadContextCommands, DebugSessionContextCommands,
     DebugEditorContextCommands, DebugBreakpointWidgetCommands, nlsEnableBreakpoint, nlsDisableBreakpoint
 } from './debug-commands';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget>
@@ -114,6 +115,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     @inject(AddOrEditDataBreakpointAddress)
     protected readonly AddOrEditDataBreakpointAddress: AddOrEditDataBreakpointAddress;
+
+    @inject(ILogger) @named('debug:DebugFrontendApplicationContribution')
+    protected readonly logger: ILogger;
 
     constructor() {
         super({
@@ -1050,7 +1054,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             if (thread.stopped && thread === this.manager.currentThread) {
                 return true;
             }
-            console.warn('Cannot run to the specified location. The current thread has changed or is not stopped.');
+            this.logger.warn('Cannot run to the specified location. The current thread has changed or is not stopped.');
             return false;
         };
         if (!checkThread()) {

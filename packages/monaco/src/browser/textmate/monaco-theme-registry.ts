@@ -17,7 +17,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { IRawTheme } from 'vscode-textmate';
 import * as monaco from '@theia/monaco-editor-core';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
@@ -25,11 +25,15 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
 import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
 import { MixStandaloneTheme, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class MonacoThemeRegistry {
 
     @inject(TextmateRegistryFactory) protected readonly registryFactory: TextmateRegistryFactory;
+
+    @inject(ILogger) @named('monaco:MonacoThemeRegistry')
+    protected readonly logger: ILogger;
 
     initializeDefaultThemes(): void {
         this.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
@@ -87,7 +91,7 @@ export class MonacoThemeRegistry {
         };
         if (typeof json.include !== 'undefined') {
             if (!includes || !includes[json.include]) {
-                console.error(`Couldn't resolve includes theme ${json.include}.`);
+                this.logger.error(`Couldn't resolve includes theme ${json.include}.`);
             } else {
                 const parentTheme = this.register(includes[json.include], includes);
                 Object.assign(result.colors, parentTheme.colors);
@@ -161,7 +165,7 @@ export class MonacoThemeRegistry {
         const normalized = String(color).replace(/^\#/, '').slice(0, 6);
         if (normalized.length < 6 || !(normalized).match(/^[0-9A-Fa-f]{6}$/)) {
             // ignoring not normalized colors to avoid breaking token color indexes between monaco and vscode-textmate
-            console.error(`Color '${normalized}' is NOT normalized, it must have 6 positions.`);
+            this.logger.error(`Color '${normalized}' is NOT normalized, it must have 6 positions.`);
             return undefined;
         }
         return '#' + normalized;

@@ -19,9 +19,9 @@ import {
     AIVariableOpener, AIVariableResolutionRequest, AIVariableResolver, ResolvedAIContextVariable
 } from '@theia/ai-core';
 import { FrontendVariableService, AIVariablePasteResult } from '@theia/ai-core/lib/browser';
-import { Path, URI } from '@theia/core';
+import { Path, URI, ILogger } from '@theia/core';
 import { LabelProvider, LabelProviderContribution, open, OpenerService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable, ImageContextVariableRequest } from '../common/image-context-variable';
@@ -39,6 +39,9 @@ export class ImageContextVariableContribution implements AIVariableContribution,
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    @inject(ILogger) @named('ai-chat:ImageContextVariableContribution')
+    protected readonly logger: ILogger;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerResolver(IMAGE_CONTEXT_VARIABLE, this);
@@ -92,7 +95,7 @@ export class ImageContextVariableContribution implements AIVariableContribution,
                             origin: 'temporary'
                         }));
                     } catch (error) {
-                        console.error('Failed to process pasted image:', error);
+                        this.logger.error('Failed to process pasted image:', error);
                     }
                 }
             }

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, MessageService, nls, Prioritizeable } from '@theia/core';
+import { Disposable, MessageService, nls, Prioritizeable, ILogger } from '@theia/core';
 import { FrontendApplicationContribution, OpenerService, open } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     AIVariable,
     AIVariableArg,
@@ -108,6 +108,8 @@ export class DefaultFrontendVariableService extends DefaultAIVariableService imp
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(AIVariableResourceResolver) protected readonly aiResourceResolver: AIVariableResourceResolver;
     @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(ILogger) @named('ai-core:DefaultFrontendVariableService')
+    protected readonly logger: ILogger;
 
     onStart(): void {
         this.initContributions();
@@ -199,7 +201,7 @@ export class DefaultFrontendVariableService extends DefaultAIVariableService imp
         try {
             return opener ? opener.open({ variable, arg }, context ?? {}) : this.openReadonly({ variable, arg }, context);
         } catch (err) {
-            console.error('Unable to open variable:', err);
+            this.logger.error('Unable to open variable:', err);
             this.messageService.error(nls.localize('theia/ai/core/unableToDisplayVariableValue', 'Unable to display variable value.'));
         }
     }

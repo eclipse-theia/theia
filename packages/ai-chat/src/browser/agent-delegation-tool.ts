@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     assertChatContext,
     ChatAgentService,
@@ -30,6 +30,7 @@ import {
     ChatRequestInvocation,
 } from '../common';
 import { DelegationResponseContent } from './delegation-response-content';
+import { ILogger } from '@theia/core';
 
 export const AGENT_DELEGATION_FUNCTION_ID = 'delegateToAgent';
 
@@ -42,6 +43,9 @@ export class AgentDelegationTool implements ToolProvider {
 
     @inject(ChatServiceFactory)
     protected readonly getChatService: () => ChatService;
+
+    @inject(ILogger) @named('ai-chat:AgentDelegationTool')
+    protected readonly logger: ILogger;
 
     getTool(): ToolRequest {
         return {
@@ -89,7 +93,7 @@ export class AgentDelegationTool implements ToolProvider {
 
             if (!agentId || !prompt) {
                 const errorMsg = 'Both agentId and prompt parameters are required.';
-                console.error(errorMsg, { agentId, prompt });
+                this.logger.error(errorMsg, { agentId, prompt });
                 return errorMsg;
             }
 
@@ -100,7 +104,7 @@ export class AgentDelegationTool implements ToolProvider {
                     .getAgents()
                     .map(a => a.id);
                 const errorMsg = `Agent '${agentId}' not found or not enabled. Available agents: ${availableAgents.join(', ')}`;
-                console.error(errorMsg);
+                this.logger.error(errorMsg);
                 return errorMsg;
             }
 
@@ -128,7 +132,7 @@ export class AgentDelegationTool implements ToolProvider {
                 this.setupChangeSetBubbling(newSession, ctx.request.session);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
-                console.error(errorMsg, sessionError);
+                this.logger.error(errorMsg, sessionError);
                 return errorMsg;
             }
 
@@ -160,7 +164,7 @@ export class AgentDelegationTool implements ToolProvider {
                 }
             } catch (sendError) {
                 const errorMsg = `Failed to send request to agent '${agentId}': ${sendError instanceof Error ? sendError.message : sendError}`;
-                console.error(errorMsg, sendError);
+                this.logger.error(errorMsg, sendError);
                 return errorMsg;
             }
 
@@ -179,7 +183,7 @@ export class AgentDelegationTool implements ToolProvider {
                     // Clean up the session after completion (no need to await)
                     const chatService = this.getChatService();
                     chatService.deleteSession(newSession.id).catch(error => {
-                        console.error('Failed to delete delegated session', error);
+                        this.logger.error('Failed to delete delegated session', error);
                     });
 
                     // Return the raw text to the top-level Agent, as a tool result
@@ -192,16 +196,16 @@ export class AgentDelegationTool implements ToolProvider {
                         return 'Operation cancelled by user';
                     }
                     const errorMsg = `Failed to complete response from agent '${agentId}': ${completionError instanceof Error ? completionError.message : completionError}`;
-                    console.error(errorMsg, completionError);
+                    this.logger.error(errorMsg, completionError);
                     return errorMsg;
                 }
             } else {
                 const errorMsg = `Delegation to agent '${agentId}' has failed: no response returned.`;
-                console.error(errorMsg);
+                this.logger.error(errorMsg);
                 return errorMsg;
             }
         } catch (error) {
-            console.error('Failed to delegate to agent', error);
+            this.logger.error('Failed to delegate to agent', error);
             return JSON.stringify({
                 error: `Failed to parse arguments or delegate to agent: ${error instanceof Error ? error.message : 'Unknown error'}`,
             });

@@ -29,7 +29,7 @@ import { PluginUninstallationManager } from '../../main/node/plugin-uninstallati
 
 @injectable()
 export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:PluginDeployerHandlerImpl')
     protected readonly logger: ILogger;
 
     @inject(HostedPluginReader)
@@ -128,7 +128,7 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
             }
             return dependencies;
         } catch (e) {
-            console.error(`Failed to load plugin dependencies from '${pluginPath}' path`, e);
+            this.logger.error(`Failed to load plugin dependencies from '${pluginPath}' path`, e);
             return undefined;
         }
     }
@@ -211,13 +211,13 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
                 return false;
             }
             await Promise.all(Array.from(sourceLocations,
-                location => fs.remove(location).catch(err => console.error(`Failed to remove source for ${pluginId} at ${location}`, err))));
+                location => fs.remove(location).catch(err => this.logger.error(`Failed to remove source for ${pluginId} at ${location}`, err))));
             this.sourceLocations.delete(pluginId);
             this.localizationService.undeployLocalizations(pluginId);
             this.uninstallationManager.markAsUninstalled(pluginId);
             return true;
         } catch (e) {
-            console.error('Error uninstalling plugin', e);
+            this.logger.error('Error uninstalling plugin', e);
             return false;
         }
     }

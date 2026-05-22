@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
-import { environment } from '@theia/core';
+import { environment, ILogger } from '@theia/core';
 
 /**
  * Configuration options for OS notifications
@@ -55,6 +55,9 @@ export interface OSNotificationResult {
 @injectable()
 export class OSNotificationService {
 
+    @inject(ILogger) @named('ai-core:OSNotificationService')
+    protected readonly logger: ILogger;
+
     private isElectron: boolean;
 
     constructor() {
@@ -92,7 +95,7 @@ export class OSNotificationService {
             };
 
         } catch (error) {
-            console.error('Failed to show OS notification:', error);
+            this.logger.error('Failed to show OS notification:', error);
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -130,7 +133,7 @@ export class OSNotificationService {
             const permission = await Notification.requestPermission();
             return permission;
         } catch (error) {
-            console.error('Failed to request notification permission:', error);
+            this.logger.error('Failed to request notification permission:', error);
             return 'denied';
         }
     }
@@ -215,22 +218,22 @@ export class OSNotificationService {
                 const notification = new Notification(title, notificationOptions);
 
                 notification.onshow = () => {
-                    console.debug('OS notification shown:', title);
+                    this.logger.debug('OS notification shown:', title);
                 };
 
                 notification.onerror = error => {
-                    console.error('OS notification error:', error);
+                    this.logger.error('OS notification error:', error);
                     reject(new Error('Failed to show notification'));
                 };
 
                 notification.onclick = () => {
-                    console.debug('OS notification clicked:', title);
+                    this.logger.debug('OS notification clicked:', title);
                     this.focusApplicationWindow();
                     notification.close();
                 };
 
                 notification.onclose = () => {
-                    console.debug('OS notification closed:', title);
+                    this.logger.debug('OS notification closed:', title);
                 };
 
                 resolve(notification);
@@ -254,7 +257,7 @@ export class OSNotificationService {
                 }
             }
         } catch (error) {
-            console.debug('Could not focus application window:', error);
+            this.logger.debug('Could not focus application window:', error);
         }
     }
 

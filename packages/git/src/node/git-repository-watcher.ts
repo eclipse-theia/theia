@@ -37,7 +37,7 @@ export class GitRepositoryWatcher implements Disposable {
     @inject(Git)
     protected readonly git: Git;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('git:GitRepositoryWatcher')
     protected readonly logger: ILogger;
 
     @inject(GitRepositoryWatcherOptions)
@@ -50,7 +50,7 @@ export class GitRepositoryWatcher implements Disposable {
 
     watch(): void {
         if (this.watching) {
-            console.debug('Repository watcher is already active.');
+            this.logger.debug('Repository watcher is already active.');
             return;
         }
         this.watching = true;

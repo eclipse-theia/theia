@@ -128,7 +128,7 @@ export class KeybindingRegistry {
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:KeybindingRegistry')
     protected readonly logger: ILogger;
 
     @inject(ContextKeyService)
@@ -542,7 +542,7 @@ export class KeybindingRegistry {
             if (command) {
                 if (this.commandRegistry.isEnabled(binding.command, binding.args)) {
                     this.commandRegistry.executeCommand(binding.command, binding.args)
-                        .catch(e => console.error('Failed to execute command:', e));
+                        .catch(e => this.logger.error('Failed to execute command:', e));
                 }
 
                 /* Note that if a keybinding is in context but the command is

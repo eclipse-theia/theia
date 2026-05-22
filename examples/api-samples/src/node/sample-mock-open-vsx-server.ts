@@ -17,13 +17,14 @@
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import * as express from '@theia/core/shared/express';
 import * as fs from 'fs';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OVSXMockClient, VSXExtensionRaw } from '@theia/ovsx-client';
 import * as path from 'path';
 import { SampleAppInfo } from '../common/vsx/sample-app-info';
 import * as http from 'http';
 import * as https from 'https';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ILogger } from '@theia/core';
 
 type VersionedId = `${string}.${string}@${string}`;
 
@@ -37,6 +38,9 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
 
     @inject(SampleAppInfo)
     protected appInfo: SampleAppInfo;
+
+    @inject(ILogger) @named('api-samples:SampleMockOpenVsxServer')
+    protected readonly logger: ILogger;
 
     protected mockClient: OVSXMockClient;
     protected staticFileHandlers: Map<string, express.RequestHandler<{
@@ -130,7 +134,7 @@ export class SampleMockOpenVsxServer implements BackendApplicationContribution {
         const url = new OVSXMockClient.UrlBuilder(baseUrl);
         const result = new Map<VersionedId, { path: string, data: VSXExtensionRaw }>();
         if (!await this.isDirectory(pluginsDbPath)) {
-            console.error(`ERROR: ${pluginsDbPath} is not a directory!`);
+            this.logger.error(`ERROR: ${pluginsDbPath} is not a directory!`);
             return result;
         }
         const namespaces = await fs.promises.readdir(pluginsDbPath);

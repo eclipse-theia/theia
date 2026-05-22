@@ -16,7 +16,7 @@
 
 /* eslint-disable @theia/localization-check */
 
-import { inject, injectable, unmanaged } from '@theia/core/shared/inversify';
+import { inject, injectable, unmanaged, named } from '@theia/core/shared/inversify';
 import {
     AutoClosingPair,
     AutoClosingPairConditional,
@@ -81,6 +81,7 @@ import { ColorDefinition } from '@theia/core/lib/common/color';
 import { CSSIcon } from '@theia/core/lib/common/markdown-rendering/icon-utilities';
 import { PluginUriFactory } from './plugin-uri-factory';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+import { ILogger } from '@theia/core';
 
 const colorIdPattern = '^\\w+[.\\w+]*$';
 const iconIdPattern = `^${CSSIcon.iconNameSegment}(-${CSSIcon.iconNameSegment})+$`;
@@ -146,6 +147,9 @@ export abstract class AbstractPluginScanner implements PluginScanner {
 
     @inject(PluginUriFactory)
     protected readonly pluginUriFactory: PluginUriFactory;
+
+    @inject(ILogger) @named('plugin-ext:AbstractPluginScanner')
+    protected readonly logger: ILogger;
 
     constructor(
         @unmanaged() private readonly _apiType: PluginEngine,
@@ -302,7 +306,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 }
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'configuration'.`, rawPlugin.contributes.configuration, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'configuration'.`, rawPlugin.contributes.configuration, err);
         }
 
         const configurationDefaults = rawPlugin.contributes.configurationDefaults;
@@ -313,7 +317,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 contributions.submenus = this.readSubmenus(rawPlugin.contributes.submenus, rawPlugin);
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'submenus'.`, rawPlugin.contributes.submenus, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'submenus'.`, rawPlugin.contributes.submenus, err);
         }
 
         try {
@@ -322,7 +326,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 contributions.customEditors = customEditors;
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'customEditors'.`, rawPlugin.contributes.customEditors, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'customEditors'.`, rawPlugin.contributes.customEditors, err);
         }
 
         try {
@@ -341,7 +345,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 }
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsContainers'.`, rawPlugin.contributes.viewsContainers, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'viewsContainers'.`, rawPlugin.contributes.viewsContainers, err);
         }
 
         try {
@@ -354,7 +358,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 }
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'views'.`, rawPlugin.contributes.views, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'views'.`, rawPlugin.contributes.views, err);
         }
 
         try {
@@ -362,7 +366,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 contributions.viewsWelcome = this.readViewsWelcome(rawPlugin.contributes!.viewsWelcome, rawPlugin.contributes.views);
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsWelcome'.`, rawPlugin.contributes.viewsWelcome, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'viewsWelcome'.`, rawPlugin.contributes.viewsWelcome, err);
         }
 
         try {
@@ -372,7 +376,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 contributions.commands = commands.map(command => this.readCommand(command, rawPlugin));
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'commands'.`, rawPlugin.contributes!.commands, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'commands'.`, rawPlugin.contributes!.commands, err);
         }
 
         try {
@@ -385,7 +389,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 }
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'menus'.`, rawPlugin.contributes.menus, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'menus'.`, rawPlugin.contributes.menus, err);
         }
 
         try {
@@ -394,7 +398,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 contributions.keybindings = rawKeybindings.map(rawKeybinding => this.readKeybinding(rawKeybinding));
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'keybindings'.`, rawPlugin.contributes.keybindings, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'keybindings'.`, rawPlugin.contributes.keybindings, err);
         }
 
         try {
@@ -403,7 +407,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 contributions.debuggers = debuggers;
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'debuggers'.`, rawPlugin.contributes.debuggers, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'debuggers'.`, rawPlugin.contributes.debuggers, err);
         }
 
         try {
@@ -412,91 +416,91 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 contributions.taskDefinitions = definitions.map(definitionContribution => this.readTaskDefinition(rawPlugin.name, definitionContribution));
             }
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'taskDefinitions'.`, rawPlugin.contributes.taskDefinitions, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'taskDefinitions'.`, rawPlugin.contributes.taskDefinitions, err);
         }
 
         try {
             contributions.problemMatchers = rawPlugin.contributes.problemMatchers;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'problemMatchers'.`, rawPlugin.contributes.problemMatchers, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'problemMatchers'.`, rawPlugin.contributes.problemMatchers, err);
         }
 
         try {
             contributions.problemPatterns = rawPlugin.contributes.problemPatterns;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'problemPatterns'.`, rawPlugin.contributes.problemPatterns, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'problemPatterns'.`, rawPlugin.contributes.problemPatterns, err);
         }
 
         try {
             contributions.resourceLabelFormatters = rawPlugin.contributes.resourceLabelFormatters;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'resourceLabelFormatters'.`, rawPlugin.contributes.resourceLabelFormatters, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'resourceLabelFormatters'.`, rawPlugin.contributes.resourceLabelFormatters, err);
         }
 
         try {
             contributions.authentication = rawPlugin.contributes.authentication;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'authentication'.`, rawPlugin.contributes.authentication, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'authentication'.`, rawPlugin.contributes.authentication, err);
         }
 
         try {
             contributions.notebooks = rawPlugin.contributes.notebooks;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.notebooks, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'notebooks'.`, rawPlugin.contributes.notebooks, err);
         }
 
         try {
             contributions.notebookRenderer = rawPlugin.contributes.notebookRenderer;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'notebook-renderer'.`, rawPlugin.contributes.notebookRenderer, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'notebook-renderer'.`, rawPlugin.contributes.notebookRenderer, err);
         }
 
         try {
             contributions.notebookPreload = rawPlugin.contributes.notebookPreload;
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'notebooks-preload'.`, rawPlugin.contributes.notebookPreload, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'notebooks-preload'.`, rawPlugin.contributes.notebookPreload, err);
         }
 
         try {
             contributions.snippets = this.readSnippets(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'snippets'.`, rawPlugin.contributes!.snippets, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'snippets'.`, rawPlugin.contributes!.snippets, err);
         }
 
         try {
             contributions.themes = this.readThemes(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'themes'.`, rawPlugin.contributes.themes, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'themes'.`, rawPlugin.contributes.themes, err);
         }
 
         try {
             contributions.icons = this.readIcons(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'icons'.`, rawPlugin.contributes.icons, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'icons'.`, rawPlugin.contributes.icons, err);
         }
 
         try {
             contributions.iconThemes = this.readIconThemes(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'iconThemes'.`, rawPlugin.contributes.iconThemes, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'iconThemes'.`, rawPlugin.contributes.iconThemes, err);
         }
 
         try {
             contributions.colors = this.readColors(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'colors'.`, rawPlugin.contributes.colors, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'colors'.`, rawPlugin.contributes.colors, err);
         }
 
         try {
             contributions.terminalProfiles = this.readTerminals(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'terminals'.`, rawPlugin.contributes.terminal, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'terminals'.`, rawPlugin.contributes.terminal, err);
         }
 
         try {
             contributions.localizations = this.readLocalizations(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'localizations'.`, rawPlugin.contributes.localizations, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'localizations'.`, rawPlugin.contributes.localizations, err);
         }
 
         const [languagesResult, grammarsResult] = await Promise.allSettled([
@@ -508,7 +512,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             if (languagesResult.status === 'fulfilled') {
                 contributions.languages = languagesResult.value;
             } else {
-                console.error(`Could not read '${rawPlugin.name}' contribution 'languages'.`, rawPlugin.contributes.languages, languagesResult.reason);
+                this.logger.error(`Could not read '${rawPlugin.name}' contribution 'languages'.`, rawPlugin.contributes.languages, languagesResult.reason);
             }
         }
 
@@ -516,7 +520,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             if (grammarsResult.status === 'fulfilled') {
                 contributions.grammars = grammarsResult.value;
             } else {
-                console.error(`Could not read '${rawPlugin.name}' contribution 'grammars'.`, rawPlugin.contributes.grammars, grammarsResult.reason);
+                this.logger.error(`Could not read '${rawPlugin.name}' contribution 'grammars'.`, rawPlugin.contributes.grammars, grammarsResult.reason);
             }
         }
 
@@ -591,20 +595,20 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         const result: ColorDefinition[] = [];
         for (const contribution of pck.contributes.colors) {
             if (typeof contribution.id !== 'string' || contribution.id.length === 0) {
-                console.error("'configuration.colors.id' must be defined and can not be empty");
+                this.logger.error("'configuration.colors.id' must be defined and can not be empty");
                 continue;
             }
             if (!contribution.id.match(colorIdPattern)) {
-                console.error("'configuration.colors.id' must follow the word[.word]*");
+                this.logger.error("'configuration.colors.id' must follow the word[.word]*");
                 continue;
             }
             if (typeof contribution.description !== 'string' || contribution.id.length === 0) {
-                console.error("'configuration.colors.description' must be defined and can not be empty");
+                this.logger.error("'configuration.colors.description' must be defined and can not be empty");
                 continue;
             }
             const defaults = contribution.defaults;
             if (!defaults || typeof defaults !== 'object' || typeof defaults.light !== 'string' || typeof defaults.dark !== 'string' || typeof defaults.highContrast !== 'string') {
-                console.error("'configuration.colors.defaults' must be defined and must contain 'light', 'dark' and 'highContrast'");
+                this.logger.error("'configuration.colors.defaults' must be defined and must contain 'light', 'dark' and 'highContrast'");
                 continue;
             }
             result.push({
@@ -646,11 +650,11 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         const result: IconThemeContribution[] = [];
         for (const contribution of pck.contributes.iconThemes) {
             if (typeof contribution.id !== 'string') {
-                console.error('Expected string in `contributes.iconThemes.id`. Provided value:', contribution.id);
+                this.logger.error('Expected string in `contributes.iconThemes.id`. Provided value:', contribution.id);
                 continue;
             }
             if (typeof contribution.path !== 'string') {
-                console.error('Expected string in `contributes.iconThemes.path`. Provided value:', contribution.path);
+                this.logger.error('Expected string in `contributes.iconThemes.path`. Provided value:', contribution.path);
                 continue;
             }
             result.push({
@@ -673,13 +677,13 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         for (const id in iconEntries) {
             if (pck.contributes.icons.hasOwnProperty(id)) {
                 if (!id.match(iconIdPattern)) {
-                    console.error("'configuration.icons' keys represent the icon id and can only contain letter, digits and minuses. " +
+                    this.logger.error("'configuration.icons' keys represent the icon id and can only contain letter, digits and minuses. " +
                         'They need to consist of at least two segments in the form `component-iconname`.', 'extension: ', pck.name, 'icon id: ', id);
                     return;
                 }
                 const iconContribution = iconEntries[id];
                 if (typeof iconContribution.description !== 'string' || iconContribution.description['length'] === 0) {
-                    console.error('configuration.icons.description must be defined and can not be empty, ', 'extension: ', pck.name, 'icon id: ', id);
+                    this.logger.error('configuration.icons.description must be defined and can not be empty, ', 'extension: ', pck.name, 'icon id: ', id);
                     return;
                 }
 
@@ -694,7 +698,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 } else if (typeof defaultIcon === 'object' && typeof defaultIcon.fontPath === 'string' && typeof defaultIcon.fontCharacter === 'string') {
                     const format = getFileExtension(defaultIcon.fontPath);
                     if (['woff', 'woff2', 'ttf'].indexOf(format) === -1) {
-                        console.warn("Expected `contributes.icons.default.fontPath` to have file extension 'woff', woff2' or 'ttf', is '{0}'.", format);
+                        this.logger.warn("Expected `contributes.icons.default.fontPath` to have file extension 'woff', woff2' or 'ttf', is '{0}'.", format);
                         return;
                     }
 
@@ -709,7 +713,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                         }
                     });
                 } else {
-                    console.error("'configuration.icons.default' must be either a reference to the id of an other theme icon (string) or a icon definition (object) with ",
+                    this.logger.error("'configuration.icons.default' must be either a reference to the id of an other theme icon (string) or a icon definition (object) with ",
                         'properties `fontPath` and `fontCharacter`.');
                 }
             }
@@ -744,7 +748,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             return content;
         } catch (e) {
             if (!isENOENT(e)) {
-                console.error(e);
+                this.logger.error(e);
             }
             return '';
         }
@@ -983,7 +987,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             return undefined;
         }
         if (!Array.isArray(source)) {
-            console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs\` to be an array.`);
+            this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs\` to be an array.`);
             return undefined;
         }
 
@@ -992,27 +996,27 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             const pair = source[i];
             if (Array.isArray(pair)) {
                 if (!isCharacterPair(pair)) {
-                    console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}]\` to be an array of two strings or an object.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}]\` to be an array of two strings or an object.`);
                     continue;
                 }
                 result = result || [];
                 result.push({ open: pair[0], close: pair[1] });
             } else {
                 if (!isObject(pair)) {
-                    console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}]\` to be an array of two strings or an object.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}]\` to be an array of two strings or an object.`);
                     continue;
                 }
                 if (typeof pair.open !== 'string') {
-                    console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].open\` to be a string.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].open\` to be a string.`);
                     continue;
                 }
                 if (typeof pair.close !== 'string') {
-                    console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].close\` to be a string.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].close\` to be a string.`);
                     continue;
                 }
                 if (typeof pair.notIn !== 'undefined') {
                     if (!isStringArray(pair.notIn)) {
-                        console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].notIn\` to be a string array.`);
+                        this.logger.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}].notIn\` to be a string array.`);
                         continue;
                     }
                 }
@@ -1029,7 +1033,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             return undefined;
         }
         if (!Array.isArray(source)) {
-            console.warn(`[${langId}]: language configuration: expected \`surroundingPairs\` to be an array.`);
+            this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs\` to be an array.`);
             return undefined;
         }
 
@@ -1038,22 +1042,22 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             const pair = source[i];
             if (Array.isArray(pair)) {
                 if (!isCharacterPair(pair)) {
-                    console.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}]\` to be an array of two strings or an object.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}]\` to be an array of two strings or an object.`);
                     continue;
                 }
                 result = result || [];
                 result.push({ open: pair[0], close: pair[1] });
             } else {
                 if (!isObject(pair)) {
-                    console.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}]\` to be an array of two strings or an object.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}]\` to be an array of two strings or an object.`);
                     continue;
                 }
                 if (typeof pair.open !== 'string') {
-                    console.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}].open\` to be a string.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}].open\` to be a string.`);
                     continue;
                 }
                 if (typeof pair.close !== 'string') {
-                    console.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}].close\` to be a string.`);
+                    this.logger.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}].close\` to be a string.`);
                     continue;
                 }
                 result = result || [];

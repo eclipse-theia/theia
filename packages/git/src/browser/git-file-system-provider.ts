@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { Event, URI, Disposable } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { Event, URI, Disposable, ILogger } from '@theia/core';
 import {
     FileChange,
     FileDeleteOptions,
@@ -46,6 +46,9 @@ export class GitFileSystemProvider implements FileSystemProvider {
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
 
+    @inject(ILogger) @named('git:GitFileSystemProvider')
+    protected readonly logger: ILogger;
+
     watch(resource: URI, opts: WatchOptions): Disposable {
         return Disposable.NULL;
     }
@@ -56,7 +59,7 @@ export class GitFileSystemProvider implements FileSystemProvider {
         try {
             size = await gitResource.getSize();
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
         return { type: FileType.File, mtime: 0, ctime: 0, size };
     }
@@ -67,7 +70,7 @@ export class GitFileSystemProvider implements FileSystemProvider {
         try {
             contents = await gitResource.readContents({ encoding: 'binary' });
         } catch (e) {
-            console.error(e);
+            this.logger.error(e);
         }
         return this.encodingService.encode(contents, { encoding: 'binary', hasBOM: false }).buffer;
     }

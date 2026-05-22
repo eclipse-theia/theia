@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct, named } from '@theia/core/shared/inversify';
 import {
     ApplicationShell,
     BaseWidget,
@@ -32,7 +32,7 @@ import {
     Widget,
     WidgetManager,
 } from '@theia/core/lib/browser';
-import { Emitter, nls } from '@theia/core';
+import { Emitter, nls, ILogger } from '@theia/core';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
@@ -112,6 +112,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(StorageService) protected readonly storageService: StorageService;
+    @inject(ILogger) @named('terminal-manager:TerminalManagerWidget')
+    protected readonly logger: ILogger;
 
     protected readonly terminalsDeletingFromClose = new Set<TerminalManagerTreeTypes.TerminalKey>();
 
@@ -567,7 +569,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             try {
                 this.restoreLayoutData(items, widget);
             } catch (e) {
-                console.error(e);
+                this.logger.error(e);
                 this.resetLayout();
                 this.populateLayout(true);
             } finally {

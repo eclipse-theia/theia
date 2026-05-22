@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import {
     Command,
@@ -25,7 +25,8 @@ import {
     MenuContribution,
     MenuModelRegistry,
     MessageService,
-    Mutable
+    Mutable,
+    ILogger
 } from '@theia/core';
 import { codicon, DiffUris, Widget, open, OpenerService } from '@theia/core/lib/browser';
 import {
@@ -314,6 +315,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
     @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
     @inject(GitDecorationProvider) protected readonly gitDecorationProvider: GitDecorationProvider;
     @inject(GitWatcher) protected readonly gitWatcher: GitWatcher;
+    @inject(ILogger) @named('git:GitContribution')
+    protected readonly logger: ILogger;
 
     onStart(): void {
         this.updateStatusBar();
@@ -545,7 +548,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                         const uri = widget.editor.uri.toString();
                         if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
                             scmProvider.openMergeEditor(widget.editor.uri).then(() => widget.close()).catch(e => {
-                                console.error(e);
+                                this.logger.error(e);
                                 this.messageService.error(e.message);
                             });
                         }
@@ -666,7 +669,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                             const uri = resource.sourceUri.toString();
                             if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
                                 scmProvider.openMergeEditor(resource.sourceUri).catch(e => {
-                                    console.error(e);
+                                    this.logger.error(e);
                                     this.messageService.error(e.message);
                                 });
                             }

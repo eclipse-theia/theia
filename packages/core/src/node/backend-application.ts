@@ -28,6 +28,7 @@ import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ProcessUtils } from './process-utils';
+import { ILogger } from '../common/logger';
 
 /**
  * The path to the application project directory. This is the directory where the application code is located.
@@ -162,6 +163,9 @@ export class BackendApplication {
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
 
+    @inject(ILogger) @named('core:BackendApplication')
+    protected readonly logger: ILogger;
+
     private _configured: Promise<void>;
 
     constructor(
@@ -175,7 +179,7 @@ export class BackendApplication {
         // Workaround for Electron not installing a handler to ignore SIGPIPE error
         // (https://github.com/electron/electron/issues/13254)
         process.on('SIGPIPE', () => {
-            console.error(new Error('Unexpected SIGPIPE'));
+            this.logger.error(new Error('Unexpected SIGPIPE'));
         });
         /**
          * Kill the current process tree on exit.
@@ -199,7 +203,7 @@ export class BackendApplication {
                         () => contribution.initialize!()
                     );
                 } catch (error) {
-                    console.error('Could not initialize contribution', error);
+                    this.logger.error('Could not initialize contribution', error);
                 }
             }
         }));
@@ -234,11 +238,11 @@ export class BackendApplication {
                 try {
                     await contribution.configure!(this.app);
                 } catch (error) {
-                    console.error('Could not configure contribution', error);
+                    this.logger.error('Could not configure contribution', error);
                 }
             }
         }));
-        console.info('configured all backend app contributions');
+        this.logger.info('configured all backend app contributions');
     }
 
     use(...handlers: express.Handler[]): void {
@@ -271,14 +275,14 @@ export class BackendApplication {
             try {
                 key = await fs.readFile(this.cliParams.certkey as string);
             } catch (err) {
-                console.error("Can't read certificate key");
+                this.logger.error("Can't read certificate key");
                 throw err;
             }
 
             try {
                 cert = await fs.readFile(this.cliParams.cert as string);
             } catch (err) {
-                console.error("Can't read certificate");
+                this.logger.error("Can't read certificate");
                 throw err;
             }
             server = https.createServer({ key, cert }, this.app);
@@ -297,7 +301,7 @@ export class BackendApplication {
             // address should be defined at this point
             const address = server.address()!;
             const url = typeof address === 'string' ? address : this.getHttpUrl(address, this.cliParams.ssl);
-            console.info(`Theia app listening on ${url}.`);
+            this.logger.info(`Theia app listening on ${url}.`);
             deferred.resolve(server);
         });
 
@@ -311,7 +315,7 @@ export class BackendApplication {
                         () => contribution.onStart!(server)
                     );
                 } catch (error) {
-                    console.error('Could not start contribution', error);
+                    this.logger.error('Could not start contribution', error);
                 }
             }
         }
@@ -326,17 +330,17 @@ export class BackendApplication {
     }
 
     protected onStop(): void {
-        console.info('>>> Stopping backend contributions...');
+        this.logger.info('>>> Stopping backend contributions...');
         for (const contrib of this.contributionsProvider.getContributions()) {
             if (contrib.onStop) {
                 try {
                     contrib.onStop(this.app);
                 } catch (error) {
-                    console.error('Could not stop contribution', error);
+                    this.logger.error('Could not stop contribution', error);
                 }
             }
         }
-        console.info('<<< All backend contributions have been stopped.');
+        this.logger.info('<<< All backend contributions have been stopped.');
         this.processUtils.terminateProcessTree(process.pid);
     }
 
@@ -364,9 +368,9 @@ export class BackendApplication {
 
     protected handleUncaughtError(error: Error): void {
         if (error) {
-            console.error('Uncaught Exception: ', error.toString());
+            this.logger.error('Uncaught Exception: ', error.toString());
             if (error.stack) {
-                console.error(error.stack);
+                this.logger.error(error.stack);
             }
         }
     }

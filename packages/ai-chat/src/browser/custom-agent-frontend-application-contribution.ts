@@ -16,9 +16,10 @@
 
 import { AgentService, CustomAgentDescription, PromptFragmentCustomizationService } from '@theia/ai-core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '../common';
 import { CustomAgentFactory } from './custom-agent-factory';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class AICustomAgentsFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -34,6 +35,9 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
     @inject(ChatAgentService)
     private readonly chatAgentService: ChatAgentService;
 
+    @inject(ILogger) @named('ai-chat:AICustomAgentsFrontendApplicationContribution')
+    protected readonly logger: ILogger;
+
     private knownCustomAgents: Map<string, CustomAgentDescription> = new Map();
     onStart(): void {
         this.customizationService?.getCustomAgents().then(customAgents => {
@@ -42,7 +46,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
                 this.knownCustomAgents.set(agent.id, agent);
             });
         }).catch(e => {
-            console.error('Failed to load custom agents', e);
+            this.logger.error('Failed to load custom agents', e);
         });
         this.customizationService?.onDidChangeCustomAgents(() => {
             this.customizationService?.getCustomAgents().then(customAgents => {
@@ -63,7 +67,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
                         this.knownCustomAgents.set(agent.id, agent);
                     });
             }).catch(e => {
-                console.error('Failed to load custom agents', e);
+                this.logger.error('Failed to load custom agents', e);
             });
         });
     }

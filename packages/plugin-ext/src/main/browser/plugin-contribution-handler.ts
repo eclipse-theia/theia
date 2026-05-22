@@ -52,6 +52,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 import { JSONObject, JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { ILogger } from '@theia/core';
 
 // The enum export is missing from `vscode-textmate@9.2.0`
 const enum StandardTokenType {
@@ -147,6 +148,9 @@ export class PluginContributionHandler {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(ILogger) @named('plugin-ext:PluginContributionHandler')
+    protected readonly logger: ILogger;
+
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
     protected readonly onDidRegisterCommandHandlerEmitter = new Emitter<string>();
@@ -164,8 +168,8 @@ export class PluginContributionHandler {
         }
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         /* eslint-disable @typescript-eslint/no-explicit-any */
-        const logError = (message: string, ...args: any[]) => console.error(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
-        const logWarning = (message: string, ...args: any[]) => console.warn(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
+        const logError = (message: string, ...args: any[]) => this.logger.error(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
+        const logWarning = (message: string, ...args: any[]) => this.logger.warn(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
         const pushContribution = (id: string, contribute: () => Disposable) => {
             if (toDispose.disposed) {
                 return;
@@ -483,7 +487,7 @@ export class PluginContributionHandler {
 
     registerCommand(command: Command, enablement?: string): Disposable {
         if (this.hasCommand(command.id)) {
-            console.warn(`command '${command.id}' already registered`);
+            this.logger.warn(`command '${command.id}' already registered`);
             return Disposable.NULL;
         }
 
@@ -531,7 +535,7 @@ export class PluginContributionHandler {
 
     registerCommandHandler(id: string, execute: CommandHandler['execute']): Disposable {
         if (this.hasCommandHandler(id)) {
-            console.warn(`command handler '${id}' already registered`);
+            this.logger.warn(`command handler '${id}' already registered`);
             return Disposable.NULL;
         }
 

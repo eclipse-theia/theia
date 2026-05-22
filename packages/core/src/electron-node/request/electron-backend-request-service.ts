@@ -14,14 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { decorate, injectable } from 'inversify';
+import { decorate, injectable, inject, named } from 'inversify';
 import { NodeRequestOptions, NodeRequestService } from '@theia/request/lib/node-request-service';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
+import { ILogger } from '../../common';
 
 decorate(injectable(), NodeRequestService);
 
 @injectable()
 export class ElectronBackendRequestService extends NodeRequestService {
+
+    @inject(ILogger) @named('core:ElectronBackendRequestService')
+    protected readonly logger: ILogger;
 
     override async getProxyUrl(url: string): Promise<string | undefined> {
         if (this.proxyUrl) {
@@ -34,7 +38,7 @@ export class ElectronBackendRequestService extends NodeRequestService {
                 return this.buildProxyUrl(url, proxyHost);
             }
         } catch (e) {
-            console.error('Could not resolve electron proxy.', e);
+            this.logger.error('Could not resolve electron proxy.', e);
         }
         return super.getProxyUrl(url);
     }

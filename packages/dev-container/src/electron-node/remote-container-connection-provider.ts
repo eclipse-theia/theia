@@ -61,7 +61,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(RemoteConnectionService)
     protected readonly remoteService: RemoteConnectionService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('dev-container:DevContainerConnectionProvider')
     protected readonly logger: ILogger;
 
     protected outputProvider: ContainerOutputProvider | undefined;
@@ -102,7 +102,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         const dockerConnection = new Docker(dockerOptions);
         const version = await dockerConnection.version()
             .catch(e => {
-                console.error('Docker Error:', e);
+                this.logger.error('Docker Error:', e);
                 this.messageService.error('Docker Error: ' + e.message);
             });
 
@@ -151,7 +151,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             };
         } catch (e) {
             this.messageService.error(e.message);
-            console.error(e);
+            this.logger.error(e);
             throw e;
         } finally {
             progress.cancel();

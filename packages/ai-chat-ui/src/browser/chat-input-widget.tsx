@@ -22,11 +22,11 @@ import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
-import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
+import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable, ILogger } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { IMouseEvent, Range } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -109,6 +109,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ContextFileValidationService) @optional()
     protected readonly validationService: ContextFileValidationService | undefined;
+
+    @inject(ILogger) @named('ai-chat-ui:AIChatInputWidget')
+    protected readonly logger: ILogger;
 
     protected fileValidationState = new Map<string, FileValidationResult>();
 
@@ -399,7 +402,7 @@ export class AIChatInputWidget extends ReactWidget {
                 this.update();
             }
         } catch (error) {
-            console.warn('Failed to determine receiving agent:', error);
+            this.logger.warn('Failed to determine receiving agent:', error);
             if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
                 this.chatInputHasModesKey.set(false);
@@ -463,7 +466,7 @@ export class AIChatInputWidget extends ReactWidget {
                 await this.agentNotificationService.showCompletionNotification(agentId);
             }
         } catch (error) {
-            console.error('Failed to handle agent completion notification:', error);
+            this.logger.error('Failed to handle agent completion notification:', error);
         }
     }
 

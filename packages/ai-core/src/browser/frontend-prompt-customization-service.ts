@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, URI, Event, Emitter, nls } from '@theia/core';
+import { DisposableCollection, URI, Event, Emitter, nls, ILogger } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -130,6 +130,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(ILogger) @named('ai-core:DefaultPromptFragmentCustomizationService')
+    protected readonly logger: ILogger;
 
     /** Stores URI strings of template files from directories currently being monitored for changes. */
     protected trackedTemplateURIs = new Set<string>();
@@ -269,7 +272,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             } else if (priority === existingEntry.priority) {
                 // There is a conflict with the same priority, we ignore the new customization
                 const conflictSourceUri = existingEntry.sourceUri ? ` (Existing source: ${existingEntry.sourceUri}, New source: ${sourceUri})` : '';
-                console.warn(`Fragment conflict detected for ID '${id}' with equal priority.${conflictSourceUri}`);
+                this.logger.warn(`Fragment conflict detected for ID '${id}' with equal priority.${conflictSourceUri}`);
             }
             return;
         }
@@ -1070,7 +1073,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             const doc = load(fileContent.value);
 
             if (!Array.isArray(doc) || !doc.every(entry => CustomAgentDescription.is(entry))) {
-                console.debug(`Invalid customAgents.yml file content in ${directoryURI.toString()}`);
+                this.logger.debug(`Invalid customAgents.yml file content in ${directoryURI.toString()}`);
                 return;
             }
 
@@ -1083,7 +1086,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 }
             }
         } catch (e) {
-            console.debug(`Error loading customAgents.yml from ${directoryURI.toString()}: ${e.message}`, e);
+            this.logger.debug(`Error loading customAgents.yml from ${directoryURI.toString()}: ${e.message}`, e);
         }
     }
 
