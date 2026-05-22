@@ -52,6 +52,11 @@ export interface QaapCreateAgentTaskRequest {
 
 export interface QaapAgentTaskListResponse {
     readonly tasks: QaapAgentTask[];
+    /**
+     * True when QAAP_AGENT_COMMAND is set — i.e. a prompt launches a real coding agent.
+     * When false, a prompt is run verbatim as a shell command.
+     */
+    readonly agentConfigured: boolean;
 }
 
 /** True once the task has stopped and will not change state again. */

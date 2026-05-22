@@ -21,8 +21,12 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
     protected readonly runner: QaapAgentTaskRunner;
 
     configure(app: Application): void {
-        app.get(QAAP_AGENT_TASK_API_PATH, (_req, res) => {
-            res.json({ tasks: this.runner.list() } satisfies QaapAgentTaskListResponse);
+        app.get(QAAP_AGENT_TASK_API_PATH, (req, res) => {
+            const cwd = typeof req.query.cwd === 'string' ? req.query.cwd : undefined;
+            res.json({
+                tasks: this.runner.listForCwd(cwd),
+                agentConfigured: this.runner.isAgentConfigured(),
+            } satisfies QaapAgentTaskListResponse);
         });
         app.post(QAAP_AGENT_TASK_API_PATH, (req, res) => {
             this.handleCreate(req, res);

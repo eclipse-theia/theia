@@ -13,6 +13,16 @@
     color: var(--theia-foreground);
 }
 
+.qaap-agent-tasks-banner {
+    flex: none;
+    padding: 8px 14px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    background: var(--theia-editorWidget-background);
+    color: var(--theia-descriptionForeground);
+    border-bottom: 1px solid var(--theia-editorWidget-border);
+}
+
 .qaap-agent-tasks-launcher {
     display: flex;
     gap: 8px;

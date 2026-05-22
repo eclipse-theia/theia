@@ -39,6 +39,9 @@ export class QaapAgentTasksWidget extends ReactWidget {
     protected expandedLog = '';
     protected busy = false;
     protected pollHandle: number | undefined;
+    /** Absolute path of the current project — tasks are scoped to it. */
+    protected projectCwd: string | undefined;
+    protected agentConfigured = false;
 
     @postConstruct()
     protected init(): void {
@@ -66,10 +69,15 @@ export class QaapAgentTasksWidget extends ReactWidget {
 
     protected async refresh(): Promise<void> {
         try {
-            const response = await fetch(QAAP_AGENT_TASK_API_PATH, { credentials: 'include' });
+            if (!this.projectCwd) {
+                this.projectCwd = await this.resolveCwd();
+            }
+            const query = this.projectCwd ? `?cwd=${encodeURIComponent(this.projectCwd)}` : '';
+            const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}${query}`, { credentials: 'include' });
             if (response.ok) {
-                const body = await response.json() as { tasks?: QaapAgentTask[] };
+                const body = await response.json() as { tasks?: QaapAgentTask[]; agentConfigured?: boolean };
                 this.tasks = body.tasks ?? [];
+                this.agentConfigured = body.agentConfigured === true;
             }
             if (this.expandedId) {
                 await this.loadLog(this.expandedId);
@@ -99,6 +107,14 @@ export class QaapAgentTasksWidget extends ReactWidget {
     protected render(): React.ReactNode {
         return (
             <div className='qaap-agent-tasks-body'>
+                {!this.agentConfigured && (
+                    <div className='qaap-agent-tasks-banner'>
+                        {nls.localize(
+                            'qaap/agentTasks/noAgent',
+                            'No coding agent configured — input runs as a shell command. Set QAAP_AGENT_COMMAND on the server to run agent prompts.',
+                        )}
+                    </div>
+                )}
                 {this.renderLauncher()}
                 <div className='qaap-agent-tasks-list'>
                     {this.tasks.length === 0
@@ -117,7 +133,9 @@ export class QaapAgentTasksWidget extends ReactWidget {
                 <input
                     className='qaap-agent-tasks-input'
                     type='text'
-                    placeholder={nls.localize('qaap/agentTasks/placeholder', 'Describe a task for the agent…')}
+                    placeholder={this.agentConfigured
+                        ? nls.localize('qaap/agentTasks/placeholderAgent', 'Describe a task for the agent…')
+                        : nls.localize('qaap/agentTasks/placeholderCommand', 'Command to run in the background…')}
                     value={this.commandDraft}
                     disabled={this.busy}
                     onChange={this.onDraftChange}

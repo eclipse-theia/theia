@@ -62,6 +62,21 @@ export class QaapAgentTaskRunner {
         return [...this.tasks.values()].sort((a, b) => b.createdAt - a.createdAt);
     }
 
+    /** Tasks scoped to one project (by working directory); all tasks when `cwd` is omitted. */
+    listForCwd(cwd: string | undefined): QaapAgentTask[] {
+        const all = this.list();
+        if (!cwd) {
+            return all;
+        }
+        const resolved = path.resolve(cwd);
+        return all.filter(task => task.cwd === resolved);
+    }
+
+    /** True when a coding agent is configured — see {@link buildAgentCommand}. */
+    isAgentConfigured(): boolean {
+        return !!process.env.QAAP_AGENT_COMMAND?.trim();
+    }
+
     async detail(id: string): Promise<QaapAgentTaskDetail | undefined> {
         const task = this.tasks.get(id);
         if (!task) {
