@@ -66,6 +66,9 @@
       "path": "../../packages/ai-mcp-ui"
     },
     {
+      "path": "../../packages/ai-nvidia"
+    },
+    {
       "path": "../../packages/ai-ollama"
     },
     {

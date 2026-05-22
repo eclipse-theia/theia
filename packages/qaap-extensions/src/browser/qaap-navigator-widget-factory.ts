@@ -23,6 +23,5 @@ export function createQaapFileNavigatorWidget(parent: interfaces.Container): Fil
         props: FILE_NAVIGATOR_PROPS,
     });
     child.bind(FileNavigatorModel).toService(QaapFileNavigatorModel);
-    child.bind(QaapFileNavigatorWidget).toSelf();
     return child.get(QaapFileNavigatorWidget);
 }

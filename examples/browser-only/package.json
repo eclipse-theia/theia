@@ -21,6 +21,7 @@
     "@theia/ai-core": "1.71.0",
     "@theia/ai-core-ui": "1.71.0",
     "@theia/ai-history": "1.71.0",
+    "@theia/ai-nvidia": "1.71.0",
     "@theia/ai-ollama": "1.71.0",
     "@theia/ai-openai": "1.71.0",
     "@theia/ai-scanoss": "1.71.0",

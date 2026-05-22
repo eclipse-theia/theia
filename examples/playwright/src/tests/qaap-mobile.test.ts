@@ -46,6 +46,21 @@ test.describe('@qaap-mobile Qaap mobile layout', () => {
         await app.page.close();
     });
 
+    test('opens Explorer from the mobile bottom bar', async ({ playwright, browser }) => {
+        const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1')]);
+        const app = await TheiaAppLoader.load({ playwright, browser }, ws);
+        await app.waitForShellAndInitialized();
+
+        const explorerBtn = app.page.locator('#theia-mobile-bottom-bar .theia-mobile-bottom-activity-btn[data-action-id="explore"]');
+        await expect(explorerBtn).toBeVisible();
+        await explorerBtn.click();
+
+        await expect(app.page.locator('#theia-left-content-panel')).not.toHaveClass(/theia-mod-collapsed/);
+        await expect(app.page.locator('#explorer-view-container--files')).toBeVisible();
+
+        await app.page.close();
+    });
+
     test('collapses left explorer sheet after opening a file', async ({ playwright, browser }) => {
         const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1')]);
         const app = await TheiaAppLoader.load({ playwright, browser }, ws);
