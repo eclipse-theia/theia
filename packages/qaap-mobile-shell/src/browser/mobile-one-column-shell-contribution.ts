@@ -145,6 +145,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected projectsPanel: MobileProjectsPanel | undefined;
     protected pullRequestPanel: MobilePullRequestPanel | undefined;
     protected projectsCount = 0;
+    protected authOpenFirstRepoListenerInstalled = false;
 
     protected leftEdgeTouchStartX = 0;
     protected rightEdgeTouchStartX = 0;
@@ -157,6 +158,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.mobileMq?.addEventListener('change', this.onMediaChange);
         window.addEventListener('resize', this.onWindowResize);
         window.addEventListener(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT, this.onDismissProjectsPanelEvent);
+        if (!this.authOpenFirstRepoListenerInstalled) {
+            this.authOpenFirstRepoListenerInstalled = true;
+            window.addEventListener(QAAP_AUTH_OPEN_FIRST_REPO_EVENT, this.onAuthOpenFirstRepo);
+            this.toDispose.push(Disposable.create(() => {
+                window.removeEventListener(QAAP_AUTH_OPEN_FIRST_REPO_EVENT, this.onAuthOpenFirstRepo);
+            }));
+        }
         if (this.mobileMq?.matches) {
             window.requestAnimationFrame(() => this.onMediaChange());
         }
@@ -520,14 +528,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             }
         }
         this.projectsPanel = undefined;
-        this.hidePullRequestPanel();
-        if (this.pullRequestPanel) {
-            this.pullRequestPanel.dispose();
-            if (this.pullRequestPanel.node.parentElement) {
-                this.pullRequestPanel.node.parentElement.removeChild(this.pullRequestPanel.node);
-            }
-        }
-        this.pullRequestPanel = undefined;
+        this.disposePullRequestPanel();
         this.shell.node.classList.remove(MOBILE_BOTTOM_OPEN_CLASS);
     }
 
@@ -567,15 +568,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.keyboardHelper.install();
         }
         this.ensureProjectsPanel();
-        this.ensurePullRequestPanel();
         this.applyMobileProjectsPanelDismissAfterReload();
         void this.refreshProjectsCount();
         this.refreshBottomBar();
         this.updateBackdropVisibility();
-        window.addEventListener(QAAP_AUTH_OPEN_FIRST_REPO_EVENT, this.onAuthOpenFirstRepo);
-        this.toDispose.push(Disposable.create(() => {
-            window.removeEventListener(QAAP_AUTH_OPEN_FIRST_REPO_EVENT, this.onAuthOpenFirstRepo);
-        }));
     }
 
     protected readonly onAuthOpenFirstRepo = (): void => {
@@ -636,14 +632,28 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.shell.node.appendChild(this.projectsPanel.node);
     }
 
-    protected ensurePullRequestPanel(): void {
-        if (this.pullRequestPanel) {
-            return;
-        }
+    /** Remove every PR overlay node under the app shell (fixes stacked sheets after re-open). */
+    protected removeAllMobilePrPanelsFromShell(): void {
+        this.shell.node.querySelectorAll('.theia-mobile-pr').forEach(el => el.remove());
+    }
+
+    protected isPullRequestPanelShown(): boolean {
+        return Boolean(this.shell.node.querySelector('.theia-mobile-pr.theia-mod-visible'));
+    }
+
+    protected disposePullRequestPanel(): void {
+        this.pullRequestPanel?.dispose();
+        this.pullRequestPanel = undefined;
+        this.removeAllMobilePrPanelsFromShell();
+    }
+
+    protected openPullRequestPanel(): void {
+        this.disposePullRequestPanel();
         this.pullRequestPanel = new MobilePullRequestPanel({
             onDismiss: () => this.scheduleSnapAndUiRefresh(),
         });
         this.shell.node.appendChild(this.pullRequestPanel.node);
+        this.pullRequestPanel.show();
     }
 
     protected async refreshProjectsCount(): Promise<void> {
@@ -660,7 +670,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected hidePullRequestPanel(): void {
-        this.pullRequestPanel?.hide();
+        this.disposePullRequestPanel();
     }
 
     protected async toggleProjectsPanel(): Promise<void> {
@@ -684,13 +694,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected async togglePullRequestPanel(): Promise<void> {
-        this.ensurePullRequestPanel();
-        const panel = this.pullRequestPanel;
-        if (!panel) {
-            return;
-        }
-        if (panel.isVisible()) {
-            panel.hide();
+        if (this.isPullRequestPanelShown()) {
+            this.disposePullRequestPanel();
             this.scheduleSnapAndUiRefresh();
             return;
         }
@@ -699,7 +704,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (this.shell.isExpanded('bottom')) {
             await this.shell.collapsePanel('bottom');
         }
-        panel.show();
+        this.openPullRequestPanel();
         this.refreshBottomBar();
     }
 
@@ -1002,7 +1007,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             case 'projects':
                 return !!this.projectsPanel?.isVisible();
             case 'pr':
-                return !!this.pullRequestPanel?.isVisible();
+                return this.isPullRequestPanelShown();
             case 'agent':
                 return this.isMobileAgentSheetVisible();
             case 'preview':
@@ -1349,9 +1354,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             label: nls.localize('qaap/mobileBottomBar/prRefresh', 'Refresh pull requests'),
             icon: 'codicon-refresh',
             run: async () => {
-                this.ensurePullRequestPanel();
                 this.hideProjectsPanel();
-                this.pullRequestPanel?.show();
+                this.openPullRequestPanel();
                 this.refreshBottomBar();
             },
         }];

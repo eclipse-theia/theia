@@ -88,6 +88,8 @@ export class MobilePullRequestPanel {
     protected mergeError: string | undefined;
     protected dragDismissDispose: Disposable = Disposable.NULL;
     protected pullToRefreshDispose: Disposable = Disposable.NULL;
+    /** Bumps on hide so in-flight `loadPullRequests` cannot append stale CTA rows after close. */
+    protected loadRequestGeneration = 0;
 
     constructor(protected readonly delegate: MobilePullRequestPanelDelegate) {
         this.root = document.createElement('div');
@@ -142,7 +144,6 @@ export class MobilePullRequestPanel {
         this.toast.hidden = true;
 
         this.root.append(this.header, progress, this.hintRow, this.stack, this.ctaRow, this.toast);
-        this.render();
 
         this.dragDismissDispose = installMobileSheetDragDismiss({
             target: this.root,
@@ -165,10 +166,17 @@ export class MobilePullRequestPanel {
     }
 
     dispose(): void {
+        this.loadRequestGeneration++;
+        this.visible = false;
+        this.root.classList.remove('theia-mod-visible');
+        this.root.setAttribute('aria-hidden', 'true');
+        this.root.hidden = true;
+        this.clearActionChrome();
         this.dragDismissDispose.dispose();
         this.dragDismissDispose = Disposable.NULL;
         this.pullToRefreshDispose.dispose();
         this.pullToRefreshDispose = Disposable.NULL;
+        this.root.remove();
     }
 
     get node(): HTMLElement {
@@ -186,21 +194,25 @@ export class MobilePullRequestPanel {
         this.root.classList.add('theia-mod-visible');
         if (!this.loaded) {
             void this.loadPullRequests();
+        } else {
+            this.render();
         }
-        this.render();
     }
 
     hide(): void {
         if (!this.visible) {
             return;
         }
+        this.loadRequestGeneration++;
         this.visible = false;
         this.root.classList.remove('theia-mod-visible');
         this.root.setAttribute('aria-hidden', 'true');
+        this.resetSheetPresentation();
         this.pointerId = undefined;
         this.dragX = 0;
         this.dragMode = undefined;
         this.hideToast();
+        this.clearActionChrome();
         window.setTimeout(() => {
             if (!this.visible) {
                 this.root.hidden = true;
@@ -210,12 +222,16 @@ export class MobilePullRequestPanel {
     }
 
     protected async loadPullRequests(): Promise<void> {
+        const generation = ++this.loadRequestGeneration;
         this.loading = true;
         this.errorMessage = undefined;
         this.signedOut = false;
         this.render();
         try {
             const response = await fetchQaapGithubPullRequests();
+            if (generation !== this.loadRequestGeneration) {
+                return;
+            }
             this.loaded = true;
             this.loading = false;
             this.currentRepository = response.currentRepository;
@@ -233,10 +249,16 @@ export class MobilePullRequestPanel {
                 this.usePullRequest(previous ?? response.pullRequests[0]);
             }
         } catch (err) {
+            if (generation !== this.loadRequestGeneration) {
+                return;
+            }
             this.loaded = true;
             this.loading = false;
             this.errorMessage = err instanceof Error ? err.message : nls.localize('qaap/mobilePr/loadError', 'Failed to load pull requests.');
             this.clearActivePullRequest();
+        }
+        if (generation !== this.loadRequestGeneration) {
+            return;
         }
         this.render();
     }
@@ -290,13 +312,23 @@ export class MobilePullRequestPanel {
         this.queue = pullRequest.filesPreview.filter(file => !this.decisions.has(file.f));
     }
 
+    /** Single place to reset footer actions (avoids stacked rows after re-open). */
+    protected clearActionChrome(): void {
+        this.root.querySelectorAll('.theia-mobile-pr-button-row, .theia-mobile-pr-quick-row').forEach(el => el.remove());
+        this.ctaRow.replaceChildren();
+    }
+
+    protected setCtaContent(...nodes: Node[]): void {
+        this.ctaRow.replaceChildren(...nodes);
+    }
+
     protected render(): void {
         this.renderHeader();
+        this.clearActionChrome();
         if (this.loading && !this.activePullRequest) {
             this.renderProgress(0, 0, 0, 0, 0);
             this.hintRow.hidden = true;
             this.stack.replaceChildren(this.createBusyState());
-            this.ctaRow.replaceChildren();
             return;
         }
         if (this.signedOut) {
@@ -700,7 +732,6 @@ export class MobilePullRequestPanel {
     }
 
     protected renderActions(allReviewed: boolean, stats: ReturnType<MobilePullRequestPanel['reviewStats']>): void {
-        this.ctaRow.replaceChildren();
         if (allReviewed) {
             this.renderReviewedActions(stats);
             return;
@@ -725,7 +756,7 @@ export class MobilePullRequestPanel {
             approve.disabled = true;
         }
         buttonRow.append(reject, undo, approve);
-        this.ctaRow.append(quickRow, buttonRow);
+        this.setCtaContent(quickRow, buttonRow);
     }
 
     protected renderReviewedActions(stats: ReturnType<MobilePullRequestPanel['reviewStats']>): void {
@@ -739,7 +770,7 @@ export class MobilePullRequestPanel {
             });
             const confirm = this.createActionButton('primary', nls.localize('qaap/mobilePr/confirmMerge', 'Confirm merge'), 'codicon-git-merge', () => { void this.executeMergeAndDeploy(); });
             buttonRow.append(cancel, confirm);
-            this.ctaRow.append(buttonRow);
+            this.setCtaContent(buttonRow);
             return;
         }
         const undo = this.createActionButton('secondary', nls.localize('qaap/mobilePr/undo', 'Undo'), 'codicon-discard', () => this.undo());
@@ -753,7 +784,13 @@ export class MobilePullRequestPanel {
             merge.replaceChildren(this.createIcon('codicon-debug-restart'), this.createTextSpan(nls.localize('qaap/mobilePr/retryMerge', 'Retry merge')));
         }
         buttonRow.append(undo, merge);
-        this.ctaRow.append(buttonRow);
+        this.setCtaContent(buttonRow);
+    }
+
+    protected resetSheetPresentation(): void {
+        this.root.style.transition = '';
+        this.root.style.transform = '';
+        this.root.style.opacity = '';
     }
 
     protected renderEmptyActions(): void {
@@ -780,7 +817,7 @@ export class MobilePullRequestPanel {
             );
             buttonRow.append(open);
         }
-        this.ctaRow.append(buttonRow);
+        this.setCtaContent(buttonRow);
     }
 
     protected renderErrorActions(): void {
@@ -794,7 +831,7 @@ export class MobilePullRequestPanel {
         );
         retry.disabled = this.loading;
         buttonRow.append(retry);
-        this.ctaRow.append(buttonRow);
+        this.setCtaContent(buttonRow);
     }
 
     protected renderSignInActions(): void {
@@ -807,7 +844,7 @@ export class MobilePullRequestPanel {
             () => startGithubOAuth()
         );
         buttonRow.append(signIn);
-        this.ctaRow.append(buttonRow);
+        this.setCtaContent(buttonRow);
     }
 
     protected mergeButtonLabel(blockers: number): string {
