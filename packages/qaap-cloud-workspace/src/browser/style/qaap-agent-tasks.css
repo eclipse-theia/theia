@@ -1,0 +1,153 @@
+/* Background-tasks surface — launch and monitor VPS tasks from mobile. */
+
+.qaap-agent-tasks {
+    overflow: hidden;
+}
+
+.qaap-agent-tasks-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--theia-editor-background);
+    color: var(--theia-foreground);
+}
+
+.qaap-agent-tasks-launcher {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--theia-editorWidget-border);
+    flex: none;
+}
+
+.qaap-agent-tasks-input {
+    flex: 1;
+    min-width: 0;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid var(--theia-input-border, var(--theia-editorWidget-border));
+    background: var(--theia-input-background);
+    color: var(--theia-input-foreground);
+    font-family: var(--theia-code-font-family, monospace);
+    font-size: 13px;
+}
+
+.qaap-agent-tasks-run {
+    flex: none;
+    height: 38px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 8px;
+    background: var(--theia-button-background);
+    color: var(--theia-button-foreground);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.qaap-agent-tasks-run:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.qaap-agent-tasks-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.qaap-agent-tasks-empty {
+    padding: 28px 24px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-agent-tasks-item {
+    border-bottom: 1px solid var(--theia-editorWidget-border);
+}
+
+.qaap-agent-tasks-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+}
+
+.qaap-agent-tasks-row:active {
+    background: var(--theia-list-activeSelectionBackground);
+}
+
+.qaap-agent-tasks-state {
+    flex: none;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--theia-badge-background);
+    color: var(--theia-badge-foreground);
+}
+
+.qaap-agent-tasks-state--running {
+    background: var(--theia-progressBar-background, var(--theia-focusBorder));
+    color: var(--theia-editor-background);
+}
+
+.qaap-agent-tasks-state--completed {
+    background: var(--theia-gitDecoration-untrackedResourceForeground);
+    color: var(--theia-editor-background);
+}
+
+.qaap-agent-tasks-state--failed,
+.qaap-agent-tasks-state--interrupted {
+    background: var(--theia-errorForeground);
+    color: var(--theia-editor-background);
+}
+
+.qaap-agent-tasks-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qaap-agent-tasks-cancel {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: var(--theia-descriptionForeground);
+    cursor: pointer;
+    padding: 2px;
+    font-size: 16px;
+}
+
+.qaap-agent-tasks-cancel:active {
+    color: var(--theia-errorForeground);
+}
+
+.qaap-agent-tasks-chevron {
+    flex: none;
+    font-size: 14px;
+    color: var(--theia-descriptionForeground);
+}
+
+.qaap-agent-tasks-log {
+    margin: 0;
+    padding: 10px 14px;
+    max-height: 320px;
+    overflow: auto;
+    background: var(--theia-editorWidget-background);
+    font-family: var(--theia-code-font-family, monospace);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--theia-foreground);
+}

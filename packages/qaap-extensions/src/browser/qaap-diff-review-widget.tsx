@@ -189,6 +189,14 @@ export class QaapDiffReviewWidget extends ReactWidget {
                     </span>
                 )}
                 <span className='qaap-diff-review-spacer' />
+                <button
+                    type='button'
+                    className='qaap-diff-review-chip'
+                    title={nls.localize('qaap/diff/backgroundTasks', 'Background tasks')}
+                    onClick={this.onOpenTasks}
+                >
+                    <i className={codicon('server-process')} />
+                </button>
                 {count > 0 && (
                     <button type='button' className='qaap-diff-review-chip' onClick={this.onDiscardAll}>
                         {nls.localize('qaap/diff/discardAll', 'Discard all')}
@@ -301,6 +309,10 @@ export class QaapDiffReviewWidget extends ReactWidget {
         if (uri) {
             void open(this.openerService, uri);
         }
+    };
+
+    protected readonly onOpenTasks = (): void => {
+        void this.commands.executeCommand('qaap.agentTasks.open');
     };
 
     protected readonly onAcceptAll = (): void => {

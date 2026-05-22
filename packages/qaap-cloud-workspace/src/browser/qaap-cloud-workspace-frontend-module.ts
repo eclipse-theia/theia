@@ -4,11 +4,15 @@
 // *****************************************************************************
 
 import '../../src/browser/style/qaap-cloud.css';
+import '../../src/browser/style/qaap-agent-tasks.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindToolProvider } from '@theia/ai-core/lib/common/tool-invocation-registry';
+import { QaapAgentTasksContribution } from './qaap-agent-tasks-contribution';
+import { QaapAgentTasksWidget } from './qaap-agent-tasks-widget';
 import { QaapCloudBootstrapUiContribution } from './qaap-cloud-bootstrap-ui-contribution';
 import { QaapDeployCloudflareTool, QaapDeployVercelTool } from './qaap-deploy-tool-providers';
 import { QaapTerminalPersistenceContribution } from './qaap-terminal-persistence-contribution';
@@ -24,6 +28,14 @@ export default new ContainerModule(bind => {
 
     bind(QaapWebPushContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapWebPushContribution);
+
+    bind(QaapAgentTasksWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: QaapAgentTasksWidget.ID,
+        createWidget: () => ctx.container.get(QaapAgentTasksWidget),
+    })).inSingletonScope();
+    bind(QaapAgentTasksContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapAgentTasksContribution);
 
     bindToolProvider(QaapDeployVercelTool, bind);
     bindToolProvider(QaapDeployCloudflareTool, bind);
