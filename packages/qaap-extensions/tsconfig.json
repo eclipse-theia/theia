@@ -55,6 +55,9 @@
       "path": "../qaap-mobile-shell"
     },
     {
+      "path": "../scm"
+    },
+    {
       "path": "../terminal"
     },
     {

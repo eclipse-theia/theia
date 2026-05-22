@@ -5,9 +5,11 @@
 // *****************************************************************************
 
 import '../../src/browser/style/qaap-login.css';
+import '../../src/browser/style/qaap-diff-review.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common/command';
+import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ShellLayoutTransformer } from '@theia/core/lib/browser/shell/shell-layout-restorer';
@@ -42,6 +44,8 @@ import { QaapWorkspaceFrontendContribution } from './qaap-workspace-frontend-con
 import { QaapWorkspaceTrustDialogFactory } from './qaap-workspace-trust-dialog-factory';
 import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
+import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
+import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
@@ -67,6 +71,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapCodeCompletionAgentImpl).toSelf().inSingletonScope();
     rebind(CodeCompletionAgentImpl).toService(QaapCodeCompletionAgentImpl);
     rebind(CodeCompletionAgent).toService(QaapCodeCompletionAgentImpl);
+
+    bind(QaapDiffReviewWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: QaapDiffReviewWidget.ID,
+        createWidget: () => ctx.container.get(QaapDiffReviewWidget),
+    })).inSingletonScope();
+    bind(QaapDiffReviewContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapDiffReviewContribution);
 
     bind(QaapAiPreferenceBrandingContribution).toSelf().inSingletonScope();
     bind(PreferenceContribution).toService(QaapAiPreferenceBrandingContribution);
