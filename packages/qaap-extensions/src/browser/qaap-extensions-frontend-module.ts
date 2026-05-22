@@ -47,6 +47,8 @@ import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobil
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
 import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
+import { QaapChatToBackgroundContribution } from './qaap-chat-to-background-contribution';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
@@ -84,6 +86,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapAgentCompletionContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapAgentCompletionContribution);
+
+    bind(QaapChatToBackgroundContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(QaapChatToBackgroundContribution);
+    bind(TabBarToolbarContribution).toService(QaapChatToBackgroundContribution);
 
     bind(QaapAiPreferenceBrandingContribution).toSelf().inSingletonScope();
     bind(PreferenceContribution).toService(QaapAiPreferenceBrandingContribution);
