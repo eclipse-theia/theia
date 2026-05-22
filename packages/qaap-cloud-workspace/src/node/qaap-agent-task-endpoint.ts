@@ -42,12 +42,17 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
 
     protected handleCreate(req: Request, res: Response): void {
         const body = (req.body ?? {}) as Partial<QaapCreateAgentTaskRequest>;
-        if (typeof body.command !== 'string' || typeof body.cwd !== 'string') {
-            res.status(400).json({ error: '"command" and "cwd" are required.' });
+        if (typeof body.cwd !== 'string' || (typeof body.command !== 'string' && typeof body.prompt !== 'string')) {
+            res.status(400).json({ error: '"cwd" and one of "command" or "prompt" are required.' });
             return;
         }
         try {
-            const task = this.runner.create({ command: body.command, cwd: body.cwd, title: body.title });
+            const task = this.runner.create({
+                command: body.command,
+                prompt: body.prompt,
+                cwd: body.cwd,
+                title: body.title,
+            });
             res.status(201).json(task);
         } catch (error) {
             res.status(400).json({ error: error instanceof Error ? error.message : String(error) });

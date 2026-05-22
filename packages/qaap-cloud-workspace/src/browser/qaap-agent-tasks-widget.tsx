@@ -117,7 +117,7 @@ export class QaapAgentTasksWidget extends ReactWidget {
                 <input
                     className='qaap-agent-tasks-input'
                     type='text'
-                    placeholder={nls.localize('qaap/agentTasks/placeholder', 'Command to run in the background…')}
+                    placeholder={nls.localize('qaap/agentTasks/placeholder', 'Describe a task for the agent…')}
                     value={this.commandDraft}
                     disabled={this.busy}
                     onChange={this.onDraftChange}
@@ -200,8 +200,8 @@ export class QaapAgentTasksWidget extends ReactWidget {
     };
 
     protected readonly onRun = async (): Promise<void> => {
-        const command = this.commandDraft.trim();
-        if (!command || this.busy) {
+        const prompt = this.commandDraft.trim();
+        if (!prompt || this.busy) {
             return;
         }
         const cwd = await this.resolveCwd();
@@ -215,7 +215,7 @@ export class QaapAgentTasksWidget extends ReactWidget {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command, cwd }),
+                body: JSON.stringify({ prompt, cwd }),
             });
             this.commandDraft = '';
         } catch {

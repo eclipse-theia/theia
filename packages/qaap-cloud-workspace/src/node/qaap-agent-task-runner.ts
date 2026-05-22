@@ -72,9 +72,12 @@ export class QaapAgentTaskRunner {
 
     /** Validate the request, spawn the process and start tracking the task. */
     create(request: QaapCreateAgentTaskRequest): QaapAgentTask {
-        const command = (request.command ?? '').trim();
+        const prompt = (request.prompt ?? '').trim();
+        const command = prompt
+            ? this.buildAgentCommand(prompt)
+            : (request.command ?? '').trim();
         if (!command) {
-            throw new Error('A non-empty "command" is required.');
+            throw new Error('A non-empty "command" or "prompt" is required.');
         }
         const cwd = path.resolve(request.cwd ?? '');
         if (!path.isAbsolute(cwd) || !this.isDirectory(cwd)) {
@@ -83,7 +86,7 @@ export class QaapAgentTaskRunner {
         const id = randomUUID();
         const task: QaapAgentTask = {
             id,
-            title: (request.title ?? '').trim() || command,
+            title: (request.title ?? '').trim() || prompt || command,
             command,
             cwd,
             state: 'running',
@@ -93,6 +96,32 @@ export class QaapAgentTaskRunner {
         this.spawnProcess(task);
         void this.persist();
         return task;
+    }
+
+    /**
+     * Turn a natural-language prompt into the command that runs the coding agent.
+     *
+     * `QAAP_AGENT_COMMAND` is a template: a `{prompt}` placeholder is replaced with the
+     * shell-quoted prompt; without a placeholder the prompt is appended. Examples:
+     *   QAAP_AGENT_COMMAND='claude -p {prompt}'
+     *   QAAP_AGENT_COMMAND='aider --yes --message {prompt}'
+     * With no template configured the prompt is run verbatim, so a prompt that is itself a
+     * shell command still works.
+     */
+    protected buildAgentCommand(prompt: string): string {
+        const template = process.env.QAAP_AGENT_COMMAND?.trim();
+        if (!template) {
+            return prompt;
+        }
+        const quoted = this.shellQuote(prompt);
+        return template.includes('{prompt}')
+            ? template.split('{prompt}').join(quoted)
+            : `${template} ${quoted}`;
+    }
+
+    /** POSIX single-quote escaping so the prompt is passed as one safe argument. */
+    protected shellQuote(value: string): string {
+        return `'${value.split('\'').join('\'\\\'\'')}'`;
     }
 
     cancel(id: string): QaapAgentTask | undefined {

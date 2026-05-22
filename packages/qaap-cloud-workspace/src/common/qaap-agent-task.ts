@@ -39,7 +39,14 @@ export interface QaapAgentTaskDetail extends QaapAgentTask {
 
 export interface QaapCreateAgentTaskRequest {
     readonly title?: string;
-    readonly command: string;
+    /** A raw shell command to run. Provide this OR {@link prompt}. */
+    readonly command?: string;
+    /**
+     * A natural-language task for the coding agent. The backend wraps it with the agent CLI
+     * configured via the QAAP_AGENT_COMMAND environment variable (a template with a {prompt}
+     * placeholder). With no agent configured the prompt is run verbatim as a command.
+     */
+    readonly prompt?: string;
     readonly cwd: string;
 }
 
