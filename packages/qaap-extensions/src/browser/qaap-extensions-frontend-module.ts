@@ -46,6 +46,7 @@ import { createQaapFileNavigatorWidget } from './qaap-navigator-widget-factory';
 import { QaapVsxExtensionsMobileContribution } from './qaap-vsx-extensions-mobile-contribution';
 import { QaapDiffReviewWidget } from './qaap-diff-review-widget';
 import { QaapDiffReviewContribution } from './qaap-diff-review-contribution';
+import { QaapAgentCompletionContribution } from './qaap-agent-completion-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(QaapAiChatMobileContribution).toSelf().inSingletonScope();
@@ -79,6 +80,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     })).inSingletonScope();
     bind(QaapDiffReviewContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(QaapDiffReviewContribution);
+    bind(FrontendApplicationContribution).toService(QaapDiffReviewContribution);
+
+    bind(QaapAgentCompletionContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapAgentCompletionContribution);
 
     bind(QaapAiPreferenceBrandingContribution).toSelf().inSingletonScope();
     bind(PreferenceContribution).toService(QaapAiPreferenceBrandingContribution);

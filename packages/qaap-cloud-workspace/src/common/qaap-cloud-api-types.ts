@@ -53,6 +53,8 @@ export interface QaapPushNotifyRequest {
     readonly body: string;
     readonly tag?: string;
     readonly userLogin?: string;
+    /** In-app destination to open when the notification is clicked (e.g. 'diff-review'). */
+    readonly route?: string;
 }
 
 export interface QaapPushVapidResponse {

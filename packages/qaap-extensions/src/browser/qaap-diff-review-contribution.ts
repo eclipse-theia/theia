@@ -4,6 +4,7 @@
 // *****************************************************************************
 
 import { ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -15,8 +16,11 @@ export const QAAP_OPEN_DIFF_REVIEW: Command = {
     label: nls.localize('qaap/diff/openReview', 'Review Working Changes'),
 };
 
+/** Notification route handled by this contribution (see service-worker notificationclick). */
+const DIFF_REVIEW_ROUTE = 'diff-review';
+
 @injectable()
-export class QaapDiffReviewContribution implements CommandContribution {
+export class QaapDiffReviewContribution implements CommandContribution, FrontendApplicationContribution {
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
@@ -28,6 +32,39 @@ export class QaapDiffReviewContribution implements CommandContribution {
         commands.registerCommand(QAAP_OPEN_DIFF_REVIEW, {
             execute: () => this.openReview(),
         });
+    }
+
+    onStart(): void {
+        // A Web Push notification was clicked while the page was loading fresh.
+        this.consumeRouteFromUrl();
+        // A Web Push notification was clicked while the app was merely backgrounded.
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', this.onServiceWorkerMessage);
+        }
+    }
+
+    onStop(): void {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.removeEventListener('message', this.onServiceWorkerMessage);
+        }
+    }
+
+    protected readonly onServiceWorkerMessage = (event: MessageEvent): void => {
+        const data = event.data;
+        if (data && data.type === 'qaap-notification-route' && data.route === DIFF_REVIEW_ROUTE) {
+            void this.openReview();
+        }
+    };
+
+    protected consumeRouteFromUrl(): void {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('qaap_route') !== DIFF_REVIEW_ROUTE) {
+            return;
+        }
+        params.delete('qaap_route');
+        const search = params.toString();
+        window.history.replaceState({}, '', window.location.pathname + (search ? `?${search}` : '') + window.location.hash);
+        void this.openReview();
     }
 
     protected async openReview(): Promise<void> {

@@ -43,6 +43,7 @@ export class QaapWebPushService {
             title: request.title,
             body: request.body,
             tag: request.tag,
+            route: request.route,
         });
         for (const row of targets) {
             try {

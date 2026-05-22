@@ -504,13 +504,19 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
     event.notification.close();
+    const route = event.notification.data && event.notification.data.route;
     event.waitUntil((async () => {
         const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         if (clients.length > 0) {
             await clients[0].focus();
+            // Tell the live app where to navigate (it may have been backgrounded, not closed).
+            if (route) {
+                clients[0].postMessage({ type: 'qaap-notification-route', route });
+            }
             return;
         }
-        await self.clients.openWindow('./');
+        // No window open — carry the route as a query param for the fresh page to read.
+        await self.clients.openWindow(route ? './?qaap_route=' + encodeURIComponent(route) : './');
     })());
 });
 `;

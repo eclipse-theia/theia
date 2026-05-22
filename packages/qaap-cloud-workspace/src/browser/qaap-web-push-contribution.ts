@@ -47,6 +47,11 @@ export class QaapWebPushContribution implements FrontendApplicationContribution 
     };
 
     protected readonly onAgentCompleted = (event: Event): void => {
+        // Only push when the app is backgrounded/locked — a foreground tab already shows the
+        // in-app notification, so a system push would be redundant noise.
+        if (document.visibilityState === 'visible') {
+            return;
+        }
         const detail = (event as CustomEvent<{ agentName?: string }>).detail;
         void sendQaapPushNotify({
             title: 'Agent finished',
@@ -54,6 +59,7 @@ export class QaapWebPushContribution implements FrontendApplicationContribution 
                 ? `${detail.agentName} completed its task.`
                 : 'Your agent completed its task.',
             tag: 'qaap-agent-done',
+            route: 'diff-review',
         });
     };
 
