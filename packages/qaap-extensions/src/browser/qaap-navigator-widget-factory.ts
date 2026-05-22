@@ -12,15 +12,17 @@ import { FileNavigatorWidget } from '@theia/navigator/lib/browser/navigator-widg
 import { NavigatorDecoratorService } from '@theia/navigator/lib/browser/navigator-decorator-service';
 import { FILE_NAVIGATOR_PROPS } from '@theia/navigator/lib/browser/navigator-container';
 import { QaapFileNavigatorModel } from './qaap-file-navigator-model';
+import { QaapFileNavigatorWidget } from './qaap-file-navigator-widget';
 
 export function createQaapFileNavigatorWidget(parent: interfaces.Container): FileNavigatorWidget {
     const child = createFileTreeContainer(parent, {
         tree: FileNavigatorTree,
         model: QaapFileNavigatorModel,
-        widget: FileNavigatorWidget,
+        widget: QaapFileNavigatorWidget,
         decoratorService: NavigatorDecoratorService,
         props: FILE_NAVIGATOR_PROPS,
     });
     child.bind(FileNavigatorModel).toService(QaapFileNavigatorModel);
-    return child.get(FileNavigatorWidget);
+    child.bind(QaapFileNavigatorWidget).toSelf();
+    return child.get(QaapFileNavigatorWidget);
 }

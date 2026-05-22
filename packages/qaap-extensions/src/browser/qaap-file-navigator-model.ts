@@ -6,6 +6,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TreeNode } from '@theia/core/lib/browser';
+import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { collapseLeftPanelIfMobileOneColumn } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { FileNode } from '@theia/filesystem/lib/browser/file-tree';
@@ -22,6 +23,18 @@ export class QaapFileNavigatorModel extends FileNavigatorModel {
         if (FileNode.is(node)) {
             this.collapseLeftExplorerSheetIfMobile();
         }
+    }
+
+    /** Narrow mobile: one tap opens the file in the editor (not preview) and closes the explorer sheet. */
+    openFileOnMobileSingleTap(node: TreeNode): void {
+        if (!FileNode.is(node)) {
+            return;
+        }
+        if (SelectableTreeNode.is(node)) {
+            this.selectNode(node);
+        }
+        this.doOpenNode(node);
+        this.collapseLeftExplorerSheetIfMobile();
     }
 
     protected override doOpenNode(node: TreeNode): void {

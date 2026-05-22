@@ -856,7 +856,9 @@
 
 .theia-mobile-sheet-backdrop.theia-mod-visible {
   opacity: 1;
-  pointer-events: auto;
+  /* Decorative only: body-level backdrop (9500) stacks above #theia-app-shell (0) and would
+     close side sheets on the first in-panel touch if this were auto. */
+  pointer-events: none;
 }
 
 /* Agent-first bottom bar (Lumino widget in the shell layout, pinned with `position: fixed` in

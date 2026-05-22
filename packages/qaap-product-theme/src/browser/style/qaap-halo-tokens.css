@@ -208,6 +208,20 @@ body.qaap-theme-dark {
   --theia-list-focusBackground: var(--qaap-halo-accent-soft) !important;
   --theia-list-focusForeground: var(--qaap-halo-accent-ink) !important;
   --theia-list-highlightForeground: var(--qaap-halo-accent) !important;
+  --theia-list-focusHighlightForeground: var(--qaap-halo-accent) !important;
+
+  /* Quick input / command palette (resolved independently on <html> — must override explicitly) */
+  --theia-quickInput-background: var(--qaap-halo-surface) !important;
+  --theia-quickInput-foreground: var(--qaap-halo-ink) !important;
+  --theia-quickInputList-focusBackground: var(--qaap-halo-accent-soft) !important;
+  --theia-quickInputList-focusForeground: var(--qaap-halo-accent-ink) !important;
+  --theia-quickInputTitle-background: var(--qaap-halo-surface) !important;
+  --theia-pickerGroup-border: var(--qaap-halo-line) !important;
+  --theia-pickerGroup-foreground: var(--qaap-halo-muted) !important;
+  --theia-keybindingLabel-background: var(--qaap-halo-line-soft) !important;
+  --theia-keybindingLabel-foreground: var(--qaap-halo-ink-2) !important;
+  --theia-keybindingLabel-border: var(--qaap-halo-line) !important;
+  --theia-keybindingLabel-bottomBorder: var(--qaap-halo-line) !important;
 
   /* Tabs */
   --theia-tab-activeBackground: var(--qaap-halo-bg) !important;
@@ -546,6 +560,94 @@ body.qaap-theme-dark .theia-input:focus-visible {
   border-color: var(--qaap-halo-accent);
   box-shadow: var(--qaap-halo-shadow-accent);
   outline: none;
+}
+
+/*-----------------------------------------------------------------------------
+|| Command palette / quick pick (Monaco). Inline list styles from
+|| `MonacoQuickInputService#computeStyles` use resolved `--theia-*` values;
+|| component rules below align description, keybindings and chrome with Halo.
+||-----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .quick-input-widget,
+body.qaap-theme-dark .quick-input-widget {
+  background-color: var(--qaap-halo-surface) !important;
+  color: var(--qaap-halo-ink) !important;
+  border: 1px solid var(--qaap-halo-line) !important;
+  border-radius: var(--qaap-halo-radius-lg) !important;
+  box-shadow: var(--qaap-halo-shadow-lg) !important;
+}
+
+body.qaap-theme-light .quick-input-titlebar,
+body.qaap-theme-dark .quick-input-titlebar {
+  background-color: var(--qaap-halo-surface) !important;
+}
+
+body.qaap-theme-light .quick-input-widget .monaco-inputbox > .ibwrapper > .input,
+body.qaap-theme-dark .quick-input-widget .monaco-inputbox > .ibwrapper > .input,
+body.qaap-theme-light .quick-input-widget input,
+body.qaap-theme-dark .quick-input-widget input {
+  background-color: var(--qaap-halo-surface) !important;
+  color: var(--qaap-halo-ink) !important;
+  border-color: var(--qaap-halo-line) !important;
+  border-radius: var(--qaap-halo-radius-sm) !important;
+}
+
+body.qaap-theme-light .quick-input-widget .monaco-inputbox.synthetic-focus,
+body.qaap-theme-dark .quick-input-widget .monaco-inputbox.synthetic-focus {
+  outline-color: var(--qaap-halo-accent) !important;
+  box-shadow: var(--qaap-halo-shadow-accent);
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row:hover,
+body.qaap-theme-dark .quick-input-list .monaco-list-row:hover {
+  background-color: var(--qaap-halo-line-soft) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused {
+  background-color: var(--qaap-halo-accent-soft) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .label-name,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .label-name,
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .monaco-highlighted-label,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .monaco-highlighted-label,
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .codicon,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .codicon {
+  color: var(--qaap-halo-accent-ink) !important;
+}
+
+body.qaap-theme-light .quick-input-list .label-description,
+body.qaap-theme-dark .quick-input-list .label-description {
+  color: var(--qaap-halo-muted) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .label-description,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .label-description {
+  color: var(--qaap-halo-accent-ink) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .monaco-highlighted-label .highlight,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .monaco-highlighted-label .highlight {
+  color: var(--qaap-halo-accent) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-keybinding-key,
+body.qaap-theme-dark .quick-input-list .monaco-keybinding-key {
+  background-color: var(--qaap-halo-line-soft) !important;
+  border-color: var(--qaap-halo-line) !important;
+  color: var(--qaap-halo-ink-2) !important;
+  box-shadow: none !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .monaco-keybinding-key,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .monaco-keybinding-key {
+  color: var(--qaap-halo-accent-ink) !important;
+}
+
+body.qaap-theme-light .quick-input-list .quick-input-list-separator,
+body.qaap-theme-dark .quick-input-list .quick-input-list-separator {
+  color: var(--qaap-halo-muted) !important;
 }
 
 /*-----------------------------------------------------------------------------

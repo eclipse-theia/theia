@@ -129,7 +129,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected readonly mobileMq: MediaQueryList | undefined =
         typeof window !== 'undefined' ? window.matchMedia(MOBILE_NARROW_VIEWPORT_MEDIA_QUERY) : undefined;
 
-    protected backdrop: HTMLElement | undefined;
     protected bottomChromeHost: HTMLElement | undefined;
     protected bottomChromeTouchScrollDispose = Disposable.NULL;
     protected statusBarShellIndex = -1;
@@ -533,11 +532,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected removeBackdrop(): void {
-        if (this.backdrop?.parentElement) {
-            this.backdrop.removeEventListener('click', this.onBackdropClick);
-            this.backdrop.parentElement.removeChild(this.backdrop);
-        }
-        this.backdrop = undefined;
+        document.querySelector('.theia-mobile-sheet-backdrop')?.remove();
     }
 
     protected ensureOverlayElements(): void {
@@ -841,11 +836,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.bottomBarWidget = undefined;
     }
 
-    protected readonly onBackdropClick = (): void => {
-        MobileHaptics.fire(MobileHaptics.LIGHT);
-        void this.dismissMobileSideSheets();
-    };
-
     protected readonly onLeftEdgeTouchStart = (e: TouchEvent): void => {
         this.leftEdgeTouchStartX = e.changedTouches[0]?.clientX ?? 0;
     };
@@ -976,13 +966,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected updateBackdropVisibility(): void {
-        const anySide = this.isAnyMobileSideSheetVisible();
-        if (!anySide) {
-            this.removeBackdrop();
+        /* No interactive backdrop — it sat above the shell and closed sheets on the first in-panel touch. */
+        this.removeBackdrop();
+        if (!this.isAnyMobileSideSheetVisible()) {
             return;
         }
-        this.ensureSheetBackdrop();
-        this.backdrop!.classList.add('theia-mod-visible');
         window.requestAnimationFrame(() => {
             this.requestSheetRelayout();
             if (this.shell.isExpanded('left')) {
@@ -992,20 +980,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 this.relayoutMobileSidePanelHandler('right');
             }
         });
-    }
-
-    protected ensureSheetBackdrop(): void {
-        if (this.backdrop?.isConnected) {
-            return;
-        }
-        this.removeBackdrop();
-        const el = document.createElement('div');
-        el.className = 'theia-mobile-sheet-backdrop';
-        el.setAttribute('aria-hidden', 'true');
-        el.addEventListener('pointerdown', this.onBackdropClick);
-        el.addEventListener('click', this.onBackdropClick);
-        document.body.appendChild(el);
-        this.backdrop = el;
     }
 
     /** Primary mobile views; Projects first (multi-workspace hub), then agent-first actions. */
