@@ -67,6 +67,9 @@ export class MobileKeyboardHelper implements Disposable {
         '.t-siw-search-container',
         // SCM commit message — same problem when the keyboard opens above it.
         '.theia-scm-input-message-container',
+        // Monaco rename popup (F2): anchored to the symbol, reflowed off-screen
+        // when the keyboard opens and the editor shrinks.
+        '.monaco-editor .rename-box',
     ].join(', ');
 
     /** Selector for an editor textarea where the code accessory bar makes sense. */

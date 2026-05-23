@@ -1321,7 +1321,9 @@
     /* Any Monaco-styled inputbox that surfaces above content (peek widgets,
        rename, parameter hints input) — same zoom-on-focus failure mode. */
     .monaco-inputbox > .ibwrapper > .input,
-    .monaco-inputbox > .ibwrapper > textarea {
+    .monaco-inputbox > .ibwrapper > textarea,
+    /* Monaco rename popup input (F2 on a symbol). */
+    .monaco-editor .rename-box input {
       font-size: 16px;
     }
   }
