@@ -54,6 +54,19 @@ export class MobileKeyboardHelper implements Disposable {
         '.theia-mobile-open-repo',
         '.lm-Widget.dialogOverlay',
         '.chat-view-widget',
+        // Monaco editor find/replace widget anchors at the top of the editor.
+        // Without skipping the viewport nudge, the keyboard opens, the shell shrinks,
+        // the widget reflows, the input loses focus, and the keyboard closes → loop.
+        '.monaco-editor .find-widget',
+        // Notebook find widget pins itself similarly above the notebook.
+        '.theia-notebook-find-widget',
+        // Terminal in-pane search panel.
+        '.terminal-search-container',
+        // Search-in-workspace view — its inputs sit above the result tree and
+        // viewport nudges scroll the tree away from the input on every keystroke.
+        '.t-siw-search-container',
+        // SCM commit message — same problem when the keyboard opens above it.
+        '.theia-scm-input-message-container',
     ].join(', ');
 
     /** Selector for an editor textarea where the code accessory bar makes sense. */

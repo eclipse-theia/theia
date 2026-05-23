@@ -41,6 +41,7 @@ import { CancellationToken, Event } from '@theia/core';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MonacoQuickInputLayout } from './monaco-quick-input-layout';
+import { matchesMobileNarrowViewport } from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService';
 import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate';
@@ -160,7 +161,16 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.themeService.initialized.then(() => this.controller.applyStyles(this.computeStyles()));
         // Hook into the theming service of Monaco to ensure that the updates are ready.
         StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.computeStyles()));
-        window.addEventListener('resize', () => this.updateLayout());
+        window.addEventListener('resize', () => {
+            // On narrow mobile viewports, the virtual keyboard fires `resize` whenever it opens
+            // or closes. Re-running `controller.layout(...)` while a quick-input field is focused
+            // re-renders the input element and drops focus -> keyboard hides -> another resize.
+            // The picker is laid out full-width by CSS on mobile, so skipping is safe.
+            if (matchesMobileNarrowViewport() && this.container.contains(document.activeElement)) {
+                return;
+            }
+            this.updateLayout();
+        });
     }
 
     setContextKey(key: string | undefined): void {

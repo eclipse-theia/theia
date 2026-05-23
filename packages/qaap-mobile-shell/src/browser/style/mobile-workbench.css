@@ -1302,7 +1302,26 @@
     .theia-mobile-open-repo-public-input,
     .lm-Widget.dialogOverlay input,
     .lm-Widget.dialogOverlay textarea,
-    .lm-Widget.dialogOverlay select {
+    .lm-Widget.dialogOverlay select,
+    /* Monaco editor find/replace widget (Ctrl+F): inputs sit above the editor and
+       would otherwise trigger the iOS zoom-on-focus loop, dropping focus and
+       making the widget unusable on phones. */
+    .monaco-editor .find-widget .monaco-inputbox > .ibwrapper > .input,
+    .monaco-editor .find-widget .monaco-inputbox > .ibwrapper > textarea,
+    .monaco-editor .find-widget input,
+    /* SCM commit message textarea. */
+    .theia-scm-input-message-container textarea,
+    /* Search across files / replace inputs. */
+    .t-siw-search-container input,
+    .t-siw-search-container textarea,
+    /* Notebook find/replace widget. */
+    .theia-notebook-find-widget input,
+    /* Terminal in-pane search (Ctrl+F in terminal). */
+    .terminal-search-container input,
+    /* Any Monaco-styled inputbox that surfaces above content (peek widgets,
+       rename, parameter hints input) — same zoom-on-focus failure mode. */
+    .monaco-inputbox > .ibwrapper > .input,
+    .monaco-inputbox > .ibwrapper > textarea {
       font-size: 16px;
     }
   }
