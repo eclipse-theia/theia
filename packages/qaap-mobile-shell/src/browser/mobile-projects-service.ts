@@ -364,7 +364,7 @@ export class MobileProjectsService {
     /** Public access to the list of GitHub repositories visible to the signed-in user. */
     async listGithubRepositories(): Promise<MobileProjectEntry[]> {
         const sessionMap = await this.loadSessionMap();
-        return this.loadGithubProjects(sessionMap);
+        return this.sortProjectsByRecent(await this.loadGithubProjects(sessionMap));
     }
 
     protected readDisplayNames(): Record<string, string> {
@@ -432,6 +432,7 @@ export class MobileProjectsService {
             progress: stored.progress,
             agents: stored.agents,
             lastActive: stored.lastActive,
+            lastActiveAt: stored.lastActiveAt,
             tokens: stored.tokens,
             cost: stored.cost,
             pinned: this.isPinned(stored.id, pinnedIds, stored.pinned),
@@ -507,6 +508,7 @@ export class MobileProjectsService {
             progress: project.progress,
             agents: project.agents.map(a => ({ ...a })),
             lastActive: project.lastActive !== '—' ? project.lastActive : '—',
+            lastActiveAt: project.lastActiveAt,
             tokens: project.tokens,
             cost: project.cost,
             pinned: false,
@@ -572,7 +574,7 @@ export class MobileProjectsService {
         const sessionMap = await this.loadSessionMap();
         const githubProjects = await this.loadGithubProjects(sessionMap);
         if (githubProjects.length > 0) {
-            return githubProjects;
+            return this.sortProjectsByRecent(githubProjects);
         }
 
         const entries: MobileProjectEntry[] = [];
@@ -585,6 +587,7 @@ export class MobileProjectsService {
             const uri = current.resource;
             const name = this.labelProvider.getName(uri);
             const id = `ws:${uri.toString()}`;
+            const now = new Date().toISOString();
             entries.push(this.applySessionToEntry({
                 id,
                 name: this.resolveDisplayName(id, name),
@@ -595,6 +598,7 @@ export class MobileProjectsService {
                 progress: 0.35,
                 agents: [{ role: 'ai', color: '#3B6FA0' }],
                 lastActive: nls.localize('qaap/mobileProjects/lastActiveNow', 'now'),
+                lastActiveAt: now,
                 tokens: '—',
                 cost: '—',
                 pinned: this.isPinned(id, pinnedIds, true),
@@ -643,7 +647,7 @@ export class MobileProjectsService {
             entries.push(this.storedToEntry(stored, pinnedIds));
         }
 
-        return entries.filter(p => !hiddenIds.has(p.id));
+        return this.sortProjectsByRecent(entries.filter(p => !hiddenIds.has(p.id)));
     }
 
     /** Records hub metrics for the active workspace (local + server when signed in). */
@@ -725,6 +729,7 @@ export class MobileProjectsService {
             return entry;
         }
         const status = session.agentState ?? entry.status;
+        const lastActiveAt = this.latestTimestamp(entry.lastActiveAt, session.lastActiveAt);
         return {
             ...entry,
             branch: session.branch || entry.branch,
@@ -732,7 +737,8 @@ export class MobileProjectsService {
             task: session.lastTask?.trim() || entry.task,
             tokens: session.tokens ?? entry.tokens,
             cost: session.cost ?? entry.cost,
-            lastActive: session.lastActiveAt ? this.relativeUpdatedAt(session.lastActiveAt) : entry.lastActive,
+            lastActive: lastActiveAt ? this.relativeUpdatedAt(lastActiveAt) : entry.lastActive,
+            lastActiveAt,
             previewUrl: session.previewUrl ?? entry.previewUrl,
             progress: status === 'working' ? Math.max(entry.progress, 0.2) : entry.progress,
             agents: status === 'working' || status === 'review'
@@ -777,6 +783,7 @@ export class MobileProjectsService {
         const id = `github:${repo.fullName}`;
         const name = this.resolveDisplayName(id, repo.name);
         const isCurrent = repo.fullName.toLowerCase() === currentFullName;
+        const lastActiveAt = isCurrent ? new Date().toISOString() : repo.updatedAt;
         return {
             id,
             name,
@@ -791,7 +798,10 @@ export class MobileProjectsService {
                     : nls.localize('qaap/mobileProjects/githubRepo', 'GitHub repository')),
             progress: isCurrent ? 0.35 : 0,
             agents: isCurrent ? [{ role: 'ai', color: '#3B6FA0' }] : [],
-            lastActive: this.relativeUpdatedAt(repo.updatedAt),
+            lastActive: isCurrent
+                ? nls.localize('qaap/mobileProjects/lastActiveNow', 'now')
+                : this.relativeUpdatedAt(repo.updatedAt),
+            lastActiveAt,
             tokens: '—',
             cost: '—',
             pinned: this.isPinned(id, pinnedIds, isCurrent),
@@ -822,6 +832,30 @@ export class MobileProjectsService {
             return nls.localize('qaap/mobileProjects/updatedHours', '{0} h', String(Math.round(diff / hour)));
         }
         return nls.localize('qaap/mobileProjects/updatedDays', '{0} d', String(Math.round(diff / day)));
+    }
+
+    protected sortProjectsByRecent(projects: MobileProjectEntry[]): MobileProjectEntry[] {
+        return [...projects].sort((a, b) => this.projectActivityTime(b) - this.projectActivityTime(a));
+    }
+
+    protected projectActivityTime(project: MobileProjectEntry): number {
+        if (!project.lastActiveAt) {
+            return 0;
+        }
+        const time = Date.parse(project.lastActiveAt);
+        return Number.isFinite(time) ? time : 0;
+    }
+
+    protected latestTimestamp(a?: string, b?: string): string | undefined {
+        const timeA = a ? Date.parse(a) : NaN;
+        const timeB = b ? Date.parse(b) : NaN;
+        if (Number.isFinite(timeA) && Number.isFinite(timeB)) {
+            return timeA >= timeB ? a : b;
+        }
+        if (Number.isFinite(timeA)) {
+            return a;
+        }
+        return Number.isFinite(timeB) ? b : undefined;
     }
 
     filterProjects(projects: MobileProjectEntry[], filter: MobileProjectFilter): MobileProjectEntry[] {

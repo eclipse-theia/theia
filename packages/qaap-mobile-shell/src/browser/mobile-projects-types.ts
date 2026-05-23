@@ -22,6 +22,7 @@ export interface MobileProjectEntry {
     progress: number;
     agents: MobileProjectAgent[];
     lastActive: string;
+    lastActiveAt?: string;
     tokens: string;
     cost: string;
     pinned: boolean;
@@ -51,6 +52,7 @@ export interface StoredMobileProject {
     progress: number;
     agents: MobileProjectAgent[];
     lastActive: string;
+    lastActiveAt?: string;
     tokens: string;
     cost: string;
     pinned: boolean;
