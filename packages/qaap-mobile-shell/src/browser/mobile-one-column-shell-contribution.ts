@@ -64,13 +64,11 @@ class MobileBottomBarWidget extends LuminoWidget {
 const WORKBENCH_AI_CHAT_TOGGLE = 'aiChat:toggle';
 const WORKBENCH_CHAT_VIEW_WIDGET_ID = 'chat-view-widget';
 const WORKBENCH_TOGGLE_TERMINAL = 'workbench.action.terminal.toggleTerminal';
-const WORKBENCH_TASKS_RUN = 'workbench.action.tasks.runTask';
 const WORKBENCH_OPEN_DIFF = 'qaap.diff.openReview';
 const WORKBENCH_OPEN_AGENT_TASKS = 'qaap.agentTasks.open';
 const MINI_BROWSER_OPEN_URL = 'mini-browser.openUrl';
 const GETTING_STARTED_WIDGET_COMMAND = 'getting.started.widget';
 const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
-const VSX_EXTENSIONS_VIEW_CONTAINER_ID = 'vsx-extensions-view-container';
 const OPEN_AI_CONFIGURATION_COMMAND = 'aiConfiguration:open';
 const EDIT_CHAT_SESSION_SETTINGS_COMMAND = 'chat:widget:session-settings';
 
@@ -82,7 +80,7 @@ interface ShellWithMaximizedOverlay {
     readonly maximizedElement: HTMLElement;
 }
 
-type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'explore' | 'pr' | 'diff' | 'jobs' | 'tasks' | 'skills' | 'terminal';
+type MobileBottomButtonId = 'projects' | 'agent' | 'preview' | 'explore' | 'pr' | 'diff' | 'jobs' | 'terminal';
 
 interface MobileBottomButton {
     id: MobileBottomButtonId;
@@ -999,8 +997,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             { id: 'pr', label: nls.localize('qaap/mobileBottomBar/pr', 'PR'), icon: 'codicon-git-pull-request' },
             { id: 'diff', label: nls.localize('theia/core/mobileBottomBar/diff', 'Diff'), icon: 'codicon-diff', commandId: WORKBENCH_OPEN_DIFF },
             { id: 'jobs', label: nls.localize('qaap/mobileBottomBar/jobs', 'Jobs'), icon: 'codicon-server-process', commandId: WORKBENCH_OPEN_AGENT_TASKS },
-            { id: 'tasks', label: nls.localize('theia/core/mobileBottomBar/tasks', 'Tasks'), icon: 'codicon-list-tree', commandId: WORKBENCH_TASKS_RUN },
-            { id: 'skills', label: nls.localize('theia/core/mobileBottomBar/skills', 'Skills'), icon: 'codicon-extensions' },
         ];
     }
 
@@ -1473,12 +1469,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (def.id === 'explore') {
             this.hidePullRequestPanel();
             await this.toggleMobileExploreSheet();
-            return;
-        }
-        if (def.id === 'skills') {
-            this.hidePullRequestPanel();
-            await this.openMobileSideSheet('left', VSX_EXTENSIONS_VIEW_CONTAINER_ID);
-            this.scheduleSnapAndUiRefresh();
             return;
         }
         this.hideProjectsPanel();
