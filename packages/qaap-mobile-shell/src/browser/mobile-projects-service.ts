@@ -157,6 +157,7 @@ export class MobileProjectsService {
     }
 
     openWorkspaceUri(uri: URI): void {
+        this.touchWorkspaceActivity(uri);
         requestMobileProjectsPanelDismiss();
         markMobileProjectReadmeForOpen();
         this.workspaceService.open(uri, { preserveWindow: true });
@@ -184,6 +185,7 @@ export class MobileProjectsService {
             return;
         }
         if (project.uri) {
+            this.touchProjectActivity(project);
             this.openWorkspaceUri(project.uri);
         }
     }
@@ -196,6 +198,7 @@ export class MobileProjectsService {
         if (!project.uri) {
             return;
         }
+        this.touchProjectActivity(project);
         markMobileProjectReadmeForOpen();
         const url = new URL(window.location.href);
         url.hash = encodeURI(this.workspacePathFromUri(project.uri));
@@ -215,6 +218,7 @@ export class MobileProjectsService {
         try {
             const result = await openQaapGithubRepository(project.github.owner, project.github.name);
             const uri = new URI(result.workspaceUri);
+            this.touchProjectActivity(project);
             if (newWindow) {
                 MobileSnackbar.dismiss();
                 const url = new URL(window.location.href);
@@ -619,7 +623,7 @@ export class MobileProjectsService {
                 seen.add(key);
                 const name = this.labelProvider.getName(uri);
                 const id = `recent:${key}`;
-                entries.push({
+                entries.push(this.applySessionToEntry({
                     id,
                     name: this.resolveDisplayName(id, name),
                     color: mobileProjectColorForName(name),
@@ -634,7 +638,7 @@ export class MobileProjectsService {
                     pinned: this.isPinned(id, pinnedIds, false),
                     uri,
                     isCurrent: false,
-                });
+                }, sessionMap.get(`ws:${key}`)));
             }
         } catch {
             /* recent list optional */
@@ -671,6 +675,37 @@ export class MobileProjectsService {
         if (readQaapSignedIn()) {
             await upsertQaapProjectSession(row).catch(() => undefined);
         }
+    }
+
+    protected touchProjectActivity(project: MobileProjectEntry): void {
+        const repoKey = this.projectSessionKey(project);
+        if (!repoKey) {
+            return;
+        }
+        this.touchProjectSession(repoKey, project.branch);
+    }
+
+    protected touchWorkspaceActivity(uri: URI): void {
+        this.touchProjectSession(`ws:${uri.toString()}`, uri.path.base);
+    }
+
+    protected touchProjectSession(repoKey: string, branch: string): void {
+        const row: QaapProjectSessionSummary = {
+            repoKey,
+            branch: branch || 'main',
+            lastActiveAt: new Date().toISOString(),
+        };
+        patchLocalProjectSession(row);
+        if (readQaapSignedIn()) {
+            void upsertQaapProjectSession(row).catch(() => undefined);
+        }
+    }
+
+    protected projectSessionKey(project: MobileProjectEntry): string | undefined {
+        if (project.github) {
+            return `github:${project.github.fullName}`;
+        }
+        return project.uri ? `ws:${project.uri.toString()}` : undefined;
     }
 
     protected currentRepoKey(): string | undefined {
@@ -761,7 +796,7 @@ export class MobileProjectsService {
             return response.repositories
                 .map(repo => this.applySessionToEntry(
                     this.githubRepositoryToProject(repo, pinnedIds, currentFullName),
-                    sessionMap.get(`github:${repo.fullName}`)
+                    sessionMap.get(`github:${repo.fullName}`) ?? sessionMap.get(`github:${repo.fullName.toLowerCase()}`)
                 ));
         } catch (err) {
             console.warn('[qaap] Failed to load GitHub repositories:', err);
