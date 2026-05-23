@@ -23,7 +23,7 @@ import {
     QaapProjectKind,
     isMonorepoDescriptor,
 } from './qaap-project-bootstrap-types';
-import { probeQaapDevPreviewPort, toProxiedDevPreviewUrl } from './qaap-dev-preview-client';
+import { probeQaapDevPreviewPort, toDevPreviewUrl } from './qaap-dev-preview-client';
 import {
     getImplicitDevPort,
     getQaapIdeListenPort,
@@ -630,7 +630,7 @@ export class QaapProjectBootstrapService {
             if (isReservedIdePort(effectivePort)) {
                 continue;
             }
-            this.recordForwardedPort(effectivePort, toProxiedDevPreviewUrl(effectivePort));
+            this.recordForwardedPort(effectivePort, toDevPreviewUrl(effectivePort));
         }
     }
 

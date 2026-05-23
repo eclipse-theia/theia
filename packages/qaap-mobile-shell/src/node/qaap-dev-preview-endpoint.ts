@@ -11,7 +11,7 @@ import * as net from 'net';
 import {
     QAAP_DEV_PREVIEW_PREFIX,
     QAAP_DEV_PREVIEW_PROBE_PATH,
-    buildQaapDevPreviewUrl,
+    buildQaapDevPreviewOpenUrl,
     isAllowedDevPreviewPort,
     parseQaapDevPreviewPort,
     parseQaapDevPreviewRequestPath,
@@ -53,13 +53,13 @@ export class QaapDevPreviewEndpoint implements BackendApplicationContribution {
             return;
         }
         if (this.isIdeListenPort(port)) {
-            res.json({ ready: false, previewUrl: buildQaapDevPreviewUrl(origin, port) } satisfies QaapDevPreviewProbeResponse);
+            res.json({ ready: false, previewUrl: buildQaapDevPreviewOpenUrl(origin, port) } satisfies QaapDevPreviewProbeResponse);
             return;
         }
         const ready = await this.probeLocalDevServer(port);
         const body: QaapDevPreviewProbeResponse = {
             ready,
-            previewUrl: buildQaapDevPreviewUrl(origin, port),
+            previewUrl: buildQaapDevPreviewOpenUrl(origin, port),
         };
         res.json(body);
     }

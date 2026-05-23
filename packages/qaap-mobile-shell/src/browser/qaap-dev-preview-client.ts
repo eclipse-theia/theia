@@ -5,7 +5,7 @@
 
 import {
     QAAP_DEV_PREVIEW_PROBE_PATH,
-    buildQaapDevPreviewUrl,
+    buildQaapDevPreviewOpenUrl,
     type QaapDevPreviewProbeResponse,
 } from '../common/qaap-dev-preview';
 
@@ -19,12 +19,12 @@ export function getQaapPublicOrigin(): string {
     return window.location.origin.replace(/\/+$/, '');
 }
 
-/** Same-origin proxied preview URL; safe for mini-browser on VPS and localhost. */
-export function toProxiedDevPreviewUrl(port: number, origin: string = getQaapPublicOrigin()): string {
+/** Preview URL for the current host: direct on localhost, same-origin proxy on remote deployments. */
+export function toDevPreviewUrl(port: number, origin: string = getQaapPublicOrigin()): string {
     if (!origin) {
-        return buildQaapDevPreviewUrl(`http://127.0.0.1:${port}`, port);
+        return buildQaapDevPreviewOpenUrl(`http://127.0.0.1:${port}`, port);
     }
-    return buildQaapDevPreviewUrl(origin, port);
+    return buildQaapDevPreviewOpenUrl(origin, port);
 }
 
 /**
@@ -35,7 +35,7 @@ export async function probeQaapDevPreviewPort(port: number): Promise<QaapDevPrev
     const origin = getQaapPublicOrigin();
     const fallback: QaapDevPreviewProbeResponse = {
         ready: false,
-        previewUrl: toProxiedDevPreviewUrl(port, origin),
+        previewUrl: toDevPreviewUrl(port, origin),
     };
     if (!origin) {
         return fallback;

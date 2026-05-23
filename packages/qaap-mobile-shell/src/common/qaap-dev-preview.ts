@@ -10,7 +10,7 @@ export const QAAP_DEV_PREVIEW_PROBE_PATH = `${QAAP_DEV_PREVIEW_PREFIX}/api/probe
 
 export interface QaapDevPreviewProbeResponse {
     readonly ready: boolean;
-    /** Same-origin URL the mini-browser should load, e.g. `http://178.x.x.x:3000/qaap-dev/3001/`. */
+    /** URL the mini-browser should load, direct on localhost and proxied on remote hosts. */
     readonly previewUrl: string;
 }
 
@@ -30,6 +30,28 @@ export function normalizePublicOrigin(origin: string): string {
     return origin.replace(/\/+$/, '');
 }
 
+export function isLocalQaapPreviewOrigin(publicOrigin: string): boolean {
+    try {
+        const { hostname } = new URL(normalizePublicOrigin(publicOrigin));
+        return hostname === 'localhost'
+            || hostname === '127.0.0.1'
+            || hostname === '0.0.0.0'
+            || hostname === '[::1]'
+            || hostname === '::1';
+    } catch {
+        return false;
+    }
+}
+
+export function buildDirectDevPreviewUrl(publicOrigin: string, port: number): string {
+    const url = new URL(normalizePublicOrigin(publicOrigin));
+    url.port = String(port);
+    url.pathname = '/';
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+}
+
 /**
  * Builds the preview URL served by {@link QAAP_DEV_PREVIEW_PREFIX} on the Qaap backend.
  * Works for localhost, VPS IP (`http://178.x.x.x:3000`), and future custom domains.
@@ -37,6 +59,12 @@ export function normalizePublicOrigin(origin: string): string {
 export function buildQaapDevPreviewUrl(publicOrigin: string, port: number): string {
     const base = normalizePublicOrigin(publicOrigin);
     return `${base}${QAAP_DEV_PREVIEW_PREFIX}/${port}/`;
+}
+
+export function buildQaapDevPreviewOpenUrl(publicOrigin: string, port: number): string {
+    return isLocalQaapPreviewOrigin(publicOrigin)
+        ? buildDirectDevPreviewUrl(publicOrigin, port)
+        : buildQaapDevPreviewUrl(publicOrigin, port);
 }
 
 /** Parses `/qaap-dev/5173/...` upgrade or request paths. */

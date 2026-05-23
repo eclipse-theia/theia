@@ -5,6 +5,7 @@
 
 import { expect } from 'chai';
 import {
+    buildQaapDevPreviewOpenUrl,
     buildQaapDevPreviewUrl,
     parseQaapDevPreviewRequestPath,
     parseQaapDevPreviewPort,
@@ -15,6 +16,18 @@ describe('qaap-dev-preview', () => {
     it('buildQaapDevPreviewUrl works for VPS IP origins', () => {
         expect(buildQaapDevPreviewUrl('http://178.105.136.93:3000', 3001))
             .to.equal('http://178.105.136.93:3000/qaap-dev/3001/');
+    });
+
+    it('buildQaapDevPreviewOpenUrl uses direct localhost ports', () => {
+        expect(buildQaapDevPreviewOpenUrl('http://localhost:3000', 5173))
+            .to.equal('http://localhost:5173/');
+        expect(buildQaapDevPreviewOpenUrl('http://127.0.0.1:3000', 5173))
+            .to.equal('http://127.0.0.1:5173/');
+    });
+
+    it('buildQaapDevPreviewOpenUrl keeps the proxy for remote origins', () => {
+        expect(buildQaapDevPreviewOpenUrl('http://178.105.136.93:3000', 5173))
+            .to.equal('http://178.105.136.93:3000/qaap-dev/5173/');
     });
 
     it('parseQaapDevPreviewRequestPath extracts port and path', () => {
