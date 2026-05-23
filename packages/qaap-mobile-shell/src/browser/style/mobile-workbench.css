@@ -320,6 +320,40 @@
     display: inline-block;
   }
 
+  /*-----------------------------------------------------------------------------
+  || Breadcrumbs. Desktop row is 22px tall — below WCAG 2.5.5; the dropdown
+  || picker is 300×200 fixed and clips off-screen on a phone.
+  ||----------------------------------------------------------------------------*/
+  .theia-breadcrumbs {
+    height: 36px;
+    padding: 0 4px;
+  }
+
+  .theia-breadcrumbs .theia-breadcrumb-item {
+    padding: 0 6px;
+    min-height: 36px;
+  }
+
+  .theia-breadcrumbs .theia-breadcrumb-item:not(:last-of-type)::after {
+    font-size: var(--theia-ui-font-size3, 14px);
+  }
+
+  /* Pin the breadcrumb picker to the viewport so it doesn't run off the edge. */
+  .theia-breadcrumbs-popup {
+    width: min(calc(100vw - 16px), 480px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: 60vh !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .theia-breadcrumbs-popup ul li {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+
   /* Flex child of `.theia-tabBar-tab-row` must shrink below tab min-content so overflow-x applies here. */
   #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
   #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container {
