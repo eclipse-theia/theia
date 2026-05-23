@@ -113,6 +113,29 @@
     margin: 8px 10px;
   }
 
+  /* Action icons (close, expand, source) ship at 16×16. Expand the hit area
+     to 36×36 with content-box so the icon itself stays the same visual size. */
+  .theia-notification-actions > li {
+    width: 36px;
+    height: 36px;
+    padding: 10px;
+    margin-left: 0;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .theia-notification-center-header-actions > li,
+  .theia-notification-center-header-actions > div {
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .theia-notifications-container.theia-notification-toasts
     .theia-notification-message {
     display: -webkit-box;

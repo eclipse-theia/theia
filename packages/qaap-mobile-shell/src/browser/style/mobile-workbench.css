@@ -449,8 +449,10 @@
   }
 
   .lm-TabBar-toolbar .item > div {
-    min-width: 32px;
-    min-height: 32px;
+    /* 32 → 36 to match `.theia-sidepanel-toolbar` and the WCAG 2.5.5 floor.
+       The bottom panel toggle (maximize/minimize) lives here too. */
+    min-width: 36px;
+    min-height: 36px;
   }
 
   .theia-input {
