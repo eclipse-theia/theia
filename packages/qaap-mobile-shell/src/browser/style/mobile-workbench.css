@@ -296,6 +296,30 @@
     scroll-snap-align: start;
   }
 
+  /* Tab close (×): desktop renders at 16px with 2px padding → ~20px hit area,
+     well below WCAG 2.5.5. Expand to 28×28 on the current tab so it can be
+     hit reliably with a fingertip without growing the tab row height. */
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab.lm-mod-closable > .lm-TabBar-tabCloseIcon,
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab.theia-mod-pinned > .lm-TabBar-tabCloseIcon,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab.lm-mod-closable > .lm-TabBar-tabCloseIcon,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab.theia-mod-pinned > .lm-TabBar-tabCloseIcon {
+    width: 28px;
+    height: 28px;
+    padding: 6px;
+    line-height: 16px;
+    margin-left: 6px;
+    font-size: 16px;
+    box-sizing: content-box;
+  }
+
+  /* On touch-only devices, `:hover` never fires; reveal the close icon on the
+     current tab unconditionally so the user has a way to close it. Dynamic
+     tabs (`.dynamic-tabs`) still keep the desktop behaviour of hiding it. */
+  #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"]:not(.dynamic-tabs) .lm-TabBar-tab.lm-mod-closable.lm-mod-current > .lm-TabBar-tabCloseIcon,
+  #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"]:not(.dynamic-tabs) .lm-TabBar-tab.lm-mod-closable.lm-mod-current > .lm-TabBar-tabCloseIcon {
+    display: inline-block;
+  }
+
   /* Flex child of `.theia-tabBar-tab-row` must shrink below tab min-content so overflow-x applies here. */
   #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
   #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container {
