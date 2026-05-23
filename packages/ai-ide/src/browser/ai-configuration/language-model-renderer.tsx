@@ -18,6 +18,8 @@ import { Agent, AISettingsService, FrontendLanguageModelRegistry, LanguageModel,
 import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { Mutable } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
+import { isFreeNvidiaModelId } from '@theia/ai-nvidia/lib/common';
+import { isFreeOpenRouterModelId } from '@theia/ai-openrouter/lib/common';
 
 export interface LanguageModelSettingsProps {
     agent: Agent;
@@ -116,14 +118,19 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                             ))}
                             {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => {
                                 const isNotReady = model.status.status !== 'ready';
+                                const isFree = isFreeNvidiaModelId(model.id) || isFreeOpenRouterModelId(model.id);
                                 return (
                                     <option
                                         key={model.id}
                                         value={model.id}
                                         className={isNotReady ? 'ai-language-model-item-not-ready' : 'ai-language-model-item-ready'}
-                                        title={isNotReady && model.status.message ? model.status.message : undefined}
+                                        title={isFree
+                                            ? nls.localize('theia/ai/core/languageModelRenderer/freeModelTooltip',
+                                                'Free-tier model — NVIDIA NIM (build.nvidia.com) or OpenRouter (slug ending with `:free`). Usable at no cost with a free provider account.')
+                                            : (isNotReady && model.status.message ? model.status.message : undefined)}
                                     >
                                         {model.name ?? model.id} {isNotReady ? '✗' : '✓'}
+                                        {isFree ? `  🆓 ${nls.localize('theia/ai/core/languageModelRenderer/freeModelBadge', 'Free')}` : ''}
                                     </option>
                                 );
                             })}

@@ -16,6 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { spawn, ChildProcess, execSync } from 'child_process';
+import * as fs from 'fs';
 import * as path from 'path';
 import { ShellExecutionServer, ShellExecutionRequest, ShellExecutionResult } from '../common/shell-execution-server';
 
@@ -127,7 +128,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                 }
             });
 
-            childProcess.on('error', (error: Error) => {
+            childProcess.on('error', (error: Error & { code?: string }) => {
                 clearTimeout(timeoutId);
 
                 if (executionId) {
@@ -135,12 +136,29 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                     this.canceledExecutions.delete(executionId);
                 }
 
+                // Node reports a missing `cwd` directory as `spawn /bin/sh ENOENT` (it blames the
+                // shell rather than the missing dir). That confuses both users and the LLM agent,
+                // which then tries the same thing again. Detect that case and explain.
+                let message = error.message;
+                if (error.code === 'ENOENT' && resolvedCwd) {
+                    let cwdExists = false;
+                    try {
+                        cwdExists = fs.statSync(resolvedCwd).isDirectory();
+                    } catch {
+                        cwdExists = false;
+                    }
+                    if (!cwdExists) {
+                        message = `Working directory does not exist: ${resolvedCwd}. ` +
+                            'Pass a different cwd (or omit it to use the workspace root).';
+                    }
+                }
+
                 resolve({
                     success: false,
                     exitCode: undefined,
                     stdout,
                     stderr,
-                    error: error.message,
+                    error: message,
                     duration: Date.now() - startTime,
                     resolvedCwd,
                 });
@@ -186,9 +204,28 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
         if (path.isAbsolute(requestedCwd)) {
             return requestedCwd;
         }
-        if (workspaceRoot) {
-            return path.resolve(workspaceRoot, requestedCwd);
+        if (!workspaceRoot) {
+            return requestedCwd;
         }
-        return requestedCwd;
+        // A common LLM mistake: passing `cwd: "<projectName>"` thinking workspaceRoot is the
+        // parent dir, when in fact workspaceRoot IS the project. Naively joining produces
+        // `<workspaceRoot>/<projectName>` which does not exist, and `child_process.spawn` then
+        // fails with the famously misleading `spawn /bin/sh ENOENT` (Node blames the shell when
+        // really the `cwd` is missing). Detect that case and use workspaceRoot directly.
+        if (requestedCwd === path.basename(workspaceRoot) || requestedCwd === `./${path.basename(workspaceRoot)}`) {
+            return workspaceRoot;
+        }
+        const candidate = path.resolve(workspaceRoot, requestedCwd);
+        // If the joined directory doesn't exist on disk, fall back to workspaceRoot rather than
+        // letting spawn fail with the misleading ENOENT. This is defensive — the model can still
+        // pass nonsense, but we degrade gracefully instead of confusing the agent.
+        try {
+            if (fs.statSync(candidate).isDirectory()) {
+                return candidate;
+            }
+        } catch {
+            // candidate doesn't exist or isn't accessible
+        }
+        return workspaceRoot;
     }
 }

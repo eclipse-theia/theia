@@ -98,6 +98,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(QaapHubActionsContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(QaapHubActionsContribution);
+    bind(FrontendApplicationContribution).toService(QaapHubActionsContribution);
 
     bind(QaapMobileAppTesterContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapMobileAppTesterContribution);

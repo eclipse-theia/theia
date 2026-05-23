@@ -488,6 +488,11 @@ export class MobileProjectsPanel {
         name.className = 'theia-mobile-projects-name';
         name.textContent = project.name;
         nameRow.append(name);
+        const inlineStatusDot = document.createElement('span');
+        inlineStatusDot.className = 'theia-mobile-projects-name-dot';
+        inlineStatusDot.style.background = status.color;
+        inlineStatusDot.setAttribute('aria-hidden', 'true');
+        nameRow.append(inlineStatusDot);
         if (project.pinned) {
             const pin = document.createElement('span');
             pin.className = 'codicon codicon-pin theia-mobile-projects-pin';
@@ -500,6 +505,7 @@ export class MobileProjectsPanel {
             time.textContent = project.lastActive;
             nameRow.append(time);
         }
+        nameRow.append(menuBtn);
         const branchRow = document.createElement('div');
         branchRow.className = 'theia-mobile-projects-branch';
         branchRow.innerHTML = '<span class="codicon codicon-git-branch" aria-hidden="true"></span>';
@@ -552,7 +558,7 @@ export class MobileProjectsPanel {
             body.append(bar);
         }
 
-        card.append(body, menuBtn, menu);
+        card.append(body, menu);
         return card;
     }
 

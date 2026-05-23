@@ -75,6 +75,9 @@
       "path": "../../packages/ai-openai"
     },
     {
+      "path": "../../packages/ai-openrouter"
+    },
+    {
       "path": "../../packages/ai-scanoss"
     },
     {

@@ -25,6 +25,12 @@
       "path": "../ai-mcp"
     },
     {
+      "path": "../ai-nvidia"
+    },
+    {
+      "path": "../ai-openrouter"
+    },
+    {
       "path": "../ai-terminal"
     },
     {

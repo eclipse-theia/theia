@@ -59,7 +59,12 @@ export class LaunchListProvider implements ToolProvider {
                 required: []
             },
             handler: async (argString: string) => {
-                const filterArgs: { filter?: string } = JSON.parse(argString);
+                // The model can legitimately invoke this tool with no arguments (`filter` is optional),
+                // in which case `argString` arrives as '' and a raw `JSON.parse('')` throws
+                // "unexpected end of data". That exception bubbles up as a tool error and tends to
+                // trigger the agent to retry in a loop, burning through provider rate limits. Treat
+                // an empty / whitespace-only payload as `{}` so the no-filter case just works.
+                const filterArgs: { filter?: string } = argString && argString.trim() ? JSON.parse(argString) : {};
                 const configurations = await this.getAvailableLaunchConfigurations(filterArgs.filter);
                 return JSON.stringify(configurations);
             }

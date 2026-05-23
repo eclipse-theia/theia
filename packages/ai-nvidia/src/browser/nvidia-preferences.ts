@@ -6,6 +6,7 @@
 
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
+import { NVIDIA_FREE_MODELS } from '../common/nvidia-models';
 
 /** Default NVIDIA NIM endpoint. It is OpenAI Chat-Completions compatible. */
 export const NVIDIA_DEFAULT_BASE_URL = 'https://integrate.api.nvidia.com/v1';
@@ -18,12 +19,7 @@ export const MODELS_PREF = 'ai-features.nvidia.nvidiaModels';
  * Curated set of models that NVIDIA NIM exposes for free via build.nvidia.com.
  * Users can add or remove entries from the preferences.
  */
-export const NVIDIA_DEFAULT_MODELS: string[] = [
-    'nvidia/llama-3.3-nemotron-super-49b-v1',
-    'meta/llama-3.3-70b-instruct',
-    'deepseek-ai/deepseek-r1',
-    'qwen/qwen2.5-coder-32b-instruct'
-];
+export const NVIDIA_DEFAULT_MODELS: string[] = [...NVIDIA_FREE_MODELS];
 
 export const NvidiaPreferencesSchema: PreferenceSchema = {
     properties: {

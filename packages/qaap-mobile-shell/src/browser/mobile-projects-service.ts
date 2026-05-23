@@ -678,6 +678,32 @@ export class MobileProjectsService {
         return uri ? `ws:${uri.toString()}` : undefined;
     }
 
+    /** Stable key used to defer hub actions until the selected project is the active workspace. */
+    getProjectWorkspaceMatchKey(project: MobileProjectEntry): string | undefined {
+        if (project.github) {
+            return `github:${project.github.fullName.toLowerCase()}`;
+        }
+        return project.uri ? `ws:${project.uri.toString()}` : undefined;
+    }
+
+    /** Stable key for the workspace currently loaded in this window. */
+    getCurrentWorkspaceMatchKey(): string | undefined {
+        const fullName = this.currentGithubRepositoryFullName();
+        if (fullName) {
+            return `github:${fullName}`;
+        }
+        const uri = this.workspaceService.workspace?.resource;
+        return uri ? `ws:${uri.toString()}` : undefined;
+    }
+
+    projectMatchesCurrentWorkspace(project: MobileProjectEntry): boolean {
+        if (project.isCurrent) {
+            return true;
+        }
+        const projectKey = this.getProjectWorkspaceMatchKey(project);
+        return !!projectKey && projectKey === this.getCurrentWorkspaceMatchKey();
+    }
+
     protected async loadSessionMap(): Promise<Map<string, QaapProjectSessionSummary>> {
         const local = readLocalProjectSessions();
         if (!readQaapSignedIn()) {
@@ -749,7 +775,7 @@ export class MobileProjectsService {
 
     protected githubRepositoryToProject(repo: QaapGithubRepositorySummary, pinnedIds: Set<string>, currentFullName?: string): MobileProjectEntry {
         const id = `github:${repo.fullName}`;
-        const name = this.resolveDisplayName(id, repo.fullName);
+        const name = this.resolveDisplayName(id, repo.name);
         const isCurrent = repo.fullName.toLowerCase() === currentFullName;
         return {
             id,

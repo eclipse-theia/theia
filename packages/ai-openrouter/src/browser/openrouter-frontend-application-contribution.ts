@@ -9,17 +9,18 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '@theia/ai-openai/lib/common';
-import { API_KEY_PREF, BASE_URL_PREF, MODELS_PREF, NVIDIA_DEFAULT_BASE_URL } from './nvidia-preferences';
-import { NVIDIA_PROVIDER_ID } from '../common/nvidia-models';
+import { API_KEY_PREF, BASE_URL_PREF, MODELS_PREF, OPENROUTER_DEFAULT_BASE_URL } from './openrouter-preferences';
+import { OPENROUTER_PROVIDER_ID } from '../common/openrouter-models';
 
 /**
- * Registers NVIDIA NIM models as language models. NVIDIA NIM is OpenAI Chat-Completions compatible,
- * so the models are routed through the {@link OpenAiLanguageModelsManager} with the NVIDIA endpoint
- * and API key supplied per model. This keeps NVIDIA a first-class provider without duplicating the
- * OpenAI request engine.
+ * Registers OpenRouter models as language models. OpenRouter exposes a unified OpenAI-compatible
+ * gateway in front of dozens of providers, so the models are routed through the
+ * {@link OpenAiLanguageModelsManager} with the OpenRouter endpoint and API key supplied per
+ * model. This keeps OpenRouter a first-class provider without duplicating the OpenAI request
+ * engine.
  */
 @injectable()
-export class NvidiaFrontendApplicationContribution implements FrontendApplicationContribution {
+export class OpenRouterFrontendApplicationContribution implements FrontendApplicationContribution {
 
     @inject(PreferenceService)
     protected preferenceService: PreferenceService;
@@ -35,7 +36,7 @@ export class NvidiaFrontendApplicationContribution implements FrontendApplicatio
     onStart(): void {
         this.preferenceService.ready.then(() => {
             const models = this.normalizeModelIds(this.preferenceService.get<string[]>(MODELS_PREF, []));
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createNvidiaModelDescription(modelId)));
+            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenRouterModelDescription(modelId)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
@@ -54,17 +55,6 @@ export class NvidiaFrontendApplicationContribution implements FrontendApplicatio
         });
     }
 
-    /**
-     * Strip the `nvidia/` prefix from preference entries that already include it. Users frequently
-     * copy ids straight from the model dropdown, which renders the full namespaced id (e.g.
-     * `nvidia/meta/llama-3.3-70b-instruct`). Without this normalization we'd send the prefixed
-     * slug to the NIM API and get a 400/404.
-     */
-    protected normalizeModelIds(ids: string[]): string[] {
-        const prefix = `${NVIDIA_PROVIDER_ID}/`;
-        return ids.map(id => id.startsWith(prefix) ? id.slice(prefix.length) : id);
-    }
-
     protected handleModelChanges(newModels: string[]): void {
         const oldModels = new Set(this.prevModels);
         const updatedModels = new Set(newModels);
@@ -72,29 +62,45 @@ export class NvidiaFrontendApplicationContribution implements FrontendApplicatio
         const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
         const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
 
-        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${NVIDIA_PROVIDER_ID}/${model}`));
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createNvidiaModelDescription(modelId)));
+        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${OPENROUTER_PROVIDER_ID}/${model}`));
+        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createOpenRouterModelDescription(modelId)));
         this.prevModels = newModels;
     }
 
     protected updateAllModels(): void {
         const models = this.normalizeModelIds(this.preferenceService.get<string[]>(MODELS_PREF, []));
-        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createNvidiaModelDescription(modelId)));
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenRouterModelDescription(modelId)));
     }
 
-    protected createNvidiaModelDescription(modelId: string): OpenAiModelDescription {
+    /**
+     * Strip the `openrouter/` prefix from preference entries that already include it. Users frequently
+     * copy ids straight from the model dropdown, which renders the full namespaced id (e.g.
+     * `openrouter/deepseek/deepseek-v4-flash:free`). Without this normalization we'd send the
+     * prefixed slug to the OpenRouter API and get `400 ... is not a valid model ID`.
+     */
+    protected normalizeModelIds(ids: string[]): string[] {
+        const prefix = `${OPENROUTER_PROVIDER_ID}/`;
+        return ids.map(id => id.startsWith(prefix) ? id.slice(prefix.length) : id);
+    }
+
+    protected createOpenRouterModelDescription(modelId: string): OpenAiModelDescription {
         const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
-        const baseUrl = this.preferenceService.get<string>(BASE_URL_PREF, NVIDIA_DEFAULT_BASE_URL) || NVIDIA_DEFAULT_BASE_URL;
+        const baseUrl = this.preferenceService.get<string>(BASE_URL_PREF, OPENROUTER_DEFAULT_BASE_URL) || OPENROUTER_DEFAULT_BASE_URL;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         return {
-            id: `${NVIDIA_PROVIDER_ID}/${modelId}`,
+            id: `${OPENROUTER_PROVIDER_ID}/${modelId}`,
             model: modelId,
             url: baseUrl,
             apiKey: apiKey && apiKey.trim() ? apiKey.trim() : undefined,
             apiVersion: undefined,
+            // OpenRouter normalizes the system role for routes that prefer 'system'; using 'system'
+            // works across the widest range of upstream providers.
             developerMessageSettings: 'system',
             enableStreaming: true,
-            supportsStructuredOutput: true,
+            // Structured output (`response_format: json_schema`) coverage varies across the upstream
+            // models OpenRouter fronts. Leaving this off avoids errors on routes that don't support it;
+            // function calling itself is unaffected and works on most modern models.
+            supportsStructuredOutput: false,
             maxRetries: maxRetries,
             useResponseApi: false
         };

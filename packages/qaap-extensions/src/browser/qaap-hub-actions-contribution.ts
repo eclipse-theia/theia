@@ -6,6 +6,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ChatService } from '@theia/ai-chat/lib/common';
 import { AI_CHAT_TOGGLE_COMMAND_ID } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
 import { CoderAgentId } from '@theia/ai-ide/lib/browser/coder-agent';
@@ -15,6 +16,17 @@ import { QaapProjectBootstrapService } from '@theia/qaap-mobile-shell/lib/browse
 
 export const QAAP_HUB_RESUME_PREVIEW_COMMAND_ID = 'qaap.hub.resumePreview';
 export const QAAP_HUB_OPEN_AGENT_ON_TASK_COMMAND_ID = 'qaap.hub.openAgentOnTask';
+
+const QAAP_HUB_PENDING_ACTION_KEY = 'qaap.hub.pendingAction';
+
+type QaapHubPendingActionKind = 'resumePreview' | 'openAgentOnTask';
+
+interface QaapHubPendingAction {
+    readonly kind: QaapHubPendingActionKind;
+    readonly targetKey?: string;
+    readonly previewUrl?: string;
+    readonly task?: string;
+}
 
 export namespace QaapHubCommands {
     export const RESUME_PREVIEW: Command = {
@@ -28,7 +40,7 @@ export namespace QaapHubCommands {
 }
 
 @injectable()
-export class QaapHubActionsContribution implements CommandContribution {
+export class QaapHubActionsContribution implements CommandContribution, FrontendApplicationContribution {
 
     @inject(MobileProjectsService)
     protected readonly projects: MobileProjectsService;
@@ -53,14 +65,21 @@ export class QaapHubActionsContribution implements CommandContribution {
         });
     }
 
+    onDidInitializeLayout(): void {
+        void this.resumePendingAction();
+    }
+
     protected async resumePreview(project?: MobileProjectEntry): Promise<void> {
-        if (project && !project.isCurrent) {
-            this.projects.openInCurrentWindow(project);
+        if (!this.ensureProjectReady('resumePreview', project)) {
+            return;
         }
-        const url = project?.previewUrl;
-        if (url) {
+        await this.doResumePreview(project?.previewUrl);
+    }
+
+    protected async doResumePreview(previewUrl?: string): Promise<void> {
+        if (previewUrl) {
             try {
-                await this.commands.executeCommand('mini-browser.openUrl', url);
+                await this.commands.executeCommand('mini-browser.openUrl', previewUrl);
                 return;
             } catch {
                 /* fall through to bootstrap */
@@ -70,10 +89,81 @@ export class QaapHubActionsContribution implements CommandContribution {
     }
 
     protected async openAgentOnTask(project?: MobileProjectEntry): Promise<void> {
-        if (project && !project.isCurrent) {
-            this.projects.openInCurrentWindow(project);
+        if (!this.ensureProjectReady('openAgentOnTask', project)) {
+            return;
         }
-        const task = project?.task?.trim();
+        await this.doOpenAgentOnTask(project?.task?.trim());
+    }
+
+    protected ensureProjectReady(kind: QaapHubPendingActionKind, project?: MobileProjectEntry): boolean {
+        if (!project || this.projects.projectMatchesCurrentWorkspace(project)) {
+            return true;
+        }
+        const targetKey = this.projects.getProjectWorkspaceMatchKey(project);
+        if (targetKey) {
+            this.writePendingAction({
+                kind,
+                targetKey,
+                previewUrl: project.previewUrl,
+                task: project.task?.trim(),
+            });
+            this.projects.openInCurrentWindow(project);
+            return false;
+        }
+        return true;
+    }
+
+    protected async resumePendingAction(): Promise<void> {
+        const pending = this.readPendingAction();
+        if (!pending) {
+            return;
+        }
+        const currentKey = this.projects.getCurrentWorkspaceMatchKey();
+        if (pending.targetKey && pending.targetKey !== currentKey) {
+            this.clearPendingAction();
+            return;
+        }
+        this.clearPendingAction();
+        if (pending.kind === 'resumePreview') {
+            await this.doResumePreview(pending.previewUrl);
+            return;
+        }
+        await this.doOpenAgentOnTask(pending.task);
+    }
+
+    protected readPendingAction(): QaapHubPendingAction | undefined {
+        if (typeof sessionStorage === 'undefined') {
+            return undefined;
+        }
+        try {
+            const raw = sessionStorage.getItem(QAAP_HUB_PENDING_ACTION_KEY);
+            if (!raw) {
+                return undefined;
+            }
+            const parsed = JSON.parse(raw) as Partial<QaapHubPendingAction>;
+            if (parsed.kind !== 'resumePreview' && parsed.kind !== 'openAgentOnTask') {
+                return undefined;
+            }
+            return parsed as QaapHubPendingAction;
+        } catch {
+            return undefined;
+        }
+    }
+
+    protected writePendingAction(action: QaapHubPendingAction): void {
+        if (typeof sessionStorage === 'undefined') {
+            return;
+        }
+        sessionStorage.setItem(QAAP_HUB_PENDING_ACTION_KEY, JSON.stringify(action));
+    }
+
+    protected clearPendingAction(): void {
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.removeItem(QAAP_HUB_PENDING_ACTION_KEY);
+        }
+    }
+
+    protected async doOpenAgentOnTask(task: string | undefined): Promise<void> {
         try {
             await this.commands.executeCommand(AI_CHAT_TOGGLE_COMMAND_ID);
         } catch {
