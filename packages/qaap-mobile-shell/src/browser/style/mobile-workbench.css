@@ -354,6 +354,34 @@
     padding: 8px 12px;
   }
 
+  /*-----------------------------------------------------------------------------
+  || Monaco editor floating widgets (hover, parameter hints, suggest). Monaco
+  || positions them relative to the cursor with no viewport clamp — on a phone
+  || they routinely overflow the viewport horizontally and clip vertically.
+  || Constrain to viewport with an internal scroll for long content.
+  ||----------------------------------------------------------------------------*/
+  .monaco-editor .monaco-hover,
+  .monaco-editor-hover.monaco-hover {
+    max-width: calc(100vw - 16px) !important;
+    max-height: 50vh !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: var(--theia-ui-font-size1);
+    line-height: 1.4;
+  }
+
+  .monaco-editor .parameter-hints-widget {
+    max-width: calc(100vw - 16px) !important;
+    max-height: 40vh !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .monaco-editor .suggest-widget {
+    max-width: calc(100vw - 16px) !important;
+    max-height: 50vh !important;
+  }
+
   /* Flex child of `.theia-tabBar-tab-row` must shrink below tab min-content so overflow-x applies here. */
   #theia-main-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container,
   #theia-bottom-content-panel .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container {
