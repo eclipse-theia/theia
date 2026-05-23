@@ -627,6 +627,37 @@
   display: none !important;
 }
 
+/*-----------------------------------------------------------------------------
+| Touch-friendly split handles. Lumino paints the visible drag bar via `::after`
+| at a 2–4px width — invisible to a fingertip. Add a transparent `::before` that
+| extends the hit area ±10px without affecting layout (the handle itself stays
+| at its inline-positioned size). Events on the pseudo bubble to the host
+| handle, so Lumino's mousedown/pointerdown handlers receive them unchanged.
+|-----------------------------------------------------------------------------*/
+@media (max-width: 767px) {
+  /* Lumino sets `position: absolute` on the handle itself, which already makes
+     it a containing block for absolutely positioned children — no extra
+     `position` rule needed here. */
+  .lm-SplitPanel[data-orientation="vertical"] > .lm-SplitPanel-handle::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -10px;
+    bottom: -10px;
+    pointer-events: auto;
+  }
+  .lm-SplitPanel[data-orientation="horizontal"] > .lm-SplitPanel-handle::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -10px;
+    right: -10px;
+    pointer-events: auto;
+  }
+}
+
 /*
  * Side sheets are position:fixed overlays — they must not consume horizontal split space.
  * Without this, Lumino keeps ~50% width for a sheet and the editor is crushed to a thin strip.
