@@ -15,14 +15,17 @@ export interface QaapGithubStoredSession {
 }
 
 interface PersistedState {
+    version: number;
     sessions: Array<[string, QaapGithubStoredSession]>;
     oauthStates: Array<[string, number]>;
 }
 
+const STORE_SCHEMA_VERSION = 1;
 const OAUTH_STATE_MAX_AGE_MS = 10 * 60 * 1000;
 const PERSIST_DEBOUNCE_MS = 100;
 const STORE_FILE_MODE = 0o600;
 const STORE_DIR_MODE = 0o700;
+const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 
 /** Docker/VPS: persist next to cloned repos on the mounted /workspace volume. */
 export function resolveQaapAuthStorePath(): string {
@@ -51,12 +54,15 @@ export class QaapGithubSessionStore {
     protected readonly sessions = new Map<string, QaapGithubStoredSession>();
     protected readonly oauthStates = new Map<string, number>();
     protected readonly storePath: string = resolveQaapAuthStorePath();
+    protected readonly backupPath: string = `${resolveQaapAuthStorePath()}.bak`;
     protected persistTimer: NodeJS.Timeout | undefined;
     protected loaded = false;
+    protected shutdownHandlersInstalled = false;
 
     @postConstruct()
     protected init(): void {
         this.loadFromDisk();
+        this.installShutdownHandlers();
     }
 
     createSession(data: QaapGithubStoredSession): string {
@@ -111,9 +117,30 @@ export class QaapGithubSessionStore {
     }
 
     protected loadFromDisk(): void {
+        if (!this.tryLoadFile(this.storePath) && !this.tryLoadFile(this.backupPath)) {
+            // Either no file exists yet, or both primary and backup are unreadable.
+        }
+        this.loaded = true;
+    }
+
+    protected tryLoadFile(filePath: string): boolean {
+        let raw: string;
         try {
-            const raw = fs.readFileSync(this.storePath, 'utf8');
+            raw = fs.readFileSync(filePath, 'utf8');
+        } catch (err) {
+            const code = (err as NodeJS.ErrnoException).code;
+            if (code !== 'ENOENT') {
+                console.warn(`[qaap-auth] Could not read session store at ${filePath}:`, err);
+            }
+            return false;
+        }
+        try {
             const parsed = JSON.parse(raw) as Partial<PersistedState>;
+            // version is currently informational; future migrations can branch on it here.
+            if (typeof parsed.version === 'number' && parsed.version > STORE_SCHEMA_VERSION) {
+                console.warn(`[qaap-auth] Session store ${filePath} has newer schema v${parsed.version}; ignoring.`);
+                return false;
+            }
             if (Array.isArray(parsed.sessions)) {
                 for (const entry of parsed.sessions) {
                     if (this.isValidSessionEntry(entry)) {
@@ -131,13 +158,11 @@ export class QaapGithubSessionStore {
                     }
                 }
             }
+            return true;
         } catch (err) {
-            const code = (err as NodeJS.ErrnoException).code;
-            if (code !== 'ENOENT') {
-                console.warn('[qaap-auth] Could not read persisted session store:', err);
-            }
+            console.warn(`[qaap-auth] Session store ${filePath} is corrupt, trying fallback:`, err);
+            return false;
         }
-        this.loaded = true;
     }
 
     protected isValidSessionEntry(entry: unknown): entry is [string, QaapGithubStoredSession] {
@@ -166,8 +191,22 @@ export class QaapGithubSessionStore {
         this.persistTimer.unref?.();
     }
 
+    /**
+     * Flush any pending debounced write immediately. Safe to call multiple times
+     * and from shutdown signal handlers — used to guarantee that a session created
+     * just before a VPS restart is not lost in the debounce window.
+     */
+    flushPendingPersist(): void {
+        if (this.persistTimer !== undefined) {
+            clearTimeout(this.persistTimer);
+            this.persistTimer = undefined;
+            this.persistNow();
+        }
+    }
+
     protected persistNow(): void {
         const payload: PersistedState = {
+            version: STORE_SCHEMA_VERSION,
             sessions: [...this.sessions.entries()],
             oauthStates: [...this.oauthStates.entries()],
         };
@@ -175,13 +214,59 @@ export class QaapGithubSessionStore {
         const tmpPath = `${this.storePath}.${process.pid}.tmp`;
         try {
             fs.mkdirSync(dir, { recursive: true, mode: STORE_DIR_MODE });
-            fs.writeFileSync(tmpPath, JSON.stringify(payload), { mode: STORE_FILE_MODE });
+            // Write + fsync the data file before rename, so the rename can't
+            // expose a zero-length file after a power loss.
+            const fd = fs.openSync(tmpPath, 'w', STORE_FILE_MODE);
+            try {
+                fs.writeSync(fd, JSON.stringify(payload));
+                try { fs.fsyncSync(fd); } catch { /* fsync may be unsupported on some filesystems */ }
+            } finally {
+                fs.closeSync(fd);
+            }
+            // Roll the previous good copy to .bak so a corrupt write still has a fallback.
+            try {
+                if (fs.existsSync(this.storePath)) {
+                    fs.copyFileSync(this.storePath, this.backupPath);
+                    try { fs.chmodSync(this.backupPath, STORE_FILE_MODE); } catch { /* best-effort */ }
+                }
+            } catch (err) {
+                console.warn('[qaap-auth] Could not refresh session store backup:', err);
+            }
             fs.renameSync(tmpPath, this.storePath);
             // Tighten perms in case mkdir/write honored umask instead of mode.
             try { fs.chmodSync(this.storePath, STORE_FILE_MODE); } catch { /* best-effort */ }
+            // fsync the parent dir so the rename itself survives a crash.
+            try {
+                const dirFd = fs.openSync(dir, 'r');
+                try { fs.fsyncSync(dirFd); } catch { /* not supported everywhere */ }
+                fs.closeSync(dirFd);
+            } catch { /* best-effort */ }
         } catch (err) {
             console.warn('[qaap-auth] Could not persist session store:', err);
             try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+        }
+    }
+
+    protected installShutdownHandlers(): void {
+        if (this.shutdownHandlersInstalled) {
+            return;
+        }
+        this.shutdownHandlersInstalled = true;
+        const flush = (): void => {
+            try {
+                this.flushPendingPersist();
+            } catch (err) {
+                console.warn('[qaap-auth] Error flushing session store on shutdown:', err);
+            }
+        };
+        process.on('beforeExit', flush);
+        process.on('exit', flush);
+        for (const signal of SHUTDOWN_SIGNALS) {
+            process.on(signal, () => {
+                flush();
+                // Do not exit here — other shutdown logic may still need to run.
+                // If we are the only handler, Node will exit normally after this tick.
+            });
         }
     }
 }
