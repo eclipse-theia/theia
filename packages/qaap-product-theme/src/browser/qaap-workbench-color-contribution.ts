@@ -10,10 +10,10 @@ import { Color } from '@theia/core/lib/common/color';
 
 /**
  * Cursor-like status bar defaults (product layer; overrides {@link CommonFrontendContribution}
- * upstream colors). Halo palette overrides are NOT registered here on purpose:
+ * upstream colors). Qaap palette overrides are NOT registered here on purpose:
  * they must apply ONLY to the Qaap-branded "Light (Qaap)" / "Dark (Qaap)" themes
  * and not to marketplace themes or High Contrast, so they live as scoped CSS in
- * `style/qaap-halo-tokens.css` instead (toggled by {@link QaapHaloThemeContribution}).
+ * `style/qaap-tokens.css` instead (toggled by {@link QaapThemeContribution}).
  */
 @injectable()
 export class QaapWorkbenchColorContribution implements ColorContribution {

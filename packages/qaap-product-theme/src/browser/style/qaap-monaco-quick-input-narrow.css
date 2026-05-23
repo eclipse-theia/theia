@@ -66,13 +66,13 @@
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    border-radius: 0 0 var(--qaap-halo-radius-lg, 8px) var(--qaap-halo-radius-lg, 8px) !important;
+    border-radius: 0 0 var(--qaap-radius-lg, 8px) var(--qaap-radius-lg, 8px) !important;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
   }
 
   body.qaap-theme-light .quick-input-widget,
   body.qaap-theme-dark .quick-input-widget {
-    box-shadow: var(--qaap-halo-shadow-lg) !important;
+    box-shadow: var(--qaap-shadow-lg) !important;
   }
 
   /* Larger touch targets; 16px avoids iOS Safari zoom-on-focus (breaks keyboard/focus). */

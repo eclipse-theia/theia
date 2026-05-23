@@ -551,6 +551,15 @@ export class MobileProjectsService {
         return this.resolveDisplayName(id, name);
     }
 
+    /** Last known branch for the active workspace; defaults to main for the mobile top bar. */
+    getCurrentWorkspaceBranch(): string | undefined {
+        const repoKey = this.currentRepoKey();
+        if (!repoKey) {
+            return undefined;
+        }
+        return readLocalProjectSessions().get(repoKey)?.branch || 'main';
+    }
+
     getFilter(): MobileProjectFilter {
         return this.filter;
     }

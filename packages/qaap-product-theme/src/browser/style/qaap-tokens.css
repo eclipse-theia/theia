@@ -1,0 +1,780 @@
+/********************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+|| Qaap design system — premium minimal palette applied ONLY to the
+|| "Light (Qaap)" / "Dark (Qaap)" built-in themes.
+||
+|| `body.qaap-theme-light` / `body.qaap-theme-dark` are toggled by
+|| `QaapThemeContribution` based on the active theme id; marketplace themes
+|| and High Contrast keep their original colors.
+||
+|| Theia writes `--theia-*` color tokens as inline styles on <html> via
+|| `ColorApplicationContribution`. To win against inline styles we use
+|| `!important` on the variable redefinitions below. Component CSS that reads
+|| these tokens (mobile shell, top bar, status bar, side panel…) picks the new
+|| values without any other edit.
+||----------------------------------------------------------------------------*/
+
+/*-----------------------------------------------------------------------------
+|| Qaap design tokens (non-color: radii, motion, shadows, fonts).
+|| Available globally — they don't override anything, they just expose new
+|| utility variables the product can opt into.
+||----------------------------------------------------------------------------*/
+
+:root {
+  --qaap-radius-xs: 10px;
+  --qaap-radius-sm: 10px;
+  --qaap-radius-md: 10px;
+  --qaap-radius-lg: 12px;
+  --qaap-radius-xl: 14px;
+  --qaap-radius-2xl: 18px;
+  --qaap-radius-pill: 99px;
+
+  --qaap-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --qaap-duration-fast: 120ms;
+  --qaap-duration-base: 180ms;
+
+  --qaap-font-sans: 'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --qaap-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/*=============================================================================
+|| Light (Qaap) — minimal, warm, off-white.
+||
+|| Background hierarchy:
+||   bg          #F6F5F1   page chrome (activity bar, side bar, status bar)
+||   surface     #FDFBF8   cards / inputs / editors
+||   surfaceAlt  #FCFBF7   secondary panels (terminal, bottom panel)
+|| Ink:
+||   ink         #111111   primary text
+||   ink2        #3A3A3A   secondary text
+||   muted       #8A8A8A   tertiary / placeholder
+|| Lines:
+||   line        #ECEAE3   hairline (cards, panels)
+||   lineSoft    #F3F1EB   inner dividers
+|| Accent:
+||   amber       #D97757   used sparingly (selection, focus, primary CTA)
+||===========================================================================*/
+
+body.qaap-theme-light {
+  --qaap-bg: #F6F5F1;
+  --qaap-surface: #FDFBF8;
+  --qaap-surface-alt: #FCFBF7;
+  --qaap-ink: #111111;
+  --qaap-ink-2: #3A3A3A;
+  --qaap-muted: #8A8A8A;
+  --qaap-line: #ECEAE3;
+  --qaap-line-soft: #F3F1EB;
+  --qaap-accent: #D97757;
+  --qaap-accent-ink: #854017;
+  --qaap-accent-soft: #FBECDC;
+  --qaap-success: #357A4F;
+  --qaap-danger: #B23D27;
+  --qaap-add-bg: #EEF6EE;
+  --qaap-add-ink: #28663F;
+  --qaap-del-bg: #F8E5DF;
+  --qaap-del-ink: #8E2F1F;
+  --qaap-code: #FCFBF7;
+  --qaap-focus-ring: rgba(217, 119, 87, 0.28);
+
+  --qaap-shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.04), 0 1px 1px rgba(17, 17, 17, 0.03);
+  --qaap-shadow-md: 0 6px 18px rgba(17, 17, 17, 0.06), 0 2px 6px rgba(17, 17, 17, 0.04);
+  --qaap-shadow-lg: 0 18px 40px rgba(17, 17, 17, 0.08), 0 4px 12px rgba(17, 17, 17, 0.05);
+  --qaap-shadow-accent: 0 0 0 3px var(--qaap-focus-ring);
+}
+
+/*=============================================================================
+|| Dark (Qaap) — deep warm black, very low-contrast surfaces, premium feel.
+||
+||   bg          #0E0D0B   editor canvas / page background
+||   surface     #161513   cards / activity bar / status bar / side bar
+||   surfaceAlt  #0E0D0B   bottom panel
+||   ink         #F4F1E8   primary text (warm off-white)
+||   ink2        #C9C4B5   secondary text
+||   muted       #85816F   tertiary
+||   line        #2A2823   hairline
+||   lineSoft    #1F1D19   ultra soft divider
+||   amber       #E58E40   accent (slightly brighter for dark)
+||===========================================================================*/
+
+body.qaap-theme-dark {
+  --qaap-bg: #0E0D0B;
+  --qaap-surface: #161513;
+  --qaap-surface-alt: #0E0D0B;
+  --qaap-ink: #F4F1E8;
+  --qaap-ink-2: #C9C4B5;
+  --qaap-muted: #85816F;
+  --qaap-line: #2A2823;
+  --qaap-line-soft: #1F1D19;
+  --qaap-accent: #E58E40;
+  --qaap-accent-ink: #F5C58F;
+  --qaap-accent-soft: #3A2614;
+  --qaap-success: #67B07F;
+  --qaap-danger: #E6745A;
+  --qaap-add-bg: #1C2A1D;
+  --qaap-add-ink: #8DC79E;
+  --qaap-del-bg: #2E1814;
+  --qaap-del-ink: #E89A8B;
+  --qaap-code: #121110;
+  --qaap-focus-ring: rgba(229, 142, 64, 0.45);
+
+  --qaap-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(0, 0, 0, 0.30);
+  --qaap-shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.30);
+  --qaap-shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --qaap-shadow-accent: 0 0 0 3px var(--qaap-focus-ring);
+}
+
+/*=============================================================================
+|| Map Qaap tokens onto the Theia color variables, scoped to Qaap themes.
+|| `!important` is required because `ColorApplicationContribution` writes the
+|| `--theia-*` properties as inline styles on `<html>`. Once a user picks
+|| another theme, the `body.qaap-theme-*` class is removed and Theia's inline
+|| styles take over again.
+||
+|| The mapping intentionally stays conservative: text foreground, surfaces,
+|| hairlines, accent / focus / selection. Editor / Monaco syntax tokens are
+|| left to the underlying VS Code theme JSON.
+||===========================================================================*/
+
+body.qaap-theme-light,
+body.qaap-theme-dark {
+  /* Foreground / text */
+  --theia-foreground: var(--qaap-ink) !important;
+  --theia-descriptionForeground: var(--qaap-muted) !important;
+  --theia-disabledForeground: var(--qaap-muted) !important;
+  --theia-icon-foreground: var(--qaap-ink-2) !important;
+
+  /* Editor canvas + side surfaces */
+  --theia-editor-background: var(--qaap-bg) !important;
+  --theia-editor-foreground: var(--qaap-ink) !important;
+  --theia-editor-selectionBackground: var(--qaap-accent-soft) !important;
+  --theia-editor-inactiveSelectionBackground: var(--qaap-accent-soft) !important;
+  --theia-editor-lineHighlightBackground: var(--qaap-line-soft) !important;
+
+  --theia-sideBar-background: var(--qaap-bg) !important;
+  --theia-sideBar-foreground: var(--qaap-ink) !important;
+  --theia-sideBarSectionHeader-background: var(--qaap-bg) !important;
+  --theia-sideBarSectionHeader-foreground: var(--qaap-ink-2) !important;
+  --theia-sideBarTitle-foreground: var(--qaap-ink) !important;
+
+  --theia-activityBar-background: var(--qaap-bg) !important;
+  --theia-activityBar-foreground: var(--qaap-ink) !important;
+  --theia-activityBar-inactiveForeground: var(--qaap-muted) !important;
+  --theia-activityBar-activeBackground: var(--qaap-accent-soft) !important;
+
+  --theia-panel-background: var(--qaap-surface-alt) !important;
+  --theia-panelTitle-activeForeground: var(--qaap-ink) !important;
+  --theia-panelTitle-inactiveForeground: var(--qaap-muted) !important;
+
+  /* Hairline borders everywhere */
+  --theia-panel-border: var(--qaap-line) !important;
+  --theia-panelInput-border: var(--qaap-line) !important;
+  --theia-input-border: var(--qaap-line) !important;
+  --theia-editorWidget-border: var(--qaap-line) !important;
+  --theia-editorGroup-border: var(--qaap-line) !important;
+  --theia-sideBar-border: var(--qaap-line) !important;
+  --theia-sideBarSectionHeader-border: var(--qaap-line-soft) !important;
+  --theia-activityBar-border: var(--qaap-line) !important;
+  --theia-tab-border: var(--qaap-line) !important;
+  --theia-menu-border: var(--qaap-line) !important;
+  --theia-dropdown-border: var(--qaap-line) !important;
+  --theia-contrastBorder: var(--qaap-line) !important;
+  --theia-contrastActiveBorder: var(--qaap-accent) !important;
+
+  /* Surfaces for editor widgets, popovers, dialogs */
+  --theia-editorWidget-background: var(--qaap-surface) !important;
+  --theia-editorWidget-foreground: var(--qaap-ink) !important;
+  --theia-dropdown-background: var(--qaap-surface) !important;
+  --theia-dropdown-foreground: var(--qaap-ink) !important;
+  --theia-menu-background: var(--qaap-surface) !important;
+  --theia-menu-foreground: var(--qaap-ink) !important;
+  --theia-menu-selectionBackground: var(--qaap-accent-soft) !important;
+  --theia-menu-selectionForeground: var(--qaap-accent-ink) !important;
+  --theia-input-background: var(--qaap-surface) !important;
+  --theia-input-foreground: var(--qaap-ink) !important;
+  --theia-input-placeholderForeground: var(--qaap-muted) !important;
+
+  /* Lists / tree */
+  --theia-list-hoverBackground: var(--qaap-line-soft) !important;
+  --theia-list-hoverForeground: var(--qaap-ink) !important;
+  --theia-list-activeSelectionBackground: var(--qaap-accent-soft) !important;
+  --theia-list-activeSelectionForeground: var(--qaap-accent-ink) !important;
+  --theia-list-inactiveSelectionBackground: var(--qaap-accent-soft) !important;
+  --theia-list-inactiveSelectionForeground: var(--qaap-accent-ink) !important;
+  --theia-list-focusBackground: var(--qaap-accent-soft) !important;
+  --theia-list-focusForeground: var(--qaap-accent-ink) !important;
+  --theia-list-highlightForeground: var(--qaap-accent) !important;
+  --theia-list-focusHighlightForeground: var(--qaap-accent) !important;
+
+  /* Quick input / command palette (resolved independently on <html> — must override explicitly) */
+  --theia-quickInput-background: var(--qaap-surface) !important;
+  --theia-quickInput-foreground: var(--qaap-ink) !important;
+  --theia-quickInputList-focusBackground: var(--qaap-accent-soft) !important;
+  --theia-quickInputList-focusForeground: var(--qaap-accent-ink) !important;
+  --theia-quickInputTitle-background: var(--qaap-surface) !important;
+  --theia-pickerGroup-border: var(--qaap-line) !important;
+  --theia-pickerGroup-foreground: var(--qaap-muted) !important;
+  --theia-keybindingLabel-background: var(--qaap-line-soft) !important;
+  --theia-keybindingLabel-foreground: var(--qaap-ink-2) !important;
+  --theia-keybindingLabel-border: var(--qaap-line) !important;
+  --theia-keybindingLabel-bottomBorder: var(--qaap-line) !important;
+
+  /* Tabs */
+  --theia-tab-activeBackground: var(--qaap-bg) !important;
+  --theia-tab-activeForeground: var(--qaap-ink) !important;
+  --theia-tab-inactiveBackground: var(--qaap-bg) !important;
+  --theia-tab-inactiveForeground: var(--qaap-muted) !important;
+  --theia-tab-activeBorderTop: var(--qaap-accent) !important;
+  --theia-tab-activeBorder: transparent !important;
+  --theia-tab-hoverBackground: var(--qaap-line-soft) !important;
+  --theia-tab-unfocusedActiveForeground: var(--qaap-ink-2) !important;
+  --theia-tab-unfocusedInactiveForeground: var(--qaap-muted) !important;
+
+  /* Accent: focus, buttons, badges, progress */
+  --theia-focusBorder: var(--qaap-accent) !important;
+  --theia-button-background: var(--qaap-accent) !important;
+  --theia-button-foreground: var(--qaap-bg) !important;
+  --theia-button-hoverBackground: var(--qaap-accent-ink) !important;
+  --theia-button-secondaryBackground: var(--qaap-line-soft) !important;
+  --theia-button-secondaryForeground: var(--qaap-ink) !important;
+  --theia-button-secondaryHoverBackground: var(--qaap-line) !important;
+  --theia-activityBarBadge-background: var(--qaap-accent) !important;
+  --theia-activityBarBadge-foreground: var(--qaap-bg) !important;
+  --theia-badge-background: var(--qaap-accent) !important;
+  --theia-badge-foreground: var(--qaap-bg) !important;
+  --theia-progressBar-background: var(--qaap-accent) !important;
+  --theia-panelTitle-activeBorder: var(--qaap-accent) !important;
+  --theia-inputOption-activeBackground: var(--qaap-accent-soft) !important;
+  --theia-inputOption-activeForeground: var(--qaap-accent-ink) !important;
+  --theia-inputOption-activeBorder: var(--qaap-accent) !important;
+
+  /* Status / decorations */
+  --theia-errorForeground: var(--qaap-danger) !important;
+  --theia-editorError-foreground: var(--qaap-danger) !important;
+  --theia-editorWarning-foreground: var(--qaap-accent) !important;
+  --theia-gitDecoration-modifiedResourceForeground: var(--qaap-accent) !important;
+  --theia-gitDecoration-addedResourceForeground: var(--qaap-add-ink) !important;
+  --theia-gitDecoration-deletedResourceForeground: var(--qaap-del-ink) !important;
+
+  /* Toolbar hover (used by many mobile components for chip / button hover) */
+  --theia-toolbar-hoverBackground: var(--qaap-line-soft) !important;
+
+  /* Scrollbar */
+  --theia-scrollbarSlider-background: color-mix(in srgb, var(--qaap-ink) 18%, transparent) !important;
+  --theia-scrollbarSlider-hoverBackground: color-mix(in srgb, var(--qaap-ink) 30%, transparent) !important;
+  --theia-scrollbarSlider-activeBackground: color-mix(in srgb, var(--qaap-ink) 45%, transparent) !important;
+}
+
+/*-----------------------------------------------------------------------------
+|| Status bar in Light (Qaap) is white per upstream defaults — switch to Qaap
+|| surface and tone foreground for a calmer minimal look. Status bar in
+|| Dark (Qaap) follows the same hierarchy.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light {
+  --theia-statusBar-background: var(--qaap-surface) !important;
+  --theia-statusBar-foreground: var(--qaap-ink-2) !important;
+  --theia-statusBar-border: var(--qaap-line) !important;
+}
+
+body.qaap-theme-dark {
+  --theia-statusBar-background: var(--qaap-surface) !important;
+  --theia-statusBar-foreground: var(--qaap-ink-2) !important;
+  --theia-statusBar-border: var(--qaap-line) !important;
+}
+
+/*-----------------------------------------------------------------------------
+|| Reusable Qaap primitives. Components living anywhere in the workbench can
+|| add `qaap-card` / `qaap-pill` for the canonical premium look.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .qaap-card,
+body.qaap-theme-dark .qaap-card {
+  background: var(--qaap-surface);
+  border: 1px solid var(--qaap-line);
+  border-radius: var(--qaap-radius-2xl);
+  box-shadow: none;
+  color: var(--qaap-ink);
+  font-family: var(--qaap-font-sans);
+  transition: border-color var(--qaap-duration-fast) var(--qaap-ease),
+    box-shadow var(--qaap-duration-fast) var(--qaap-ease);
+}
+
+body.qaap-theme-light .qaap-card.qaap-mod-flat,
+body.qaap-theme-dark .qaap-card.qaap-mod-flat {
+  background: var(--qaap-surface-alt);
+  box-shadow: none;
+}
+
+body.qaap-theme-light .qaap-pill,
+body.qaap-theme-dark .qaap-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--qaap-radius-pill);
+  border: 1px solid var(--qaap-line);
+  background: var(--qaap-surface);
+  color: var(--qaap-ink-2);
+  font-family: var(--qaap-font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 1.4;
+}
+
+body.qaap-theme-light .qaap-pill.qaap-mod-accent,
+body.qaap-theme-dark .qaap-pill.qaap-mod-accent {
+  background: var(--qaap-accent-soft);
+  border-color: transparent;
+  color: var(--qaap-accent-ink);
+}
+
+body.qaap-theme-light .qaap-pill.qaap-mod-success,
+body.qaap-theme-dark .qaap-pill.qaap-mod-success {
+  background: var(--qaap-add-bg);
+  border-color: transparent;
+  color: var(--qaap-add-ink);
+}
+
+body.qaap-theme-light .qaap-pill.qaap-mod-danger,
+body.qaap-theme-dark .qaap-pill.qaap-mod-danger {
+  background: var(--qaap-del-bg);
+  border-color: transparent;
+  color: var(--qaap-del-ink);
+}
+
+/*-----------------------------------------------------------------------------
+|| Refined mobile shell components (Projects panel, PR review, Open Repo sheet)
+|| picking up the Qaap radii + soft hairlines. Selectors prefixed with
+|| `body.qaap-theme-*` so they only activate for the branded themes.
+||----------------------------------------------------------------------------*/
+
+@media (max-width: 767px) {
+  body.qaap-theme-light .theia-mobile-projects-card,
+  body.qaap-theme-dark .theia-mobile-projects-card,
+  body.qaap-theme-light .theia-mobile-pr-card,
+  body.qaap-theme-dark .theia-mobile-pr-card {
+    border-color: var(--qaap-line);
+    border-radius: var(--qaap-radius-xl);
+    background: var(--qaap-surface);
+    box-shadow: none;
+    transition: border-color var(--qaap-duration-fast) var(--qaap-ease),
+      box-shadow var(--qaap-duration-fast) var(--qaap-ease);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-card:hover,
+  body.qaap-theme-dark .theia-mobile-projects-card:hover,
+  body.qaap-theme-light .theia-mobile-pr-card.theia-mod-top:hover,
+  body.qaap-theme-dark .theia-mobile-pr-card.theia-mod-top:hover {
+    border-color: color-mix(in srgb, var(--qaap-accent) 22%, var(--qaap-line));
+    box-shadow: none;
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-card-body,
+  body.qaap-theme-dark .theia-mobile-projects-card-body {
+    border-radius: var(--qaap-radius-xl);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-search,
+  body.qaap-theme-dark .theia-mobile-projects-search,
+  body.qaap-theme-light .theia-mobile-open-repo-filter,
+  body.qaap-theme-dark .theia-mobile-open-repo-filter,
+  body.qaap-theme-light .theia-mobile-open-repo-public-input,
+  body.qaap-theme-dark .theia-mobile-open-repo-public-input {
+    background: var(--qaap-surface);
+    border-color: var(--qaap-line);
+    border-radius: var(--qaap-radius-md);
+    color: var(--qaap-ink);
+    transition: border-color var(--qaap-duration-fast) var(--qaap-ease),
+      box-shadow var(--qaap-duration-fast) var(--qaap-ease);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-search:focus-within,
+  body.qaap-theme-dark .theia-mobile-projects-search:focus-within,
+  body.qaap-theme-light .theia-mobile-open-repo-filter:focus-within,
+  body.qaap-theme-dark .theia-mobile-open-repo-filter:focus-within {
+    border-color: var(--qaap-accent);
+    box-shadow: var(--qaap-shadow-accent);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-filter-chip,
+  body.qaap-theme-dark .theia-mobile-projects-filter-chip,
+  body.qaap-theme-light .theia-mobile-pr-chip,
+  body.qaap-theme-dark .theia-mobile-pr-chip,
+  body.qaap-theme-light .theia-mobile-pr-picker-tab,
+  body.qaap-theme-dark .theia-mobile-pr-picker-tab,
+  body.qaap-theme-light .theia-mobile-pr-repo,
+  body.qaap-theme-dark .theia-mobile-pr-repo {
+    border-color: var(--qaap-line);
+    color: var(--qaap-ink-2);
+    transition: background-color var(--qaap-duration-fast) var(--qaap-ease),
+      color var(--qaap-duration-fast) var(--qaap-ease),
+      border-color var(--qaap-duration-fast) var(--qaap-ease);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-filter-chip.theia-mod-active,
+  body.qaap-theme-dark .theia-mobile-projects-filter-chip.theia-mod-active,
+  body.qaap-theme-light .theia-mobile-pr-picker-tab.theia-mod-active,
+  body.qaap-theme-dark .theia-mobile-pr-picker-tab.theia-mod-active {
+    background: var(--qaap-accent-soft);
+    border-color: transparent;
+    color: var(--qaap-accent-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-empty,
+  body.qaap-theme-dark .theia-mobile-projects-empty,
+  body.qaap-theme-light .theia-mobile-projects-add,
+  body.qaap-theme-dark .theia-mobile-projects-add,
+  body.qaap-theme-light .theia-mobile-open-repo-create,
+  body.qaap-theme-dark .theia-mobile-open-repo-create {
+    border-color: var(--qaap-line);
+    border-radius: var(--qaap-radius-lg);
+    color: var(--qaap-muted);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-add:hover,
+  body.qaap-theme-dark .theia-mobile-projects-add:hover,
+  body.qaap-theme-light .theia-mobile-open-repo-create:hover,
+  body.qaap-theme-dark .theia-mobile-open-repo-create:hover {
+    border-color: var(--qaap-accent);
+    color: var(--qaap-accent-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-section-dot,
+  body.qaap-theme-dark .theia-mobile-projects-section-dot,
+  body.qaap-theme-light .theia-mobile-projects-pin,
+  body.qaap-theme-dark .theia-mobile-projects-pin {
+    color: var(--qaap-accent);
+  }
+
+  body.qaap-theme-light .theia-mobile-projects-status-pill,
+  body.qaap-theme-dark .theia-mobile-projects-status-pill {
+    border-radius: var(--qaap-radius-xs);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-diff-line.theia-mod-add,
+  body.qaap-theme-dark .theia-mobile-pr-diff-line.theia-mod-add {
+    background: var(--qaap-add-bg);
+    color: var(--qaap-add-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-diff-line.theia-mod-del,
+  body.qaap-theme-dark .theia-mobile-pr-diff-line.theia-mod-del {
+    background: var(--qaap-del-bg);
+    color: var(--qaap-del-ink);
+  }
+
+  /* Primary CTAs on mobile sheets pick the Qaap amber instead of the
+     foreground/background swap (which can look too stark). */
+  body.qaap-theme-light .theia-mobile-pr-action.theia-mod-primary,
+  body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-primary,
+  body.qaap-theme-light .theia-mobile-projects-new-btn,
+  body.qaap-theme-dark .theia-mobile-projects-new-btn,
+  body.qaap-theme-light .theia-mobile-open-repo-public-submit,
+  body.qaap-theme-dark .theia-mobile-open-repo-public-submit {
+    border-color: var(--qaap-accent);
+    background: var(--qaap-accent);
+    color: var(--qaap-bg);
+    box-shadow: none;
+    border-radius: var(--qaap-radius-md);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-action.theia-mod-primary:hover:not(:disabled),
+  body.qaap-theme-dark .theia-mobile-pr-action.theia-mod-primary:hover:not(:disabled),
+  body.qaap-theme-light .theia-mobile-projects-new-btn:hover,
+  body.qaap-theme-dark .theia-mobile-projects-new-btn:hover,
+  body.qaap-theme-light .theia-mobile-open-repo-public-submit:hover:not(:disabled),
+  body.qaap-theme-dark .theia-mobile-open-repo-public-submit:hover:not(:disabled) {
+    background: var(--qaap-accent-ink);
+    border-color: var(--qaap-accent-ink);
+    color: var(--qaap-bg);
+  }
+
+  /* Bottom-bar long-press action sheet sits on document.body, not under the
+     shell, so it's selected via body alone. */
+  body.qaap-theme-light .theia-mobile-bottom-actionsheet,
+  body.qaap-theme-dark .theia-mobile-bottom-actionsheet {
+    background: var(--qaap-surface);
+    border-color: var(--qaap-line);
+    border-radius: var(--qaap-radius-xl);
+    box-shadow: var(--qaap-shadow-lg);
+    color: var(--qaap-ink);
+  }
+
+  body.qaap-theme-light .theia-mobile-pr-toast,
+  body.qaap-theme-dark .theia-mobile-pr-toast {
+    background: var(--qaap-surface);
+    border-color: var(--qaap-line);
+    border-radius: var(--qaap-radius-lg);
+    box-shadow: var(--qaap-shadow-md);
+    color: var(--qaap-ink);
+  }
+}
+
+/*-----------------------------------------------------------------------------
+|| Desktop refinements (Qaap themes only): menus, dialogs, primary buttons,
+|| inputs. Same Qaap radii + accent glow on focus.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .lm-Menu,
+body.qaap-theme-dark .lm-Menu,
+body.qaap-theme-light .dialogContent,
+body.qaap-theme-dark .dialogContent,
+body.qaap-theme-light .theia-Dialog,
+body.qaap-theme-dark .theia-Dialog {
+  border-radius: var(--qaap-radius-lg);
+  border-color: var(--qaap-line);
+  box-shadow: var(--qaap-shadow-lg);
+}
+
+body.qaap-theme-light .theia-button.main,
+body.qaap-theme-dark .theia-button.main,
+body.qaap-theme-light .theia-button:not(.secondary):not(:disabled),
+body.qaap-theme-dark .theia-button:not(.secondary):not(:disabled) {
+  border-radius: var(--qaap-radius-sm);
+  transition: background-color var(--qaap-duration-fast) var(--qaap-ease),
+    box-shadow var(--qaap-duration-fast) var(--qaap-ease);
+}
+
+body.qaap-theme-light .theia-button.main:hover,
+body.qaap-theme-dark .theia-button.main:hover {
+  box-shadow: var(--qaap-shadow-accent);
+}
+
+body.qaap-theme-light .theia-input,
+body.qaap-theme-dark .theia-input {
+  border-radius: var(--qaap-radius-sm);
+  transition: border-color var(--qaap-duration-fast) var(--qaap-ease),
+    box-shadow var(--qaap-duration-fast) var(--qaap-ease);
+}
+
+body.qaap-theme-light .theia-input:focus,
+body.qaap-theme-light .theia-input:focus-visible,
+body.qaap-theme-dark .theia-input:focus,
+body.qaap-theme-dark .theia-input:focus-visible {
+  border-color: var(--qaap-accent);
+  box-shadow: var(--qaap-shadow-accent);
+  outline: none;
+}
+
+/*-----------------------------------------------------------------------------
+|| Command palette / quick pick (Monaco). Inline list styles from
+|| `MonacoQuickInputService#computeStyles` use resolved `--theia-*` values;
+|| component rules below align description, keybindings and chrome with Qaap.
+||-----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .quick-input-widget,
+body.qaap-theme-dark .quick-input-widget {
+  background-color: var(--qaap-surface) !important;
+  color: var(--qaap-ink) !important;
+  border: 1px solid var(--qaap-line) !important;
+  border-radius: var(--qaap-radius-lg) !important;
+  box-shadow: var(--qaap-shadow-lg) !important;
+}
+
+body.qaap-theme-light .quick-input-titlebar,
+body.qaap-theme-dark .quick-input-titlebar {
+  background-color: var(--qaap-surface) !important;
+}
+
+body.qaap-theme-light .quick-input-widget .monaco-inputbox > .ibwrapper > .input,
+body.qaap-theme-dark .quick-input-widget .monaco-inputbox > .ibwrapper > .input,
+body.qaap-theme-light .quick-input-widget input,
+body.qaap-theme-dark .quick-input-widget input {
+  background-color: var(--qaap-surface) !important;
+  color: var(--qaap-ink) !important;
+  border-color: var(--qaap-line) !important;
+  border-radius: var(--qaap-radius-sm) !important;
+}
+
+body.qaap-theme-light .quick-input-widget .monaco-inputbox.synthetic-focus,
+body.qaap-theme-dark .quick-input-widget .monaco-inputbox.synthetic-focus {
+  outline-color: var(--qaap-accent) !important;
+  box-shadow: var(--qaap-shadow-accent);
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row:hover,
+body.qaap-theme-dark .quick-input-list .monaco-list-row:hover {
+  background-color: var(--qaap-line-soft) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused {
+  background-color: var(--qaap-accent-soft) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .label-name,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .label-name,
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .monaco-highlighted-label,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .monaco-highlighted-label,
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .codicon,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .codicon {
+  color: var(--qaap-accent-ink) !important;
+}
+
+body.qaap-theme-light .quick-input-list .label-description,
+body.qaap-theme-dark .quick-input-list .label-description {
+  color: var(--qaap-muted) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .label-description,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .label-description {
+  color: var(--qaap-accent-ink) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .monaco-highlighted-label .highlight,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .monaco-highlighted-label .highlight {
+  color: var(--qaap-accent) !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-keybinding-key,
+body.qaap-theme-dark .quick-input-list .monaco-keybinding-key {
+  background-color: var(--qaap-line-soft) !important;
+  border-color: var(--qaap-line) !important;
+  color: var(--qaap-ink-2) !important;
+  box-shadow: none !important;
+}
+
+body.qaap-theme-light .quick-input-list .monaco-list-row.focused .monaco-keybinding-key,
+body.qaap-theme-dark .quick-input-list .monaco-list-row.focused .monaco-keybinding-key {
+  color: var(--qaap-accent-ink) !important;
+}
+
+body.qaap-theme-light .quick-input-list .quick-input-list-separator,
+body.qaap-theme-dark .quick-input-list .quick-input-list-separator {
+  color: var(--qaap-muted) !important;
+}
+
+/*-----------------------------------------------------------------------------
+|| "Surface card" buttons: white (or dark surface) with a thin hairline border,
+|| not a tinted grey. This is the canonical Qaap button-on-page treatment.
+||
+|| Applied to:
+||   - Welcome quick actions (Command Palette, New AI Chat, New Terminal, Color Theme)
+||   - Open GitHub Repo list items (mobile + desktop)
+||   - Any element opting in via the `qaap-surface-btn` class
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light .theia-mobile-open-repo-item,
+body.qaap-theme-dark .theia-mobile-open-repo-item,
+body.qaap-theme-light .qaap-surface-btn,
+body.qaap-theme-dark .qaap-surface-btn {
+  background: var(--qaap-surface);
+  border: 1px solid var(--qaap-line);
+  border-radius: var(--qaap-radius-md);
+  color: var(--qaap-ink);
+  box-shadow: none;
+  transition: border-color var(--qaap-duration-fast) var(--qaap-ease),
+    background-color var(--qaap-duration-fast) var(--qaap-ease),
+    box-shadow var(--qaap-duration-fast) var(--qaap-ease);
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item:hover,
+body.qaap-theme-dark .theia-mobile-open-repo-item:hover,
+body.qaap-theme-light .qaap-surface-btn:hover,
+body.qaap-theme-dark .qaap-surface-btn:hover {
+  background: var(--qaap-surface);
+  border-color: color-mix(in srgb, var(--qaap-accent) 30%, var(--qaap-line));
+  box-shadow: none;
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item:active,
+body.qaap-theme-dark .theia-mobile-open-repo-item:active {
+  background: var(--qaap-line-soft);
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item:focus-visible,
+body.qaap-theme-dark .theia-mobile-open-repo-item:focus-visible {
+  outline: none;
+  border-color: var(--qaap-accent);
+  box-shadow: var(--qaap-shadow-accent);
+}
+
+/* Welcome quick-action tiles use a borderless, transparent style for a minimal/clean look —
+   the Qaap theme keeps the icon accent but does NOT reintroduce borders, surfaces, or shadows. */
+body.qaap-theme-light .gs-quick-action,
+body.qaap-theme-dark .gs-quick-action {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--qaap-ink);
+  transition: background-color var(--qaap-duration-fast) var(--qaap-ease);
+}
+
+body.qaap-theme-light .gs-quick-action:hover,
+body.qaap-theme-dark .gs-quick-action:hover {
+  background: color-mix(in srgb, var(--qaap-accent) 10%, transparent);
+  border: none;
+  box-shadow: none;
+}
+
+body.qaap-theme-light .gs-quick-action:active,
+body.qaap-theme-dark .gs-quick-action:active {
+  background: color-mix(in srgb, var(--qaap-accent) 16%, transparent);
+}
+
+body.qaap-theme-light .gs-quick-action:focus-visible,
+body.qaap-theme-dark .gs-quick-action:focus-visible {
+  outline: 2px solid var(--qaap-accent);
+  outline-offset: 2px;
+  border: none;
+  box-shadow: none;
+}
+
+/* Icon inside the surface button picks the Qaap accent for a single visual
+   anchor; in light mode this is the warm amber, in dark it's the brighter
+   variant. The original rule colored the icon with `focusBorder` so it inherits
+   automatically once `--theia-focusBorder` is mapped, but we restate it here
+   to keep the welcome page legible even if a future tweak changes the focus
+   token. */
+body.qaap-theme-light .gs-quick-action i,
+body.qaap-theme-dark .gs-quick-action i {
+  color: var(--qaap-accent);
+}
+
+body.qaap-theme-light .theia-mobile-open-repo-item.theia-mod-current,
+body.qaap-theme-dark .theia-mobile-open-repo-item.theia-mod-current {
+  border-color: var(--qaap-accent);
+  background: var(--qaap-accent-soft);
+  color: var(--qaap-accent-ink);
+  box-shadow: none;
+}
+
+/* Welcome page background: replace the gradient mix that uses `focusBorder`
+   (now Qaap amber, which would tint the whole top of the page) with the same
+   surfaceAlt → bg subtle gradient. */
+body.qaap-theme-light .gs-container,
+body.qaap-theme-dark .gs-container {
+  background: linear-gradient(
+    180deg,
+    var(--qaap-surface-alt) 0%,
+    var(--qaap-bg) 240px
+  );
+}
+
+/*-----------------------------------------------------------------------------
+|| Focus ring: replaces the harsh single-pixel ring with a soft amber glow.
+||----------------------------------------------------------------------------*/
+
+body.qaap-theme-light #theia-app-shell :focus-visible,
+body.qaap-theme-dark #theia-app-shell :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--qaap-bg), 0 0 0 4px var(--qaap-focus-ring);
+  border-radius: var(--qaap-radius-sm);
+}
+
+/*-----------------------------------------------------------------------------
+|| Reduced motion.
+||----------------------------------------------------------------------------*/
+
+@media (prefers-reduced-motion: reduce) {
+  body.qaap-theme-light *,
+  body.qaap-theme-dark * {
+    transition: none !important;
+  }
+}

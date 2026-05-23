@@ -58,6 +58,7 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
         this.projectNameEl = document.createElement('span');
         this.projectNameEl.className = 'theia-workbench-current-project-name';
         this.projectNameEl.setAttribute('aria-hidden', 'true');
+        this.projectNameEl.dataset.branch = '';
         node.append(this.toggleBtn, this.projectNameEl);
         this.toggleBtn.addEventListener('click', this.onToggleClick);
         const refresh = (): void => this.updateEnabledStates();
@@ -101,11 +102,17 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
             this.projectNameEl.textContent = name;
             this.projectNameEl.title = name;
             this.projectNameEl.hidden = false;
+            this.updateProjectBranch();
         } else {
             this.projectNameEl.textContent = '';
             this.projectNameEl.title = '';
+            this.projectNameEl.dataset.branch = '';
             this.projectNameEl.hidden = true;
         }
+    }
+
+    protected updateProjectBranch(): void {
+        this.projectNameEl.dataset.branch = this.projectsService.getCurrentWorkspaceBranch() ?? '';
     }
 }
 
@@ -121,11 +128,11 @@ export class QaapWorkbenchHistoryNavWidget extends Widget {
         super({ node });
         this.id = 'theia:workbench-history-nav';
         this.backBtn = createWorkbenchHistoryNavBtn(
-            'codicon codicon-arrow-left',
+            'codicon codicon-chevron-left',
             nls.localizeByDefault('Go Back')
         );
         this.forwardBtn = createWorkbenchHistoryNavBtn(
-            'codicon codicon-arrow-right',
+            'codicon codicon-chevron-right',
             nls.localizeByDefault('Go Forward')
         );
         node.append(this.backBtn, this.forwardBtn);

@@ -524,6 +524,161 @@
 }
 
 /*-----------------------------------------------------------------------------
+| Qaap Conservador mobile top bar.
+| Keeps the existing widgets/commands, but presents them as:
+| back / forward · centered workspace/project/branch · account.
+|-----------------------------------------------------------------------------*/
+
+@media (max-width: 767px) {
+  #theia-top-panel {
+    min-height: 52px;
+    height: 52px;
+    padding: 0 12px;
+    background: var(--q-bg, var(--qaap-bg, #0E0D0B)) !important;
+    border-bottom: 1px solid var(--q-line, var(--qaap-line, #2A2823)) !important;
+    box-sizing: border-box;
+  }
+
+  #theia-top-panel > #theia\:workbench-history-nav {
+    left: calc(env(safe-area-inset-left, 0px) + 44px);
+  }
+
+  #theia-top-panel > #theia\:workbench-nav {
+    max-width: min(46vw, calc(100% - 188px));
+  }
+
+  #theia-top-panel > #theia\:workbench-right-controls {
+    height: 52px;
+    margin-right: 12px;
+  }
+
+  .theia-workbench-history-nav-group {
+    gap: 28px;
+  }
+
+  .theia-workbench-history-nav-group .theia-workbench-history-nav-btn {
+    width: 36px;
+    height: 44px;
+    min-width: 36px;
+    min-height: 44px;
+    margin: 0;
+    color: var(--q-text-2, var(--qaap-ink-2, #C9C4B5));
+    border-radius: var(--q-radius-icon, 10px);
+    opacity: 0.82;
+  }
+
+  .theia-workbench-history-nav-group .theia-workbench-history-nav-btn:disabled {
+    opacity: 0.38;
+  }
+
+  .theia-workbench-history-nav-group .theia-workbench-history-nav-btn:hover:not(:disabled) {
+    background: var(--q-line-soft, var(--qaap-line-soft, #1F1D19));
+  }
+
+  .theia-workbench-history-nav-group .theia-workbench-history-nav-btn.codicon::before {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    margin: 0;
+    padding-left: 0;
+    overflow: hidden;
+    color: var(--q-text, var(--qaap-ink, #F4F1E8));
+    font-family: var(--q-font-sans, var(--qaap-font-sans, var(--theia-ui-font-family)));
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 16px;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name::before {
+    content: 'workspace';
+    display: block;
+    margin-left: 0;
+    color: var(--q-muted, var(--qaap-muted, #85816F));
+    font-family: var(--q-font-sans, var(--qaap-font-sans, var(--theia-ui-font-family)));
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    line-height: 12px;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name::after {
+    content: ' ' attr(data-branch);
+    color: var(--q-muted, var(--qaap-muted, #85816F));
+    font-family: var(--q-font-mono, var(--qaap-font-mono, var(--theia-code-font-family)));
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 16px;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name[data-branch='']::after {
+    content: none;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name:not([hidden]) {
+    min-width: 0;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name:not([hidden])::marker {
+    content: none;
+  }
+
+  .theia-workbench-nav-controls .theia-workbench-current-project-name:not([hidden]) {
+    background:
+      radial-gradient(circle at 3px 20px, var(--q-accent, var(--qaap-accent, #E58E40)) 0 3px, transparent 4px);
+  }
+
+  .theia-workbench-right-controls .theia-workbench-nav-btn.theia-workbench-account-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    margin: 0;
+    padding: 0 !important;
+    border-radius: var(--q-radius-pill, 99px);
+    background: var(--q-accent-soft, var(--qaap-accent-soft, #3A2614));
+    color: var(--q-accent, var(--qaap-accent, #E58E40));
+    flex: 0 0 32px;
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar,
+  .theia-workbench-right-controls .theia-workbench-account-avatar img {
+    width: 32px !important;
+    height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    border-radius: var(--q-radius-pill, 99px);
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar {
+    background: transparent;
+    color: inherit;
+    font-family: var(--q-font-sans, var(--qaap-font-sans, var(--theia-ui-font-family)));
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .theia-workbench-right-controls .theia-workbench-account-avatar .codicon,
+  .theia-workbench-right-controls .theia-workbench-account-avatar .theia-workbench-account-fallback-icon {
+    color: inherit;
+  }
+}
+
+/*-----------------------------------------------------------------------------
 | One-column shell (class `theia-mod-mobile-one-column` on #theia-app-shell,
 | toggled with max-width: 767px by MobileOneColumnShellContribution).
 |-----------------------------------------------------------------------------*/

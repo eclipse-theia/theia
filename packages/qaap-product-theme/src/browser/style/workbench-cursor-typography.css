@@ -9,68 +9,68 @@
  ********************************************************************************/
 
 /*-----------------------------------------------------------------------------
-| Workbench typography aligned with Cursor / compact VS Code–like UI density
-| (Inter first; ~12px UI, tighter icon grid.) Loads after os.css.
+| Workbench typography aligned with Qaap / Conservador.
+| Inter Tight drives UI text; technical data keeps Theia's code font.
 |----------------------------------------------------------------------------*/
 
 .mac {
-  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .mac:lang(zh-Hans) {
-  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, PingFang SC, Hiragino Sans GB, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, -apple-system, BlinkMacSystemFont, PingFang SC, Hiragino Sans GB, sans-serif;
 }
 
 .mac:lang(zh-Hant) {
-  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, PingFang TC, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, -apple-system, BlinkMacSystemFont, PingFang TC, sans-serif;
 }
 
 .mac:lang(ja) {
-  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, Hiragino Kaku Gothic Pro, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, -apple-system, BlinkMacSystemFont, Hiragino Kaku Gothic Pro, sans-serif;
 }
 
 .mac:lang(ko) {
-  --theia-ui-font-family: Inter, -apple-system, BlinkMacSystemFont, Nanum Gothic, Apple SD Gothic Neo, AppleGothic, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, -apple-system, BlinkMacSystemFont, Nanum Gothic, Apple SD Gothic Neo, AppleGothic, sans-serif;
 }
 
 .windows {
-  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, Segoe WPC, Segoe UI, sans-serif;
 }
 
 .windows:lang(zh-Hans) {
-  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Microsoft YaHei, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, Segoe WPC, Segoe UI, Microsoft YaHei, sans-serif;
 }
 
 .windows:lang(zh-Hant) {
-  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Microsoft Jhenghei, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, Segoe WPC, Segoe UI, Microsoft Jhenghei, sans-serif;
 }
 
 .windows:lang(ja) {
-  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Yu Gothic UI, Meiryo UI, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, Segoe WPC, Segoe UI, Yu Gothic UI, Meiryo UI, sans-serif;
 }
 
 .windows:lang(ko) {
-  --theia-ui-font-family: Inter, Segoe WPC, Segoe UI, Malgun Gothic, Dotom, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, Segoe WPC, Segoe UI, Malgun Gothic, Dotom, sans-serif;
 }
 
 .linux {
-  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, system-ui, Ubuntu, Droid Sans, sans-serif;
 }
 
 .linux:lang(zh-Hans) {
-  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans SC, Source Han Sans CN, Source Han Sans, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans SC, Source Han Sans CN, Source Han Sans, sans-serif;
 }
 
 .linux:lang(zh-Hant) {
-  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans TC, Source Han Sans TW, Source Han Sans, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans TC, Source Han Sans TW, Source Han Sans, sans-serif;
 }
 
 .linux:lang(ja) {
-  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans J, Source Han Sans JP, Source Han Sans, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans J, Source Han Sans JP, Source Han Sans, sans-serif;
 }
 
 .linux:lang(ko) {
-  --theia-ui-font-family: Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans K, Source Han Sans JR, Source Han Sans, UnDotum, FBaekmuk Gulim, sans-serif;
+  --theia-ui-font-family: 'Inter Tight', Inter, system-ui, Ubuntu, Droid Sans, Source Han Sans K, Source Han Sans JR, Source Han Sans, UnDotum, FBaekmuk Gulim, sans-serif;
 }
 
 .mac,
