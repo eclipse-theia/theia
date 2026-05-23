@@ -12,6 +12,8 @@ import {
     MobileProjectEntry,
     MobileProjectFilter,
 } from './mobile-projects-types';
+import { MobileAgentTaskComposer } from './mobile-agent-task-composer';
+import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsService } from './mobile-projects-service';
 import { markMobileProjectReadmeForOpen } from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
@@ -37,6 +39,17 @@ export interface MobileProjectsPanelDelegate {
     onOpenAgentOnTask?(project: MobileProjectEntry): void | Promise<void>;
 }
 
+export interface MobileProjectsPanelOptions {
+    /**
+     * Render as the workbench home view instead of a transient sheet: no drag-to-dismiss, no
+     * outside-tap dismiss, no `dialog` ARIA role. The user lives here when there is no workspace
+     * open, so the panel must not be dismissable.
+     */
+    homeMode?: boolean;
+    /** Live cross-project task tracker. When provided the panel updates cards from SSE events. */
+    activeTasks?: MobileProjectsActiveTasks;
+}
+
 export class MobileProjectsPanel {
 
     protected readonly root: HTMLElement;
@@ -49,10 +62,17 @@ export class MobileProjectsPanel {
     protected projects: MobileProjectEntry[] = [];
     protected visible = false;
     protected openMenu: HTMLElement | undefined;
+    protected openMenuAnchor: HTMLElement | undefined;
+    protected openMenuCard: HTMLElement | undefined;
+    protected openMenuRepositionDispose: Disposable = Disposable.NULL;
     protected openRepoDialog: MobileOpenRepositoryDialog | undefined;
+    protected agentComposer: MobileAgentTaskComposer | undefined;
     protected dragDismissDispose: Disposable = Disposable.NULL;
     protected pullToRefreshDispose: Disposable = Disposable.NULL;
     protected lastTitleTap = 0;
+    protected readonly homeMode: boolean;
+    protected readonly activeTasks: MobileProjectsActiveTasks | undefined;
+    protected activeTasksDispose: Disposable = Disposable.NULL;
     protected readonly onDocumentPointerDown = (ev: PointerEvent): void => {
         if (!this.openMenu) {
             return;
@@ -64,15 +84,30 @@ export class MobileProjectsPanel {
         this.closeCardMenu();
     };
 
+    protected readonly onScrollWhileMenuOpen = (): void => {
+        if (this.openMenu && this.openMenuAnchor) {
+            this.positionCardMenu(this.openMenu, this.openMenuAnchor);
+        }
+    };
+
+    protected readonly onWindowResizeWhileMenuOpen = (): void => {
+        this.onScrollWhileMenuOpen();
+    };
+
     constructor(
         protected readonly projectsService: MobileProjectsService,
         protected readonly commands: CommandRegistry,
         protected readonly delegate: MobileProjectsPanelDelegate,
+        options: MobileProjectsPanelOptions = {},
     ) {
+        this.homeMode = !!options.homeMode;
+        this.activeTasks = options.activeTasks;
         this.root = document.createElement('div');
-        this.root.className = 'theia-mobile-projects';
-        this.root.setAttribute('role', 'dialog');
-        this.root.setAttribute('aria-modal', 'true');
+        this.root.className = this.homeMode ? 'theia-mobile-projects theia-mod-home' : 'theia-mobile-projects';
+        if (!this.homeMode) {
+            this.root.setAttribute('role', 'dialog');
+            this.root.setAttribute('aria-modal', 'true');
+        }
         this.root.setAttribute('aria-hidden', 'true');
         this.root.hidden = true;
 
@@ -142,14 +177,16 @@ export class MobileProjectsPanel {
 
         titleBlock.addEventListener('click', () => this.onTitleTap());
 
-        this.dragDismissDispose = installMobileSheetDragDismiss({
-            target: this.root,
-            grip: grabber,
-            onDismiss: () => {
-                this.hide();
-                this.delegate.onDismiss();
-            },
-        });
+        if (!this.homeMode) {
+            this.dragDismissDispose = installMobileSheetDragDismiss({
+                target: this.root,
+                grip: grabber,
+                onDismiss: () => {
+                    this.hide();
+                    this.delegate.onDismiss();
+                },
+            });
+        }
 
         this.pullToRefreshDispose = installMobilePullToRefresh({
             scroller: this.scroll,
@@ -182,11 +219,21 @@ export class MobileProjectsPanel {
         return this.visible;
     }
 
+    /** True when the panel is the workbench home (no active workspace), not a dismissable sheet. */
+    isHomeMode(): boolean {
+        return this.homeMode;
+    }
+
     dispose(): void {
+        this.closeCardMenu();
+        this.agentComposer?.dispose();
+        this.agentComposer = undefined;
         this.dragDismissDispose.dispose();
         this.dragDismissDispose = Disposable.NULL;
         this.pullToRefreshDispose.dispose();
         this.pullToRefreshDispose = Disposable.NULL;
+        this.activeTasksDispose.dispose();
+        this.activeTasksDispose = Disposable.NULL;
     }
 
     async show(): Promise<void> {
@@ -198,6 +245,7 @@ export class MobileProjectsPanel {
         this.root.setAttribute('aria-hidden', 'false');
         this.root.classList.add('theia-mod-visible');
         document.addEventListener('pointerdown', this.onDocumentPointerDown, true);
+        this.subscribeToActiveTasks();
     }
 
     hide(): void {
@@ -206,11 +254,53 @@ export class MobileProjectsPanel {
         }
         this.closeCardMenu();
         this.openRepoDialog?.hide();
+        this.agentComposer?.hide();
         document.removeEventListener('pointerdown', this.onDocumentPointerDown, true);
+        this.activeTasksDispose.dispose();
+        this.activeTasksDispose = Disposable.NULL;
         this.visible = false;
         this.root.hidden = true;
         this.root.setAttribute('aria-hidden', 'true');
         this.root.classList.remove('theia-mod-visible');
+    }
+
+    /**
+     * Re-render the list when a VPS task starts or finishes in any project. We reload from the
+     * service (cheap — it's an in-memory overlay) rather than mutating state in place, so
+     * heuristics and SSE-derived status stay consistent through a single code path.
+     */
+    protected subscribeToActiveTasks(): void {
+        if (!this.activeTasks) {
+            return;
+        }
+        this.activeTasksDispose.dispose();
+        this.activeTasksDispose = this.activeTasks.onDidChange(() => {
+            if (!this.visible) {
+                return;
+            }
+            void this.applyActiveTasksRefresh();
+        });
+    }
+
+    protected async applyActiveTasksRefresh(): Promise<void> {
+        try {
+            this.projects = await this.projectsService.loadProjects();
+            this.renderList();
+            this.renderSubtitle();
+            this.renderFilters();
+        } catch {
+            /* a transient load failure must not break the live view */
+        }
+    }
+
+    protected renderSubtitle(): void {
+        const activeCount = this.projectsService.countActive(this.projects);
+        this.subtitleEl.textContent = nls.localize(
+            'qaap/mobileProjects/subtitle',
+            '{0} repositories · {1} active',
+            String(this.projects.length),
+            String(activeCount)
+        );
     }
 
     protected async onNewClick(): Promise<void> {
@@ -401,10 +491,9 @@ export class MobileProjectsPanel {
             card.classList.add('theia-mod-current');
         }
 
-        const body = document.createElement('button');
-        body.type = 'button';
-        body.className = 'theia-mobile-projects-card-body';
-        body.addEventListener('click', () => this.delegate.onProjectOpen(project));
+        const canRunTask = !!this.projectsService.getProjectCwd(project) || !!project.github;
+        const canOpenNewWindow = this.projectsService.canOpenInNewWindow(project);
+        const activeInfo = this.activeInfoForProject(project);
 
         const menuBtn = document.createElement('button');
         menuBtn.type = 'button';
@@ -426,13 +515,46 @@ export class MobileProjectsPanel {
         menu.hidden = true;
 
         this.appendCardMenuItem(menu, {
-            label: nls.localize('qaap/mobileProjects/openNewWindow', 'Open in new window'),
-            disabled: !this.projectsService.canOpenInNewWindow(project),
+            label: nls.localize('qaap/mobileProjects/runTask', 'Run background task'),
+            disabled: !canRunTask,
+            onSelect: () => { void this.openAgentComposer(project); },
+        });
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/viewActiveLog', 'View active log'),
+            disabled: !activeInfo?.taskId,
             onSelect: () => {
-                this.closeCardMenu();
-                this.projectsService.openInNewWindow(project);
+                if (activeInfo?.taskId) {
+                    void this.showTaskLog(project, activeInfo.taskId);
+                }
             },
         });
+
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/cancelActiveTask', 'Cancel active task'),
+            danger: true,
+            disabled: !activeInfo?.taskId,
+            onSelect: () => {
+                if (activeInfo?.taskId) {
+                    void this.cancelActiveTask(activeInfo.taskId);
+                }
+            },
+        });
+
+        if (project.previewUrl || project.isCurrent) {
+            this.appendCardMenuItem(menu, {
+                label: nls.localize('qaap/mobileProjects/openPreview', 'Open preview'),
+                disabled: !this.delegate.onResumePreview,
+                onSelect: () => {
+                    this.closeCardMenu();
+                    void this.delegate.onResumePreview?.(project);
+                },
+            });
+        }
+
+        const taskSeparator = document.createElement('div');
+        taskSeparator.className = 'theia-mobile-projects-card-menu-separator';
+        taskSeparator.setAttribute('role', 'separator');
+        menu.append(taskSeparator);
 
         this.appendCardMenuItem(menu, {
             label: project.pinned
@@ -473,6 +595,13 @@ export class MobileProjectsPanel {
             ev.stopPropagation();
             this.toggleCardMenu(card, menu, menuBtn);
         });
+        card.addEventListener('contextmenu', ev => {
+            ev.preventDefault();
+            this.toggleCardMenu(card, menu, menuBtn);
+        });
+
+        const main = document.createElement('div');
+        main.className = 'theia-mobile-projects-card-main';
 
         const top = document.createElement('div');
         top.className = 'theia-mobile-projects-card-top';
@@ -499,13 +628,17 @@ export class MobileProjectsPanel {
             pin.setAttribute('aria-hidden', 'true');
             nameRow.append(pin);
         }
-        if (project.lastActive && project.lastActive !== '—') {
+        if (project.isCurrent) {
+            const currentBadge = document.createElement('span');
+            currentBadge.className = 'theia-mobile-projects-current-badge';
+            currentBadge.textContent = nls.localize('qaap/mobileProjects/activeBadge', 'Active');
+            nameRow.append(currentBadge);
+        } else if (project.lastActive && project.lastActive !== '—') {
             const time = document.createElement('span');
             time.className = 'theia-mobile-projects-time';
             time.textContent = project.lastActive;
             nameRow.append(time);
         }
-        nameRow.append(menuBtn);
         const branchRow = document.createElement('div');
         branchRow.className = 'theia-mobile-projects-branch';
         branchRow.innerHTML = '<span class="codicon codicon-git-branch" aria-hidden="true"></span>';
@@ -525,27 +658,20 @@ export class MobileProjectsPanel {
         dot.className = 'theia-mobile-projects-status-dot';
         dot.style.background = status.color;
         pill.append(dot, document.createTextNode(nls.localize(status.labelKey, status.defaultLabel)));
-
         statusRow.append(pill);
         if (project.agents.length > 0) {
             statusRow.append(this.createAgentStack(project.agents));
         }
-        if (project.status === 'working' && project.tokens !== '—') {
-            const metrics = document.createElement('span');
-            metrics.className = 'theia-mobile-projects-metrics';
-            metrics.textContent = `${project.tokens} · ${project.cost}`;
-            statusRow.append(metrics);
-        }
 
-        const task = document.createElement('p');
-        task.className = 'theia-mobile-projects-task';
-        task.textContent = project.task;
+        main.append(top, statusRow);
 
-        body.append(top, statusRow, task);
-
-        const quick = this.createQuickActions(project);
-        if (quick) {
-            body.append(quick);
+        const subtitleText = activeInfo?.title
+            ?? (project.task && project.task !== '—' ? project.task : undefined);
+        if (subtitleText) {
+            const subtitle = document.createElement('p');
+            subtitle.className = 'theia-mobile-projects-card-subtitle';
+            subtitle.textContent = subtitleText;
+            main.append(subtitle);
         }
 
         if (project.progress > 0) {
@@ -555,11 +681,74 @@ export class MobileProjectsPanel {
             fill.className = 'theia-mobile-projects-progress-fill';
             fill.style.width = `${Math.round(project.progress * 100)}%`;
             bar.append(fill);
-            body.append(bar);
+            main.append(bar);
         }
 
-        card.append(body, menu);
+        const foot = document.createElement('div');
+        foot.className = 'theia-mobile-projects-card-foot';
+
+        const openHereLabel = project.isCurrent
+            ? nls.localize('qaap/mobileProjects/focusProject', 'View project')
+            : nls.localize('qaap/mobileProjects/openHere', 'Open here');
+        const openHereBtn = this.createFootButton(
+            openHereLabel,
+            project.isCurrent ? 'codicon-eye' : 'codicon-folder-opened',
+            'theia-mod-primary',
+            () => { this.delegate.onProjectOpen(project); },
+        );
+        foot.append(openHereBtn);
+
+        if (canOpenNewWindow) {
+            foot.append(this.createFootButton(
+                nls.localize('qaap/mobileProjects/openNewWindowShort', 'New window'),
+                'codicon-window',
+                'theia-mod-secondary',
+                () => this.projectsService.openInNewWindow(project),
+            ));
+        }
+
+        foot.append(this.createFootButton(
+            nls.localize('qaap/mobileProjects/runTaskShort', 'Task'),
+            'codicon-server-process',
+            'theia-mod-accent',
+            () => { void this.openAgentComposer(project); },
+            !canRunTask,
+        ));
+
+        const footActions = document.createElement('div');
+        footActions.className = 'theia-mobile-projects-card-foot-menu';
+        footActions.append(menuBtn);
+        foot.append(footActions);
+
+        card.append(main, foot, menu);
         return card;
+    }
+
+    protected createFootButton(
+        label: string,
+        iconClass: string,
+        modifier: 'theia-mod-primary' | 'theia-mod-secondary' | 'theia-mod-accent',
+        onClick: () => void,
+        disabled = false,
+    ): HTMLButtonElement {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `theia-mobile-projects-foot-btn ${modifier}`;
+        btn.disabled = disabled;
+        const icon = document.createElement('span');
+        icon.className = `codicon ${iconClass}`;
+        icon.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.className = 'theia-mobile-projects-foot-btn-label';
+        text.textContent = label;
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+        btn.append(icon, text);
+        btn.addEventListener('click', ev => {
+            ev.stopPropagation();
+            onClick();
+        });
+        return btn;
     }
 
     protected createQuickActions(project: MobileProjectEntry): HTMLElement | undefined {
@@ -606,25 +795,77 @@ export class MobileProjectsPanel {
         }
         this.closeCardMenu();
         this.openMenu = menu;
+        this.openMenuAnchor = menuBtn;
+        this.openMenuCard = card;
         menu.hidden = false;
-        menu.classList.add('theia-mod-open');
+        menu.classList.add('theia-mod-open', 'theia-mod-floating');
+        this.root.appendChild(menu);
         menuBtn.setAttribute('aria-expanded', 'true');
         card.classList.add('theia-mod-menu-open');
+        window.requestAnimationFrame(() => {
+            if (this.openMenu === menu) {
+                this.positionCardMenu(menu, menuBtn);
+            }
+        });
+        this.scroll.addEventListener('scroll', this.onScrollWhileMenuOpen, { passive: true });
+        window.addEventListener('resize', this.onWindowResizeWhileMenuOpen);
+        this.openMenuRepositionDispose.dispose();
+        this.openMenuRepositionDispose = Disposable.create(() => {
+            this.scroll.removeEventListener('scroll', this.onScrollWhileMenuOpen);
+            window.removeEventListener('resize', this.onWindowResizeWhileMenuOpen);
+        });
     }
 
     protected closeCardMenu(): void {
         if (!this.openMenu) {
             return;
         }
-        const card = this.openMenu.closest('.theia-mobile-projects-card');
+        const menu = this.openMenu;
+        const card = this.openMenuCard ?? menu.closest('.theia-mobile-projects-card');
         const menuBtn = card?.querySelector('.theia-mobile-projects-card-menu-btn');
-        this.openMenu.hidden = true;
-        this.openMenu.classList.remove('theia-mod-open');
+        menu.hidden = true;
+        menu.classList.remove('theia-mod-open', 'theia-mod-floating');
+        this.clearCardMenuPosition(menu);
+        if (card && card.contains(menu) === false) {
+            card.appendChild(menu);
+        }
         card?.classList.remove('theia-mod-menu-open');
         if (menuBtn instanceof HTMLButtonElement) {
             menuBtn.setAttribute('aria-expanded', 'false');
         }
+        this.openMenuRepositionDispose.dispose();
+        this.openMenuRepositionDispose = Disposable.NULL;
         this.openMenu = undefined;
+        this.openMenuAnchor = undefined;
+        this.openMenuCard = undefined;
+    }
+
+    /** Fixed layer above the projects panel so overflow on the scroll area does not clip options. */
+    protected positionCardMenu(menu: HTMLElement, anchor: HTMLElement): void {
+        const margin = 8;
+        const gap = 4;
+        const anchorRect = anchor.getBoundingClientRect();
+        const menuWidth = Math.max(menu.offsetWidth, 168);
+        const menuHeight = menu.offsetHeight;
+        let top = anchorRect.bottom + gap;
+        const maxBottom = window.innerHeight - margin;
+        if (top + menuHeight > maxBottom) {
+            const aboveTop = anchorRect.top - gap - menuHeight;
+            top = aboveTop >= margin ? aboveTop : Math.max(margin, maxBottom - menuHeight);
+        }
+        let left = anchorRect.right - menuWidth;
+        left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
+        menu.style.top = `${top}px`;
+        menu.style.left = `${left}px`;
+    }
+
+    protected clearCardMenuPosition(menu: HTMLElement): void {
+        menu.style.top = '';
+        menu.style.left = '';
+        menu.style.right = '';
+        menu.style.bottom = '';
+        menu.style.position = '';
+        menu.style.zIndex = '';
     }
 
     protected appendCardMenuItem(
@@ -699,6 +940,125 @@ export class MobileProjectsPanel {
         this.delegate.onProjectsChanged?.();
     }
 
+    protected async openAgentComposer(project: MobileProjectEntry): Promise<void> {
+        this.closeCardMenu();
+        let cwd = this.projectsService.getProjectCwd(project);
+        if (!cwd && project.github) {
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/preparingRepo', 'Preparing {0}…', project.name),
+                { kind: 'loading' }
+            );
+            cwd = await this.projectsService.prepareProjectCwd(project);
+            MobileSnackbar.dismiss();
+        }
+        if (!cwd) {
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/runTaskNoCwd', 'Open or clone this project before running a background task.'),
+                { duration: 2800 }
+            );
+            return;
+        }
+        if (!this.agentComposer) {
+            this.agentComposer = new MobileAgentTaskComposer(this.activeTasks, {
+                onSubmitted: task => {
+                    this.markProjectTaskRunning(task.cwd, task.title ?? task.command);
+                    this.render();
+                    this.delegate.onProjectsChanged?.();
+                },
+            });
+            this.root.append(this.agentComposer.node);
+        }
+        await this.agentComposer.show(project, cwd);
+    }
+
+    protected activeInfoForProject(project: MobileProjectEntry): ReturnType<MobileProjectsActiveTasks['getForCwd']> {
+        const cwd = this.projectsService.getProjectCwd(project);
+        return cwd && this.activeTasks ? this.activeTasks.getForCwd(cwd) : undefined;
+    }
+
+    protected markProjectTaskRunning(cwd: string, title: string | undefined): void {
+        let changed = false;
+        this.projects = this.projects.map(project => {
+            if (this.projectsService.getProjectCwd(project) !== cwd) {
+                return project;
+            }
+            changed = true;
+            return {
+                ...project,
+                status: 'working',
+                task: title || project.task,
+                lastActive: nls.localize('qaap/mobileProjects/lastActiveNow', 'now'),
+            };
+        });
+        if (!changed) {
+            void this.applyActiveTasksRefresh();
+        }
+    }
+
+    protected async cancelActiveTask(taskId: string): Promise<void> {
+        this.closeCardMenu();
+        try {
+            const response = await fetch(`/qaap/api/agent-tasks/${encodeURIComponent(taskId)}/cancel`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+            if (response.ok) {
+                this.activeTasks?.recordTaskEnded(await response.json());
+                MobileSnackbar.show(
+                    nls.localize('qaap/mobileProjects/taskCancelled', 'Task cancelled'),
+                    { duration: 1400 }
+                );
+            }
+        } finally {
+            this.projects = await this.projectsService.loadProjects();
+            this.render();
+            this.delegate.onProjectsChanged?.();
+        }
+    }
+
+    protected async showTaskLog(project: MobileProjectEntry, taskId: string): Promise<void> {
+        this.closeCardMenu();
+        const root = document.createElement('div');
+        root.className = 'theia-mobile-agent-log theia-mod-visible';
+        root.setAttribute('role', 'dialog');
+        root.setAttribute('aria-modal', 'true');
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'theia-mobile-agent-log-backdrop';
+        const sheet = document.createElement('section');
+        sheet.className = 'theia-mobile-agent-log-sheet';
+        const header = document.createElement('header');
+        header.className = 'theia-mobile-agent-log-header';
+        const title = document.createElement('h2');
+        title.textContent = nls.localize('qaap/mobileProjects/activeLogTitle', '{0} log', project.name);
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'theia-mobile-agent-log-close codicon codicon-close';
+        close.title = nls.localize('qaap/mobileProjects/closeLog', 'Close');
+        close.setAttribute('aria-label', close.title);
+        const pre = document.createElement('pre');
+        pre.className = 'theia-mobile-agent-log-output';
+        pre.textContent = nls.localize('qaap/mobileProjects/loadingLog', 'Loading...');
+        const dispose = (): void => root.remove();
+        close.addEventListener('click', dispose);
+        backdrop.addEventListener('click', dispose);
+        header.append(title, close);
+        sheet.append(header, pre);
+        root.append(backdrop, sheet);
+        this.root.append(root);
+        try {
+            const response = await fetch(`/qaap/api/agent-tasks/${encodeURIComponent(taskId)}`, { credentials: 'include' });
+            if (response.ok) {
+                const detail = await response.json() as { log?: string };
+                pre.textContent = detail.log || nls.localize('qaap/mobileProjects/noLogOutput', '(no output yet)');
+            } else {
+                pre.textContent = response.statusText;
+            }
+        } catch (error) {
+            pre.textContent = error instanceof Error ? error.message : String(error);
+        }
+    }
+
     protected createAgentStack(agents: MobileProjectEntry['agents']): HTMLElement {
         const stack = document.createElement('span');
         stack.className = 'theia-mobile-projects-agents';
@@ -719,25 +1079,33 @@ export class MobileProjectsPanel {
 
     async openProject(project: MobileProjectEntry): Promise<void> {
         if (project.isCurrent) {
-            // Tapping the active workspace must not trigger a reload (which would close any open
-            // editors). Instead, dismiss the panel and let the shell surface the README in-place.
-            this.hide();
-            this.delegate.onDismiss();
+            // Active workspace: focus the editor without reloading; dismiss the sheet when not home.
+            this.dismissPanelIfSheet();
             await this.delegate.onCurrentProjectActivated?.(project);
             return;
         }
-        if (project.github) {
-            this.projectsService.openInCurrentWindow(project);
+        try {
+            if (project.github || project.uri) {
+                await this.projectsService.openInCurrentWindowAsync(project);
+            } else {
+                const openFolder = WorkspaceCommands.OPEN_FOLDER.id;
+                if (this.commands.getCommand(openFolder)) {
+                    markMobileProjectReadmeForOpen();
+                    await this.commands.executeCommand(openFolder);
+                }
+            }
+        } finally {
+            // GitHub open ends in a full reload — dismissing early hid the panel before clone started.
+            this.dismissPanelIfSheet();
+        }
+    }
+
+    /** Sheet overlay only — home dashboard stays visible until the workspace reloads. */
+    protected dismissPanelIfSheet(): void {
+        if (this.homeMode) {
             return;
         }
-        if (project.uri) {
-            this.projectsService.openInCurrentWindow(project);
-            return;
-        }
-        const openFolder = WorkspaceCommands.OPEN_FOLDER.id;
-        if (this.commands.getCommand(openFolder)) {
-            markMobileProjectReadmeForOpen();
-            await this.commands.executeCommand(openFolder);
-        }
+        this.hide();
+        this.delegate.onDismiss();
     }
 }

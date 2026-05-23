@@ -30,6 +30,7 @@ import { MobileEditorGestureContribution } from './mobile-editor-gesture-contrib
 import { QaapEmptyWorkbenchBrandingContribution } from './qaap-empty-workbench-branding-contribution';
 import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-contribution';
 import { LongPressContextMenuContribution } from './long-press-context-menu';
+import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { QaapProjectBootstrapDetector } from './qaap-project-bootstrap-detector';
@@ -39,11 +40,13 @@ import { MobileTouchScrollContribution } from './mobile-touch-scroll-contributio
 import { QaapBootstrapVariableContribution } from './qaap-bootstrap-variable-contribution';
 
 export default new ContainerModule(bind => {
+    bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
     bind(MobileProjectsService).toSelf().inSingletonScope();
     bind(MobileProjectsReadmeContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileProjectsReadmeContribution);
     bind(MobileOneColumnShellContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileOneColumnShellContribution);
+    bind(CommandContribution).toService(MobileOneColumnShellContribution);
     bind(QaapShellLayoutRestoreContribution).toSelf().inSingletonScope();
     bind(ShellLayoutTransformer).toService(QaapShellLayoutRestoreContribution);
     bind(MobileOnboardingTutorialContribution).toSelf().inSingletonScope();

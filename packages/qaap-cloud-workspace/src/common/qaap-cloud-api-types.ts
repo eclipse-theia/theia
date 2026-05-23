@@ -5,6 +5,18 @@
 
 export const QAAP_CLOUD_API_PATH = '/qaap/api/cloud';
 
+/**
+ * Default CDP endpoint AppTester's `chrome-devtools-mcp` MCP server connects to. Must point at a
+ * Chrome running with `--remote-debugging-port=9222` on the *backend* host (same machine as the
+ * MCP process), not the user's browser.
+ */
+export const QAAP_CDP_PROBE_URL = 'http://127.0.0.1:9222/json/version';
+
+export interface QaapCdpStatusResponse {
+    readonly reachable: boolean;
+    readonly endpoint: string;
+}
+
 export type QaapCloudWorkspaceStatus = 'provisioning' | 'ready' | 'stopped' | 'error';
 
 export interface QaapCloudWorkspaceSummary {

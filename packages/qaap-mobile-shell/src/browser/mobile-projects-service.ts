@@ -34,6 +34,7 @@ import {
     mobileProjectInitials,
     StoredMobileProject,
 } from './mobile-projects-types';
+import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import {
     clearMobileProjectReadmeOpenRequest,
     markMobileProjectReadmeForOpen,
@@ -67,6 +68,9 @@ export class MobileProjectsService {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(MobileProjectsActiveTasks)
+    protected readonly activeTasks: MobileProjectsActiveTasks;
 
     protected filter: MobileProjectFilter = 'all';
 
@@ -180,8 +184,13 @@ export class MobileProjectsService {
     }
 
     openInCurrentWindow(project: MobileProjectEntry): void {
+        void this.openInCurrentWindowAsync(project);
+    }
+
+    /** Opens the project in this browser tab; awaits GitHub clone/prepare when needed. */
+    async openInCurrentWindowAsync(project: MobileProjectEntry): Promise<void> {
         if (project.github) {
-            void this.openGithubProject(project);
+            await this.openGithubProject(project);
             return;
         }
         if (project.uri) {
@@ -575,10 +584,13 @@ export class MobileProjectsService {
     }
 
     async loadProjects(): Promise<MobileProjectEntry[]> {
+        // Open the SSE stream the first time projects are queried — the panel will subscribe to
+        // tracker changes to live-update cards as VPS tasks start/finish.
+        this.activeTasks.start();
         const sessionMap = await this.loadSessionMap();
         const githubProjects = await this.loadGithubProjects(sessionMap);
         if (githubProjects.length > 0) {
-            return this.sortProjectsByRecent(githubProjects);
+            return this.overlayActiveTasks(this.sortProjectsByRecent(githubProjects));
         }
 
         const entries: MobileProjectEntry[] = [];
@@ -651,7 +663,87 @@ export class MobileProjectsService {
             entries.push(this.storedToEntry(stored, pinnedIds));
         }
 
-        return this.sortProjectsByRecent(entries.filter(p => !hiddenIds.has(p.id)));
+        return this.overlayActiveTasks(this.sortProjectsByRecent(entries.filter(p => !hiddenIds.has(p.id))));
+    }
+
+    /**
+     * Overlay live VPS task state on top of the session-derived entries. A project with a task
+     * actively running on the backend flips to `working` regardless of what the heuristic said,
+     * because the backend is the source of truth for "is there an agent doing work right now".
+     */
+    protected overlayActiveTasks(projects: MobileProjectEntry[]): MobileProjectEntry[] {
+        return projects.map(project => {
+            const cwd = this.cwdForProject(project);
+            if (!cwd) {
+                return project;
+            }
+            const info = this.activeTasks.getForCwd(cwd);
+            if (!info) {
+                return project;
+            }
+            return {
+                ...project,
+                status: 'working',
+                task: info.title ?? project.task,
+                lastActive: nls.localize('qaap/mobileProjects/lastActiveNow', 'now'),
+            };
+        });
+    }
+
+    /**
+     * Absolute filesystem path the backend would record as `cwd` for this project, or undefined
+     * when the project has no local URI (e.g. a GitHub-only entry that has never been cloned).
+     * Cross-OS note: `uri.path.toString()` is the fs path on POSIX; on Windows the leading slash
+     * is stripped so the result matches what `path.resolve` produces on the backend.
+     */
+    /**
+     * Absolute VPS path for agent tasks, when known. Uses the project URI, or the active
+     * workspace when this card is the current repo (GitHub entries often omit `uri`).
+     */
+    getProjectCwd(project: MobileProjectEntry): string | undefined {
+        const fromUri = this.cwdFromFileUri(project.uri);
+        if (fromUri) {
+            return fromUri;
+        }
+        if (project.isCurrent && this.workspaceService.workspace) {
+            return this.cwdFromFileUri(this.workspaceService.workspace.resource);
+        }
+        return undefined;
+    }
+
+    /**
+     * Ensures a GitHub repo is cloned on the VPS and returns its path, without switching the
+     * active workspace. Used by the dashboard "+" composer.
+     */
+    async prepareProjectCwd(project: MobileProjectEntry): Promise<string | undefined> {
+        const existing = this.getProjectCwd(project);
+        if (existing) {
+            return existing;
+        }
+        if (!project.github || !readQaapSignedIn()) {
+            return undefined;
+        }
+        try {
+            const result = await openQaapGithubRepository(project.github.owner, project.github.name);
+            return this.cwdFromFileUri(new URI(result.workspaceUri));
+        } catch {
+            return undefined;
+        }
+    }
+
+    protected cwdForProject(project: MobileProjectEntry): string | undefined {
+        return this.getProjectCwd(project);
+    }
+
+    protected cwdFromFileUri(uri: URI | undefined): string | undefined {
+        if (!uri || uri.scheme !== 'file') {
+            return undefined;
+        }
+        const raw = uri.path.toString();
+        if (/^\/[A-Za-z]:/.test(raw)) {
+            return raw.slice(1);
+        }
+        return raw;
     }
 
     /** Records hub metrics for the active workspace (local + server when signed in). */
@@ -819,6 +911,7 @@ export class MobileProjectsService {
         const name = this.resolveDisplayName(id, repo.name);
         const isCurrent = repo.fullName.toLowerCase() === currentFullName;
         const lastActiveAt = isCurrent ? new Date().toISOString() : repo.updatedAt;
+        const workspaceUri = isCurrent ? this.workspaceService.workspace?.resource : undefined;
         return {
             id,
             name,
@@ -840,6 +933,7 @@ export class MobileProjectsService {
             tokens: '—',
             cost: '—',
             pinned: this.isPinned(id, pinnedIds, isCurrent),
+            uri: workspaceUri,
             github: {
                 owner: repo.owner,
                 name: repo.name,

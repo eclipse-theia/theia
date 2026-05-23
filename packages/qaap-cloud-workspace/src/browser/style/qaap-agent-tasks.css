@@ -31,6 +31,18 @@
     flex: none;
 }
 
+.qaap-agent-tasks-agent {
+    flex: none;
+    height: 38px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid var(--theia-input-border, var(--theia-editorWidget-border));
+    background: var(--theia-input-background);
+    color: var(--theia-input-foreground);
+    font-size: 12.5px;
+    max-width: 40%;
+}
+
 .qaap-agent-tasks-input {
     flex: 1;
     min-width: 0;
@@ -117,6 +129,11 @@
 .qaap-agent-tasks-state--interrupted {
     background: var(--theia-errorForeground);
     color: var(--theia-editor-background);
+}
+
+.qaap-agent-tasks-child-marker {
+    color: var(--theia-descriptionForeground);
+    margin-right: 2px;
 }
 
 .qaap-agent-tasks-title {

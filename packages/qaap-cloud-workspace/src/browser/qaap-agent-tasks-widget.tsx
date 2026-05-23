@@ -10,7 +10,16 @@ import * as React from '@theia/core/shared/react';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import {
+    buildCreateAgentTaskBody,
+    cancelAgentTask,
+    createAgentTask,
+    reconcileSelectedAgent,
+    SHELL_AGENT_ID,
+    writeStoredAgent,
+} from '@theia/qaap-mobile-shell/lib/common/qaap-agent-task-client';
+import {
     QAAP_AGENT_TASK_API_PATH,
+    type QaapAgentDescriptor,
     type QaapAgentTask,
     type QaapAgentTaskDetail,
 } from '../common/qaap-agent-task';
@@ -42,6 +51,9 @@ export class QaapAgentTasksWidget extends ReactWidget {
     /** Absolute path of the current project — tasks are scoped to it. */
     protected projectCwd: string | undefined;
     protected agentConfigured = false;
+    protected agents: QaapAgentDescriptor[] = [];
+    /** User's current pick, or `undefined` until the server's defaultAgent arrives. */
+    protected selectedAgent: string | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -75,9 +87,21 @@ export class QaapAgentTasksWidget extends ReactWidget {
             const query = this.projectCwd ? `?cwd=${encodeURIComponent(this.projectCwd)}` : '';
             const response = await fetch(`${QAAP_AGENT_TASK_API_PATH}${query}`, { credentials: 'include' });
             if (response.ok) {
-                const body = await response.json() as { tasks?: QaapAgentTask[]; agentConfigured?: boolean };
+                const body = await response.json() as {
+                    tasks?: QaapAgentTask[];
+                    agentConfigured?: boolean;
+                    agents?: QaapAgentDescriptor[];
+                    defaultAgent?: string;
+                };
                 this.tasks = body.tasks ?? [];
                 this.agentConfigured = body.agentConfigured === true;
+                this.agents = body.agents ?? [];
+                this.selectedAgent = reconcileSelectedAgent(
+                    this.selectedAgent,
+                    this.agents,
+                    body.defaultAgent,
+                    this.projectCwd,
+                );
             }
             if (this.expandedId) {
                 await this.loadLog(this.expandedId);
@@ -105,14 +129,20 @@ export class QaapAgentTasksWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
+        const showBanner = !this.agentConfigured || this.selectedAgent === SHELL_AGENT_ID;
         return (
             <div className='qaap-agent-tasks-body'>
-                {!this.agentConfigured && (
+                {showBanner && (
                     <div className='qaap-agent-tasks-banner'>
-                        {nls.localize(
-                            'qaap/agentTasks/noAgent',
-                            'No coding agent configured — input runs as a shell command. Set QAAP_AGENT_COMMAND on the server to run agent prompts.',
-                        )}
+                        {this.agentConfigured
+                            ? nls.localize(
+                                'qaap/agentTasks/shellMode',
+                                'Shell mode — input runs verbatim as a command. Pick an agent above to send prompts instead.',
+                            )
+                            : nls.localize(
+                                'qaap/agentTasks/noAgent',
+                                'No coding agent detected on the server. Install one of: claude, codex, aider — or set QAAP_AGENT_COMMAND.',
+                            )}
                     </div>
                 )}
                 {this.renderLauncher()}
@@ -128,14 +158,28 @@ export class QaapAgentTasksWidget extends ReactWidget {
     }
 
     protected renderLauncher(): React.ReactNode {
+        const usingShell = this.selectedAgent === SHELL_AGENT_ID;
         return (
             <div className='qaap-agent-tasks-launcher'>
+                {this.agents.length > 1 && (
+                    <select
+                        className='qaap-agent-tasks-agent'
+                        value={this.selectedAgent ?? ''}
+                        disabled={this.busy}
+                        onChange={this.onAgentChange}
+                        aria-label={nls.localize('qaap/agentTasks/agentLabel', 'Agent')}
+                    >
+                        {this.agents.map(agent => (
+                            <option key={agent.id} value={agent.id}>{agent.label}</option>
+                        ))}
+                    </select>
+                )}
                 <input
                     className='qaap-agent-tasks-input'
                     type='text'
-                    placeholder={this.agentConfigured
-                        ? nls.localize('qaap/agentTasks/placeholderAgent', 'Describe a task for the agent…')
-                        : nls.localize('qaap/agentTasks/placeholderCommand', 'Command to run in the background…')}
+                    placeholder={usingShell
+                        ? nls.localize('qaap/agentTasks/placeholderCommand', 'Command to run in the background…')
+                        : nls.localize('qaap/agentTasks/placeholderAgent', 'Describe a task for the agent…')}
                     value={this.commandDraft}
                     disabled={this.busy}
                     onChange={this.onDraftChange}
@@ -161,7 +205,10 @@ export class QaapAgentTasksWidget extends ReactWidget {
                     <span className={`qaap-agent-tasks-state qaap-agent-tasks-state--${task.state}`}>
                         {this.stateLabel(task)}
                     </span>
-                    <span className='qaap-agent-tasks-title' title={task.command}>{task.title}</span>
+                    <span className='qaap-agent-tasks-title' title={task.command}>
+                        {task.parentId && <span className='qaap-agent-tasks-child-marker' aria-hidden='true'>↳ </span>}
+                        {task.title}
+                    </span>
                     {task.state === 'running' && (
                         <button
                             type='button'
@@ -211,6 +258,12 @@ export class QaapAgentTasksWidget extends ReactWidget {
         this.update();
     };
 
+    protected readonly onAgentChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+        this.selectedAgent = event.target.value;
+        writeStoredAgent(this.projectCwd, event.target.value);
+        this.update();
+    };
+
     protected readonly onDraftKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         if (event.key === 'Enter') {
             void this.onRun();
@@ -218,23 +271,20 @@ export class QaapAgentTasksWidget extends ReactWidget {
     };
 
     protected readonly onRun = async (): Promise<void> => {
-        const prompt = this.commandDraft.trim();
-        if (!prompt || this.busy) {
+        const draft = this.commandDraft.trim();
+        if (!draft || this.busy) {
             return;
         }
         const cwd = await this.resolveCwd();
         if (!cwd) {
             return;
         }
+        const agent = this.selectedAgent ?? SHELL_AGENT_ID;
+        const body = buildCreateAgentTaskBody(draft, agent, cwd);
         this.busy = true;
         this.update();
         try {
-            await fetch(QAAP_AGENT_TASK_API_PATH, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, cwd }),
-            });
+            await createAgentTask(body);
             this.commandDraft = '';
         } catch {
             /* surfaced by the next refresh */
@@ -246,9 +296,6 @@ export class QaapAgentTasksWidget extends ReactWidget {
 
     protected readonly onCancel = (event: React.MouseEvent, id: string): void => {
         event.stopPropagation();
-        void fetch(`${QAAP_AGENT_TASK_API_PATH}/${encodeURIComponent(id)}/cancel`, {
-            method: 'POST',
-            credentials: 'include',
-        }).then(() => this.refresh());
+        void cancelAgentTask(id).then(() => this.refresh());
     };
 }

@@ -7,8 +7,11 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { Application, Request, Response } from '@theia/core/shared/express';
 import { json } from 'body-parser';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import * as http from 'http';
 import {
+    QAAP_CDP_PROBE_URL,
     QAAP_CLOUD_API_PATH,
+    type QaapCdpStatusResponse,
     type QaapCloudWorkspaceEnsureRequest,
     type QaapDeployEnvVar,
     type QaapDeployRunRequest,
@@ -67,7 +70,31 @@ export class QaapCloudWorkspaceEndpoint implements BackendApplicationContributio
         app.get(`${QAAP_CLOUD_API_PATH}/push/vapid`, (req, res) => { void this.handlePushVapid(req, res); });
         app.post(`${QAAP_CLOUD_API_PATH}/push/subscribe`, (req, res) => { void this.handlePushSubscribe(req, res); });
         app.post(`${QAAP_CLOUD_API_PATH}/push/notify`, (req, res) => { void this.handlePushNotify(req, res); });
+        app.get(`${QAAP_CLOUD_API_PATH}/cdp-status`, (req, res) => { void this.handleCdpStatus(req, res); });
         this.shareProxy.configure(app);
+    }
+
+    /**
+     * Probes the local CDP endpoint AppTester relies on (Chrome with --remote-debugging-port=9222).
+     * Returns `{ reachable: false }` quickly when there's no Chrome — used by the mobile AppTester
+     * auto-trigger to avoid asking the user to start the MCP server in environments where it
+     * would just hang or fail later inside a tool call.
+     */
+    protected async handleCdpStatus(_req: Request, res: Response): Promise<void> {
+        const reachable = await this.probeCdpEndpoint();
+        const body: QaapCdpStatusResponse = { reachable, endpoint: QAAP_CDP_PROBE_URL };
+        res.json(body);
+    }
+
+    protected probeCdpEndpoint(): Promise<boolean> {
+        return new Promise(resolve => {
+            const req = http.get(QAAP_CDP_PROBE_URL, { timeout: 750 }, response => {
+                response.resume();
+                resolve(response.statusCode !== undefined && response.statusCode >= 200 && response.statusCode < 500);
+            });
+            req.on('timeout', () => { req.destroy(); resolve(false); });
+            req.on('error', () => resolve(false));
+        });
     }
 
     protected async handleListWorkspaces(_req: Request, res: Response): Promise<void> {

@@ -31,7 +31,7 @@ export class QaapWorkbenchTopBarFactory implements WorkbenchTopBarFactory {
 
     createTrailingTopBarWidgets(commands: CommandRegistry, shell: ApplicationShell): Widget[] {
         return [
-            new QaapWorkbenchHistoryNavWidget(commands),
+            new QaapWorkbenchHistoryNavWidget(commands, this.workspaceService),
             new QaapWorkbenchRightControlsWidget(commands, shell),
         ];
     }

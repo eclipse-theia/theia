@@ -5,6 +5,7 @@
 
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import {
+    matchesMobileNarrowViewport,
     MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
     MOBILE_ONE_COLUMN_LAYOUT_CLASS
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
@@ -171,33 +172,13 @@ export class QaapEmptyWorkbenchBrandingContribution implements FrontendApplicati
         if (projects) {
             return false;
         }
-        if (!this.isMobileLayout()) {
-            // Desktop: sidebar may stay expanded; still show the empty-editor watermark in main.
-            return true;
-        }
-        if (this.shell.isExpanded('left') || this.shell.isExpanded('right') || this.shell.isExpanded('bottom')) {
+        // Narrow viewport uses the projects dashboard as home; the desktop watermark only traps users
+        // on the logo after a workspace reload when the sheet was dismissed and main is still empty.
+        if (this.isMobileLayout() || matchesMobileNarrowViewport()) {
             return false;
         }
-        if (this.isMobileSideSheetDomVisible()) {
-            return false;
-        }
+        // Desktop: sidebar may stay expanded; still show the empty-editor watermark in main.
         return true;
-    }
-
-    /** True when a side sheet is expanded in shell state and not slid off-screen. */
-    protected isMobileSideSheetDomVisible(): boolean {
-        for (const side of ['left', 'right'] as const) {
-            if (!this.shell.isExpanded(side)) {
-                continue;
-            }
-            const id = side === 'left' ? 'theia-left-content-panel' : 'theia-right-content-panel';
-            const panel = document.getElementById(id);
-            if (!panel || panel.classList.contains('theia-mod-collapsed') || panel.classList.contains('lm-mod-hidden')) {
-                continue;
-            }
-            return true;
-        }
-        return false;
     }
 
     protected isMainAreaEmpty(): boolean {

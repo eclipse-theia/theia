@@ -51,7 +51,15 @@ export class MobileProjectsReadmeContribution implements FrontendApplicationCont
     }
 
     onDidInitializeLayout(_app: FrontendApplication): void {
-        void this.handlePendingOpenRequest();
+        void this.retryPendingReadmeOpen();
+    }
+
+    /** Reintenta abrir el README marcado antes del reload (el workspace puede no estar listo al primer intento). */
+    async retryPendingReadmeOpen(): Promise<void> {
+        await this.handlePendingOpenRequest();
+        for (const delayMs of [400, 1200, 2500]) {
+            window.setTimeout(() => { void this.handlePendingOpenRequest(); }, delayMs);
+        }
     }
 
     /**

@@ -30,6 +30,11 @@ export interface QaapAgentTask {
     /** Epoch milliseconds. */
     readonly createdAt: number;
     readonly finishedAt?: number;
+    /**
+     * Id of the task that spawned this one — set when an agent calls the `qaap-task` helper.
+     * Lets the UI render sub-tasks under their parent.
+     */
+    readonly parentId?: string;
 }
 
 /** A task plus its captured stdout/stderr log. */
@@ -42,21 +47,68 @@ export interface QaapCreateAgentTaskRequest {
     /** A raw shell command to run. Provide this OR {@link prompt}. */
     readonly command?: string;
     /**
-     * A natural-language task for the coding agent. The backend wraps it with the agent CLI
-     * configured via the QAAP_AGENT_COMMAND environment variable (a template with a {prompt}
-     * placeholder). With no agent configured the prompt is run verbatim as a command.
+     * A natural-language task for the coding agent. The backend wraps it with the selected
+     * agent ({@link agent}), the QAAP_AGENT_COMMAND env template, or — as a last resort —
+     * runs the prompt verbatim as a shell command.
      */
     readonly prompt?: string;
+    /**
+     * Id of an agent returned by the list endpoint, e.g. `'claude'` or `'codex'`. Use the
+     * special value `'shell'` to bypass any agent and run the prompt verbatim as a command.
+     */
+    readonly agent?: string;
     readonly cwd: string;
+    /** Forwarded by the `qaap-task` helper so spawned tasks attribute to their parent. */
+    readonly parentId?: string;
+}
+
+/** A coding agent the runner knows how to invoke. */
+export interface QaapAgentDescriptor {
+    /** Stable identifier sent back in {@link QaapCreateAgentTaskRequest.agent}. */
+    readonly id: string;
+    /** Human-readable label for the picker. */
+    readonly label: string;
+    /** True when the agent's CLI was detected on the server's PATH (or env template is set). */
+    readonly available: boolean;
 }
 
 export interface QaapAgentTaskListResponse {
     readonly tasks: QaapAgentTask[];
     /**
-     * True when QAAP_AGENT_COMMAND is set — i.e. a prompt launches a real coding agent.
-     * When false, a prompt is run verbatim as a shell command.
+     * True when at least one agent is available — autodetected on the PATH or configured via
+     * QAAP_AGENT_COMMAND. When false, a prompt is run verbatim as a shell command.
      */
     readonly agentConfigured: boolean;
+    /** Agents available on the server, plus the always-present `'shell'` pseudo-agent. */
+    readonly agents: QaapAgentDescriptor[];
+    /** Id of the agent used when the request omits one (first available, else `'shell'`). */
+    readonly defaultAgent: string;
+}
+
+/** All tasks the runner knows about, grouped by their working directory. */
+export interface QaapAgentTaskCwdGroup {
+    /** Absolute, normalized working directory the tasks ran in. */
+    readonly cwd: string;
+    /** Best-effort human-readable name (typically `package.json#name` or the dir basename). */
+    readonly projectName: string;
+    /** Number of tasks currently in the `'running'` state in this group. */
+    readonly activeCount: number;
+    /** Tasks for this cwd, newest first (same ordering as {@link QaapAgentTaskListResponse.tasks}). */
+    readonly tasks: QaapAgentTask[];
+}
+
+export interface QaapAgentTaskAllResponse {
+    /** One entry per distinct cwd known to the runner. */
+    readonly groups: QaapAgentTaskCwdGroup[];
+    readonly agentConfigured: boolean;
+    readonly agents: QaapAgentDescriptor[];
+    readonly defaultAgent: string;
+}
+
+/** Payload pushed over SSE when a task changes state. */
+export interface QaapAgentTaskEvent {
+    readonly type: 'created' | 'completed' | 'cancelled';
+    readonly task: QaapAgentTask;
 }
 
 /** True once the task has stopped and will not change state again. */

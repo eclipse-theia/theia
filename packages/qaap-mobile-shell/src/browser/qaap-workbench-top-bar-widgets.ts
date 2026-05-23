@@ -15,6 +15,7 @@ import {
 } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { buildQaapAccountMenuEntries, dismissQaapAccountMenu, toggleQaapAccountMenu } from './qaap-workbench-account-menu';
+import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
 import { MobileProjectsService } from './mobile-projects-service';
 
 const WORKBENCH_NAV_GO_BACK = 'textEditor.commands.go.back';
@@ -119,14 +120,23 @@ export class QaapWorkbenchNavControlsWidget extends Widget {
 /** Editor back / forward; separate top-panel child so mobile CSS can center it in the bar. */
 export class QaapWorkbenchHistoryNavWidget extends Widget {
     protected readonly toDispose = new DisposableCollection();
+    protected readonly dashboardBtn: HTMLButtonElement;
     protected readonly backBtn: HTMLButtonElement;
     protected readonly forwardBtn: HTMLButtonElement;
 
-    constructor(protected readonly commands: CommandRegistry) {
+    constructor(
+        protected readonly commands: CommandRegistry,
+        protected readonly workspaceService: WorkspaceService,
+    ) {
         const node = document.createElement('motion.div');
         node.classList.add('theia-workbench-history-nav-group');
         super({ node });
         this.id = 'theia:workbench-history-nav';
+        this.dashboardBtn = createWorkbenchHistoryNavBtn(
+            'codicon codicon-project',
+            nls.localize('qaap/mobileProjects/toggleDashboard', 'Projects dashboard')
+        );
+        this.dashboardBtn.classList.add('theia-workbench-dashboard-nav-btn');
         this.backBtn = createWorkbenchHistoryNavBtn(
             'codicon codicon-chevron-left',
             nls.localizeByDefault('Go Back')
@@ -135,14 +145,18 @@ export class QaapWorkbenchHistoryNavWidget extends Widget {
             'codicon codicon-chevron-right',
             nls.localizeByDefault('Go Forward')
         );
-        node.append(this.backBtn, this.forwardBtn);
+        node.append(this.dashboardBtn, this.backBtn, this.forwardBtn);
+        this.dashboardBtn.addEventListener('click', this.onDashboardClick);
         this.backBtn.addEventListener('click', this.onBackClick);
         this.forwardBtn.addEventListener('click', this.onForwardClick);
         const refresh = (): void => this.updateEnabledStates();
         this.toDispose.push(this.commands.onDidExecuteCommand(refresh));
         this.toDispose.push(this.commands.onCommandsChanged(refresh));
+        this.toDispose.push(this.workspaceService.onWorkspaceChanged(refresh));
+        this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(refresh));
     }
 
+    protected readonly onDashboardClick = (): void => this.runIfEnabled(QaapMobileProjectsDashboardCommands.TOGGLE.id);
     protected readonly onBackClick = (): void => this.runIfEnabled(WORKBENCH_NAV_GO_BACK);
     protected readonly onForwardClick = (): void => this.runIfEnabled(WORKBENCH_NAV_GO_FORWARD);
 
@@ -156,6 +170,7 @@ export class QaapWorkbenchHistoryNavWidget extends Widget {
             return;
         }
         this.toDispose.dispose();
+        this.dashboardBtn.removeEventListener('click', this.onDashboardClick);
         this.backBtn.removeEventListener('click', this.onBackClick);
         this.forwardBtn.removeEventListener('click', this.onForwardClick);
         super.dispose();
@@ -168,7 +183,24 @@ export class QaapWorkbenchHistoryNavWidget extends Widget {
         void this.commands.executeCommand(commandId).catch(() => undefined);
     }
 
+    /** Refresh toggled state after the projects overlay opens or closes outside this widget. */
+    refreshChrome(): void {
+        this.updateEnabledStates();
+    }
+
     protected updateEnabledStates(): void {
+        const narrow = matchesMobileNarrowViewport();
+        const showDashboard = narrow && this.workspaceService.opened;
+        this.dashboardBtn.hidden = !showDashboard;
+        this.dashboardBtn.style.display = showDashboard ? '' : 'none';
+        if (showDashboard) {
+            this.dashboardBtn.disabled = !this.commands.isEnabled(QaapMobileProjectsDashboardCommands.TOGGLE.id);
+            const open = Boolean(
+                document.querySelector('.theia-mobile-projects.theia-mod-visible:not(.theia-mod-home)')
+            );
+            this.dashboardBtn.classList.toggle('theia-mod-toggled', open);
+            this.dashboardBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
+        }
         this.backBtn.disabled = !this.commands.isEnabled(WORKBENCH_NAV_GO_BACK);
         this.forwardBtn.disabled = !this.commands.isEnabled(WORKBENCH_NAV_GO_FORWARD);
     }

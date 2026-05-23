@@ -6,6 +6,7 @@
 import { qaapAuthenticatedFetchInit } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
 import {
     QAAP_CLOUD_API_PATH,
+    type QaapCdpStatusResponse,
     type QaapCloudWorkspaceEnsureRequest,
     type QaapCloudWorkspaceSummary,
     type QaapCloudWorkspacesResponse,
@@ -139,4 +140,21 @@ export async function sendQaapPushNotify(request: QaapPushNotifyRequest): Promis
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
     }));
+}
+
+/**
+ * Probes whether AppTester's CDP target is reachable from the backend. Returns `{ reachable: false }`
+ * on any failure so callers can short-circuit instead of waiting on a hanging MCP startup.
+ */
+export async function fetchQaapCdpStatus(): Promise<QaapCdpStatusResponse> {
+    try {
+        const response = await fetch(`${QAAP_CLOUD_API_PATH}/cdp-status`, qaapAuthenticatedFetchInit());
+        if (!response.ok) {
+            return { reachable: false, endpoint: '' };
+        }
+        const body = await response.json() as Partial<QaapCdpStatusResponse>;
+        return { reachable: !!body.reachable, endpoint: typeof body.endpoint === 'string' ? body.endpoint : '' };
+    } catch {
+        return { reachable: false, endpoint: '' };
+    }
 }

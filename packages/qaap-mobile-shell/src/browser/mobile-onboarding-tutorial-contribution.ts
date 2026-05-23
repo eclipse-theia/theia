@@ -45,7 +45,7 @@ interface TutorialStep {
  * First-launch in-app tutorial for the mobile (≤ 767 px) layout.
  *
  * Highlights the primitives introduced by `MobileOneColumnShellContribution`:
- *   1. Left-edge swipe → opens the Explorer (sheet)
+ *   1. Left-edge swipe → opens the projects dashboard (when a workspace is open)
  *   2. Bottom activity bar = agent-first command surface
  *   3. The dedicated "Agent" button for the chat sheet
  *   4. The single-tab "Recents" header in the main panel
@@ -224,11 +224,11 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
     protected buildSteps(): TutorialStep[] {
         return [
             {
-                id: 'swipe-explorer',
-                title: nls.localize('theia/core/mobile/onboarding/swipe/title', 'Swipe → to open Explorer'),
+                id: 'swipe-dashboard',
+                title: nls.localize('qaap/mobileOnboarding/swipeDashboard/title', 'Swipe → for projects'),
                 body: nls.localize(
-                    'theia/core/mobile/onboarding/swipe/body',
-                    'Drag your finger from the left edge of the screen to slide the file Explorer in as a sheet. Drag back ← (or tap the dimmed area) to close it.'
+                    'qaap/mobileOnboarding/swipeDashboard/body',
+                    'Drag from the left edge to open the projects dashboard — every repo and its background tasks in one place. Tap a card to switch, or use Explore in the bottom bar for the file tree.'
                 ),
                 target: () => document.querySelector<HTMLElement>('.theia-mobile-edgeSwipeZone-left') ?? undefined,
                 demo: 'swipe-right',
@@ -238,8 +238,8 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
                 id: 'bottom-bar',
                 title: nls.localize('theia/core/mobile/onboarding/bottomBar/title', 'Bottom bar — agent-first'),
                 body: nls.localize(
-                    'theia/core/mobile/onboarding/bottomBar/body',
-                    'The bar at the bottom is your primary workspace on mobile: Agent, Preview, Explore, Diff, Tasks, Skills, Terminal and Editor — always one tap away.'
+                    'qaap/mobileOnboarding/bottomBar/body',
+                    'The bar at the bottom is your primary workspace on mobile: Projects, Agent, Preview, Explore, PR, Diff, Jobs, and Terminal — always one tap away.'
                 ),
                 target: () => document.getElementById('theia-mobile-bottom-bar') ?? undefined,
                 placement: 'top',
@@ -428,7 +428,7 @@ export class MobileOnboardingTutorialContribution implements FrontendApplication
         const tooltipMargin = 12;
 
         // Spotlight
-        if (rect && rect.width > 0 && rect.height > 0 && step.id !== 'swipe-explorer') {
+        if (rect && rect.width > 0 && rect.height > 0 && step.id !== 'swipe-dashboard') {
             // Pad the spotlight a few px so the focus ring sits outside the target.
             const pad = 6;
             this.spotlight.style.display = 'block';

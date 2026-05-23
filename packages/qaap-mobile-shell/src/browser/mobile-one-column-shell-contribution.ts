@@ -19,7 +19,7 @@ import { ArrayExt, toArray } from '@lumino/algorithm';
 import { MessageLoop } from '@lumino/messaging';
 import { BoxLayout, BoxPanel, Panel, SplitPanel, Widget as LuminoWidget } from '@lumino/widgets';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { CommandRegistry } from '@theia/core/lib/common/command';
+import { CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 import { CommonCommands } from '@theia/core/lib/browser/common-commands';
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
@@ -27,12 +27,18 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { ApplicationShell, MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell/application-shell';
 import { StatusBarImpl } from '@theia/core/lib/browser/status-bar/status-bar';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { MOBILE_NARROW_VIEWPORT_MEDIA_QUERY, MOBILE_ONE_COLUMN_LAYOUT_CLASS } from '@theia/core/lib/browser/shell/mobile-layout-state';
+import {
+    matchesMobileNarrowViewport,
+    MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
+    MOBILE_ONE_COLUMN_LAYOUT_CLASS,
+} from '@theia/core/lib/browser/shell/mobile-layout-state';
 import { hasQaapLeftRightSplitPanel } from '@theia/qaap-shell/lib/browser/qaap-shell-layout';
 import { QaapSidePanelHandler } from '@theia/qaap-shell/lib/browser/qaap-side-panel-handler';
 import { MobileHaptics } from './mobile-haptics';
 import { installMobileHorizontalTouchScroll } from './mobile-horizontal-touch-scroll';
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
@@ -45,6 +51,8 @@ import {
     QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
 } from './mobile-projects-open';
 import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
+import { QaapMobileProjectsDashboardCommands } from './mobile-projects-dashboard-commands';
+import { QaapWorkbenchHistoryNavWidget } from './qaap-workbench-top-bar-widgets';
 
 class MobileBottomBarWidget extends LuminoWidget {
     constructor() {
@@ -101,7 +109,7 @@ interface BottomBarSecondaryItem {
  * edge swipes and backdrop; main editor tabs in a horizontally scrollable tab row.
  */
 @injectable()
-export class MobileOneColumnShellContribution implements FrontendApplicationContribution {
+export class MobileOneColumnShellContribution implements FrontendApplicationContribution, CommandContribution {
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -114,6 +122,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MobileProjectsService)
     protected readonly projectsService: MobileProjectsService;
+
+    @inject(MobileProjectsActiveTasks)
+    protected readonly activeTasks: MobileProjectsActiveTasks;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     @inject(MobileProjectsReadmeContribution)
     protected readonly projectsReadme: MobileProjectsReadmeContribution;
@@ -174,7 +188,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.onMediaChange();
         if (this.mobileActive) {
             void this.collapseMobileSideSheets().then(() => {
-                void this.ensureWelcomeInMainArea();
+                this.ensureMobileProjectsHomeVisible();
+                void this.ensureMainContentAfterWorkspaceReload();
                 this.applyMobileProjectsPanelDismissAfterReload();
                 this.scheduleSnapAndUiRefresh();
             });
@@ -310,7 +325,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.ensureOverlayElements();
         // Restored layout often leaves a side sheet expanded; collapse so the editor column is visible.
         void this.collapseMobileSideSheets().then(async () => {
-            await this.ensureWelcomeInMainArea();
+            this.ensureMobileProjectsHomeVisible();
+            await this.ensureMainContentAfterWorkspaceReload();
             this.scheduleSnapAndUiRefresh();
         });
     }
@@ -567,6 +583,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.keyboardHelper.install();
         }
         this.ensureProjectsPanel();
+        this.ensureMobileProjectsHomeVisible();
         this.applyMobileProjectsPanelDismissAfterReload();
         void this.refreshProjectsCount();
         this.refreshBottomBar();
@@ -605,18 +622,63 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             return;
         }
         this.hideProjectsPanel();
+        void this.ensureMainContentAfterWorkspaceReload();
+    }
+
+    /** Tablero como home cuando no hay workspace (p. ej. tras recargar sin carpeta abierta). */
+    protected ensureMobileProjectsHomeVisible(): void {
+        if (!this.mobileActive || this.workspaceService.opened) {
+            return;
+        }
+        this.ensureProjectsPanel();
+        const panel = this.projectsPanel;
+        if (panel?.isHomeMode() && !panel.isVisible()) {
+            void panel.show();
+        }
+    }
+
+    /**
+     * Tras abrir un proyecto el panel se cierra y el main puede quedar vacío unos instantes; reintenta
+     * Welcome y README hasta que haya un widget en el área principal.
+     */
+    protected async ensureMainContentAfterWorkspaceReload(): Promise<void> {
+        if (!this.workspaceService.opened) {
+            return;
+        }
+        const fillMain = async (): Promise<void> => {
+            if (toArray(this.shell.mainPanel.widgets()).length > 0) {
+                return;
+            }
+            await this.ensureWelcomeInMainArea();
+            if (toArray(this.shell.mainPanel.widgets()).length === 0) {
+                await this.projectsReadme.retryPendingReadmeOpen();
+            }
+        };
+        await fillMain();
+        for (const delayMs of [400, 1200, 2500]) {
+            window.setTimeout(() => { void fillMain(); }, delayMs);
+        }
     }
 
     protected ensureProjectsPanel(): void {
         if (this.projectsPanel) {
             return;
         }
+        // No workspace at construction time means this session lives in the dashboard — render
+        // the panel as the workbench home rather than a transient sheet. Opening a workspace
+        // triggers a page reload (see existing dismiss flow), so the next session's panel will
+        // pick the sheet shape automatically.
+        const homeMode = !this.workspaceService.opened;
         this.projectsPanel = new MobileProjectsPanel(
             this.projectsService,
             this.commands,
             {
                 onProjectOpen: (project: MobileProjectEntry) => { void this.onProjectsPanelOpen(project); },
-                onDismiss: () => this.scheduleSnapAndUiRefresh(),
+                onDismiss: () => {
+                    this.scheduleSnapAndUiRefresh();
+                    this.refreshBottomBar();
+                    this.refreshWorkbenchTopBar();
+                },
                 onWorkspaceOpened: () => this.onProjectsWorkspaceOpened(),
                 onProjectsChanged: () => { void this.refreshProjectsCount().then(() => this.refreshBottomBar()); },
                 onCurrentProjectActivated: () => this.onCurrentProjectActivated(),
@@ -626,9 +688,13 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 onOpenAgentOnTask: (project) => {
                     void this.commands.executeCommand('qaap.hub.openAgentOnTask', project);
                 },
-            }
+            },
+            { homeMode, activeTasks: this.activeTasks }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
+        if (homeMode) {
+            void this.projectsPanel.show();
+        }
     }
 
     /** Remove every PR overlay node under the app shell (fixes stacked sheets after re-open). */
@@ -666,10 +732,20 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected hideProjectsPanel(): void {
         this.projectsPanel?.hide();
+        this.refreshBottomBar();
+        this.refreshWorkbenchTopBar();
     }
 
     protected hidePullRequestPanel(): void {
         this.disposePullRequestPanel();
+    }
+
+    registerCommands(registry: CommandRegistry): void {
+        registry.registerCommand(QaapMobileProjectsDashboardCommands.TOGGLE, {
+            execute: () => this.toggleProjectsPanel(),
+            isEnabled: () => this.mobileActive && this.workspaceService.opened,
+            isVisible: () => matchesMobileNarrowViewport() && this.workspaceService.opened,
+        });
     }
 
     protected async toggleProjectsPanel(): Promise<void> {
@@ -678,9 +754,17 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (!panel) {
             return;
         }
+        if (panel.isHomeMode()) {
+            if (!panel.isVisible()) {
+                await panel.show();
+            }
+            return;
+        }
         if (panel.isVisible()) {
             panel.hide();
             this.scheduleSnapAndUiRefresh();
+            this.refreshBottomBar();
+            this.refreshWorkbenchTopBar();
             return;
         }
         this.hidePullRequestPanel();
@@ -690,6 +774,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         await panel.show();
         this.refreshBottomBar();
+        this.refreshWorkbenchTopBar();
     }
 
     protected async togglePullRequestPanel(): Promise<void> {
@@ -713,7 +798,6 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             return;
         }
         await panel.openProject(project);
-        panel.hide();
         this.scheduleSnapAndUiRefresh();
     }
 
@@ -846,10 +930,15 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected readonly onLeftEdgeTouchEnd = (e: TouchEvent): void => {
         const x = e.changedTouches[0]?.clientX ?? 0;
-        if (x - this.leftEdgeTouchStartX > 40) {
-            MobileHaptics.fire(MobileHaptics.MEDIUM);
-            void this.shell.leftPanelHandler.expand();
+        if (x - this.leftEdgeTouchStartX <= 40) {
+            return;
         }
+        MobileHaptics.fire(MobileHaptics.MEDIUM);
+        if (this.mobileActive && this.workspaceService.opened) {
+            void this.toggleProjectsPanel();
+            return;
+        }
+        void this.shell.leftPanelHandler.expand();
     };
 
     protected readonly onRightEdgeTouchStart = (e: TouchEvent): void => {
@@ -1056,6 +1145,15 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         await this.applyMobileBottomPanelMaximizedSize();
         this.scheduleSnapAndUiRefresh();
+    }
+
+    protected refreshWorkbenchTopBar(): void {
+        for (const widget of toArray(this.shell.topPanel.widgets)) {
+            if (widget instanceof QaapWorkbenchHistoryNavWidget) {
+                widget.refreshChrome();
+                return;
+            }
+        }
     }
 
     protected refreshBottomBar(): void {
