@@ -540,7 +540,7 @@
   }
 
   #theia-top-panel > #theia\:workbench-history-nav {
-    left: calc(env(safe-area-inset-left, 0px) + 44px);
+    left: calc(env(safe-area-inset-left, 0px) + 14px);
   }
 
   #theia-top-panel > #theia\:workbench-nav {
