@@ -124,10 +124,10 @@ export class MobileAgentTaskComposer {
         this.node.append(backdrop, sheet);
     }
 
-    async show(project: MobileProjectEntry, cwd: string | undefined): Promise<void> {
+    async show(project: MobileProjectEntry, cwd: string | undefined, draft?: string): Promise<void> {
         this.project = project;
         this.cwd = cwd;
-        this.input.value = '';
+        this.input.value = draft ?? '';
         this.errorEl.textContent = '';
         await this.loadAgents();
         this.renderState();

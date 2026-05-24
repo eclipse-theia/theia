@@ -15,6 +15,7 @@ import {
     clearMobileProjectReadmeOpenRequest,
     consumeMobileProjectReadmeOpenRequest,
     peekMobileProjectReadmeOpenRequest,
+    shouldSkipMobileProjectsLanding,
 } from './mobile-projects-open';
 
 const README_CANDIDATE_NAMES = [
@@ -77,6 +78,11 @@ export class MobileProjectsReadmeContribution implements FrontendApplicationCont
      */
     protected async handlePendingOpenRequest(): Promise<void> {
         if (!peekMobileProjectReadmeOpenRequest()) {
+            return;
+        }
+        // Wait until the mobile projects landing is dismissed — the shell opens the README once
+        // the user enters the workspace, not while the dashboard is still full-screen.
+        if (shouldSkipMobileProjectsLanding() || document.body.classList.contains('theia-mobile-mod-landing')) {
             return;
         }
         if (this.pendingFlagOpen) {

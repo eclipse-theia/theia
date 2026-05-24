@@ -236,7 +236,6 @@ export class MobileOpenRepositoryDialog {
                 return;
             }
             this.delegate.onProjectsChanged?.(next);
-            this.delegate.onWorkspaceOpened?.();
             this.hide();
         } finally {
             this.root.classList.remove('theia-mod-loading');
@@ -462,10 +461,12 @@ export class MobileOpenRepositoryDialog {
         if (!project.github) {
             return;
         }
-        await this.runWithBusy(async () => {
-            this.service.openInCurrentWindow(project);
-            return this.service.listGithubRepositories();
-        });
+        this.setBusy(true);
+        try {
+            await this.service.openInCurrentWindowAsync(project);
+        } finally {
+            this.setBusy(false);
+        }
     }
 
     protected async onCreateNew(): Promise<void> {
@@ -480,7 +481,6 @@ export class MobileOpenRepositoryDialog {
                 this.repositories = next;
                 this.delegate.onProjectsChanged?.(next);
                 this.hide();
-                this.delegate.onWorkspaceOpened?.();
             }
         } finally {
             this.setBusy(false);

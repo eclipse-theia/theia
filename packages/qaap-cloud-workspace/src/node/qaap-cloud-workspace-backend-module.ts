@@ -6,6 +6,8 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { IShellTerminalServer, IShellTerminalServerOptions } from '@theia/terminal/lib/common/shell-terminal-protocol';
+import { QaapAgentConversationEndpoint } from './qaap-agent-conversation-endpoint';
+import { QaapAgentConversationStore } from './qaap-agent-conversation-store';
 import { QaapAgentTaskEndpoint } from './qaap-agent-task-endpoint';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
 import { QaapCloudOrchestrator } from './qaap-cloud-orchestrator';
@@ -35,6 +37,9 @@ export default new ContainerModule((bind, _unbind, _isBound, _rebind, _unbindAsy
     bind(QaapAgentTaskRunner).toSelf().inSingletonScope();
     bind(QaapAgentTaskEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(QaapAgentTaskEndpoint);
+    bind(QaapAgentConversationStore).toSelf().inSingletonScope();
+    bind(QaapAgentConversationEndpoint).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(QaapAgentConversationEndpoint);
 
     // Inject the `qaap-task` helper env (PATH prefix, token, API URL) into every interactive
     // shell so users can call `qaap-task` from the Terminal tab — not just background-task

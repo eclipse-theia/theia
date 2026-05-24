@@ -1,0 +1,116 @@
+// *****************************************************************************
+// Copyright (C) 2026 Theia contributors and Qaap product fork.
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+/** HTTP base path for the persistent agent-conversation endpoints. */
+export const QAAP_AGENT_CONVERSATION_API_PATH = '/qaap/api/agent-conversations';
+
+export type QaapAgentConversationStatus =
+    /** No turn is in flight; ready to accept the next user message. */
+    | 'idle'
+    /** A user message is being processed by the agent. */
+    | 'streaming'
+    /** Last agent turn failed (the conversation can still accept a follow-up message). */
+    | 'failed';
+
+export type QaapAgentMessageRole = 'user' | 'agent';
+
+export interface QaapAgentMessage {
+    readonly id: string;
+    readonly role: QaapAgentMessageRole;
+    readonly content: string;
+    /** Epoch milliseconds. */
+    readonly createdAt: number;
+    /** When set on a user message, points at the agent-task spawned for that turn. */
+    readonly taskId?: string;
+    /** When the user message's task ended unsuccessfully — short reason for the UI. */
+    readonly error?: string;
+}
+
+/** A persistent multi-turn thread with an agent, tied to a working directory. */
+export interface QaapAgentConversation {
+    readonly id: string;
+    /** Absolute working directory the agent is invoked in. */
+    readonly cwd: string;
+    /** Agent id (e.g. `'claude'`, `'codex'`, `'shell'`). */
+    readonly agentId: string;
+    /** Best-effort title, derived from the first user message. */
+    readonly title: string;
+    readonly status: QaapAgentConversationStatus;
+    readonly createdAt: number;
+    readonly updatedAt: number;
+    readonly messages: QaapAgentMessage[];
+}
+
+/** Summary row used by list endpoints — omits messages to keep payloads small. */
+export interface QaapAgentConversationSummary {
+    readonly id: string;
+    readonly cwd: string;
+    readonly agentId: string;
+    readonly title: string;
+    readonly status: QaapAgentConversationStatus;
+    readonly createdAt: number;
+    readonly updatedAt: number;
+    readonly messageCount: number;
+    /** Excerpt of the most recent message — handy for list-view previews. */
+    readonly lastMessagePreview?: string;
+    /** Role of the most recent message, so the UI can render "you said…" vs. "agent replied…". */
+    readonly lastMessageRole?: QaapAgentMessageRole;
+}
+
+/** Conversations bucketed by project working directory. */
+export interface QaapAgentConversationCwdGroup {
+    readonly cwd: string;
+    readonly projectName: string;
+    readonly streamingCount: number;
+    readonly conversations: QaapAgentConversationSummary[];
+}
+
+export interface QaapAgentConversationListResponse {
+    readonly conversations: QaapAgentConversationSummary[];
+}
+
+export interface QaapAgentConversationAllResponse {
+    readonly groups: QaapAgentConversationCwdGroup[];
+}
+
+export interface QaapCreateAgentConversationRequest {
+    readonly cwd: string;
+    readonly agent?: string;
+    readonly title?: string;
+    /** Optional first user message; when present, the agent turn fires right after creation. */
+    readonly message?: string;
+}
+
+export interface QaapPostAgentMessageRequest {
+    readonly content: string;
+}
+
+/** Payload pushed over SSE when a conversation changes. */
+export type QaapAgentConversationEvent =
+    | { readonly type: 'created'; readonly conversation: QaapAgentConversationSummary }
+    | { readonly type: 'updated'; readonly conversation: QaapAgentConversationSummary }
+    | { readonly type: 'message'; readonly conversationId: string; readonly cwd: string; readonly message: QaapAgentMessage }
+    | { readonly type: 'deleted'; readonly conversationId: string; readonly cwd: string };
+
+export function toConversationSummary(conv: QaapAgentConversation): QaapAgentConversationSummary {
+    const last = conv.messages[conv.messages.length - 1];
+    return {
+        id: conv.id,
+        cwd: conv.cwd,
+        agentId: conv.agentId,
+        title: conv.title,
+        status: conv.status,
+        createdAt: conv.createdAt,
+        updatedAt: conv.updatedAt,
+        messageCount: conv.messages.length,
+        lastMessagePreview: last ? excerpt(last.content) : undefined,
+        lastMessageRole: last?.role,
+    };
+}
+
+function excerpt(text: string): string {
+    const clean = text.replace(/\s+/g, ' ').trim();
+    return clean.length > 160 ? `${clean.slice(0, 157)}…` : clean;
+}

@@ -38,6 +38,7 @@ import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import {
     clearMobileProjectReadmeOpenRequest,
     markMobileProjectReadmeForOpen,
+    markMobileProjectsPanelDismiss,
     requestMobileProjectsPanelDismiss,
 } from './mobile-projects-open';
 import { MobileSnackbar } from './mobile-snackbar';
@@ -189,6 +190,7 @@ export class MobileProjectsService {
 
     /** Opens the project in this browser tab; awaits GitHub clone/prepare when needed. */
     async openInCurrentWindowAsync(project: MobileProjectEntry): Promise<void> {
+        markMobileProjectsPanelDismiss();
         if (project.github) {
             await this.openGithubProject(project);
             return;
@@ -709,6 +711,15 @@ export class MobileProjectsService {
             return this.cwdFromFileUri(this.workspaceService.workspace.resource);
         }
         return undefined;
+    }
+
+    getCurrentWorkspaceCwd(): string | undefined {
+        return this.cwdFromFileUri(this.workspaceService.workspace?.resource);
+    }
+
+    getCurrentWorkspaceName(): string | undefined {
+        const uri = this.workspaceService.workspace?.resource;
+        return uri ? this.labelProvider.getName(uri) : undefined;
     }
 
     /**

@@ -12,6 +12,7 @@ import '../../src/browser/style/qaap-project-bootstrap.css';
 import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { AIVariableContribution } from '@theia/ai-core/lib/common/variable-service';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import {
     QaapBootstrapInstallTool,
     QaapBootstrapOpenPreviewTool,
@@ -31,6 +32,8 @@ import { QaapEmptyWorkbenchBrandingContribution } from './qaap-empty-workbench-b
 import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-contribution';
 import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
+import { MobileProjectsConversations } from './mobile-projects-conversations';
+import { MobileProjectAIChatInputWidget } from './mobile-project-ai-chat-input-widget';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { QaapProjectBootstrapDetector } from './qaap-project-bootstrap-detector';
@@ -41,6 +44,15 @@ import { QaapBootstrapVariableContribution } from './qaap-bootstrap-variable-con
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
+    bind(MobileProjectsConversations).toSelf().inSingletonScope();
+    // Transient binding so each `getOrCreateWidget` call (with a unique options.id) gets a fresh
+    // instance — the workspace Agent AI view already mounts an AIChatInputWidget with a fixed
+    // resource URI, and a second one would collide unless this subclass mints its own URI.
+    bind(MobileProjectAIChatInputWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: 'mobile-projects-chat-input',
+        createWidget: () => container.get(MobileProjectAIChatInputWidget),
+    })).inSingletonScope();
     bind(MobileProjectsService).toSelf().inSingletonScope();
     bind(MobileProjectsReadmeContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileProjectsReadmeContribution);

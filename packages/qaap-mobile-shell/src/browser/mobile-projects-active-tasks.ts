@@ -17,13 +17,25 @@ const STREAM_URL = `${AGENT_TASK_API_PATH}/stream`;
 /** Backoff when the stream drops — long enough to be cheap, short enough to feel live. */
 const RECONNECT_DELAY_MS = 5_000;
 
-/** Minimal shape of a task as it arrives over SSE — only the fields the dashboard needs. */
+/** Task row as shown in the mobile Projects panel (mirrors VPS agent-task API). */
+export interface MobileProjectTaskView {
+    readonly id: string;
+    readonly title: string;
+    readonly command: string;
+    readonly cwd: string;
+    readonly state: string;
+    readonly createdAt: number;
+    readonly finishedAt?: number;
+}
+
 interface TaskEventPayload {
     readonly id: string;
     readonly cwd: string;
     readonly state: string;
     readonly title?: string;
+    readonly command?: string;
     readonly createdAt?: number;
+    readonly finishedAt?: number;
 }
 
 export interface MobileProjectAgentDescriptor {
@@ -61,8 +73,10 @@ export interface MobileProjectActiveTaskInfo {
 @injectable()
 export class MobileProjectsActiveTasks {
 
-    /** Active-task info keyed by normalized cwd. */
+    /** Active-task summary keyed by normalized cwd. */
     protected readonly activeByCwd = new Map<string, MobileProjectActiveTaskInfo>();
+    /** Full task lists per cwd (newest first), for the expanded project task block. */
+    protected readonly tasksByCwd = new Map<string, MobileProjectTaskView[]>();
     protected source: EventSource | undefined;
     protected reconnectHandle: number | undefined;
     protected started = false;
@@ -85,7 +99,26 @@ export class MobileProjectsActiveTasks {
     }
 
     getForCwd(cwd: string): MobileProjectActiveTaskInfo | undefined {
-        return this.activeByCwd.get(cwd);
+        return lookupByCwd(this.activeByCwd, cwd);
+    }
+
+    /** All tasks for a project cwd, running first then newest — excludes cancelled. */
+    getTasksForCwd(cwd: string): MobileProjectTaskView[] {
+        return lookupByCwd(this.tasksByCwd, cwd) ?? [];
+    }
+
+    /**
+     * Match tasks when the panel only knows repo identity (GitHub card without a local URI yet).
+     * Compares normalized cwd suffixes against repo name / owner/name.
+     */
+    findTasksForProject(project: { readonly name: string; readonly github?: { readonly owner: string; readonly name: string } }): MobileProjectTaskView[] {
+        const merged: MobileProjectTaskView[] = [];
+        for (const [cwd, tasks] of this.tasksByCwd) {
+            if (cwdMatchesProject(cwd, project)) {
+                merged.push(...tasks);
+            }
+        }
+        return sortTasks(merged);
     }
 
     getAgents(): MobileProjectAgentDescriptor[] {
@@ -124,19 +157,29 @@ export class MobileProjectsActiveTasks {
             this.agents = [...(payload.agents ?? [])];
             this.agentConfigured = payload.agentConfigured === true;
             this.defaultAgentId = payload.defaultAgent ?? this.agents[0]?.id ?? 'shell';
-            const next = new Map<string, MobileProjectActiveTaskInfo>();
+            const nextActive = new Map<string, MobileProjectActiveTaskInfo>();
+            const nextTasks = new Map<string, MobileProjectTaskView[]>();
             for (const group of payload.groups ?? []) {
-                if (group.activeCount <= 0) {
-                    continue;
+                const cwd = normalizeCwd(group.cwd);
+                const tasks = sortTasks(
+                    group.tasks
+                        .map(task => toTaskView(task))
+                        .filter(task => task.state !== 'cancelled')
+                );
+                if (tasks.length > 0) {
+                    nextTasks.set(cwd, tasks);
                 }
-                const running = group.tasks.find(task => task.state === 'running');
-                next.set(group.cwd, {
-                    activeCount: group.activeCount,
-                    taskId: running?.id,
-                    title: running?.title,
-                });
+                if (group.activeCount > 0) {
+                    const running = tasks.find(task => task.state === 'running');
+                    nextActive.set(cwd, {
+                        activeCount: group.activeCount,
+                        taskId: running?.id,
+                        title: running?.title,
+                    });
+                }
             }
-            this.replaceActive(next);
+            this.replaceTasks(nextTasks);
+            this.replaceActive(nextActive);
         } catch {
             /* network errors silently ignored — SSE will reconcile when it connects */
         }
@@ -175,35 +218,60 @@ export class MobileProjectsActiveTasks {
         this.reconnectHandle = window.setTimeout(() => {
             this.reconnectHandle = undefined;
             this.openStream();
-            // Re-prime after a reconnect so we don't drift if events fired while we were down.
             void this.primeFromAll();
         }, RECONNECT_DELAY_MS);
     }
 
     protected applyEvent(type: 'created' | 'completed' | 'cancelled', task: TaskEventPayload): void {
-        const current = this.activeByCwd.get(task.cwd);
+        const cwd = normalizeCwd(task.cwd);
+        this.upsertTaskList({ ...task, cwd });
+        const current = lookupByCwd(this.activeByCwd, cwd);
         if (type === 'created') {
             if (current?.taskId === task.id) {
+                this.onDidChangeEmitter.fire();
                 return;
             }
-            this.activeByCwd.set(task.cwd, {
+            this.activeByCwd.set(cwd, {
                 activeCount: (current?.activeCount ?? 0) + 1,
                 taskId: task.id,
                 title: task.title ?? current?.title,
             });
         } else {
             const nextCount = Math.max(0, (current?.activeCount ?? 1) - 1);
+            const tasks = this.getTasksForCwd(cwd);
+            const running = tasks.find(entry => entry.state === 'running');
             if (nextCount === 0) {
-                this.activeByCwd.delete(task.cwd);
+                this.activeByCwd.delete(cwd);
             } else {
-                this.activeByCwd.set(task.cwd, {
+                this.activeByCwd.set(cwd, {
                     activeCount: nextCount,
-                    taskId: current?.taskId === task.id ? undefined : current?.taskId,
-                    title: current?.title,
+                    taskId: running?.id,
+                    title: running?.title ?? current?.title,
                 });
             }
         }
         this.onDidChangeEmitter.fire();
+    }
+
+    protected upsertTaskList(task: TaskEventPayload): void {
+        const cwd = normalizeCwd(task.cwd);
+        const view = toTaskView({ ...task, cwd });
+        const list = [...(lookupByCwd(this.tasksByCwd, cwd) ?? [])];
+        const index = list.findIndex(entry => entry.id === view.id);
+        if (view.state === 'cancelled') {
+            if (index >= 0) {
+                list.splice(index, 1);
+            }
+        } else if (index >= 0) {
+            list[index] = { ...list[index], ...view };
+        } else {
+            list.unshift(view);
+        }
+        if (list.length === 0) {
+            this.tasksByCwd.delete(cwd);
+        } else {
+            this.tasksByCwd.set(cwd, sortTasks(list));
+        }
     }
 
     protected replaceActive(next: Map<string, MobileProjectActiveTaskInfo>): void {
@@ -216,6 +284,81 @@ export class MobileProjectsActiveTasks {
         }
         this.onDidChangeEmitter.fire();
     }
+
+    protected replaceTasks(next: Map<string, MobileProjectTaskView[]>): void {
+        if (sameTasks(this.tasksByCwd, next)) {
+            return;
+        }
+        this.tasksByCwd.clear();
+        for (const [cwd, tasks] of next) {
+            this.tasksByCwd.set(cwd, tasks);
+        }
+        this.onDidChangeEmitter.fire();
+    }
+}
+
+function toTaskView(task: TaskEventPayload): MobileProjectTaskView {
+    const command = task.command ?? task.title ?? '';
+    return {
+        id: task.id,
+        title: task.title ?? command.slice(0, 80) ?? 'Background task',
+        command,
+        cwd: normalizeCwd(task.cwd),
+        state: task.state,
+        createdAt: task.createdAt ?? Date.now(),
+        finishedAt: task.finishedAt,
+    };
+}
+
+function normalizeCwd(cwd: string): string {
+    let normalized = cwd.replace(/\\/g, '/');
+    while (normalized.length > 1 && normalized.endsWith('/')) {
+        normalized = normalized.slice(0, -1);
+    }
+    return normalized;
+}
+
+function lookupByCwd<T>(map: Map<string, T>, cwd: string): T | undefined {
+    const normalized = normalizeCwd(cwd);
+    const direct = map.get(normalized);
+    if (direct !== undefined) {
+        return direct;
+    }
+    for (const [key, value] of map) {
+        if (normalizeCwd(key) === normalized) {
+            return value;
+        }
+    }
+    return undefined;
+}
+
+function cwdMatchesProject(
+    cwd: string,
+    project: { readonly name: string; readonly github?: { readonly owner: string; readonly name: string } },
+): boolean {
+    const normalized = normalizeCwd(cwd).toLowerCase();
+    const base = normalized.split('/').pop() ?? '';
+    if (base === project.name.toLowerCase()) {
+        return true;
+    }
+    if (project.github) {
+        const repoPath = `${project.github.owner}/${project.github.name}`.toLowerCase();
+        if (normalized.endsWith(`/${repoPath}`) || normalized.endsWith(`/repos/${repoPath}`)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function sortTasks(tasks: MobileProjectTaskView[]): MobileProjectTaskView[] {
+    return [...tasks].sort((a, b) => {
+        const aRunning = a.state === 'running' ? 1 : 0;
+        const bRunning = b.state === 'running' ? 1 : 0;
+        if (aRunning !== bRunning) {
+            return bRunning - aRunning;
+        }
+        return b.createdAt - a.createdAt;
+    });
 }
 
 function sameActive(a: Map<string, MobileProjectActiveTaskInfo>, b: Map<string, MobileProjectActiveTaskInfo>): boolean {
@@ -226,6 +369,26 @@ function sameActive(a: Map<string, MobileProjectActiveTaskInfo>, b: Map<string, 
         const other = b.get(cwd);
         if (!other || other.activeCount !== info.activeCount || other.taskId !== info.taskId || other.title !== info.title) {
             return false;
+        }
+    }
+    return true;
+}
+
+function sameTasks(a: Map<string, MobileProjectTaskView[]>, b: Map<string, MobileProjectTaskView[]>): boolean {
+    if (a.size !== b.size) {
+        return false;
+    }
+    for (const [cwd, tasks] of a) {
+        const other = b.get(cwd);
+        if (!other || other.length !== tasks.length) {
+            return false;
+        }
+        for (let i = 0; i < tasks.length; i++) {
+            const left = tasks[i];
+            const right = other[i];
+            if (left.id !== right.id || left.state !== right.state || left.title !== right.title) {
+                return false;
+            }
         }
     }
     return true;

@@ -21,12 +21,16 @@ import { BoxLayout, BoxPanel, Panel, SplitPanel, Widget as LuminoWidget } from '
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
+import { MessageService } from '@theia/core/lib/common/message-service';
 import { CommonCommands } from '@theia/core/lib/browser/common-commands';
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { ApplicationShell, MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell/application-shell';
 import { StatusBarImpl } from '@theia/core/lib/browser/status-bar/status-bar';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { ChatService } from '@theia/ai-chat';
+import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
+import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import {
     matchesMobileNarrowViewport,
     MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
@@ -39,6 +43,7 @@ import { installMobileHorizontalTouchScroll } from './mobile-horizontal-touch-sc
 import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
+import { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
@@ -47,6 +52,9 @@ import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
 import {
     consumeMobileProjectsPanelDismiss,
+    markMobileProjectsLeftLanding,
+    markMobileProjectsPanelDismiss,
+    shouldSkipMobileProjectsLanding,
     QAAP_AUTH_OPEN_FIRST_REPO_EVENT,
     QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
 } from './mobile-projects-open';
@@ -120,11 +128,17 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     @inject(MobileProjectsService)
     protected readonly projectsService: MobileProjectsService;
 
     @inject(MobileProjectsActiveTasks)
     protected readonly activeTasks: MobileProjectsActiveTasks;
+
+    @inject(MobileProjectsConversations)
+    protected readonly conversations: MobileProjectsConversations;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -134,6 +148,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
 
     @inject(QaapProjectBootstrapService)
     protected readonly projectBootstrap: QaapProjectBootstrapService;
@@ -159,6 +179,12 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected pullRequestPanel: MobilePullRequestPanel | undefined;
     protected projectsCount = 0;
     protected authOpenFirstRepoListenerInstalled = false;
+    /**
+     * True once the user has actively left the mobile landing (Projects panel) in this session,
+     * either by opening a workspace from the dashboard or by tapping Focus on the active project.
+     * Subsequent re-opens of the Projects view are sheet-style.
+     */
+    protected landingLeftThisSession = false;
 
     protected leftEdgeTouchStartX = 0;
     protected rightEdgeTouchStartX = 0;
@@ -168,6 +194,10 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     };
 
     onStart(_app: FrontendApplication): void {
+        this.syncLandingStateFromStorage();
+        if (this.mobileMq?.matches && !shouldSkipMobileProjectsLanding() && !this.hasPendingHubAction()) {
+            document.body.classList.add('theia-mobile-mod-landing');
+        }
         this.mobileMq?.addEventListener('change', this.onMediaChange);
         window.addEventListener('resize', this.onWindowResize);
         window.addEventListener(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT, this.onDismissProjectsPanelEvent);
@@ -188,9 +218,8 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.onMediaChange();
         if (this.mobileActive) {
             void this.collapseMobileSideSheets().then(() => {
-                this.ensureMobileProjectsHomeVisible();
-                void this.ensureMainContentAfterWorkspaceReload();
                 this.applyMobileProjectsPanelDismissAfterReload();
+                this.ensureMobileProjectsHomeVisible();
                 this.scheduleSnapAndUiRefresh();
             });
         } else {
@@ -324,9 +353,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         this.forceCenterColumnFullWidth();
         this.ensureOverlayElements();
         // Restored layout often leaves a side sheet expanded; collapse so the editor column is visible.
-        void this.collapseMobileSideSheets().then(async () => {
+        void this.collapseMobileSideSheets().then(() => {
+            this.applyMobileProjectsPanelDismissAfterReload();
             this.ensureMobileProjectsHomeVisible();
-            await this.ensureMainContentAfterWorkspaceReload();
             this.scheduleSnapAndUiRefresh();
         });
     }
@@ -582,9 +611,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             this.keyboardHelper = new MobileKeyboardHelper(this.shell.node);
             this.keyboardHelper.install();
         }
+        this.applyMobileProjectsPanelDismissAfterReload();
         this.ensureProjectsPanel();
         this.ensureMobileProjectsHomeVisible();
-        this.applyMobileProjectsPanelDismissAfterReload();
         void this.refreshProjectsCount();
         this.refreshBottomBar();
         this.updateBackdropVisibility();
@@ -616,24 +645,61 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
     }
 
+    /**
+     * After a workspace open the page reloads; the dismiss flag survives in sessionStorage.
+     * Restore in-memory state before any async panel.show() so the landing cannot flash back.
+     */
+    protected syncLandingStateFromStorage(): void {
+        if (shouldSkipMobileProjectsLanding()) {
+            this.landingLeftThisSession = true;
+            document.body.classList.remove('theia-mobile-mod-landing');
+        }
+    }
+
     /** After clone/open the page reloads; keep the projects sheet closed on the new workspace. */
     protected applyMobileProjectsPanelDismissAfterReload(): void {
         if (!consumeMobileProjectsPanelDismiss()) {
             return;
         }
+        this.landingLeftThisSession = true;
         this.hideProjectsPanel();
+        document.body.classList.remove('theia-mobile-mod-landing');
         void this.ensureMainContentAfterWorkspaceReload();
+        void this.projectBootstrap.refreshFromCurrentWorkspace();
     }
 
-    /** Tablero como home cuando no hay workspace (p. ej. tras recargar sin carpeta abierta). */
+    /**
+     * Projects landing visible on every mobile session — even when a workspace is already open,
+     * the user must explicitly tap into it from the dashboard. Once the user has left the landing
+     * in this session, this method is a no-op.
+     *
+     * Skipped when the hub has a pending action queued (e.g. tapping a task in another project
+     * before reload): the user already chose to enter the workspace, so we drop them straight into
+     * the agent the hub is about to open.
+     */
     protected ensureMobileProjectsHomeVisible(): void {
-        if (!this.mobileActive || this.workspaceService.opened) {
+        if (!this.mobileActive || this.landingLeftThisSession || shouldSkipMobileProjectsLanding()) {
             return;
         }
+        if (this.hasPendingHubAction()) {
+            this.landingLeftThisSession = true;
+            void this.projectBootstrap.refreshFromCurrentWorkspace();
+            return;
+        }
+        document.body.classList.add('theia-mobile-mod-landing');
         this.ensureProjectsPanel();
         const panel = this.projectsPanel;
         if (panel?.isHomeMode() && !panel.isVisible()) {
-            void panel.show();
+            void panel.show().then(() => {
+                if (this.landingLeftThisSession || shouldSkipMobileProjectsLanding()) {
+                    panel.hide();
+                    document.body.classList.remove('theia-mobile-mod-landing');
+                    return;
+                }
+                this.applyLandingChrome();
+            });
+        } else {
+            this.applyLandingChrome();
         }
     }
 
@@ -642,7 +708,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
      * Welcome y README hasta que haya un widget en el área principal.
      */
     protected async ensureMainContentAfterWorkspaceReload(): Promise<void> {
-        if (!this.workspaceService.opened) {
+        if (!this.landingLeftThisSession || !this.workspaceService.opened) {
             return;
         }
         const fillMain = async (): Promise<void> => {
@@ -664,17 +730,18 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (this.projectsPanel) {
             return;
         }
-        // No workspace at construction time means this session lives in the dashboard — render
-        // the panel as the workbench home rather than a transient sheet. Opening a workspace
-        // triggers a page reload (see existing dismiss flow), so the next session's panel will
-        // pick the sheet shape automatically.
-        const homeMode = !this.workspaceService.opened;
+        // On mobile every session lands on the Projects view, regardless of whether a workspace is
+        // already opened. The landing is full-screen and hides the bottom navigation; once the user
+        // explicitly enters a project (Focus / open), `landingLeftThisSession` flips and any later
+        // re-open of the Projects view falls back to the sheet shape sliding from the bottom.
+        const homeMode = this.mobileActive && !this.landingLeftThisSession;
         this.projectsPanel = new MobileProjectsPanel(
             this.projectsService,
             this.commands,
             {
                 onProjectOpen: (project: MobileProjectEntry) => { void this.onProjectsPanelOpen(project); },
                 onDismiss: () => {
+                    this.onLandingDismissed();
                     this.scheduleSnapAndUiRefresh();
                     this.refreshBottomBar();
                     this.refreshWorkbenchTopBar();
@@ -689,12 +756,91 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                     void this.commands.executeCommand('qaap.hub.openAgentOnTask', project);
                 },
             },
-            { homeMode, activeTasks: this.activeTasks }
+            {
+                homeMode,
+                activeTasks: this.activeTasks,
+                conversations: this.conversations,
+                // Use WidgetManager with our own factory id (registered by the mobile-shell
+                // module) so each call returns a fresh `MobileProjectAIChatInputWidget` instance.
+                // That subclass overrides `getResourceUri` to mint a per-instance URI, which is
+                // what unblocks the empty agent-input card: the vanilla AIChatInputWidget calls
+                // `resources.add('ai-chat:/input.aichatviewlanguage', '')` in its postConstruct,
+                // and the workspace Agent AI view already owns that key — a second registration
+                // throws "Cannot add already existing in-memory resource" and the create promise
+                // never resolves.
+                createChatInputWidget: id => this.widgetManager.getOrCreateWidget<AIChatInputWidget>(
+                    'mobile-projects-chat-input',
+                    { source: 'mobile-projects', id },
+                ),
+                chatService: this.chatService,
+                chatAgentService: this.chatAgentService,
+                messageService: this.messageService,
+            }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
-        if (homeMode) {
-            void this.projectsPanel.show();
+        if (homeMode && !shouldSkipMobileProjectsLanding()) {
+            void this.projectsPanel.show().then(() => {
+                if (this.landingLeftThisSession || shouldSkipMobileProjectsLanding()) {
+                    this.projectsPanel?.hide();
+                    document.body.classList.remove('theia-mobile-mod-landing');
+                    return;
+                }
+                this.applyLandingChrome();
+            });
         }
+    }
+
+    /** Hub queues a pending action across reloads via this sessionStorage key — see qaap-hub-actions-contribution. */
+    protected hasPendingHubAction(): boolean {
+        try {
+            return typeof sessionStorage !== 'undefined'
+                && sessionStorage.getItem('qaap.hub.pendingAction') !== null;
+        } catch {
+            return false;
+        }
+    }
+
+    /** Add/remove the body class that lets CSS hide the bottom nav while the landing is up. */
+    protected applyLandingChrome(): void {
+        const panel = this.projectsPanel;
+        const isLanding = !!(panel?.isHomeMode() && panel?.isVisible());
+        document.body.classList.toggle('theia-mobile-mod-landing', isLanding);
+    }
+
+    /**
+     * The user dismissed the landing — by opening a project or focusing the active workspace.
+     * Drop the landing-mode panel so the next Projects open creates a sheet variant, and lift the
+     * landing chrome lock so the bottom nav comes back.
+     */
+    protected onLandingDismissed(): void {
+        markMobileProjectsLeftLanding();
+        this.landingLeftThisSession = true;
+        if (this.projectsPanel?.isHomeMode()) {
+            this.projectsPanel.dispose();
+            if (this.projectsPanel.node.parentElement) {
+                this.projectsPanel.node.parentElement.removeChild(this.projectsPanel.node);
+            }
+            this.projectsPanel = undefined;
+        }
+        document.body.classList.remove('theia-mobile-mod-landing');
+        void this.projectBootstrap.refreshFromCurrentWorkspace();
+    }
+
+    /** Hide the full-screen landing the moment the user picks a project. */
+    protected leaveMobileProjectsLandingNow(): void {
+        markMobileProjectsPanelDismiss();
+        this.landingLeftThisSession = true;
+        document.body.classList.remove('theia-mobile-mod-landing');
+        const panel = this.projectsPanel;
+        if (panel?.isHomeMode()) {
+            panel.hide();
+            this.onLandingDismissed();
+            return;
+        }
+        panel?.hide();
+        this.applyLandingChrome();
+        this.refreshBottomBar();
+        this.refreshWorkbenchTopBar();
     }
 
     /** Remove every PR overlay node under the app shell (fixes stacked sheets after re-open). */
@@ -732,6 +878,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected hideProjectsPanel(): void {
         this.projectsPanel?.hide();
+        this.applyLandingChrome();
         this.refreshBottomBar();
         this.refreshWorkbenchTopBar();
     }
@@ -793,16 +940,21 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected async onProjectsPanelOpen(project: MobileProjectEntry): Promise<void> {
-        const panel = this.projectsPanel;
-        if (!panel) {
-            return;
+        this.leaveMobileProjectsLandingNow();
+        try {
+            if (project.isCurrent) {
+                await this.onCurrentProjectActivated();
+                return;
+            }
+            await this.projectsService.openInCurrentWindowAsync(project);
+        } finally {
+            this.scheduleSnapAndUiRefresh();
         }
-        await panel.openProject(project);
-        this.scheduleSnapAndUiRefresh();
     }
 
     /** Dismiss the projects sheet after clone/create/open so the IDE workspace is visible. */
     protected onProjectsWorkspaceOpened(): void {
+        this.onLandingDismissed();
         this.hideProjectsPanel();
         this.scheduleSnapAndUiRefresh();
     }
