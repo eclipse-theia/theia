@@ -608,6 +608,10 @@ export class MobileProjectsPanel {
         );
     }
 
+    protected isChatSessionWaitingForInput(session: ChatSession): boolean {
+        return session.model.getRequests().some(request => request.response.isWaitingForInput);
+    }
+
     protected chatSessionPreview(session: ChatSession | undefined): string | undefined {
         const request = session?.model.getRequests().at(-1);
         return request?.request.displayText?.trim() || request?.request.text?.trim();
@@ -681,10 +685,24 @@ export class MobileProjectsPanel {
             title: c.title,
             command: c.lastMessagePreview ?? '',
             cwd: c.cwd,
-            state: c.status === 'streaming' ? 'running' : c.status === 'failed' ? 'failed' : 'completed',
+            state: this.conversationTaskState(c),
             createdAt: c.createdAt,
             finishedAt: c.status !== 'streaming' ? c.updatedAt : undefined,
         }));
+    }
+
+    protected conversationTaskState(conversation: QaapAgentConversationSummaryDTO): string {
+        const session = conversation.sessionId ? this.chatService?.getSession(conversation.sessionId) : undefined;
+        if (session && this.isChatSessionWaitingForInput(session)) {
+            return 'needs-input';
+        }
+        if (conversation.status === 'streaming' || (session && this.isChatSessionWorking(session))) {
+            return 'running';
+        }
+        if (conversation.status === 'failed') {
+            return 'failed';
+        }
+        return 'completed';
     }
 
     protected fallbackTasksFromProject(project: MobileProjectEntry): MobileProjectTaskView[] {
@@ -1206,11 +1224,80 @@ export class MobileProjectsPanel {
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-projects-tasks-list';
-        for (const task of tasks) {
-            list.append(this.createTaskItem(project, task, activeInfo));
+        for (const group of this.groupConversationTasks(tasks)) {
+            const section = document.createElement('section');
+            section.className = `theia-mobile-projects-conversation-group theia-mod-${group.id}`;
+            const groupHead = document.createElement('div');
+            groupHead.className = 'theia-mobile-projects-conversation-group-head';
+            const groupLabel = document.createElement('span');
+            groupLabel.className = 'theia-mobile-projects-conversation-group-label';
+            groupLabel.textContent = group.label;
+            const groupCount = document.createElement('span');
+            groupCount.className = 'theia-mobile-projects-conversation-group-count';
+            groupCount.textContent = String(group.tasks.length);
+            groupHead.append(groupLabel, groupCount);
+            section.append(groupHead);
+            for (const task of group.tasks) {
+                section.append(this.createTaskItem(project, task, activeInfo));
+            }
+            list.append(section);
         }
         block.append(list);
         return block;
+    }
+
+    protected groupConversationTasks(tasks: MobileProjectTaskView[]): Array<{
+        id: 'working' | 'needs-you' | 'recent' | 'done';
+        label: string;
+        tasks: MobileProjectTaskView[];
+    }> {
+        type ConversationGroup = {
+            id: 'working' | 'needs-you' | 'recent' | 'done';
+            label: string;
+            tasks: MobileProjectTaskView[];
+        };
+        const groups = {
+            working: [] as MobileProjectTaskView[],
+            needsYou: [] as MobileProjectTaskView[],
+            recent: [] as MobileProjectTaskView[],
+            done: [] as MobileProjectTaskView[],
+        };
+        const recentWindowMs = 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        for (const task of tasks) {
+            if (task.state === 'running') {
+                groups.working.push(task);
+            } else if (task.state === 'needs-input' || task.state === 'failed' || task.state === 'interrupted') {
+                groups.needsYou.push(task);
+            } else if (now - (task.finishedAt ?? task.createdAt) <= recentWindowMs) {
+                groups.recent.push(task);
+            } else {
+                groups.done.push(task);
+            }
+        }
+        const ordered: ConversationGroup[] = [
+            {
+                id: 'working',
+                label: nls.localize('qaap/mobileProjects/conversationGroupWorking', 'Working'),
+                tasks: groups.working,
+            },
+            {
+                id: 'needs-you',
+                label: nls.localize('qaap/mobileProjects/conversationGroupNeedsYou', 'Needs you'),
+                tasks: groups.needsYou,
+            },
+            {
+                id: 'recent',
+                label: nls.localize('qaap/mobileProjects/conversationGroupRecent', 'Recent'),
+                tasks: groups.recent,
+            },
+            {
+                id: 'done',
+                label: nls.localize('qaap/mobileProjects/conversationGroupDone', 'Done'),
+                tasks: groups.done,
+            },
+        ];
+        return ordered.filter(group => group.tasks.length > 0);
     }
 
     protected createTaskItem(
@@ -1222,10 +1309,13 @@ export class MobileProjectsPanel {
         item.type = 'button';
         item.className = 'theia-mobile-projects-task-item';
         const isRunning = task.state === 'running';
+        const needsInput = task.state === 'needs-input';
         const isDone = task.state === 'completed';
         const isFailed = task.state === 'failed' || task.state === 'interrupted';
         const stateColor = isRunning
             ? 'var(--theia-charts-green, #4caf7c)'
+            : needsInput
+                ? 'var(--theia-notificationsWarningIcon-foreground, #cca700)'
             : isDone
                 ? 'var(--theia-charts-green, #4caf7c)'
                 : isFailed
@@ -1237,12 +1327,17 @@ export class MobileProjectsPanel {
         if (isDone) {
             item.classList.add('theia-mod-done');
         }
+        if (needsInput) {
+            item.classList.add('theia-mod-needs-input');
+        }
 
         const taskDot = document.createElement('span');
         taskDot.className = 'theia-mobile-projects-task-dot';
         taskDot.style.background = stateColor;
         if (isRunning) {
             taskDot.classList.add('theia-mod-pulse');
+        } else if (needsInput) {
+            taskDot.classList.add('theia-mod-attention');
         }
 
         const taskBody = document.createElement('div');
@@ -1351,6 +1446,8 @@ export class MobileProjectsPanel {
         switch (state) {
             case 'running':
                 return nls.localize('qaap/mobileProjects/taskStateRunning', 'running');
+            case 'needs-input':
+                return nls.localize('qaap/mobileProjects/taskStateNeedsInput', 'needs you');
             case 'completed':
                 return nls.localize('qaap/mobileProjects/taskStateChat', 'chat');
             case 'failed':

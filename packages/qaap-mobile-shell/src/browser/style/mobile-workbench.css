@@ -2877,6 +2877,46 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   flex-direction: column;
 }
 
+.theia-mobile-projects-conversation-group {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 8px;
+}
+
+.theia-mobile-projects-conversation-group + .theia-mobile-projects-conversation-group {
+  padding-top: 10px;
+  border-top: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.16));
+}
+
+.theia-mobile-projects-conversation-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 0 4px;
+  font-family: var(--theia-code-font-family, monospace);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-mobile-projects-conversation-group-label {
+  font-weight: 700;
+}
+
+.theia-mobile-projects-conversation-group.theia-mod-working .theia-mobile-projects-conversation-group-label {
+  color: var(--theia-charts-green, #4caf7c);
+}
+
+.theia-mobile-projects-conversation-group.theia-mod-needs-you .theia-mobile-projects-conversation-group-label {
+  color: var(--theia-notificationsWarningIcon-foreground, #cca700);
+}
+
+.theia-mobile-projects-conversation-group-count {
+  opacity: 0.72;
+}
+
 .theia-mobile-projects-task-item {
   display: flex;
   align-items: flex-start;
@@ -2911,6 +2951,10 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 
 .theia-mobile-projects-task-dot.theia-mod-pulse {
   animation: theia-mobile-projects-pulse 1.2s ease-in-out infinite;
+}
+
+.theia-mobile-projects-task-dot.theia-mod-attention {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theia-notificationsWarningIcon-foreground, #cca700) 20%, transparent);
 }
 
 .theia-mobile-projects-task-body { flex: 1; min-width: 0; }
