@@ -91,27 +91,32 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
     }
 
     /**
-     * Restore the selected channel from storage (used when widget is reopened).
-     * State restoration has higher priority, so this only applies if state restoration hasn't already
-     * set a selectedChannelName or pendingSelectedChannelName.
+     * Restore the selected channel from storage. This handles the case where the
+     * Output widget was closed before the application shut down, so the widget was
+     * not in the layout and `storeState`/`restoreState` never ran.
+     *
+     * Only applies if the manager doesn't already have a selected channel — if it
+     * does, something (e.g. a `channel.show()` call) already set the selection
+     * before this widget was created, and we should not override it.
      */
     protected async restoreSelectedChannelFromStorage(): Promise<void> {
         const storedChannelName = await this.storageService.getData<string>(OutputWidget.SELECTED_CHANNEL_STORAGE_KEY);
-        // Only apply storage restoration if state restoration hasn't provided a channel
-        if (storedChannelName && !this._state.selectedChannelName && !this._state.pendingSelectedChannelName) {
+        if (storedChannelName
+            && !this._state.selectedChannelName
+            && !this._state.pendingSelectedChannelName
+            && !this.outputChannelManager.selectedChannel
+        ) {
             const channel = this.outputChannelManager.getVisibleChannels().find(ch => ch.name === storedChannelName);
             if (channel) {
                 this.outputChannelManager.selectedChannel = channel;
                 this.refreshEditorWidget();
             } else {
-                // Channel not yet available, store as pending
                 this._state = { ...this._state, pendingSelectedChannelName: storedChannelName };
             }
         }
     }
 
     override dispose(): void {
-        // Save the selected channel to storage before disposing
         const channelName = this.selectedChannel?.name;
         if (channelName) {
             this.storageService.setData(OutputWidget.SELECTED_CHANNEL_STORAGE_KEY, channelName);
