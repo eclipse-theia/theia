@@ -88,12 +88,8 @@ const ALLOWED = [
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-renderer\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/model-aliases-configuration-widget\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/context-file-validation-service-impl\.spec\.ts$/,
-    /^packages\/ai-ide\/src\/browser\/ide-chat-welcome-message-provider\.tsx$/,
-    /^packages\/ai-ide\/src\/browser\/review\/pr-review-prompt-template\.ts$/,
     /^packages\/ai-ide\/src\/browser\/style\/widgets\/model-aliases-configuration\.css$/,
     /^packages\/ai-ide\/src\/browser\/workspace-launch-provider\.ts$/,
-    /^packages\/ai-ide\/src\/common\/command-chat-agents\.ts$/,
-    /^packages\/ai-ide\/src\/common\/command-prompt-template\.ts$/,
     /^packages\/ai-ide\/src\/common\/workspace-preferences\.ts$/,
     // ---- Misc product seams in upstream Theia packages ---------------------
     /^packages\/core\/README\.md$/,
