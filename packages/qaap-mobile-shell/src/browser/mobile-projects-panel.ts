@@ -5,7 +5,7 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import { CommandRegistry } from '@theia/core/lib/common/command';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { Widget as LuminoWidget } from '@lumino/widgets';
@@ -147,6 +147,10 @@ export class MobileProjectsPanel {
     protected readonly messageService: MessageService | undefined;
     protected activeTasksDispose: Disposable = Disposable.NULL;
     protected conversationsDispose: Disposable = Disposable.NULL;
+    protected chatServiceDispose: Disposable = Disposable.NULL;
+    protected readonly chatSessionModelDisposables = new Map<string, Disposable>();
+    protected readonly chatSessionProjectIds = new Map<string, string>();
+    protected chatServiceRefreshHandle: number | undefined;
     /** Open transcript sheet — only one at a time, dismissed on tap-outside or close button. */
     protected transcriptSheet: HTMLElement | undefined;
     protected transcriptSheetDispose: Disposable = Disposable.NULL;
@@ -304,6 +308,9 @@ export class MobileProjectsPanel {
         this.activeTasksDispose = Disposable.NULL;
         this.conversationsDispose.dispose();
         this.conversationsDispose = Disposable.NULL;
+        this.chatServiceDispose.dispose();
+        this.chatServiceDispose = Disposable.NULL;
+        this.disposeChatSessionModelListeners();
         this.closeTranscriptSheet();
     }
 
@@ -332,6 +339,9 @@ export class MobileProjectsPanel {
         this.activeTasksDispose = Disposable.NULL;
         this.conversationsDispose.dispose();
         this.conversationsDispose = Disposable.NULL;
+        this.chatServiceDispose.dispose();
+        this.chatServiceDispose = Disposable.NULL;
+        this.disposeChatSessionModelListeners();
         this.closeTranscriptSheet();
         this.visible = false;
         this.root.hidden = true;
@@ -347,6 +357,7 @@ export class MobileProjectsPanel {
     protected subscribeToActiveTasks(): void {
         this.activeTasksDispose.dispose();
         this.conversationsDispose.dispose();
+        this.chatServiceDispose.dispose();
         if (this.activeTasks) {
             this.activeTasksDispose = this.activeTasks.onDidChange(() => {
                 if (this.visible) {
@@ -362,6 +373,64 @@ export class MobileProjectsPanel {
                 }
             });
         }
+        this.subscribeToChatServiceSessions();
+    }
+
+    protected subscribeToChatServiceSessions(): void {
+        if (!this.chatService) {
+            this.chatServiceDispose = Disposable.NULL;
+            return;
+        }
+        const disposables = new DisposableCollection();
+        disposables.push(this.chatService.onSessionEvent(() => {
+            this.trackChatServiceSessionModels();
+            this.scheduleChatServiceRefresh();
+        }));
+        this.chatServiceDispose = disposables;
+        this.trackChatServiceSessionModels();
+    }
+
+    protected trackChatServiceSessionModels(): void {
+        if (!this.chatService) {
+            return;
+        }
+        const liveIds = new Set(this.chatService.getSessions().map(session => session.id));
+        for (const [sessionId, disposable] of [...this.chatSessionModelDisposables]) {
+            if (!liveIds.has(sessionId)) {
+                disposable.dispose();
+                this.chatSessionModelDisposables.delete(sessionId);
+                this.chatSessionProjectIds.delete(sessionId);
+            }
+        }
+        for (const session of this.chatService.getSessions()) {
+            if (this.chatSessionModelDisposables.has(session.id)) {
+                continue;
+            }
+            this.chatSessionModelDisposables.set(session.id, session.model.onDidChange(() => {
+                this.scheduleChatServiceRefresh();
+            }));
+        }
+    }
+
+    protected disposeChatSessionModelListeners(): void {
+        if (this.chatServiceRefreshHandle !== undefined) {
+            window.clearTimeout(this.chatServiceRefreshHandle);
+            this.chatServiceRefreshHandle = undefined;
+        }
+        for (const disposable of this.chatSessionModelDisposables.values()) {
+            disposable.dispose();
+        }
+        this.chatSessionModelDisposables.clear();
+    }
+
+    protected scheduleChatServiceRefresh(): void {
+        if (!this.visible || this.chatServiceRefreshHandle !== undefined) {
+            return;
+        }
+        this.chatServiceRefreshHandle = window.setTimeout(() => {
+            this.chatServiceRefreshHandle = undefined;
+            void this.applyActiveTasksRefresh();
+        }, 120);
     }
 
     protected async applyActiveTasksRefresh(): Promise<void> {
@@ -451,12 +520,16 @@ export class MobileProjectsPanel {
         if (!this.chatService) {
             return;
         }
+        this.trackChatServiceSessionModels();
         let persisted: ChatSessionMetadata[] = [];
         try {
             persisted = Object.values(await this.chatService.getPersistedSessions());
         } catch {
             persisted = [];
         }
+        const activeSessions = new Map(this.chatService.getSessions()
+            .filter(session => !session.model.isEmpty())
+            .map(session => [session.id, session]));
         const active = this.chatService.getSessions()
             .filter(session => !session.model.isEmpty())
             .map(session => ({
@@ -486,21 +559,58 @@ export class MobileProjectsPanel {
             return;
         }
         const cwd = this.projectsService.getProjectCwd(targetProject) ?? currentCwd ?? targetProject.name;
-        this.chatServiceSessionSummariesByProjectId.set(targetProject.id, sessions.map(session => ({
-            id: this.chatServiceConversationId(session.sessionId),
-            source: 'theia-chat',
-            cwd,
-            workspacePath: cwd,
-            sessionId: session.sessionId,
-            agentId: 'chat',
-            title: session.title,
-            status: 'idle',
-            createdAt: session.saveDate,
-            updatedAt: session.saveDate,
-            messageCount: 1,
-            lastMessagePreview: nls.localize('qaap/mobileProjects/workspaceChatPreview', 'Workspace chat'),
-            lastMessageRole: 'user',
-        })));
+        for (const session of sessions) {
+            const project = this.projectForChatSession(session.sessionId, targetProject);
+            if (activeSessions.has(session.sessionId) && !this.chatSessionProjectIds.has(session.sessionId)) {
+                this.rememberChatSessionProject(session.sessionId, project);
+            }
+            const projectCwd = this.projectsService.getProjectCwd(project) ?? cwd;
+            const modelSession = activeSessions.get(session.sessionId);
+            const summary: QaapAgentConversationSummaryDTO = {
+                id: this.chatServiceConversationId(session.sessionId),
+                source: 'theia-chat',
+                cwd: projectCwd,
+                workspacePath: projectCwd,
+                sessionId: session.sessionId,
+                agentId: modelSession?.pinnedAgent?.id ?? 'chat',
+                title: modelSession?.title ?? session.title,
+                status: modelSession && this.isChatSessionWorking(modelSession) ? 'streaming' : 'idle',
+                createdAt: session.saveDate,
+                updatedAt: modelSession?.lastInteraction?.getTime?.() ?? session.saveDate,
+                messageCount: modelSession?.model.getRequests().length ?? 1,
+                lastMessagePreview: this.chatSessionPreview(modelSession) ??
+                    nls.localize('qaap/mobileProjects/workspaceChatPreview', 'Workspace chat'),
+                lastMessageRole: 'user',
+            };
+            const existing = this.chatServiceSessionSummariesByProjectId.get(project.id) ?? [];
+            existing.push(summary);
+            this.chatServiceSessionSummariesByProjectId.set(project.id, existing);
+        }
+    }
+
+    protected projectForChatSession(sessionId: string, fallback: MobileProjectEntry): MobileProjectEntry {
+        const mappedId = this.chatSessionProjectIds.get(sessionId);
+        if (mappedId) {
+            return this.projects.find(project => project.id === mappedId) ?? fallback;
+        }
+        return fallback;
+    }
+
+    protected rememberChatSessionProject(sessionId: string | undefined, project: MobileProjectEntry): void {
+        if (sessionId) {
+            this.chatSessionProjectIds.set(sessionId, project.id);
+        }
+    }
+
+    protected isChatSessionWorking(session: ChatSession): boolean {
+        return session.model.getRequests().some(request =>
+            !request.response.isComplete && !request.response.isCanceled
+        );
+    }
+
+    protected chatSessionPreview(session: ChatSession | undefined): string | undefined {
+        const request = session?.model.getRequests().at(-1);
+        return request?.request.displayText?.trim() || request?.request.text?.trim();
     }
 
     protected mergeConversationSummaries(
@@ -508,7 +618,19 @@ export class MobileProjectsPanel {
         second: QaapAgentConversationSummaryDTO[],
     ): QaapAgentConversationSummaryDTO[] {
         const byId = new Map<string, QaapAgentConversationSummaryDTO>();
+        const bySessionId = new Map<string, string>();
         for (const item of [...first, ...second]) {
+            if (item.sessionId) {
+                const existingId = bySessionId.get(item.sessionId);
+                if (existingId) {
+                    const existing = byId.get(existingId);
+                    if (existing) {
+                        byId.set(existingId, this.preferConversationSummary(existing, item));
+                    }
+                    continue;
+                }
+                bySessionId.set(item.sessionId, item.id);
+            }
             byId.set(item.id, item);
         }
         return [...byId.values()].sort((a, b) => {
@@ -519,6 +641,25 @@ export class MobileProjectsPanel {
             }
             return b.updatedAt - a.updatedAt;
         });
+    }
+
+    protected preferConversationSummary(
+        current: QaapAgentConversationSummaryDTO,
+        next: QaapAgentConversationSummaryDTO,
+    ): QaapAgentConversationSummaryDTO {
+        if (current.status !== 'streaming' && next.status === 'streaming') {
+            return { ...next, id: current.id };
+        }
+        if (current.id.startsWith('theia-chat-service:')) {
+            return {
+                ...current,
+                title: current.title || next.title,
+                messageCount: Math.max(current.messageCount, next.messageCount),
+                updatedAt: Math.max(current.updatedAt, next.updatedAt),
+                lastMessagePreview: current.lastMessagePreview ?? next.lastMessagePreview,
+            };
+        }
+        return next.updatedAt > current.updatedAt ? next : current;
     }
 
     protected chatServiceConversationId(sessionId: string): string {
@@ -1997,6 +2138,8 @@ export class MobileProjectsPanel {
             if (!session) {
                 throw new Error(nls.localize('qaap/mobileProjects/transcriptUnavailable', 'This chat could not be loaded.'));
             }
+            this.rememberChatSessionProject(session.id, project);
+            this.trackChatServiceSessionModels();
             const uniqueId = `transcript-${project.id}-${summary.id}-${++this.agentChatInputMountSeq}-${Date.now()}`;
             const widget = await this.createChatViewWidget(uniqueId);
             if (!this.transcriptSheet || !chatHost.isConnected) {
