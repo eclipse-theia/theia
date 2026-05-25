@@ -25,15 +25,12 @@ import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
     conversationToSummary,
-    createConversation,
     getConversation,
     postConversationMessage,
 } from '../common/qaap-agent-conversation-client';
 import { markMobileProjectReadmeForOpen, markMobileProjectsPanelDismiss } from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
 import {
-    readStoredAgent,
-    reconcileSelectedAgent,
     SHELL_AGENT_ID,
 } from '../common/qaap-agent-task-client';
 import {
@@ -1832,34 +1829,27 @@ export class MobileProjectsPanel {
     protected async submitBackgroundAgentTask(
         project: MobileProjectEntry,
         draft: string,
-        options: { openConversation?: boolean } = {},
+        options: {
+            openConversation?: boolean;
+            modeId?: string;
+            capabilityOverrides?: Record<string, boolean>;
+            genericCapabilitySelections?: GenericCapabilitySelections;
+            variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
+        } = {},
     ): Promise<void> {
         const cwd = await this.ensureInlineComposerCwd(project);
         if (!cwd) {
             return;
         }
-        const agents = this.activeTasks?.getAgents() ?? [];
-        const agent = reconcileSelectedAgent(
-            readStoredAgent(cwd),
-            agents,
-            this.activeTasks?.getDefaultAgent(),
-            cwd,
-        );
         try {
-            // Each inline submission opens a fresh conversation — the Antigravity-style "fan out
-            // parallel sessions" UX. To continue an existing thread the user taps it to open the
-            // transcript sheet and types from there.
-            const conv = await createConversation({ cwd, agent, message: draft });
-            this.conversations?.recordSnapshot(conversationToSummary(conv));
-            this.applyTaskStartedToProject(cwd, draft, conv.id);
+            const summary = await this.createProjectChatSession(project, cwd, draft, options);
+            this.applyTaskStartedToProject(cwd, draft, summary.id);
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/conversationStarted', 'Conversation started'),
                 { kind: 'success', duration: 1400 }
             );
             if (options.openConversation ?? true) {
-                // The advanced chat input keeps the previous behavior: open the new thread so the
-                // user can continue immediately with the full Agent UI.
-                void this.openTranscriptSheet(project, conversationToSummary(conv));
+                void this.openTheiaChatTranscriptSheet(project, summary);
             }
         } catch (error) {
             const detail = error instanceof Error ? error.message : String(error);
@@ -1869,6 +1859,78 @@ export class MobileProjectsPanel {
                 detail
             ));
         }
+    }
+
+    protected async createProjectChatSession(
+        project: MobileProjectEntry,
+        cwd: string,
+        draft: string,
+        options: {
+            modeId?: string;
+            capabilityOverrides?: Record<string, boolean>;
+            genericCapabilitySelections?: GenericCapabilitySelections;
+            variables?: ReturnType<AIChatInputWidget['getAllVariablesForRequest']>;
+        },
+    ): Promise<QaapAgentConversationSummaryDTO> {
+        if (!this.chatService) {
+            throw new Error(nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.'));
+        }
+        const previousActiveSessionId = this.chatService.getActiveSession()?.id;
+        const coderAgent = this.chatAgentService?.getAgent('Coder');
+        const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: false }, coderAgent);
+        this.rememberChatSessionProject(session.id, project);
+        this.trackChatServiceSessionModels();
+        const summary = this.chatServiceSessionToSummary(session, project, cwd, draft, 'streaming');
+        this.upsertProjectChatServiceSummary(project.id, summary);
+        if (previousActiveSessionId && this.chatService.getSession(previousActiveSessionId)) {
+            this.chatService.setActiveSession(previousActiveSessionId, { focus: false });
+        }
+        const invocation = await this.chatService.sendRequest(session.id, {
+            text: draft,
+            modeId: options.modeId,
+            capabilityOverrides: options.capabilityOverrides,
+            genericCapabilitySelections: options.genericCapabilitySelections,
+            ...(options.variables && options.variables.length > 0 ? { variables: options.variables } : {}),
+        });
+        this.scheduleChatServiceRefresh();
+        void invocation?.responseCompleted.finally(() => this.scheduleChatServiceRefresh());
+        return summary;
+    }
+
+    protected chatServiceSessionToSummary(
+        session: ChatSession,
+        project: MobileProjectEntry,
+        cwd: string,
+        fallbackTitle: string,
+        fallbackStatus?: QaapAgentConversationSummaryDTO['status'],
+    ): QaapAgentConversationSummaryDTO {
+        const now = session.lastInteraction?.getTime?.() ?? Date.now();
+        return {
+            id: this.chatServiceConversationId(session.id),
+            source: 'theia-chat',
+            cwd,
+            workspacePath: cwd,
+            sessionId: session.id,
+            agentId: session.pinnedAgent?.id ?? 'chat',
+            title: session.title ?? fallbackTitle,
+            status: fallbackStatus ?? (this.isChatSessionWorking(session) ? 'streaming' : 'idle'),
+            createdAt: now,
+            updatedAt: now,
+            messageCount: Math.max(1, session.model.getRequests().length),
+            lastMessagePreview: this.chatSessionPreview(session) ?? fallbackTitle,
+            lastMessageRole: 'user',
+        };
+    }
+
+    protected upsertProjectChatServiceSummary(projectId: string, summary: QaapAgentConversationSummaryDTO): void {
+        const list = [...(this.chatServiceSessionSummariesByProjectId.get(projectId) ?? [])];
+        const index = list.findIndex(item => item.id === summary.id || (!!item.sessionId && item.sessionId === summary.sessionId));
+        if (index >= 0) {
+            list[index] = summary;
+        } else {
+            list.unshift(summary);
+        }
+        this.chatServiceSessionSummariesByProjectId.set(projectId, list);
     }
 
     protected applyTaskStartedToProject(cwd: string, title: string, taskId: string): void {
@@ -1951,16 +2013,23 @@ export class MobileProjectsPanel {
             ? (this.composerDraft.startsWith('@') ? this.composerDraft : `@Coder ${this.composerDraft}`)
             : '@Coder ';
         widget.setEnabled(true);
-        widget.onQuery = async (query: string, _modeId?: string, _capabilityOverrides?: Record<string, boolean>,
-            _genericCapabilitySelections?: GenericCapabilitySelections) => {
+        widget.onQuery = async (query: string, modeId?: string, capabilityOverrides?: Record<string, boolean>,
+            genericCapabilitySelections?: GenericCapabilitySelections) => {
             const cleaned = query.replace(/^@Coder\s+/i, '').trim() || query.trim();
             if (!cleaned) {
                 return;
             }
+            const variables = widget.getAllVariablesForRequest();
             widget.clearPendingImageAttachments();
             this.composerExpanded = false;
             this.composerDraft = '';
-            await this.submitBackgroundAgentTask(project, cleaned, { openConversation: true });
+            await this.submitBackgroundAgentTask(project, cleaned, {
+                openConversation: false,
+                modeId,
+                capabilityOverrides,
+                genericCapabilitySelections,
+                variables,
+            });
         };
         widget.onCancel = (requestModel: ChatRequestModel) => {
             void this.chatService?.cancelRequest(requestModel.session.id, requestModel.id);
