@@ -93,11 +93,17 @@ export class HostedPluginManagerClient {
 
     private connection: DebugSessionConnection;
 
+    // Session ID of the parent pwa-extensionHost debug session
+    protected hostedPluginSessionId: string | undefined;
+
     // path to the plugin on the file system
     protected pluginLocation: URI | undefined;
 
     // URL to the running plugin instance
     protected pluginInstanceURL: string | undefined;
+
+    // Electron window ID of the hosted plugin window, for closing on shutdown
+    protected hostedWindowId: number | undefined;
 
     protected isDebug = false;
 
@@ -212,7 +218,9 @@ export class HostedPluginManagerClient {
                 name,
                 smartStep: true,
                 sourceMaps: !!outFiles,
-                outFiles
+                outFiles,
+                parentSessionId: this.hostedPluginSessionId,
+                lifecycleManagedByParent: true,
             }
         });
     }
@@ -225,6 +233,20 @@ export class HostedPluginManagerClient {
         try {
             this.stateChanged.fire({ state: HostedInstanceState.STOPPING, pluginLocation: this.pluginLocation! });
             await this.hostedPluginServer.terminateHostedPluginInstance();
+            if (this.hostedWindowId !== undefined) {
+                this.windowService.closeWindow(this.hostedWindowId);
+                this.hostedWindowId = undefined;
+            }
+            // Terminate the parent pwa-extensionHost debug session (and its children)
+            // so that stopping the hosted instance also ends all related debug sessions,
+            // matching VS Code's behavior where they are tightly coupled.
+            if (this.hostedPluginSessionId) {
+                const session = this.debugSessionManager.sessions.find(s => s.id === this.hostedPluginSessionId);
+                if (session) {
+                    this.debugSessionManager.terminateSession(session);
+                }
+                this.hostedPluginSessionId = undefined;
+            }
             this.messageService.info((this.pluginInstanceURL
                 ? nls.localize('theia/plugin-dev/instanceTerminated', '{0} has been terminated', this.pluginInstanceURL)
                 : nls.localize('theia/plugin-dev/unknownTerminated', 'The instance has been terminated')));
@@ -306,11 +328,25 @@ export class HostedPluginManagerClient {
     register(configType: string, connection: DebugSessionConnection): void {
         if (configType === 'pwa-extensionHost') {
             this.connection = connection;
+            this.hostedPluginSessionId = connection.sessionId;
             this.connection.onRequest('launchVSCode', (request: LaunchVSCodeRequest) => this.launchVSCode(request));
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.connection.on('exited', async (args: any) => {
                 await this.stop();
+            });
+
+            // Stop the hosted instance when the parent pwa-extensionHost session or any
+            // of its child sessions (e.g. "Hosted Plugin: Remote Process") are destroyed.
+            // The 'exited' event may not fire because the hosted backend process is not a
+            // child of the debug adapter.
+            const onDestroy = this.debugSessionManager.onDidDestroyDebugSession(async session => {
+                const isParent = session.id === this.hostedPluginSessionId;
+                const isChild = session.parentSession?.id === this.hostedPluginSessionId;
+                if ((isParent || isChild) && await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+                    onDestroy.dispose();
+                    await this.stop(false);
+                }
             });
         }
     }
@@ -319,17 +355,21 @@ export class HostedPluginManagerClient {
      * Opens window with URL to the running plugin instance.
      */
     protected async openPluginWindow(): Promise<void> {
-        // do nothing for electron browser
-        if (isNative) {
-            return;
-        }
-
         if (this.pluginInstanceURL) {
-            try {
-                this.windowService.openNewWindow(this.pluginInstanceURL);
-            } catch (err) {
-                // browser blocked opening of a new tab
-                this.openNewTabAskDialog.showOpenNewTabAskDialog(this.pluginInstanceURL);
+            if (isNative) {
+                // In Electron, the hosted backend is a headless Node.js server process.
+                // Open a new default window (file:// URL) pointing to the hosted backend's
+                // port, just like normal Electron windows. This ensures the origin is
+                // file:// which passes the ElectronWsOriginValidator.
+                const port = new URL(this.pluginInstanceURL).port;
+                this.hostedWindowId = await this.windowService.openNewDefaultWindow({ search: { port } });
+            } else {
+                try {
+                    this.windowService.openNewWindow(this.pluginInstanceURL);
+                } catch (err) {
+                    // browser blocked opening of a new tab
+                    this.openNewTabAskDialog.showOpenNewTabAskDialog(this.pluginInstanceURL);
+                }
             }
         }
     }

@@ -19,6 +19,29 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
+/** Provider-agnostic reasoning level; each provider maps this to its native API. */
+export type ReasoningLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'auto';
+
+export interface ReasoningSettings {
+    level: ReasoningLevel;
+}
+
+/**
+ * Shape of a model's reasoning parameter in its native API.
+ * - `'effort'`: discrete effort enum.
+ * - `'budget'`: numeric token budget.
+ */
+export type ReasoningApi = 'effort' | 'budget';
+
+/**
+ * Declares a model's reasoning capabilities. When unset, the chat UI hides the
+ * reasoning selector and providers ignore the `reasoning` field on requests.
+ */
+export interface ReasoningSupport {
+    readonly supportedLevels: ReadonlyArray<ReasoningLevel>;
+    readonly defaultLevel?: ReasoningLevel;
+}
+
 export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
 export namespace LanguageModelMessage {
 
@@ -93,6 +116,11 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
         typeof (obj as { query: unknown }).query === 'string'
     );
 
+export interface AutoActionResult {
+    action: 'allow' | 'deny';
+    reason?: string;
+}
+
 export interface ToolRequestParameterProperty {
     type?: | 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
     anyOf?: ToolRequestParameterProperty[];
@@ -131,6 +159,29 @@ export interface ToolRequest<TContext extends ToolInvocationContext = ToolInvoca
      * Use for tools with broad system access (shell execution, file deletion, etc.)
      */
     confirmAlwaysAllow?: boolean | string;
+
+    /**
+     * Optional method that returns a short, human-readable label for the tool's arguments
+     * to display in the chat UI summary.
+     *
+     * @param args - The raw arguments JSON string passed to the tool.
+     * @returns An object with:
+     *  - `label`: A short text to display (e.g. the most important argument value).
+     *  - `hasMore`: Whether there are additional arguments not shown in the label (renders as `...` suffix).
+     *  Returns `undefined` if no short label can be determined.
+     *  If this method is not provided, a generic condensed rendering of the arguments JSON is used as fallback.
+     */
+    getArgumentsShortLabel?(args: string): { label: string; hasMore: boolean } | undefined;
+
+    /**
+     * Optional hook to determine automatic action for this tool invocation.
+     * @param argString - The JSON argument string passed to the tool
+     * @returns
+     *   - { action: 'allow' } - Auto-approve without confirmation
+     *   - { action: 'deny', reason } - Auto-deny without confirmation
+     *   - undefined - Show confirmation UI (default behavior)
+     */
+    checkAutoAction?: (argString: string) => AutoActionResult | undefined;
 }
 
 /**
@@ -238,7 +289,9 @@ export interface LanguageModelRequest {
     tools?: ToolRequest[];
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
-    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean }
+    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
+    /** Provider-agnostic reasoning configuration; providers translate it to their native API. */
+    reasoning?: ReasoningSettings;
 }
 export interface ResponseFormatJsonSchema {
     type: 'json_schema';
@@ -274,6 +327,14 @@ export interface UserRequest extends LanguageModelRequest {
      */
     agentId?: string;
     /**
+     * Optional prompt variant ID used for this request
+     */
+    promptVariantId?: string;
+    /**
+     * Indicates whether the prompt variant was customized
+     */
+    isPromptVariantCustomized?: boolean;
+    /**
      * Cancellation support
      */
     cancellationToken?: CancellationToken;
@@ -281,6 +342,7 @@ export interface UserRequest extends LanguageModelRequest {
 
 export interface LanguageModelTextResponse {
     text: string;
+    usage?: UsageResponsePart;
 }
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
@@ -293,6 +355,8 @@ export const isLanguageModelStreamResponsePart = (part: unknown): part is Langua
 export interface UsageResponsePart {
     input_tokens: number;
     output_tokens: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
 }
 export const isUsageResponsePart = (part: unknown): part is UsageResponsePart =>
     !!(part && typeof part === 'object' &&
@@ -372,6 +436,7 @@ export const isLanguageModelStreamResponse = (obj: unknown): obj is LanguageMode
 export interface LanguageModelParsedResponse {
     parsed: unknown;
     content: string;
+    usage?: UsageResponsePart;
 }
 export const isLanguageModelParsedResponse = (obj: unknown): obj is LanguageModelParsedResponse =>
     !!(obj && typeof obj === 'object' && 'parsed' in obj && 'content' in obj);
@@ -395,6 +460,7 @@ export interface LanguageModelMetaData {
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
     readonly status: LanguageModelStatus;
+    readonly reasoningSupport?: ReasoningSupport;
 }
 
 export namespace LanguageModelMetaData {

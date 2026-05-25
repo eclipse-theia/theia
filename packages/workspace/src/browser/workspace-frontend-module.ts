@@ -17,8 +17,8 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { CommandContribution, MenuContribution, bindRootContributionProvider } from '@theia/core/lib/common';
+import { FrontendApplicationContribution, KeybindingContribution, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import {
     OpenFileDialogFactory,
     SaveFileDialogFactory,
@@ -34,7 +34,7 @@ import { LabelProviderContribution } from '@theia/core/lib/browser/label-provide
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceServer, workspacePath, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WorkspaceFrontendContribution } from './workspace-frontend-contribution';
-import { WorkspaceOpenHandlerContribution, WorkspaceService } from './workspace-service';
+import { WorkspaceHandlingContribution, WorkspaceOpenHandlerContribution, WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution, EditMenuContribution } from './workspace-commands';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
@@ -57,20 +57,24 @@ import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';
 import { WorkspaceWindowTitleUpdater } from './workspace-window-title-updater';
 import { CanonicalUriService } from './canonical-uri-service';
+import { WorkspaceMetadataStorageService, WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './metadata-storage';
+import { WorkspaceMetadataStoreImpl } from './metadata-storage/workspace-metadata-store';
+import { WorkspaceSearchFilterService, WorkspaceSearchFilterProvider } from './workspace-search-filter-service';
+import { WorkspaceFilesExcludeFilterProvider } from './workspace-files-exclude-filter-provider';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
     bindWorkspaceTrustPreferences(bind);
-    bindContributionProvider(bind, WorkspaceOpenHandlerContribution);
+    bindRootContributionProvider(bind, WorkspaceOpenHandlerContribution);
+    bindRootContributionProvider(bind, WorkspaceHandlingContribution);
 
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WorkspaceService);
 
     bind(CanonicalUriService).toSelf().inSingletonScope();
-    bind(WorkspaceServer).toDynamicValue(ctx => {
-        const provider = ctx.container.get(WebSocketConnectionProvider);
-        return provider.createProxy<WorkspaceServer>(workspacePath);
-    }).inSingletonScope();
+    bind(WorkspaceServer).toDynamicValue(ctx =>
+        ServiceConnectionProvider.createLocalProxy<WorkspaceServer>(ctx.container, workspacePath)
+    ).inSingletonScope();
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution]) {
@@ -101,6 +105,11 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(WorkspaceStorageService).toSelf().inSingletonScope();
     rebind(StorageService).toService(WorkspaceStorageService);
 
+    bind(WorkspaceMetadataStoreImpl).toSelf();
+    bind(WorkspaceMetadataStoreFactory).toFactory(ctx => () => ctx.container.get(WorkspaceMetadataStoreImpl));
+    bind(WorkspaceMetadataStorageServiceImpl).toSelf().inSingletonScope();
+    bind(WorkspaceMetadataStorageService).toService(WorkspaceMetadataStorageServiceImpl);
+
     bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
     bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     bind(VariableContribution).toService(WorkspaceVariableContribution);
@@ -115,9 +124,14 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 
-    bindContributionProvider(bind, WorkspaceRestrictionContribution);
+    bindRootContributionProvider(bind, WorkspaceRestrictionContribution);
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 
     rebind(WindowTitleUpdater).to(WorkspaceWindowTitleUpdater).inSingletonScope();
+
+    bindRootContributionProvider(bind, WorkspaceSearchFilterProvider);
+    bind(WorkspaceSearchFilterService).toSelf().inSingletonScope();
+    bind(WorkspaceFilesExcludeFilterProvider).toSelf().inSingletonScope();
+    bind(WorkspaceSearchFilterProvider).toService(WorkspaceFilesExcludeFilterProvider);
 });

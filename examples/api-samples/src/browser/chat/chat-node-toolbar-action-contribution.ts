@@ -31,7 +31,7 @@ export function bindChatNodeToolbarActionContribution(bind: interfaces.Bind): vo
                 return [{
                     commandId: 'sample-command',
                     icon: 'codicon codicon-feedback',
-                    tooltip: 'Example command'
+                    tooltip: 'API Samples: Example command'
                 }];
             } else {
                 return [];

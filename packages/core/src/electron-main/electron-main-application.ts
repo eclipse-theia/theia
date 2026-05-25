@@ -30,6 +30,7 @@ import URI from '../common/uri';
 import { FileUri } from '../common/file-uri';
 import { Deferred, timeout } from '../common/promise-util';
 import { MaybePromise } from '../common/types';
+import { Stopwatch } from '../common/performance';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
@@ -49,6 +50,8 @@ import { ILogger } from '../common/logger';
 export { ElectronMainApplicationGlobals };
 
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
+
+const ELECTRON_TIMER_WARNING_THRESHOLD = 50;
 
 /**
  * Options passed to the main/default command handler.
@@ -174,6 +177,9 @@ export class ElectronMainApplication {
 
     @inject(ILogger) @named('core:ElectronMainApplication')
     protected readonly logger: ILogger;
+    
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
 
     protected isPortable = this.makePortable();
 
@@ -233,15 +239,19 @@ export class ElectronMainApplication {
                         await fs.mkdir(args.electronUserData, { recursive: true });
                         app.setPath('userData', args.electronUserData);
                     }
+                    const startupMeasurement = this.stopwatch.start('electron-main-startup');
                     this.useNativeWindowFrame = this.getTitleBarStyle(config) === 'native';
                     this._config = config;
                     this.hookApplicationEvents();
                     this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
-                    const port = await this.startBackend();
+                    const port = await this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend());
                     this._backendPort.resolve(port);
                     await app.whenReady();
-                    await this.attachElectronSecurityToken(port);
-                    await this.startContributions();
+                    await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
+                        () => this.attachElectronSecurityToken(port));
+                    await this.stopwatch.startAsync('electron-main-start-contributions', 'Starting contributions',
+                        () => this.startContributions());
+                    startupMeasurement.info('Startup sequence completed');
 
                     this.handleMainCommand({
                         file: args.file,
@@ -504,6 +514,13 @@ export class ElectronMainApplication {
             },
             ...this.config.electron?.windowOptions || {},
         };
+    }
+
+    closeWindowById(webContentsId: number): void {
+        const window = this.windows.get(webContentsId);
+        if (window) {
+            window.close(StopReason.Close);
+        }
     }
 
     async openDefaultWindow(params?: WindowSearchParams): Promise<BrowserWindow> {
@@ -917,8 +934,14 @@ export class ElectronMainApplication {
     protected async startContributions(): Promise<void> {
         const promises = [];
         for (const contribution of this.contributions.getContributions()) {
-            if (contribution.onStart) {
-                promises.push(contribution.onStart(this));
+            const onStart = contribution.onStart;
+            if (onStart) {
+                promises.push(this.stopwatch.startAsync(
+                    `${contribution.constructor.name}.onStart`,
+                    `${contribution.constructor.name}.onStart`,
+                    () => onStart.call(contribution, this),
+                    { thresholdMillis: ELECTRON_TIMER_WARNING_THRESHOLD }
+                ));
             }
         }
         await Promise.all(promises);

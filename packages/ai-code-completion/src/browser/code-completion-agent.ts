@@ -22,6 +22,7 @@ import {
     UserRequest
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { codeCompletionPrompts } from './code-completion-prompt-template';
@@ -78,6 +79,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 this.logger.error('No prompt found for code-completion-agent');
                 return undefined;
             }
+
+            const variantInfo = this.promptService.getPromptVariantInfo('code-completion-system');
+
             // since we do not actually hold complete conversions, the request/response pair is considered a session
             const sessionId = generateUuid();
             const requestId = generateUuid();
@@ -86,10 +90,15 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 settings: {
                     stream: false
                 },
+                // Inline completion is a one-shot text replacement; reasoning/thinking adds latency
+                // and can cause models (e.g. Anthropic adaptive thinking) to emit no text at all.
+                reasoning: { level: 'off' },
                 agentId: this.id,
                 sessionId,
                 requestId,
-                cancellationToken: token
+                cancellationToken: token,
+                promptVariantId: variantInfo?.variantId,
+                isPromptVariantCustomized: variantInfo?.isCustomized
             };
             if (token.isCancellationRequested) {
                 return undefined;
@@ -140,7 +149,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     id = 'Code Completion';
     name = 'Code Completion';
     description =
-        nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor in the Theia IDE.');
+        nls.localize('theia/ai/completion/agent/description',
+            'This agent provides inline code completion in the code editor in {0}.',
+            FrontendApplicationConfigProvider.get().applicationName);
     prompts: PromptVariantSet[] = codeCompletionPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
         {

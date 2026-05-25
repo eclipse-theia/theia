@@ -17,7 +17,7 @@
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator, TreeNode } from '@theia/core/lib/browser';
 import { Emitter, nls } from '@theia/core';
-import { TerminalManagerTreeTypes } from './terminal-manager-types';
+import { TerminalManagerTreeTypes, TASKS_PAGE_ID } from './terminal-manager-types';
 
 @injectable()
 export class TerminalManagerTreeModel extends TreeModelImpl {
@@ -74,10 +74,11 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         terminalKey: TerminalManagerTreeTypes.TerminalKey,
         groupId: TerminalManagerTreeTypes.GroupId,
         pageId: TerminalManagerTreeTypes.PageId,
+        label?: string,
     ): void {
         const pageNode = this.createPageNode(pageId);
         const groupNode = this.createGroupNode(groupId, pageId);
-        const terminalNode = this.createTerminalNode(terminalKey, groupId);
+        const terminalNode = this.createTerminalNode(terminalKey, groupId, label);
         if (this.root && CompositeTreeNode.is(this.root)) {
             this.activePageNode = pageNode;
             CompositeTreeNode.addChild(groupNode, terminalNode);
@@ -106,7 +107,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     }
 
     protected getNextPageCounter(): number {
-        return Math.max(0, ...Array.from(this.pages.values(), page => page.counter)) + 1;
+        return Math.max(0, ...Array.from(this.pages.values(), page => page.counter > 0 ? page.counter : 0)) + 1;
     }
 
     deleteTerminalPage(pageId: TerminalManagerTreeTypes.PageId): void {
@@ -123,9 +124,10 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         terminalKey: TerminalManagerTreeTypes.TerminalKey,
         groupId: TerminalManagerTreeTypes.GroupId,
         pageId: TerminalManagerTreeTypes.PageId,
+        label?: string,
     ): void {
         const groupNode = this.createGroupNode(groupId, pageId);
-        const terminalNode = this.createTerminalNode(terminalKey, groupId);
+        const terminalNode = this.createTerminalNode(terminalKey, groupId, label);
         const pageNode = this.getNode(pageId);
         if (this.root && CompositeTreeNode.is(this.root) && TerminalManagerTreeTypes.isPageNode(pageNode)) {
             this.onDidAddTerminalGroupEmitter.fire({ groupId: groupNode.id, pageId, terminalKey });
@@ -181,10 +183,10 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         CompositeTreeNode.removeChild(page, group);
     }
 
-    addTerminal(newTerminalId: TerminalManagerTreeTypes.TerminalKey, groupId: TerminalManagerTreeTypes.GroupId): void {
+    addTerminal(newTerminalId: TerminalManagerTreeTypes.TerminalKey, groupId: TerminalManagerTreeTypes.GroupId, label?: string): void {
         const groupNode = this.getNode(groupId);
         if (groupNode && TerminalManagerTreeTypes.isGroupNode(groupNode)) {
-            const terminalNode = this.createTerminalNode(newTerminalId, groupId);
+            const terminalNode = this.createTerminalNode(newTerminalId, groupId, label);
             CompositeTreeNode.addChild(groupNode, terminalNode);
             this.onDidAddTerminalToGroupEmitter.fire({ terminalId: newTerminalId, groupId });
             this.refreshWithSelection(undefined, terminalNode);
@@ -194,10 +196,11 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     createTerminalNode(
         terminalId: TerminalManagerTreeTypes.TerminalKey,
         groupId: TerminalManagerTreeTypes.GroupId,
+        label?: string,
     ): TerminalManagerTreeTypes.TerminalNode {
         return {
             id: terminalId,
-            label: nls.localizeByDefault('Terminal'),
+            label: label || nls.localizeByDefault('Terminal'),
             parent: undefined,
             children: [],
             selected: false,
@@ -317,6 +320,14 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         }
     }
 
+    updateTerminalLabel(terminalKey: TerminalManagerTreeTypes.TerminalKey, newLabel: string): void {
+        const node = this.getNode(terminalKey);
+        if (TerminalManagerTreeTypes.isTerminalNode(node)) {
+            node.label = newLabel;
+            this.fireChanged();
+        }
+    }
+
     protected async refreshWithSelection(refreshTarget?: CompositeTreeNode, selectionTarget?: SelectableTreeNode, selectionReferent?: TreeNode): Promise<void> {
         await this.refresh(refreshTarget);
         if (selectionTarget) {
@@ -336,5 +347,47 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         if (TerminalManagerTreeTypes.isTerminalNode(start)) { return start; }
         if (TerminalManagerTreeTypes.isGroupNode(start)) { return start.children.at(0); }
         if (TerminalManagerTreeTypes.isPageNode(start)) { return start.children.at(0)?.children.at(0); }
+    }
+
+    getOrCreateTasksPage(): { page: TerminalManagerTreeTypes.PageNode, isNewlyCreated: boolean } {
+        const existingTasksPage = this.getNode(TASKS_PAGE_ID);
+        if (TerminalManagerTreeTypes.isPageNode(existingTasksPage)) {
+            return { page: existingTasksPage, isNewlyCreated: false };
+        }
+        const tasksPageNode: TerminalManagerTreeTypes.PageNode = {
+            id: TASKS_PAGE_ID,
+            label: nls.localizeByDefault('Tasks'),
+            parent: undefined,
+            selected: false,
+            children: [],
+            page: true,
+            isEditing: false,
+            expanded: true,
+            counter: 0,
+        };
+        if (this.root && CompositeTreeNode.is(this.root)) {
+            this.root = CompositeTreeNode.addChild(this.root, tasksPageNode);
+        }
+        return { page: tasksPageNode, isNewlyCreated: true };
+    }
+
+    addTerminalToTasksPage(
+        terminalKey: TerminalManagerTreeTypes.TerminalKey,
+        groupId: TerminalManagerTreeTypes.GroupId,
+        label?: string,
+    ): void {
+        const { page: tasksPage, isNewlyCreated } = this.getOrCreateTasksPage();
+        const groupNode = this.createGroupNode(groupId, tasksPage.id);
+        const terminalNode = this.createTerminalNode(terminalKey, groupId, label);
+        if (this.root && CompositeTreeNode.is(this.root)) {
+            this.activePageNode = tasksPage;
+            CompositeTreeNode.addChild(groupNode, terminalNode);
+            CompositeTreeNode.addChild(tasksPage, groupNode);
+            if (isNewlyCreated) {
+                this.onDidAddPageEmitter.fire({ pageId: tasksPage.id, terminalKey });
+            }
+            this.onDidAddTerminalGroupEmitter.fire({ groupId: groupNode.id, pageId: tasksPage.id, terminalKey });
+            this.refreshWithSelection(tasksPage, terminalNode);
+        }
     }
 }

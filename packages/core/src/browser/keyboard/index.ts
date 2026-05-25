@@ -18,3 +18,4 @@ export * from './keys';
 export * from './keyboard-layout-service';
 export * from './browser-keyboard-layout-provider';
 export * from './browser-keyboard-frontend-contribution';
+export * from './keyboard-utils';

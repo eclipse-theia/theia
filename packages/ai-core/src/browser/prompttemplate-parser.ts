@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { load } from 'js-yaml';
-import { CommandPromptFragmentMetadata } from '../common';
+import { CommandPromptFragmentMetadata, FRONT_MATTER_REGEX } from '../common';
 
 /**
  * Result of parsing a template file that may contain YAML front matter
@@ -37,6 +37,8 @@ export function isTemplateMetadata(obj: unknown): obj is CommandPromptFragmentMe
     }
     const metadata = obj as Record<string, unknown>;
     return (
+        (metadata.name === undefined || typeof metadata.name === 'string') &&
+        (metadata.description === undefined || typeof metadata.description === 'string') &&
         (metadata.isCommand === undefined || typeof metadata.isCommand === 'boolean') &&
         (metadata.commandName === undefined || typeof metadata.commandName === 'string') &&
         (metadata.commandDescription === undefined || typeof metadata.commandDescription === 'string') &&
@@ -67,8 +69,7 @@ export function isTemplateMetadata(obj: unknown): obj is CommandPromptFragmentMe
  * @returns ParsedTemplate containing the template content and optional metadata
  */
 export function parseTemplateWithMetadata(fileContent: string): ParsedTemplate {
-    const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-    const match = fileContent.match(frontMatterRegex);
+    const match = fileContent.match(FRONT_MATTER_REGEX);
 
     if (!match) {
         // No front matter, return content as-is
@@ -89,6 +90,8 @@ export function parseTemplateWithMetadata(fileContent: string): ParsedTemplate {
 
         // Extract and validate command metadata
         const templateMetadata: CommandPromptFragmentMetadata = {
+            name: typeof metadata.name === 'string' ? metadata.name : undefined,
+            description: typeof metadata.description === 'string' ? metadata.description : undefined,
             isCommand: typeof metadata.isCommand === 'boolean' ? metadata.isCommand : undefined,
             commandName: typeof metadata.commandName === 'string' ? metadata.commandName : undefined,
             commandDescription: typeof metadata.commandDescription === 'string' ? metadata.commandDescription : undefined,

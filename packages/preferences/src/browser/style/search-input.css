@@ -17,6 +17,7 @@
 .theia-settings-container .settings-search-container {
   display: flex;
   align-items: center;
+  padding: 1px; /* Enough for the search bar's outline to show up. */
 }
 
 .theia-settings-container .settings-search-container .settings-search-input {
@@ -34,10 +35,6 @@
   z-index: 999;
   right: 5px;
   display: flex;
-}
-
-.theia-settings-container .settings-search-container .clear-all {
-  background: var(--theia-icon-clear);
 }
 
 .theia-settings-container .settings-search-container .results-found {
@@ -59,6 +56,17 @@
   border: var(--theia-border-width) solid transparent;
   opacity: 0.7;
   cursor: pointer;
+  /* Reset default button styles when using <button> */
+  appearance: none;
+  background-color: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.theia-settings-container .settings-search-container .option:disabled {
+  cursor: default;
+  opacity: var(--theia-mod-disabled-opacity);
 }
 
 .theia-settings-container .settings-search-container .enabled {

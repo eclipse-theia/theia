@@ -20,23 +20,40 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource, PreferenceService } from '@theia/core';
+import { CancellationTokenSource, OS, PreferenceService } from '@theia/core';
 import {
     GetWorkspaceDirectoryStructure,
     FileContentFunction,
     GetWorkspaceFileList,
     FileDiagnosticProvider,
-    WorkspaceFunctionScope
+    WorkspaceFunctionScope,
+    FindFilesByPattern
 } from './workspace-functions';
 import { ToolInvocationContext } from '@theia/ai-core';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
 import { Container } from '@theia/core/shared/inversify';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { URI } from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { OpenerService } from '@theia/core/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+
+const makeTrustAwareReader = (overrides: { [pref: string]: unknown } = {}): TrustAwarePreferenceReader => ({
+    get: <T>(name: string, fallback?: T) => (name in overrides ? overrides[name] as T : fallback),
+    ready: Promise.resolve(),
+    onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+} as unknown as TrustAwarePreferenceReader);
+
+const makeEnvVariablesServer = (homeDirUri: string = 'file:///home/test'): EnvVariablesServer => ({
+    getHomeDirUri: async () => homeDirUri,
+    getExecPath: async () => '',
+    getVariables: async () => [],
+    getValue: async () => undefined,
+    getConfigDirUri: async () => 'file:///home/test/.config'
+} as unknown as EnvVariablesServer);
 
 disableJSDOM();
 
@@ -90,8 +107,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         };
 
         const mockMonacoWorkspace = {
-            // eslint-disable-next-line no-null/no-null
-            getTextDocument: () => null
+            getTextDocument: () => undefined
         } as unknown as MonacoWorkspace;
 
         const mockProblemManager = {
@@ -109,10 +125,6 @@ describe('Workspace Functions Cancellation Tests', () => {
             })
         } as unknown as MonacoTextModelService;
 
-        const mockOpenerService = {
-            open: async () => { }
-        };
-
         // Register mocks in the container
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
@@ -120,12 +132,14 @@ describe('Workspace Functions Cancellation Tests', () => {
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
         container.bind(ProblemManager).toConstantValue(mockProblemManager);
         container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
-        container.bind(OpenerService).toConstantValue(mockOpenerService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
         container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(GetWorkspaceDirectoryStructure).toSelf();
         container.bind(FileContentFunction).toSelf();
         container.bind(GetWorkspaceFileList).toSelf();
         container.bind(FileDiagnosticProvider).toSelf();
+        container.bind(FindFilesByPattern).toSelf();
     });
 
     afterEach(() => {
@@ -193,5 +207,1115 @@ describe('Workspace Functions Cancellation Tests', () => {
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+});
+
+describe('FileContentFunction.getArgumentsShortLabel', () => {
+    let container: Container;
+    let getArgumentsShortLabel: (args: string) => { label: string; hasMore: boolean } | undefined;
+
+    let disableJSDOMInner: () => void;
+    before(() => {
+        disableJSDOMInner = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOMInner();
+    });
+
+    beforeEach(() => {
+        container = new Container();
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async () => ({
+                isDirectory: true,
+                children: [],
+                resource: new URI('file:///workspace')
+            }),
+            read: async () => ({ value: { toString: () => 'test content' } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const mockMonacoWorkspace = {
+            getTextDocument: () => undefined
+        } as unknown as MonacoWorkspace;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+
+        const fileContentFunction = container.get(FileContentFunction);
+        const tool = fileContentFunction.getTool();
+        getArgumentsShortLabel = tool.getArgumentsShortLabel!;
+    });
+
+    it('returns label for valid file argument', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ file: 'src/index.ts' }));
+        expect(result).to.deep.equal({ label: 'src/index.ts', hasMore: false });
+    });
+
+    it('returns undefined for invalid JSON', () => {
+        const result = getArgumentsShortLabel('not valid json');
+        expect(result).to.be.undefined;
+    });
+
+    it('returns undefined when file key is missing', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ path: 'src/index.ts' }));
+        expect(result).to.be.undefined;
+    });
+
+    it('returns hasMore true when offset is provided', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ file: 'src/index.ts', offset: 10 }));
+        expect(result).to.deep.equal({ label: 'src/index.ts', hasMore: true });
+    });
+
+    it('returns hasMore true when limit is provided', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ file: 'src/index.ts', limit: 50 }));
+        expect(result).to.deep.equal({ label: 'src/index.ts', hasMore: true });
+    });
+
+    it('returns hasMore true when both offset and limit are provided', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ file: 'src/index.ts', offset: 10, limit: 50 }));
+        expect(result).to.deep.equal({ label: 'src/index.ts', hasMore: true });
+    });
+});
+
+describe('FileContentFunction handler', () => {
+    let container: Container;
+    let fileContentFunction: FileContentFunction;
+    // Mutable delegates — tests reassign these directly instead of casting the mock object.
+    let mockResolve: () => Promise<unknown>;
+    let mockRead: () => Promise<unknown>;
+    let mockReadStream: () => Promise<unknown>;
+    let mockMonacoWorkspace: MonacoWorkspace;
+    let mockPreferenceService: { get: <T>(path: string, defaultValue: T) => T };
+
+    const makeMockStream = (content: string) => {
+        const handlers: Record<string, Function> = {};
+        // Use setTimeout so the macro-task fires after all pending microtasks
+        // (including the await continuation that registers the listeners).
+        setTimeout(() => {
+            handlers['data']?.(content);
+            handlers['end']?.();
+        }, 0);
+        return {
+            on(event: string, cb: Function): void { handlers[event] = cb; },
+            pause(): void { },
+            resume(): void { },
+            destroy(): void { },
+            removeListener(): void { }
+        };
+    };
+
+    let disableJSDOMInner: () => void;
+    before(() => {
+        disableJSDOMInner = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOMInner();
+    });
+
+    beforeEach(() => {
+        container = new Container();
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 1024,
+            resource: new URI('file:///workspace/test.txt')
+        });
+
+        mockRead = async () => ({ value: 'line1\nline2\nline3\nline4\nline5' });
+
+        mockReadStream = async () => ({ value: makeMockStream('line1\nline2\nline3\nline4\nline5') });
+
+        // The mock object is stable across a test; individual methods delegate to
+        // the mutable variables above so tests can substitute behaviour without
+        // the fragile `(obj as unknown as {…}).method = …` double-cast pattern.
+        const mockFileService = {
+            exists: async () => true,
+            resolve: () => mockResolve(),
+            read: () => mockRead(),
+            readStream: () => mockReadStream(),
+        } as unknown as FileService;
+
+        mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        mockMonacoWorkspace = {
+            getTextDocument: () => undefined
+        } as unknown as MonacoWorkspace;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+
+        fileContentFunction = container.get(FileContentFunction);
+    });
+
+    it('returns file content when file is within size limit', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+        expect(result).to.equal('line1\nline2\nline3\nline4\nline5');
+    });
+
+    it('rejects without reading when on-disk size exceeds limit', async () => {
+        // Stat reports 512 KB; default limit is 256 KB
+        let readCalled = false;
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 512 * 1024,
+            resource: new URI('file:///workspace/big.txt')
+        });
+        mockRead = async () => {
+            readCalled = true;
+            return { value: 'should not be read' };
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.sizeKB).to.equal(512);
+        expect(readCalled).to.be.false;
+    });
+
+    it('returns editor content when file is open in editor and within size limit', async () => {
+        let resolveCalled = false;
+        mockResolve = async () => {
+            resolveCalled = true;
+            return { isFile: true, isDirectory: false, size: 1024, resource: new URI('file:///workspace/open.txt') };
+        };
+        mockMonacoWorkspace.getTextDocument = () => ({
+            getText: () => 'editor content'
+        } as unknown as ReturnType<MonacoWorkspace['getTextDocument']>);
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'open.txt' }), undefined);
+
+        expect(result).to.equal('editor content');
+        expect(resolveCalled).to.be.false;
+    });
+
+    it('rejects editor content when it exceeds the size limit', async () => {
+        const bigContent = 'x'.repeat(512 * 1024);
+        mockMonacoWorkspace.getTextDocument = () => ({
+            getText: () => bigContent
+        } as unknown as ReturnType<MonacoWorkspace['getTextDocument']>);
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'open.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.sizeKB).to.equal(512);
+    });
+
+    it('returns sliced content with header when offset and limit are provided', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 1, limit: 2 }), undefined);
+
+        expect(result).to.include('[Lines 2\u20133 of 5 total.');
+        expect(result).to.include('line2\nline3');
+    });
+
+    it('returns sliced editor content with header when file is open and offset/limit are provided', async () => {
+        mockMonacoWorkspace.getTextDocument = () => ({
+            getText: () => 'alpha\nbeta\ngamma\ndelta\nepsilon'
+        } as unknown as ReturnType<MonacoWorkspace['getTextDocument']>);
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'open.txt', offset: 1, limit: 2 }), undefined);
+
+        expect(result).to.include('[Lines 2\u20133 of 5 total.');
+        expect(result).to.include('beta\ngamma');
+    });
+
+    it('does not call resolve() or read() for paginated disk reads, uses readStream instead', async () => {
+        // Stat would report huge file, but the streaming path bypasses both stat and read
+        let resolveCalled = false;
+        let readCalled = false;
+        mockResolve = async () => {
+            resolveCalled = true;
+            return {
+                isFile: true,
+                isDirectory: false,
+                size: 512 * 1024,
+                resource: new URI('file:///workspace/big.txt')
+            };
+        };
+        mockRead = async () => {
+            readCalled = true;
+            return { value: 'should not be read' };
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt', offset: 0, limit: 3 }), undefined);
+
+        // resolve and read are NOT called in the streaming path
+        expect(resolveCalled).to.be.false;
+        expect(readCalled).to.be.false;
+        expect(result).to.include('line1\nline2\nline3');
+    });
+
+    it('rejects when the requested slice itself exceeds the size limit', async () => {
+        const bigLine = 'x'.repeat(1024);
+        const bigContent = Array.from({ length: 300 }, () => bigLine).join('\n');
+        mockReadStream = async () => ({ value: makeMockStream(bigContent) });
+
+        const handler = fileContentFunction.getTool().handler;
+        // Reading all 300 lines × 1 KB each = ~300 KB, over the 256 KB default limit
+        const result = await handler(JSON.stringify({ file: 'big.txt', offset: 0, limit: 300 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.resultSizeKB).to.be.greaterThan(256);
+    });
+
+    it('returns File not found error when file does not exist', async () => {
+        mockResolve = async () => { throw new Error('File not found'); };
+        mockRead = async () => { throw new Error('File not found'); };
+        mockReadStream = async () => { throw new Error('File not found'); };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'nonexistent.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.equal('File not found');
+    });
+
+    it('rejects negative offset', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: -1 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('non-negative integer');
+    });
+
+    it('rejects fractional offset', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 1.5 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('non-negative integer');
+    });
+
+    it('rejects negative limit', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', limit: -1 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('positive integer');
+    });
+
+    it('rejects zero limit', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', limit: 0 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('positive integer');
+    });
+
+    it('returns content from offset to end when only offset is provided', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 2 }), undefined);
+
+        expect(result).to.include('[Lines 3\u20135 of 5 total.');
+        expect(result).to.include('line3\nline4\nline5');
+    });
+
+    it('returns last line when offset is at boundary', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 4, limit: 1 }), undefined);
+
+        expect(result).to.include('[Lines 5\u20135 of 5 total.');
+        expect(result).to.include('line5');
+    });
+
+    it('returns empty content when offset is beyond end of file', async () => {
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt', offset: 100, limit: 5 }), undefined);
+
+        // slice beyond end returns empty array → empty joined string
+        expect(result).to.include('[Lines 101\u2013100 of 5 total.');
+    });
+
+    it('uses custom preference value for size limit', async () => {
+        // Set a very small limit of 1 KB
+        mockPreferenceService.get = <T>(_path: string, _defaultValue: T) => 1 as unknown as T;
+
+        const content = 'x'.repeat(2 * 1024); // 2 KB
+        mockRead = async () => ({ value: content });
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 2 * 1024,
+            resource: new URI('file:///workspace/test.txt')
+        });
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.maxSizeKB).to.equal(1);
+    });
+
+    it('falls back to streaming when stat.size is undefined and file is within limit', async () => {
+        // stat does not include a size — the code must not treat this as "0 KB"
+        // but instead stream the file and succeed when content is small.
+        let readCalled = false;
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: undefined,
+            resource: new URI('file:///workspace/test.txt')
+        });
+        mockRead = async () => {
+            readCalled = true;
+            return { value: 'should not be used' };
+        };
+        // mockReadStream already returns the small 5-line fixture from beforeEach
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        expect(readCalled).to.be.false;
+        expect(result).to.include('line1');
+        // Full-file streaming fallback must NOT include the [Lines...] header
+        expect(result).to.not.include('[Lines');
+    });
+
+    it('returns size-limit error (not "File not found") when stat.size is undefined and streamed content exceeds limit', async () => {
+        // stat does not include a size; the streamed content is larger than the limit.
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: undefined,
+            resource: new URI('file:///workspace/big.txt')
+        });
+        const bigLine = 'x'.repeat(1024);
+        const bigContent = Array.from({ length: 300 }, () => bigLine).join('\n'); // ~300 KB
+        mockReadStream = async () => ({ value: makeMockStream(bigContent) });
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.error).not.to.equal('File not found');
+    });
+
+    it('returns size-limit error (not "File not found") when fileService.read throws FILE_TOO_LARGE', async () => {
+        // Simulate a file system provider that enforces its own hard size limit below maxSizeKB.
+        // stat.size is present and within our configured limit, but read() still throws.
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 100 * 1024, // 100 KB — under the 256 KB default limit
+            resource: new URI('file:///workspace/test.txt')
+        });
+        mockRead = async () => {
+            throw new FileOperationError('File too large', FileOperationResult.FILE_TOO_LARGE);
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.maxSizeKB).to.equal(256);
+    });
+
+    it('returns size-limit error (not "File not found") when fileService.read throws FILE_EXCEEDS_MEMORY_LIMIT', async () => {
+        mockResolve = async () => ({
+            isFile: true,
+            isDirectory: false,
+            size: 100 * 1024,
+            resource: new URI('file:///workspace/test.txt')
+        });
+        mockRead = async () => {
+            throw new FileOperationError('Exceeds memory limit', FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT);
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.maxSizeKB).to.equal(256);
+    });
+
+    it('returns size-limit error (not "File not found") when readStream throws FILE_TOO_LARGE for paginated read', async () => {
+        // This is the key scenario: files.maxFileSizeMB is lower than the file size,
+        // but the caller is trying to read a chunk with offset/limit.
+        // Before the fix, readStream would throw FILE_TOO_LARGE and the catch block
+        // would return "File not found".
+        mockReadStream = async () => {
+            throw new FileOperationError('File too large', FileOperationResult.FILE_TOO_LARGE);
+        };
+
+        const handler = fileContentFunction.getTool().handler;
+        const result = await handler(JSON.stringify({ file: 'big.txt', offset: 0, limit: 50 }), undefined);
+
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('size limit');
+        expect(parsed.error).to.include('offset');
+        expect(parsed.error).not.to.equal('File not found');
+        expect(parsed.maxSizeKB).to.equal(256);
+    });
+});
+
+describe('FindFilesByPattern.getArgumentsShortLabel', () => {
+    let container: Container;
+    let getArgumentsShortLabel: (args: string) => { label: string; hasMore: boolean } | undefined;
+
+    let disableJSDOMInner: () => void;
+    before(() => {
+        disableJSDOMInner = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOMInner();
+    });
+
+    beforeEach(() => {
+        container = new Container();
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async () => ({
+                isDirectory: true,
+                children: [],
+                resource: new URI('file:///workspace')
+            }),
+            read: async () => ({ value: { toString: () => 'test content' } })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FindFilesByPattern).toSelf();
+
+        const findFilesByPattern = container.get(FindFilesByPattern);
+        const tool = findFilesByPattern.getTool();
+        getArgumentsShortLabel = tool.getArgumentsShortLabel!;
+    });
+
+    it('returns label for valid pattern argument', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ pattern: '**/*.ts' }));
+        expect(result).to.deep.equal({ label: '**/*.ts', hasMore: false });
+    });
+
+    it('returns hasMore true when additional arguments exist', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ pattern: '**/*.ts', exclude: ['node_modules'] }));
+        expect(result).to.deep.equal({ label: '**/*.ts', hasMore: true });
+    });
+
+    it('returns undefined for invalid JSON', () => {
+        const result = getArgumentsShortLabel('not valid json');
+        expect(result).to.be.undefined;
+    });
+
+    it('returns undefined when pattern key is missing', () => {
+        const result = getArgumentsShortLabel(JSON.stringify({ glob: '**/*.ts' }));
+        expect(result).to.be.undefined;
+    });
+});
+
+describe('FileContentFunction external paths', () => {
+    let container: Container;
+    let fileContentFunction: FileContentFunction;
+    let allowedPaths: string[];
+    let trustedScopeOnly: boolean;
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+        trustedScopeOnly = false;
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => ({
+                isFile: true,
+                isDirectory: false,
+                size: 1024,
+                resource: uri
+            }),
+            read: async (uri: URI) => ({ value: `content-of-${uri.path.toString()}` }),
+            readStream: async () => { throw new Error('not used'); }
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const mockMonacoWorkspace = {
+            getTextDocument: () => undefined
+        } as unknown as MonacoWorkspace;
+
+        const trustAwareReader = {
+            get: <T>(_name: string, fallback?: T) => (trustedScopeOnly ? fallback : (allowedPaths as unknown as T)),
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer('file:///home/test'));
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+
+        fileContentFunction = container.get(FileContentFunction);
+    });
+
+    const callTool = (file: string) =>
+        fileContentFunction.getTool().handler(JSON.stringify({ file }), undefined) as Promise<string>;
+
+    it('rejects absolute path outside the workspace when allow-list is empty', async () => {
+        const result = await callTool('/etc/hosts');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+        expect(parsed.error).to.include('allowedExternalPaths');
+    });
+
+    it('allows absolute path inside an allow-listed directory', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool('/external/configs/myapp.json');
+        expect(result).to.equal('content-of-/external/configs/myapp.json');
+    });
+
+    it('allows file:// URI inside an allow-listed directory', async () => {
+        allowedPaths = ['file:///external/configs'];
+        const result = await callTool('file:///external/configs/myapp.json');
+        expect(result).to.equal('content-of-/external/configs/myapp.json');
+    });
+
+    it('rejects sibling that shares the prefix but is not a child', async () => {
+        // /external/configs-other must NOT be matched by /external/configs
+        allowedPaths = ['/external/configs'];
+        const result = await callTool('/external/configs-other/myapp.json');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('rejects path with .. traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool('/external/configs/../secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('Invalid file path');
+    });
+
+    it('expands ~ in allow-list entries', async () => {
+        allowedPaths = ['~/configs'];
+        const result = await callTool('/home/test/configs/myapp.json');
+        expect(result).to.equal('content-of-/home/test/configs/myapp.json');
+    });
+
+    it('expands ~ in tool input paths', async () => {
+        allowedPaths = ['/home/test/configs'];
+        const result = await callTool('~/configs/myapp.json');
+        expect(result).to.equal('content-of-/home/test/configs/myapp.json');
+    });
+
+    it('expands ~ in both allow-list entries and tool input paths', async () => {
+        allowedPaths = ['~/configs'];
+        const result = await callTool('~/configs/myapp.json');
+        expect(result).to.equal('content-of-/home/test/configs/myapp.json');
+    });
+
+    it('rejects ~-prefixed tool input that escapes via .. traversal', async () => {
+        allowedPaths = ['/home/test/configs'];
+        const result = await callTool('~/configs/../secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('Invalid file path');
+    });
+
+    it('still allows workspace-relative paths', async () => {
+        allowedPaths = [];
+        const result = await callTool('src/index.ts');
+        expect(result).to.equal('content-of-/workspace/src/index.ts');
+    });
+
+    it('accepts Windows-style absolute paths in the allow-list', async () => {
+        // Mixed: backslash separators in the entry, forward-slash in the file argument
+        allowedPaths = ['C:\\external\\configs'];
+        const result = await callTool('C:/external/configs/myapp.json');
+        // The mock returns content keyed off the resolved URI's path. Both forms
+        // normalize to the same `file:///c:/external/configs/myapp.json`.
+        expect(result).to.match(/^content-of-/);
+        expect(result).to.include('external/configs/myapp.json');
+    });
+
+    it('accepts Windows drive paths as the tool argument', async () => {
+        allowedPaths = ['C:/external'];
+        const result = await callTool('C:\\external\\file.txt');
+        expect(result).to.match(/^content-of-/);
+        expect(result).to.include('external/file.txt');
+    });
+
+    it('drops workspace-scoped allow-list values when workspace is untrusted', async () => {
+        // simulate trust-aware reader behavior: when untrusted, only user/default scope is returned
+        trustedScopeOnly = true;
+        const result = await callTool('/external/configs/myapp.json');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+});
+
+describe('GetWorkspaceFileList / GetWorkspaceDirectoryStructure with external paths', () => {
+    let container: Container;
+    let allowedPaths: string[];
+
+    const FS_TREE: Record<string, { isDirectory: boolean; children?: string[] }> = {
+        'file:///workspace': { isDirectory: true, children: ['file:///workspace/a.ts', 'file:///workspace/sub'] },
+        'file:///workspace/a.ts': { isDirectory: false },
+        'file:///workspace/sub': { isDirectory: true, children: [] },
+        'file:///external/configs': {
+            isDirectory: true,
+            children: ['file:///external/configs/myapp.json', 'file:///external/configs/sub']
+        },
+        'file:///external/configs/myapp.json': { isDirectory: false },
+        'file:///external/configs/sub': { isDirectory: true, children: [] }
+    };
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => {
+                const node = FS_TREE[uri.toString()];
+                if (!node) {
+                    throw new Error('not found');
+                }
+                return {
+                    isDirectory: node.isDirectory,
+                    isFile: !node.isDirectory,
+                    resource: uri,
+                    children: node.children?.map(child => ({
+                        isDirectory: !!FS_TREE[child]?.isDirectory,
+                        isFile: !FS_TREE[child]?.isDirectory,
+                        resource: new URI(child),
+                        path: { base: child.split('/').pop() }
+                    })) ?? []
+                };
+            },
+            read: async () => ({ value: '' })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const trustAwareReader = {
+            get: <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T,
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(GetWorkspaceFileList).toSelf();
+        container.bind(GetWorkspaceDirectoryStructure).toSelf();
+    });
+
+    it('GetWorkspaceFileList rejects absolute path outside the allow-list', async () => {
+        const tool = container.get(GetWorkspaceFileList).getTool();
+        const result = await tool.handler(JSON.stringify({ path: '/external/configs' }), undefined) as string;
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('GetWorkspaceFileList lists an allow-listed external directory', async () => {
+        allowedPaths = ['/external/configs'];
+        const tool = container.get(GetWorkspaceFileList).getTool();
+        const result = await tool.handler(JSON.stringify({ path: '/external/configs' }), undefined);
+        expect(result).to.deep.equal(['myapp.json', 'sub/']);
+    });
+
+    it('GetWorkspaceFileList still lists workspace-relative paths', async () => {
+        const tool = container.get(GetWorkspaceFileList).getTool();
+        const result = await tool.handler(JSON.stringify({ path: '' }), undefined);
+        expect(result).to.deep.equal(['a.ts', 'sub/']);
+    });
+
+    it('GetWorkspaceDirectoryStructure rejects external root not in the allow-list', async () => {
+        const tool = container.get(GetWorkspaceDirectoryStructure).getTool();
+        const result = await tool.handler(JSON.stringify({ root: '/external/configs' }), undefined) as Record<string, unknown>;
+        expect(result.error).to.include('not allowed');
+    });
+
+    it('GetWorkspaceDirectoryStructure walks an allow-listed external root', async () => {
+        allowedPaths = ['/external/configs'];
+        const tool = container.get(GetWorkspaceDirectoryStructure).getTool();
+        const result = await tool.handler(JSON.stringify({ root: '/external/configs' }), undefined);
+        expect(result).to.deep.equal({ sub: {} });
+    });
+
+    it('GetWorkspaceDirectoryStructure preserves prior workspace-only behavior when root omitted', async () => {
+        const tool = container.get(GetWorkspaceDirectoryStructure).getTool();
+        const result = await tool.handler('', undefined);
+        expect(result).to.deep.equal({ sub: {} });
+    });
+});
+
+describe('FindFilesByPattern with searchRoot', () => {
+    let container: Container;
+    let findFilesByPattern: FindFilesByPattern;
+    let allowedPaths: string[];
+
+    const FS_TREE: Record<string, { isDirectory: boolean; children?: string[] }> = {
+        'file:///workspace': { isDirectory: true, children: ['file:///workspace/a.ts'] },
+        'file:///workspace/a.ts': { isDirectory: false },
+        'file:///external/configs': { isDirectory: true, children: ['file:///external/configs/myapp.json', 'file:///external/configs/other.txt'] },
+        'file:///external/configs/myapp.json': { isDirectory: false },
+        'file:///external/configs/other.txt': { isDirectory: false }
+    };
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => {
+                const node = FS_TREE[uri.toString()];
+                if (!node) {
+                    throw new Error('not found');
+                }
+                return {
+                    isDirectory: node.isDirectory,
+                    isFile: !node.isDirectory,
+                    resource: uri,
+                    children: node.children?.map(child => ({
+                        isDirectory: !!FS_TREE[child]?.isDirectory,
+                        isFile: !FS_TREE[child]?.isDirectory,
+                        resource: new URI(child),
+                        path: { base: child.split('/').pop() }
+                    })) ?? []
+                };
+            },
+            read: async () => ({ value: '' })
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const trustAwareReader = {
+            get: <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T,
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FindFilesByPattern).toSelf();
+
+        findFilesByPattern = container.get(FindFilesByPattern);
+    });
+
+    const callTool = (args: object) =>
+        findFilesByPattern.getTool().handler(JSON.stringify(args), undefined) as Promise<string>;
+
+    it('searches the workspace by default and returns relative paths', async () => {
+        const result = await callTool({ pattern: '**/*.ts' });
+        const parsed = JSON.parse(result);
+        expect(parsed.files).to.deep.equal(['a.ts']);
+    });
+
+    it('rejects searchRoot that is not in the allow-list', async () => {
+        const result = await callTool({ pattern: '**/*.json', searchRoot: '/external/configs' });
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('searches an allow-listed external root and returns absolute paths', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool({ pattern: '**/*.json', searchRoot: '/external/configs' });
+        const parsed = JSON.parse(result);
+        expect(parsed.files).to.deep.equal(['/external/configs/myapp.json']);
+    });
+
+    it('honors exclude patterns when using an external searchRoot', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callTool({
+            pattern: '**/*',
+            exclude: ['**/*.txt'],
+            searchRoot: '/external/configs'
+        });
+        const parsed = JSON.parse(result);
+        expect(parsed.files).to.deep.equal(['/external/configs/myapp.json']);
+    });
+});
+
+describe('WorkspaceFunctionScope path-traversal hardening', () => {
+    let container: Container;
+    let fileContentFunction: FileContentFunction;
+    let allowedPaths: string[];
+    let trustReady: Promise<void>;
+    let trustAwareGet: <T>(name: string, fallback?: T) => T | undefined;
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        allowedPaths = [];
+        trustReady = Promise.resolve();
+        trustAwareGet = <T>(_name: string, _fallback?: T) => allowedPaths as unknown as T;
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace/project') }]
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => ({
+                isFile: true,
+                isDirectory: false,
+                size: 1024,
+                resource: uri
+            }),
+            read: async (uri: URI) => ({ value: `content-of-${uri.path.toString()}` }),
+            readStream: async () => { throw new Error('not used'); }
+        } as unknown as FileService;
+
+        const mockPreferenceService = {
+            get: <T>(_path: string, defaultValue: T) => defaultValue
+        };
+
+        const mockMonacoWorkspace = {
+            getTextDocument: () => undefined
+        } as unknown as MonacoWorkspace;
+
+        const trustAwareReader = {
+            get: <T>(name: string, fallback?: T) => trustAwareGet<T>(name, fallback),
+            get ready(): Promise<void> { return trustReady; },
+            onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as TrustAwarePreferenceReader;
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
+        container.bind(TrustAwarePreferenceReader).toConstantValue(trustAwareReader);
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer('file:///home/test'));
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+        container.bind(FileDiagnosticProvider).toSelf();
+        const mockProblemManager = {
+            findMarkers: () => [],
+            onDidChangeMarkers: () => ({ dispose: () => { /* noop */ } })
+        } as unknown as ProblemManager;
+        container.bind(ProblemManager).toConstantValue(mockProblemManager);
+        const mockMonacoTextModelService = {
+            createModelReference: async () => ({
+                object: { lineCount: 10, getText: () => '' },
+                dispose: () => { /* noop */ }
+            })
+        } as unknown as MonacoTextModelService;
+        container.bind(MonacoTextModelService).toConstantValue(mockMonacoTextModelService);
+
+        fileContentFunction = container.get(FileContentFunction);
+    });
+
+    const callContent = (file: string) =>
+        fileContentFunction.getTool().handler(JSON.stringify({ file }), undefined) as Promise<string>;
+
+    // Item 1 — URL-encoded and literal `..` in file:// URIs must be normalized
+    // before the allow-list check; otherwise the path-component prefix admits
+    // the traversal.
+    it('rejects file:// URI with literal .. traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('file:///external/configs/../secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('rejects file:// URI with percent-encoded %2e%2e traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('file:///external/configs/%2e%2e/secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('rejects file:// URI with upper-case percent-encoded traversal', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('file:///external/configs/%2E%2E/secrets.txt');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    // Item 4 — A filename that contains `..` as a substring but is not a
+    // traversal segment must be accepted.
+    it('accepts a valid filename whose name contains ".." as a substring', async () => {
+        allowedPaths = ['/external/configs'];
+        const result = await callContent('/external/configs/my..file.json');
+        expect(result).to.equal('content-of-/external/configs/my..file.json');
+    });
+
+    // Item 3 — Non-file allow-list entries are documented as unsupported.
+    it('rejects http:// allow-list entry even if target path appears to match', async () => {
+        allowedPaths = ['http://example.com/external/configs'];
+        const result = await callContent('/external/configs/myapp.json');
+        const parsed = JSON.parse(result);
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    // Item 7 — getAllowedExternalUris must await TrustAwarePreferenceReader.ready
+    // so that preference reads see the resolved trust state.
+    it('awaits TrustAwarePreferenceReader.ready before reading the allow-list', async () => {
+        let preferenceVisible = false;
+        let resolveReady: () => void = () => { /* noop */ };
+        trustReady = new Promise<void>(r => { resolveReady = r; });
+        trustAwareGet = <T>(_name: string, _fallback?: T) =>
+            (preferenceVisible ? ['/external/configs'] : []) as unknown as T;
+
+        const promise = callContent('/external/configs/myapp.json');
+
+        // Simulate trust state becoming available after a microtask: the
+        // allow-list is only readable once `ready` resolves.
+        await Promise.resolve();
+        preferenceVisible = true;
+        resolveReady();
+
+        const result = await promise;
+        expect(result).to.equal('content-of-/external/configs/myapp.json');
+    });
+
+    // Item 2 — On case-insensitive filesystems (Windows, macOS by default)
+    // the allow-list match must be case-insensitive. Stub OS.backend flags
+    // for the test and restore them afterwards.
+    describe('case-insensitive match on case-insensitive filesystems', () => {
+        let originalIsWindows: boolean;
+        let originalIsOSX: boolean;
+        beforeEach(() => {
+            originalIsWindows = OS.backend.isWindows;
+            originalIsOSX = OS.backend.isOSX;
+        });
+        afterEach(() => {
+            OS.backend.isWindows = originalIsWindows;
+            OS.backend.isOSX = originalIsOSX;
+        });
+
+        it('admits a case-mismatched Windows target when allow-list entry is mixed-case', async () => {
+            OS.backend.isWindows = true;
+            OS.backend.isOSX = false;
+            allowedPaths = ['C:\\External\\Configs'];
+            const result = await callContent('c:/external/configs/myapp.json');
+            // The mock returns the URI's path; both forms canonicalize to the
+            // same file:///c:/... URI (drive letter is lowercased by URI.fromFilePath),
+            // but the path segments differ in case.
+            expect(result).to.match(/^content-of-/);
+            expect(result.toLowerCase()).to.include('external/configs/myapp.json');
+        });
+
+        it('admits a case-mismatched macOS target when allow-list entry is mixed-case', async () => {
+            OS.backend.isWindows = false;
+            OS.backend.isOSX = true;
+            allowedPaths = ['/Users/safi/External/Configs'];
+            const result = await callContent('/users/safi/external/configs/myapp.json');
+            expect(result).to.match(/^content-of-/);
+            expect(result.toLowerCase()).to.include('/users/safi/external/configs/myapp.json');
+        });
+
+        it('keeps Linux case-sensitive: rejects a case-mismatched target', async () => {
+            OS.backend.isWindows = false;
+            OS.backend.isOSX = false;
+            allowedPaths = ['/home/safi/External/Configs'];
+            const result = await callContent('/home/safi/external/configs/myapp.json');
+            const parsed = JSON.parse(result);
+            expect(parsed.error).to.include('not allowed');
+        });
+    });
+
+    // Item 6 — `ensureWithinWorkspace` is the gate used by getFileDiagnostics
+    // for relative path inputs. A sibling that merely shares the workspace
+    // root's string prefix must not pass.
+    it('FileDiagnosticProvider rejects sibling-prefix path outside the workspace', async () => {
+        const diag = container.get(FileDiagnosticProvider);
+        const handler = diag.getTool().handler;
+        // Workspace root is file:///workspace/project. With a raw string-prefix
+        // check the resolved URI file:///workspace/project-other/file.txt
+        // would be (incorrectly) admitted.
+        const result = await handler(JSON.stringify({ file: '../project-other/file.txt' }), undefined);
+        const parsed = JSON.parse(result as string);
+        expect(parsed.error).to.include('outside of the workspace');
     });
 });

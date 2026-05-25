@@ -29,6 +29,7 @@ import * as React from '@theia/core/shared/react';
 import { AgentService } from '@theia/ai-core/lib/common/agent-service';
 import { Agent } from '@theia/ai-core/lib/common/agent';
 import { CustomizationSource } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
+import { isChatAgent } from '@theia/ai-chat/';
 
 /**
  * Widget for configuring AI prompt fragments and prompt variant sets.
@@ -376,14 +377,14 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
 
                 <div className="prompt-variants-container">
                     <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/promptVariantsHeader', 'Prompt Variant Sets')}</h3>
-                    {Array.from(this.promptVariantsMap.entries()).map(([promptVariantSetId, variantIds]) =>
+                    {Array.from(this.promptVariantsMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([promptVariantSetId, variantIds]) =>
                         this.renderPromptVariantSet(promptVariantSetId, variantIds)
                     )}
                 </div>
 
                 {nonSystemPromptFragments.size > 0 && <div className="prompt-fragments-container">
                     <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/otherPromptFragmentsHeader', 'Other Prompt Fragments')}</h3>
-                    {Array.from(nonSystemPromptFragments.entries()).map(([promptFragmentId, fragments]) =>
+                    {Array.from(nonSystemPromptFragments.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([promptFragmentId, fragments]) =>
                         this.renderPromptFragment(promptFragmentId, fragments)
                     )}
                 </div>}
@@ -464,7 +465,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                                 <span key={agent.id} className="agent-chip"
                                     title={nls.localize('theia/ai/core/promptFragmentsConfiguration/usedByAgentTitle', 'Used by agent: {0}', agent.name)}
                                     onClick={e => e.stopPropagation()}>
-                                    <span className={codicon('copilot')}></span>
+                                    <span className={(isChatAgent(agent) && agent.iconClass) ? agent.iconClass : codicon('copilot')}></span>
                                     {agent.name}
                                 </span>
                             ))}

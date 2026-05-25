@@ -37,6 +37,9 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId)));
             this.prevModels = [...models];
@@ -45,9 +48,12 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
                 if (event.preferenceName === API_KEY_PREF) {
                     const newApiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
                     this.manager.setApiKey(newApiKey);
-                    this.handleKeyChange(newApiKey);
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.updateAllModels();
                 }
             });
         });
@@ -65,10 +71,7 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
         this.prevModels = newModels;
     }
 
-    /**
-     * Called when the API key changes. Updates all HuggingFace models on the manager to ensure the new key is used.
-     */
-    protected handleKeyChange(newApiKey: string | undefined): void {
+    protected updateAllModels(): void {
         if (this.prevModels && this.prevModels.length > 0) {
             this.manager.createOrUpdateLanguageModels(...this.prevModels.map(modelId => this.createHuggingFaceModelDescription(modelId)));
         }

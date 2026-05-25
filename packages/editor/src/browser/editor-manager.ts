@@ -52,8 +52,6 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     readonly label = nls.localizeByDefault('Text Editor');
 
-    protected readonly editorCounters = new Map<string, number>();
-
     protected readonly onActiveEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
     /**
      * Emit when the active editor is changed.
@@ -100,9 +98,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 }
                 this.updateCurrentEditor();
             });
-            this.checkCounterForWidget(widget);
+
             widget.disposed.connect(() => {
-                this.removeFromCounter(widget);
                 this.removeRecentlyVisible(widget);
                 this.updateCurrentEditor();
             });
@@ -145,26 +142,26 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     createByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const counter = this.createCounterForUri(uri);
-        if (!options?.counter || options.counter < counter) {
-            options = { ...options, counter };
-        }
-        return this.getOrCreateByUri(uri, options);
+        return this.getOrCreateByUri(uri, { ...options, counter: this.nextCounter() });
     }
 
-    protected readonly recentlyVisibleIds: string[] = [];
+    protected readonly recentlyVisibleEditors: EditorWidget[] = [];
+
+    /** @deprecated since 1.72.0. Use {@link recentlyVisibleEditors} instead. */
+    protected get recentlyVisibleIds(): string[] {
+        return this.recentlyVisibleEditors.map(w => w.id);
+    }
     protected get recentlyVisible(): EditorWidget | undefined {
-        const id = this.recentlyVisibleIds[0];
-        return id && this.all.find(w => w.id === id) || undefined;
+        return this.recentlyVisibleEditors[0];
     }
     protected addRecentlyVisible(widget: EditorWidget): void {
         this.removeRecentlyVisible(widget);
-        this.recentlyVisibleIds.unshift(widget.id);
+        this.recentlyVisibleEditors.unshift(widget);
     }
     protected removeRecentlyVisible(widget: EditorWidget): void {
-        const index = this.recentlyVisibleIds.indexOf(widget.id);
+        const index = this.recentlyVisibleEditors.indexOf(widget);
         if (index !== -1) {
-            this.recentlyVisibleIds.splice(index, 1);
+            this.recentlyVisibleEditors.splice(index, 1);
         }
     }
 
@@ -233,19 +230,20 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions);
                 // Definitely creating a new tabbar - no widget can match.
                 if (insertionOptions.addOptions.mode?.startsWith('split')) {
-                    return await super.open(uri, { counter: this.createCounterForUri(uri), ...options });
+                    return await super.open(uri, { counter: this.nextCounter(), ...options });
                 }
                 // Check the target tabbar for an existing widget.
                 const tabbar = insertionOptions.addOptions.ref && this.shell.getTabBarFor(insertionOptions.addOptions.ref);
                 if (tabbar) {
+                    // Note: there can be multiple editor widgets with the given URI in the target tabbar
+                    // (e.g., a regular editor widget and an editor widget within the 3-way merge editor).
+                    // Try to find the most recently visible editor widget with the given URI in the target tabbar.
                     const currentUri = uri.toString();
-                    for (const title of tabbar.titles) {
-                        if (title.owner instanceof EditorWidget) {
-                            const { uri: otherWidgetUri, id } = this.extractIdFromWidget(title.owner);
-                            if (otherWidgetUri === currentUri) {
-                                return await super.open(uri, { counter: id, ...options });
-                            }
-                        }
+                    const predicate = (widget: EditorWidget) => widget.editor.uri.toString() === currentUri && tabbar.titles.find(title => title.owner.contains(widget));
+                    const existingWidget = this.recentlyVisibleEditors.find(predicate) ?? this.all.find(predicate);
+                    if (existingWidget) {
+                        const { id } = this.extractIdFromWidget(existingWidget);
+                        return await super.open(uri, { counter: id, ...options });
                     }
                 }
                 // If the user has opted to prefer to open an existing editor even if it's on a different tab, check if we have anything about the URI.
@@ -256,7 +254,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                     }
                 }
                 // Open a new widget.
-                return await super.open(uri, { counter: this.createCounterForUri(uri), ...options });
+                return await super.open(uri, { counter: this.nextCounter(), ...options });
             }
 
             return await super.open(uri, options);
@@ -271,7 +269,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
      * To modify direction, pass options with `{widgetOptions: {mode: ...}}`
      */
     openToSide(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const counter = this.createCounterForUri(uri);
+        const counter = this.nextCounter();
         const splitOptions: EditorOpenerOptions = { widgetOptions: { mode: 'split-right' }, ...options, counter };
         return this.open(uri, splitOptions);
     }
@@ -355,61 +353,25 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         };
     }
 
-    protected removeFromCounter(widget: EditorWidget): void {
-        const { id, uri } = this.extractIdFromWidget(widget);
-        if (uri && !Number.isNaN(id)) {
-            let max = -Infinity;
-            this.all.forEach(editor => {
-                const candidateID = this.extractIdFromWidget(editor);
-                if ((candidateID.uri === uri) && (candidateID.id > max)) {
-                    max = candidateID.id!;
-                }
-            });
-
-            if (max > -Infinity) {
-                this.editorCounters.set(uri, max);
-            } else {
-                this.editorCounters.delete(uri);
-            }
-        }
-    }
-
     protected extractIdFromWidget(widget: EditorWidget): WidgetId {
         const uri = widget.editor.uri.toString();
         const id = Number(widget.id.slice(widget.id.lastIndexOf(':') + 1));
         return { id, uri };
     }
 
-    protected checkCounterForWidget(widget: EditorWidget): void {
-        const { id, uri } = this.extractIdFromWidget(widget);
-        const numericalId = Number(id);
-        if (uri && !Number.isNaN(numericalId)) {
-            const highestKnownId = this.editorCounters.get(uri) ?? -Infinity;
-            if (numericalId > highestKnownId) {
-                this.editorCounters.set(uri, numericalId);
-            }
-        }
-    }
-
-    protected createCounterForUri(uri: URI): number {
-        const identifier = uri.toString();
-        const next = (this.editorCounters.get(identifier) ?? 0) + 1;
-        return next;
+    protected nextCounter(): number {
+        return Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - 100) + 100);
     }
 
     protected getCounterForUri(uri: URI): number | undefined {
         const idWithoutCounter = EditorWidgetFactory.createID(uri);
-        const counterOfMostRecentlyVisibleEditor = this.recentlyVisibleIds.find(id => id.startsWith(idWithoutCounter))?.slice(idWithoutCounter.length + 1);
+        const counterOfMostRecentlyVisibleEditor = this.recentlyVisibleEditors.find(widget => widget.id.startsWith(idWithoutCounter))?.id.slice(idWithoutCounter.length + 1);
         return counterOfMostRecentlyVisibleEditor === undefined ? undefined : parseInt(counterOfMostRecentlyVisibleEditor);
-    }
-
-    protected getOrCreateCounterForUri(uri: URI): number {
-        return this.getCounterForUri(uri) ?? this.createCounterForUri(uri);
     }
 
     protected override createWidgetOptions(uri: URI, options?: EditorOpenerOptions): NavigatableWidgetOptions {
         const navigatableOptions = super.createWidgetOptions(uri, options);
-        navigatableOptions.counter = options?.counter ?? this.getOrCreateCounterForUri(uri);
+        navigatableOptions.counter = options?.counter ?? this.getCounterForUri(uri) ?? this.nextCounter();
         return navigatableOptions;
     }
 }

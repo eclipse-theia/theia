@@ -29,13 +29,13 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(ILogger) @named('SampleFrontendMCPContribution')
+    @inject(ILogger) @named('api-samples')
     protected readonly logger: ILogger;
 
     async getTools(): Promise<Tool[]> {
         return [
             {
-                name: 'workspace-info',
+                name: 'sample-workspace-info',
                 description: 'Get information about the current workspace',
                 inputSchema: {
                     type: 'object',
@@ -44,7 +44,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
                 }
             },
             {
-                name: 'workspace-files',
+                name: 'sample-workspace-files',
                 description: 'List files in the workspace',
                 inputSchema: {
                     type: 'object',
@@ -62,7 +62,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
 
     async getTool(name: string): Promise<ToolProvider | undefined> {
         switch (name) {
-            case 'workspace-info':
+            case 'sample-workspace-info':
                 return {
                     handler: async args => {
                         try {
@@ -82,7 +82,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
                     inputSchema: z.object({})
                 };
 
-            case 'workspace-files':
+            case 'sample-workspace-files':
                 return {
                     handler: async args => {
                         try {
@@ -136,8 +136,8 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
     async getResources(): Promise<Resource[]> {
         return [
             {
-                uri: 'workspace://info',
-                name: 'Workspace Information',
+                uri: 'sample-workspace://info',
+                name: 'Sample Workspace Information',
                 description: 'General information about the current workspace',
                 mimeType: 'application/json'
             }
@@ -145,7 +145,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
     }
 
     async readResource(uri: string): Promise<unknown> {
-        if (uri === 'workspace://info') {
+        if (uri === 'sample-workspace://info') {
             try {
                 const roots = await this.workspaceService.roots;
                 return {
@@ -169,7 +169,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
     async getPrompts(): Promise<Prompt[]> {
         return [
             {
-                name: 'workspace-context',
+                name: 'sample-workspace-context',
                 description: 'Generate context information about the workspace',
                 arguments: [
                     {
@@ -183,7 +183,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
     }
 
     async getPrompt(name: string, args: unknown): Promise<PromptMessage[]> {
-        if (name === 'workspace-context') {
+        if (name === 'sample-workspace-context') {
             try {
                 const parsedArgs = args as { includeFiles?: boolean };
                 const roots = await this.workspaceService.roots;

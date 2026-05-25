@@ -16,7 +16,6 @@
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
@@ -33,6 +32,27 @@ import {
     NOTIFICATION_TYPE_BLINK,
 } from '../common/notification-types';
 import { PreferenceService, ILogger } from '@theia/core';
+
+/**
+ * Options for showing a completion notification.
+ */
+export interface CompletionNotificationOptions {
+    /**
+     * Callback to check if the notification should be suppressed.
+     * If returns true, the notification will not be shown.
+     */
+    shouldSuppress?: () => boolean;
+    /**
+     * Callback to invoke when the notification is clicked/activated.
+     * Used for navigating to the relevant chat session.
+     */
+    onActivate?: () => void;
+    /**
+     * Title of the chat session for display in the notification.
+     * Helps distinguish between multiple chats with the same agent.
+     */
+    sessionTitle?: string;
+}
 
 @injectable()
 export class AgentCompletionNotificationService {
@@ -64,16 +84,21 @@ export class AgentCompletionNotificationService {
      * Show a completion notification for the specified agent if enabled in preferences.
      *
      * @param agentId The unique identifier of the agent
-     * @param taskDescription Optional description of the completed task
+     * @param options Optional configuration for the notification
      */
     async showCompletionNotification(
         agentId: string,
-        taskDescription?: string,
+        options?: CompletionNotificationOptions,
     ): Promise<void> {
         const notificationType =
             await this.getNotificationTypeForAgent(agentId);
 
-        if (notificationType === NOTIFICATION_TYPE_OFF || this.isChatWidgetFocused()) {
+        if (notificationType === NOTIFICATION_TYPE_OFF) {
+            return;
+        }
+
+        // Check if notification should be suppressed (e.g., user is viewing the same session)
+        if (options?.shouldSuppress?.()) {
             return;
         }
 
@@ -81,8 +106,9 @@ export class AgentCompletionNotificationService {
             const agentName = this.resolveAgentName(agentId);
             await this.executeNotificationType(
                 agentName,
-                taskDescription,
                 notificationType,
+                options?.onActivate,
+                options?.sessionTitle,
             );
         } catch (error) {
             this.logger.error(
@@ -139,18 +165,16 @@ export class AgentCompletionNotificationService {
      */
     private async executeNotificationType(
         agentName: string,
-        taskDescription: string | undefined,
         type: NotificationType,
+        onActivate?: () => void,
+        sessionTitle?: string,
     ): Promise<void> {
         switch (type) {
             case NOTIFICATION_TYPE_OS_NOTIFICATION:
-                await this.showOSNotification(agentName, taskDescription);
+                await this.showOSNotification(agentName, onActivate, sessionTitle);
                 break;
             case NOTIFICATION_TYPE_MESSAGE:
-                await this.showMessageServiceNotification(
-                    agentName,
-                    taskDescription,
-                );
+                await this.showMessageServiceNotification(agentName, onActivate, sessionTitle);
                 break;
             case NOTIFICATION_TYPE_BLINK:
                 await this.showBlinkNotification(agentName);
@@ -165,12 +189,14 @@ export class AgentCompletionNotificationService {
      */
     protected async showOSNotification(
         agentName: string,
-        taskDescription?: string,
+        onActivate?: () => void,
+        sessionTitle?: string,
     ): Promise<void> {
         const result =
             await this.osNotificationService.showAgentCompletionNotification(
                 agentName,
-                taskDescription,
+                sessionTitle,
+                onActivate,
             );
         if (!result.success) {
             throw new Error(`OS notification failed: ${result.error}`);
@@ -182,21 +208,26 @@ export class AgentCompletionNotificationService {
      */
     protected async showMessageServiceNotification(
         agentName: string,
-        taskDescription?: string,
+        onActivate?: () => void,
+        sessionTitle?: string,
     ): Promise<void> {
-        const message = taskDescription
+        const message = sessionTitle
             ? nls.localize(
-                'theia/ai-core/agentCompletionWithTask',
-                'Agent "{0}" has completed the task: {1}',
+                'theia/ai-core/agentCompletionMessageWithSession',
+                'Agent "{0}" has completed its task in "{1}".',
                 agentName,
-                taskDescription,
+                sessionTitle,
             )
             : nls.localize(
                 'theia/ai-core/agentCompletionMessage',
                 'Agent "{0}" has completed its task.',
                 agentName,
             );
-        this.messageService.info(message);
+        const showChatAction = nls.localize('theia/ai-core/showChat', 'Show Chat');
+        const action = await this.messageService.info(message, showChatAction);
+        if (action === showChatAction && onActivate) {
+            onActivate();
+        }
     }
 
     /**
@@ -230,16 +261,5 @@ export class AgentCompletionNotificationService {
      */
     async requestOSNotificationPermission(): Promise<NotificationPermission> {
         return this.osNotificationService.requestPermission();
-    }
-
-    /**
-     * Check if any chat widget currently has focus.
-     */
-    protected isChatWidgetFocused(): boolean {
-        const activeWidget = this.shell.activeWidget;
-        if (!activeWidget) {
-            return false;
-        }
-        return activeWidget.id === 'chat-view-widget';
     }
 }

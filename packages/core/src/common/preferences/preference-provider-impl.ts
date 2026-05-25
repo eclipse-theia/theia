@@ -17,11 +17,14 @@
 import debounce = require('p-debounce');
 import { injectable } from 'inversify';
 import { JSONObject } from '@lumino/coreutils';
-import URI from '../../common/uri';
-import { DisposableCollection, Emitter, Event, isObject, PreferenceLanguageOverrideService } from '../../common';
-import { Deferred } from '../../common/promise-util';
+import URI from '../uri';
+import { Emitter, Event } from '../event';
+import { Deferred } from '../promise-util';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
+import { DisposableCollection } from '../disposable';
+import { PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { isObject } from '../types';
 
 export abstract class PreferenceProviderBase {
 

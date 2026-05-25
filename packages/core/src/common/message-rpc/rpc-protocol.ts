@@ -132,7 +132,9 @@ export class RpcProtocol {
             this.pendingRequests.delete(id);
             replyHandler.resolve(value);
         } else {
-            throw new Error(`No reply handler for reply with id: ${id}`);
+            // Late replies for cancelled/timed-out requests are non-critical - just warn
+            console.warn(`No reply handler for reply with id: ${id}`);
+            return;
         }
         this.disposeCancellationEventListener(id);
     }
@@ -143,7 +145,9 @@ export class RpcProtocol {
             this.pendingRequests.delete(id);
             replyHandler.reject(error);
         } else {
-            throw new Error(`No reply handler for error reply with id: ${id}`);
+            // Late error replies for cancelled/timed-out requests are non-critical - just warn
+            console.warn(`No reply handler for error reply with id: ${id}`);
+            return;
         }
         this.disposeCancellationEventListener(id);
     }
@@ -174,9 +178,18 @@ export class RpcProtocol {
         const disposableWrapper = new DisposableWrapper();
         this.pendingRequestCancellationEventListeners.set(id, disposableWrapper);
 
-        const output = this.channel.getWriteBuffer();
-        this.encoder.request(output, id, method, args);
-        output.commit();
+        try {
+            const output = this.channel.getWriteBuffer();
+            this.encoder.request(output, id, method, args);
+            output.commit();
+        } catch (err) {
+            // The message could not be sent (e.g. write buffer overflow).
+            // Clean up the pending request and reject the promise.
+            this.pendingRequests.delete(id);
+            this.disposeCancellationEventListener(id);
+            reply.reject(err);
+            return reply.promise;
+        }
 
         if (cancellationToken?.isCancellationRequested) {
             this.sendCancel(id);

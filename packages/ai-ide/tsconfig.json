@@ -25,6 +25,9 @@
       "path": "../ai-mcp"
     },
     {
+      "path": "../ai-terminal"
+    },
+    {
       "path": "../core"
     },
     {

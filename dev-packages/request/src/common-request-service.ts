@@ -28,6 +28,15 @@ export interface RequestOptions {
     headers?: Headers;
     timeout?: number;
     data?: string;
+    /**
+     * Controls automatic redirect following.
+     *
+     * Set to `0` to disable automatic redirect following (`redirect: 'manual'`).
+     * Any other value or `undefined` follows redirects automatically.
+     *
+     * Note: Custom redirect count limits are not supported; the underlying `fetch` API
+     * either follows all redirects or none.
+     */
     followRedirects?: number;
     proxyAuthorization?: string;
 }
@@ -123,5 +132,5 @@ export const REQUEST_SERVICE_PATH = '/services/request-service';
 
 export interface CancellationToken {
     readonly isCancellationRequested: boolean;
-    readonly onCancellationRequested: (listener: () => void) => void;
+    readonly onCancellationRequested: (listener: () => void) => void | { dispose(): void };
 }

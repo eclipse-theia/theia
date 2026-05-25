@@ -23,6 +23,8 @@ export const PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF = 'ai-features.promptTem
 export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTemplates.TemplateExtensions';
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 export const TASK_CONTEXT_STORAGE_DIRECTORY_PREF = 'ai-features.promptTemplates.taskContextStorageDirectory';
+export const FILE_CONTENT_MAX_SIZE_KB_PREF = 'ai-features.workspaceFunctions.fileContentMaxSizeKB';
+export const ALLOWED_EXTERNAL_PATHS_PREF = 'ai-features.workspaceFunctions.allowedExternalPaths';
 
 const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files \
 (highest) > workspace directories > global directories (lowest).';
@@ -91,6 +93,31 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
                 ' If set to empty value, generated task contexts will be stored in memory rather than on disk.'
             ),
             default: '.prompts/task-contexts'
+        },
+        [FILE_CONTENT_MAX_SIZE_KB_PREF]: {
+            type: 'number',
+            title: nls.localize('theia/ai/workspace/fileContentMaxSizeKB/title', 'File Content Max Size (KB)'),
+            description: nls.localize('theia/ai/workspace/fileContentMaxSizeKB/description',
+                'Maximum size in kilobytes of the content returned by the getFileContent tool. ' +
+                'When reading a full file (no offset/limit), files exceeding this limit return an error. ' +
+                'When using offset and limit, only the requested range is checked against this limit.'),
+            default: 256,
+            minimum: 1
+        },
+        [ALLOWED_EXTERNAL_PATHS_PREF]: {
+            type: 'array',
+            title: nls.localize('theia/ai/workspace/allowedExternalPaths/title', 'Allowed External Paths'),
+            description: nls.localize('theia/ai/workspace/allowedExternalPaths/description',
+                'List of absolute paths or file URIs (directories or files) outside the workspace that AI tools may read. ' +
+                'Supports `~` to refer to the user home directory. Empty by default; opt-in only. ' +
+                'Honored by getFileContent, findFilesByPattern, getWorkspaceFileList, and getWorkspaceDirectoryStructure. ' +
+                'Workspace-scoped values are ignored when the workspace is not trusted. ' +
+                'Symbolic links inside allow-listed directories are followed and may point to files outside the allow-list; ' +
+                'only add directories whose contents you trust.'),
+            default: [],
+            items: {
+                type: 'string'
+            }
         }
     }
 };

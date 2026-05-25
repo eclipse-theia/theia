@@ -30,7 +30,7 @@ import { FileService } from './file-service';
 
 disableJSDOM();
 
-describe.only('file-resource', () => {
+describe('file-resource', () => {
     const sandbox = sinon.createSandbox();
     const mockEmitter = new Emitter();
     const mockOnChangeEmitter = new Emitter<FileChangesEvent>();

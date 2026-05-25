@@ -21,10 +21,10 @@ import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
-import { inject, named, injectable, postConstruct } from 'inversify';
-import { ContributionProvider, MaybePromise, Stopwatch } from '../common';
+import { inject, named, injectable, type interfaces, postConstruct } from 'inversify';
+import { ContributionProvider, LogLevel, MaybePromise, MeasurementContext, Stopwatch } from '../common';
 import { CliContribution } from './cli';
-import { Deferred } from '../common/promise-util';
+import { Deferred, timeoutReject } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ProcessUtils } from './process-utils';
@@ -36,11 +36,18 @@ import { ILogger } from '../common/logger';
  */
 export const BackendApplicationPath = process.env.THEIA_APP_PROJECT_PATH || process.cwd();
 
+/**
+ * Private injection token for the backend's root Inversify {@link Container}.
+ */
+export const RootContainer = Symbol('RootContainer');
+
 export type DnsResultOrder = 'ipv4first' | 'verbatim' | 'nodeDefault';
 
 const APP_PROJECT_PATH = 'app-project-path';
 
 const TIMER_WARNING_THRESHOLD = 50;
+
+const SHUTDOWN_TIMEOUT_MS = 5000;
 
 const DEFAULT_PORT = environment.electron.is() ? 0 : 3000;
 const DEFAULT_HOST = 'localhost';
@@ -104,12 +111,23 @@ export interface BackendApplicationContribution {
     onStart?(server: http.Server | https.Server): MaybePromise<void>;
 
     /**
-     * Called when the backend application shuts down. Contributions must perform only synchronous operations.
-     * Any kind of additional asynchronous work queued in the event loop will be ignored and abandoned.
+     * Called when the backend application shuts down.
+     *
+     * When shutdown is initiated via `SIGINT`/`SIGTERM`, contributions are dispatched
+     * in parallel and any returned promise is awaited up to `SHUTDOWN_TIMEOUT_MS`
+     * milliseconds while injected services from the root container are still
+     * resolvable.
+     *
+     * On synchronous-exit fallback paths (uncaught exceptions, server bind failures,
+     * or normal process exit), the hook is invoked synchronously and any returned
+     * promise is discarded. Implementations should be resilient to either path.
+     *
+     * Contributions must be independent of one another during stop because they are
+     * dispatched in parallel.
      *
      * @param app the express application.
      */
-    onStop?(app?: express.Application): void;
+    onStop?(app?: express.Application): MaybePromise<void>;
 }
 
 @injectable()
@@ -165,8 +183,16 @@ export class BackendApplication {
 
     @inject(ILogger) @named('core:BackendApplication')
     protected readonly logger: ILogger;
+    
+    @inject(RootContainer)
+    protected readonly rootContainer: interfaces.Container;
 
     private _configured: Promise<void>;
+
+    private stoppedContributions = false;
+    private shuttingDown = false;
+
+    private settlementContext?: MeasurementContext<BackendApplicationContribution>;
 
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
@@ -181,27 +207,23 @@ export class BackendApplication {
         process.on('SIGPIPE', () => {
             this.logger.error(new Error('Unexpected SIGPIPE'));
         });
-        /**
-         * Kill the current process tree on exit.
-         */
-        function signalHandler(signal: NodeJS.Signals): never {
-            process.exit(1);
-        }
+
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
-        // Handles `Ctrl+C`.
-        process.on('SIGINT', signalHandler);
-        // Handles `kill pid`.
-        process.on('SIGTERM', signalHandler);
+
+        // Handles `Ctrl+C` and `kill pid`. Delegates to gracefulShutdown so that
+        // root-scoped singletons get their @preDestroy hooks invoked before exit.
+        const onSignal = () => { this.gracefulShutdown().catch(err => console.error(err)); };
+        process.on('SIGINT', onSignal);
+        process.on('SIGTERM', onSignal);
     }
 
     protected async initialize(): Promise<void> {
         await Promise.all(this.contributionsProvider.getContributions().map(async contribution => {
             if (contribution.initialize) {
                 try {
-                    await this.measure(contribution.constructor.name + '.initialize',
-                        () => contribution.initialize!()
-                    );
+                    await this.measureContribution(contribution, 'initialize',
+                        () => contribution.initialize!());
                 } catch (error) {
                     this.logger.error('Could not initialize contribution', error);
                 }
@@ -215,6 +237,7 @@ export class BackendApplication {
 
     @postConstruct()
     protected init(): void {
+        this.settlementContext = new MeasurementContext(this.stopwatch, 'Backend', TIMER_WARNING_THRESHOLD);
         this._configured = this.configure();
     }
 
@@ -236,7 +259,8 @@ export class BackendApplication {
         await Promise.all(this.contributionsProvider.getContributions().map(async contribution => {
             if (contribution.configure) {
                 try {
-                    await contribution.configure!(this.app);
+                    await this.measureContribution(contribution, 'configure',
+                        () => contribution.configure!(this.app));
                 } catch (error) {
                     this.logger.error('Could not configure contribution', error);
                 }
@@ -250,6 +274,8 @@ export class BackendApplication {
     }
 
     async start(port?: number, hostname?: string): Promise<http.Server | https.Server> {
+        const startupMeasurement = this.stopwatch.start('backend-startup');
+
         hostname ??= this.cliParams.hostname;
         port ??= this.cliParams.port;
 
@@ -311,15 +337,17 @@ export class BackendApplication {
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.onStart) {
                 try {
-                    await this.measure(contribution.constructor.name + '.onStart',
-                        () => contribution.onStart!(server)
-                    );
+                    await this.measureContribution(contribution, 'onStart',
+                        () => contribution.onStart!(server));
                 } catch (error) {
                     this.logger.error('Could not start contribution', error);
                 }
             }
         }
-        return this.stopwatch.startAsync('server', 'Finished starting backend application', () => deferred.promise);
+        await deferred.promise;
+        startupMeasurement.info('Backend application startup sequence completed (async work may still be pending)');
+        this.settlementContext?.armAllSettled();
+        return server;
     }
 
     protected getHttpUrl({ address, port, family }: AddressInfo, ssl?: boolean): string {
@@ -329,18 +357,82 @@ export class BackendApplication {
             : `${scheme}://${address}:${port}`;
     }
 
-    protected onStop(): void {
-        this.logger.info('>>> Stopping backend contributions...');
-        for (const contrib of this.contributionsProvider.getContributions()) {
+    /**
+     * Performs an asynchronous shutdown of the backend in two phases:
+     *
+     * 1. Contributions' {@link BackendApplicationContribution.onStop onStop} hooks are
+     *    dispatched in parallel and awaited so that they can still resolve services
+     *    from the root Inversify container while it is bound.
+     * 2. All services in the root container are unbound, running their `@preDestroy`
+     *    hooks.
+     *
+     * Each phase has its own {@link SHUTDOWN_TIMEOUT_MS} budget to avoid hanging on a
+     * misbehaving hook. Late-resolving promises from a timed-out phase may still
+     * settle in the background and could log noisily or interact with a partly
+     * unbound container; this is accepted because the process is exiting.
+     *
+     * Idempotent: a second invocation is a no-op. Exits the process with code 1 so
+     * that the `process.on('exit')` handler runs for fallback cleanup such as
+     * {@link ProcessUtils.terminateProcessTree}; the exit handler does not re-invoke
+     * contribution `onStop()` hooks that this method already dispatched.
+     */
+    protected async gracefulShutdown(): Promise<void> {
+        if (this.shuttingDown) {
+            return;
+        }
+        this.shuttingDown = true;
+
+        try {
+            await Promise.race([
+                this.stopContributions(),
+                timeoutReject<void>(SHUTDOWN_TIMEOUT_MS, `Stopping backend contributions timed out after ${SHUTDOWN_TIMEOUT_MS}ms`)
+            ]);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.warn(`Backend contributions cleanup failed: ${message}`);
+        }
+
+        try {
+            await Promise.race([
+                this.rootContainer.unbindAllAsync(),
+                timeoutReject<void>(SHUTDOWN_TIMEOUT_MS, `Container unbind timed out after ${SHUTDOWN_TIMEOUT_MS}ms`)
+            ]);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.warn(`Backend root container cleanup failed: ${message}`);
+        }
+
+        process.exit(1);
+    }
+
+    protected async stopContributions(): Promise<void> {
+        if (this.stoppedContributions) {
+            return;
+        }
+        this.stoppedContributions = true;
+        console.info('>>> Stopping backend contributions...');
+        // The `async` wrapper converts a synchronous throw inside a non-async
+        // contribution's `onStop` into a rejected promise so the per-contribution
+        // try/catch can handle it; otherwise `Promise.all` would abort.
+        await Promise.all(this.contributionsProvider.getContributions().map(async contrib => {
             if (contrib.onStop) {
                 try {
-                    contrib.onStop(this.app);
+                    await contrib.onStop(this.app);
                 } catch (error) {
                     this.logger.error('Could not stop contribution', error);
                 }
             }
-        }
-        this.logger.info('<<< All backend contributions have been stopped.');
+        }));
+        console.info('<<< All backend contributions have been stopped.');
+    }
+
+    protected onStop(): void {
+        // Deliberate fire-and-forget of an async `stopContributions`()` call.
+        // It invokes each contribution's `onStop` synchronously up to its
+        // first `await`, so any synchronous cleanup runs before
+        // `terminateProcessTree`. Any returned promises are abandoned because
+        // the `'exit'` event does not yield back to the event loop.
+        this.stopContributions();
         this.processUtils.terminateProcessTree(process.pid);
     }
 
@@ -362,8 +454,18 @@ export class BackendApplication {
         next();
     }
 
+    protected async measureContribution<T>(contribution: BackendApplicationContribution, hook: string, fn: () => MaybePromise<T>): Promise<T> {
+        let innerResult: MaybePromise<T>;
+        this.settlementContext?.ensureEntry(contribution);
+        const result = await this.measure(contribution.constructor.name + '.' + hook,
+            () => (innerResult = fn())
+        );
+        this.settlementContext?.trackSettlement(contribution, innerResult!);
+        return result;
+    }
+
     protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
-        return this.stopwatch.startAsync(name, `Backend ${name}`, fn, { thresholdMillis: TIMER_WARNING_THRESHOLD });
+        return this.stopwatch.startAsync(name, `Backend ${name}`, fn, { thresholdMillis: TIMER_WARNING_THRESHOLD, defaultLogLevel: LogLevel.DEBUG });
     }
 
     protected handleUncaughtError(error: Error): void {

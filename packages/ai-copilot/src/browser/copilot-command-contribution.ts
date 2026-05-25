@@ -15,10 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Command, CommandContribution, CommandRegistry, Disposable, DisposableCollection, PreferenceService } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, Disposable, DisposableCollection, nls, PreferenceService } from '@theia/core';
+import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service';
 import { CopilotAuthDialog, CopilotAuthDialogProps } from './copilot-auth-dialog';
-import { COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences';
+import { COPILOT_ENABLED_PREF, COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences';
 
 export namespace CopilotCommands {
     export const SIGN_IN: Command = Command.toLocalizedCommand(
@@ -45,6 +47,9 @@ export class CopilotCommandContribution implements CommandContribution, Disposab
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
 
     @inject(CopilotAuthDialogProps)
     protected readonly dialogProps: CopilotAuthDialogProps;
@@ -80,14 +85,28 @@ export class CopilotCommandContribution implements CommandContribution, Disposab
                     this.authState = await this.authService.getAuthState();
                 }
             },
-            isEnabled: () => !this.authState.isAuthenticated
+            isEnabled: () => !this.authState.isAuthenticated,
+            isVisible: () => this.activationService.isActive && this.isCopilotEnabled()
         });
 
         registry.registerCommand(CopilotCommands.SIGN_OUT, {
             execute: async () => {
-                await this.authService.signOut();
+                const confirmed = await new ConfirmDialog({
+                    title: nls.localize('theia/ai/copilot/commands/signOut', 'Sign out of GitHub Copilot'),
+                    msg: nls.localize('theia/ai/copilot/signOut/confirmMessage', 'Are you sure you want to sign out of GitHub Copilot?'),
+                    ok: Dialog.YES,
+                    cancel: Dialog.NO
+                }).open();
+                if (confirmed) {
+                    await this.authService.signOut();
+                }
             },
-            isEnabled: () => this.authState.isAuthenticated
+            isEnabled: () => this.authState.isAuthenticated,
+            isVisible: () => this.activationService.isActive && this.isCopilotEnabled()
         });
+    }
+
+    protected isCopilotEnabled(): boolean {
+        return this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true);
     }
 }

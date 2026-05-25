@@ -19,7 +19,7 @@ import { AIChatInputWidget, type AIChatInputConfiguration } from '../chat-input-
 import type { EditableRequestNode } from './chat-view-tree-widget';
 import { URI } from '@theia/core';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '../chat-view-language-contribution';
-import type { ChatRequestModel, EditableChatRequestModel, ChatHierarchyBranch } from '@theia/ai-chat';
+import type { ChatModel, ChatRequestModel, EditableChatRequestModel, ChatHierarchyBranch } from '@theia/ai-chat';
 import type { AIVariableResolutionRequest } from '@theia/ai-core';
 import { Key } from '@theia/core/lib/browser';
 
@@ -94,11 +94,38 @@ export class AIChatTreeInputWidget extends AIChatInputWidget {
         this.request.editContextManager.addVariables(variable);
     }
 
+    /**
+     * In edit mode, image attachments go to editContextManager like other context.
+     * They don't need separate handling since editContextManager is message-scoped.
+     * We add the variable directly rather than registering with the pending image registry.
+     */
+    override registerPendingImage(variable: AIVariableResolutionRequest): string {
+        this.request.editContextManager.addVariables(variable);
+        // Return a placeholder short ID - in edit mode, the full data is in editContextManager
+        return `edit_img_${Date.now()}`;
+    }
+
     protected override getContext(): readonly AIVariableResolutionRequest[] {
         return this.request.editContextManager.getVariables();
     }
 
+    override getAllVariablesForRequest(): AIVariableResolutionRequest[] {
+        return [...this.request.editContextManager.getVariables()];
+    }
+
+    override clearPendingImageAttachments(): void {
+        // No-op in edit mode - editContextManager handles its own lifecycle
+    }
+
     protected override deleteContextElement(index: number): void {
         this.request.editContextManager.deleteVariables(index);
+    }
+
+    /**
+     * No-op in edit mode: the token usage warning is owned by the main chat input
+     * widget so we avoid double-notifying when an edit widget is open alongside it.
+     */
+    protected override evaluateTokenUsageWarning(_chatModel: ChatModel): void {
+        // Intentionally empty.
     }
 }

@@ -113,7 +113,10 @@ export class TaskRunnerProvider implements ToolProvider {
                 return `Did not find a task for the label: '${args.taskName}'`;
             }
             cancellationToken?.onCancellationRequested(() => {
-                this.taskService.terminateTask(taskInfo);
+                // Only terminate if the task is still running
+                if (this.taskService.isTaskRunning(taskInfo.taskId)) {
+                    this.taskService.terminateTask(taskInfo);
+                }
             });
             if (cancellationToken?.isCancellationRequested) {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
@@ -125,7 +128,7 @@ export class TaskRunnerProvider implements ToolProvider {
                 const length = terminal?.buffer.length ?? 0;
                 const numberOfLines = Math.min(length, 50);
                 const result: string[] = [];
-                const allLines = terminal?.buffer.getLines(0, length).reverse() ?? [];
+                const allLines = terminal?.buffer.getLines(0, length) ?? [];
 
                 // collect the first 50 lines:
                 const firstLines = allLines.slice(0, numberOfLines);

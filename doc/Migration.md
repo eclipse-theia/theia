@@ -9,6 +9,27 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_ESBuild_:
+
+In addition to `webpack`, Theia is now also supporting [`ESBuild`](https://esbuild.github.io/) for bundling the application (frontend+backend). We will soon deprecate and then remove the `webpack` bundling option. Adopters can already use the ESBuild based bundler simply by deleting their `webpack.config.js`, which will automatically generate an `esbuild.mjs` file upon the next build.
+
+In case you have added your own bundling instructions to the `webpack.config.js`, these need to be migrated to the ESBuild based bundler.
+
+Note that as a part of this change, the `@theia/native-webpack-plugin` dependency has been renamed to `@theia/bundle-plugin`.
+
+The generated ESBuild configuration includes a `sourceMapPathsPlugin` that rewrites the `sources` field of emitted source maps to absolute `file://` URLs. This makes browser and Node debug launch configurations work without any custom `webRoot` or `sourceMapPathOverrides`: a minimal Chrome launch like
+
+```json
+{
+    "name": "Launch Browser Frontend",
+    "type": "chrome",
+    "request": "launch",
+    "url": "http://localhost:3000/"
+}
+```
+
+is sufficient to bind breakpoints in the original sources. If you have a customized `esbuild.mjs` that is not automatically regenerated (because the `gen-esbuild` import was removed), either regenerate it (delete `esbuild.mjs` and rerun `theia build`) or manually add `sourceMapPathsPlugin()` from `@theia/bundle-plugin` to the `plugins` array of each build target. The plugin is a no-op when source maps are disabled (production builds).
+
 _Builtin Extension Pack_:
 
 If you are using the [`eclipse-theia.builtin-extension-pack@1.79.0`](https://open-vsx.org/extension/eclipse-theia/builtin-extension-pack) extension pack you may need to include the [`ms-vscode.js-debug`](https://open-vsx.org/extension/ms-vscode/js-debug) and [`ms-vscode.js-debug-companion`](https://open-vsx.org/extension/ms-vscode/js-debug-companion) plugins for JavaScript debug support.
@@ -59,9 +80,38 @@ For example:
 }
 ```
 
+_Terminal Shell Integration Scripts_:
+
+The `@theia/terminal` package now includes shell integration scripts for Bash and Zsh (`packages/terminal/src/node/shell-integrations/`). These scripts are used at runtime by `ShellIntegrationInjector` to inject shell integration into terminal sessions, enabling features such as command history tracking and command separators.
+
+For **browser** applications, the generated webpack configuration automatically copies these scripts to `lib/backend/shell-integrations/` via `CopyWebpackPlugin`.
+
+For **Electron** applications that use custom packaging (e.g. `electron-builder`, `electron-forge`), you must ensure the `shell-integrations` directory is included in your packaged distribution. The scripts must be accessible relative to the compiled `ShellIntegrationInjector` module at `lib/backend/shell-integrations/`. If these files are missing, terminal shell integration will silently fail to activate.
+
+For example, in an `electron-builder` configuration, ensure the `lib/backend/shell-integrations` directory is included via the `files` pattern:
+
+```json
+{
+  "files": [
+    "lib/**/*",
+    "src-gen/**/*"
+  ]
+}
+```
+
+The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
+### v1.70.0
+
+#### Removal of deprecated @theia/git extension from Theia codebase [#17148](https://github.com/eclipse-theia/theia/pull/17148)
+
+The `@theia/git` extension has been completely removed from the Theia codebase.
+This extension was deprecated since v1.58.0 and stopped being published in v1.61.0.
+
+If your application still depends on `@theia/git`, you must migrate to the built-in VS Code Git extension, which provides the same feature set and is actively maintained. Remove any references to `@theia/git` from your application's dependencies and ensure the VS Code Git extension is included in your application, either through the builtin extension pack or by explicitly adding it to your plugins configuration.
+
 ### v1.65.0
 
-### Browser-only Filesystem Improvements [#16187](https://github.com/eclipse-theia/theia/pull/16187)
+#### Browser-only Filesystem Improvements [#16187](https://github.com/eclipse-theia/theia/pull/16187)
 
 Browser-only filesystem refactored to use OPFS API with web workers.
 
@@ -73,7 +123,7 @@ Key changes:
 - `NodeFileUploadService` moved from `src/node/node-file-upload-service.ts` to `src/node/upload/node-file-upload-service.ts`
 - `OPFSInitialization.getRootDirectory()` returns `Promise<string> | string` instead of `Promise<FileSystemDirectoryHandle>` - Just return the root of your filesystem as a string instead of the directory handle
 
-#### Make Preferences available in the backend [#### v1.62.0](https://github.com/eclipse-theia/theia/pull/16017)
+#### Make Preferences available in the backend [#16017](https://github.com/eclipse-theia/theia/pull/16017)
 
 The PR makes preferences support available in the backend. Only default and user preferences can be accessed in the backend. The API has changed in the following ways:
 - Many files have been moved from the "browser" folder to the "common" folder. Imports will have to be adapted
@@ -154,7 +204,7 @@ This also means that `electron-remote` can no longer be used in components in `e
 
 See `/packages/filesystem/package.json` for an example
 
-4. Implement the API on the electron-main side by contributing a `ElectronMainApplicationContribution`. See `packages/filesystem/electron-main/electron-api-main.ts` for an example. If you don't have a module contributing to the electron-main application, you may have to declare it in your package.json.
+1. Implement the API on the electron-main side by contributing a `ElectronMainApplicationContribution`. See `packages/filesystem/electron-main/electron-api-main.ts` for an example. If you don't have a module contributing to the electron-main application, you may have to declare it in your package.json.
 
 ```
 "theiaExtensions": [

@@ -46,6 +46,8 @@ export interface CopilotAuthState {
     accountLabel?: string;
     /** GitHub Enterprise URL if using enterprise */
     enterpriseUrl?: string;
+    /** True when credentials were cleared due to a client ID migration */
+    migrationRequired?: boolean;
 }
 
 /**

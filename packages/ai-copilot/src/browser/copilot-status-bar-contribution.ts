@@ -17,9 +17,11 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar-types';
-import { Disposable, DisposableCollection, nls } from '@theia/core';
+import { Disposable, DisposableCollection, nls, PreferenceService } from '@theia/core';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { CopilotAuthService, CopilotAuthState } from '../common/copilot-auth-service';
 import { CopilotCommands } from './copilot-command-contribution';
+import { COPILOT_ENABLED_PREF } from '../common/copilot-preferences';
 
 const COPILOT_STATUS_BAR_ID = 'copilot-auth-status';
 
@@ -35,6 +37,12 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
     @inject(CopilotAuthService)
     protected readonly authService: CopilotAuthService;
 
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     protected authState: CopilotAuthState = { isAuthenticated: false };
     protected readonly toDispose = new DisposableCollection();
 
@@ -43,6 +51,14 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
         this.toDispose.push(this.authService.onAuthStateChanged(state => {
             this.authState = state;
             this.updateStatusBar();
+        }));
+        this.toDispose.push(this.activationService.onDidChangeActiveStatus(() => {
+            this.updateStatusBar();
+        }));
+        this.toDispose.push(this.preferenceService.onPreferenceChanged(event => {
+            if (event.preferenceName === COPILOT_ENABLED_PREF) {
+                this.updateStatusBar();
+            }
         }));
     }
 
@@ -58,6 +74,11 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
     }
 
     protected updateStatusBar(): void {
+        if (!this.activationService.isActive || !this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true)) {
+            this.statusBar.removeElement(COPILOT_STATUS_BAR_ID);
+            return;
+        }
+
         const isAuthenticated = this.authState.isAuthenticated;
 
         let text: string;
@@ -71,7 +92,7 @@ export class CopilotStatusBarContribution implements FrontendApplicationContribu
                 'Signed in to GitHub Copilot as {0}. Click to sign out.', accountLabel);
             command = CopilotCommands.SIGN_OUT.id;
         } else {
-            text = '$(github) Copilot';
+            text = `$(github) ${nls.localize('theia/ai/copilot/commands/signIn', 'Sign in to GitHub Copilot')}`;
             tooltip = nls.localize('theia/ai/copilot/statusBar/signedOut',
                 'Not signed in to GitHub Copilot. Click to sign in.');
             command = CopilotCommands.SIGN_IN.id;

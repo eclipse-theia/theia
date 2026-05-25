@@ -32,7 +32,7 @@ import { ModelAliasesConfigurationWidget } from './model-aliases-configuration-w
 export class AIConfigurationContainerWidget extends BaseWidget {
 
     static readonly ID = 'ai-configuration';
-    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration [Beta]');
+    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration');
     protected dockpanel: DockPanel;
 
     @inject(TheiaDockPanel.Factory)

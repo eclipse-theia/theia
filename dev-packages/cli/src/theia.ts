@@ -110,7 +110,7 @@ async function theiaCli(): Promise<void> {
     const projectPath = process.cwd();
     // Create a sub `yargs` parser to read `app-target` without
     // affecting the global `yargs` instance used by the CLI.
-    const { appTarget } = defineCommonOptions(yargsFactory()).help(false).parse();
+    const { appTarget } = await defineCommonOptions(yargsFactory()).help(false).parse();
     const manager = new ApplicationPackageManager({ projectPath, appTarget });
     const localizationManager = new LocalizationManager();
     const { target } = manager.pck;
@@ -446,7 +446,8 @@ async function theiaCli(): Promise<void> {
             deeplKey: string,
             file: string,
             languages: string[],
-            sourceLanguage?: string
+            sourceLanguage?: string,
+            forceRetranslate?: string
         }>({
             command: 'nls-localize [languages...]',
             describe: 'Localize json files using the DeepL API',
@@ -469,15 +470,21 @@ async function theiaCli(): Promise<void> {
                 'source-language': {
                     alias: 's',
                     describe: 'The source language of the translation file'
+                },
+                'force-retranslate': {
+                    describe: 'Comma-separated list of localization keys to force re-translate even if they already exist',
+                    type: 'string' as const
                 }
             },
-            handler: async ({ freeApi, deeplKey, file, sourceLanguage, languages = [] }) => {
+            handler: async ({ freeApi, deeplKey, file, sourceLanguage, languages = [], forceRetranslate }) => {
+                const forceKeys = forceRetranslate ? new Set(forceRetranslate.split(',').map((k: string) => k.trim()).filter(Boolean)) : undefined;
                 const success = await localizationManager.localize({
                     sourceFile: file,
                     freeApi: freeApi ?? true,
                     authKey: deeplKey,
                     targetLanguages: languages,
-                    sourceLanguage
+                    sourceLanguage,
+                    forceKeys
                 });
                 if (!success) {
                     process.exit(1);

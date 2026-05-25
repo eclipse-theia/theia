@@ -24,6 +24,7 @@ import { DebugSessionManager } from '../debug-session-manager';
 import { Emitter, IDisposable, IRange, Range, Uri } from '@theia/monaco-editor-core';
 import { nls } from '@theia/core';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
+import { createBareFontInfoFromRawSettings } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfoFromSettings';
 import { WorkbenchTable } from '@theia/monaco-editor-core/esm/vs/platform/list/browser/listService';
 import { DebugState, DebugSession } from '../debug-session';
 import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
@@ -89,8 +90,8 @@ export class DisassemblyViewWidget extends BaseWidget {
         this.node.tabIndex = -1;
         this.node.style.outline = 'none';
         this._previousDebuggingState = this.debugSessionManager.currentSession?.state ?? DebugState.Inactive;
-        this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value);
-        this.editorPreferences.onPreferenceChanged(() => this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value));
+        this._fontInfo = createBareFontInfoFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value);
+        this.editorPreferences.onPreferenceChanged(() => this._fontInfo = createBareFontInfoFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value));
         this.debugPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'debug.disassemblyView.showSourceCode') {
                 const showSourceCode = this.debugPreferences['debug.disassemblyView.showSourceCode'];
@@ -167,40 +168,34 @@ export class DisassemblyViewWidget extends BaseWidget {
                 // draw viewable BP
                 let changed = false;
                 bpEvent.added?.forEach(bp => {
-                    if (InstructionBreakpoint.is(bp)) {
-                        const index = this.getIndexFromAddress(bp.instructionReference);
-                        if (index >= 0) {
-                            this._disassembledInstructions!.row(index).isBreakpointSet = true;
+                    const index = this.getIndexFromAddress(bp.origin.raw.instructionReference);
+                    if (index >= 0) {
+                        this._disassembledInstructions!.row(index).isBreakpointSet = true;
+                        this._disassembledInstructions!.row(index).isBreakpointEnabled = bp.enabled;
+                        changed = true;
+                    }
+                });
+
+                bpEvent.removed?.forEach(bp => {
+                    const index = this.getIndexFromAddress(bp.origin.raw.instructionReference);
+                    if (index >= 0) {
+                        this._disassembledInstructions!.row(index).isBreakpointSet = false;
+                        changed = true;
+                    }
+                });
+
+                bpEvent.changed?.forEach(bp => {
+                    const index = this.getIndexFromAddress(bp.origin.raw.instructionReference);
+                    if (index >= 0) {
+                        if (this._disassembledInstructions!.row(index).isBreakpointEnabled !== bp.enabled) {
                             this._disassembledInstructions!.row(index).isBreakpointEnabled = bp.enabled;
                             changed = true;
                         }
                     }
                 });
 
-                bpEvent.removed?.forEach(bp => {
-                    if (InstructionBreakpoint.is(bp)) {
-                        const index = this.getIndexFromAddress(bp.instructionReference);
-                        if (index >= 0) {
-                            this._disassembledInstructions!.row(index).isBreakpointSet = false;
-                            changed = true;
-                        }
-                    }
-                });
-
-                bpEvent.changed?.forEach(bp => {
-                    if (InstructionBreakpoint.is(bp)) {
-                        const index = this.getIndexFromAddress(bp.instructionReference);
-                        if (index >= 0) {
-                            if (this._disassembledInstructions!.row(index).isBreakpointEnabled !== bp.enabled) {
-                                this._disassembledInstructions!.row(index).isBreakpointEnabled = bp.enabled;
-                                changed = true;
-                            }
-                        }
-                    }
-                });
-
                 // get an updated list so that items beyond the current range would render when reached.
-                this._instructionBpList = this.breakpointManager.getInstructionBreakpoints();
+                this._instructionBpList = this.breakpointManager.getInstructionBreakpoints().map(({ origin }) => origin);
 
                 if (changed) {
                     this._onDidChangeStackFrame.fire();
@@ -343,7 +338,7 @@ export class DisassemblyViewWidget extends BaseWidget {
             let lastLocation: DebugProtocol.Source | undefined;
             let lastLine: IRange | undefined;
             for (let i = 0; i < resultEntries.length; i++) {
-                const found = this._instructionBpList.find(p => p.instructionReference === resultEntries[i].address);
+                const found = this._instructionBpList.find(p => p.raw.instructionReference === resultEntries[i].address);
                 const instruction = resultEntries[i];
 
                 // Forward fill the missing location as detailed in the DAP spec.
@@ -423,7 +418,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         if (this._disassembledInstructions) {
             this._loadingLock = true; // stop scrolling during the load.
             this._disassembledInstructions.splice(0, this._disassembledInstructions.length, [disassemblyNotAvailable]);
-            this._instructionBpList = this.breakpointManager.getInstructionBreakpoints();
+            this._instructionBpList = this.breakpointManager.getInstructionBreakpoints().map(({ origin }) => origin);
             this.loadDisassembledInstructions(targetAddress, -DisassemblyViewWidget.NUM_INSTRUCTIONS_TO_LOAD * 4, DisassemblyViewWidget.NUM_INSTRUCTIONS_TO_LOAD * 8).then(() => {
                 // on load, set the target instruction in the middle of the page.
                 if (this._disassembledInstructions!.length > 0) {
@@ -448,7 +443,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         super.onActivateRequest(msg);
     }
 
-    protected toFontInfo(): Parameters<typeof BareFontInfo.createFromRawSettings>[0] {
+    protected toFontInfo(): Parameters<typeof createBareFontInfoFromRawSettings>[0] {
         return {
             fontFamily: this.editorPreferences['editor.fontFamily'],
             fontWeight: String(this.editorPreferences['editor.fontWeight']),

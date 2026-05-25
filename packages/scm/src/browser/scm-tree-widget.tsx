@@ -22,6 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
+import { TreeViewWelcomeWidget } from '@theia/core/lib/browser/tree/tree-view-welcome-widget';
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { MenuModelRegistry, CompoundMenuNode, MenuPath, CommandMenu } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
@@ -31,13 +32,14 @@ import { EditorWidget, EditorManager, DiffNavigatorProvider } from '@theia/edito
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
+import { ScmService } from './scm-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { CorePreferences } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core';
 
 @injectable()
-export class ScmTreeWidget extends TreeWidget {
+export class ScmTreeWidget extends TreeViewWelcomeWidget {
 
     static ID = 'scm-resource-widget';
 
@@ -60,6 +62,7 @@ export class ScmTreeWidget extends TreeWidget {
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('scm:ScmTreeWidget')
     protected readonly logger: ILogger;
+    @inject(ScmService) protected readonly scmService: ScmService;
 
     // TODO: Make TreeWidget generic to better type those fields.
     override readonly model: ScmTreeModel;
@@ -78,6 +81,17 @@ export class ScmTreeWidget extends TreeWidget {
     protected override init(): void {
         super.init();
         this.toDispose.push(this.themeService.onDidColorThemeChange(() => this.update()));
+        this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.update()));
+        this.toDispose.push(this.contextService.onDidChange(e => {
+            if (e.affects(new Set(['isWorkspaceTrusted']))) {
+                this.update();
+            }
+        }));
+    }
+
+    protected override shouldShowWelcomeView(): boolean {
+        return this.scmService.selectedRepository === undefined
+            || !this.contextService.match('isWorkspaceTrusted');
     }
 
     set viewMode(id: 'tree' | 'list') {
@@ -364,9 +378,15 @@ export class ScmTreeWidget extends TreeWidget {
     }
 
     selectNodeByUri(uri: URI): void {
-        for (const group of this.model.groups) {
-            const sourceUri = new URI(uri.path.toString());
-            const id = `${group.id}:${sourceUri.toString()}`;
+        // Use the URI as-is without coercing the scheme.
+        // Only URIs whose scheme matches the SCM resource sourceUri scheme (typically 'file')
+        // will find a matching node. Diff editors for staged changes (git: scheme) won't match,
+        // which is correct VS Code behavior. See https://github.com/eclipse-theia/theia/issues/16412
+        const uriString = uri.toString();
+        // Iterate backwards (last group first) to match VS Code behavior.
+        const groups = this.model.groups;
+        for (let i = groups.length - 1; i >= 0; i--) {
+            const id = `${groups[i].id}:${uriString}`;
             const node = this.model.getNode(id);
             if (SelectableTreeNode.is(node)) {
                 this.model.selectNode(node);

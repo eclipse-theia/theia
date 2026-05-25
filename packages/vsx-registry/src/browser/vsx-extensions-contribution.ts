@@ -266,7 +266,15 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
             this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
         } catch (e) {
-            this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
+            if (e instanceof Error && e.name === 'DuplicateExtensionError') {
+                this.messageService.error(
+                    nls.localize('theia/vsx-registry/duplicateVSIX',
+                        'Failed to install {0} from VSIX. The extension is already installed. Uninstall the existing extension before installing a new version from VSIX.',
+                        extensionName)
+                );
+            } else {
+                this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
+            }
             console.warn(e);
         }
     }
@@ -293,7 +301,42 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         if (latestCompatible) {
             compatibleExtensions = extensions.slice(extensions.findIndex(ext => ext.version === latestCompatible.version));
         }
-        const items: QuickPickItem[] = compatibleExtensions.map(ext => {
+
+        // Group extensions by version
+        const extensionsByVersion = new Map<string, VSXExtensionRaw[]>();
+        for (const ext of compatibleExtensions) {
+            if (!extensionsByVersion.has(ext.version)) {
+                extensionsByVersion.set(ext.version, []);
+            }
+            extensionsByVersion.get(ext.version)!.push(ext);
+        }
+
+        // Filter extensions to one per version, preferring the current platform or universal
+        const filteredExtensions: VSXExtensionRaw[] = [];
+        for (const exts of extensionsByVersion.values()) {
+            if (exts.length === 1) {
+                // Only one extension for this version, use it directly
+                filteredExtensions.push(exts[0]);
+            } else {
+                // Multiple extensions for this version with different platforms
+                // Try to find one matching the current platform
+                const matchingPlatform = exts.find(e => e.targetPlatform === targetPlatform);
+                if (matchingPlatform) {
+                    filteredExtensions.push(matchingPlatform);
+                } else {
+                    // No match for current platform, try to find universal
+                    const universal = exts.find(e => e.targetPlatform === 'universal');
+                    if (universal) {
+                        filteredExtensions.push(universal);
+                    } else {
+                        // No universal either, just use the first one
+                        filteredExtensions.push(exts[0]);
+                    }
+                }
+            }
+        }
+
+        const items: QuickPickItem[] = filteredExtensions.map(ext => {
             const item = {
                 label: ext.version,
                 description: DateTime.fromISO(ext.timestamp).toRelative({ locale: nls.locale }) ?? ''

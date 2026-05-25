@@ -16,6 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
+import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils';
 import { ContextKeyService } from '../../context-key-service';
 import { CommandRegistry, Disposable, DisposableCollection, nls } from '../../../common';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
@@ -53,6 +54,7 @@ export class TabBarToolbar extends ReactWidget {
     protected contextKeyListener: Disposable | undefined;
     protected toDisposeOnUpdateItems: DisposableCollection = new DisposableCollection();
 
+    protected toolbarContextKeys = new Set<string>();
     protected keybindingContextKeys = new Set<string>();
 
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
@@ -74,7 +76,9 @@ export class TabBarToolbar extends ReactWidget {
         this.toDispose.pushAll([
             this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()),
             this.contextKeyService.onDidChange(e => {
-                if (e.affects(this.keybindingContextKeys)) {
+                if (this.current && e.affects(this.toolbarContextKeys)) {
+                    this.updateTarget(this.current);
+                } else if (e.affects(this.keybindingContextKeys)) {
                     this.maybeUpdate();
                 }
             }),
@@ -85,11 +89,12 @@ export class TabBarToolbar extends ReactWidget {
         ]);
     }
 
-    updateItems(items: Array<TabBarToolbarItem>, current: Widget | undefined): void {
+    updateItems(items: Array<TabBarToolbarItem>, current: Widget | undefined, contextKeys: Set<string> = new Set()): void {
         this.toDisposeOnUpdateItems.dispose();
         this.toDisposeOnUpdateItems = new DisposableCollection();
         this.inline.clear();
         this.more.clear();
+        this.toolbarContextKeys = contextKeys;
 
         for (const item of items.sort(TabBarToolbarAction.PRIORITY_COMPARATOR).reverse()) {
 
@@ -98,7 +103,6 @@ export class TabBarToolbar extends ReactWidget {
             } else {
                 this.more.set(item.id, item);
             }
-
             if (item.onDidChange) {
                 this.toDisposeOnUpdateItems.push(item.onDidChange(() => this.maybeUpdate()));
             }
@@ -116,7 +120,8 @@ export class TabBarToolbar extends ReactWidget {
     updateTarget(current?: Widget): void {
         const operativeWidget = TabBarDelegator.is(current) ? current.getTabBarDelegate() : current;
         const items = operativeWidget ? this.toolbarRegistry.visibleItems(operativeWidget) : [];
-        this.updateItems(items, operativeWidget);
+        const contextKeys = operativeWidget ? this.toolbarRegistry.collectContextKeys(operativeWidget) : new Set<string>();
+        this.updateItems(items, operativeWidget, contextKeys);
     }
 
     protected readonly toDisposeOnSetCurrent = new DisposableCollection();
@@ -146,7 +151,10 @@ export class TabBarToolbar extends ReactWidget {
 
     protected renderMore(): React.ReactNode {
         return !!this.more.size && <div key='__more__' className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled'}>
-            <div id='__more__' className={codicon('ellipsis', true)} onClick={this.showMoreContextMenu}
+            <div id='__more__' className={codicon('ellipsis', true)}
+                {...buttonKeyboardProps(nls.localizeByDefault('More Actions...'))}
+                onClick={this.showMoreContextMenu}
+                onKeyDown={this.handleMoreKeyDown}
                 title={nls.localizeByDefault('More Actions...')} />
         </div>;
     }
@@ -156,6 +164,15 @@ export class TabBarToolbar extends ReactWidget {
         event.preventDefault();
         const anchor = toAnchor(event);
         this.renderMoreContextMenu(anchor);
+    };
+
+    protected handleMoreKeyDown = (event: React.KeyboardEvent) => {
+        if (isActivationKey(event)) {
+            event.preventDefault();
+            event.stopPropagation();
+            const { left, bottom } = (event.currentTarget as HTMLElement).getBoundingClientRect();
+            this.renderMoreContextMenu({ x: left, y: bottom });
+        }
     };
 
     renderMoreContextMenu(anchor: Anchor): ContextMenuAccess {

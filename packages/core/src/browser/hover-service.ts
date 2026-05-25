@@ -18,7 +18,7 @@ import { inject, injectable } from 'inversify';
 import { Disposable, DisposableCollection, disposableTimeout, isOSX, PreferenceService } from '../common';
 import { MarkdownString } from '../common/markdown-rendering/markdown-string';
 import { animationFrame } from './browser';
-import { MarkdownRenderer, MarkdownRendererFactory } from './markdown-rendering/markdown-renderer';
+import { CoreMarkdownRenderer, MarkdownRenderer } from './markdown-rendering/markdown-renderer';
 
 import '../../src/browser/style/hover-service.css';
 
@@ -92,13 +92,10 @@ export class HoverService {
     protected static hostClassName = 'theia-hover';
     protected static styleSheetId = 'theia-hover-style';
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
-    @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
 
-    protected _markdownRenderer: MarkdownRenderer | undefined;
-    protected get markdownRenderer(): MarkdownRenderer {
-        this._markdownRenderer ||= this.markdownRendererFactory();
-        return this._markdownRenderer;
-    }
+    // Inject CoreMarkdownRenderer rather than the MarkdownRenderer symbol,
+    // which is rebound by Monaco to a renderer that strips code block content.
+    @inject(CoreMarkdownRenderer) protected readonly markdownRenderer: MarkdownRenderer;
 
     protected _hoverHost: HTMLElement | undefined;
     protected get hoverHost(): HTMLElement {
@@ -260,9 +257,11 @@ export class HoverService {
      * For interactive hovers, the hover remains visible to allow interaction with its elements.
      */
     protected listenForMouseClick(request: HoverRequest): void {
-        const handleMouseDown = (_e: MouseEvent) => {
-            const isInteractive = request.interactive;
-            if (!isInteractive) {
+        const handleMouseDown = (e: MouseEvent) => {
+            if (this.hoverHost.contains(e.target as Node)) {
+                return;
+            }
+            if (!request.interactive) {
                 this.cancelHover();
             }
         };

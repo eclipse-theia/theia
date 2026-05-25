@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
-import { MarkdownRenderer as CodeMarkdownRenderer, IMarkdownRendererOptions }
-    from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/markdownRenderer/browser/markdownRenderer';
+import { MarkdownRendererService as CodeMarkdownRenderer }
+    from '@theia/monaco-editor-core/esm/vs/platform/markdown/browser/markdownRenderer';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import * as monaco from '@theia/monaco-editor-core';
 import { OpenerService, WidgetOpenerOptions, open } from '@theia/core/lib/browser';
@@ -25,10 +24,10 @@ import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { URI } from '@theia/core/lib/common/uri';
 import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MarkedOptions, MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
+import { MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { DisposableStore } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import { DisposableCollection, DisposableGroup, PreferenceService, ILogger } from '@theia/core';
+import { DisposableCollection, DisposableGroup, ILogger } from '@theia/core';
 
 @injectable()
 export class MonacoMarkdownRenderer implements MarkdownRenderer {
@@ -40,19 +39,22 @@ export class MonacoMarkdownRenderer implements MarkdownRenderer {
     protected delegate: CodeMarkdownRenderer;
     protected _openerService: OpenerService | undefined;
 
-    render(markdown: MarkdownString | undefined, options?: MarkdownRenderOptions, markedOptions?: MarkedOptions): MarkdownRenderResult {
-        return this.delegate.render(markdown, this.transformOptions(options), markedOptions);
+    render(markdown: MarkdownString, options?: MarkdownRenderOptions): MarkdownRenderResult {
+        return this.delegate.render(markdown, this.transformOptions(options));
     }
 
     protected transformOptions(options?: MarkdownRenderOptions): MonacoMarkdownRenderOptions | undefined {
-        if (!options?.actionHandler) {
-            return options as MarkdownRenderOptions & { actionHandler: undefined } | undefined;
+        if (!options) {
+            return undefined;
         }
-        const monacoActionHandler: MonacoMarkdownRenderOptions['actionHandler'] = {
-            disposables: this.toDisposableStore(options.actionHandler.disposables),
-            callback: (content, e) => options.actionHandler!.callback(content, e?.browserEvent)
+        const { actionHandler, ...opts } = options;
+        if (!actionHandler) {
+            return opts;
+        }
+        return {
+            ...opts,
+            actionHandler: (content: string) => actionHandler.callback(content)
         };
-        return { ...options, actionHandler: monacoActionHandler };
     }
 
     protected toDisposableStore(current: DisposableGroup): DisposableStore {
@@ -69,19 +71,12 @@ export class MonacoMarkdownRenderer implements MarkdownRenderer {
 
     @postConstruct()
     protected init(): void {
-        const languages = StandaloneServices.get(ILanguageService);
         const openerService = StandaloneServices.get(IOpenerService);
         openerService.registerOpener({
             open: (u, options) => this.interceptOpen(u, options)
         });
-        const that = this;
-        const prefs = new class implements IMarkdownRendererOptions {
-            get codeBlockFontFamily(): string | undefined {
-                return that.preferences.get<string>('editor.fontFamily');
-            }
-        };
 
-        this.delegate = new CodeMarkdownRenderer(prefs, languages, openerService);
+        this.delegate = new CodeMarkdownRenderer(openerService);
     }
 
     protected async interceptOpen(monacoUri: monaco.Uri | string, monacoOptions?: OpenInternalOptions | OpenExternalOptions): Promise<boolean> {

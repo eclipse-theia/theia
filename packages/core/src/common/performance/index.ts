@@ -16,4 +16,5 @@
 
 export * from './measurement';
 export * from './stopwatch';
+export * from './simple-stopwatch';
 export * from './measurement-protocol';

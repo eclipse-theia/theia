@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { NewWindowOptions, WindowSearchParams } from '../../common/window';
+import { NewWindowOptions } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
-import { ElectronWindowPreferences } from '../../electron-common/electron-window-preferences';
+import { ElectronWindowPreferences, PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences';
 import { ConnectionCloseService } from '../../common/messaging/connection-management';
 import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
 import { WindowReloadOptions } from '../../browser/window/window-service';
@@ -57,8 +57,12 @@ export class ElectronWindowService extends DefaultWindowService {
         return undefined;
     }
 
-    override openNewDefaultWindow(params?: WindowSearchParams): void {
-        this.delegate.openNewDefaultWindow(params);
+    override async openNewDefaultWindow(params?: WindowReloadOptions): Promise<number> {
+        return this.delegate.openNewDefaultWindow(params?.search);
+    }
+
+    override closeWindow(windowId: number): void {
+        this.delegate.closeWindow(windowId);
     }
 
     override focus(): void {
@@ -68,7 +72,7 @@ export class ElectronWindowService extends DefaultWindowService {
     protected init(): void {
         // Update the default zoom level on startup when the preferences event is fired.
         this.electronWindowPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'window.zoomLevel') {
+            if (e.preferenceName === PREF_WINDOW_ZOOM_LEVEL) {
                 this.updateWindowZoomLevel();
             }
         });
@@ -94,7 +98,7 @@ export class ElectronWindowService extends DefaultWindowService {
      * Updates the window zoom level based on the preference value.
      */
     protected async updateWindowZoomLevel(): Promise<void> {
-        const preferredZoomLevel = this.electronWindowPreferences['window.zoomLevel'];
+        const preferredZoomLevel = this.electronWindowPreferences[PREF_WINDOW_ZOOM_LEVEL];
         if (await window.electronTheiaCore.getZoomLevel() !== preferredZoomLevel) {
             window.electronTheiaCore.setZoomLevel(preferredZoomLevel);
         }
@@ -116,4 +120,3 @@ export class ElectronWindowService extends DefaultWindowService {
         }
     }
 }
-

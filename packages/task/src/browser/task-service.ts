@@ -29,6 +29,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import {
@@ -68,6 +69,7 @@ import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { Mutex } from 'async-mutex';
 import { TaskContextKeyService } from './task-context-key-service';
+import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -196,6 +198,11 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskContextKeyService)
     protected readonly taskContextKeyService: TaskContextKeyService;
+
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
+    @inject(TerminalPreferences)
+    protected readonly terminalPreferences: TerminalPreferences;
 
     @postConstruct()
     protected init(): void {
@@ -528,6 +535,9 @@ export class TaskService implements TaskConfigurationClient {
      * @param scope  The scope where to look for tasks
      */
     async run(token: number, source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskInfo | undefined> {
+        if (!(await this.requestWorkspaceTrust())) {
+            return;
+        }
         let task: TaskConfiguration | undefined;
         task = this.taskConfigurations.getTask(scope, taskLabel);
         if (!task) { // if a configured task cannot be found, search from detected tasks
@@ -746,6 +756,9 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        if (!(await this.requestWorkspaceTrust())) {
+            return;
+        }
         this.logger.debug('entering runTask');
         const releaseLock = await this.taskStartingLock.acquire();
         this.logger.debug('got lock');
@@ -999,7 +1012,11 @@ export class TaskService implements TaskConfigurationClient {
         const taskLabel = resolvedTask.label;
         let taskInfo: TaskInfo | undefined;
         try {
-            taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
+            const taskToRun: TaskConfiguration = {
+                ...resolvedTask,
+                enableCommandHistory: this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false
+            };
+            taskInfo = await this.taskServer.run(taskToRun, this.getContext(), option);
             this.lastTask = { resolvedTask, option };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
@@ -1094,7 +1111,7 @@ export class TaskService implements TaskConfigurationClient {
         const widget = await this.taskTerminalWidgetManager.open({
             created: new Date().toString(),
             id: this.getTerminalWidgetId(terminalId),
-            title: nls.localize('theia/task/taskTerminalTitle', 'Task: {0}', taskInfo.config.label || nls.localize('theia/task/taskIdLabel', '#{0}', taskId)),
+            title: nls.localizeByDefault('Task: {0}', taskInfo.config.label || nls.localize('theia/task/taskIdLabel', '#{0}', taskId)),
             destroyTermOnClose: true,
             useServerTitle: false
         }, {
@@ -1160,8 +1177,32 @@ export class TaskService implements TaskConfigurationClient {
         return completedTask && completedTask.exitCode.promise;
     }
 
-    async getTerminateSignal(id: number): Promise<string | undefined> {
-        const completedTask = this.runningTasks.get(id);
-        return completedTask && completedTask.terminateSignal.promise;
+    async getTerminateSignal(taskId: number): Promise<string | undefined> {
+        const completedTask = this.runningTasks.get(taskId);
+        return completedTask?.terminateSignal.promise;
+    }
+
+    /**
+     * Checks if a task is currently running.
+     * A task is considered running if it exists in the runningTasks map AND has not yet exited.
+     * @param taskId The task ID to check
+     * @returns true if the task is still running, false otherwise
+     */
+    isTaskRunning(taskId: number): boolean {
+        const taskEntry = this.runningTasks.get(taskId);
+        if (!taskEntry) {
+            return false;
+        }
+        // Task is running if the terminateSignal deferred is still unresolved
+        return taskEntry.terminateSignal.state === 'unresolved';
+    }
+
+    /**
+     * Request workspace trust from the user. Returns true if the workspace is trusted,
+     * false if the user declined to trust the workspace.
+     */
+    protected async requestWorkspaceTrust(): Promise<boolean> {
+        const trusted = await this.workspaceTrustService.requestWorkspaceTrust();
+        return trusted === true;
     }
 }

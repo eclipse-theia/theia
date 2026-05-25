@@ -372,6 +372,18 @@ export const TerminalConfigSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Persist terminal sessions/history for the workspace across window reloads.'),
             default: true
         },
+        'terminal.integrated.enableCommandHistory': {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/terminal/enableCommandHistory', 'Track terminal commands and their output separately using shell injection. This enables use cases such as visually distinguishing commands in the UI and giving AI agents more structured access to terminals. Toggling this setting will not affect terminals that are already open.\n\n&nbsp;\n\nThis feature is currently only supported by task terminals and user terminals running bash or zsh.'),
+            default: false,
+            tags: ['experimental']
+        },
+        'terminal.integrated.enableCommandSeparator': {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/terminal/enableCommandSeparator', 'Enable a visual separator between executed commands and their output in the terminal. Changes only apply to commands executed after this setting is modified. Only works when {0} is enabled.', '`#terminal.integrated.enableCommandHistory#`'),
+            default: false,
+            tags: ['experimental']
+        },
         'terminal.integrated.defaultProfile.windows': {
             type: 'string',
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Windows.toString())
@@ -556,6 +568,8 @@ export interface TerminalConfiguration {
     'terminal.integrated.profiles.osx': Profiles,
     'terminal.integrated.confirmOnExit': ConfirmOnExitType
     'terminal.integrated.enablePersistentSessions': boolean
+    'terminal.integrated.enableCommandHistory': boolean
+    'terminal.integrated.enableCommandSeparator': boolean
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';

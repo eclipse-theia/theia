@@ -14,14 +14,41 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
 import { ApplicationShell, ExtractableWidget } from '../../browser';
 import { ElectronWindowService } from './electron-window-service';
 import { Deferred, timeout } from '../../common/promise-util';
+import { ElectronWindowPreferences, PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
+
+    @inject(ElectronWindowPreferences)
+    protected readonly electronWindowPreferences: ElectronWindowPreferences;
+
+    @postConstruct()
+    override init(): void {
+        super.init();
+        this.electronWindowPreferences.ready.then(() => {
+            const initialZoomLevel = this.electronWindowPreferences.get(PREF_WINDOW_ZOOM_LEVEL);
+            this.updateWindowZoomLevel(initialZoomLevel);
+
+            this.electronWindowPreferences.onPreferenceChanged(e => {
+                if (e.preferenceName === PREF_WINDOW_ZOOM_LEVEL) {
+                    const zoomLevel = this.electronWindowPreferences.get(PREF_WINDOW_ZOOM_LEVEL, 0);
+                    this.updateWindowZoomLevel(zoomLevel);
+                }
+            });
+        });
+    }
+
+    protected async updateWindowZoomLevel(zoomLevel: number): Promise<void> {
+        this.secondaryWindows.forEach((win: Window) => {
+            window.electronTheiaCore.setZoomLevel(zoomLevel, win.name);
+        });
+    }
+
     override focus(win: Window): void {
         window.electronTheiaCore.focusWindow(win.name);
     }
@@ -49,6 +76,10 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
     protected override windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
         window.electronTheiaCore.setMenuBarVisible(false, newWindow.name);
         window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(newWindow.name, () => this.canClose(widget, shell, newWindow));
+
+        // Apply current zoom level to newly created secondary window
+        const currentZoomLevel = this.electronWindowPreferences.get(PREF_WINDOW_ZOOM_LEVEL, 0);
+        window.electronTheiaCore.setZoomLevel(currentZoomLevel, newWindow.name);
 
         // Below code may be used to debug contents of secondary window
         // window.electronTheiaCore.openDevToolsForWindow(newWindow.name);

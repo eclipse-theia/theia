@@ -21,7 +21,9 @@
 
 import {
     AIVariableResolutionRequest,
+    GenericCapabilitySelections,
     LanguageModelMessage,
+    ReasoningSettings,
     ResolvedAIContextVariable,
     ResolvedAIVariable,
     TextMessage,
@@ -76,7 +78,8 @@ export type ChatChangeEvent =
     | ChatEditCancelEvent
     | ChatEditSubmitEvent
     | ChatResponseChangedEvent
-    | ChatChangeHierarchyBranchEvent;
+    | ChatChangeHierarchyBranchEvent
+    | ChatInteractionNeededEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
@@ -133,9 +136,17 @@ export interface ChatResponseChangedEvent {
     kind: 'responseChanged';
 }
 
+export interface ChatInteractionNeededEvent {
+    kind: 'interactionNeeded';
+    contentPart: InteractiveContent & ChatResponseContent;
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatUpdateChangeSetEvent {
         return event.kind === 'updateChangeSet';
+    }
+    export function isInteractionNeededEvent(event: ChatChangeEvent): event is ChatInteractionNeededEvent {
+        return event.kind === 'interactionNeeded';
     }
 }
 
@@ -209,14 +220,38 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
     readonly next?: ChatHierarchyBranch<TRequest>;
 }
 
+export interface CommonChatSessionSettings {
+    /** Reasoning configuration for this session; applied to reasoning-capable models. */
+    reasoning?: ReasoningSettings;
+    /** Per-session tool confirmation timeout in seconds. Overrides the global preference when set. */
+    confirmationTimeout?: number;
+}
+
+export interface ChatSessionSettings {
+    /**
+     * Theia-specific common settings processed by Theia.
+     * This key is excluded when passing settings to LLM providers.
+     */
+    commonSettings?: CommonChatSessionSettings;
+
+    /**
+     * Allow arbitrary provider-specific settings.
+     * These correspond to the "Advanced Settings (JSON)" in the UI
+     * and are passed directly to the LLM.
+     */
+    [key: string]: unknown;
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
     readonly location: ChatAgentLocation;
     readonly context: ChatContextManager;
     readonly suggestions: readonly ChatSuggestion[];
-    readonly settings?: { [key: string]: unknown };
+    readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
+    /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
+    rootSessionId?: string;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
@@ -265,6 +300,19 @@ export interface ChatRequest {
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
     readonly modeId?: string;
+    /**
+     * Capability overrides for this request.
+     * Maps capability fragment IDs to enabled/disabled state.
+     * Only includes capabilities that differ from their default value.
+     */
+    readonly capabilityOverrides?: Record<string, boolean>;
+
+    /**
+     * Generic capability selections for this request.
+     * Contains user-selected skills, functions, MCP tools, etc.
+     * from the capabilities panel dropdowns.
+     */
+    readonly genericCapabilitySelections?: GenericCapabilitySelections;
 }
 
 export interface ChatContext {
@@ -338,6 +386,29 @@ export interface ChatProgressMessage {
     status: 'inProgress' | 'completed' | 'failed';
     show: 'untilFirstContent' | 'whileIncomplete' | 'forever';
     content: string;
+}
+
+/**
+ * Interface for ChatResponseContent parts that require user interaction.
+ * Content parts that implement this interface can be tracked by the delegation
+ * renderer without content-type-specific checks.
+ */
+export interface InteractiveContent {
+    /** Stable identifier for deduplication in pending interaction tracking. */
+    readonly interactionId: string | undefined;
+    /** Whether the interaction has been resolved (e.g., confirmed/denied, option selected). */
+    readonly isResolved: boolean;
+    /** Resolves when the interaction is resolved. Used for cleanup in delegation chains. */
+    readonly whenResolved: Promise<void>;
+}
+
+export namespace InteractiveContent {
+    export function is(content: unknown): content is InteractiveContent {
+        return typeof content === 'object' && !!content
+            && 'interactionId' in content
+            && 'isResolved' in content
+            && 'whenResolved' in content;
+    }
 }
 
 export interface ChatResponseContent {
@@ -447,8 +518,11 @@ export interface ErrorContentData {
  */
 export interface QuestionContentData {
     question: string;
-    options: { text: string; value?: string }[];
+    header?: string;
+    options: { text: string; value?: string; description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
 }
 
 export interface TextChatResponseContent
@@ -481,19 +555,25 @@ export interface HorizontalLayoutChatResponseContent extends ChatResponseContent
     content: ChatResponseContent[];
 }
 
-export interface ToolCallChatResponseContent extends Required<ChatResponseContent> {
+export interface ToolCallChatResponseContent extends Required<ChatResponseContent>, InteractiveContent {
     kind: 'toolCall';
     id?: string;
     name?: string;
     arguments?: string;
     finished: boolean;
     result?: ToolCallResult;
+    /** Timeout in seconds for confirmation dialogs. 0 means no timeout. */
+    confirmationTimeout?: number;
     confirmed: Promise<boolean>;
+    /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
+    needsUserConfirmation: Promise<void>;
     whenFinished: Promise<void>;
     data?: Record<string, string>;
     confirm(): void;
     deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
+    /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
+    requestUserConfirmation(): void;
     /**
      * Mark the tool call as completed with the given result.
      *
@@ -748,12 +828,21 @@ export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
 
-export interface QuestionResponseContent extends ChatResponseContent {
+export type MultiSelectQuestionResponseHandler = (
+    selectedOptions: { text: string, value?: string }[],
+) => void;
+
+export interface QuestionResponseContent extends ChatResponseContent, InteractiveContent {
     kind: 'question';
     question: string;
-    options: { text: string, value?: string }[];
+    header?: string;
+    options: { text: string, value?: string, description?: string }[];
+    multiSelect?: boolean;
     selectedOption?: { text: string, value?: string };
-    handler?: QuestionResponseHandler;
+    selectedOptions?: { text: string, value?: string }[];
+    handler?: QuestionResponseHandler | MultiSelectQuestionResponseHandler;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
     request?: MutableChatRequestModel;
     /**
      * Whether this question is read-only (restored from persistence without handler).
@@ -784,6 +873,13 @@ export namespace QuestionResponseContent {
     }
 }
 
+export interface ResponseTokenUsage {
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly cacheCreationInputTokens?: number;
+    readonly cacheReadInputTokens?: number;
+}
+
 export interface ChatResponse {
     readonly content: ChatResponseContent[];
     asString(): string;
@@ -798,6 +894,11 @@ export interface ChatResponseModel {
      * Use this to be notified for any change in the response model
      */
     readonly onDidChange: Event<void>;
+    /**
+     * Fires when this response requires user interaction (e.g., tool confirmation, question response).
+     * The content part that needs interaction is provided as the event payload.
+     */
+    readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent>;
     /**
      * The unique identifier of the response model
      */
@@ -851,6 +952,7 @@ export interface ChatResponseModel {
      * Indicates whether the prompt variant was customized/edited
      */
     readonly isPromptVariantEdited?: boolean;
+    readonly tokenUsage?: ResponseTokenUsage;
     toSerializable(): SerializableChatResponseData;
 }
 
@@ -869,8 +971,9 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
     protected _changeSet: ChatTreeChangeSet;
-    protected _settings: { [key: string]: unknown };
+    protected _settings: ChatSessionSettings;
     protected _location: ChatAgentLocation;
+    rootSessionId?: string;
 
     get location(): ChatAgentLocation {
         return this._location;
@@ -931,6 +1034,11 @@ export class MutableChatModel implements ChatModel, Disposable {
                 respData
             );
             requestMap.set(requestModel.id, requestModel);
+            requestModel.onDidChange(event => {
+                if (!ChatChangeEvent.isChangeSetEvent(event)) {
+                    this._onDidChangeEmitter.fire(event);
+                }
+            }, this, this.toDispose);
         }
 
         // Restore the hierarchy structure with all alternatives
@@ -978,12 +1086,23 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._contextManager;
     }
 
-    get settings(): { [key: string]: unknown } {
+    get settings(): ChatSessionSettings {
         return this._settings;
     }
 
-    setSettings(settings: { [key: string]: unknown }): void {
+    setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
+    }
+
+    addChildModel(child: MutableChatModel): Disposable {
+        const disposable = new DisposableCollection();
+        disposable.push(child.onDidChange(event => {
+            if (ChatChangeEvent.isInteractionNeededEvent(event)) {
+                this._onDidChangeEmitter.fire(event);
+            }
+        }));
+        this.toDispose.push(disposable);
+        return disposable;
     }
 
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
@@ -1614,8 +1733,12 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
 
         // Wire response changes to propagate through request to session
         this._response.onDidChange(() => {
-            // Fire a generic addVariable event to propagate response changes
             this._onDidChangeEmitter.fire({ kind: 'responseChanged' });
+        }, this, this.toDispose);
+
+        // Wire interaction needed events to propagate through request to session
+        this._response.onInteractionNeeded(contentPart => {
+            this._onDidChangeEmitter.fire({ kind: 'interactionNeeded', contentPart });
         }, this, this.toDispose);
 
         this.toDispose.push(this._onDidChangeEmitter);
@@ -1636,7 +1759,11 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         respData?: SerializableChatResponseData
     ): void {
         this._id = reqData.id;
-        this._request = { text: reqData.text };
+        this._request = {
+            text: reqData.text,
+            capabilityOverrides: reqData.capabilityOverrides,
+            genericCapabilitySelections: reqData.genericCapabilitySelections
+        };
         this._agentId = reqData.agentId;
         this._data = {};
         this._context = { variables: [] };
@@ -1877,7 +2004,9 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
             } : undefined,
-            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
+            capabilityOverrides: this.request.capabilityOverrides,
+            genericCapabilitySelections: this.request.genericCapabilitySelections
         };
     }
 
@@ -2164,7 +2293,7 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
     }
 }
 
-export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent {
+export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent, InteractiveContent {
     readonly kind = 'toolCall';
     protected _id?: string;
     protected _name?: string;
@@ -2172,6 +2301,9 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
     protected _data?: Record<string, string>;
+    protected _confirmationTimeout?: number;
+    protected _needsUserConfirmation: Promise<void>;
+    protected _needsUserConfirmationResolver?: () => void;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
@@ -2187,6 +2319,9 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._data = data;
         this._confirmed = this.createConfirmationPromise();
         this._whenFinished = this.createFinishedPromise();
+        this._needsUserConfirmation = new Promise<void>(resolve => {
+            this._needsUserConfirmationResolver = resolve;
+        });
     }
 
     get id(): string | undefined {
@@ -2212,11 +2347,35 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._data;
     }
 
+    get confirmationTimeout(): number | undefined {
+        return this._confirmationTimeout;
+    }
+
+    set confirmationTimeout(value: number | undefined) {
+        this._confirmationTimeout = value;
+    }
+
+    get interactionId(): string | undefined {
+        return this._id;
+    }
+
+    get isResolved(): boolean {
+        return this.finished;
+    }
+
     get confirmed(): Promise<boolean> {
         return this._confirmed;
     }
 
+    get needsUserConfirmation(): Promise<void> {
+        return this._needsUserConfirmation;
+    }
+
     get whenFinished(): Promise<void> {
+        return this._whenFinished;
+    }
+
+    get whenResolved(): Promise<void> {
         return this._whenFinished;
     }
 
@@ -2257,6 +2416,13 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._result = { denied: true, reason };
             this._confirmationResolver(false);
             this.resolveFinished();
+        }
+    }
+
+    requestUserConfirmation(): void {
+        if (this._needsUserConfirmationResolver) {
+            this._needsUserConfirmationResolver();
+            this._needsUserConfirmationResolver = undefined;
         }
     }
 
@@ -2451,52 +2617,130 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
 }
 
 /**
+ * Options bag for constructing a {@link QuestionResponseContentImpl}.
+ */
+export interface QuestionResponseContentOptions {
+    selectedOption?: { text: string; value?: string };
+    selectedOptions?: { text: string; value?: string }[];
+    multiSelect?: boolean;
+    header?: string;
+    /** Called when the user dismisses a single-select question without choosing an option. */
+    onSkip?: () => void;
+}
+
+/**
  * Default implementation for the QuestionResponseContent.
  * Can be created with or without handler/request for read-only (restored) mode.
  */
-export class QuestionResponseContentImpl implements QuestionResponseContent {
+export class QuestionResponseContentImpl implements QuestionResponseContent, InteractiveContent {
     readonly kind = 'question';
-    protected _selectedOption: { text: string; value?: string } | undefined;
+    public multiSelect?: boolean;
+    public header?: string;
+    public onSkip?: () => void;
+    protected _selectedOptions: { text: string; value?: string }[] | undefined;
+    protected _resolvedResolver?: () => void;
+    readonly whenResolved: Promise<void>;
 
     constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: QuestionResponseHandler | undefined,
+        questionOptions?: Omit<QuestionResponseContentOptions, 'multiSelect'> & { multiSelect?: false }
+    );
+    constructor(
+        question: string,
+        options: { text: string, value?: string, description?: string }[],
+        request: MutableChatRequestModel | undefined,
+        handler: MultiSelectQuestionResponseHandler | undefined,
+        questionOptions: QuestionResponseContentOptions & { multiSelect: true }
+    );
+    constructor(
         public question: string,
-        public options: { text: string, value?: string }[],
+        public options: { text: string, value?: string, description?: string }[],
         public request: MutableChatRequestModel | undefined,
-        public handler: QuestionResponseHandler | undefined,
-        selectedOption?: { text: string; value?: string }
+        public handler: QuestionResponseHandler | MultiSelectQuestionResponseHandler | undefined,
+        questionOptions?: QuestionResponseContentOptions
     ) {
-        this._selectedOption = selectedOption;
+        this.multiSelect = questionOptions?.multiSelect;
+        this.header = questionOptions?.header;
+        this.onSkip = questionOptions?.onSkip;
+        this._selectedOptions = questionOptions?.selectedOptions ??
+            (questionOptions?.selectedOption ? [questionOptions.selectedOption] : undefined);
+        if (this._selectedOptions) {
+            this.whenResolved = Promise.resolve();
+        } else {
+            this.whenResolved = new Promise<void>(resolve => {
+                this._resolvedResolver = resolve;
+            });
+        }
+        if (!this.isReadOnly && this.request) {
+            this.request.response.fireInteractionNeeded(this);
+        }
     }
 
     get isReadOnly(): boolean {
         return !this.handler || !this.request;
     }
 
-    set selectedOption(option: { text: string; value?: string; } | undefined) {
-        this._selectedOption = option;
-        // Only trigger change notification if request is available (not in read-only mode)
+    get interactionId(): string | undefined {
+        return `question-${this.question}`;
+    }
+
+    get isResolved(): boolean {
+        return this.selectedOption !== undefined;
+    }
+
+    set selectedOption(option: { text: string; value?: string } | undefined) {
+        this._selectedOptions = option ? [option] : undefined;
+        this._resolvedResolver?.();
         if (this.request) {
             this.request.response.response.responseContentChanged();
         }
     }
-    get selectedOption(): { text: string; value?: string; } | undefined {
-        return this._selectedOption;
+    get selectedOption(): { text: string; value?: string } | undefined {
+        return this._selectedOptions?.[0];
     }
+
+    set selectedOptions(options: { text: string; value?: string }[] | undefined) {
+        this._selectedOptions = options;
+        this._resolvedResolver?.();
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
+    }
+    get selectedOptions(): { text: string; value?: string }[] | undefined {
+        return this._selectedOptions;
+    }
+
     asString?(): string | undefined {
-        return `Question: ${this.question}
-${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
+        const answer = this._selectedOptions && this._selectedOptions.length > 0
+            ? `Answer: ${this._selectedOptions.map(o => o.text).join(', ')}`
+            : 'No answer';
+        return `Question: ${this.question}\n${answer}`;
     }
     merge?(): boolean {
         return false;
     }
     toSerializable(): SerializableChatResponseContentData<QuestionContentData> {
+        const data: QuestionContentData = {
+            question: this.question,
+            options: this.options,
+        };
+        if (this.multiSelect) {
+            data.selectedOptions = this._selectedOptions;
+        } else if (this._selectedOptions?.[0]) {
+            data.selectedOption = this._selectedOptions[0];
+        }
+        if (this.header !== undefined) {
+            data.header = this.header;
+        }
+        if (this.multiSelect !== undefined) {
+            data.multiSelect = this.multiSelect;
+        }
         return {
             kind: 'question',
-            data: {
-                question: this.question,
-                options: this.options,
-                selectedOption: this._selectedOption
-            }
+            data
         };
     }
 }
@@ -2613,6 +2857,9 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this._onDidChangeEmitter.event;
 
+    protected readonly _onInteractionNeededEmitter = new Emitter<InteractiveContent & ChatResponseContent>();
+    readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent> = this._onInteractionNeededEmitter.event;
+
     data = {};
 
     protected _id: string;
@@ -2627,6 +2874,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _cancellationToken: CancellationTokenSource;
     protected _promptVariantId?: string;
     protected _isPromptVariantEdited?: boolean;
+    protected _tokenUsage?: ResponseTokenUsage;
+    protected _tokenUsageEntries: ResponseTokenUsage[] = [];
 
     constructor(
         requestId: string,
@@ -2670,6 +2919,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._progressMessages = [];
         this._promptVariantId = data.promptVariantId;
         this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
+        this._tokenUsage = data.tokenUsage;
 
         if (data.errorMessage) {
             this._errorObject = new Error(data.errorMessage);
@@ -2749,6 +2999,24 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._isPromptVariantEdited ?? false;
     }
 
+    get tokenUsage(): ResponseTokenUsage | undefined {
+        return this._tokenUsage;
+    }
+
+    setTokenUsage(usage: ResponseTokenUsage): void {
+        this._tokenUsage = usage;
+        this.addTokenUsageEntry(usage);
+        this._onDidChangeEmitter.fire();
+    }
+
+    addTokenUsageEntry(usage: ResponseTokenUsage): void {
+        this._tokenUsageEntries.push(usage);
+    }
+
+    get tokenUsageEntries(): readonly ResponseTokenUsage[] {
+        return this._tokenUsageEntries;
+    }
+
     setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
         this._promptVariantId = variantId;
         this._isPromptVariantEdited = isEdited;
@@ -2799,6 +3067,14 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._onDidChangeEmitter.fire();
     }
 
+    fireInteractionNeeded(contentPart: InteractiveContent & ChatResponseContent): void {
+        this._onInteractionNeededEmitter.fire(contentPart);
+    }
+
+    notifyChanged(): void {
+        this._onDidChangeEmitter.fire();
+    }
+
     error(error: Error): void {
         this._isComplete = true;
         this._isWaitingForInput = false;
@@ -2822,6 +3098,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
             errorMessage: this.errorObject?.message,
             promptVariantId: this._promptVariantId,
             isPromptVariantEdited: this._isPromptVariantEdited,
+            tokenUsage: this._tokenUsage,
             content: this.response.content.map(c => {
                 const serialized = c.toSerializable?.();
                 if (!serialized) {

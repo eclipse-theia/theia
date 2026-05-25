@@ -14,28 +14,55 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-let disableJSDOM = enableJSDOM();
-FrontendApplicationConfigProvider.set({});
-
 import { PreferenceService } from '@theia/core/lib/common';
 import { Container } from '@theia/core/shared/inversify';
 import { editor, languages, Uri } from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { CodeCompletionVariableContext } from './code-completion-variable-context';
 import { CodeCompletionVariableContribution } from './code-completion-variable-contribution';
 import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
 
-disableJSDOM();
+// A minimal fake ITextModel covering just the methods the contribution touches.
+// Avoids calling `editor.createModel`, which lazily initializes Monaco's
+// StandaloneThemeService and requires browser globals (CSS, matchMedia) that
+// JSDOM does not expose.
+function createFakeModel(text: string, languageId: string, uri: Uri): editor.ITextModel {
+    const lines = text.split('\n');
+    return {
+        uri,
+        getLanguageId: () => languageId,
+        getLineCount: () => lines.length,
+        getLineMaxColumn: (line: number) => lines[line - 1].length + 1,
+        getPositionAt: (offset: number) => {
+            let remaining = offset;
+            for (let i = 0; i < lines.length; i++) {
+                if (remaining <= lines[i].length) {
+                    return { lineNumber: i + 1, column: remaining + 1 };
+                }
+                remaining -= lines[i].length + 1; // account for '\n'
+            }
+            const last = lines.length - 1;
+            return { lineNumber: lines.length, column: lines[last].length + 1 };
+        },
+        getValueInRange: (range: { startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }) => {
+            const parts: string[] = [];
+            for (let line = range.startLineNumber; line <= range.endLineNumber; line++) {
+                const lineText = lines[line - 1];
+                const start = line === range.startLineNumber ? range.startColumn - 1 : 0;
+                const end = line === range.endLineNumber ? range.endColumn - 1 : lineText.length;
+                parts.push(lineText.substring(start, end));
+            }
+            return parts.join('\n');
+        },
+        dispose: () => { /* no-op */ },
+    } as unknown as editor.ITextModel;
+}
 
 describe('CodeCompletionVariableContribution', () => {
     let contribution: CodeCompletionVariableContribution;
     let model: editor.ITextModel;
 
     before(() => {
-        disableJSDOM = enableJSDOM();
         const container = new Container();
         container.bind(PreferenceService).toConstantValue({
             get: () => 1000,
@@ -45,18 +72,7 @@ describe('CodeCompletionVariableContribution', () => {
     });
 
     beforeEach(() => {
-        model = editor.createModel('//line 1\nconsole.\n//line 2', 'javascript', Uri.file('/home/user/workspace/test.js'));
-        sinon.stub(model, 'getLanguageId').returns('javascript');
-    });
-
-    afterEach(() => {
-        model.dispose();
-    });
-
-    after(() => {
-        // Disable JSDOM after all tests
-        disableJSDOM();
-        model.dispose();
+        model = createFakeModel('//line 1\nconsole.\n//line 2', 'javascript', Uri.file('/home/user/workspace/test.js'));
     });
 
     describe('canResolve', () => {
@@ -68,7 +84,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -89,7 +107,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -108,7 +128,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -127,7 +149,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 
@@ -146,7 +170,9 @@ describe('CodeCompletionVariableContribution', () => {
                     triggerKind: languages.InlineCompletionTriggerKind.Automatic,
                     selectedSuggestionInfo: undefined,
                     includeInlineEdits: false,
-                    includeInlineCompletions: false
+                    includeInlineCompletions: false,
+                    requestIssuedDateTime: Date.now(),
+                    earliestShownDateTime: Date.now()
                 }
             };
 

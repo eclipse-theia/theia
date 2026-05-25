@@ -79,7 +79,7 @@ export class PreferenceSingleFilePathInputRenderer extends PreferenceStringInput
     protected createBrowseButton(parent: HTMLElement): void {
         const button = document.createElement('button');
         button.classList.add('theia-button', 'main', 'preference-file-button');
-        button.textContent = nls.localize('theia/core/file/browse', 'Browse');
+        button.textContent = nls.localizeByDefault('Browse');
         const handler = this.browse.bind(this);
         button.onclick = handler;
         button.onkeydown = handler;

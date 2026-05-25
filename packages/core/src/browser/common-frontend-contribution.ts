@@ -159,7 +159,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected readonly undoRedoHandlerService: UndoRedoHandlerService;
 
     protected pinnedKey: ContextKey<boolean>;
-    protected inputFocus: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
         // FIXME: This request blocks valuable startup time (~200ms).
@@ -174,9 +173,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
-        this.inputFocus = this.contextKeyService.createKey<boolean>('inputFocus', false);
-        this.updateInputFocus();
-        browser.onDomEvent(document, 'focusin', () => this.updateInputFocus());
+        // Note: the 'inputFocus' context key is tracked by Monaco's ContextKeyService
+        // which sets it for <input>, <textarea>, and elements with EditContext (Monaco editors).
+        // We no longer track it separately to avoid race conditions between two focusin listeners.
 
         this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
         this.updatePinnedKey();
@@ -234,15 +233,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }
     }
 
-    protected updateInputFocus(): void {
-        const activeElement = document.activeElement;
-        if (activeElement) {
-            const isInput = activeElement.tagName?.toLowerCase() === 'input'
-                || activeElement.tagName?.toLowerCase() === 'textarea';
-            this.inputFocus.set(isInput);
-        }
-    }
-
     protected updatePinnedKey(): void {
         const activeTab = this.shell.findTabBar();
         const pinningTarget = activeTab && this.shell.findTitle(activeTab);
@@ -291,8 +281,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     onStart(): void {
+        this.setupHtmlLanguageAttributes(document.documentElement);
         this.storageService.getData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent: [] })
             .then(tasks => this.commandRegistry.recent = tasks.recent);
+    }
+
+    protected setupHtmlLanguageAttributes(element: HTMLElement): void {
+        nls.setHtmlLang(element);
+        nls.setHtmlNoTranslate(element);
     }
 
     onStop(): void {
@@ -492,7 +488,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.CUT, {
             execute: () => {
                 if (supportCut) {
-                    document.execCommand('cut');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const start = active.selectionStart ?? 0;
+                        const end = active.selectionEnd ?? 0;
+                        const selectedText = active.value.substring(start, end);
+                        if (selectedText) {
+                            this.clipboardService.writeText(selectedText);
+                            document.execCommand('insertText', false, '');
+                        }
+                    } else {
+                        document.execCommand('cut');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/cutWarn', "Please use the browser's cut command or shortcut."));
                 }
@@ -501,16 +508,34 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.COPY, {
             execute: () => {
                 if (supportCopy) {
-                    document.execCommand('copy');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const start = active.selectionStart ?? 0;
+                        const end = active.selectionEnd ?? 0;
+                        const selectedText = active.value.substring(start, end);
+                        if (selectedText) {
+                            this.clipboardService.writeText(selectedText);
+                        }
+                    } else {
+                        document.execCommand('copy');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/copyWarn', "Please use the browser's copy command or shortcut."));
                 }
             }
         });
         commandRegistry.registerCommand(CommonCommands.PASTE, {
-            execute: () => {
+            execute: async () => {
                 if (supportPaste) {
-                    document.execCommand('paste');
+                    const active = document.activeElement;
+                    if (environment.electron.is() && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                        const text = await this.clipboardService.readText();
+                        if (text) {
+                            document.execCommand('insertText', false, text);
+                        }
+                    } else {
+                        document.execCommand('paste');
+                    }
                 } else {
                     this.messageService.warn(nls.localize('theia/core/pasteWarn', "Please use the browser's paste command or shortcut."));
                 }
@@ -693,8 +718,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: title => title?.owner && this.shell.toggleMaximized(title?.owner),
         }));
         commandRegistry.registerCommand(CommonCommands.SHOW_MENU_BAR, {
-            isEnabled: () => !isOSX,
-            isVisible: () => !isOSX,
+            isEnabled: () => !this.isElectron() || !isOSX,
+            isVisible: () => !this.isElectron() || !isOSX,
             execute: () => {
                 const menuBarVisibility = 'window.menuBarVisibility';
                 const visibility = this.preferences[menuBarVisibility];

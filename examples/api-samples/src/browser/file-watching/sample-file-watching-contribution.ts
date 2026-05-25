@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { postConstruct, injectable, inject, interfaces } from '@theia/core/shared/inversify';
+import { postConstruct, injectable, inject, interfaces, named } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, LabelProvider,
 } from '@theia/core/lib/browser';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { createPreferenceProxy, PreferenceService, PreferenceProxy, PreferenceContribution } from '@theia/core';
@@ -55,6 +56,9 @@ class SampleFileWatchingContribution implements FrontendApplicationContribution 
     @inject(FileWatchingPreferences)
     protected readonly fileWatchingPreferences: FileWatchingPreferences;
 
+    @inject(ILogger) @named('api-samples')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.verbose = this.fileWatchingPreferences['sample.file-watching.verbose'];
@@ -75,7 +79,7 @@ class SampleFileWatchingContribution implements FrontendApplicationContribution 
                 const workspace = roots.length > 0
                     ? roots.map(root => this.labelProvider.getLongName(root.resource)).join('+')
                     : '<no workspace>';
-                console.log(`Sample File Watching: ${event.changes.length} file(s) changed! ${workspace}`);
+                this.logger.info(`Sample File Watching: ${event.changes.length} file(s) changed! ${workspace}`);
             }
         });
     }

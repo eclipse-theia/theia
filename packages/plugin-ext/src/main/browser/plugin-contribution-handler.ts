@@ -213,11 +213,16 @@ export class PluginContributionHandler {
                 }
                 const langConfiguration = lang.configuration;
                 if (langConfiguration) {
+                    const comments = langConfiguration.comments;
                     pushContribution(`language.${lang.id}.configuration`, () => monaco.languages.setLanguageConfiguration(lang.id, {
                         wordPattern: this.createRegex(langConfiguration.wordPattern),
                         autoClosingPairs: langConfiguration.autoClosingPairs,
                         brackets: langConfiguration.brackets,
-                        comments: langConfiguration.comments,
+                        // @monaco-uplift: Monaco doesn't support LineCommentRule yet, extract the string
+                        comments: comments ? {
+                            lineComment: comments.lineComment && typeof comments.lineComment === 'object' ? comments.lineComment.comment : comments.lineComment,
+                            blockComment: comments.blockComment,
+                        } : undefined,
                         folding: this.convertFolding(langConfiguration.folding),
                         surroundingPairs: langConfiguration.surroundingPairs,
                         indentationRules: this.convertIndentationRules(langConfiguration.indentationRules),
@@ -402,6 +407,35 @@ export class PluginContributionHandler {
                 );
             }
             this.debugSchema.update();
+        }
+
+        // Register dynamic debug configuration types discovered from activation events.
+        // This allows the debug dropdown to show provider types before the extension has activated.
+        if (contributions.activationEvents) {
+            for (const event of contributions.activationEvents) {
+                if (event.startsWith('onDebugDynamicConfigurations:')) {
+                    // Explicit type declaration: onDebugDynamicConfigurations:python
+                    // Try to find a matching debugger to get the label
+                    const debugType = event.slice('onDebugDynamicConfigurations:'.length);
+                    const debuggerContrib = contributions.debuggers?.find(d => d.type === debugType);
+                    const label = debuggerContrib?.label ?? debugType;
+                    pushContribution(`dynamicDebugType.${debugType}`,
+                        () => this.debugService.registerDynamicDebugConfigurationType(debugType, label)
+                    );
+                } else if (event === 'onDebugDynamicConfigurations' && contributions.debuggers?.length) {
+                    // Generic event - register all unique debugger types from this extension
+                    const registeredTypes = new Set<string>();
+                    for (const contrib of contributions.debuggers) {
+                        if (!registeredTypes.has(contrib.type)) {
+                            registeredTypes.add(contrib.type);
+                            const label = contrib.label ?? contrib.type;
+                            pushContribution(`dynamicDebugType.${contrib.type}`,
+                                () => this.debugService.registerDynamicDebugConfigurationType(contrib.type, label)
+                            );
+                        }
+                    }
+                }
+            }
         }
 
         if (contributions.resourceLabelFormatters) {

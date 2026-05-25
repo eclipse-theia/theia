@@ -42,6 +42,7 @@ import {
     QuestionContentData
 } from './chat-model';
 import { SerializableChatResponseContentData } from './chat-model-serialization';
+import { createToolCallError } from '@theia/ai-core/lib/common/language-model';
 import { ContributionProvider, ILogger, MaybePromise } from '@theia/core';
 
 export const ChatContentDeserializer = Symbol('ChatContentDeserializer');
@@ -268,14 +269,21 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
 
         registry.register({
             kind: 'toolCall',
-            deserialize: (data: ToolCallContentData) => new ToolCallChatResponseContentImpl(
-                data.id,
-                data.name,
-                data.arguments,
-                data.finished,
-                data.result,
-                data.data
-            )
+            deserialize: (data: ToolCallContentData) => {
+                const wasInterrupted = data.finished !== true && data.result === undefined;
+                const finished = wasInterrupted || data.finished;
+                const result = wasInterrupted
+                    ? createToolCallError('Tool call was interrupted. No result is available.')
+                    : data.result;
+                return new ToolCallChatResponseContentImpl(
+                    data.id,
+                    data.name,
+                    data.arguments,
+                    finished,
+                    result,
+                    data.data
+                );
+            }
         });
 
         registry.register({
@@ -314,14 +322,21 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
 
         registry.register({
             kind: 'question',
-            deserialize: (data: QuestionContentData) =>
-                // Restore in read-only mode (no handler/request)
-                new QuestionResponseContentImpl(
+            // Restore in read-only mode (no handler/request)
+            deserialize: (data: QuestionContentData) => data.multiSelect
+                ? new QuestionResponseContentImpl(
                     data.question,
                     data.options,
                     undefined,
                     undefined,
-                    data.selectedOption
+                    { multiSelect: true, header: data.header, selectedOptions: data.selectedOptions }
+                )
+                : new QuestionResponseContentImpl(
+                    data.question,
+                    data.options,
+                    undefined,
+                    undefined,
+                    { header: data.header, selectedOption: data.selectedOption }
                 )
         });
     }

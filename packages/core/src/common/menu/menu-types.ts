@@ -36,6 +36,10 @@ export interface MenuNode {
      */
     readonly id: string;
     /**
+     * When expression to determine if the menu node is visible.
+     */
+    readonly when?: string;
+    /**
      * Menu nodes are sorted in ascending order based on their `sortString`.
      */
     readonly sortString: string;

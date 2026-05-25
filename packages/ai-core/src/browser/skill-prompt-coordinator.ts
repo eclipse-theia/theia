@@ -30,7 +30,10 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
 
     protected registeredSkillCommands = new Set<string>();
 
-    onStart(): void {
+    async onStart(): Promise<void> {
+        // Wait for skills to be loaded before registering commands
+        await this.skillService.ready;
+
         // Register initial skills
         this.updateSkillCommands();
 
@@ -57,7 +60,7 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
             if (!this.registeredSkillCommands.has(skill.name)) {
                 this.promptService.addBuiltInPromptFragment({
                     id: `skill-command-${skill.name}`,
-                    template: `{{skill:${skill.name}}}`,
+                    template: `Load the skill ${skill.name} using ~{getSkillFileContent}.`,
                     isCommand: true,
                     commandName: skill.name,
                     commandDescription: skill.description

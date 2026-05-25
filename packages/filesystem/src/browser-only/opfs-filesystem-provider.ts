@@ -36,7 +36,7 @@ import { OPFSFileSystem, WatchEventType, type FileStat, type OPFSError, type Wat
 import { OPFSInitialization } from './opfs-filesystem-initialization';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { readFileIntoStream } from '../common/io';
-import { FileUri } from '@theia/core/lib/common/file-uri';
+import { Path } from '@theia/core/lib/common/path';
 
 @injectable()
 export class OPFSFileSystemProvider implements Disposable,
@@ -515,10 +515,14 @@ export class OPFSFileSystemProvider implements Disposable,
 }
 
 /**
- * Formats a URI or string resource to a file system path
+ * Formats a URI or string resource to a file system path.
+ *
+ * For browser-only mode with OPFS we always want POSIX-style paths,
+ * regardless of the underlying platform.
  */
 function formatPath(resource: URI | string): string {
-    return FileUri.fsPath(resource);
+    const uri = typeof resource === 'string' ? new URI(resource) : resource;
+    return uri.path.fsPath(Path.Format.Posix);
 }
 
 /**

@@ -168,8 +168,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 return false;
             }
         }
-
-        const endpointUrl = new URI(serverUrl).withPath(provider.endpoint);
+        const endpointUrl = new URI(serverUrl).resolve(provider.endpoint);
         const response = await fetch(endpointUrl.toString(true), {
             method: 'POST',
             body: JSON.stringify(values),
@@ -186,7 +185,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
     }
 
     protected async handleWebAuth(serverUrl: string, token: string, provider: WebAuthProvider): Promise<boolean> {
-        const uri = new URI(serverUrl).withPath(provider.endpoint).withQuery('token=' + token);
+        const uri = new URI(serverUrl).resolve(provider.endpoint).withQuery('token=' + token);
         this.windowService.openNewWindow(uri.toString(true), { external: true });
         return true;
     }

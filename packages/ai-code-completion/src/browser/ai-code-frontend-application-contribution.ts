@@ -81,7 +81,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
             }
         });
 
-        this.activationService.onDidChangeActiveStatus(change => {
+        this.activationService.onDidChangeCanRun(() => {
             this.toDispose.get('inlineCompletions')?.dispose();
             this.toDispose.set('inlineCompletions', handler());
         });
@@ -96,7 +96,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     }
 
     protected handleInlineCompletions(): Disposable {
-        if (!this.activationService.isActive) {
+        if (!this.activationService.canRun) {
             return Disposable.NULL;
         }
         const automatic = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, true);
@@ -147,9 +147,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                         return completionHandler();
                     }
                 },
-                freeInlineCompletions: completions => {
-                    this.inlineCodeCompletionProvider.freeInlineCompletions(completions);
-                }
+                disposeInlineCompletions: () => { /* no-op */ }
             }
         );
     }

@@ -63,7 +63,15 @@ export interface PluginPackage {
     extensionPack?: string[];
     l10n?: string;
     icon?: string;
-    extensionKind?: Array<'ui' | 'workspace'>
+    type?: 'module' | 'commonjs';
+    extensionKind?: Array<'ui' | 'workspace'>;
+    capabilities?: {
+        untrustedWorkspaces?: {
+            supported: boolean | 'limited';
+            description?: string;
+            restrictedConfigurations?: string[];
+        };
+    };
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage | PluginModel, relativePath: string): string {
@@ -585,6 +593,7 @@ export interface PluginModel {
     l10n?: string;
     readmeUrl?: string;
     licenseUrl?: string;
+    untrustedWorkspacesSupport?: boolean | 'limited';
 }
 
 export interface PluginEntryPoint {

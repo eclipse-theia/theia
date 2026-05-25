@@ -45,9 +45,7 @@ export class AICodeInlineCompletionsProvider
         );
     }
 
-    freeInlineCompletions(
-        completions: monaco.languages.InlineCompletions<monaco.languages.InlineCompletion>
-    ): void {
+    disposeInlineCompletions(): void {
         // nothing to do
     }
 }

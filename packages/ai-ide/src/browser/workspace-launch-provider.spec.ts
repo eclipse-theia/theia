@@ -144,12 +144,12 @@ describe('Launch Management Tool Providers', () => {
             expect(tool.description).to.contain(
                 'Lists available launch configurations'
             );
-            expect(tool.parameters.required).to.deep.equal(['filter']);
+            expect(tool.parameters.required).to.deep.equal([]);
         });
 
-        it('should list all configurations without filter', async () => {
+        it('should list all configurations when filter is omitted', async () => {
             const tool = launchListProvider.getTool();
-            const result = await tool.handler('{"filter":""}');
+            const result = await tool.handler('{}');
             expect(result).to.be.a('string');
             const configurations = JSON.parse(result as string);
 
@@ -195,7 +195,7 @@ describe('Launch Management Tool Providers', () => {
             expect(tool.id).to.equal('runLaunchConfiguration');
             expect(tool.name).to.equal('runLaunchConfiguration');
             expect(tool.description).to.contain(
-                'Executes a specified launch configuration'
+                'Starts a launch configuration'
             );
             expect(tool.parameters.required).to.deep.equal([
                 'configurationName',

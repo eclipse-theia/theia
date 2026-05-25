@@ -22,12 +22,10 @@ import * as monaco from '@theia/monaco-editor-core';
 import { FormattingConflicts, FormattingMode } from '@theia/monaco-editor-core/esm/vs/editor/contrib/format/browser/format';
 import { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceService, PreferenceLanguageOverrideService } from '@theia/core';
+import { nls, PreferenceScope } from '@theia/core';
+import { MonacoFormatterService } from './monaco-formatter-service';
 
 type FormattingEditProvider = DocumentFormattingEditProvider | DocumentRangeFormattingEditProvider;
-
-const PREFERENCE_NAME = 'editor.defaultFormatter';
 
 @injectable()
 export class MonacoFormattingConflictsContribution implements FrontendApplicationContribution {
@@ -35,38 +33,16 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
     @inject(MonacoQuickInputService)
     protected readonly monacoQuickInputService: MonacoQuickInputService;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
-
-    @inject(PreferenceLanguageOverrideService)
-    protected readonly preferenceSchema: PreferenceLanguageOverrideService;
-
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
-    async initialize(): Promise<void> {
+    @inject(MonacoFormatterService)
+    protected readonly formatterService: MonacoFormatterService;
 
+    async initialize(): Promise<void> {
         FormattingConflicts.setFormatterSelector(<T extends FormattingEditProvider>(
             formatters: T[], document: ITextModel, mode: FormattingMode) =>
             this.selectFormatter(formatters, document, mode));
-    }
-
-    protected async setDefaultFormatter(language: string, formatter: string): Promise<void> {
-        const name = this.preferenceSchema.overridePreferenceName({
-            preferenceName: PREFERENCE_NAME,
-            overrideIdentifier: language
-        });
-
-        await this.preferenceService.set(name, formatter);
-    }
-
-    private getDefaultFormatter(language: string, resourceURI: string): string | undefined {
-        const name = this.preferenceSchema.overridePreferenceName({
-            preferenceName: PREFERENCE_NAME,
-            overrideIdentifier: language
-        });
-
-        return this.preferenceService.get<string>(name, undefined, resourceURI);
     }
 
     private async selectFormatter<T extends FormattingEditProvider>(
@@ -86,7 +62,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
         }
 
         const languageId = currentEditor.editor.document.languageId;
-        const defaultFormatterId = this.getDefaultFormatter(languageId, document.uri.toString());
+        const defaultFormatterId = this.formatterService.getDefaultFormatter(languageId, document.uri.toString());
 
         if (defaultFormatterId) {
             const formatter = formatters.find(f => f.extensionId && f.extensionId.value === defaultFormatterId);
@@ -107,7 +83,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
 
             const selectedFormatter = await this.monacoQuickInputService.showQuickPick(items, { placeholder: nls.localizeByDefault('Format Document With...') });
             if (selectedFormatter) {
-                this.setDefaultFormatter(languageId, selectedFormatter.detail ? selectedFormatter.detail : '');
+                this.formatterService.setDefaultFormatter(languageId, selectedFormatter.detail, PreferenceScope.Workspace);
                 resolve(selectedFormatter.value);
             } else {
                 resolve(undefined);

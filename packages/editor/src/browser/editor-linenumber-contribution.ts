@@ -17,7 +17,7 @@
 import { EditorManager } from './editor-manager';
 import { EditorMouseEvent, MouseTargetType, Position, TextEditor } from './editor';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, ContextMenuRenderer, isContextMenuEvent } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Disposable, DisposableCollection, MenuPath } from '@theia/core';
 import { EditorWidget } from './editor-widget';
@@ -53,7 +53,7 @@ export class EditorLineNumberContribution implements FrontendApplicationContribu
 
     protected handleContextMenu(editor: TextEditor, event: EditorMouseEvent): void {
         if (event.target && (event.target.type === MouseTargetType.GUTTER_LINE_NUMBERS || event.target.type === MouseTargetType.GUTTER_GLYPH_MARGIN)) {
-            if (event.event.button === 2) {
+            if (isContextMenuEvent(event.event)) {
                 editor.focus();
                 const lineNumber = lineNumberFromPosition(event.target.position);
                 const contextKeyService = this.contextKeyService.createOverlay([['editorLineNumber', lineNumber]]);

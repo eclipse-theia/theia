@@ -240,7 +240,7 @@ export class CustomNonSerializableContentRenderer implements ChatResponsePartRen
 
 @injectable()
 export class CustomResponseContentRendererAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-    id = 'CustomContent';
+    id = 'CustomContentSample';
     name = this.id;
     override description = 'Demonstrates custom serializable and non-serializable chat response content';
     languageModelRequirements = [];

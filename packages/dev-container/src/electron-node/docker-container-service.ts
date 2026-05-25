@@ -20,7 +20,7 @@ import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
 import { ContainerConnectionOptions } from '../electron-common/remote-container-connection-provider';
-import { DevContainerConfiguration } from './devcontainer-file';
+import { DevContainerConfiguration, NonComposeContainerBase } from './devcontainer-file';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 import { RemoteDockerContainerConnection } from './remote-container-connection-provider';
@@ -123,6 +123,15 @@ export class DockerContainerService {
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
             await containerCreateContrib.handleContainerCreation?.(containerCreateOptions, devcontainerConfig, docker, outputProvider);
+        }
+
+        // Per the devcontainer spec, overrideCommand defaults to true for non-compose containers.
+        // When true, override the image's CMD with a sleep loop to keep the container alive.
+        if (!devcontainerConfig.dockerComposeFile) {
+            const overrideCommand = (devcontainerConfig as NonComposeContainerBase).overrideCommand;
+            if (overrideCommand !== false) {
+                containerCreateOptions.Cmd = ['/bin/sh', '-c', 'while sleep 1000; do :; done'];
+            }
         }
 
         let container: Docker.Container;

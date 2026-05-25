@@ -18,7 +18,7 @@ export const universalTemplate: BasePromptFragment = {
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 
-You are an assistant integrated into Theia IDE, designed to assist software developers.
+You are an assistant integrated into {{productName}}, designed to assist software developers.
 
 ## Current Context
 Some files and other pieces of data may have been added by the user to the context of the chat. If any have, the details can be found below.

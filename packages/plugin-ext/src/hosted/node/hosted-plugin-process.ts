@@ -22,6 +22,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as cp from 'child_process';
 import { Duplex } from 'stream';
 import { HostedPluginClient, PLUGIN_HOST_BACKEND, PluginHostEnvironmentVariable, ServerPluginRunner } from '../../common/plugin-protocol';
+import { PluginHostNavigatorState } from '../../main/common/plugin-host-environment-preferences';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { ProcessTerminateMessage, ProcessTerminatedMessage } from './hosted-plugin-protocol';
@@ -63,6 +64,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     @inject(ProcessUtils)
     protected readonly processUtils: ProcessUtils;
+
+    @inject(PluginHostNavigatorState)
+    protected readonly navigatorState: PluginHostNavigatorState;
 
     private childProcess: cp.ChildProcess | undefined;
     private messagePipe?: BinaryMessagePipe;
@@ -179,6 +183,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
         env['VSCODE_NLS_CONFIG'] = JSON.stringify(this.localizationService.getNlsConfig());
         // apply external env variables
         this.pluginHostEnvironmentVariables.getContributions().forEach(envVar => envVar.process(env));
+        if (this.navigatorState.supportNodeGlobalNavigator) {
+            env['THEIA_SUPPORT_NODE_GLOBAL_NAVIGATOR'] = 'true';
+        }
         if (this.cli.extensionTestsPath) {
             env.extensionTestsPath = this.cli.extensionTestsPath;
         }

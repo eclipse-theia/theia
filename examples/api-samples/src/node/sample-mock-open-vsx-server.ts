@@ -18,6 +18,7 @@ import { BackendApplicationContribution } from '@theia/core/lib/node';
 import * as express from '@theia/core/shared/express';
 import * as fs from 'fs';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { OVSXMockClient, VSXExtensionRaw } from '@theia/ovsx-client';
 import * as path from 'path';
 import { SampleAppInfo } from '../common/vsx/sample-app-info';
