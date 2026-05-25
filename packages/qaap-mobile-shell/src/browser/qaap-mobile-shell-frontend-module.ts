@@ -13,6 +13,8 @@ import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { AIVariableContribution } from '@theia/ai-core/lib/common/variable-service';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+import { SCM_WIDGET_FACTORY_ID } from '@theia/scm/lib/browser/scm-contribution';
+import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { createChatViewTreeWidget } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatViewTreeWidget } from '@theia/ai-chat-ui/lib/browser/chat-tree-view/chat-view-tree-widget';
@@ -48,6 +50,7 @@ import { QaapProjectBootstrapService } from './qaap-project-bootstrap-service';
 import { QaapProjectBootstrapContribution } from './qaap-project-bootstrap-contribution';
 import { MobileTouchScrollContribution } from './mobile-touch-scroll-contribution';
 import { QaapBootstrapVariableContribution } from './qaap-bootstrap-variable-contribution';
+import { createQaapScmWidgetContainer } from './qaap-scm-tree-widget';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
@@ -72,6 +75,10 @@ export default new ContainerModule(bind => {
         widget.node.classList.add('theia-mobile-projects-real-agent-view');
         return widget;
     });
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: SCM_WIDGET_FACTORY_ID,
+        createWidget: () => createQaapScmWidgetContainer(container).get(ScmWidget)
+    })).inSingletonScope();
     bind(MobileProjectsService).toSelf().inSingletonScope();
     bind(MobileProjectsReadmeContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileProjectsReadmeContribution);

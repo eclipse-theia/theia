@@ -26,7 +26,7 @@ import { TreeViewWelcomeWidget } from '@theia/core/lib/browser/tree/tree-view-we
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { MenuModelRegistry, CompoundMenuNode, MenuPath, CommandMenu } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
-import { ApplicationShell, ContextMenuRenderer, LabelProvider, DiffUris, ACTION_ITEM, Widget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { EditorWidget, EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
@@ -60,7 +60,6 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
     @inject(ColorRegistry) protected readonly colors: ColorRegistry;
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     // TODO: Make TreeWidget generic to better type those fields.
     override readonly model: ScmTreeModel;
@@ -157,30 +156,33 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
                 (node.parent && ScmFileChangeFolderNode.is(node.parent))
                     ? new URI(node.parent.sourceUri) : new URI(this.model.rootUri);
 
-            const content = <ScmResourceComponent
-                key={node.sourceUri}
-                model={this.model}
-                treeNode={node}
-                contextMenuRenderer={this.contextMenuRenderer}
-                menus={this.menus}
-                contextKeys={this.contextKeys}
-                labelProvider={this.labelProvider}
-                corePreferences={this.corePreferences}
-                caption={caption}
-                collapseContainingPanel={() => this.collapseContainingPanel()}
-                {...{
-                    ...this.props,
-                    parentPath,
-                    sourceUri: node.sourceUri,
-                    decoration: this.decorationsService.getDecoration(new URI(node.sourceUri), true)[0],
-                    colors: this.colors,
-                    isLightTheme: this.isCurrentThemeLight(),
-                    renderExpansionToggle: () => this.renderExpansionToggle(node, props),
-                }}
-            />;
+            const content = this.renderScmResourceComponent(node, props, parentPath, caption);
             return React.createElement('div', attributes, content);
         }
         return super.renderNode(node, props);
+    }
+
+    protected renderScmResourceComponent(node: ScmFileChangeNode, props: NodeProps, parentPath: URI, caption: React.ReactNode): React.ReactNode {
+        return <ScmResourceComponent
+            key={node.sourceUri}
+            model={this.model}
+            treeNode={node}
+            contextMenuRenderer={this.contextMenuRenderer}
+            menus={this.menus}
+            contextKeys={this.contextKeys}
+            labelProvider={this.labelProvider}
+            corePreferences={this.corePreferences}
+            caption={caption}
+            {...{
+                ...this.props,
+                parentPath,
+                sourceUri: node.sourceUri,
+                decoration: this.decorationsService.getDecoration(new URI(node.sourceUri), true)[0],
+                colors: this.colors,
+                isLightTheme: this.isCurrentThemeLight(),
+                renderExpansionToggle: () => this.renderExpansionToggle(node, props),
+            }}
+        />;
     }
 
     protected override createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
@@ -455,18 +457,6 @@ export class ScmTreeWidget extends TreeViewWelcomeWidget {
         return standaloneEditor;
     }
 
-    protected collapseContainingPanel(): void {
-        let widget: Widget | null = this;
-        while (widget) {
-            const area = this.shell.getAreaFor(widget);
-            if (area === 'left' || area === 'right') {
-                this.shell.collapsePanel(area);
-                return;
-            }
-            widget = widget.parent;
-        }
-    }
-
     protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.viewMode === 'list') {
             if (props.depth === 1) {
@@ -630,23 +620,11 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
     protected open = () => {
         const resource = this.props.model.getResourceFromNode(this.props.treeNode);
         if (resource) {
-            resource.open()
-                .then(() => this.props.collapseContainingPanel())
-                .catch(e => console.error('Failed to open a SCM resource', e));
+            resource.open();
         }
     };
 
-    protected handleInlineCommand = (node: CommandMenu) => {
-        if (this.isOpenResourceCommand(node)) {
-            this.props.collapseContainingPanel();
-        }
-    };
-
-    protected isOpenResourceCommand(node: CommandMenu): boolean {
-        return node.id === 'git.openFile'
-            || node.id === 'git.openFile2'
-            || node.id === 'git.openChange';
-    }
+    protected handleInlineCommand = (_node: CommandMenu): void => { };
 
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
@@ -677,14 +655,25 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
      */
     protected handleClick = (event: React.MouseEvent) => {
         if (!this.hasCtrlCmdOrShiftMask(event)) {
-            this.open();
+            // Determine the behavior based on the preference value.
+            const isSingle = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'singleClick';
+            if (isSingle) {
+                this.open();
+            }
         }
     };
 
     /**
      * Handle the double clicking of nodes present in the widget.
      */
-    protected handleDoubleClick = () => { };
+    protected handleDoubleClick = () => {
+        // Determine the behavior based on the preference value.
+        const isDouble = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'doubleClick';
+        // Nodes should only be opened through double clicking if the correct preference is set.
+        if (isDouble) {
+            this.open();
+        }
+    };
 }
 
 export namespace ScmResourceComponent {
@@ -694,8 +683,7 @@ export namespace ScmResourceComponent {
         sourceUri: string;
         decoration: Decoration | undefined;
         colors: ColorRegistry;
-        isLightTheme: boolean;
-        collapseContainingPanel: () => void;
+        isLightTheme: boolean
     }
 }
 
@@ -855,9 +843,8 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
         event.stopPropagation();
 
         const { node, menuPath, args, onDidRunCommand } = this.props;
-        node.run(menuPath, ...args)
-            .then(() => onDidRunCommand?.(node))
-            .catch(e => console.error('Failed to execute a SCM inline action', e));
+        node.run(menuPath, ...args);
+        onDidRunCommand?.(node);
     };
 }
 export namespace ScmInlineAction {

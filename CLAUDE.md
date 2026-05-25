@@ -105,7 +105,7 @@ Pick the next task off this list. Each is independent — extract one, verify, c
 
 - [x] **ai-anthropic preference defaults.** Extracted to `QaapAiModelDefaultsContribution` in `qaap-ai-config`; upstream reverted.
 - [x] **ai-google preference defaults.** Same — extracted alongside Anthropic via `service.registerOverride()`.
-- [ ] **scm mobile single-click + auto-collapse.** Subclass `ScmTreeWidget` and `ScmResourceComponent` in a `qaap-*` package to add `collapseContainingPanel()` and always-single-click open. Rebind via DI. **Verify visually on narrow viewport** (open file from SCM panel; panel should collapse). Revert `packages/scm/src/browser/scm-tree-widget.tsx`.
+- [x] **scm mobile single-click + auto-collapse.** Extracted to `QaapScmTreeWidget` / `QaapScmResourceComponent` in `qaap-mobile-shell`. `packages/scm/src/browser/scm-tree-widget.tsx` now keeps only protected/optional seam hooks for resource rendering and inline-action callbacks. Compile verified; still needs manual narrow-viewport SCM click-through when a repo with changes is available.
 - [x] **plugin-ext-vscode ESM loader hook.** Re-adopted upstream — was pure fork lag (no fork commits had touched the file).
 
 **Tier 2 — Medium (2–3 files, subclass + rebind)**
