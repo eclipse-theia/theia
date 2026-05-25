@@ -232,6 +232,26 @@ export class MobileProjectsConversations {
         };
     }
 
+    async getTheiaSerializedConversation(id: string): Promise<unknown | undefined> {
+        const file = this.theiaSessionFiles.get(id);
+        return file ? this.readJson<unknown>(file) : undefined;
+    }
+
+    async findTheiaSerializedConversationBySessionId(sessionId: string, cwd?: string): Promise<unknown | undefined> {
+        const normalizedCwd = cwd ? normalizeCwd(cwd) : undefined;
+        for (const [id, file] of this.theiaSessionFiles) {
+            const summary = this.findTheiaSummary(id);
+            if (summary?.sessionId !== sessionId) {
+                continue;
+            }
+            if (normalizedCwd && summary.cwd && normalizeCwd(summary.cwd) !== normalizedCwd) {
+                continue;
+            }
+            return this.readJson<unknown>(file);
+        }
+        return undefined;
+    }
+
     /** Optimistic update after a synchronous POST returns, before SSE catches up. */
     recordSnapshot(conv: QaapAgentConversationSummaryDTO): void {
         this.upsert(conv);

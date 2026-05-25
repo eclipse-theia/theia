@@ -6,6 +6,10 @@
 import URI from '@theia/core/lib/common/uri';
 import { injectable } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
+import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+
+export const MobileProjectChatViewWidgetFactory = Symbol('MobileProjectChatViewWidgetFactory');
+export type MobileProjectChatViewWidgetFactory = (id: string) => ChatViewWidget;
 
 /**
  * AIChatInputWidget variant used by the mobile Projects panel.

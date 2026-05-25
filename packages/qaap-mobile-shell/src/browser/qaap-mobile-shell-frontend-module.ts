@@ -13,6 +13,10 @@ import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { AIVariableContribution } from '@theia/ai-core/lib/common/variable-service';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
+import { createChatViewTreeWidget } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { ChatViewTreeWidget } from '@theia/ai-chat-ui/lib/browser/chat-tree-view/chat-view-tree-widget';
+import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import {
     QaapBootstrapInstallTool,
     QaapBootstrapOpenPreviewTool,
@@ -33,7 +37,10 @@ import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-con
 import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
-import { MobileProjectAIChatInputWidget } from './mobile-project-ai-chat-input-widget';
+import {
+    MobileProjectAIChatInputWidget,
+    MobileProjectChatViewWidgetFactory,
+} from './mobile-project-ai-chat-input-widget';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { QaapProjectBootstrapDetector } from './qaap-project-bootstrap-detector';
@@ -53,6 +60,18 @@ export default new ContainerModule(bind => {
         id: 'mobile-projects-chat-input',
         createWidget: () => container.get(MobileProjectAIChatInputWidget),
     })).inSingletonScope();
+    bind(MobileProjectChatViewWidgetFactory).toFactory(ctx => (id: string) => {
+        const child = ctx.container.createChild();
+        child.bind(AIChatInputWidget).to(MobileProjectAIChatInputWidget);
+        child.bind(ChatViewTreeWidget).toDynamicValue(treeCtx =>
+            createChatViewTreeWidget(treeCtx.container)
+        );
+        child.bind(ChatViewWidget).toSelf();
+        const widget = child.get(ChatViewWidget);
+        widget.id = `mobile-projects-chat-view-${id}`;
+        widget.node.classList.add('theia-mobile-projects-real-agent-view');
+        return widget;
+    });
     bind(MobileProjectsService).toSelf().inSingletonScope();
     bind(MobileProjectsReadmeContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileProjectsReadmeContribution);

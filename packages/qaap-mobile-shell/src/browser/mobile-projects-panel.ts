@@ -11,8 +11,9 @@ import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-comman
 import { Widget as LuminoWidget } from '@lumino/widgets';
 import { GenericCapabilitySelections } from '@theia/ai-core';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { ChatAgentLocation, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatRequestModel, ChatService, ChatSession, ChatSessionMetadata, MutableChatModel } from '@theia/ai-chat';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
+import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import {
     MobileProjectEntry,
     MobileProjectFilter,
@@ -74,9 +75,31 @@ export interface MobileProjectsPanelOptions {
     conversations?: MobileProjectsConversations;
     /** Creates the same chat input widget used by the Agent view. */
     createChatInputWidget?: (id: string) => Promise<AIChatInputWidget>;
+    /** Creates a full Agent chat view for opening real workspace chat sessions from Projects. */
+    createChatViewWidget?: (id: string) => Promise<ChatViewWidget>;
     chatService?: ChatService;
     chatAgentService?: ChatAgentService;
     messageService?: MessageService;
+}
+
+interface RestorableTheiaChatData {
+    readonly title?: string;
+    readonly pinnedAgentId?: string;
+    readonly saveDate?: number;
+    readonly model: ConstructorParameters<typeof MutableChatModel>[0] & {
+        readonly sessionId: string;
+        readonly requests: unknown[];
+        readonly responses: unknown[];
+    };
+}
+
+function isRestorableTheiaChatData(candidate: unknown): candidate is RestorableTheiaChatData {
+    const data = candidate as Partial<RestorableTheiaChatData> | undefined;
+    const model = data?.model as Partial<RestorableTheiaChatData['model']> | undefined;
+    return !!model
+        && typeof model.sessionId === 'string'
+        && Array.isArray(model.requests)
+        && Array.isArray(model.responses);
 }
 
 export class MobileProjectsPanel {
@@ -97,6 +120,8 @@ export class MobileProjectsPanel {
     protected composerDraft = '';
     protected agentChatInputWidget: AIChatInputWidget | undefined;
     protected agentChatInputSession: ChatSession | undefined;
+    protected transcriptChatInputWidget: AIChatInputWidget | undefined;
+    protected transcriptChatViewWidget: ChatViewWidget | undefined;
     /** Monotonic counter that disambiguates each AIChatInputWidget instance from the WidgetManager cache. */
     protected agentChatInputMountSeq = 0;
     /** Last-flashed task id — drives the highlight animation when a fresh task appears. */
@@ -116,6 +141,7 @@ export class MobileProjectsPanel {
     protected readonly activeTasks: MobileProjectsActiveTasks | undefined;
     protected readonly conversations: MobileProjectsConversations | undefined;
     protected readonly createChatInputWidget: MobileProjectsPanelOptions['createChatInputWidget'];
+    protected readonly createChatViewWidget: MobileProjectsPanelOptions['createChatViewWidget'];
     protected readonly chatService: ChatService | undefined;
     protected readonly chatAgentService: ChatAgentService | undefined;
     protected readonly messageService: MessageService | undefined;
@@ -155,6 +181,7 @@ export class MobileProjectsPanel {
         this.activeTasks = options.activeTasks;
         this.conversations = options.conversations;
         this.createChatInputWidget = options.createChatInputWidget;
+        this.createChatViewWidget = options.createChatViewWidget;
         this.chatService = options.chatService;
         this.chatAgentService = options.chatAgentService;
         this.messageService = options.messageService;
@@ -1866,7 +1893,7 @@ export class MobileProjectsPanel {
     ): Promise<void> {
         this.closeTranscriptSheet();
         const root = document.createElement('div');
-        root.className = 'theia-mobile-agent-log theia-mod-visible';
+        root.className = 'theia-mobile-agent-log theia-mobile-agent-transcript-root theia-mod-visible';
         root.setAttribute('role', 'dialog');
         root.setAttribute('aria-modal', 'true');
 
@@ -1889,21 +1916,13 @@ export class MobileProjectsPanel {
         transcript.className = 'theia-mobile-agent-transcript';
         transcript.textContent = nls.localize('qaap/mobileProjects/loadingTranscript', 'Loading…');
 
-        const composer = document.createElement('form');
-        composer.className = 'theia-mobile-agent-transcript-composer';
-        const input = document.createElement('textarea');
-        input.className = 'theia-mobile-agent-transcript-input';
-        input.rows = 2;
-        input.placeholder = nls.localize('qaap/mobileProjects/transcriptComposerPlaceholder', 'Reply to the agent…');
-        const send = document.createElement('button');
-        send.type = 'submit';
-        send.className = 'theia-mobile-agent-transcript-send';
-        send.textContent = nls.localize('qaap/mobileProjects/transcriptSend', 'Send');
-        composer.append(input, send);
+        const composer = document.createElement('div');
+        composer.className = 'theia-mobile-agent-transcript-chat-input';
+        composer.textContent = nls.localize('qaap/mobileProjects/agentInputLoading', 'Loading agent input…');
 
         sheet.append(header, transcript, composer);
         root.append(backdrop, sheet);
-        this.root.append(root);
+        document.body.append(root);
         this.transcriptSheet = root;
 
         const refresh = async (): Promise<void> => {
@@ -1924,31 +1943,11 @@ export class MobileProjectsPanel {
         close.addEventListener('click', dismiss);
         backdrop.addEventListener('click', dismiss);
 
-        composer.addEventListener('submit', async ev => {
-            ev.preventDefault();
-            const content = input.value.trim();
-            if (!content) {
-                return;
-            }
-            send.disabled = true;
-            input.disabled = true;
-            try {
-                const full = await postConversationMessage(summary.id, content);
-                input.value = '';
-                this.renderTranscriptMessages(transcript, full);
-                this.conversations?.recordSnapshot(conversationToSummary(full));
-            } catch (error) {
-                const detail = error instanceof Error ? error.message : String(error);
-                this.messageService?.error(nls.localize(
-                    'qaap/mobileProjects/transcriptSendFailed', 'Could not send: {0}', detail
-                ));
-            } finally {
-                send.disabled = false;
-                input.disabled = false;
-                input.focus();
-            }
+        void this.mountTranscriptChatInput(project, summary, composer, async content => {
+            const full = await postConversationMessage(summary.id, content);
+            this.renderTranscriptMessages(transcript, full);
+            this.conversations?.recordSnapshot(conversationToSummary(full));
         });
-        input.focus();
     }
 
     protected async openTheiaChatTranscriptSheet(
@@ -1957,7 +1956,7 @@ export class MobileProjectsPanel {
     ): Promise<void> {
         this.closeTranscriptSheet();
         const root = document.createElement('div');
-        root.className = 'theia-mobile-agent-log theia-mod-visible';
+        root.className = 'theia-mobile-agent-log theia-mobile-agent-transcript-root theia-mod-visible';
         root.setAttribute('role', 'dialog');
         root.setAttribute('aria-modal', 'true');
 
@@ -1976,39 +1975,110 @@ export class MobileProjectsPanel {
         close.setAttribute('aria-label', close.title);
         header.append(title, close);
 
-        const transcript = document.createElement('div');
-        transcript.className = 'theia-mobile-agent-transcript';
-        transcript.textContent = nls.localize('qaap/mobileProjects/loadingTranscript', 'Loading…');
+        const chatHost = document.createElement('div');
+        chatHost.className = 'theia-mobile-agent-transcript-real-chat';
+        chatHost.textContent = nls.localize('qaap/mobileProjects/loadingTranscript', 'Loading…');
 
-        const openHint = document.createElement('div');
-        openHint.className = 'theia-mobile-agent-transcript-readonly';
-        openHint.textContent = nls.localize(
-            'qaap/mobileProjects/workspaceChatReadonly',
-            'Workspace chat history. Open the project to continue it in the Chat view.'
-        );
-
-        sheet.append(header, transcript, openHint);
+        sheet.append(header, chatHost);
         root.append(backdrop, sheet);
-        this.root.append(root);
+        document.body.append(root);
         this.transcriptSheet = root;
 
         const dismiss = (): void => this.closeTranscriptSheet();
         close.addEventListener('click', dismiss);
         backdrop.addEventListener('click', dismiss);
-        this.transcriptSheetDispose = Disposable.NULL;
+        const previousActiveSessionId = this.chatService?.getActiveSession()?.id;
 
         try {
-            const full = summary.id.startsWith('theia-chat-service:')
-                ? await this.getChatServiceConversation(summary)
-                : await this.conversations?.getTheiaConversation(summary.id);
-            if (full) {
-                this.renderTranscriptMessages(transcript, full);
-            } else {
-                transcript.textContent = nls.localize('qaap/mobileProjects/transcriptUnavailable', 'This chat could not be loaded.');
+            if (!this.createChatViewWidget || !this.chatService || !summary.sessionId) {
+                throw new Error(nls.localize('qaap/mobileProjects/agentViewUnavailable', 'Agent chat is unavailable.'));
             }
+            const session = await this.getOrRestoreProjectChatSession(project, summary);
+            if (!session) {
+                throw new Error(nls.localize('qaap/mobileProjects/transcriptUnavailable', 'This chat could not be loaded.'));
+            }
+            const uniqueId = `transcript-${project.id}-${summary.id}-${++this.agentChatInputMountSeq}-${Date.now()}`;
+            const widget = await this.createChatViewWidget(uniqueId);
+            if (!this.transcriptSheet || !chatHost.isConnected) {
+                widget.dispose();
+                return;
+            }
+            this.transcriptChatViewWidget = widget;
+            chatHost.replaceChildren();
+            this.chatService.setActiveSession(session.id, { focus: false });
+            if (widget.node.parentElement && widget.node.parentElement !== chatHost) {
+                LuminoWidget.detach(widget);
+            }
+            if (!widget.node.parentElement) {
+                LuminoWidget.attach(widget, chatHost);
+            }
+            widget.show();
+            widget.update();
+            widget.activate();
+            this.transcriptSheetDispose = Disposable.create(() => {
+                if (previousActiveSessionId && this.chatService?.getSession(previousActiveSessionId)) {
+                    this.chatService.setActiveSession(previousActiveSessionId, { focus: false });
+                }
+            });
         } catch (error) {
-            transcript.textContent = error instanceof Error ? error.message : String(error);
+            chatHost.textContent = error instanceof Error ? error.message : String(error);
+            this.transcriptSheetDispose = Disposable.NULL;
         }
+    }
+
+    protected async getOrRestoreProjectChatSession(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<ChatSession | undefined> {
+        if (!this.chatService || !summary.sessionId) {
+            return undefined;
+        }
+        const restored = await this.chatService.getOrRestoreSession(summary.sessionId);
+        return restored ?? this.restoreTheiaChatSessionFromProjectsStorage(project, summary);
+    }
+
+    protected async restoreTheiaChatSessionFromProjectsStorage(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<ChatSession | undefined> {
+        if (!this.chatService || !summary.sessionId || !this.conversations) {
+            return undefined;
+        }
+        const existing = this.chatService.getSession(summary.sessionId);
+        if (existing) {
+            return existing;
+        }
+        const cwd = this.projectsService.getProjectCwd(project) ?? summary.cwd;
+        const raw = summary.id.startsWith('theia-chat:')
+            ? await this.conversations.getTheiaSerializedConversation(summary.id)
+            : await this.conversations.findTheiaSerializedConversationBySessionId(summary.sessionId, cwd)
+                ?? await this.conversations.findTheiaSerializedConversationBySessionId(summary.sessionId);
+        if (!isRestorableTheiaChatData(raw)) {
+            return undefined;
+        }
+
+        const model = new MutableChatModel(raw.model);
+        const service = this.chatService as ChatService & {
+            _sessions?: ChatSession[];
+            restoreSessionData?: (model: MutableChatModel, data: RestorableTheiaChatData['model']) => Promise<void>;
+            setupAutoSaveForSession?: (session: ChatSession) => void;
+        };
+        await service.restoreSessionData?.(model, raw.model);
+        const pinnedAgent = raw.pinnedAgentId ? this.chatAgentService?.getAgent(raw.pinnedAgentId) : undefined;
+        const session: ChatSession = {
+            id: summary.sessionId,
+            title: raw.title ?? summary.title,
+            lastInteraction: new Date(raw.saveDate ?? summary.updatedAt),
+            model,
+            isActive: false,
+            pinnedAgent,
+        };
+        if (!Array.isArray(service._sessions)) {
+            return undefined;
+        }
+        service._sessions.push(session);
+        service.setupAutoSaveForSession?.(session);
+        return session;
     }
 
     protected async getChatServiceConversation(summary: QaapAgentConversationSummaryDTO): Promise<QaapAgentConversationDTO | undefined> {
@@ -2054,6 +2124,90 @@ export class MobileProjectsPanel {
         };
     }
 
+    protected async mountTranscriptChatInput(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        host: HTMLElement,
+        submit: (content: string, modeId?: string, capabilityOverrides?: Record<string, boolean>,
+            genericCapabilitySelections?: GenericCapabilitySelections, widget?: AIChatInputWidget) => Promise<void>,
+    ): Promise<void> {
+        if (!this.createChatInputWidget || !this.chatService) {
+            host.textContent = nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.');
+            return;
+        }
+        if (this.transcriptChatInputWidget && !this.transcriptChatInputWidget.isDisposed) {
+            this.transcriptChatInputWidget.dispose();
+        }
+        this.transcriptChatInputWidget = undefined;
+
+        const uniqueId = `transcript-${project.id}-${summary.id}-${++this.agentChatInputMountSeq}-${Date.now()}`;
+        let widget: AIChatInputWidget;
+        try {
+            widget = await this.createChatInputWidget(uniqueId);
+        } catch (error) {
+            console.error('[qaap-mobile-projects] transcript createChatInputWidget threw:', error);
+            host.textContent = `Agent input failed to load: ${error instanceof Error ? error.message : String(error)}`;
+            return;
+        }
+        widget.id = `mobile-projects-transcript-chat-input-${uniqueId}`;
+        if (!this.transcriptSheet || !host.isConnected) {
+            widget.dispose();
+            return;
+        }
+
+        host.replaceChildren();
+        if (widget.node.parentElement && widget.node.parentElement !== host) {
+            LuminoWidget.detach(widget);
+        }
+        if (!widget.node.parentElement) {
+            LuminoWidget.attach(widget, host);
+        }
+        widget.node.classList.add('chat-input-widget', 'theia-mobile-projects-real-agent-input');
+        widget.show();
+
+        const restoredSession = summary.sessionId && summary.id.startsWith('theia-chat')
+            ? await this.chatService.getOrRestoreSession(summary.sessionId)
+            : undefined;
+        const session = restoredSession ?? this.ensureAgentChatSession();
+        widget.chatModel = session.model;
+        widget.pinnedAgent = session.pinnedAgent;
+        widget.initialValue = '';
+        widget.setEnabled(true);
+        widget.onQuery = async (query: string, modeId?: string, capabilityOverrides?: Record<string, boolean>,
+            genericCapabilitySelections?: GenericCapabilitySelections) => {
+            const cleaned = query.trim();
+            if (!cleaned) {
+                return;
+            }
+            try {
+                await submit(cleaned, modeId, capabilityOverrides, genericCapabilitySelections, widget);
+                widget.clearPendingImageAttachments();
+            } catch (error) {
+                const detail = error instanceof Error ? error.message : String(error);
+                this.messageService?.error(nls.localize(
+                    'qaap/mobileProjects/transcriptSendFailed', 'Could not send: {0}', detail
+                ));
+            }
+        };
+        widget.onCancel = (requestModel: ChatRequestModel) => {
+            void this.chatService?.cancelRequest(requestModel.session.id, requestModel.id);
+        };
+        widget.onUnpin = () => {
+            session.pinnedAgent = undefined;
+            widget.pinnedAgent = undefined;
+        };
+        widget.onDeleteChangeSet = ((sessionId: string) => {
+            this.chatService?.deleteChangeSet(sessionId);
+        }) as unknown as (requestModel: ChatRequestModel) => void;
+        widget.onDeleteChangeSetElement = ((sessionId: string, uri: Parameters<ChatService['deleteChangeSetElement']>[1]) => {
+            this.chatService?.deleteChangeSetElement(sessionId, uri);
+        }) as unknown as (requestModel: ChatRequestModel, index: number) => void;
+
+        this.transcriptChatInputWidget = widget;
+        widget.activate();
+        widget.update();
+    }
+
     protected renderTranscriptMessages(host: HTMLElement, conv: QaapAgentConversationDTO): void {
         host.replaceChildren();
         if (conv.messages.length === 0) {
@@ -2095,6 +2249,14 @@ export class MobileProjectsPanel {
     protected closeTranscriptSheet(): void {
         this.transcriptSheetDispose.dispose();
         this.transcriptSheetDispose = Disposable.NULL;
+        if (this.transcriptChatInputWidget && !this.transcriptChatInputWidget.isDisposed) {
+            this.transcriptChatInputWidget.dispose();
+        }
+        this.transcriptChatInputWidget = undefined;
+        if (this.transcriptChatViewWidget && !this.transcriptChatViewWidget.isDisposed) {
+            this.transcriptChatViewWidget.dispose();
+        }
+        this.transcriptChatViewWidget = undefined;
         this.transcriptSheet?.remove();
         this.transcriptSheet = undefined;
     }

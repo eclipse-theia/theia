@@ -4826,14 +4826,31 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 }
 
 /* ---------------------------------------------------------------------------
- * Conversation transcript sheet — multi-turn view of a single agent thread.
- * Reuses the existing .theia-mobile-agent-log-sheet shell; adds message bubbles
- * and an inline composer at the bottom so the user can continue chatting
- * without leaving the projects panel.
+ * Conversation sheet — full-height multi-turn view of a single agent thread.
+ * Theia chat sessions mount the real ChatViewWidget here; VPS-backed threads
+ * still use the lightweight transcript fallback plus the real ChatInputWidget.
  * --------------------------------------------------------------------------- */
-.theia-mobile-agent-log-sheet.theia-mod-transcript {
-  max-height: 80vh;
-  min-height: 60vh;
+.theia-mobile-agent-transcript-root {
+  z-index: 2147483001 !important;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-backdrop {
+  background: var(--theia-editor-background);
+}
+
+.theia-mobile-agent-transcript-root .theia-mobile-agent-log-sheet.theia-mod-transcript {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 100dvh;
+  max-width: none;
+  border-bottom: none;
+  box-shadow: none;
+  transform: none;
 }
 
 .theia-mobile-agent-transcript {
@@ -4843,6 +4860,30 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.theia-mobile-agent-transcript-real-chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.theia-mobile-agent-transcript-real-chat .chat-view-widget,
+.theia-mobile-agent-transcript-real-chat .theia-mobile-projects-real-agent-view {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.theia-mobile-agent-transcript-real-chat .chat-tree-view-widget {
+  min-height: 0;
+}
+
+.theia-mobile-agent-transcript-real-chat .chat-input-widget {
+  flex: 0 0 auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--theia-editor-background);
 }
 
 .theia-mobile-agent-transcript-empty {
@@ -4907,6 +4948,24 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   color: var(--theia-descriptionForeground);
   font-size: 12px;
   line-height: 1.35;
+}
+
+.theia-mobile-agent-transcript-chat-input {
+  flex: 0 0 auto;
+  padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.18));
+  background: var(--theia-editor-background);
+}
+
+.theia-mobile-agent-transcript-chat-input .chat-input-widget,
+.theia-mobile-agent-transcript-chat-input .theia-mobile-projects-real-agent-input {
+  display: block;
+  width: 100%;
+  min-height: 118px;
+}
+
+.theia-mobile-agent-transcript-chat-input .theia-ChatInput {
+  width: 100%;
 }
 
 .theia-mobile-agent-transcript-composer {

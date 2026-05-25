@@ -31,6 +31,7 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { ChatService } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
+import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import {
     matchesMobileNarrowViewport,
     MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
@@ -46,6 +47,7 @@ import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
+import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
 import { MobileProjectsReadmeContribution } from './mobile-projects-readme-contribution';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
@@ -154,6 +156,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
+
+    @inject(MobileProjectChatViewWidgetFactory)
+    protected readonly mobileProjectChatViewWidgetFactory: MobileProjectChatViewWidgetFactory;
 
     @inject(QaapProjectBootstrapService)
     protected readonly projectBootstrap: QaapProjectBootstrapService;
@@ -771,6 +776,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 createChatInputWidget: id => this.widgetManager.getOrCreateWidget<AIChatInputWidget>(
                     'mobile-projects-chat-input',
                     { source: 'mobile-projects', id },
+                ),
+                createChatViewWidget: id => Promise.resolve(
+                    this.mobileProjectChatViewWidgetFactory(id) as ChatViewWidget
                 ),
                 chatService: this.chatService,
                 chatAgentService: this.chatAgentService,
