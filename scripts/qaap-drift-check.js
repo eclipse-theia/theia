@@ -87,7 +87,6 @@ const ALLOWED = [
     /^packages\/ai-ide\/tsconfig\.json$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-renderer\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/model-aliases-configuration-widget\.tsx$/,
-    /^packages\/ai-ide\/src\/browser\/context-file-validation-service-impl\.spec\.ts$/,
     /^packages\/ai-ide\/src\/browser\/style\/widgets\/model-aliases-configuration\.css$/,
     /^packages\/ai-ide\/src\/browser\/workspace-launch-provider\.ts$/,
     /^packages\/ai-ide\/src\/common\/workspace-preferences\.ts$/,
