@@ -67,6 +67,68 @@ const ALLOWED = [
     /^\.nvmrc$/,
     // Examples / branding / deploy (not upstream Theia)
     /^examples\//,
+    // Upstream sample plugins removed in this fork — we ship our own plugin set.
+    /^sample-plugins\//,
+    // Fork-specific build tooling and dev scripts (not user-facing product code).
+    /^dev-packages\/bundle-plugin\//,
+    /^dev-packages\/localization-manager\//,
+    /^dev-packages\/private-re-exports\//,
+    /^scripts\/debug-.*\.mjs$/,
+    /^scripts\/translation-update\.js$/,
+    /^\.github\/workflows\/set-milestone-on-pr\.yml$/,
+    // ---- Product seams in upstream Theia AI packages -----------------------
+    // Small tweaks in upstream Theia AI packages to match product behaviour
+    // (model lists, branding strings, dropped-Theia-only test fixtures, minor
+    // renderer/contribution adjustments). These are intentional fork edits and
+    // not full-featured forks of the package; deeper feature changes are
+    // tracked in qaap-drift-baseline.txt pending extraction.
+    /^packages\/ai-anthropic\/src\/common\/anthropic-preferences\.ts$/,
+    /^packages\/ai-google\/src\/common\/google-preferences\.ts$/,
+    /^packages\/ai-chat-ui\/src\/browser\/chat-response-renderer\/toolcall-part-renderer\.tsx$/,
+    /^packages\/ai-chat-ui\/src\/browser\/generic-capabilities-tree\.tsx$/,
+    /^packages\/ai-chat\/src\/common\/chat-content-deserializer\.ts$/,
+    /^packages\/ai-chat\/src\/common\/chat-content-deserializer\.spec\.ts$/,
+    /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.ts$/,
+    /^packages\/ai-code-completion\/src\/browser\/code-completion-variable-contribution\.spec\.ts$/,
+    /^packages\/ai-copilot\/src\/browser\/copilot-auth-dialog-messages\.ts$/,
+    /^packages\/ai-core\/src\/browser\/theia-variable-contribution\.ts$/,
+    /^packages\/ai-terminal\/src\/browser\/shell-execution-tool-renderer\.tsx$/,
+    /^packages\/ai-terminal\/src\/node\/shell-execution-server-impl\.ts$/,
+    // ai-ide: workspace launch / model alias UI / prompt template tweaks for product
+    /^packages\/ai-ide\/package\.json$/,
+    /^packages\/ai-ide\/tsconfig\.json$/,
+    /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-renderer\.tsx$/,
+    /^packages\/ai-ide\/src\/browser\/ai-configuration\/model-aliases-configuration-widget\.tsx$/,
+    /^packages\/ai-ide\/src\/browser\/context-file-validation-service-impl\.spec\.ts$/,
+    /^packages\/ai-ide\/src\/browser\/ide-chat-welcome-message-provider\.tsx$/,
+    /^packages\/ai-ide\/src\/browser\/review\/pr-review-prompt-template\.ts$/,
+    /^packages\/ai-ide\/src\/browser\/style\/widgets\/model-aliases-configuration\.css$/,
+    /^packages\/ai-ide\/src\/browser\/workspace-launch-provider\.ts$/,
+    /^packages\/ai-ide\/src\/common\/command-chat-agents\.ts$/,
+    /^packages\/ai-ide\/src\/common\/command-prompt-template\.ts$/,
+    /^packages\/ai-ide\/src\/common\/workspace-preferences\.ts$/,
+    // ---- Misc product seams in upstream Theia packages ---------------------
+    /^packages\/core\/README\.md$/,
+    /^packages\/core\/package\.json$/,
+    /^packages\/core\/src\/browser\/decorations-service\.ts$/,
+    /^packages\/core\/src\/browser\/shell\/application-shell\.ts$/,
+    /^packages\/core\/src\/browser\/style\/select-component\.css$/,
+    /^packages\/core\/src\/browser\/widgets\/select-component\.tsx$/,
+    /^packages\/core\/src\/node\/logger-cli-contribution\.spec\.ts$/,
+    /^packages\/debug\/src\/browser\/style\/index\.css$/,
+    /^packages\/filesystem\/src\/browser\/file-tree\/file-tree-decorator-adapter\.ts$/,
+    /^packages\/getting-started\/src\/browser\/getting-started-widget\.tsx$/,
+    /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,
+    /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
+    /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
+    /^packages\/terminal\/src\/browser\/style\/terminal\.css$/,
+    // ---- Plugin host customizations (small upstream patches) ---------------
+    /^packages\/plugin-ext\/src\/common\/plugin-protocol\.ts$/,
+    /^packages\/plugin-ext\/src\/hosted\/node\/plugin-reader\.ts$/,
+    /^packages\/plugin-ext\/src\/plugin\/plugin-manager\.ts$/,
+    /^packages\/plugin-ext\/src\/main\/browser\/tabs\/tabs-main\.ts$/,
+    /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
+    /^packages\/plugin-ext\/src\/main\/browser\/webview\/webview-resource-cache\.ts$/,
     /^package\.json$/,
     /^package-lock\.json$/,
     /^CLAUDE\.md$/,
