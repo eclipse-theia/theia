@@ -103,30 +103,34 @@ Pick the next task off this list. Each is independent — extract one, verify, c
 
 **Tier 1 — Quick wins (1 file, ~1 session each)**
 
-- [ ] **ai-anthropic preference defaults.** Add a `PreferenceContribution` in `qaap-ai-config` that overrides `AnthropicPreferencesSchema` default models to include `claude-sonnet-4-5` and `claude-opus-4-5`. Revert `packages/ai-anthropic/src/common/anthropic-preferences.ts`.
-- [ ] **ai-google preference defaults.** Same pattern. First confirm whether `gemini-3.5-flash` or `gemini-3-flash-preview` is the right model name before deciding extract-vs-revert.
+- [x] **ai-anthropic preference defaults.** Extracted to `QaapAiModelDefaultsContribution` in `qaap-ai-config`; upstream reverted.
+- [x] **ai-google preference defaults.** Same — extracted alongside Anthropic via `service.registerOverride()`.
 - [ ] **scm mobile single-click + auto-collapse.** Subclass `ScmTreeWidget` and `ScmResourceComponent` in a `qaap-*` package to add `collapseContainingPanel()` and always-single-click open. Rebind via DI. **Verify visually on narrow viewport** (open file from SCM panel; panel should collapse). Revert `packages/scm/src/browser/scm-tree-widget.tsx`.
-- [ ] **plugin-ext-vscode ESM loader hook (triage).** Decide whether to re-adopt upstream's `registerESMLoaderHook()` in `plugin-vscode-init.ts` (enables ESM-style VS Code plugins). If yes, `git checkout upstream/master --` it. If no, document the rationale in this file.
+- [x] **plugin-ext-vscode ESM loader hook.** Re-adopted upstream — was pure fork lag (no fork commits had touched the file).
 
 **Tier 2 — Medium (2–3 files, subclass + rebind)**
 
-- [ ] **ai-chat** (`chat-content-deserializer.{ts,spec.ts}`). Subclass + rebind, or revert if fork lag. Verify chat round-trip.
-- [ ] **ai-chat-ui** (`toolcall-part-renderer.tsx`, `generic-capabilities-tree.tsx`). Subclass renderers and rebind. Verify toolcall rendering and capabilities tree.
-- [ ] **ai-core** (`theia-variable-contribution.ts` + 1). Subclass + rebind in `qaap-ai-config` or new `qaap-ai-core` package.
-- [ ] **ai-terminal** (`shell-execution-tool-renderer.tsx`, `shell-execution-server-impl.ts`). Subclass renderer + server impl. Verify AI terminal tool execution.
-- [ ] **ai-code-completion** (`code-completion-agent.ts` + spec). Subclass agent. Verify completions work in the editor.
-- [ ] **monaco** (`monaco-quick-input-{layout,service}.ts`, `monaco-frontend-module.ts`). Move logic to `qaap-product-theme` or `qaap-mobile-shell`. Revert upstream.
+- [x] **ai-chat** (`chat-content-deserializer.{ts,spec.ts}`). Re-adopted upstream (fork lag — upstream added interrupted-tool-call handling and `createToolCallError`).
+- [x] **ai-chat-ui** (`toolcall-part-renderer.tsx`, `generic-capabilities-tree.tsx`). Re-adopted upstream — fork's branding edits had regressed the configurable `applicationName` back to a hardcoded "Theia" string.
+- [x] **ai-core** (`theia-variable-contribution.ts`). Re-adopted upstream (same branding regression as ai-chat-ui).
+- [x] **ai-terminal**: `shell-execution-tool-renderer.tsx` re-adopted upstream (fork lag); `shell-execution-server-impl.ts` extracted to `QaapShellExecutionServerImpl` in `qaap-ai-config` (cwd resilience: basename fallback + ENOENT message rewrite).
+- [x] **ai-code-completion** (`code-completion-agent.ts` + 2 specs). Re-adopted upstream (restores `reasoning='off'` for one-shot completion and `applicationName` branding).
+- [-] **monaco** (`monaco-quick-input-{layout,service}.ts`, `monaco-frontend-module.ts`). **Accepted as permanent seam.** The factory `MonacoQuickInputLayout` is a textbook upstream-style DI seam consumed by `qaap-mobile-shell`; reverting and subclassing `MonacoQuickInputImplementation` would require duplicating `@postConstruct init()` (~30 lines copy-paste). Net result is worse coupling.
 
 **Tier 3 — Larger surfaces (4–7 files)**
 
-- [ ] **workspace** (4 files: trust dialog/factory/service + frontend-module). Subclass dialog + service, rebind via factory. Verify workspace-trust flow on first open.
-- [ ] **mini-browser** (7 files, most already seamed). Identify which still need extraction vs reversion (Element Inspector + mobile open-handler seams may already be sufficient).
-- [ ] **plugin-ext** (7 files). Plugin host / view registry / webview-resource-cache. Sensitive area — one file per commit. Verify plugins still load, tabs/webviews render.
+- [x] **workspace** (4 files: trust dialog/factory/service + frontend-module). The 4 upstream files stay allowlisted as documented seams; `QaapWorkspaceTrustDialog` + `QaapWorkspaceTrustDialogFactory` in `qaap-extensions` now consume the seam so the branded label uses `applicationName`.
+- [x] **mini-browser** (7 files). Verified — all 7 are justified: the `MiniBrowserOpenHook` seam is consumed by `QaapMiniBrowserOpenHookBridge` in `qaap-adapters`; the new `mini-browser-url-utils.{ts,spec.ts}`, `mini-browser-opener-options.ts`, `mini-browser-open-hook.ts` are co-located with the upstream files that consume them (moving them creates a back-dep anti-pattern).
+- [x] **plugin-ext** (7 files). 5 re-adopted from upstream (fork-lag ESM plugin machinery + small null-check); `webview-resource-cache.ts` extracted to `QaapWebviewResourceCache` in `qaap-extensions`; `plugin-view-registry.ts` left allowlisted (intentional product behavior — qaap is a cloud IDE so the "Open Folder" welcome view is omitted).
 
 **Tier 4 — Multi-session projects**
 
-- [ ] **ai-ide** (14 files). Includes model-alias UI, command/prompt templates, and `workspace-functions.ts` (−291 lines: missing `TrustAwarePreferenceReader` + external-path allowlist — reassess against current Theia AI release). Split into sub-tasks per file group when started.
-- [ ] **core** (17 files). Mostly already-allowlisted small seams. Big residuals: `backend-application.{ts,-module.ts}` (fork lag — missing graceful-shutdown machinery and `RootContainer`). Decide per-file: re-sync vs keep simplified with documented reason.
+- [ ] **ai-ide** (12 files). Includes model-alias UI, command/prompt templates, and `workspace-functions.ts` (−291 lines: missing `TrustAwarePreferenceReader` + external-path allowlist — reassess against current Theia AI release). Split into sub-tasks per file group when started.
+- [ ] **core** (residuals after Tier 1–3 cleanups). Mostly already-allowlisted small seams **justified by qaap consumers** (e.g. `WorkbenchTopBarFactory` → `qaap-mobile-shell`, `ElectronMainApplication.resolveApplicationIconPath` → `qaap-product`). Real outstanding work:
+    - `backend-application.{ts,-module.ts}` (fork lag — missing upstream graceful-shutdown machinery and `RootContainer`). Decide per-file: re-sync vs keep simplified with documented reason.
+    - yargs `v15 → v17` upgrade across `core`, `dev-packages/{cli,application-manager,private-re-exports}` (would clean 4–5 files in one go). Attempted in 2026-05; aborted because `npm install` cascaded into a zod/MCP-SDK type-resolution conflict in `ai-mcp-server`. Needs a proper dependency-graph investigation (likely pin zod or align MCP SDK) before retrying.
+    - `application-shell.ts`: small top-bar-visibility tweak (16 lines). Subclass point is buried inside a heavily-used class; current allowlist entry is defensible.
+    - `select-component.{tsx,css}`: mobile bottom-navigation z-index + dropdown clip logic. Tied to a React component instantiated via JSX (not DI), so cannot be substituted via rebind. Accepted seam.
 
 ### Workflow per extraction
 
