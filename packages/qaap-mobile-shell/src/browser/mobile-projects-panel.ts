@@ -23,6 +23,7 @@ import {
 } from './mobile-projects-types';
 import { MobileProjectsActiveTasks, MobileProjectTaskView } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
+import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import { MobileProjectsService } from './mobile-projects-service';
 import {
     QaapAgentConversationDTO,
@@ -34,6 +35,7 @@ import {
     getConversation,
     postConversationMessage,
     renameConversation,
+    updateConversation,
 } from '../common/qaap-agent-conversation-client';
 import { markMobileProjectReadmeForOpen, markMobileProjectsPanelDismiss } from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
@@ -77,6 +79,12 @@ export interface MobileProjectsPanelOptions {
      * of firing fire-and-forget background tasks.
      */
     conversations?: MobileProjectsConversations;
+    /**
+     * Browser-local store of per-conversation priority/pause overrides for Theia-chat sessions
+     * (the VPS conversation store handles its own flags). Optional — when omitted the menu items
+     * fall back to no-op.
+     */
+    conversationFlags?: MobileProjectsConversationFlags;
     /** Creates the same chat input widget used by the Agent view. */
     createChatInputWidget?: (id: string) => Promise<AIChatInputWidget>;
     /** Creates a full Agent chat view for opening real workspace chat sessions from Projects. */
@@ -144,6 +152,7 @@ export class MobileProjectsPanel {
     protected readonly homeMode: boolean;
     protected readonly activeTasks: MobileProjectsActiveTasks | undefined;
     protected readonly conversations: MobileProjectsConversations | undefined;
+    protected readonly conversationFlags: MobileProjectsConversationFlags | undefined;
     protected readonly createChatInputWidget: MobileProjectsPanelOptions['createChatInputWidget'];
     protected readonly createChatViewWidget: MobileProjectsPanelOptions['createChatViewWidget'];
     protected readonly chatService: ChatService | undefined;
@@ -188,6 +197,7 @@ export class MobileProjectsPanel {
         this.homeMode = !!options.homeMode;
         this.activeTasks = options.activeTasks;
         this.conversations = options.conversations;
+        this.conversationFlags = options.conversationFlags;
         this.createChatInputWidget = options.createChatInputWidget;
         this.createChatViewWidget = options.createChatViewWidget;
         this.chatService = options.chatService;
@@ -641,14 +651,51 @@ export class MobileProjectsPanel {
             }
             byId.set(item.id, item);
         }
-        return [...byId.values()].sort((a, b) => {
-            const aStreaming = a.status === 'streaming' ? 1 : 0;
-            const bStreaming = b.status === 'streaming' ? 1 : 0;
-            if (aStreaming !== bStreaming) {
-                return bStreaming - aStreaming;
-            }
-            return b.updatedAt - a.updatedAt;
-        });
+        return [...byId.values()].sort((a, b) => this.compareConversationOrder(a, b));
+    }
+
+    /**
+     * Order conversations within a project card. Highest first: priority chats (and never paused),
+     * then streaming chats, then idle chats, then paused chats sink to the bottom. Within each tier
+     * the more recently updated one wins.
+     */
+    protected compareConversationOrder(
+        a: QaapAgentConversationSummaryDTO,
+        b: QaapAgentConversationSummaryDTO,
+    ): number {
+        const fa = this.resolveConversationFlags(a);
+        const fb = this.resolveConversationFlags(b);
+        const aPriority = fa.priority && !fa.paused ? 1 : 0;
+        const bPriority = fb.priority && !fb.paused ? 1 : 0;
+        if (aPriority !== bPriority) {
+            return bPriority - aPriority;
+        }
+        const aPaused = fa.paused ? 1 : 0;
+        const bPaused = fb.paused ? 1 : 0;
+        if (aPaused !== bPaused) {
+            return aPaused - bPaused;
+        }
+        const aStreaming = a.status === 'streaming' ? 1 : 0;
+        const bStreaming = b.status === 'streaming' ? 1 : 0;
+        if (aStreaming !== bStreaming) {
+            return bStreaming - aStreaming;
+        }
+        return b.updatedAt - a.updatedAt;
+    }
+
+    /**
+     * Effective priority/paused state for a conversation. VPS-backed conversations carry the
+     * flags on the summary itself; Theia-chat summaries pick them up from the local override store.
+     */
+    protected resolveConversationFlags(summary: QaapAgentConversationSummaryDTO): { priority: boolean; paused: boolean } {
+        if (summary.source === 'theia-chat' && this.conversationFlags) {
+            const overrides = this.conversationFlags.get(summary.id);
+            return {
+                priority: !!(summary.priority || overrides.priority),
+                paused: !!(summary.paused || overrides.paused),
+            };
+        }
+        return { priority: !!summary.priority, paused: !!summary.paused };
     }
 
     protected preferConversationSummary(
@@ -1411,6 +1458,23 @@ export class MobileProjectsPanel {
         row.append(item);
 
         if (summary) {
+            const flags = this.resolveConversationFlags(summary);
+            if (flags.priority && !flags.paused) {
+                row.classList.add('theia-mod-priority');
+                const star = document.createElement('span');
+                star.className = 'codicon codicon-star-full theia-mobile-projects-conversation-priority-badge';
+                star.setAttribute('aria-label', nls.localize('qaap/mobileProjects/priorityBadge', 'High priority'));
+                star.title = star.getAttribute('aria-label')!;
+                taskTitleRow.insertBefore(star, taskTitleRow.firstChild);
+            }
+            if (flags.paused) {
+                row.classList.add('theia-mod-paused');
+                const pause = document.createElement('span');
+                pause.className = 'codicon codicon-debug-pause theia-mobile-projects-conversation-pause-badge';
+                pause.setAttribute('aria-label', nls.localize('qaap/mobileProjects/pausedBadge', 'Paused'));
+                pause.title = pause.getAttribute('aria-label')!;
+                taskTitleRow.insertBefore(pause, taskTitleRow.firstChild);
+            }
             const menuBtn = document.createElement('button');
             menuBtn.type = 'button';
             menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-menu-btn';
@@ -1662,6 +1726,34 @@ export class MobileProjectsPanel {
                 ? nls.localize('qaap/mobileProjects/renameChatTitle', 'Change this chat name.')
                 : nls.localize('qaap/mobileProjects/renameChatUnavailable', 'This chat cannot be renamed.'),
             onSelect: () => { void this.onRenameConversation(project, summary); },
+        });
+
+        const flags = this.resolveConversationFlags(summary);
+        const canFlag = isTheiaChat ? !!this.conversationFlags : true;
+        this.appendCardMenuItem(menu, {
+            label: flags.priority
+                ? nls.localize('qaap/mobileProjects/removePriority', 'Remove high priority')
+                : nls.localize('qaap/mobileProjects/markPriority', 'Mark as high priority'),
+            iconClass: flags.priority ? 'codicon-star-full' : 'codicon-star-empty',
+            disabled: !canFlag,
+            title: flags.priority
+                ? nls.localize('qaap/mobileProjects/removePriorityTitle', 'Stop pinning this chat at the top.')
+                : nls.localize('qaap/mobileProjects/markPriorityTitle', 'Pin this chat at the top of the project list.'),
+            onSelect: () => { void this.onSetConversationPriority(summary, !flags.priority); },
+        });
+        this.appendCardMenuItem(menu, {
+            label: flags.paused
+                ? nls.localize('qaap/mobileProjects/resumeChat', 'Resume chat')
+                : nls.localize('qaap/mobileProjects/pauseChat', 'Pause chat'),
+            iconClass: flags.paused ? 'codicon-debug-start' : 'codicon-debug-pause',
+            disabled: !canFlag,
+            title: flags.paused
+                ? nls.localize('qaap/mobileProjects/resumeChatTitle', 'Move this chat back to the active list.')
+                : nls.localize(
+                    'qaap/mobileProjects/pauseChatTitle',
+                    'Stop any active turn and push this chat to the bottom of the list.'
+                ),
+            onSelect: () => { void this.onSetConversationPaused(project, summary, !flags.paused); },
         });
 
         if (summary.status === 'streaming') {
@@ -1991,6 +2083,64 @@ export class MobileProjectsPanel {
             this.messageService?.error(nls.localize(
                 'qaap/mobileProjects/renameChatFailed',
                 'Could not rename chat: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
+    }
+
+    protected async onSetConversationPriority(
+        summary: QaapAgentConversationSummaryDTO,
+        priority: boolean,
+    ): Promise<void> {
+        this.closeCardMenu();
+        try {
+            if (summary.source === 'theia-chat') {
+                if (!this.conversationFlags) {
+                    return;
+                }
+                this.conversationFlags.set(summary.id, { priority });
+                this.conversations?.recordSnapshot({ ...summary, priority: priority || undefined });
+            } else {
+                const full = await updateConversation(summary.id, { priority });
+                this.conversations?.recordSnapshot(conversationToSummary(full));
+            }
+            this.renderList();
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/priorityFailed',
+                'Could not update chat priority: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
+    }
+
+    protected async onSetConversationPaused(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+        paused: boolean,
+    ): Promise<void> {
+        this.closeCardMenu();
+        try {
+            if (paused && summary.status === 'streaming') {
+                // Stopping the active turn mirrors what the server does for qaap-agent chats; for
+                // Theia chats we use the same path as the existing "Cancel run" menu item.
+                await this.onCancelConversation(project, summary);
+            }
+            if (summary.source === 'theia-chat') {
+                if (!this.conversationFlags) {
+                    return;
+                }
+                this.conversationFlags.set(summary.id, { paused });
+                this.conversations?.recordSnapshot({ ...summary, paused: paused || undefined });
+            } else {
+                const full = await updateConversation(summary.id, { paused });
+                this.conversations?.recordSnapshot(conversationToSummary(full));
+            }
+            this.renderList();
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/pauseFailed',
+                'Could not change chat pause state: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }

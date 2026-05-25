@@ -18,6 +18,7 @@ import {
     QaapAgentMessage,
     QaapCreateAgentConversationRequest,
     QaapRenameAgentConversationRequest,
+    QaapUpdateAgentConversationRequest,
     toConversationSummary,
 } from '../common/qaap-agent-conversation';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
@@ -136,6 +137,8 @@ export class QaapAgentConversationStore {
             status: 'streaming',
             updatedAt: Date.now(),
             messages,
+            // Posting a new turn implicitly resumes a paused chat.
+            paused: undefined,
         };
         this.conversations.set(id, next);
         this.fire({ type: 'message', conversationId: id, cwd: next.cwd, message: userMessage });
@@ -183,12 +186,43 @@ export class QaapAgentConversationStore {
     }
 
     rename(id: string, request: QaapRenameAgentConversationRequest): QaapAgentConversation | undefined {
+        return this.update(id, { title: request.title });
+    }
+
+    /**
+     * Patch a conversation's mutable flags (title, priority, paused). Pausing a streaming
+     * conversation also cancels the in-flight task so it doesn't keep burning compute.
+     */
+    update(id: string, request: QaapUpdateAgentConversationRequest): QaapAgentConversation | undefined {
         const conv = this.conversations.get(id);
-        const title = request.title.trim();
-        if (!conv || !title) {
+        if (!conv) {
             return undefined;
         }
-        const next: QaapAgentConversation = { ...conv, title, updatedAt: Date.now() };
+        const patch: { -readonly [K in keyof QaapAgentConversation]?: QaapAgentConversation[K] } = {};
+        if (request.title !== undefined) {
+            const title = request.title.trim();
+            if (!title) {
+                return undefined;
+            }
+            patch.title = title;
+        }
+        if (request.priority !== undefined) {
+            patch.priority = request.priority || undefined;
+        }
+        if (request.paused !== undefined) {
+            patch.paused = request.paused || undefined;
+            if (request.paused && conv.status === 'streaming') {
+                const lastUser = [...conv.messages].reverse().find(m => m.role === 'user' && m.taskId);
+                if (lastUser?.taskId) {
+                    this.taskRunner.cancel(lastUser.taskId);
+                }
+                patch.status = 'idle';
+            }
+        }
+        if (Object.keys(patch).length === 0) {
+            return conv;
+        }
+        const next: QaapAgentConversation = { ...conv, ...patch, updatedAt: Date.now() };
         this.conversations.set(id, next);
         this.fire({ type: 'updated', conversation: toConversationSummary(next) });
         void this.persist();

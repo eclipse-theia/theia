@@ -39,6 +39,7 @@ import { QaapWatermarkCommandsContribution } from './qaap-watermark-commands-con
 import { LongPressContextMenuContribution } from './long-press-context-menu';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
+import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import {
     MobileProjectAIChatInputWidget,
     MobileProjectChatViewWidgetFactory,
@@ -56,6 +57,7 @@ import { QaapSelectComponentOverlayContribution } from './qaap-select-component-
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
     bind(MobileProjectsConversations).toSelf().inSingletonScope();
+    bind(MobileProjectsConversationFlags).toSelf().inSingletonScope();
     // Transient binding so each `getOrCreateWidget` call (with a unique options.id) gets a fresh
     // instance — the workspace Agent AI view already mounts an AIChatInputWidget with a fixed
     // resource URI, and a second one would collide unless this subclass mints its own URI.

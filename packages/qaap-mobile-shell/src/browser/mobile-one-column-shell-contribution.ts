@@ -45,6 +45,7 @@ import { MobileKeyboardHelper } from './mobile-keyboard-helper';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { MobileProjectsActiveTasks } from './mobile-projects-active-tasks';
 import { MobileProjectsConversations } from './mobile-projects-conversations';
+import { MobileProjectsConversationFlags } from './mobile-projects-conversation-flags';
 import { MobileProjectsService } from './mobile-projects-service';
 import { MobileProjectsPanel } from './mobile-projects-panel';
 import { MobileProjectChatViewWidgetFactory } from './mobile-project-ai-chat-input-widget';
@@ -141,6 +142,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     @inject(MobileProjectsConversations)
     protected readonly conversations: MobileProjectsConversations;
+
+    @inject(MobileProjectsConversationFlags)
+    protected readonly conversationFlags: MobileProjectsConversationFlags;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -765,6 +769,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 homeMode,
                 activeTasks: this.activeTasks,
                 conversations: this.conversations,
+                conversationFlags: this.conversationFlags,
                 // Use WidgetManager with our own factory id (registered by the mobile-shell
                 // module) so each call returns a fresh `MobileProjectAIChatInputWidget` instance.
                 // That subclass overrides `getResourceUri` to mint a per-instance URI, which is

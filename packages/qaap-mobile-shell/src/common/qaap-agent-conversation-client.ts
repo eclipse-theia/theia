@@ -23,6 +23,10 @@ export interface QaapAgentConversationSummaryDTO {
     readonly lastMessageRole?: 'user' | 'agent';
     readonly workspacePath?: string;
     readonly sessionId?: string;
+    /** User-flagged "high priority" — sorts at the top of the project list. */
+    readonly priority?: boolean;
+    /** User-flagged "paused" — sinks to the bottom and renders dimmed. */
+    readonly paused?: boolean;
 }
 
 export interface QaapAgentMessageDTO {
@@ -48,6 +52,8 @@ export interface QaapAgentConversationDTO {
     readonly createdAt: number;
     readonly updatedAt: number;
     readonly messages: QaapAgentMessageDTO[];
+    readonly priority?: boolean;
+    readonly paused?: boolean;
 }
 
 export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO {
@@ -67,6 +73,8 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         messageCount: conv.messages.length,
         lastMessagePreview: preview,
         lastMessageRole: last?.role,
+        priority: conv.priority,
+        paused: conv.paused,
     };
 }
 
@@ -138,11 +146,21 @@ export async function postConversationMessage(id: string, content: string): Prom
 }
 
 export async function renameConversation(id: string, title: string): Promise<QaapAgentConversationDTO> {
+    return updateConversation(id, { title });
+}
+
+export interface QaapUpdateConversationBody {
+    readonly title?: string;
+    readonly priority?: boolean;
+    readonly paused?: boolean;
+}
+
+export async function updateConversation(id: string, patch: QaapUpdateConversationBody): Promise<QaapAgentConversationDTO> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify(patch),
     });
     if (!response.ok) {
         throw new Error((await response.text()) || response.statusText);

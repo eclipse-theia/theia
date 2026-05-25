@@ -2977,6 +2977,28 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   opacity: 0.9;
 }
 
+.theia-mobile-projects-task-row.theia-mod-paused .theia-mobile-projects-task-item {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+
+.theia-mobile-projects-task-row.theia-mod-priority .theia-mobile-projects-task-item {
+  background: var(--theia-list-activeSelectionBackground, transparent);
+  background-color: color-mix(in srgb, var(--theia-notificationsWarningIcon-foreground, #cca700) 8%, transparent);
+}
+
+.theia-mobile-projects-conversation-priority-badge {
+  color: var(--theia-notificationsWarningIcon-foreground, #cca700);
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+.theia-mobile-projects-conversation-pause-badge {
+  color: var(--theia-descriptionForeground);
+  margin-right: 4px;
+  font-size: 12px;
+}
+
 .theia-mobile-projects-task-item.theia-mod-done .theia-mobile-projects-task-dot {
   opacity: 0.65;
 }

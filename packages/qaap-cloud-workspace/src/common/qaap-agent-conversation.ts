@@ -41,6 +41,10 @@ export interface QaapAgentConversation {
     readonly createdAt: number;
     readonly updatedAt: number;
     readonly messages: QaapAgentMessage[];
+    /** User-flagged "high priority" — surfaces at the top of project lists. */
+    readonly priority?: boolean;
+    /** User-flagged "paused" — sinks to the bottom; active turn is cancelled when paused. */
+    readonly paused?: boolean;
 }
 
 /** Summary row used by list endpoints — omits messages to keep payloads small. */
@@ -57,6 +61,8 @@ export interface QaapAgentConversationSummary {
     readonly lastMessagePreview?: string;
     /** Role of the most recent message, so the UI can render "you said…" vs. "agent replied…". */
     readonly lastMessageRole?: QaapAgentMessageRole;
+    readonly priority?: boolean;
+    readonly paused?: boolean;
 }
 
 /** Conversations bucketed by project working directory. */
@@ -91,6 +97,13 @@ export interface QaapRenameAgentConversationRequest {
     readonly title: string;
 }
 
+/** PATCH body — any subset of these mutable flags can be updated in one call. */
+export interface QaapUpdateAgentConversationRequest {
+    readonly title?: string;
+    readonly priority?: boolean;
+    readonly paused?: boolean;
+}
+
 /** Payload pushed over SSE when a conversation changes. */
 export type QaapAgentConversationEvent =
     | { readonly type: 'created'; readonly conversation: QaapAgentConversationSummary }
@@ -111,6 +124,8 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         messageCount: conv.messages.length,
         lastMessagePreview: last ? excerpt(last.content) : undefined,
         lastMessageRole: last?.role,
+        priority: conv.priority || undefined,
+        paused: conv.paused || undefined,
     };
 }
 

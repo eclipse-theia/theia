@@ -12,7 +12,7 @@ import {
     QaapAgentConversationListResponse,
     QaapCreateAgentConversationRequest,
     QaapPostAgentMessageRequest,
-    QaapRenameAgentConversationRequest,
+    QaapUpdateAgentConversationRequest,
 } from '../common/qaap-agent-conversation';
 import { QaapAgentConversationStore } from './qaap-agent-conversation-store';
 
@@ -53,7 +53,7 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             this.handlePostMessage(req, res);
         });
         app.patch(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id`, (req, res) => {
-            this.handleRename(req, res);
+            this.handleUpdate(req, res);
         });
         app.post(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id/fork`, (req, res) => {
             const conv = this.store.fork(req.params.id);
@@ -112,14 +112,28 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         }
     }
 
-    protected handleRename(req: Request, res: Response): void {
-        const body = (req.body ?? {}) as Partial<QaapRenameAgentConversationRequest>;
-        const title = typeof body.title === 'string' ? body.title.trim() : '';
-        if (!title) {
-            res.status(400).json({ error: '"title" must be a non-empty string.' });
+    protected handleUpdate(req: Request, res: Response): void {
+        const body = (req.body ?? {}) as Partial<QaapUpdateAgentConversationRequest>;
+        const patch: { -readonly [K in keyof QaapUpdateAgentConversationRequest]: QaapUpdateAgentConversationRequest[K] } = {};
+        if (typeof body.title === 'string') {
+            const title = body.title.trim();
+            if (!title) {
+                res.status(400).json({ error: '"title" must be a non-empty string.' });
+                return;
+            }
+            patch.title = title;
+        }
+        if (typeof body.priority === 'boolean') {
+            patch.priority = body.priority;
+        }
+        if (typeof body.paused === 'boolean') {
+            patch.paused = body.paused;
+        }
+        if (Object.keys(patch).length === 0) {
+            res.status(400).json({ error: 'No mutable fields supplied.' });
             return;
         }
-        const conv = this.store.rename(req.params.id, { title });
+        const conv = this.store.update(req.params.id, patch);
         if (!conv) {
             res.status(404).json({ error: 'Conversation not found.' });
             return;
