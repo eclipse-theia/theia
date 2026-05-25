@@ -114,7 +114,6 @@ const ALLOWED = [
     /^packages\/core\/src\/browser\/style\/select-component\.css$/,
     /^packages\/core\/src\/browser\/widgets\/select-component\.tsx$/,
     /^packages\/core\/src\/node\/logger-cli-contribution\.spec\.ts$/,
-    /^packages\/filesystem\/src\/browser\/file-tree\/file-tree-decorator-adapter\.ts$/,
     /^packages\/mini-browser\/src\/browser\/location-mapper-service\.ts$/,
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
