@@ -3,8 +3,11 @@
   "version": "1.71.0",
   "description": "Qaap — AI agent prompts and Coder workflow configuration (product layer)",
   "dependencies": {
+    "@theia/ai-anthropic": "1.71.0",
     "@theia/ai-core": "1.71.0",
+    "@theia/ai-google": "1.71.0",
     "@theia/ai-ide": "1.71.0",
+    "@theia/ai-terminal": "1.71.0",
     "@theia/core": "1.71.0",
     "@theia/qaap-adapters": "1.71.0",
     "@theia/qaap-mobile-shell": "1.71.0",
@@ -15,7 +18,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/qaap-ai-config-frontend-module"
+      "frontend": "lib/browser/qaap-ai-config-frontend-module",
+      "backend": "lib/node/qaap-ai-config-backend-module"
     }
   ],
   "keywords": [

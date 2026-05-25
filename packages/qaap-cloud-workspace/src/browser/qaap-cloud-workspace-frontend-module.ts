@@ -11,14 +11,18 @@ import { CommandContribution } from '@theia/core/lib/common/command';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindToolProvider } from '@theia/ai-core/lib/common/tool-invocation-registry';
+import { WorkspaceTrustDialogFactory } from '@theia/workspace/lib/browser/workspace-trust-dialog-factory';
 import { QaapAgentTasksContribution } from './qaap-agent-tasks-contribution';
 import { QaapAgentTasksWidget } from './qaap-agent-tasks-widget';
 import { QaapCloudBootstrapUiContribution } from './qaap-cloud-bootstrap-ui-contribution';
 import { QaapDeployCloudflareTool, QaapDeployVercelTool } from './qaap-deploy-tool-providers';
 import { QaapTerminalPersistenceContribution } from './qaap-terminal-persistence-contribution';
 import { QaapWebPushContribution } from './qaap-web-push-contribution';
+import { QaapWorkspaceTrustDialogFactory } from './qaap-workspace-trust-dialog-factory';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    rebind(WorkspaceTrustDialogFactory).to(QaapWorkspaceTrustDialogFactory).inSingletonScope();
+
     bind(QaapCloudBootstrapUiContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapCloudBootstrapUiContribution);
     bind(CommandContribution).toService(QaapCloudBootstrapUiContribution);

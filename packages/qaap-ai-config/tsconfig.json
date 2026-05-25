@@ -10,10 +10,19 @@
   ],
   "references": [
     {
+      "path": "../ai-anthropic"
+    },
+    {
       "path": "../ai-core"
     },
     {
+      "path": "../ai-google"
+    },
+    {
       "path": "../ai-ide"
+    },
+    {
+      "path": "../ai-terminal"
     },
     {
       "path": "../core"

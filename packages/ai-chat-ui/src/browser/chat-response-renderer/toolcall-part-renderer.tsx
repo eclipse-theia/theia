@@ -112,8 +112,10 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
                                 <MarkdownRender text={content.text} openerService={this.openerService} />
                             </div>;
                         }
+                        case 'error': {
+                            return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-error-result'><pre>{content.data}</pre></div>;
+                        }
                         case 'audio':
-                        case 'error':
                         default: {
                             return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-default-result'><pre>{JSON.stringify(response, undefined, 2)}</pre></div>;
                         }

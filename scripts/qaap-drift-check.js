@@ -82,17 +82,6 @@ const ALLOWED = [
     // renderer/contribution adjustments). These are intentional fork edits and
     // not full-featured forks of the package; deeper feature changes are
     // tracked in qaap-drift-baseline.txt pending extraction.
-    /^packages\/ai-anthropic\/src\/common\/anthropic-preferences\.ts$/,
-    /^packages\/ai-google\/src\/common\/google-preferences\.ts$/,
-    /^packages\/ai-chat-ui\/src\/browser\/chat-response-renderer\/toolcall-part-renderer\.tsx$/,
-    /^packages\/ai-chat-ui\/src\/browser\/generic-capabilities-tree\.tsx$/,
-    /^packages\/ai-chat\/src\/common\/chat-content-deserializer\.ts$/,
-    /^packages\/ai-chat\/src\/common\/chat-content-deserializer\.spec\.ts$/,
-    /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.ts$/,
-    /^packages\/ai-code-completion\/src\/browser\/code-completion-variable-contribution\.spec\.ts$/,
-    /^packages\/ai-core\/src\/browser\/theia-variable-contribution\.ts$/,
-    /^packages\/ai-terminal\/src\/browser\/shell-execution-tool-renderer\.tsx$/,
-    /^packages\/ai-terminal\/src\/node\/shell-execution-server-impl\.ts$/,
     // ai-ide: workspace launch / model alias UI / prompt template tweaks for product
     /^packages\/ai-ide\/package\.json$/,
     /^packages\/ai-ide\/tsconfig\.json$/,
@@ -109,7 +98,6 @@ const ALLOWED = [
     // ---- Misc product seams in upstream Theia packages ---------------------
     /^packages\/core\/README\.md$/,
     /^packages\/core\/package\.json$/,
-    /^packages\/core\/src\/browser\/decorations-service\.ts$/,
     /^packages\/core\/src\/browser\/shell\/application-shell\.ts$/,
     /^packages\/core\/src\/browser\/style\/select-component\.css$/,
     /^packages\/core\/src\/browser\/widgets\/select-component\.tsx$/,
@@ -138,7 +126,6 @@ const ALLOWED = [
     // TODO: triage each entry against the current upstream Theia release.
     /^packages\/core\/src\/node\/backend-application\.ts$/,
     /^packages\/core\/src\/node\/backend-application-module\.ts$/,
-    /^packages\/plugin-ext-vscode\/src\/node\/plugin-vscode-init\.ts$/,
     /^packages\/plugin-ext\/src\/hosted\/node\/plugin-host-rpc\.ts$/,
     /^packages\/ai-ide\/src\/browser\/workspace-functions\.ts$/,
     /^package\.json$/,
