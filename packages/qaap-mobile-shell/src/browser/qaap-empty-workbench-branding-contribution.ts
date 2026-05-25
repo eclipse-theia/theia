@@ -5,7 +5,6 @@
 
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import {
-    matchesMobileNarrowViewport,
     MOBILE_NARROW_VIEWPORT_MEDIA_QUERY,
     MOBILE_ONE_COLUMN_LAYOUT_CLASS
 } from '@theia/core/lib/browser/shell/mobile-layout-state';
@@ -113,17 +112,6 @@ export class QaapEmptyWorkbenchBrandingContribution implements FrontendApplicati
         this.toDispose.dispose();
     }
 
-    protected isBrandingEnabled(): boolean {
-        if (document.documentElement.classList.contains('theia-splash-branded')) {
-            return true;
-        }
-        if (Boolean(FrontendApplicationConfigProvider.get().applicationIcon?.trim())) {
-            return true;
-        }
-        const logo = getComputedStyle(document.documentElement).getPropertyValue('--theia-workbench-brand-logo-url').trim();
-        return logo.length > 0 && logo !== 'none';
-    }
-
     protected scheduleRefresh(): void {
         if (this.refreshHandle !== undefined) {
             window.cancelAnimationFrame(this.refreshHandle);
@@ -135,7 +123,7 @@ export class QaapEmptyWorkbenchBrandingContribution implements FrontendApplicati
     }
 
     protected refresh(): void {
-        if (!this.isBrandingEnabled()) {
+        if (!this.ensureBrandingEnabled()) {
             return;
         }
         this.removeStaleBrandNodes();
@@ -172,12 +160,7 @@ export class QaapEmptyWorkbenchBrandingContribution implements FrontendApplicati
         if (projects) {
             return false;
         }
-        // Narrow viewport uses the projects dashboard as home; the desktop watermark only traps users
-        // on the logo after a workspace reload when the sheet was dismissed and main is still empty.
-        if (this.isMobileLayout() || matchesMobileNarrowViewport()) {
-            return false;
-        }
-        // Desktop: sidebar may stay expanded; still show the empty-editor watermark in main.
+        // Sidebar sheets may stay expanded; still show the empty-editor watermark in main.
         return true;
     }
 
@@ -303,6 +286,32 @@ export class QaapEmptyWorkbenchBrandingContribution implements FrontendApplicati
             return bindings.find(candidate => candidate.keybinding === preferred) ?? bindings[0];
         }
         return bindings[0];
+    }
+
+    protected ensureBrandingEnabled(): boolean {
+        if (document.documentElement.classList.contains('theia-splash-branded')) {
+            return true;
+        }
+        const existingLogo = getComputedStyle(document.documentElement).getPropertyValue('--theia-workbench-brand-logo-url').trim();
+        if (existingLogo.length > 0 && existingLogo !== 'none') {
+            document.documentElement.classList.add('theia-splash-branded');
+            return true;
+        }
+        const appIcon = FrontendApplicationConfigProvider.get().applicationIcon?.trim();
+        if (!appIcon) {
+            return false;
+        }
+        const iconUrl = this.resolveIconUrl(appIcon);
+        document.documentElement.classList.add('theia-splash-branded');
+        document.documentElement.style.setProperty('--theia-workbench-brand-logo-url', `url(${JSON.stringify(iconUrl)})`);
+        return true;
+    }
+
+    protected resolveIconUrl(ref: string): string {
+        if (/^https?:\/\//i.test(ref) || ref.startsWith('data:') || ref.startsWith('/')) {
+            return ref;
+        }
+        return new URL(ref, document.baseURI).href;
     }
 }
 
