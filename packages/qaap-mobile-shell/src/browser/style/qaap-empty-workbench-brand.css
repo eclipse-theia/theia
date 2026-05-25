@@ -42,6 +42,13 @@ html.theia-splash-branded .qaap-empty-workbench-brand {
 
 /* Narrow viewport: fixed layer between top bar and bottom chrome (host = #theia-app-shell). */
 @media (max-width: 767px) {
+  html.theia-splash-branded {
+    --qaap-empty-brand-gap: clamp(8px, 2.4vmin, 14px);
+    --qaap-empty-brand-logo-size: clamp(56px, min(28vmin, 18vh), 96px);
+    --qaap-empty-brand-pad-inline: clamp(12px, 4vw, 18px);
+    --qaap-empty-brand-shortcuts-max: min(340px, calc(100% - 24px));
+  }
+
   html.theia-splash-branded #theia-app-shell > .qaap-empty-workbench-brand {
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + var(--theia-private-menubar-height, 40px));
@@ -59,8 +66,29 @@ html.theia-splash-branded .qaap-empty-workbench-brand {
     -webkit-overflow-scrolling: touch;
   }
 
-  html.theia-splash-branded {
-    --qaap-empty-brand-logo-size: clamp(80px, min(44vmin, 24vh), 140px);
+  html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .qaap-watermark-entry {
+    gap: 6px;
+    margin: 1px 0;
+    padding: 3px 4px;
+    font-size: clamp(0.6875rem, 3.1vw, 0.75rem);
+  }
+
+  html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .qaap-watermark-entry dt {
+    letter-spacing: 0;
+  }
+
+  html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .qaap-watermark-entry dd {
+    margin-inline-start: clamp(6px, 2vw, 12px);
+  }
+
+  html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .monaco-keybinding {
+    gap: 1px;
+  }
+
+  html.theia-splash-branded .qaap-empty-workbench-brand-shortcuts .monaco-keybinding-key {
+    min-width: 10px;
+    padding: 2px 4px;
+    font-size: clamp(9px, 2.7vw, 10px);
   }
 }
 
