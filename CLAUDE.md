@@ -43,45 +43,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`@theia/mini-browser`** still lists **`@theia/qaap-element-inspector`** directly (DI and imports from that package).
 - Narrow mobile viewport breakpoint for TypeScript: **`MOBILE_NARROW_VIEWPORT_MEDIA_QUERY`** and **`matchesMobileNarrowViewport()`** in `packages/core/src/browser/shell/mobile-layout-state.ts` (keep CSS using the same `767px` breakpoint in sync). Narrow-viewport rules for menus / side panel / dialogs live in **`@theia/qaap-product-theme`** (`qaap-menus-narrow-viewport.css`, `qaap-sidepanel-narrow-viewport.css`, `qaap-dialog-narrow-viewport.css`); apps without that package will not get those overrides.
 
-**Upstream-drift policy and migration plan:**
-
-Rule: all new Qaap product code lives under `packages/qaap-*`; do not modify files inside upstream Theia packages. The CI guard at `scripts/qaap-drift-check.js` enforces this. Files that currently differ from `upstream/master` are either in the regex allowlist (with a comment explaining why) or in `scripts/qaap-drift-baseline.txt` (currently empty).
-
-The fork still touches 15 upstream packages, listed below. Each entry should eventually be removed by extracting product behaviour into a `packages/qaap-*` package and reverting the upstream file. Extraction patterns by change type:
-
-| Change type | Extraction pattern |
-|---|---|
-| Preference default | New `PreferenceContribution` in a `qaap-*` package |
-| Branding string | Rebind the `Symbol`-backed messages object, or use `FrontendApplicationConfigProvider.applicationName` |
-| CSS rule | Add the rule to a `qaap-product-theme` stylesheet and import it from `qaap-product-theme-frontend-module.ts` |
-| Service / widget behaviour | Subclass the upstream class in `qaap-*` and `rebind(UpstreamClass).to(QaapSubclass)` in the frontend module |
-| Contribution (menu/keybinding/command) | Add a new `Contribution` in `qaap-*`; never edit the upstream one |
-| "Fork lag" (upstream improved a file we haven't picked up) | `git checkout upstream/master -- <file>` and re-verify build; not really product code |
-
-Remaining packages to extract (descending file count):
-
-- **`core`** (17 files) — mostly small seams (`workbench-top-bar-factory`, `mobile-layout-state`, several `shell`/`menu` files already seamed). The big residual is `backend-application.{ts,-module.ts}` (fork lag: missing upstream's graceful-shutdown machinery and `RootContainer` symbol — decide per-file whether to re-sync or keep simplified).
-- **`ai-ide`** (14 files) — model-alias configuration UI, command/prompt templates, `workspace-functions.ts` (−291 lines, removed `TrustAwarePreferenceReader` and external-path allowlists; reassess against current upstream Theia AI release).
-- **`plugin-ext`** (7 files) — plugin host / view registry / webview-resource-cache customizations; sensitive area, extract via subclass + rebind one file at a time.
-- **`mini-browser`** (7 files) — most already seamed for the Element Inspector and mobile open-handler; a few remain.
-- **`workspace`** (4 files) — trust dialog / trust service customizations.
-- **`monaco`** (3 files) — quick-input layout + frontend-module seams already documented.
-- **`ai-code-completion`** (3 files) — agent and variable-contribution customizations.
-- **`ai-chat`**, **`ai-chat-ui`**, **`ai-core`**, **`ai-terminal`** (2 files each) — subclass the relevant renderer/contribution and rebind in a `qaap-*` package.
-- **`scm`** (1 file) — adds `collapseContainingPanel()` and single-click open for mobile; needs subclass of `ScmTreeWidget` + `ScmResourceComponent` together, then visual verification on a narrow viewport.
-- **`plugin-ext-vscode`** (1 file) — fork lag (upstream's ESM loader hook removed in fork). Decide whether to re-adopt.
-- **`ai-anthropic`** / **`ai-google`** (1 file each) — preference defaults; needs schema-merge pattern or a higher-priority `PreferenceContribution`.
-
-Workflow per extraction:
-1. Read the diff (`git diff upstream/master -- <file>`).
-2. Decide: real product code → extract; fork lag → revert with `git checkout upstream/master -- <file>`.
-3. If extracting, create or edit a `packages/qaap-*` package; add the rebind in its frontend module; revert the upstream file.
-4. Drop the matching regex from `ALLOWED` in `scripts/qaap-drift-check.js`.
-5. Verify: `npm run compile`, `node scripts/qaap-drift-check.js`, `npm run build:browser`, and (for UI behaviour) start the app and exercise the affected flow.
-6. Commit per extraction so a regression can be bisected.
-
-End state goal: zero entries in the per-package section of `ALLOWED`, baseline empty, `git merge upstream/master` produces no conflicts inside `packages/<upstream>/...`.
-
 **Platform-specific code organization (per package):**
 - `src/common/` - Shared JavaScript APIs (runs everywhere)
 - `src/browser/` - Browser/DOM APIs (InversifyJS DI container for frontend)
@@ -102,6 +63,52 @@ End state goal: zero entries in the per-package section of `ALLOWED`, baseline e
 - Dependency Injection via InversifyJS (property injection preferred over constructor injection)
 - Contribution Points pattern for extensibility (CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution, etc.)
 - Three extension types: Theia extensions (build-time), VS Code extensions (runtime), Theia plugins (runtime)
+
+## Upstream-Drift Policy and Migration Plan
+
+**The rule:** all new Qaap product code lives under `packages/qaap-*`. Do not modify files inside upstream Theia packages (`packages/<anything not starting with qaap->`). Drift is enforced in CI by `scripts/qaap-drift-check.js`: every file that differs from `upstream/master` must be either inside `packages/qaap-*`, matched by a regex in the `ALLOWED` list (with a comment explaining why), or listed in `scripts/qaap-drift-baseline.txt` (currently empty — no undocumented drift).
+
+### Extraction patterns by change type
+
+When a Qaap product behaviour requires changing a Theia file, use one of these patterns instead of editing the upstream file:
+
+| Change type | Extraction pattern |
+|---|---|
+| Preference default | Add a new `PreferenceContribution` in a `qaap-*` package |
+| Branding string | Rebind the `Symbol`-backed messages object, or use `FrontendApplicationConfigProvider.applicationName` |
+| CSS rule | Add the rule to a `qaap-product-theme` stylesheet and import it from `qaap-product-theme-frontend-module.ts` |
+| Service / widget behaviour | Subclass the upstream class in `qaap-*` and `rebind(UpstreamClass).to(QaapSubclass)` in the frontend module |
+| Contribution (menu / keybinding / command) | Add a new `Contribution` in `qaap-*`; never edit the upstream one |
+| "Fork lag" (upstream improved a file we haven't picked up) | `git checkout upstream/master -- <file>` and re-verify build; not really product code |
+
+### Remaining upstream packages still touched (15 as of last audit)
+
+Each entry should eventually be removed by extracting product behaviour into `packages/qaap-*` and reverting the upstream file. Listed in descending file count:
+
+- **`core`** (17 files) — mostly small seams already in the allowlist (`workbench-top-bar-factory`, `mobile-layout-state`, several `shell` / `menu` files). The big residuals are `backend-application.ts` and `backend-application-module.ts` (fork lag: missing upstream's graceful-shutdown machinery and the `RootContainer` symbol — decide per-file whether to re-sync or keep simplified).
+- **`ai-ide`** (14 files) — model-alias configuration UI, command/prompt templates, and `workspace-functions.ts` (−291 lines: removed `TrustAwarePreferenceReader` and the external-path allowlist; reassess against the current upstream Theia AI release).
+- **`plugin-ext`** (7 files) — plugin host, view registry, webview-resource-cache customizations. Sensitive area: extract via subclass + rebind one file at a time.
+- **`mini-browser`** (7 files) — most already seamed for the Element Inspector and mobile open-handler; a few remain.
+- **`workspace`** (4 files) — trust dialog and trust service customizations.
+- **`monaco`** (3 files) — quick-input layout and frontend-module seams already documented.
+- **`ai-code-completion`** (3 files) — agent and variable-contribution customizations.
+- **`ai-chat`**, **`ai-chat-ui`**, **`ai-core`**, **`ai-terminal`** (2 files each) — subclass the relevant renderer / contribution and rebind in a `qaap-*` package.
+- **`scm`** (1 file) — adds `collapseContainingPanel()` and single-click open for mobile; needs subclass of `ScmTreeWidget` + `ScmResourceComponent` together, then visual verification on a narrow viewport.
+- **`plugin-ext-vscode`** (1 file) — fork lag (upstream's ESM loader hook removed in fork). Decide whether to re-adopt.
+- **`ai-anthropic`** / **`ai-google`** (1 file each) — preference defaults; needs a schema-merge pattern or a higher-priority `PreferenceContribution`.
+
+### Workflow per extraction
+
+1. Read the diff: `git diff upstream/master -- <file>`.
+2. Decide: real product code → extract (next step); fork lag → revert with `git checkout upstream/master -- <file>` and skip to step 4.
+3. If extracting: create or edit a `packages/qaap-*` package, add the rebind in its frontend module, then revert the upstream file (`git checkout upstream/master -- <file>`).
+4. Drop the matching regex from `ALLOWED` in `scripts/qaap-drift-check.js`.
+5. Verify in this order: `npm run compile`, `node scripts/qaap-drift-check.js`, `npm run build:browser`, and (for UI behaviour) `npm run start:browser` plus exercising the affected flow at the relevant viewport.
+6. Commit per extraction so a regression can be bisected.
+
+### End state
+
+Zero entries in the per-package section of `ALLOWED`. Baseline empty. `git merge upstream/master` produces no conflicts inside `packages/<upstream>/...`. New Theia releases can be adopted with a single `git merge` and a green CI.
 
 ## Key Patterns
 
