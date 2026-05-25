@@ -16,6 +16,7 @@
     "@theia/memory-inspector": "1.71.0",
     "@theia/navigator": "1.71.0",
     "@theia/outline-view": "1.71.0",
+    "@theia/plugin-ext": "1.71.0",
     "@theia/preview": "1.71.0",
     "@theia/qaap-mobile-shell": "1.71.0",
     "@theia/scm": "1.71.0",

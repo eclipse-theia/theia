@@ -49,6 +49,9 @@
       "path": "../outline-view"
     },
     {
+      "path": "../plugin-ext"
+    },
+    {
       "path": "../preview"
     },
     {

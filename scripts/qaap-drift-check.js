@@ -106,12 +106,7 @@ const ALLOWED = [
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
     // ---- Plugin host customizations (small upstream patches) ---------------
-    /^packages\/plugin-ext\/src\/common\/plugin-protocol\.ts$/,
-    /^packages\/plugin-ext\/src\/hosted\/node\/plugin-reader\.ts$/,
-    /^packages\/plugin-ext\/src\/plugin\/plugin-manager\.ts$/,
-    /^packages\/plugin-ext\/src\/main\/browser\/tabs\/tabs-main\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
-    /^packages\/plugin-ext\/src\/main\/browser\/webview\/webview-resource-cache\.ts$/,
     // Upstream Theia spec files removed or gutted in the fork.
     /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.spec\.ts$/,
     /^packages\/ai-ide\/src\/browser\/workspace-functions\.spec\.ts$/,
@@ -126,7 +121,6 @@ const ALLOWED = [
     // TODO: triage each entry against the current upstream Theia release.
     /^packages\/core\/src\/node\/backend-application\.ts$/,
     /^packages\/core\/src\/node\/backend-application-module\.ts$/,
-    /^packages\/plugin-ext\/src\/hosted\/node\/plugin-host-rpc\.ts$/,
     /^packages\/ai-ide\/src\/browser\/workspace-functions\.ts$/,
     /^package\.json$/,
     /^package-lock\.json$/,
