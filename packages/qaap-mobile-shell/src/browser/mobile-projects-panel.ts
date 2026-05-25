@@ -1149,7 +1149,7 @@ export class MobileProjectsPanel {
             input.value = '';
             updateBtn();
             this.composerDraft = '';
-            void this.submitBackgroundAgentTask(project, draft);
+            void this.submitBackgroundAgentTask(project, draft, { openConversation: false });
         };
         input.addEventListener('keydown', ev => {
             if (ev.key === 'Enter') {
@@ -1829,7 +1829,11 @@ export class MobileProjectsPanel {
         return cwd;
     }
 
-    protected async submitBackgroundAgentTask(project: MobileProjectEntry, draft: string): Promise<void> {
+    protected async submitBackgroundAgentTask(
+        project: MobileProjectEntry,
+        draft: string,
+        options: { openConversation?: boolean } = {},
+    ): Promise<void> {
         const cwd = await this.ensureInlineComposerCwd(project);
         if (!cwd) {
             return;
@@ -1852,9 +1856,11 @@ export class MobileProjectsPanel {
                 nls.localize('qaap/mobileProjects/conversationStarted', 'Conversation started'),
                 { kind: 'success', duration: 1400 }
             );
-            // Drop the user straight into the new conversation so the agent reply is visible as
-            // soon as it streams back. The sheet lives inside this panel — no workspace switch.
-            void this.openTranscriptSheet(project, conversationToSummary(conv));
+            if (options.openConversation ?? true) {
+                // The advanced chat input keeps the previous behavior: open the new thread so the
+                // user can continue immediately with the full Agent UI.
+                void this.openTranscriptSheet(project, conversationToSummary(conv));
+            }
         } catch (error) {
             const detail = error instanceof Error ? error.message : String(error);
             this.messageService?.error(nls.localize(
@@ -1954,7 +1960,7 @@ export class MobileProjectsPanel {
             widget.clearPendingImageAttachments();
             this.composerExpanded = false;
             this.composerDraft = '';
-            await this.submitBackgroundAgentTask(project, cleaned);
+            await this.submitBackgroundAgentTask(project, cleaned, { openConversation: true });
         };
         widget.onCancel = (requestModel: ChatRequestModel) => {
             void this.chatService?.cancelRequest(requestModel.session.id, requestModel.id);
