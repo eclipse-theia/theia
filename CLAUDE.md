@@ -97,6 +97,37 @@ Each entry should eventually be removed by extracting product behaviour into `pa
 - **`plugin-ext-vscode`** (1 file) — fork lag (upstream's ESM loader hook removed in fork). Decide whether to re-adopt.
 - **`ai-anthropic`** / **`ai-google`** (1 file each) — preference defaults; needs a schema-merge pattern or a higher-priority `PreferenceContribution`.
 
+### Open extraction tasks (ordered by recommended priority)
+
+Pick the next task off this list. Each is independent — extract one, verify, commit, and tick the box. The order goes from low-risk quick wins to multi-session efforts.
+
+**Tier 1 — Quick wins (1 file, ~1 session each)**
+
+- [ ] **ai-anthropic preference defaults.** Add a `PreferenceContribution` in `qaap-ai-config` that overrides `AnthropicPreferencesSchema` default models to include `claude-sonnet-4-5` and `claude-opus-4-5`. Revert `packages/ai-anthropic/src/common/anthropic-preferences.ts`.
+- [ ] **ai-google preference defaults.** Same pattern. First confirm whether `gemini-3.5-flash` or `gemini-3-flash-preview` is the right model name before deciding extract-vs-revert.
+- [ ] **scm mobile single-click + auto-collapse.** Subclass `ScmTreeWidget` and `ScmResourceComponent` in a `qaap-*` package to add `collapseContainingPanel()` and always-single-click open. Rebind via DI. **Verify visually on narrow viewport** (open file from SCM panel; panel should collapse). Revert `packages/scm/src/browser/scm-tree-widget.tsx`.
+- [ ] **plugin-ext-vscode ESM loader hook (triage).** Decide whether to re-adopt upstream's `registerESMLoaderHook()` in `plugin-vscode-init.ts` (enables ESM-style VS Code plugins). If yes, `git checkout upstream/master --` it. If no, document the rationale in this file.
+
+**Tier 2 — Medium (2–3 files, subclass + rebind)**
+
+- [ ] **ai-chat** (`chat-content-deserializer.{ts,spec.ts}`). Subclass + rebind, or revert if fork lag. Verify chat round-trip.
+- [ ] **ai-chat-ui** (`toolcall-part-renderer.tsx`, `generic-capabilities-tree.tsx`). Subclass renderers and rebind. Verify toolcall rendering and capabilities tree.
+- [ ] **ai-core** (`theia-variable-contribution.ts` + 1). Subclass + rebind in `qaap-ai-config` or new `qaap-ai-core` package.
+- [ ] **ai-terminal** (`shell-execution-tool-renderer.tsx`, `shell-execution-server-impl.ts`). Subclass renderer + server impl. Verify AI terminal tool execution.
+- [ ] **ai-code-completion** (`code-completion-agent.ts` + spec). Subclass agent. Verify completions work in the editor.
+- [ ] **monaco** (`monaco-quick-input-{layout,service}.ts`, `monaco-frontend-module.ts`). Move logic to `qaap-product-theme` or `qaap-mobile-shell`. Revert upstream.
+
+**Tier 3 — Larger surfaces (4–7 files)**
+
+- [ ] **workspace** (4 files: trust dialog/factory/service + frontend-module). Subclass dialog + service, rebind via factory. Verify workspace-trust flow on first open.
+- [ ] **mini-browser** (7 files, most already seamed). Identify which still need extraction vs reversion (Element Inspector + mobile open-handler seams may already be sufficient).
+- [ ] **plugin-ext** (7 files). Plugin host / view registry / webview-resource-cache. Sensitive area — one file per commit. Verify plugins still load, tabs/webviews render.
+
+**Tier 4 — Multi-session projects**
+
+- [ ] **ai-ide** (14 files). Includes model-alias UI, command/prompt templates, and `workspace-functions.ts` (−291 lines: missing `TrustAwarePreferenceReader` + external-path allowlist — reassess against current Theia AI release). Split into sub-tasks per file group when started.
+- [ ] **core** (17 files). Mostly already-allowlisted small seams. Big residuals: `backend-application.{ts,-module.ts}` (fork lag — missing graceful-shutdown machinery and `RootContainer`). Decide per-file: re-sync vs keep simplified with documented reason.
+
 ### Workflow per extraction
 
 1. Read the diff: `git diff upstream/master -- <file>`.
