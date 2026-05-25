@@ -125,7 +125,16 @@ Pick the next task off this list. Each is independent — extract one, verify, c
 
 **Tier 4 — Multi-session projects**
 
-- [ ] **ai-ide** (12 files). Includes model-alias UI, command/prompt templates, and `workspace-functions.ts` (−291 lines: missing `TrustAwarePreferenceReader` + external-path allowlist — reassess against current Theia AI release). Split into sub-tasks per file group when started.
+- [~] **ai-ide** (12 files). Partial:
+    - 4 branding-regression files re-adopted from upstream (`ide-chat-welcome-message-provider.tsx`, `pr-review-prompt-template.ts`, `command-chat-agents.ts`, `command-prompt-template.ts`). Fork was hardcoding "Theia" / "Theia IDE" in places upstream already passes `applicationName` / `productName`.
+    - Remaining (accepted as documented seams):
+        - `language-model-renderer.tsx` + `model-aliases-configuration-widget.tsx` + matching CSS — implement the "free model" badge feature for NVIDIA NIM / OpenRouter. Tightly coupled to upstream widget render code; clean extraction would require duplicating ~250 lines.
+        - `workspace-launch-provider.ts` — defensive `JSON.parse('')` guard in an inline `ToolProvider.getTool()` handler; subclassing requires duplicating ~30 lines of tool definition for a 1-line fix.
+        - `package.json` + `tsconfig.json` — add direct deps on `qaap-ai-nvidia` / `qaap-ai-openrouter` that the free-badge feature needs.
+    - Remaining (real fork lag, deferred — needs decision):
+        - `workspace-functions.{ts,spec.ts}` (−291 lines + −586 lines spec): fork stripped `TrustAwarePreferenceReader` and the `ALLOWED_EXTERNAL_PATHS_PREF` external-path allowlist. Restoring would re-add a security feature; needs reasoning about why it was removed before re-syncing.
+        - `context-file-validation-service-impl.spec.ts` paired with the above.
+        - `common/workspace-preferences.ts` paired with the above.
 - [ ] **core** (residuals after Tier 1–3 cleanups). Mostly already-allowlisted small seams **justified by qaap consumers** (e.g. `WorkbenchTopBarFactory` → `qaap-mobile-shell`, `ElectronMainApplication.resolveApplicationIconPath` → `qaap-product`). Real outstanding work:
     - `backend-application.{ts,-module.ts}` (fork lag — missing upstream graceful-shutdown machinery and `RootContainer`). Decide per-file: re-sync vs keep simplified with documented reason.
     - yargs `v15 → v17` upgrade across `core`, `dev-packages/{cli,application-manager,private-re-exports}` (would clean 4–5 files in one go). Attempted in 2026-05; aborted because `npm install` cascaded into a zod/MCP-SDK type-resolution conflict in `ai-mcp-server`. Needs a proper dependency-graph investigation (likely pin zod or align MCP SDK) before retrying.
