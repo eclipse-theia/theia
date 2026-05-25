@@ -85,7 +85,10 @@ const ALLOWED = [
     // ai-ide: workspace launch / model alias UI / prompt template tweaks for product
     /^packages\/ai-ide\/package\.json$/,
     /^packages\/ai-ide\/tsconfig\.json$/,
+    /^packages\/ai-ide\/src\/browser\/frontend-module\.ts$/,
+    /^packages\/ai-ide\/src\/browser\/ai-configuration\/agent-configuration-widget\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-renderer\.tsx$/,
+    /^packages\/ai-ide\/src\/browser\/ai-configuration\/language-model-option-contribution\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/ai-configuration\/model-aliases-configuration-widget\.tsx$/,
     /^packages\/ai-ide\/src\/browser\/style\/widgets\/model-aliases-configuration\.css$/,
     /^packages\/ai-ide\/src\/browser\/workspace-launch-provider\.ts$/,
@@ -101,7 +104,9 @@ const ALLOWED = [
     /^packages\/mini-browser\/src\/browser\/mini-browser-url-utils\.spec\.ts$/,
     /^packages\/scm\/src\/browser\/scm-tree-widget\.tsx$/,
     // ---- Plugin host customizations (small upstream patches) ---------------
+    /^packages\/plugin-ext\/src\/main\/browser\/plugin-ext-frontend-module\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
+    /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-welcome-policy\.ts$/,
     // Upstream Theia spec files removed or gutted in the fork.
     /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.spec\.ts$/,
     // ---- Fork lags upstream Theia (NOT product-code drift) ----------------

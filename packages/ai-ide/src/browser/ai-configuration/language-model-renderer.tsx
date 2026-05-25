@@ -18,8 +18,7 @@ import { Agent, AISettingsService, FrontendLanguageModelRegistry, LanguageModel,
 import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { Mutable } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
-import { isFreeNvidiaModelId } from '@theia/qaap-ai-nvidia/lib/common';
-import { isFreeOpenRouterModelId } from '@theia/qaap-ai-openrouter/lib/common';
+import { collectLanguageModelOptionDecorations, LanguageModelOptionContribution } from './language-model-option-contribution';
 
 export interface LanguageModelSettingsProps {
     agent: Agent;
@@ -27,10 +26,11 @@ export interface LanguageModelSettingsProps {
     aiSettingsService: AISettingsService;
     languageModelRegistry: FrontendLanguageModelRegistry;
     languageModelAliases: LanguageModelAlias[];
+    languageModelOptionContributions?: readonly LanguageModelOptionContribution[];
 }
 
 export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
-    { agent, languageModels, aiSettingsService, languageModelRegistry, languageModelAliases: aliases }) => {
+    { agent, languageModels, aiSettingsService, languageModelRegistry, languageModelAliases: aliases, languageModelOptionContributions }) => {
 
     const findLanguageModelRequirement = async (purpose: string): Promise<LanguageModelRequirement | undefined> => {
         const requirementSetting = await aiSettingsService.getAgentSettings(agent.id);
@@ -118,19 +118,16 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                             ))}
                             {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => {
                                 const isNotReady = model.status.status !== 'ready';
-                                const isFree = isFreeNvidiaModelId(model.id) || isFreeOpenRouterModelId(model.id);
+                                const decoration = collectLanguageModelOptionDecorations(languageModelOptionContributions, model);
                                 return (
                                     <option
                                         key={model.id}
                                         value={model.id}
                                         className={isNotReady ? 'ai-language-model-item-not-ready' : 'ai-language-model-item-ready'}
-                                        title={isFree
-                                            ? nls.localize('theia/ai/core/languageModelRenderer/freeModelTooltip',
-                                                'Free-tier model — NVIDIA NIM (build.nvidia.com) or OpenRouter (slug ending with `:free`). Usable at no cost with a free provider account.')
-                                            : (isNotReady && model.status.message ? model.status.message : undefined)}
+                                        title={decoration.title ?? (isNotReady && model.status.message ? model.status.message : undefined)}
                                     >
                                         {model.name ?? model.id} {isNotReady ? '✗' : '✓'}
-                                        {isFree ? `  🆓 ${nls.localize('theia/ai/core/languageModelRenderer/freeModelBadge', 'Free')}` : ''}
+                                        {decoration.labelSuffix}
                                     </option>
                                 );
                             })}

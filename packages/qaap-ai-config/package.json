@@ -10,6 +10,8 @@
     "@theia/ai-terminal": "1.71.0",
     "@theia/core": "1.71.0",
     "@theia/qaap-adapters": "1.71.0",
+    "@theia/qaap-ai-nvidia": "1.71.0",
+    "@theia/qaap-ai-openrouter": "1.71.0",
     "@theia/qaap-mobile-shell": "1.71.0",
     "tslib": "^2.8.1"
   },

@@ -53,7 +53,11 @@ export interface SelectComponentState {
 
 export const SELECT_COMPONENT_CONTAINER = 'select-component-container';
 
+export type SelectComponentOverlayClipBottomProvider = (fallbackBottom: number) => number;
+
 export class SelectComponent extends React.Component<SelectComponentProps, SelectComponentState> {
+    static overlayClipBottomProvider: SelectComponentOverlayClipBottomProvider | undefined;
+
     protected dropdownElement: HTMLElement;
     protected fieldRef = React.createRef<HTMLDivElement>();
     protected dropdownRef = React.createRef<HTMLDivElement>();
@@ -355,9 +359,6 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             this.optimalWidth = this.getOptimalWidth();
             this.optimalHeight = this.getOptimalHeight(Math.max(this.state.dimensions.width, this.optimalWidth));
         }
-        // A fixed overlay (e.g. the mobile bottom navigation chrome) may cover the lower part of the
-        // shell area. Treat its top edge as the effective shell bottom so the dropdown is not
-        // rendered behind it, and the invert logic kicks in when there is not enough room below.
         const shellBottom = shellArea.top + shellArea.height;
         const effectiveShellBottom = Math.min(shellBottom, this.getOverlayClipBottom(shellBottom));
         const availableTop = this.state.dimensions.top - shellArea.top;
@@ -404,21 +405,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         </div>;
     }
 
-    /**
-     * Returns the viewport-relative Y coordinate at which a fixed bottom overlay (e.g. the mobile
-     * bottom navigation chrome) starts obscuring the shell area, or `fallbackBottom` when no such
-     * overlay is present. The dropdown should not be rendered below this line.
-     */
     protected getOverlayClipBottom(fallbackBottom: number): number {
-        const overlay = document.querySelector<HTMLElement>('.theia-mobile-bottom-chrome-host');
-        if (!overlay) {
-            return fallbackBottom;
-        }
-        const rect = overlay.getBoundingClientRect();
-        if (rect.height <= 0 || rect.top >= fallbackBottom) {
-            return fallbackBottom;
-        }
-        return rect.top;
+        return SelectComponent.overlayClipBottomProvider?.(fallbackBottom) ?? fallbackBottom;
     }
 
     protected renderOption(index: number, option: SelectOption): React.ReactNode {

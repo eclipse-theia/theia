@@ -20,6 +20,10 @@
 | Requires viewport-fit=cover on the page viewport meta tag for safe-area.
 |-----------------------------------------------------------------------------*/
 
+:root {
+  --theia-select-component-dropdown-z-index: 9500;
+}
+
 @media (max-width: 767px) {
   html,
   body {

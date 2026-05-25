@@ -27,7 +27,7 @@ import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widg
 import { SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
-import { EXPLORER_VIEW_CONTAINER_ID, FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
+import { EXPLORER_VIEW_CONTAINER_ID, FileNavigatorWidget, FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -50,6 +50,7 @@ import { nls } from '@theia/core';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+import { PluginViewWelcomePolicy } from './plugin-view-welcome-policy';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -99,6 +100,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
+
+    @inject(PluginViewWelcomePolicy)
+    protected readonly welcomePolicy: PluginViewWelcomePolicy;
 
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
@@ -177,9 +181,18 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         });
         this.widgetManager.onDidCreateWidget(event => {
-            // qaap: "Open Folder" welcome view intentionally omitted — qaap is a cloud IDE,
-            // so opening a local folder is not supported. The "Clone Repository" welcome
-            // contributed at runtime by the built-in Git extension is sufficient.
+            if (event.widget instanceof FileNavigatorWidget && this.welcomePolicy.shouldRegisterExplorerOpenFolderWelcome()) {
+                const disposable = new DisposableCollection();
+                disposable.push(this.registerViewWelcome({
+                    view: 'explorer',
+                    content: nls.localizeByDefault(
+                        'You have not yet opened a folder.\n{0}',
+                        `[${nls.localizeByDefault('Open Folder')}](command:workbench.action.files.openFolder)`
+                    ),
+                    order: 0
+                }));
+                disposable.push(event.widget.onDidDispose(() => disposable.dispose()));
+            }
             if (event.widget instanceof ScmWidget) {
                 const disposable = new DisposableCollection();
                 disposable.push(this.registerViewWelcome({

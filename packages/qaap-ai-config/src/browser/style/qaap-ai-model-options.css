@@ -1,0 +1,13 @@
+.ai-model-free-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 0.78em;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--theia-successForeground, #89d185);
+    background-color: color-mix(in srgb, var(--theia-successForeground, #89d185) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theia-successForeground, #89d185) 40%, transparent);
+    vertical-align: baseline;
+}

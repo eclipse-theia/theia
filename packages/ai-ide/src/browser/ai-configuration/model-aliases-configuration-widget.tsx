@@ -14,15 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { FrontendLanguageModelRegistry, LanguageModel, LanguageModelRegistry, LanguageModelRequirement } from '@theia/ai-core/lib/common/language-model';
-import { nls } from '@theia/core/lib/common/nls';
+import { ContributionProvider, nls } from '@theia/core';
 import { AgentService, AISettingsService } from '@theia/ai-core';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
 import { ConfigurationSection } from './components/configuration-section';
-import { isFreeNvidiaModelId } from '@theia/qaap-ai-nvidia/lib/common';
-import { isFreeOpenRouterModelId } from '@theia/qaap-ai-openrouter/lib/common';
+import { collectLanguageModelOptionDecorations, LanguageModelOptionContribution } from './language-model-option-contribution';
 
 @injectable()
 export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWidget<LanguageModelAlias> {
@@ -37,6 +36,8 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
     protected readonly aiSettingsService: AISettingsService;
     @inject(AgentService)
     protected readonly agentService: AgentService;
+    @inject(ContributionProvider) @named(LanguageModelOptionContribution)
+    protected readonly languageModelOptionContributions: ContributionProvider<LanguageModelOptionContribution>;
 
     protected languageModels: LanguageModel[] = [];
     protected matchingAgentIdsForAliasMap: Map<string, string[]> = new Map();
@@ -181,19 +182,16 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
                             .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))
                             .map(model => {
                                 const isNotReady = model.status.status !== 'ready';
-                                const isFree = isFreeNvidiaModelId(model.id) || isFreeOpenRouterModelId(model.id);
+                                const decoration = collectLanguageModelOptionDecorations(this.languageModelOptionContributions.getContributions(), model);
                                 return (
                                     <option
                                         key={model.id}
                                         value={model.id}
                                         className={isNotReady ? 'ai-language-model-item-not-ready' : 'ai-language-model-item-ready'}
-                                        title={isFree
-                                            ? nls.localize('theia/ai/core/languageModelRenderer/freeModelTooltip',
-                                                'Free NVIDIA NIM model — usable with the free credits from a build.nvidia.com account.')
-                                            : (isNotReady && model.status.message ? model.status.message : undefined)}
+                                        title={decoration.title ?? (isNotReady && model.status.message ? model.status.message : undefined)}
                                     >
                                         {model.name ?? model.id} {isNotReady ? '✗' : '✓'}
-                                        {isFree ? `  🆓 ${nls.localize('theia/ai/core/languageModelRenderer/freeModelBadge', 'Free')}` : ''}
+                                        {decoration.labelSuffix}
                                     </option>
                                 );
                             }
@@ -211,29 +209,20 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
                                 {alias.defaultModelIds.map(modelId => {
                                     const model = this.languageModels.find(m => m.id === modelId);
                                     const isReady = model?.status.status === 'ready';
-                                    const isFree = isFreeNvidiaModelId(modelId) || isFreeOpenRouterModelId(modelId);
-                                    const freeBadge = isFree ? (
-                                        <span
-                                            className="ai-model-free-badge"
-                                            title={nls.localize('theia/ai/core/languageModelRenderer/freeModelTooltip',
-                                                'Free NVIDIA NIM model — usable with the free credits from a build.nvidia.com account.')}
-                                        >
-                                            🆓 {nls.localize('theia/ai/core/languageModelRenderer/freeModelBadge', 'Free')}
-                                        </span>
-                                    ) : undefined;
+                                    const decoration = collectLanguageModelOptionDecorations(this.languageModelOptionContributions.getContributions(), { id: modelId });
                                     return (
                                         <li key={modelId}>
                                             {isReady ? (
                                                 <span className={modelId === resolvedModel?.id ? 'ai-alias-priority-item-resolved' : 'ai-alias-priority-item-ready'}>
                                                     {modelId} <span className="ai-model-status-ready"
                                                         title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelReadyTooltip', 'Ready')}>✓</span>
-                                                    {freeBadge && <> {freeBadge}</>}
+                                                    {decoration.inlineBadge && <> {decoration.inlineBadge}</>}
                                                 </span>
                                             ) : (
                                                 <span className="ai-model-default-not-ready">
                                                     {modelId} <span className="ai-model-status-not-ready"
                                                         title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelNotReadyTooltip', 'Not ready')}>✗</span>
-                                                    {freeBadge && <> {freeBadge}</>}
+                                                    {decoration.inlineBadge && <> {decoration.inlineBadge}</>}
                                                 </span>
                                             )}
                                         </li>

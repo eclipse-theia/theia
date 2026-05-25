@@ -21,9 +21,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  /* Must sit above fixed bottom chrome / mobile navigation (z-index 9300) so the dropdown
-     is never visually occluded by the bottom navigation bar. */
-  z-index: 9500;
+  z-index: var(--theia-select-component-dropdown-z-index, 6000);
 }
 
 .theia-select-component {

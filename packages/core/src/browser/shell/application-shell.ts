@@ -412,9 +412,8 @@ export class ApplicationShell extends Widget {
 
     protected setTopPanelVisibility(preference: string): void {
         const hideMenuBar = preference === 'compact' || preference === 'hidden';
-        // The top panel may also host product-provided widgets (e.g. leading/trailing nav controls
-        // injected via `WorkbenchTopBarFactory`). Only hide the menu bar widget itself so those stay
-        // visible; hide the entire top panel only when there is nothing else to show.
+        // The top panel may host widgets from the workbench top-bar factory in addition to the menu
+        // bar. Hide the entire panel only when no other visible widgets remain.
         const menuBar = this.topPanel.widgets.find(w => w.id === 'theia:menubar');
         menuBar?.setHidden(hideMenuBar);
         const hasOtherVisibleWidget = this.topPanel.widgets.some(w => w !== menuBar && !w.isHidden);
@@ -711,10 +710,8 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * Create the top panel, which holds the main menu and product-provided leading/trailing widgets
-     * (see {@link WorkbenchTopBarFactory}). The panel starts visible so the workbench renders the
-     * top bar immediately on startup; {@link setTopPanelVisibility} later collapses just the menu
-     * bar inside it when the user's `window.menuBarVisibility` preference is `hidden`/`compact`.
+     * Create the top panel, which holds the main menu and widgets from the workbench top-bar factory
+     * (see {@link WorkbenchTopBarFactory}).
      */
     protected createTopPanel(): Panel {
         const topPanel = new Panel();

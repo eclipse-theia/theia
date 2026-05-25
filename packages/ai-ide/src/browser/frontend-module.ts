@@ -95,6 +95,7 @@ import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
 import { GetSkillFileContent } from './skill-file-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
+import { LanguageModelOptionContribution } from './ai-configuration/language-model-option-contribution';
 import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
@@ -195,6 +196,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
     bindContributionProvider(bind, ChatSessionCardActionContribution);
+    bindContributionProvider(bind, LanguageModelOptionContribution);
     bind(DefaultChatSessionCardActionContribution).toSelf().inSingletonScope();
     bind(ChatSessionCardActionContribution).toService(DefaultChatSessionCardActionContribution);
     bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();

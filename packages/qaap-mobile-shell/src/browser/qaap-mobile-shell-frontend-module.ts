@@ -51,6 +51,7 @@ import { QaapProjectBootstrapContribution } from './qaap-project-bootstrap-contr
 import { MobileTouchScrollContribution } from './mobile-touch-scroll-contribution';
 import { QaapBootstrapVariableContribution } from './qaap-bootstrap-variable-contribution';
 import { createQaapScmWidgetContainer } from './qaap-scm-tree-widget';
+import { QaapSelectComponentOverlayContribution } from './qaap-select-component-overlay-contribution';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
@@ -109,6 +110,8 @@ export default new ContainerModule(bind => {
     bind(QaapProjectBootstrapService).toSelf().inSingletonScope();
     bind(MobileTouchScrollContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MobileTouchScrollContribution);
+    bind(QaapSelectComponentOverlayContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapSelectComponentOverlayContribution);
 
     bind(QaapProjectBootstrapContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapProjectBootstrapContribution);

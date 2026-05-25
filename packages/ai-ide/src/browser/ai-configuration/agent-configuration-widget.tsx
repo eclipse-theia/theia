@@ -37,7 +37,7 @@ import { isChatAgent } from '@theia/ai-chat/lib/common';
 import { codicon, CommonCommands, QuickInputService } from '@theia/core/lib/browser';
 import { CommandService } from '@theia/core/lib/common/command';
 import { URI } from '@theia/core/lib/common';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
@@ -47,6 +47,8 @@ import { nls } from '@theia/core';
 import { PromptVariantRenderer } from './template-settings-renderer';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
 import { AgentNotificationSettings } from './components/agent-notification-settings';
+import { ContributionProvider } from '@theia/core';
+import { LanguageModelOptionContribution } from './language-model-option-contribution';
 
 interface ParsedPrompt {
     functions: string[];
@@ -90,6 +92,9 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
     @inject(CommandService)
     protected readonly commandService: CommandService;
+
+    @inject(ContributionProvider) @named(LanguageModelOptionContribution)
+    protected readonly languageModelOptionContributions: ContributionProvider<LanguageModelOptionContribution>;
 
     protected languageModels: LanguageModel[] | undefined;
     protected languageModelAliases: LanguageModelAlias[] = [];
@@ -334,6 +339,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                     aiSettingsService={this.aiSettingsService}
                     languageModelRegistry={this.languageModelRegistry}
                     languageModelAliases={this.languageModelAliases}
+                    languageModelOptionContributions={this.languageModelOptionContributions.getContributions()}
                 />
             </div>
 
