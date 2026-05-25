@@ -12,6 +12,7 @@ import {
     QaapAgentConversationListResponse,
     QaapCreateAgentConversationRequest,
     QaapPostAgentMessageRequest,
+    QaapRenameAgentConversationRequest,
 } from '../common/qaap-agent-conversation';
 import { QaapAgentConversationStore } from './qaap-agent-conversation-store';
 
@@ -50,6 +51,17 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
         });
         app.post(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id/messages`, (req, res) => {
             this.handlePostMessage(req, res);
+        });
+        app.patch(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id`, (req, res) => {
+            this.handleRename(req, res);
+        });
+        app.post(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id/fork`, (req, res) => {
+            const conv = this.store.fork(req.params.id);
+            if (!conv) {
+                res.status(404).json({ error: 'Conversation not found.' });
+                return;
+            }
+            res.status(201).json(conv);
         });
         app.post(`${QAAP_AGENT_CONVERSATION_API_PATH}/:id/cancel`, (req, res) => {
             const conv = this.store.cancel(req.params.id);
@@ -98,6 +110,21 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             const message = error instanceof Error ? error.message : String(error);
             res.status(message === 'Conversation not found.' ? 404 : 400).json({ error: message });
         }
+    }
+
+    protected handleRename(req: Request, res: Response): void {
+        const body = (req.body ?? {}) as Partial<QaapRenameAgentConversationRequest>;
+        const title = typeof body.title === 'string' ? body.title.trim() : '';
+        if (!title) {
+            res.status(400).json({ error: '"title" must be a non-empty string.' });
+            return;
+        }
+        const conv = this.store.rename(req.params.id, { title });
+        if (!conv) {
+            res.status(404).json({ error: 'Conversation not found.' });
+            return;
+        }
+        res.json(conv);
     }
 
     /** SSE feed of conversation events used by every connected client for live updates. */

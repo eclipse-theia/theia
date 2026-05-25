@@ -137,6 +137,30 @@ export async function postConversationMessage(id: string, content: string): Prom
     return response.json() as Promise<QaapAgentConversationDTO>;
 }
 
+export async function renameConversation(id: string, title: string): Promise<QaapAgentConversationDTO> {
+    const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+    });
+    if (!response.ok) {
+        throw new Error((await response.text()) || response.statusText);
+    }
+    return response.json() as Promise<QaapAgentConversationDTO>;
+}
+
+export async function forkConversation(id: string): Promise<QaapAgentConversationDTO> {
+    const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/fork`, {
+        method: 'POST',
+        credentials: 'include',
+    });
+    if (!response.ok) {
+        throw new Error((await response.text()) || response.statusText);
+    }
+    return response.json() as Promise<QaapAgentConversationDTO>;
+}
+
 export async function cancelConversation(id: string): Promise<void> {
     const response = await fetch(`${QAAP_AGENT_CONVERSATION_API_PATH}/${encodeURIComponent(id)}/cancel`, {
         method: 'POST',

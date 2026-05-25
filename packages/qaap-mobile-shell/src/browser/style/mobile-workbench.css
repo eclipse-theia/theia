@@ -2095,7 +2095,9 @@
 }
 
 .theia-mobile-projects-card-menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   padding: 10px 12px;
   border: none;
@@ -2107,6 +2109,13 @@
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.theia-mobile-projects-card-menu-item .codicon {
+  flex: 0 0 18px;
+  width: 18px;
+  text-align: center;
+  font-size: 16px;
 }
 
 .theia-mobile-projects-card-menu-item:hover:not(:disabled),
@@ -2921,14 +2930,25 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   opacity: 0.72;
 }
 
-.theia-mobile-projects-task-item {
+.theia-mobile-projects-task-row {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   width: 100%;
-  padding: 10px 0;
   border: none;
   border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.22));
+  position: relative;
+}
+
+.theia-mobile-projects-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  padding: 10px 0;
+  border: none;
   background: transparent;
   cursor: pointer;
   text-align: left;
@@ -2936,9 +2956,25 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   font-family: var(--theia-ui-font-family, sans-serif);
 }
 
-.theia-mobile-projects-tasks-list .theia-mobile-projects-task-item:last-child {
+.theia-mobile-projects-tasks-list .theia-mobile-projects-task-row:last-child {
   border-bottom: none;
+}
+
+.theia-mobile-projects-tasks-list .theia-mobile-projects-task-row:last-child .theia-mobile-projects-task-item {
   padding-bottom: 0;
+}
+
+.theia-mobile-projects-conversation-menu-btn {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  margin-top: 7px;
+  opacity: 0.72;
+}
+
+.theia-mobile-projects-task-row:focus-within .theia-mobile-projects-conversation-menu-btn,
+.theia-mobile-projects-task-row:hover .theia-mobile-projects-conversation-menu-btn {
+  opacity: 0.9;
 }
 
 .theia-mobile-projects-task-item.theia-mod-done .theia-mobile-projects-task-dot {

@@ -17,6 +17,7 @@ import {
     QaapAgentConversationSummary,
     QaapAgentMessage,
     QaapCreateAgentConversationRequest,
+    QaapRenameAgentConversationRequest,
     toConversationSummary,
 } from '../common/qaap-agent-conversation';
 import { QaapAgentTaskRunner } from './qaap-agent-task-runner';
@@ -179,6 +180,45 @@ export class QaapAgentConversationStore {
         this.fire({ type: 'updated', conversation: toConversationSummary(next) });
         void this.persist();
         return next;
+    }
+
+    rename(id: string, request: QaapRenameAgentConversationRequest): QaapAgentConversation | undefined {
+        const conv = this.conversations.get(id);
+        const title = request.title.trim();
+        if (!conv || !title) {
+            return undefined;
+        }
+        const next: QaapAgentConversation = { ...conv, title, updatedAt: Date.now() };
+        this.conversations.set(id, next);
+        this.fire({ type: 'updated', conversation: toConversationSummary(next) });
+        void this.persist();
+        return next;
+    }
+
+    fork(id: string): QaapAgentConversation | undefined {
+        const conv = this.conversations.get(id);
+        if (!conv) {
+            return undefined;
+        }
+        const now = Date.now();
+        const forked: QaapAgentConversation = {
+            ...conv,
+            id: randomUUID(),
+            title: `${conv.title} fork`,
+            status: 'idle',
+            createdAt: now,
+            updatedAt: now,
+            messages: conv.messages.map(message => ({
+                ...message,
+                id: randomUUID(),
+                taskId: undefined,
+                error: undefined,
+            })),
+        };
+        this.conversations.set(forked.id, forked);
+        this.fire({ type: 'created', conversation: toConversationSummary(forked) });
+        void this.persist();
+        return forked;
     }
 
     delete(id: string): boolean {

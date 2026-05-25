@@ -87,6 +87,10 @@ export interface QaapPostAgentMessageRequest {
     readonly content: string;
 }
 
+export interface QaapRenameAgentConversationRequest {
+    readonly title: string;
+}
+
 /** Payload pushed over SSE when a conversation changes. */
 export type QaapAgentConversationEvent =
     | { readonly type: 'created'; readonly conversation: QaapAgentConversationSummary }

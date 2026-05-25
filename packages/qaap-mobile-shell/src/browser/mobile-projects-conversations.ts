@@ -258,6 +258,24 @@ export class MobileProjectsConversations {
         this.onDidChangeEmitter.fire();
     }
 
+    /** Optimistic update after deleting a conversation before SSE/storage refresh catches up. */
+    removeSnapshot(conversationId: string, cwd: string, source?: QaapAgentConversationSummaryDTO['source']): void {
+        const map = source === 'theia-chat' ? this.theiaByCwd : this.byCwd;
+        const normalized = normalizeCwd(cwd);
+        const entry = [...map.entries()].find(([key]) => normalizeCwd(key) === normalized);
+        if (!entry) {
+            return;
+        }
+        const [key, list] = entry;
+        const next = list.filter(c => c.id !== conversationId && c.sessionId !== conversationId);
+        if (next.length === 0) {
+            map.delete(key);
+        } else {
+            map.set(key, next);
+        }
+        this.onDidChangeEmitter.fire();
+    }
+
     protected async primeFromAll(): Promise<void> {
         try {
             const groups = await listAllConversationGroups();

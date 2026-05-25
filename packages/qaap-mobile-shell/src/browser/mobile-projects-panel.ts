@@ -7,6 +7,9 @@ import { nls } from '@theia/core/lib/common/nls';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { generateUuid } from '@theia/core/lib/common/uuid';
+import { ConfirmDialog } from '@theia/core/lib/browser';
+import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { Widget as LuminoWidget } from '@lumino/widgets';
 import { GenericCapabilitySelections } from '@theia/ai-core';
@@ -24,9 +27,13 @@ import { MobileProjectsService } from './mobile-projects-service';
 import {
     QaapAgentConversationDTO,
     QaapAgentConversationSummaryDTO,
+    cancelConversation,
     conversationToSummary,
+    deleteConversation,
+    forkConversation,
     getConversation,
     postConversationMessage,
+    renameConversation,
 } from '../common/qaap-agent-conversation-client';
 import { markMobileProjectReadmeForOpen, markMobileProjectsPanelDismiss } from './mobile-projects-open';
 import { MobileOpenRepositoryDialog } from './mobile-open-repository-dialog';
@@ -1235,7 +1242,8 @@ export class MobileProjectsPanel {
             groupHead.append(groupLabel, groupCount);
             section.append(groupHead);
             for (const task of group.tasks) {
-                section.append(this.createTaskItem(project, task, activeInfo));
+                const summary = this.conversationsForProject(project).find(c => c.id === task.id);
+                section.append(this.createTaskItem(project, task, activeInfo, summary));
             }
             list.append(section);
         }
@@ -1301,7 +1309,11 @@ export class MobileProjectsPanel {
         project: MobileProjectEntry,
         task: MobileProjectTaskView,
         _activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
+        summary?: QaapAgentConversationSummaryDTO,
     ): HTMLElement {
+        const row = document.createElement('div');
+        row.className = 'theia-mobile-projects-task-row';
+
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'theia-mobile-projects-task-item';
@@ -1396,7 +1408,28 @@ export class MobileProjectsPanel {
             ev.stopPropagation();
             void this.openTaskInAgent(project, task);
         });
-        return item;
+        row.append(item);
+
+        if (summary) {
+            const menuBtn = document.createElement('button');
+            menuBtn.type = 'button';
+            menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-conversation-menu-btn';
+            menuBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/conversationMenu', 'Chat options'));
+            menuBtn.setAttribute('aria-haspopup', 'menu');
+            menuBtn.setAttribute('aria-expanded', 'false');
+            const icon = document.createElement('span');
+            icon.className = 'codicon codicon-kebab-vertical';
+            icon.setAttribute('aria-hidden', 'true');
+            menuBtn.append(icon);
+            const menu = this.buildConversationMenu(project, summary);
+            menuBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                this.toggleCardMenu(row, menu, menuBtn);
+            });
+            row.append(menuBtn, menu);
+        }
+
+        return row;
     }
 
     protected formatTaskSince(task: MobileProjectTaskView): string {
@@ -1475,11 +1508,7 @@ export class MobileProjectsPanel {
         if (task && this.conversations) {
             const summary = this.conversationsForProject(project).find(c => c.id === task.id);
             if (summary) {
-                if (summary.source === 'theia-chat') {
-                    await this.openTheiaChatTranscriptSheet(project, summary);
-                    return;
-                }
-                await this.openTranscriptSheet(project, summary);
+                await this.openConversationSummary(project, summary);
                 return;
             }
         }
@@ -1487,6 +1516,18 @@ export class MobileProjectsPanel {
         this.hide();
         this.delegate.onDismiss();
         await this.delegate.onOpenAgentOnTask?.(entry);
+    }
+
+    protected async openConversationSummary(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        this.closeCardMenu();
+        if (summary.source === 'theia-chat') {
+            await this.openTheiaChatTranscriptSheet(project, summary);
+            return;
+        }
+        await this.openTranscriptSheet(project, summary);
     }
 
     protected buildCardMenu(
@@ -1578,6 +1619,78 @@ export class MobileProjectsPanel {
         });
 
         // The kebab button itself is built by the caller (createRow) — buildCardMenu only owns the menu.
+        return menu;
+    }
+
+    protected buildConversationMenu(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): HTMLElement {
+        const menu = document.createElement('div');
+        menu.className = 'theia-mobile-projects-card-menu theia-mobile-projects-conversation-menu';
+        menu.setAttribute('role', 'menu');
+        menu.hidden = true;
+
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/openChat', 'Open chat'),
+            iconClass: 'codicon-comment-discussion',
+            onSelect: () => {
+                void this.openConversationSummary(project, summary);
+            },
+        });
+
+        const isTheiaChat = summary.source === 'theia-chat';
+        const canFork = isTheiaChat
+            ? !!summary.sessionId && !!this.chatService && !!this.conversations
+            : true;
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/forkChat', 'Fork chat'),
+            iconClass: 'codicon-git-branch',
+            disabled: !canFork,
+            title: canFork
+                ? nls.localize('qaap/mobileProjects/forkChatTitle', 'Duplicate this chat to try another strategy.')
+                : nls.localize('qaap/mobileProjects/forkChatUnavailable', 'Only saved workspace chats can be forked here.'),
+            onSelect: () => { void this.onForkConversation(project, summary); },
+        });
+
+        const canRename = isTheiaChat ? !!summary.sessionId && !!this.chatService : true;
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/renameChat', 'Rename chat'),
+            iconClass: 'codicon-edit',
+            disabled: !canRename,
+            title: canRename
+                ? nls.localize('qaap/mobileProjects/renameChatTitle', 'Change this chat name.')
+                : nls.localize('qaap/mobileProjects/renameChatUnavailable', 'This chat cannot be renamed.'),
+            onSelect: () => { void this.onRenameConversation(project, summary); },
+        });
+
+        if (summary.status === 'streaming') {
+            const separator = document.createElement('div');
+            separator.className = 'theia-mobile-projects-card-menu-separator';
+            separator.setAttribute('role', 'separator');
+            menu.append(separator);
+
+            this.appendCardMenuItem(menu, {
+                label: nls.localize('qaap/mobileProjects/cancelConversation', 'Cancel run'),
+                iconClass: 'codicon-debug-stop',
+                danger: true,
+                onSelect: () => { void this.onCancelConversation(project, summary); },
+            });
+        }
+
+        const separator = document.createElement('div');
+        separator.className = 'theia-mobile-projects-card-menu-separator';
+        separator.setAttribute('role', 'separator');
+        menu.append(separator);
+
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/deleteChat', 'Delete chat'),
+            iconClass: 'codicon-trash',
+            danger: true,
+            disabled: summary.source === 'theia-chat' && !summary.sessionId,
+            onSelect: () => { void this.onDeleteConversation(summary); },
+        });
+
         return menu;
     }
 
@@ -1679,7 +1792,7 @@ export class MobileProjectsPanel {
         }
         const menu = this.openMenu;
         const card = this.openMenuCard ?? menu.closest('.theia-mobile-projects-card');
-        const menuBtn = card?.querySelector('.theia-mobile-projects-card-menu-btn');
+        const menuBtn = this.openMenuAnchor ?? card?.querySelector('.theia-mobile-projects-card-menu-btn');
         menu.hidden = true;
         menu.classList.remove('theia-mod-open', 'theia-mod-floating');
         this.clearCardMenuPosition(menu);
@@ -1729,6 +1842,7 @@ export class MobileProjectsPanel {
         menu: HTMLElement,
         options: {
             label: string;
+            iconClass?: string;
             disabled?: boolean;
             danger?: boolean;
             title?: string;
@@ -1742,7 +1856,16 @@ export class MobileProjectsPanel {
             item.classList.add('theia-mod-danger');
         }
         item.setAttribute('role', 'menuitem');
-        item.textContent = options.label;
+        if (options.iconClass) {
+            const icon = document.createElement('span');
+            icon.className = `codicon ${options.iconClass}`;
+            icon.setAttribute('aria-hidden', 'true');
+            const label = document.createElement('span');
+            label.textContent = options.label;
+            item.append(icon, label);
+        } else {
+            item.textContent = options.label;
+        }
         item.disabled = !!options.disabled;
         if (options.title) {
             item.title = options.title;
@@ -1784,6 +1907,151 @@ export class MobileProjectsPanel {
         this.projects = await this.projectsService.loadProjects();
         this.render();
         this.delegate.onProjectsChanged?.();
+    }
+
+    protected async onForkConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        this.closeCardMenu();
+        try {
+            if (summary.source !== 'theia-chat') {
+                const full = await forkConversation(summary.id);
+                const forked = conversationToSummary(full);
+                this.conversations?.recordSnapshot(forked);
+                this.renderList();
+                await this.openTranscriptSheet(project, forked);
+                return;
+            }
+            const session = await this.forkTheiaConversation(project, summary);
+            if (!session) {
+                this.messageService?.error(nls.localize(
+                    'qaap/mobileProjects/forkChatFailedUnavailable',
+                    'Could not fork this chat because its saved transcript is unavailable.'
+                ));
+                return;
+            }
+            this.rememberChatSessionProject(session.id, project);
+            this.trackChatServiceSessionModels();
+            await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
+            this.renderList();
+            this.messageService?.info(nls.localize('qaap/mobileProjects/forkChatCreated', 'Forked chat created'));
+            await this.openTheiaChatTranscriptSheet(project, {
+                ...summary,
+                id: `theia-chat:fork:${session.id}`,
+                sessionId: session.id,
+                title: session.title ?? summary.title,
+                updatedAt: Date.now(),
+                status: 'idle',
+            });
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/forkChatFailed',
+                'Could not fork chat: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
+    }
+
+    protected async onRenameConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        this.closeCardMenu();
+        if (summary.source === 'theia-chat' && (!summary.sessionId || !this.chatService)) {
+            return;
+        }
+        const dialog = new SingleTextInputDialog({
+            title: nls.localize('qaap/mobileProjects/renameChatDialog', 'Rename chat'),
+            initialValue: summary.title,
+            placeholder: nls.localize('qaap/mobileProjects/renameChatPlaceholder', 'Chat name'),
+            validate: (value, mode) => {
+                if (mode !== 'preview' && !value.trim()) {
+                    return nls.localize('qaap/mobileProjects/renameChatRequired', 'Enter a chat name');
+                }
+                return true;
+            },
+        });
+        const value = await dialog.open();
+        const title = value?.trim();
+        if (!title || title === summary.title) {
+            return;
+        }
+        try {
+            if (summary.source === 'theia-chat') {
+                await this.getOrRestoreProjectChatSession(project, summary);
+                await this.chatService!.renameSession(summary.sessionId!, title);
+                await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
+            } else {
+                const full = await renameConversation(summary.id, title);
+                this.conversations?.recordSnapshot(conversationToSummary(full));
+            }
+            this.renderList();
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/renameChatFailed',
+                'Could not rename chat: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
+    }
+
+    protected async onCancelConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<void> {
+        this.closeCardMenu();
+        try {
+            if (summary.source === 'theia-chat') {
+                const session = await this.getOrRestoreProjectChatSession(project, summary);
+                const request = [...(session?.model.getRequests() ?? [])]
+                    .reverse()
+                    .find(candidate => ChatRequestModel.isInProgress(candidate));
+                if (session && request) {
+                    await this.chatService?.cancelRequest(session.id, request.id);
+                }
+            } else {
+                await cancelConversation(summary.id);
+            }
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/cancelChatFailed',
+                'Could not cancel run: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
+    }
+
+    protected async onDeleteConversation(summary: QaapAgentConversationSummaryDTO): Promise<void> {
+        this.closeCardMenu();
+        const confirmed = await new ConfirmDialog({
+            title: nls.localize('qaap/mobileProjects/deleteChat', 'Delete chat'),
+            msg: nls.localize('qaap/mobileProjects/deleteChatConfirm', 'Delete this chat? This cannot be undone.'),
+        }).open();
+        if (!confirmed) {
+            return;
+        }
+        try {
+            if (summary.source === 'theia-chat') {
+                if (!summary.sessionId || !this.chatService) {
+                    return;
+                }
+                await this.chatService.deleteSession(summary.sessionId);
+                this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
+                await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
+            } else {
+                await deleteConversation(summary.id);
+                this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
+            }
+            this.closeTranscriptSheet();
+            this.renderList();
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/deleteChatFailed',
+                'Could not delete chat: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
     }
 
     protected async onRemoveProject(project: MobileProjectEntry): Promise<void> {
@@ -2350,6 +2618,71 @@ export class MobileProjectsPanel {
         }
         const restored = await this.chatService.getOrRestoreSession(summary.sessionId);
         return restored ?? this.restoreTheiaChatSessionFromProjectsStorage(project, summary);
+    }
+
+    protected async forkTheiaConversation(
+        project: MobileProjectEntry,
+        summary: QaapAgentConversationSummaryDTO,
+    ): Promise<ChatSession | undefined> {
+        if (!this.chatService || !this.conversations || !summary.sessionId) {
+            return undefined;
+        }
+
+        const cwd = this.projectsService.getProjectCwd(project) ?? summary.cwd;
+        const existing = await this.getOrRestoreProjectChatSession(project, summary);
+        const raw = summary.id.startsWith('theia-chat:')
+            ? await this.conversations.getTheiaSerializedConversation(summary.id)
+            : await this.conversations.findTheiaSerializedConversationBySessionId(summary.sessionId, cwd)
+                ?? await this.conversations.findTheiaSerializedConversationBySessionId(summary.sessionId);
+        const baseData: RestorableTheiaChatData | undefined = isRestorableTheiaChatData(raw)
+            ? raw
+            : existing
+                ? {
+                    title: existing.title,
+                    pinnedAgentId: existing.pinnedAgent?.id,
+                    saveDate: existing.lastInteraction?.getTime() ?? Date.now(),
+                    model: existing.model.toSerializable() as RestorableTheiaChatData['model'],
+                }
+                : undefined;
+        if (!baseData) {
+            return undefined;
+        }
+
+        const sessionId = generateUuid();
+        const serializedModel = JSON.parse(JSON.stringify(baseData.model)) as RestorableTheiaChatData['model'];
+        (serializedModel as { sessionId: string }).sessionId = sessionId;
+
+        const model = new MutableChatModel(serializedModel);
+        const service = this.chatService as ChatService & {
+            _sessions?: ChatSession[];
+            restoreSessionData?: (model: MutableChatModel, data: RestorableTheiaChatData['model']) => Promise<void>;
+            setupAutoSaveForSession?: (session: ChatSession) => void;
+            saveSession?: (sessionId: string) => Promise<void>;
+        };
+        await service.restoreSessionData?.(model, serializedModel);
+
+        const title = nls.localize(
+            'qaap/mobileProjects/forkedChatTitle',
+            '{0} fork',
+            baseData.title ?? summary.title ?? project.name
+        );
+        const pinnedAgentId = baseData.pinnedAgentId ?? existing?.pinnedAgent?.id;
+        const session: ChatSession = {
+            id: sessionId,
+            title,
+            lastInteraction: new Date(),
+            model,
+            isActive: false,
+            pinnedAgent: pinnedAgentId ? this.chatAgentService?.getAgent(pinnedAgentId) : existing?.pinnedAgent,
+        };
+        if (!Array.isArray(service._sessions)) {
+            return undefined;
+        }
+        service._sessions.push(session);
+        service.setupAutoSaveForSession?.(session);
+        await service.saveSession?.(session.id);
+        this.chatService.setActiveSession(session.id, { focus: false });
+        return session;
     }
 
     protected async restoreTheiaChatSessionFromProjectsStorage(
