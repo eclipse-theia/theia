@@ -17,22 +17,8 @@
 .terminal-container {
   width: 100%;
   height: 100%;
-  min-height: 0;
   padding: var(--theia-code-padding);
   background: var(--theia-terminal-background);
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-/* xterm viewport is position:absolute (top/bottom:0); the host must have a bounded height. */
-.terminal-container .xterm {
-  height: 100%;
-}
-
-.terminal-container .xterm-viewport {
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
 }
 
 .xterm .xterm-screen canvas {

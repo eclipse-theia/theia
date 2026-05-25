@@ -16,6 +16,7 @@ import '../../src/browser/style/qaap-sidepanel-narrow-viewport.css';
 import '../../src/browser/style/qaap-dialog-narrow-viewport.css';
 import '../../src/browser/style/qaap-tabbar-narrow-viewport.css';
 import '../../src/browser/style/qaap-mini-browser-toolbar-mobile.css';
+import '../../src/browser/style/qaap-terminal-mobile.css';
 import '../../src/browser/style/qaap-monaco-quick-input-narrow.css';
 import '../../src/browser/style/qaap-status-bar.css';
 import '../../src/browser/style/qaap-workbench-chrome.css';

@@ -1,0 +1,29 @@
+/* *****************************************************************************
+ * Copyright (C) 2026 Theia contributors and Qaap product fork.
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ *****************************************************************************/
+
+/*
+ * Qaap product additions to xterm's host container.
+ * - `min-height: 0` and `overflow: hidden` keep the host bounded inside flex
+ *   layouts so the absolutely-positioned xterm viewport (top:0/bottom:0) has
+ *   a real height to resolve against.
+ * - touch-action and overscroll properties make the terminal scrollable on
+ *   mobile WebKit without triggering page-level pull-to-refresh.
+ */
+
+.terminal-container {
+    min-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.terminal-container .xterm {
+    height: 100%;
+}
+
+.terminal-container .xterm-viewport {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+}
