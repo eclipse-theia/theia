@@ -34,7 +34,10 @@ import {
     PreferenceProviderProvider,
     PreferenceProvider
 } from '../common';
-import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer, BackendApplicationPath } from './backend-application';
+import {
+    BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution,
+    BackendApplicationServer, BackendApplicationPath, RootContainer
+} from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
@@ -87,6 +90,13 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(CliContribution).toService(BackendApplicationCliContribution);
 
     bind(BackendApplication).toSelf().inSingletonScope();
+    bind(RootContainer).toDynamicValue(({ container }) => {
+        let root = container;
+        while (root.parent) {
+            root = root.parent;
+        }
+        return root;
+    }).inSingletonScope();
     bindRootContributionProvider(bind, BackendApplicationContribution);
     // Bind the BackendApplicationServer as a BackendApplicationContribution
     // and fallback to an empty contribution if never bound.
