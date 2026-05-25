@@ -45,6 +45,8 @@ export interface QaapAgentConversation {
     readonly priority?: boolean;
     /** User-flagged "paused" — sinks to the bottom; active turn is cancelled when paused. */
     readonly paused?: boolean;
+    /** Set on conversations created via {@link fork} — points at the parent's id. */
+    readonly forkedFromId?: string;
 }
 
 /** Summary row used by list endpoints — omits messages to keep payloads small. */
@@ -63,6 +65,7 @@ export interface QaapAgentConversationSummary {
     readonly lastMessageRole?: QaapAgentMessageRole;
     readonly priority?: boolean;
     readonly paused?: boolean;
+    readonly forkedFromId?: string;
 }
 
 /** Conversations bucketed by project working directory. */
@@ -126,6 +129,7 @@ export function toConversationSummary(conv: QaapAgentConversation): QaapAgentCon
         lastMessageRole: last?.role,
         priority: conv.priority || undefined,
         paused: conv.paused || undefined,
+        forkedFromId: conv.forkedFromId,
     };
 }
 

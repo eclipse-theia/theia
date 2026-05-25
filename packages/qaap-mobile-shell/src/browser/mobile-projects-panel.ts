@@ -525,6 +525,40 @@ export class MobileProjectsPanel {
         return this.conversationsForProject(project).filter(c => c.status === 'idle' && c.messageCount > 0).length;
     }
 
+    protected countNeedsInputTasks(project: MobileProjectEntry): number {
+        return this.conversationsForProject(project).filter(c => {
+            const session = c.sessionId ? this.chatService?.getSession(c.sessionId) : undefined;
+            return !!session && this.isChatSessionWaitingForInput(session);
+        }).length;
+    }
+
+    protected countFailedTasks(project: MobileProjectEntry): number {
+        return this.conversationsForProject(project).filter(c => c.status === 'failed').length;
+    }
+
+    protected countUnreadTasks(project: MobileProjectEntry): number {
+        if (!this.conversationFlags) {
+            return 0;
+        }
+        return this.conversationsForProject(project).filter(c => this.isConversationUnread(c)).length;
+    }
+
+    /**
+     * A conversation is "unread" when the agent has produced new activity since the user last
+     * opened it. Conversations the user has never opened only count as unread if their last
+     * message is from the agent — otherwise the row would render as a permanent badge.
+     */
+    protected isConversationUnread(summary: QaapAgentConversationSummaryDTO): boolean {
+        if (!this.conversationFlags) {
+            return false;
+        }
+        if (summary.lastMessageRole !== 'agent' || !summary.messageCount) {
+            return false;
+        }
+        const lastSeen = this.conversationFlags.getLastSeen(summary.id);
+        return summary.updatedAt > lastSeen;
+    }
+
     /** All persistent agent conversations the panel knows about for this project. */
     protected conversationsForProject(project: MobileProjectEntry): QaapAgentConversationSummaryDTO[] {
         const directChatSessions = this.chatServiceSessionSummariesByProjectId.get(project.id) ?? [];
@@ -692,6 +726,31 @@ export class MobileProjectsPanel {
             return bStreaming - aStreaming;
         }
         return b.updatedAt - a.updatedAt;
+    }
+
+    /**
+     * Position of a conversation in the fork tree:
+     *   'none'   — no fork relationship
+     *   'parent' — at least one other conversation was forked from this one
+     *   'child'  — this conversation was forked from another
+     *   'both'   — both of the above (forked in and out)
+     */
+    protected resolveConversationLineage(
+        summary: QaapAgentConversationSummaryDTO,
+        parentIds: ReadonlySet<string>,
+    ): 'none' | 'parent' | 'child' | 'both' {
+        const isChild = !!summary.forkedFromId;
+        const isParent = parentIds.has(summary.id);
+        if (isParent && isChild) {
+            return 'both';
+        }
+        if (isParent) {
+            return 'parent';
+        }
+        if (isChild) {
+            return 'child';
+        }
+        return 'none';
     }
 
     /**
@@ -975,6 +1034,9 @@ export class MobileProjectsPanel {
         }
 
         const running = this.countRunningTasks(project) > 0;
+        const needsInput = this.countNeedsInputTasks(project) > 0;
+        const failed = this.countFailedTasks(project) > 0;
+        const unreadCount = this.countUnreadTasks(project);
         const doneCount = this.countDoneTasks(project);
         const activeInfo = this.activeInfoForProject(project);
 
@@ -984,13 +1046,28 @@ export class MobileProjectsPanel {
         header.className = 'theia-mobile-projects-row-head';
         header.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
 
+        // Status glyph follows a priority ladder so the most actionable state wins:
+        //   needs-input > failed > running > unread > current workspace > done > idle
+        // The colored dot + animation pair signals intent at a glance from the project list.
         const glyph = document.createElement('span');
         glyph.className = 'theia-mobile-projects-row-glyph';
         if (project.isCurrent) {
             glyph.classList.add('theia-mod-workspace');
         }
-        if (running) {
+        if (needsInput) {
+            glyph.classList.add('theia-mod-needs-input');
+            glyph.title = nls.localize('qaap/mobileProjects/glyphNeedsInput', 'Waiting for your input');
+        } else if (failed) {
+            glyph.classList.add('theia-mod-failed');
+            glyph.title = nls.localize('qaap/mobileProjects/glyphFailed', 'A chat failed — review and retry');
+        } else if (running) {
             glyph.classList.add('theia-mod-running');
+            glyph.title = nls.localize('qaap/mobileProjects/glyphRunning', 'Agent is working');
+        } else if (unreadCount > 0) {
+            glyph.classList.add('theia-mod-unread');
+            glyph.title = unreadCount === 1
+                ? nls.localize('qaap/mobileProjects/glyphUnreadOne', 'New agent reply since you last opened this project')
+                : nls.localize('qaap/mobileProjects/glyphUnreadMany', '{0} chats with new agent replies', String(unreadCount));
         } else if (doneCount > 0) {
             glyph.classList.add('theia-mod-done');
         }
@@ -1178,9 +1255,15 @@ export class MobileProjectsPanel {
         if (!canRunTask) {
             wrap.classList.add('theia-mod-disabled');
         }
-        const caret = document.createElement('span');
+        // Left-side caret doubles as the "more options" accordion trigger: tapping it expands the
+        // composer into its full chrome, same as the former right-side tune button (now removed).
+        const caret = document.createElement('button');
+        caret.type = 'button';
         caret.className = 'theia-mobile-projects-inline-caret';
         caret.textContent = '›';
+        caret.title = nls.localize('qaap/mobileProjects/inlineMoreOptions', 'More options');
+        caret.setAttribute('aria-label', caret.title);
+        caret.setAttribute('aria-expanded', 'false');
 
         const input = document.createElement('input');
         input.type = 'text';
@@ -1192,26 +1275,23 @@ export class MobileProjectsPanel {
             this.composerDraft = input.value;
         });
 
-        const tuneBtn = document.createElement('button');
-        tuneBtn.type = 'button';
-        tuneBtn.className = 'theia-mobile-projects-inline-tune';
-        tuneBtn.title = nls.localize('qaap/mobileProjects/inlineMoreOptions', 'More options');
-        tuneBtn.setAttribute('aria-label', tuneBtn.title);
-        tuneBtn.innerHTML = this.tuneIconSvg();
-        tuneBtn.addEventListener('click', ev => {
+        caret.addEventListener('click', ev => {
             ev.stopPropagation();
             this.composerDraft = input.value;
             this.composerExpanded = true;
             this.renderList();
         });
 
+        // Send affordance — sits pinned to the right inside the input wrapper instead of stealing
+        // a flex column at the end of the composer row.
         const startBtn = document.createElement('button');
         startBtn.type = 'button';
         startBtn.className = 'theia-mobile-projects-inline-start';
         startBtn.disabled = true;
-        startBtn.innerHTML =
-            `<span>${nls.localize('qaap/mobileProjects/inlineStart', 'Start')}</span>` +
-            '<span class="theia-mobile-projects-inline-start-key">↵</span>';
+        const startLabel = nls.localize('qaap/mobileProjects/inlineStart', 'Start');
+        startBtn.title = startLabel;
+        startBtn.setAttribute('aria-label', startLabel);
+        startBtn.innerHTML = '<span class="codicon codicon-send" aria-hidden="true"></span>';
 
         const updateBtn = (): void => {
             const has = input.value.trim().length > 0;
@@ -1241,7 +1321,10 @@ export class MobileProjectsPanel {
             submit();
         });
 
-        wrap.append(caret, input, tuneBtn, startBtn);
+        const inputWrap = document.createElement('div');
+        inputWrap.className = 'theia-mobile-projects-inline-input-wrap';
+        inputWrap.append(input, startBtn);
+        wrap.append(caret, inputWrap);
         return wrap;
     }
 
@@ -1251,11 +1334,37 @@ export class MobileProjectsPanel {
         if (!canRunTask) {
             wrap.classList.add('theia-mod-disabled');
         }
+
+        // Collapse handle on top — mirrors the left caret on the collapsed composer so the user
+        // can fold the full agent input back into the simple inline input row.
+        const collapseRow = document.createElement('div');
+        collapseRow.className = 'theia-mobile-projects-agent-chat-input-collapse-row';
+        const collapseBtn = document.createElement('button');
+        collapseBtn.type = 'button';
+        collapseBtn.className = 'theia-mobile-projects-inline-caret theia-mod-expanded';
+        collapseBtn.textContent = '⌃';
+        const collapseLabel = nls.localize('qaap/mobileProjects/inlineCollapse', 'Collapse to simple input');
+        collapseBtn.title = collapseLabel;
+        collapseBtn.setAttribute('aria-label', collapseLabel);
+        collapseBtn.setAttribute('aria-expanded', 'true');
+        collapseBtn.addEventListener('click', ev => {
+            ev.stopPropagation();
+            this.composerExpanded = false;
+            this.renderList();
+        });
+        collapseRow.append(collapseBtn);
+        wrap.append(collapseRow);
+
         if (!this.createChatInputWidget || !this.chatService) {
-            wrap.textContent = nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.');
+            const unavailable = document.createElement('div');
+            unavailable.textContent = nls.localize('qaap/mobileProjects/agentInputUnavailable', 'Agent input is unavailable.');
+            wrap.append(unavailable);
             return wrap;
         }
-        void this.mountAgentChatInput(project, wrap);
+        const mountHost = document.createElement('div');
+        mountHost.className = 'theia-mobile-projects-agent-chat-input-host';
+        wrap.append(mountHost);
+        void this.mountAgentChatInput(project, mountHost);
         return wrap;
     }
 
@@ -1301,6 +1410,16 @@ export class MobileProjectsPanel {
             return block;
         }
 
+        // Pre-compute the set of conversation ids that have at least one descendant fork, so each
+        // row can decide which lineage glyph to render (parent / child / both / standalone).
+        const conversations = this.conversationsForProject(project);
+        const parentIds = new Set<string>();
+        for (const c of conversations) {
+            if (c.forkedFromId) {
+                parentIds.add(c.forkedFromId);
+            }
+        }
+
         const list = document.createElement('div');
         list.className = 'theia-mobile-projects-tasks-list';
         for (const group of this.groupConversationTasks(tasks)) {
@@ -1317,8 +1436,8 @@ export class MobileProjectsPanel {
             groupHead.append(groupLabel, groupCount);
             section.append(groupHead);
             for (const task of group.tasks) {
-                const summary = this.conversationsForProject(project).find(c => c.id === task.id);
-                section.append(this.createTaskItem(project, task, activeInfo, summary));
+                const summary = conversations.find(c => c.id === task.id);
+                section.append(this.createTaskItem(project, task, activeInfo, summary, parentIds));
             }
             list.append(section);
         }
@@ -1385,6 +1504,7 @@ export class MobileProjectsPanel {
         task: MobileProjectTaskView,
         _activeInfo: ReturnType<MobileProjectsActiveTasks['getForCwd']>,
         summary?: QaapAgentConversationSummaryDTO,
+        parentIds: ReadonlySet<string> = new Set<string>(),
     ): HTMLElement {
         const row = document.createElement('div');
         row.className = 'theia-mobile-projects-task-row';
@@ -1415,13 +1535,35 @@ export class MobileProjectsPanel {
             item.classList.add('theia-mod-needs-input');
         }
 
+        const lineage = summary ? this.resolveConversationLineage(summary, parentIds) : 'none';
         const taskDot = document.createElement('span');
-        taskDot.className = 'theia-mobile-projects-task-dot';
-        taskDot.style.background = stateColor;
-        if (isRunning) {
-            taskDot.classList.add('theia-mod-pulse');
-        } else if (needsInput) {
-            taskDot.classList.add('theia-mod-attention');
+        if (lineage === 'none') {
+            // Standalone chat → keep the existing colored status dot (idle/running/failed/etc).
+            taskDot.className = 'theia-mobile-projects-task-dot';
+            taskDot.style.background = stateColor;
+            if (isRunning) {
+                taskDot.classList.add('theia-mod-pulse');
+            } else if (needsInput) {
+                taskDot.classList.add('theia-mod-attention');
+            }
+        } else {
+            // Fork lineage glyph mirrors Claude Code desktop's chat list:
+            //   parent  → green branch (someone forked from this chat)
+            //   child   → purple fork (this chat came from another)
+            //   both    → orange merge (forked in and out)
+            const iconClass = lineage === 'parent'
+                ? 'codicon-git-branch'
+                : lineage === 'child'
+                    ? 'codicon-repo-forked'
+                    : 'codicon-git-merge';
+            taskDot.className = `theia-mobile-projects-task-lineage theia-mod-${lineage} codicon ${iconClass}`;
+            taskDot.setAttribute('aria-hidden', 'true');
+            const lineageLabel = lineage === 'parent'
+                ? nls.localize('qaap/mobileProjects/lineageParent', 'Forked into other chats')
+                : lineage === 'child'
+                    ? nls.localize('qaap/mobileProjects/lineageChild', 'Forked from another chat')
+                    : nls.localize('qaap/mobileProjects/lineageBoth', 'Forked from another chat and into others');
+            taskDot.title = lineageLabel;
         }
 
         const taskBody = document.createElement('div');
@@ -1615,6 +1757,9 @@ export class MobileProjectsPanel {
         summary: QaapAgentConversationSummaryDTO,
     ): Promise<void> {
         this.closeCardMenu();
+        // Opening a chat clears its unread badge — record the high-water mark before navigating so
+        // the project glyph drops the "new replies" treatment on the next render.
+        this.conversationFlags?.markRead(summary.id, summary.updatedAt);
         if (summary.source === 'theia-chat') {
             await this.openTheiaChatTranscriptSheet(project, summary);
             return;

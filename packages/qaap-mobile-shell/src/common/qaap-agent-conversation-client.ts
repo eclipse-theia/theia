@@ -27,6 +27,8 @@ export interface QaapAgentConversationSummaryDTO {
     readonly priority?: boolean;
     /** User-flagged "paused" — sinks to the bottom and renders dimmed. */
     readonly paused?: boolean;
+    /** Id of the parent conversation when this one was created via fork. */
+    readonly forkedFromId?: string;
 }
 
 export interface QaapAgentMessageDTO {
@@ -54,6 +56,7 @@ export interface QaapAgentConversationDTO {
     readonly messages: QaapAgentMessageDTO[];
     readonly priority?: boolean;
     readonly paused?: boolean;
+    readonly forkedFromId?: string;
 }
 
 export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgentConversationSummaryDTO {
@@ -75,6 +78,7 @@ export function conversationToSummary(conv: QaapAgentConversationDTO): QaapAgent
         lastMessageRole: last?.role,
         priority: conv.priority,
         paused: conv.paused,
+        forkedFromId: conv.forkedFromId,
     };
 }
 

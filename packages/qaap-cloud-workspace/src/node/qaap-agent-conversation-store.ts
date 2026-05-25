@@ -242,6 +242,7 @@ export class QaapAgentConversationStore {
             status: 'idle',
             createdAt: now,
             updatedAt: now,
+            forkedFromId: conv.id,
             messages: conv.messages.map(message => ({
                 ...message,
                 id: randomUUID(),

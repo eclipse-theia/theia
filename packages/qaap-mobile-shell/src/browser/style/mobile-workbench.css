@@ -2596,6 +2596,50 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   inset: 4px;
 }
 
+/* Needs your input — amber pulsing dot. */
+.theia-mobile-projects-row-glyph.theia-mod-needs-input::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 999px;
+  background: var(--theia-notificationsWarningIcon-foreground, #cca700);
+  animation: theia-mobile-projects-pulse 1.2s ease-in-out infinite;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theia-notificationsWarningIcon-foreground, #cca700) 22%, transparent);
+}
+
+.theia-mobile-projects-row-glyph.theia-mod-workspace.theia-mod-needs-input::after {
+  inset: 3px;
+}
+
+/* Last turn failed — red dot, static so the user notices but isn't visually nagged. */
+.theia-mobile-projects-row-glyph.theia-mod-failed::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 999px;
+  background: var(--theia-errorForeground, #f14c4c);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theia-errorForeground, #f14c4c) 22%, transparent);
+}
+
+.theia-mobile-projects-row-glyph.theia-mod-workspace.theia-mod-failed::after {
+  inset: 3px;
+}
+
+/* Unread agent reply — blue dot with a soft halo. Doesn't pulse so it stays distinguishable
+   from the running state at the project list level. */
+.theia-mobile-projects-row-glyph.theia-mod-unread::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 999px;
+  background: var(--theia-charts-blue, #4c9aff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theia-charts-blue, #4c9aff) 22%, transparent);
+}
+
+.theia-mobile-projects-row-glyph.theia-mod-workspace.theia-mod-unread::after {
+  inset: 3px;
+}
+
 .theia-mobile-projects-row-main {
   flex: 1 1 auto;
   min-width: 0;
@@ -2666,11 +2710,21 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 }
 
 .theia-mobile-projects-row-chevron {
+  position: relative;
   flex: 0 0 auto;
   color: var(--theia-descriptionForeground);
   font-size: 18px;
   line-height: 1;
-  transition: transform 180ms ease;
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+/* Mobile-friendly tap target without inflating layout: invisible overlay extends the click
+   region around the compact glyph by ~12px in every direction. */
+.theia-mobile-projects-row-chevron::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
 }
 
 .theia-mobile-projects-card.theia-mod-expanded .theia-mobile-projects-row-chevron {
@@ -2840,9 +2894,44 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 }
 
 .theia-mobile-projects-inline-caret {
+  position: relative;
   color: var(--q-accent, var(--qaap-accent, #E58E40));
   font-family: var(--theia-code-font-family, monospace);
-  font-size: 13px;
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  padding: 0 6px;
+  cursor: pointer;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Extended tap target — invisible overlay so the visible caret stays compact while fingers get
+   a generous hit area around it. */
+.theia-mobile-projects-inline-caret::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+
+.theia-mobile-projects-inline-caret.theia-mod-expanded {
+  font-size: 18px;
+}
+
+.theia-mobile-projects-inline-caret:hover,
+.theia-mobile-projects-inline-caret:focus-visible {
+  color: var(--theia-foreground);
+  outline: none;
+}
+
+.theia-mobile-projects-inline-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
 .theia-mobile-projects-inline-input {
@@ -2854,32 +2943,42 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   color: var(--theia-foreground);
   font: inherit;
   font-size: 13.5px;
-  padding: 4px 0;
+  padding: 4px 32px 4px 0;
+  width: 100%;
 }
 
 .theia-mobile-projects-inline-start {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 8px;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
   border: none;
   background: transparent;
   color: var(--theia-descriptionForeground);
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background 120ms ease, color 120ms ease, opacity 120ms ease;
+  opacity: 0.6;
+}
+
+.theia-mobile-projects-inline-start .codicon {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .theia-mobile-projects-inline-start.theia-mod-ready {
   background: var(--q-accent, var(--qaap-accent, #E58E40));
   color: #fff;
+  opacity: 1;
 }
 
 .theia-mobile-projects-inline-start:disabled { cursor: default; }
-
-.theia-mobile-projects-inline-start-key { font-family: var(--theia-code-font-family, monospace); }
 
 /* Tasks block */
 .theia-mobile-projects-tasks-block {
@@ -3043,6 +3142,31 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 
 .theia-mobile-projects-task-dot.theia-mod-attention {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--theia-notificationsWarningIcon-foreground, #cca700) 20%, transparent);
+}
+
+/* Fork-lineage glyph — replaces the colored dot when a chat sits in a fork tree. */
+.theia-mobile-projects-task-lineage {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theia-mobile-projects-task-lineage.theia-mod-parent {
+  color: var(--theia-charts-green, #4caf7c);
+}
+
+.theia-mobile-projects-task-lineage.theia-mod-child {
+  color: var(--theia-charts-purple, #b18cf3);
+}
+
+.theia-mobile-projects-task-lineage.theia-mod-both {
+  color: var(--theia-notificationsWarningIcon-foreground, #cca700);
 }
 
 .theia-mobile-projects-task-body { flex: 1; min-width: 0; }
