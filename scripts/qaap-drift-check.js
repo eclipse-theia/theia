@@ -129,11 +129,23 @@ const ALLOWED = [
     /^packages\/plugin-ext\/src\/main\/browser\/tabs\/tabs-main\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/webview\/webview-resource-cache\.ts$/,
-    // Upstream Theia spec files removed or gutted in the fork (intentional;
-    // matching production code is also forked — tracked in baseline).
+    // Upstream Theia spec files removed or gutted in the fork.
     /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.spec\.ts$/,
     /^packages\/ai-ide\/src\/browser\/workspace-functions\.spec\.ts$/,
     /^packages\/core\/src\/node\/backend-application\.spec\.ts$/,
+    // ---- Fork lags upstream Theia (NOT product-code drift) ----------------
+    // These files show the fork on a SIMPLER/OLDER version than upstream — i.e.
+    // upstream Theia later added features (graceful shutdown, ESM plugin loader,
+    // trust-aware preference reader, external-path allowlists) that this fork
+    // has not picked up. There is no Qaap product code to extract here; the
+    // proper resolution is a per-file decision to either (a) cherry-pick the
+    // upstream additions back in, or (b) keep the simplification intentionally.
+    // TODO: triage each entry against the current upstream Theia release.
+    /^packages\/core\/src\/node\/backend-application\.ts$/,
+    /^packages\/core\/src\/node\/backend-application-module\.ts$/,
+    /^packages\/plugin-ext-vscode\/src\/node\/plugin-vscode-init\.ts$/,
+    /^packages\/plugin-ext\/src\/hosted\/node\/plugin-host-rpc\.ts$/,
+    /^packages\/ai-ide\/src\/browser\/workspace-functions\.ts$/,
     /^package\.json$/,
     /^package-lock\.json$/,
     /^CLAUDE\.md$/,
