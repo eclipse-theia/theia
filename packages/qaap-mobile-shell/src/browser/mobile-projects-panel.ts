@@ -127,6 +127,12 @@ export class MobileProjectsPanel {
     protected visible = false;
     /** Id of the single project row currently expanded; undefined when all are collapsed. */
     protected expandedId: string | undefined;
+    /**
+     * True when the expansion was driven by the user (vs. the auto-expand of the current workspace
+     * at render time). When true, renderList hides the other project rows so the user can focus
+     * on the expanded project's chats without surrounding noise; collapsing restores the full list.
+     */
+    protected soloExpanded = false;
     /** Whether the inline composer for the expanded row is in its full chrome (morphed) view. */
     protected composerExpanded = false;
     protected composerDraft = '';
@@ -249,6 +255,11 @@ export class MobileProjectsPanel {
         this.searchInput.placeholder = nls.localize('qaap/mobileProjects/searchPlaceholder', 'Search repositories');
         this.searchInput.addEventListener('input', () => {
             this.query = this.searchInput.value.trim().toLowerCase();
+            // Typing in search means the user wants to scan repos again, so leave the
+            // solo-project focus mode and show the full filtered list.
+            if (this.query) {
+                this.soloExpanded = false;
+            }
             this.renderList();
         });
         searchWrap.append(searchIcon, this.searchInput);
@@ -859,6 +870,7 @@ export class MobileProjectsPanel {
             btn.addEventListener('click', () => {
                 this.filter = tab.id;
                 this.projectsService.setFilter(tab.id);
+                this.soloExpanded = false;
                 this.renderFilters();
                 this.renderList();
             });
@@ -887,7 +899,10 @@ export class MobileProjectsPanel {
 
         const list = document.createElement('div');
         list.className = 'theia-mobile-projects-rows';
-        for (const p of filtered) {
+        const visible = this.soloExpanded && this.expandedId !== undefined
+            ? filtered.filter(p => p.id === this.expandedId)
+            : filtered;
+        for (const p of visible) {
             list.append(this.createRow(p));
         }
         this.scroll.append(list);
@@ -986,6 +1001,11 @@ export class MobileProjectsPanel {
 
         const nameRow = document.createElement('div');
         nameRow.className = 'theia-mobile-projects-row-name-row';
+        const chevron = document.createElement('span');
+        chevron.className = 'theia-mobile-projects-row-chevron';
+        chevron.textContent = '›';
+        chevron.setAttribute('aria-hidden', 'true');
+        nameRow.append(chevron);
         const name = document.createElement('span');
         name.className = 'theia-mobile-projects-row-name';
         name.textContent = project.name;
@@ -1033,14 +1053,25 @@ export class MobileProjectsPanel {
                 : nls.localize('qaap/mobileProjects/rowChatsMany', '{0} chats', String(doneCount));
             metaRow.append(sep, done);
         }
+        if (!project.isCurrent) {
+            const openBtn = document.createElement('button');
+            openBtn.type = 'button';
+            openBtn.className = 'theia-mobile-projects-row-meta-open';
+            const openLabel = nls.localize('qaap/mobileProjects/workspaceOpenIn', 'Open in workspace');
+            openBtn.setAttribute('aria-label', openLabel);
+            openBtn.title = openLabel;
+            const openIcon = document.createElement('span');
+            openIcon.className = 'codicon codicon-link-external';
+            openIcon.setAttribute('aria-hidden', 'true');
+            openBtn.append(openIcon);
+            openBtn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                this.delegate.onProjectOpen(project);
+            });
+            metaRow.append(openBtn);
+        }
         main.append(metaRow);
         header.append(main);
-
-        const chevron = document.createElement('span');
-        chevron.className = 'theia-mobile-projects-row-chevron';
-        chevron.textContent = '›';
-        chevron.setAttribute('aria-hidden', 'true');
-        header.append(chevron);
 
         header.addEventListener('click', ev => {
             ev.stopPropagation();
@@ -1059,7 +1090,10 @@ export class MobileProjectsPanel {
         const body = document.createElement('div');
         body.className = 'theia-mobile-projects-row-body';
 
-        body.append(this.createWorkspaceBlock(project));
+        const workspaceBlock = this.createWorkspaceBlock(project);
+        if (workspaceBlock) {
+            body.append(workspaceBlock);
+        }
         body.append(this.createInlineComposer(project));
         body.append(this.createTaskBlock(project, activeInfo));
 
@@ -1091,13 +1125,16 @@ export class MobileProjectsPanel {
     protected async toggleRowExpanded(project: MobileProjectEntry): Promise<void> {
         this.closeCardMenu();
         this.expandedId = this.expandedId === project.id ? undefined : project.id;
+        // Hide the other rows while the user has a project expanded so the chat list isn't lost in
+        // noise; when the user collapses it again the full list returns.
+        this.soloExpanded = this.expandedId !== undefined;
         // Collapse the composer chrome whenever the expanded row changes so each row reopens clean.
         this.composerExpanded = false;
         await this.refreshChatServiceSessionSummaries();
         this.renderList();
     }
 
-    protected createWorkspaceBlock(project: MobileProjectEntry): HTMLElement {
+    protected createWorkspaceBlock(project: MobileProjectEntry): HTMLElement | undefined {
         if (project.isCurrent) {
             const card = document.createElement('div');
             card.className = 'theia-mobile-projects-workspace-card';
@@ -1123,18 +1160,9 @@ export class MobileProjectsPanel {
             card.append(dot, text, focus);
             return card;
         }
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'theia-mobile-projects-workspace-idle';
-        row.innerHTML =
-            '<span class="codicon codicon-folder" aria-hidden="true"></span>' +
-            `<span class="theia-mobile-projects-workspace-idle-label">${nls.localize('qaap/mobileProjects/workspaceOpenIn', 'Open in workspace')}</span>` +
-            '<span class="theia-mobile-projects-workspace-idle-arrow" aria-hidden="true">→</span>';
-        row.addEventListener('click', ev => {
-            ev.stopPropagation();
-            this.delegate.onProjectOpen(project);
-        });
-        return row;
+        // For non-current projects the "Open in workspace" affordance is rendered as a compact
+        // icon button on the meta row (see createRow) so it doesn't take a full line in the body.
+        return undefined;
     }
 
     protected createInlineComposer(project: MobileProjectEntry): HTMLElement {
@@ -2218,6 +2246,7 @@ export class MobileProjectsPanel {
     protected async openAgentComposer(project: MobileProjectEntry, draft?: string): Promise<void> {
         this.closeCardMenu();
         this.expandedId = project.id;
+        this.soloExpanded = true;
         this.composerExpanded = true;
         this.composerDraft = draft ?? this.composerDraft;
         this.renderList();
