@@ -39,6 +39,7 @@ allure-results
 license-check-summary.txt*
 .playwright-mcp/*
 **/.playwright-cli/
+test-results/
 /.theia/chatSessions
 .tmp.cfg
 # Deployment env — contains secrets (VAPID private key, OAuth secret). Never commit.
