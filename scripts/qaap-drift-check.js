@@ -129,6 +129,11 @@ const ALLOWED = [
     /^packages\/plugin-ext\/src\/main\/browser\/tabs\/tabs-main\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
     /^packages\/plugin-ext\/src\/main\/browser\/webview\/webview-resource-cache\.ts$/,
+    // Upstream Theia spec files removed or gutted in the fork (intentional;
+    // matching production code is also forked — tracked in baseline).
+    /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.spec\.ts$/,
+    /^packages\/ai-ide\/src\/browser\/workspace-functions\.spec\.ts$/,
+    /^packages\/core\/src\/node\/backend-application\.spec\.ts$/,
     /^package\.json$/,
     /^package-lock\.json$/,
     /^CLAUDE\.md$/,

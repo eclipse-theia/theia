@@ -1,16 +1,15 @@
 # Known upstream drift outside packages/qaap-* (historical). Shrink as migrations land.
 # Generated against upstream/master; paths must match `git diff --name-only upstream/master`.
 #
-# Remaining entries below are LARGE feature deletions/changes in upstream Theia
-# packages not yet extracted into packages/qaap-*. Each should eventually be
-# extracted (a qaap-* package + DI rebind / contribution override) and removed
-# from this list. See CLAUDE.md "Qaap product layer" section. Smaller upstream
-# seams are documented inline in scripts/qaap-drift-check.js ALLOWED.
-packages/ai-code-completion/src/browser/code-completion-agent.spec.ts
-packages/ai-ide/src/browser/workspace-functions.spec.ts
+# Remaining entries below are PRODUCTION-CODE deltas in upstream Theia packages
+# that should eventually be extracted into packages/qaap-* (a qaap-* package +
+# DI rebind / contribution override). Extracting them requires careful work
+# per file — re-binding services or overriding contributions — and is not safe
+# to do in bulk. See CLAUDE.md "Qaap product layer" section.
+# Smaller seams and removed upstream spec files are documented inline in
+# scripts/qaap-drift-check.js ALLOWED.
 packages/ai-ide/src/browser/workspace-functions.ts
 packages/core/src/node/backend-application-module.ts
-packages/core/src/node/backend-application.spec.ts
 packages/core/src/node/backend-application.ts
 packages/plugin-ext-vscode/src/node/plugin-vscode-init.ts
 packages/plugin-ext/src/hosted/node/plugin-host-rpc.ts
