@@ -19,7 +19,6 @@ import {
     QAAP_GITHUB_API_PATH,
     QAAP_GITHUB_OAUTH_CALLBACK_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
-    QAAP_TEMPLATES_API_PATH,
     type QaapGithubCreateRepositoryRequest,
     type QaapGithubMergePullRequestRequest,
     type QaapGithubOpenRepositoryRequest,
@@ -38,8 +37,6 @@ import {
 import { readQaapGithubOAuthConfig } from './qaap-github-oauth-config';
 import { QaapGithubSessionStore } from './qaap-github-session-store';
 import { QaapProjectSessionStore } from './qaap-project-session-store';
-import { QaapTemplateScaffold } from './qaap-template-scaffold';
-import type { QaapScaffoldTemplateRequest } from '@theia/qaap-adapters/lib/common/qaap-github-api-types';
 
 const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize';
 const GITHUB_OAUTH_SCOPE = 'read:user repo';
@@ -61,9 +58,6 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
     @inject(WorkspaceServer)
     protected readonly workspaceServer: WorkspaceServer;
 
-    @inject(QaapTemplateScaffold)
-    protected readonly templateScaffold: QaapTemplateScaffold;
-
     configure(app: Application): void {
         app.use(json());
         app.get(QAAP_GITHUB_OAUTH_START_PATH, (req, res) => this.handleOAuthStart(req, res));
@@ -79,23 +73,6 @@ export class QaapGithubOauthEndpoint implements BackendApplicationContribution {
         app.post(`${QAAP_GITHUB_API_PATH}/pull-requests/merge`, (req, res) => this.handleMergeGithubPullRequest(req, res));
         app.get(`${QAAP_GITHUB_API_PATH}/project-sessions`, (req, res) => this.handleProjectSessions(req, res));
         app.post(`${QAAP_GITHUB_API_PATH}/project-sessions`, (req, res) => this.handleUpsertProjectSession(req, res));
-        app.post(`${QAAP_TEMPLATES_API_PATH}/scaffold`, (req, res) => { void this.handleScaffoldTemplate(req, res); });
-    }
-
-    protected async handleScaffoldTemplate(req: Request, res: Response): Promise<void> {
-        const body = (req.body ?? {}) as Partial<QaapScaffoldTemplateRequest>;
-        const templateId = typeof body.templateId === 'string' ? body.templateId.trim() : '';
-        if (!templateId || !this.templateScaffold.isBundledTemplate(templateId)) {
-            res.status(400).json({ error: 'Invalid templateId' });
-            return;
-        }
-        try {
-            const workspaceUri = await this.templateScaffold.scaffold(templateId, body.projectName);
-            res.json({ workspaceUri, templateId });
-        } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to scaffold template';
-            res.status(502).json({ error: message });
-        }
     }
 
     protected handleProjectSessions(req: Request, res: Response): void {

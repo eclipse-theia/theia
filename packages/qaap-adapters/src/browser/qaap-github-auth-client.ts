@@ -7,7 +7,6 @@ import {
     QAAP_AUTH_API_PATH,
     QAAP_AUTH_SESSION_HEADER,
     QAAP_GITHUB_API_PATH,
-    QAAP_TEMPLATES_API_PATH,
     QAAP_GITHUB_OAUTH_START_PATH,
     type QaapAuthConfigResponse,
     type QaapAuthSessionResponse,
@@ -21,7 +20,6 @@ import {
     type QaapProjectSessionsResponse,
     type QaapProjectSessionUpsertRequest,
     type QaapProjectSessionSummary,
-    type QaapScaffoldTemplateResponse,
 } from '../common/qaap-github-api-types';
 import {
     clearQaapAuthSession,
@@ -85,19 +83,6 @@ export async function upsertQaapProjectSession(patch: QaapProjectSessionUpsertRe
     }
     const body = await response.json() as { session?: QaapProjectSessionSummary };
     return body.session;
-}
-
-export async function scaffoldQaapProjectTemplate(templateId: string, projectName?: string): Promise<QaapScaffoldTemplateResponse> {
-    const response = await fetch(`${QAAP_TEMPLATES_API_PATH}/scaffold`, qaapAuthenticatedFetchInit({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ templateId, projectName }),
-    }));
-    if (!response.ok) {
-        const body = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(body.error ?? `Template scaffold failed (${response.status})`);
-    }
-    return response.json() as Promise<QaapScaffoldTemplateResponse>;
 }
 
 export async function fetchQaapGithubRepositories(): Promise<QaapGithubRepositoriesResponse> {

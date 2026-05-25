@@ -17,7 +17,6 @@ import {
     fetchQaapGithubRepositories,
     fetchQaapProjectSessions,
     openQaapGithubRepository,
-    scaffoldQaapProjectTemplate,
     syncQaapAuthSessionFromServer,
     upsertQaapProjectSession,
 } from '@theia/qaap-adapters/lib/browser/qaap-github-auth-client';
@@ -42,7 +41,6 @@ import {
     requestMobileProjectsPanelDismiss,
 } from './mobile-projects-open';
 import { MobileSnackbar } from './mobile-snackbar';
-import { findQaapProjectTemplate } from './qaap-project-templates';
 import {
     mergeSessionMaps,
     patchLocalProjectSession,
@@ -229,7 +227,7 @@ export class MobileProjectsService {
         try {
             const result = await openQaapGithubRepository(project.github.owner, project.github.name);
             const uri = new URI(result.workspaceUri);
-            this.touchProjectActivity(project);
+            this.touchGithubRepositoryActivity(result.repository);
             if (newWindow) {
                 MobileSnackbar.dismiss();
                 const url = new URL(window.location.href);
@@ -284,6 +282,7 @@ export class MobileProjectsService {
         );
         try {
             const result = await createQaapGithubRepository({ name, private: true });
+            this.touchGithubRepositoryActivity(result.repository);
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/repoCreated', 'Created {0}', result.repository.fullName),
                 { kind: 'success', duration: 2400 }
@@ -315,37 +314,6 @@ export class MobileProjectsService {
         return this.cloneGithubProjectByRepository(repository);
     }
 
-    /** Clone/open `owner/repo` or a github.com URL without prompting for input. */
-    async cloneFromTemplate(templateId: string): Promise<MobileProjectEntry[] | undefined> {
-        const template = findQaapProjectTemplate(templateId);
-        if (!template) {
-            return undefined;
-        }
-        if (template.kind === 'bundled') {
-            MobileSnackbar.show(
-                nls.localize('qaap/mobileProjects/scaffoldingTemplate', 'Creating {0}…', template.label),
-                { kind: 'loading' }
-            );
-            try {
-                const result = await scaffoldQaapProjectTemplate(template.id, template.id);
-                MobileSnackbar.show(
-                    nls.localize('qaap/mobileProjects/templateReady', '{0} is ready', template.label),
-                    { kind: 'success', duration: 2400 }
-                );
-                this.openWorkspaceUri(new URI(result.workspaceUri));
-                return this.loadProjects();
-            } catch (err) {
-                MobileSnackbar.dismiss();
-                await this.messageService.error(err instanceof Error ? err.message : String(err));
-                return undefined;
-            }
-        }
-        if (template.repository) {
-            return this.cloneGithubProjectByRepository(template.repository);
-        }
-        return undefined;
-    }
-
     async cloneGithubProjectByRepository(repository: string): Promise<MobileProjectEntry[] | undefined> {
         const trimmed = repository.trim();
         if (!trimmed) {
@@ -358,6 +326,7 @@ export class MobileProjectsService {
         );
         try {
             const result = await cloneQaapGithubRepository(trimmed);
+            this.touchGithubRepositoryActivity(result.repository);
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/repoCloned', 'Cloned {0}', result.repository.fullName),
                 { kind: 'success', duration: 2400 }
@@ -379,7 +348,7 @@ export class MobileProjectsService {
     /** Public access to the list of GitHub repositories visible to the signed-in user. */
     async listGithubRepositories(): Promise<MobileProjectEntry[]> {
         const sessionMap = await this.loadSessionMap();
-        return this.sortProjectsByRecent(await this.loadGithubProjects(sessionMap));
+        return this.sortProjectsByRecent(await this.loadGithubProjects(sessionMap, true));
     }
 
     protected readDisplayNames(): Record<string, string> {
@@ -590,40 +559,48 @@ export class MobileProjectsService {
         // tracker changes to live-update cards as VPS tasks start/finish.
         this.activeTasks.start();
         const sessionMap = await this.loadSessionMap();
-        const githubProjects = await this.loadGithubProjects(sessionMap);
-        if (githubProjects.length > 0) {
-            return this.overlayActiveTasks(this.sortProjectsByRecent(githubProjects));
-        }
-
         const entries: MobileProjectEntry[] = [];
         const seen = new Set<string>();
         const hiddenIds = this.readHiddenProjectIds();
         const pinnedIds = this.readPinnedProjectIds();
 
+        const githubProjects = await this.loadGithubProjects(sessionMap, false);
+        for (const project of githubProjects) {
+            if (hiddenIds.has(project.id) || entries.some(e => e.id === project.id)) {
+                continue;
+            }
+            entries.push(project);
+            if (project.uri) {
+                seen.add(project.uri.toString());
+            }
+        }
+
         const current = this.workspaceService.workspace;
         if (current) {
             const uri = current.resource;
-            const name = this.labelProvider.getName(uri);
-            const id = `ws:${uri.toString()}`;
-            const now = new Date().toISOString();
-            entries.push(this.applySessionToEntry({
-                id,
-                name: this.resolveDisplayName(id, name),
-                color: mobileProjectColorForName(name),
-                branch: uri.path.base,
-                status: 'working',
-                task: nls.localize('qaap/mobileProjects/currentTask', 'Active workspace'),
-                progress: 0.35,
-                agents: [{ role: 'ai', color: '#3B6FA0' }],
-                lastActive: nls.localize('qaap/mobileProjects/lastActiveNow', 'now'),
-                lastActiveAt: now,
-                tokens: '—',
-                cost: '—',
-                pinned: this.isPinned(id, pinnedIds, true),
-                uri,
-                isCurrent: true,
-            }, sessionMap.get(id)));
-            seen.add(uri.toString());
+            if (!seen.has(uri.toString())) {
+                const name = this.labelProvider.getName(uri);
+                const id = `ws:${uri.toString()}`;
+                const now = new Date().toISOString();
+                entries.push(this.applySessionToEntry({
+                    id,
+                    name: this.resolveDisplayName(id, name),
+                    color: mobileProjectColorForName(name),
+                    branch: uri.path.base,
+                    status: 'working',
+                    task: nls.localize('qaap/mobileProjects/currentTask', 'Active workspace'),
+                    progress: 0.35,
+                    agents: [{ role: 'ai', color: '#3B6FA0' }],
+                    lastActive: nls.localize('qaap/mobileProjects/lastActiveNow', 'now'),
+                    lastActiveAt: now,
+                    tokens: '—',
+                    cost: '—',
+                    pinned: this.isPinned(id, pinnedIds, true),
+                    uri,
+                    isCurrent: true,
+                }, sessionMap.get(id)));
+                seen.add(uri.toString());
+            }
         }
 
         try {
@@ -804,6 +781,10 @@ export class MobileProjectsService {
         }
     }
 
+    protected touchGithubRepositoryActivity(repository: QaapGithubRepositorySummary): void {
+        this.touchProjectSession(`github:${repository.fullName}`, repository.defaultBranch);
+    }
+
     protected projectSessionKey(project: MobileProjectEntry): string | undefined {
         if (project.github) {
             return `github:${project.github.fullName}`;
@@ -885,7 +866,7 @@ export class MobileProjectsService {
         };
     }
 
-    protected async loadGithubProjects(sessionMap: Map<string, QaapProjectSessionSummary>): Promise<MobileProjectEntry[]> {
+    protected async loadGithubProjects(sessionMap: Map<string, QaapProjectSessionSummary>, includeUnopened: boolean): Promise<MobileProjectEntry[]> {
         if (readQaapSignedIn()) {
             await syncQaapAuthSessionFromServer();
         }
@@ -896,7 +877,11 @@ export class MobileProjectsService {
             const response = await fetchQaapGithubRepositories();
             const pinnedIds = this.readPinnedProjectIds();
             const currentFullName = this.currentGithubRepositoryFullName();
+            const openedRepoKeys = new Set([...sessionMap.keys()].map(key => key.toLowerCase()));
             return response.repositories
+                .filter(repo => includeUnopened
+                    || repo.fullName.toLowerCase() === currentFullName
+                    || openedRepoKeys.has(`github:${repo.fullName}`.toLowerCase()))
                 .map(repo => this.applySessionToEntry(
                     this.githubRepositoryToProject(repo, pinnedIds, currentFullName),
                     sessionMap.get(`github:${repo.fullName}`) ?? sessionMap.get(`github:${repo.fullName.toLowerCase()}`)

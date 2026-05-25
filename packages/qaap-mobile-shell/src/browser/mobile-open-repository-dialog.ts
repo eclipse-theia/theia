@@ -8,7 +8,6 @@ import { syncQaapAuthSessionFromServer } from '@theia/qaap-adapters/lib/browser/
 import { readQaapSignedIn } from '@theia/qaap-adapters/lib/browser/qaap-auth-session';
 import { MobileProjectEntry } from './mobile-projects-types';
 import { MobileProjectsService } from './mobile-projects-service';
-import { QAAP_PROJECT_TEMPLATES } from './qaap-project-templates';
 
 export interface MobileOpenRepositoryDialogDelegate {
     /** Refresh the projects panel after a successful open / create. */
@@ -27,7 +26,10 @@ const GITHUB_URL_OR_SLUG = /^(?:https?:\/\/(?:www\.)?github\.com\/)?([A-Za-z0-9]
 export class MobileOpenRepositoryDialog {
 
     protected readonly root: HTMLElement;
-    protected readonly replaceCheckbox: HTMLInputElement;
+    protected readonly repositoriesTab: HTMLButtonElement;
+    protected readonly cloneTab: HTMLButtonElement;
+    protected readonly repositoriesPanel: HTMLElement;
+    protected readonly clonePanel: HTMLElement;
     protected readonly statusRow: HTMLElement;
     protected readonly statusIcon: HTMLElement;
     protected readonly statusText: HTMLElement;
@@ -44,6 +46,7 @@ export class MobileOpenRepositoryDialog {
     protected repositories: MobileProjectEntry[] = [];
     protected loadError: string | undefined;
     protected query = '';
+    protected activeTab: 'repositories' | 'clone' = 'repositories';
     protected readonly onKeyDown = (ev: KeyboardEvent): void => {
         if (ev.key === 'Escape' && this.visible) {
             ev.stopPropagation();
@@ -71,21 +74,34 @@ export class MobileOpenRepositoryDialog {
 
         sheet.append(this.createHeader());
         sheet.append(this.createDescription());
-        sheet.append(this.createTemplatesSection());
-        sheet.append(this.createPublicSection());
 
-        const replaceWrap = document.createElement('label');
-        replaceWrap.className = 'theia-mobile-open-repo-checkbox';
-        this.replaceCheckbox = document.createElement('input');
-        this.replaceCheckbox.type = 'checkbox';
-        this.replaceCheckbox.checked = true;
-        const replaceText = document.createElement('span');
-        replaceText.textContent = nls.localize(
-            'qaap/mobileOpenRepo/replaceWorkspace',
-            'Replace workspace contents (clear current files before import)'
+        const tabs = document.createElement('div');
+        tabs.className = 'theia-mobile-open-repo-tabs';
+        tabs.setAttribute('role', 'tablist');
+        tabs.setAttribute('aria-label', nls.localize('qaap/mobileOpenRepo/tabsLabel', 'Repository source'));
+
+        this.repositoriesTab = this.createTabButton(
+            'theia-mobile-open-repo-tab-repositories',
+            'theia-mobile-open-repo-panel-repositories',
+            'repositories',
+            nls.localize('qaap/mobileOpenRepo/myRepositories', 'My repositories'),
+            'codicon-github-inverted'
         );
-        replaceWrap.append(this.replaceCheckbox, replaceText);
-        sheet.append(replaceWrap);
+        this.cloneTab = this.createTabButton(
+            'theia-mobile-open-repo-tab-clone',
+            'theia-mobile-open-repo-panel-clone',
+            'clone',
+            nls.localize('qaap/mobileOpenRepo/cloneRepository', 'Clone repository'),
+            'codicon-repo-clone'
+        );
+        tabs.append(this.repositoriesTab, this.cloneTab);
+        sheet.append(tabs);
+
+        this.repositoriesPanel = document.createElement('section');
+        this.repositoriesPanel.id = 'theia-mobile-open-repo-panel-repositories';
+        this.repositoriesPanel.className = 'theia-mobile-open-repo-panel theia-mod-repositories';
+        this.repositoriesPanel.setAttribute('role', 'tabpanel');
+        this.repositoriesPanel.setAttribute('aria-labelledby', this.repositoriesTab.id);
 
         this.statusRow = document.createElement('div');
         this.statusRow.className = 'theia-mobile-open-repo-status';
@@ -95,7 +111,7 @@ export class MobileOpenRepositoryDialog {
         this.statusText = document.createElement('span');
         this.statusText.className = 'theia-mobile-open-repo-status-text';
         this.statusRow.append(this.statusIcon, this.statusText);
-        sheet.append(this.statusRow);
+        this.repositoriesPanel.append(this.statusRow);
 
         const filterWrap = document.createElement('div');
         filterWrap.className = 'theia-mobile-open-repo-filter';
@@ -114,17 +130,17 @@ export class MobileOpenRepositoryDialog {
             this.renderList();
         });
         filterWrap.append(filterIcon, this.filterInput);
-        sheet.append(filterWrap);
+        this.repositoriesPanel.append(filterWrap);
 
         this.list = document.createElement('div');
         this.list.className = 'theia-mobile-open-repo-list';
         this.list.setAttribute('role', 'listbox');
-        sheet.append(this.list);
+        this.repositoriesPanel.append(this.list);
 
         this.emptyState = document.createElement('div');
         this.emptyState.className = 'theia-mobile-open-repo-empty';
         this.emptyState.hidden = true;
-        sheet.append(this.emptyState);
+        this.repositoriesPanel.append(this.emptyState);
 
         this.footer = document.createElement('div');
         this.footer.className = 'theia-mobile-open-repo-footer';
@@ -135,7 +151,11 @@ export class MobileOpenRepositoryDialog {
             nls.localize('qaap/mobileOpenRepo/createNew', 'Create new repository');
         createBtn.addEventListener('click', () => { void this.onCreateNew(); });
         this.footer.append(createBtn);
-        sheet.append(this.footer);
+        this.repositoriesPanel.append(this.footer);
+
+        this.clonePanel = this.createClonePanel();
+        sheet.append(this.repositoriesPanel, this.clonePanel);
+        this.setActiveTab('repositories');
 
         this.root.append(backdrop, sheet);
     }
@@ -159,6 +179,7 @@ export class MobileOpenRepositoryDialog {
         void this.root.offsetWidth;
         this.root.classList.add('theia-mod-visible');
         document.addEventListener('keydown', this.onKeyDown, true);
+        this.setActiveTab('repositories');
         this.renderConnectedStatus();
         await this.reloadRepositories();
     }
@@ -207,38 +228,36 @@ export class MobileOpenRepositoryDialog {
         return header;
     }
 
-    protected createTemplatesSection(): HTMLElement {
-        const section = document.createElement('section');
-        section.className = 'theia-mobile-open-repo-templates';
-        const label = document.createElement('div');
-        label.className = 'theia-mobile-open-repo-section-label';
-        label.textContent = nls.localize('qaap/mobileOpenRepo/templates', 'Start from a template');
-        section.append(label);
-        const row = document.createElement('div');
-        row.className = 'theia-mobile-open-repo-template-row';
-        for (const template of QAAP_PROJECT_TEMPLATES) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'theia-mobile-open-repo-template-btn';
-            btn.innerHTML = `<strong>${template.label}</strong><span>${template.description}</span>`;
-            btn.addEventListener('click', () => { void this.onTemplateClick(template.id); });
-            row.append(btn);
-        }
-        section.append(row);
-        return section;
+    protected createTabButton(id: string, panelId: string, tab: 'repositories' | 'clone', label: string, iconClass: string): HTMLButtonElement {
+        const button = document.createElement('button');
+        button.id = id;
+        button.type = 'button';
+        button.className = 'theia-mobile-open-repo-tab';
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-controls', panelId);
+        button.addEventListener('click', () => this.setActiveTab(tab));
+        const icon = document.createElement('span');
+        icon.className = `codicon ${iconClass}`;
+        icon.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.textContent = label;
+        button.append(icon, text);
+        return button;
     }
 
-    protected async onTemplateClick(templateId: string): Promise<void> {
-        this.root.classList.add('theia-mod-loading');
-        try {
-            const next = await this.service.cloneFromTemplate(templateId);
-            if (!next) {
-                return;
-            }
-            this.delegate.onProjectsChanged?.(next);
-            this.hide();
-        } finally {
-            this.root.classList.remove('theia-mod-loading');
+    protected setActiveTab(tab: 'repositories' | 'clone'): void {
+        this.activeTab = tab;
+        const repositoriesActive = tab === 'repositories';
+        this.repositoriesTab.classList.toggle('theia-mod-active', repositoriesActive);
+        this.cloneTab.classList.toggle('theia-mod-active', !repositoriesActive);
+        this.repositoriesTab.setAttribute('aria-selected', String(repositoriesActive));
+        this.cloneTab.setAttribute('aria-selected', String(!repositoriesActive));
+        this.repositoriesTab.tabIndex = repositoriesActive ? 0 : -1;
+        this.cloneTab.tabIndex = repositoriesActive ? -1 : 0;
+        this.repositoriesPanel.hidden = !repositoriesActive;
+        this.clonePanel.hidden = repositoriesActive;
+        if (!repositoriesActive) {
+            window.setTimeout(() => this.publicInput.focus(), 0);
         }
     }
 
@@ -247,24 +266,27 @@ export class MobileOpenRepositoryDialog {
         description.className = 'theia-mobile-open-repo-description';
         description.textContent = nls.localize(
             'qaap/mobileOpenRepo/description',
-            'Import like vscode.dev: use a public repo URL without signing in, or pick one of your connected GitHub repositories.'
+            'Choose one of your GitHub repositories, or clone another repository by URL.'
         );
         return description;
     }
 
-    protected createPublicSection(): HTMLElement {
+    protected createClonePanel(): HTMLElement {
         const section = document.createElement('section');
-        section.className = 'theia-mobile-open-repo-section';
+        section.id = 'theia-mobile-open-repo-panel-clone';
+        section.className = 'theia-mobile-open-repo-panel theia-mod-clone';
+        section.setAttribute('role', 'tabpanel');
+        section.setAttribute('aria-labelledby', this.cloneTab.id);
 
         const label = document.createElement('div');
         label.className = 'theia-mobile-open-repo-section-label';
-        label.textContent = nls.localize('qaap/mobileOpenRepo/publicLabel', 'Public repository');
+        label.textContent = nls.localize('qaap/mobileOpenRepo/publicLabel', 'Repository URL');
 
         const hint = document.createElement('p');
         hint.className = 'theia-mobile-open-repo-section-hint';
         hint.textContent = nls.localize(
             'qaap/mobileOpenRepo/publicHint',
-            'Paste owner/repo or a github.com link. No OAuth or service-role required.'
+            'Paste owner/repo or a github.com link. Public repositories work without signing in.'
         );
 
         const inputRow = document.createElement('div');
@@ -369,7 +391,7 @@ export class MobileOpenRepositoryDialog {
             } else if (this.service.getConnectedUser()) {
                 this.emptyState.textContent = nls.localize(
                     'qaap/mobileOpenRepo/noRepositories',
-                    'No repositories yet — paste a public URL above to get started.'
+                    'No repositories yet. Use Clone repository to open a public GitHub URL.'
                 );
             } else {
                 this.emptyState.textContent = nls.localize(
