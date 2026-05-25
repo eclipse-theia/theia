@@ -97,7 +97,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
     @inject(ILogger) @named('ai-mcp:McpFrontendApplicationContribution')
     protected readonly logger: ILogger;
-    
+
     @inject(WorkspaceService)
     protected workspaceService: WorkspaceService;
 

@@ -14,10 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { AGENT_DELEGATION_FUNCTION_ID, ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { Disposable } from '@theia/core';
+import { Disposable, ILogger } from '@theia/core';
 import {
     assertChatContext,
     ChatAgentService,
@@ -33,7 +32,6 @@ import {
     ChatRequestInvocation,
 } from '../common';
 import { DelegationResponseContent } from './delegation-response-content';
-import { ILogger } from '@theia/core';
 
 export const AGENT_DELEGATION_FUNCTION_ID = 'delegateToAgent';
 import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
