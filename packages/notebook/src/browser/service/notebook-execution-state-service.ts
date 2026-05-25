@@ -18,8 +18,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, DisposableCollection, Emitter, URI, generateUuid, ILogger } from '@theia/core';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Emitter, URI, generateUuid } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookService } from './notebook-service';
 import {
     CellEditType, CellExecuteOutputEdit, CellExecuteOutputItemEdit, CellExecutionUpdateType,
@@ -64,9 +64,6 @@ export class NotebookExecutionStateService implements Disposable {
 
     @inject(NotebookService)
     protected notebookService: NotebookService;
-
-    @inject(ILogger) @named('notebook:NotebookExecutionStateService')
-    protected readonly logger: ILogger;
 
     protected toDispose: DisposableCollection = new DisposableCollection();
 
