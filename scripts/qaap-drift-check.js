@@ -104,7 +104,6 @@ const ALLOWED = [
     /^packages\/plugin-ext\/src\/main\/browser\/view\/plugin-view-registry\.ts$/,
     // Upstream Theia spec files removed or gutted in the fork.
     /^packages\/ai-code-completion\/src\/browser\/code-completion-agent\.spec\.ts$/,
-    /^packages\/ai-ide\/src\/browser\/workspace-functions\.spec\.ts$/,
     /^packages\/core\/src\/node\/backend-application\.spec\.ts$/,
     // ---- Fork lags upstream Theia (NOT product-code drift) ----------------
     // These files show the fork on a SIMPLER/OLDER version than upstream — i.e.
@@ -116,7 +115,6 @@ const ALLOWED = [
     // TODO: triage each entry against the current upstream Theia release.
     /^packages\/core\/src\/node\/backend-application\.ts$/,
     /^packages\/core\/src\/node\/backend-application-module\.ts$/,
-    /^packages\/ai-ide\/src\/browser\/workspace-functions\.ts$/,
     /^package\.json$/,
     /^package-lock\.json$/,
     /^CLAUDE\.md$/,
