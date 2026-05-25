@@ -56,7 +56,6 @@ import { MobileSnackbar } from './mobile-snackbar';
 import {
     consumeMobileProjectsPanelDismiss,
     markMobileProjectsLeftLanding,
-    markMobileProjectsPanelDismiss,
     shouldSkipMobileProjectsLanding,
     QAAP_AUTH_OPEN_FIRST_REPO_EVENT,
     QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
@@ -735,15 +734,21 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
     }
 
-    protected ensureProjectsPanel(): void {
+    protected ensureProjectsPanel(forceHomeMode?: boolean): void {
+        if (this.projectsPanel && forceHomeMode !== undefined && this.projectsPanel.isHomeMode() !== forceHomeMode) {
+            this.projectsPanel.hide();
+            this.projectsPanel.dispose();
+            this.projectsPanel.node.parentElement?.removeChild(this.projectsPanel.node);
+            this.projectsPanel = undefined;
+        }
         if (this.projectsPanel) {
             return;
         }
         // On mobile every session lands on the Projects view, regardless of whether a workspace is
         // already opened. The landing is full-screen and hides the bottom navigation; once the user
-        // explicitly enters a project (Focus / open), `landingLeftThisSession` flips and any later
-        // re-open of the Projects view falls back to the sheet shape sliding from the bottom.
-        const homeMode = this.mobileActive && !this.landingLeftThisSession;
+        // explicitly enters a project (Focus / open), `landingLeftThisSession` flips so the workspace
+        // remains visible until the top-bar return action asks for Projects again.
+        const homeMode = forceHomeMode ?? (this.mobileActive && !this.landingLeftThisSession);
         this.projectsPanel = new MobileProjectsPanel(
             this.projectsService,
             this.commands,
@@ -791,7 +796,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
             }
         );
         this.shell.node.appendChild(this.projectsPanel.node);
-        if (homeMode && !shouldSkipMobileProjectsLanding()) {
+        if (forceHomeMode === undefined && homeMode && !shouldSkipMobileProjectsLanding()) {
             void this.projectsPanel.show().then(() => {
                 if (this.landingLeftThisSession || shouldSkipMobileProjectsLanding()) {
                     this.projectsPanel?.hide();
@@ -841,7 +846,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     /** Hide the full-screen landing the moment the user picks a project. */
     protected leaveMobileProjectsLandingNow(): void {
-        markMobileProjectsPanelDismiss();
+        markMobileProjectsLeftLanding();
         this.landingLeftThisSession = true;
         document.body.classList.remove('theia-mobile-mod-landing');
         const panel = this.projectsPanel;
@@ -909,22 +914,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     }
 
     protected async toggleProjectsPanel(): Promise<void> {
-        this.ensureProjectsPanel();
-        const panel = this.projectsPanel;
-        if (!panel) {
-            return;
-        }
-        if (panel.isHomeMode()) {
-            if (!panel.isVisible()) {
-                await panel.show();
-            }
-            return;
-        }
-        if (panel.isVisible()) {
-            panel.hide();
-            this.scheduleSnapAndUiRefresh();
-            this.refreshBottomBar();
-            this.refreshWorkbenchTopBar();
+        if (this.projectsPanel?.isHomeMode() && this.projectsPanel.isVisible()) {
             return;
         }
         this.hidePullRequestPanel();
@@ -932,7 +922,25 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (this.shell.isExpanded('bottom')) {
             await this.shell.collapsePanel('bottom');
         }
+        await this.showMobileProjectsHome();
+    }
+
+    protected async showMobileProjectsHome(): Promise<void> {
+        this.landingLeftThisSession = false;
+        document.body.classList.add('theia-mobile-mod-landing');
+        if (this.projectsPanel && !this.projectsPanel.isHomeMode()) {
+            this.projectsPanel.hide();
+            this.projectsPanel.dispose();
+            this.projectsPanel.node.parentElement?.removeChild(this.projectsPanel.node);
+            this.projectsPanel = undefined;
+        }
+        this.ensureProjectsPanel(true);
+        const panel = this.projectsPanel;
+        if (!panel) {
+            return;
+        }
         await panel.show();
+        this.applyLandingChrome();
         this.refreshBottomBar();
         this.refreshWorkbenchTopBar();
     }
@@ -1240,10 +1248,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         });
     }
 
-    /** Primary mobile views; Projects first (multi-workspace hub), then agent-first actions. */
+    /** Primary workspace views. Projects is isolated in the top-bar return action. */
     protected getMobileBottomButtons(): MobileBottomButton[] {
         return [
-            { id: 'projects', label: nls.localize('qaap/mobileBottomBar/projects', 'Projects'), icon: 'codicon-project' },
             { id: 'agent', label: nls.localize('theia/core/mobileBottomBar/agent', 'Agent'), icon: 'codicon-sparkle', commandId: WORKBENCH_AI_CHAT_TOGGLE },
             { id: 'preview', label: nls.localize('theia/core/mobileBottomBar/preview', 'Preview'), icon: 'codicon-play', commandId: MINI_BROWSER_OPEN_URL },
             { id: 'terminal', label: nls.localize('theia/core/mobileBottomBar/terminal', 'Terminal'), icon: 'codicon-terminal' },

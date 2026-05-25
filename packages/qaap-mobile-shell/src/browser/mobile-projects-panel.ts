@@ -133,6 +133,8 @@ export class MobileProjectsPanel {
      * on the expanded project's chats without surrounding noise; collapsing restores the full list.
      */
     protected soloExpanded = false;
+    /** Once the user collapses the current workspace row, do not auto-expand it again. */
+    protected suppressCurrentAutoExpand = false;
     /** Whether the inline composer for the expanded row is in its full chrome (morphed) view. */
     protected composerExpanded = false;
     protected composerDraft = '';
@@ -948,11 +950,13 @@ export class MobileProjectsPanel {
             return;
         }
 
-        // Default: keep the active workspace expanded so the user lands on what matters.
-        if (this.expandedId === undefined) {
+        // Default: keep the active workspace expanded so the user lands on what matters. If the
+        // user collapses it manually, keep that collapsed state like any other project row.
+        if (this.expandedId === undefined && !this.suppressCurrentAutoExpand) {
             const current = filtered.find(p => p.isCurrent);
             if (current) {
                 this.expandedId = current.id;
+                this.soloExpanded = true;
             }
         }
 
@@ -1130,7 +1134,21 @@ export class MobileProjectsPanel {
                 : nls.localize('qaap/mobileProjects/rowChatsMany', '{0} chats', String(doneCount));
             metaRow.append(sep, done);
         }
-        if (!project.isCurrent) {
+        if (project.isCurrent) {
+            const sep = document.createElement('span');
+            sep.className = 'theia-mobile-projects-row-meta-sep';
+            sep.textContent = '·';
+            const current = document.createElement('button');
+            current.type = 'button';
+            current.className = 'theia-mobile-projects-row-current-open';
+            current.textContent = nls.localize('qaap/mobileProjects/workspaceOpen', 'Workspace open');
+            current.title = nls.localize('qaap/mobileProjects/workspaceFocus', 'Focus');
+            current.addEventListener('click', ev => {
+                ev.stopPropagation();
+                this.delegate.onProjectOpen(project);
+            });
+            metaRow.append(sep, current);
+        } else {
             const openBtn = document.createElement('button');
             openBtn.type = 'button';
             openBtn.className = 'theia-mobile-projects-row-meta-open';
@@ -1201,7 +1219,9 @@ export class MobileProjectsPanel {
 
     protected async toggleRowExpanded(project: MobileProjectEntry): Promise<void> {
         this.closeCardMenu();
-        this.expandedId = this.expandedId === project.id ? undefined : project.id;
+        const wasExpanded = this.expandedId === project.id;
+        this.expandedId = wasExpanded ? undefined : project.id;
+        this.suppressCurrentAutoExpand = wasExpanded && project.isCurrent;
         // Hide the other rows while the user has a project expanded so the chat list isn't lost in
         // noise; when the user collapses it again the full list returns.
         this.soloExpanded = this.expandedId !== undefined;
@@ -1213,29 +1233,7 @@ export class MobileProjectsPanel {
 
     protected createWorkspaceBlock(project: MobileProjectEntry): HTMLElement | undefined {
         if (project.isCurrent) {
-            const card = document.createElement('div');
-            card.className = 'theia-mobile-projects-workspace-card';
-            const dot = document.createElement('span');
-            dot.className = 'theia-mobile-projects-workspace-dot';
-            const text = document.createElement('div');
-            text.className = 'theia-mobile-projects-workspace-text';
-            const title = document.createElement('div');
-            title.className = 'theia-mobile-projects-workspace-title';
-            title.textContent = nls.localize('qaap/mobileProjects/workspaceOpen', 'Workspace open');
-            const sub = document.createElement('div');
-            sub.className = 'theia-mobile-projects-workspace-sub';
-            sub.textContent = nls.localize('qaap/mobileProjects/workspaceSince', 'since {0}', project.lastActive || '—');
-            text.append(title, sub);
-            const focus = document.createElement('button');
-            focus.type = 'button';
-            focus.className = 'theia-mobile-projects-workspace-focus';
-            focus.textContent = nls.localize('qaap/mobileProjects/workspaceFocus', 'Focus') + ' →';
-            focus.addEventListener('click', ev => {
-                ev.stopPropagation();
-                this.delegate.onProjectOpen(project);
-            });
-            card.append(dot, text, focus);
-            return card;
+            return undefined;
         }
         // For non-current projects the "Open in workspace" affordance is rendered as a compact
         // icon button on the meta row (see createRow) so it doesn't take a full line in the body.

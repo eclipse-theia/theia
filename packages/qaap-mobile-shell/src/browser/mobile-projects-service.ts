@@ -642,7 +642,41 @@ export class MobileProjectsService {
             entries.push(this.storedToEntry(stored, pinnedIds));
         }
 
-        return this.overlayActiveTasks(this.sortProjectsByRecent(entries.filter(p => !hiddenIds.has(p.id))));
+        return this.overlayActiveTasks(this.sortProjectsByRecent(
+            this.collapseCurrentWorkspaceDuplicates(entries).filter(p => !hiddenIds.has(p.id))
+        ));
+    }
+
+    protected collapseCurrentWorkspaceDuplicates(entries: MobileProjectEntry[]): MobileProjectEntry[] {
+        const current = entries.find(project => project.isCurrent);
+        if (!current) {
+            return entries;
+        }
+        const currentUri = current.uri?.toString();
+        const currentName = this.normalizeProjectName(current.name);
+        const currentGithubName = current.github ? this.normalizeProjectName(current.github.name) : undefined;
+        return entries.filter(project => {
+            if (project.isCurrent) {
+                return true;
+            }
+            if (currentUri && project.uri?.toString() === currentUri) {
+                return false;
+            }
+            const name = this.normalizeProjectName(project.name);
+            if (currentName && name === currentName) {
+                return false;
+            }
+            if (currentGithubName && name === currentGithubName) {
+                return false;
+            }
+            const githubName = project.github ? this.normalizeProjectName(project.github.name) : undefined;
+            return !githubName || githubName !== currentName;
+        });
+    }
+
+    protected normalizeProjectName(name: string | undefined): string | undefined {
+        const normalized = name?.trim().toLowerCase();
+        return normalized || undefined;
     }
 
     /**

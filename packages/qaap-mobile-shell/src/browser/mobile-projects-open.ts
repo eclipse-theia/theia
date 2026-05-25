@@ -9,7 +9,7 @@ export const QAAP_MOBILE_PROJECTS_OPEN_README_KEY = 'qaap.mobileProjects.openRea
 /** Keep the projects sheet closed after a workspace reload (clone / open). */
 export const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY = 'qaap.mobileProjects.dismissPanel';
 
-/** User left the full-screen landing this tab — survives reload (not consumed on read). */
+/** @deprecated Landing state is in-memory only; reloads should return mobile users to Projects. */
 export const QAAP_MOBILE_PROJECTS_LEFT_LANDING_KEY = 'qaap.mobileProjects.leftLanding';
 
 /** Dispatched synchronously so the sheet can close before `workspaceService.open` reloads the page. */
@@ -19,16 +19,11 @@ export const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT = 'qaap-mobile-projects-di
 export const QAAP_AUTH_OPEN_FIRST_REPO_EVENT = 'qaap-auth-open-first-repo';
 
 export function markMobileProjectsLeftLanding(): void {
-    if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(QAAP_MOBILE_PROJECTS_LEFT_LANDING_KEY, '1');
-    }
+    /* Intentionally no-op. The shell keeps this state in memory for the current runtime only. */
 }
 
 export function hasMobileProjectsLeftLanding(): boolean {
-    if (typeof sessionStorage === 'undefined') {
-        return false;
-    }
-    return sessionStorage.getItem(QAAP_MOBILE_PROJECTS_LEFT_LANDING_KEY) === '1';
+    return false;
 }
 
 export function markMobileProjectsPanelDismiss(): void {
@@ -65,7 +60,7 @@ export function requestMobileProjectsPanelDismiss(): void {
 
 /** True when the user already chose to enter a workspace (survives reload via sessionStorage). */
 export function shouldSkipMobileProjectsLanding(): boolean {
-    return peekMobileProjectsPanelDismiss() || hasMobileProjectsLeftLanding();
+    return peekMobileProjectsPanelDismiss();
 }
 
 export function markMobileProjectReadmeForOpen(): void {
