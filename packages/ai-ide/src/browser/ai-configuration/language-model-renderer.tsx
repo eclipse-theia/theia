@@ -18,8 +18,8 @@ import { Agent, AISettingsService, FrontendLanguageModelRegistry, LanguageModel,
 import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { Mutable } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
-import { isFreeNvidiaModelId } from '@theia/ai-nvidia/lib/common';
-import { isFreeOpenRouterModelId } from '@theia/ai-openrouter/lib/common';
+import { isFreeNvidiaModelId } from '@theia/qaap-ai-nvidia/lib/common';
+import { isFreeOpenRouterModelId } from '@theia/qaap-ai-openrouter/lib/common';
 
 export interface LanguageModelSettingsProps {
     agent: Agent;

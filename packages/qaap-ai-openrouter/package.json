@@ -1,5 +1,5 @@
 {
-  "name": "@theia/ai-openrouter",
+  "name": "@theia/qaap-ai-openrouter",
   "version": "1.71.0",
   "description": "Theia - OpenRouter Integration",
   "dependencies": {

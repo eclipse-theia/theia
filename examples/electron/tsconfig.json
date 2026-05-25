@@ -66,16 +66,10 @@
       "path": "../../packages/ai-mcp-ui"
     },
     {
-      "path": "../../packages/ai-nvidia"
-    },
-    {
       "path": "../../packages/ai-ollama"
     },
     {
       "path": "../../packages/ai-openai"
-    },
-    {
-      "path": "../../packages/ai-openrouter"
     },
     {
       "path": "../../packages/ai-scanoss"
@@ -178,6 +172,12 @@
     },
     {
       "path": "../../packages/property-view"
+    },
+    {
+      "path": "../../packages/qaap-ai-nvidia"
+    },
+    {
+      "path": "../../packages/qaap-ai-openrouter"
     },
     {
       "path": "../../packages/qaap-product"

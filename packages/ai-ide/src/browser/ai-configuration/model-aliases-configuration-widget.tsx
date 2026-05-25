@@ -21,8 +21,8 @@ import { nls } from '@theia/core/lib/common/nls';
 import { AgentService, AISettingsService } from '@theia/ai-core';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
 import { ConfigurationSection } from './components/configuration-section';
-import { isFreeNvidiaModelId } from '@theia/ai-nvidia/lib/common';
-import { isFreeOpenRouterModelId } from '@theia/ai-openrouter/lib/common';
+import { isFreeNvidiaModelId } from '@theia/qaap-ai-nvidia/lib/common';
+import { isFreeOpenRouterModelId } from '@theia/qaap-ai-openrouter/lib/common';
 
 @injectable()
 export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWidget<LanguageModelAlias> {

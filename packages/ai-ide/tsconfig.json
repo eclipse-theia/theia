@@ -25,12 +25,6 @@
       "path": "../ai-mcp"
     },
     {
-      "path": "../ai-nvidia"
-    },
-    {
-      "path": "../ai-openrouter"
-    },
-    {
       "path": "../ai-terminal"
     },
     {
@@ -56,6 +50,12 @@
     },
     {
       "path": "../preferences"
+    },
+    {
+      "path": "../qaap-ai-nvidia"
+    },
+    {
+      "path": "../qaap-ai-openrouter"
     },
     {
       "path": "../scm"
