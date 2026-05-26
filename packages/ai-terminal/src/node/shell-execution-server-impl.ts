@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as path from 'path';
 import { injectable } from '@theia/core/shared/inversify';
 import { spawn, ChildProcess, execSync } from 'child_process';
-import * as path from 'path';
 import { ShellExecutionServer, ShellExecutionRequest, ShellExecutionResult } from '../common/shell-execution-server';
 
 const DEFAULT_TIMEOUT = 120000; // 2 minutes
@@ -30,11 +30,15 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
     protected readonly canceledExecutions = new Set<string>();
 
     async execute(request: ShellExecutionRequest): Promise<ShellExecutionResult> {
-        const { command, cwd, workspaceRoot, timeout, executionId } = request;
+        const { command, cwd, timeout, executionId } = request;
+        if (cwd && !path.isAbsolute(cwd)) {
+            throw new Error(
+                `Shell execution backend received a non-absolute cwd: '${cwd}'. ` +
+                'The frontend must resolve cwd to an absolute path before sending it to the backend.'
+            );
+        }
         const effectiveTimeout = Math.min(timeout ?? DEFAULT_TIMEOUT, MAX_TIMEOUT);
         const startTime = Date.now();
-
-        const resolvedCwd = this.resolveCwd(cwd, workspaceRoot);
 
         return new Promise<ShellExecutionResult>(resolve => {
             let stdout = '';
@@ -42,7 +46,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
             let killed = false;
 
             const childProcess = spawn(command, [], {
-                cwd: resolvedCwd,
+                cwd,
                 shell: true,
                 detached: process.platform !== 'win32',
                 windowsHide: true,
@@ -93,7 +97,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                             error: 'Command canceled by user',
                             duration,
                             canceled: true,
-                            resolvedCwd,
+                            resolvedCwd: cwd,
                         });
                     } else {
                         resolve({
@@ -103,7 +107,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                             stderr,
                             error: `Command timed out after ${effectiveTimeout}ms`,
                             duration,
-                            resolvedCwd,
+                            resolvedCwd: cwd,
                         });
                     }
                 } else if (code === 0) {
@@ -113,7 +117,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                         stdout,
                         stderr,
                         duration,
-                        resolvedCwd,
+                        resolvedCwd: cwd,
                     });
                 } else {
                     resolve({
@@ -122,7 +126,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                         stdout,
                         stderr,
                         duration,
-                        resolvedCwd,
+                        resolvedCwd: cwd,
                     });
                 }
             });
@@ -142,7 +146,7 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                     stderr,
                     error: error.message,
                     duration: Date.now() - startTime,
-                    resolvedCwd,
+                    resolvedCwd: cwd,
                 });
             });
         });
@@ -177,18 +181,5 @@ export class ShellExecutionServerImpl implements ShellExecutionServer {
                 // Process may already be dead
             }
         }
-    }
-
-    protected resolveCwd(requestedCwd: string | undefined, workspaceRoot: string | undefined): string | undefined {
-        if (!requestedCwd) {
-            return workspaceRoot;
-        }
-        if (path.isAbsolute(requestedCwd)) {
-            return requestedCwd;
-        }
-        if (workspaceRoot) {
-            return path.resolve(workspaceRoot, requestedCwd);
-        }
-        return requestedCwd;
     }
 }

@@ -500,15 +500,23 @@ export class WorkspaceTrustService {
     }
 
     protected createRestrictedModeTooltip(): MarkdownString {
-        const md = new MarkdownStringImpl('', { supportThemeIcons: true });
+        const manageTrustLink = `[${WorkspaceCommands.MANAGE_WORKSPACE_TRUST.label}](command:${WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id})`;
+        const docsLink = `[${nls.localize('theia/workspace/trustLearnMore', "Learn more about Theia's Workspace Trust")}](https://theia-ide.org/docs/workspace_trust/)`;
+
+        const md = new MarkdownStringImpl('', {
+            supportThemeIcons: true,
+            isTrusted: { enabledCommands: [WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id] }
+        });
 
         md.appendMarkdown(`**${nls.localizeByDefault('Restricted Mode')}**\n\n`);
 
         md.appendMarkdown(nls.localize('theia/workspace/restrictedModeDescription',
             'Some features are disabled because this workspace is not trusted.'));
         md.appendMarkdown('\n\n');
-        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeNote',
-            '*Please note: The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet*'));
+        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeFeatures',
+            'Features like task execution, debugging, extensions, and AI are disabled to protect against potentially harmful code.'));
+        md.appendMarkdown('\n\n');
+        md.appendMarkdown(manageTrustLink);
 
         const restrictions = this.collectRestrictions();
         if (restrictions.length > 0) {
@@ -525,7 +533,7 @@ export class WorkspaceTrustService {
         }
 
         md.appendMarkdown('\n\n---\n\n');
-        md.appendMarkdown(nls.localize('theia/workspace/clickToManageTrust', 'Click to manage trust settings.'));
+        md.appendMarkdown(docsLink);
 
         return md;
     }

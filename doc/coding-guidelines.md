@@ -602,6 +602,48 @@ console.info(``)
 
 > Why? All calls to console are intercepted on the frontend and backend and then forwarded to an `ILogger` instance already. The log level can be configured from the CLI: `theia start --log-level=debug`.
 
+## Workspace Trust
+
+Theia supports [Workspace Trust](https://theia-ide.org/docs/workspace_trust/) to protect users from potentially harmful code in untrusted repositories. Features that execute code or load external content from the workspace must be gated behind workspace trust.
+
+<a name="workspace-trust-check"></a>
+
+* [1.](#workspace-trust-check) Features that execute workspace-provided code (tasks, debug configurations, scripts) or load workspace-provided content (prompt templates, configuration files that influence behavior) must check workspace trust before proceeding. Use `WorkspaceTrustService` to check or request trust.
+
+```ts
+@inject(WorkspaceTrustService)
+protected readonly workspaceTrustService: WorkspaceTrustService;
+
+// Check current trust state
+if (!this.workspaceTrustService.isWorkspaceTrusted()) {
+    return; // disable the feature
+}
+
+// Or request trust from the user (shows dialog if not yet decided)
+const trusted = await this.workspaceTrustService.requestWorkspaceTrust();
+if (!trusted) {
+    return;
+}
+```
+
+<a name="workspace-trust-restrictions"></a>
+
+* [2.](#workspace-trust-restrictions) When a feature is restricted in untrusted workspaces, register a `WorkspaceRestrictionContribution` so that the Restricted Mode status bar tooltip can inform the user about what is disabled.
+
+```ts
+bind(WorkspaceRestrictionContribution).toDynamicValue((): WorkspaceRestrictionContribution => ({
+    getRestrictions(): WorkspaceRestriction[] {
+        return [{
+            label: nls.localize('theia/myPackage/restricted', 'My Feature is disabled in Restricted Mode')
+        }];
+    }
+})).inSingletonScope();
+```
+
+<a name="workspace-trust-context-key"></a>
+
+* [3.](#workspace-trust-context-key) Use the `isWorkspaceTrusted` context key when workspace trust should control menu or command visibility.
+
 ## "To Do" Tags
 
 There are situations where we can't properly implement some functionality at the time we merge a PR. In those cases, it is sometimes good practice to leave an indication that something needs to be fixed later in the code. This can be done by putting a "tag" string in a comment. This allows us to find the places we need to fix again later. Currently, we use two "standard" tags in Theia:

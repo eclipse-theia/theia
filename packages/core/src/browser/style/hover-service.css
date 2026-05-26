@@ -29,6 +29,7 @@
   border: 1px solid var(--theia-editorHoverWidget-border);
   padding: var(--theia-ui-padding);
   max-width: var(--theia-hover-max-width);
+  overflow-wrap: break-word;
   user-select: text;
   --vscode-scmGraph-historyItemHoverAdditionsForeground: var(--theia-scmGraph-historyItemHoverAdditionsForeground);
   --vscode-scmGraph-historyItemHoverDeletionsForeground: var(--theia-scmGraph-historyItemHoverDeletionsForeground);
