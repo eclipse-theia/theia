@@ -678,6 +678,12 @@ export class MobileProjectsService {
             if (hiddenIds.has(stored.id) || entries.some(e => e.id === stored.id)) {
                 continue;
             }
+            if (stored.uri && seen.has(stored.uri)) {
+                continue;
+            }
+            if (stored.uri) {
+                seen.add(stored.uri);
+            }
             entries.push(this.storedToEntry(stored, pinnedIds));
         }
 

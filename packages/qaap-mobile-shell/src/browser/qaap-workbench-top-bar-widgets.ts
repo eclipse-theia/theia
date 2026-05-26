@@ -133,7 +133,7 @@ export class QaapWorkbenchHistoryNavWidget extends Widget {
         super({ node });
         this.id = 'theia:workbench-history-nav';
         this.dashboardBtn = createWorkbenchHistoryNavBtn(
-            'codicon codicon-project',
+            'codicon codicon-layout',
             nls.localize('qaap/mobileProjects/returnToWorkHub', 'Back to Work Hub')
         );
         this.dashboardBtn.classList.add('theia-workbench-dashboard-nav-btn', 'theia-workbench-projects-return-nav-btn');
