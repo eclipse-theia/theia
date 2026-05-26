@@ -1045,9 +1045,10 @@ export class MobileProjectsPanel {
         const activeInfo = this.activeInfoForProject(project);
 
         // Collapsed header (always visible) — clicking toggles the expansion.
-        const header = document.createElement('button');
-        header.type = 'button';
+        const header = document.createElement('div');
         header.className = 'theia-mobile-projects-row-head';
+        header.setAttribute('role', 'button');
+        header.setAttribute('tabindex', '0');
         header.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
 
         // Status glyph follows a priority ladder so the most actionable state wins:
@@ -1141,12 +1142,36 @@ export class MobileProjectsPanel {
             const current = document.createElement('button');
             current.type = 'button';
             current.className = 'theia-mobile-projects-row-current-open';
-            current.textContent = nls.localize('qaap/mobileProjects/workspaceOpen', 'Workspace open');
             current.title = nls.localize('qaap/mobileProjects/workspaceFocus', 'Focus');
+            const currentLabel = document.createElement('span');
+            currentLabel.className = 'theia-mobile-projects-row-current-open-label';
+            currentLabel.textContent = nls.localize('qaap/mobileProjects/workspaceOpen', 'Workspace open');
+            const close = document.createElement('span');
+            close.className = 'theia-mobile-projects-row-current-close';
+            close.setAttribute('role', 'button');
+            close.setAttribute('tabindex', '0');
+            const closeLabel = nls.localize('qaap/mobileProjects/closeWorkspace', 'Close workspace');
+            close.setAttribute('aria-label', closeLabel);
+            close.title = closeLabel;
+            close.textContent = '×';
+            close.addEventListener('click', ev => {
+                ev.stopPropagation();
+                void this.closeCurrentWorkspace();
+            });
+            close.addEventListener('keydown', ev => {
+                if (ev.key !== 'Enter' && ev.key !== ' ') {
+                    return;
+                }
+                ev.preventDefault();
+                ev.stopPropagation();
+                void this.closeCurrentWorkspace();
+            });
+            current.append(currentLabel, close);
             current.addEventListener('click', ev => {
                 ev.stopPropagation();
                 this.delegate.onProjectOpen(project);
             });
+            current.addEventListener('keydown', ev => ev.stopPropagation());
             metaRow.append(sep, current);
         } else {
             const openBtn = document.createElement('button');
@@ -1163,12 +1188,39 @@ export class MobileProjectsPanel {
                 ev.stopPropagation();
                 this.delegate.onProjectOpen(project);
             });
+            openBtn.addEventListener('keydown', ev => ev.stopPropagation());
             metaRow.append(openBtn);
         }
         main.append(metaRow);
         header.append(main);
 
+        const menu = this.buildProjectOptionsMenu(project);
+        const menuBtn = document.createElement('button');
+        menuBtn.type = 'button';
+        menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-row-menu';
+        menuBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/cardMenu', 'Project options'));
+        menuBtn.setAttribute('aria-haspopup', 'menu');
+        menuBtn.setAttribute('aria-expanded', 'false');
+        const menuIcon = document.createElement('span');
+        menuIcon.className = 'codicon codicon-kebab-vertical';
+        menuIcon.setAttribute('aria-hidden', 'true');
+        menuBtn.append(menuIcon);
+        menuBtn.addEventListener('click', ev => {
+            ev.stopPropagation();
+            this.toggleCardMenu(card, menu, menuBtn);
+        });
+        menuBtn.addEventListener('keydown', ev => ev.stopPropagation());
+        header.append(menuBtn);
+
         header.addEventListener('click', ev => {
+            ev.stopPropagation();
+            void this.toggleRowExpanded(project);
+        });
+        header.addEventListener('keydown', ev => {
+            if (ev.key !== 'Enter' && ev.key !== ' ') {
+                return;
+            }
+            ev.preventDefault();
             ev.stopPropagation();
             void this.toggleRowExpanded(project);
         });
@@ -1192,27 +1244,6 @@ export class MobileProjectsPanel {
         body.append(this.createInlineComposer(project));
         body.append(this.createTaskBlock(project, activeInfo));
 
-        // Kebab menu lives in the expanded body's footer so the row stays uncluttered.
-        const menuBtn = document.createElement('button');
-        menuBtn.type = 'button';
-        menuBtn.className = 'theia-mobile-projects-card-menu-btn theia-mobile-projects-row-more';
-        menuBtn.setAttribute('aria-label', nls.localize('qaap/mobileProjects/cardMenu', 'Project options'));
-        menuBtn.setAttribute('aria-haspopup', 'menu');
-        menuBtn.setAttribute('aria-expanded', 'false');
-        const menuIcon = document.createElement('span');
-        menuIcon.className = 'codicon codicon-kebab-vertical';
-        menuIcon.setAttribute('aria-hidden', 'true');
-        menuBtn.append(menuIcon);
-        const menu = this.buildCardMenu(project, activeInfo);
-        menuBtn.addEventListener('click', ev => {
-            ev.stopPropagation();
-            this.toggleCardMenu(card, menu, menuBtn);
-        });
-        const moreRow = document.createElement('div');
-        moreRow.className = 'theia-mobile-projects-row-more-row';
-        moreRow.append(menuBtn);
-        body.append(moreRow);
-
         card.append(body, menu);
         return card;
     }
@@ -1229,6 +1260,19 @@ export class MobileProjectsPanel {
         this.composerExpanded = false;
         await this.refreshChatServiceSessionSummaries();
         this.renderList();
+    }
+
+    protected async closeCurrentWorkspace(): Promise<void> {
+        const commandId = WorkspaceCommands.CLOSE.id;
+        if (!this.commands.getCommand(commandId) || !this.commands.isEnabled(commandId)) {
+            return;
+        }
+        try {
+            await this.commands.executeCommand(commandId);
+            await this.refreshProjects();
+        } catch (error) {
+            console.error('[qaap-mobile-projects] close workspace failed:', error);
+        }
     }
 
     protected createWorkspaceBlock(project: MobileProjectEntry): HTMLElement | undefined {
@@ -1763,6 +1807,49 @@ export class MobileProjectsPanel {
             return;
         }
         await this.openTranscriptSheet(project, summary);
+    }
+
+    protected buildProjectOptionsMenu(project: MobileProjectEntry): HTMLElement {
+        const menu = document.createElement('div');
+        menu.className = 'theia-mobile-projects-card-menu';
+        menu.setAttribute('role', 'menu');
+        menu.hidden = true;
+
+        this.appendCardMenuItem(menu, {
+            label: project.pinned
+                ? nls.localize('qaap/mobileProjects/unpin', 'Unpin')
+                : nls.localize('qaap/mobileProjects/pin', 'Pin'),
+            iconClass: project.pinned ? 'codicon-pinned' : 'codicon-pin',
+            onSelect: () => { void this.onTogglePin(project); },
+        });
+
+        const canRemove = this.projectsService.canRemove(project);
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/remove', 'Remove'),
+            iconClass: 'codicon-trash',
+            danger: true,
+            disabled: !canRemove,
+            title: !canRemove && project.github
+                ? nls.localize('qaap/mobileProjects/removeGithubDisabled', 'Remove is only for custom or recent projects')
+                : !canRemove
+                ? nls.localize('qaap/mobileProjects/removeCurrentDisabled', 'Cannot remove the active workspace')
+                : undefined,
+            onSelect: () => { void this.onRemoveProject(project); },
+        });
+
+        const conversations = this.conversationsForProject(project);
+        this.appendCardMenuItem(menu, {
+            label: nls.localize('qaap/mobileProjects/clearAllChats', 'Clear all chats'),
+            iconClass: 'codicon-clear-all',
+            danger: true,
+            disabled: conversations.length === 0,
+            title: conversations.length === 0
+                ? nls.localize('qaap/mobileProjects/clearAllChatsDisabled', 'No chats to clear')
+                : undefined,
+            onSelect: () => { void this.onClearProjectChats(project); },
+        });
+
+        return menu;
     }
 
     protected buildCardMenu(
@@ -2370,6 +2457,47 @@ export class MobileProjectsPanel {
             this.messageService?.error(nls.localize(
                 'qaap/mobileProjects/deleteChatFailed',
                 'Could not delete chat: {0}',
+                error instanceof Error ? error.message : String(error)
+            ));
+        }
+    }
+
+    protected async onClearProjectChats(project: MobileProjectEntry): Promise<void> {
+        this.closeCardMenu();
+        const conversations = this.conversationsForProject(project);
+        if (conversations.length === 0) {
+            return;
+        }
+        const confirmed = await new ConfirmDialog({
+            title: nls.localize('qaap/mobileProjects/clearAllChats', 'Clear all chats'),
+            msg: nls.localize(
+                'qaap/mobileProjects/clearAllChatsConfirm',
+                'Clear all chats for this project? This cannot be undone.'
+            ),
+        }).open();
+        if (!confirmed) {
+            return;
+        }
+        try {
+            for (const summary of conversations) {
+                if (summary.source === 'theia-chat') {
+                    if (summary.sessionId && this.chatService) {
+                        await this.chatService.deleteSession(summary.sessionId);
+                        this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
+                    }
+                } else {
+                    await deleteConversation(summary.id);
+                    this.conversations?.removeSnapshot(summary.id, summary.cwd, summary.source);
+                }
+            }
+            await this.conversations?.refreshTheiaChatSessionsForProjects(this.projects);
+            this.closeTranscriptSheet();
+            await this.refreshChatServiceSessionSummaries();
+            this.renderList();
+        } catch (error) {
+            this.messageService?.error(nls.localize(
+                'qaap/mobileProjects/clearAllChatsFailed',
+                'Could not clear chats: {0}',
                 error instanceof Error ? error.message : String(error)
             ));
         }

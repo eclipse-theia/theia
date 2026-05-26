@@ -282,12 +282,11 @@ export class MobileProjectsService {
         );
         try {
             const result = await createQaapGithubRepository({ name, private: true });
-            this.touchGithubRepositoryActivity(result.repository);
+            this.registerGithubWorkspaceProject(result.repository, new URI(result.workspaceUri));
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/repoCreated', 'Created {0}', result.repository.fullName),
                 { kind: 'success', duration: 2400 }
             );
-            this.openWorkspaceUri(new URI(result.workspaceUri));
             return this.loadProjects();
         } catch (err) {
             MobileSnackbar.dismiss();
@@ -326,12 +325,11 @@ export class MobileProjectsService {
         );
         try {
             const result = await cloneQaapGithubRepository(trimmed);
-            this.touchGithubRepositoryActivity(result.repository);
+            this.registerGithubWorkspaceProject(result.repository, new URI(result.workspaceUri));
             MobileSnackbar.show(
                 nls.localize('qaap/mobileProjects/repoCloned', 'Cloned {0}', result.repository.fullName),
                 { kind: 'success', duration: 2400 }
             );
-            this.openWorkspaceUri(new URI(result.workspaceUri));
             return this.loadProjects();
         } catch (err) {
             MobileSnackbar.dismiss();
@@ -398,6 +396,58 @@ export class MobileProjectsService {
             return;
         }
         localStorage.setItem(CUSTOM_PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    }
+
+    async importGithubProject(project: MobileProjectEntry): Promise<MobileProjectEntry[] | undefined> {
+        if (!project.github) {
+            return undefined;
+        }
+        MobileSnackbar.show(
+            nls.localize('qaap/mobileProjects/importingRepo', 'Importing {0}…', project.github.fullName),
+            { kind: 'loading' }
+        );
+        try {
+            const result = await openQaapGithubRepository(project.github.owner, project.github.name);
+            this.registerGithubWorkspaceProject(result.repository, new URI(result.workspaceUri));
+            MobileSnackbar.show(
+                nls.localize('qaap/mobileProjects/repoImported', 'Imported {0}', result.repository.fullName),
+                { kind: 'success', duration: 2400 }
+            );
+            return this.loadProjects();
+        } catch (err) {
+            MobileSnackbar.dismiss();
+            await this.messageService.error(err instanceof Error ? err.message : String(err));
+            return undefined;
+        }
+    }
+
+    protected registerGithubWorkspaceProject(repository: QaapGithubRepositorySummary, uri: URI): void {
+        this.touchGithubRepositoryActivity(repository);
+        const custom = this.readCustomProjects();
+        const id = `custom:${uri.toString()}`;
+        const existing = custom.findIndex(project => project.id === id || project.uri === uri.toString());
+        const entry: StoredMobileProject = {
+            id,
+            name: repository.name,
+            color: mobileProjectColorForName(repository.fullName),
+            branch: repository.defaultBranch,
+            status: 'idle',
+            task: nls.localize('qaap/mobileProjects/recentTask', 'Tap to open workspace'),
+            progress: 0,
+            agents: [],
+            lastActive: this.relativeUpdatedAt(new Date().toISOString()),
+            lastActiveAt: new Date().toISOString(),
+            tokens: '—',
+            cost: '—',
+            pinned: false,
+            uri: uri.toString(),
+        };
+        if (existing >= 0) {
+            custom[existing] = { ...custom[existing], ...entry, pinned: custom[existing].pinned };
+        } else {
+            custom.push(entry);
+        }
+        this.writeCustomProjects(custom);
     }
 
     protected resolveDisplayName(id: string, defaultName: string): string {
@@ -563,17 +613,6 @@ export class MobileProjectsService {
         const seen = new Set<string>();
         const hiddenIds = this.readHiddenProjectIds();
         const pinnedIds = this.readPinnedProjectIds();
-
-        const githubProjects = await this.loadGithubProjects(sessionMap, false);
-        for (const project of githubProjects) {
-            if (hiddenIds.has(project.id) || entries.some(e => e.id === project.id)) {
-                continue;
-            }
-            entries.push(project);
-            if (project.uri) {
-                seen.add(project.uri.toString());
-            }
-        }
 
         const current = this.workspaceService.workspace;
         if (current) {

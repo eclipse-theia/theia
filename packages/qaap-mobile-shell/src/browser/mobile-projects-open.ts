@@ -9,6 +9,9 @@ export const QAAP_MOBILE_PROJECTS_OPEN_README_KEY = 'qaap.mobileProjects.openRea
 /** Keep the projects sheet closed after a workspace reload (clone / open). */
 export const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY = 'qaap.mobileProjects.dismissPanel';
 
+/** User is currently on the mobile Projects home. Reload should restore Projects, not workspace. */
+export const QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY = 'qaap.mobileProjects.homeVisible';
+
 /** @deprecated Landing state is in-memory only; reloads should return mobile users to Projects. */
 export const QAAP_MOBILE_PROJECTS_LEFT_LANDING_KEY = 'qaap.mobileProjects.leftLanding';
 
@@ -29,6 +32,7 @@ export function hasMobileProjectsLeftLanding(): boolean {
 export function markMobileProjectsPanelDismiss(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY, '1');
+        sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY);
         markMobileProjectsLeftLanding();
     }
 }
@@ -60,7 +64,25 @@ export function requestMobileProjectsPanelDismiss(): void {
 
 /** True when the user already chose to enter a workspace (survives reload via sessionStorage). */
 export function shouldSkipMobileProjectsLanding(): boolean {
-    return peekMobileProjectsPanelDismiss();
+    return peekMobileProjectsPanelDismiss() && !peekMobileProjectsHomeVisible();
+}
+
+export function markMobileProjectsHomeVisible(): void {
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY, '1');
+        sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY);
+    }
+}
+
+export function clearMobileProjectsHomeVisible(): void {
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY);
+    }
+}
+
+export function peekMobileProjectsHomeVisible(): boolean {
+    return typeof sessionStorage !== 'undefined'
+        && sessionStorage.getItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY) === '1';
 }
 
 export function markMobileProjectReadmeForOpen(): void {

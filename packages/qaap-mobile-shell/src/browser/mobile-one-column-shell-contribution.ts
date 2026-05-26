@@ -54,7 +54,9 @@ import { MobileProjectEntry } from './mobile-projects-types';
 import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
 import {
+    clearMobileProjectsHomeVisible,
     consumeMobileProjectsPanelDismiss,
+    markMobileProjectsHomeVisible,
     markMobileProjectsLeftLanding,
     shouldSkipMobileProjectsLanding,
     QAAP_AUTH_OPEN_FIRST_REPO_EVENT,
@@ -691,9 +693,11 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         }
         if (this.hasPendingHubAction()) {
             this.landingLeftThisSession = true;
+            clearMobileProjectsHomeVisible();
             void this.projectBootstrap.refreshFromCurrentWorkspace();
             return;
         }
+        markMobileProjectsHomeVisible();
         document.body.classList.add('theia-mobile-mod-landing');
         this.ensureProjectsPanel();
         const panel = this.projectsPanel;
@@ -832,6 +836,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
      */
     protected onLandingDismissed(): void {
         markMobileProjectsLeftLanding();
+        clearMobileProjectsHomeVisible();
         this.landingLeftThisSession = true;
         if (this.projectsPanel?.isHomeMode()) {
             this.projectsPanel.dispose();
@@ -847,6 +852,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     /** Hide the full-screen landing the moment the user picks a project. */
     protected leaveMobileProjectsLandingNow(): void {
         markMobileProjectsLeftLanding();
+        clearMobileProjectsHomeVisible();
         this.landingLeftThisSession = true;
         document.body.classList.remove('theia-mobile-mod-landing');
         const panel = this.projectsPanel;
@@ -927,6 +933,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
 
     protected async showMobileProjectsHome(): Promise<void> {
         this.landingLeftThisSession = false;
+        markMobileProjectsHomeVisible();
         document.body.classList.add('theia-mobile-mod-landing');
         if (this.projectsPanel && !this.projectsPanel.isHomeMode()) {
             this.projectsPanel.hide();

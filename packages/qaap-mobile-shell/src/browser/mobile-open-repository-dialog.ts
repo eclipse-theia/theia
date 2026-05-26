@@ -483,12 +483,7 @@ export class MobileOpenRepositoryDialog {
         if (!project.github) {
             return;
         }
-        this.setBusy(true);
-        try {
-            await this.service.openInCurrentWindowAsync(project);
-        } finally {
-            this.setBusy(false);
-        }
+        await this.runWithBusy(() => this.service.importGithubProject(project));
     }
 
     protected async onCreateNew(): Promise<void> {
