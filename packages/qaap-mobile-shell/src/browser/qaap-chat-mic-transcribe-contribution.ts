@@ -1,0 +1,368 @@
+// *****************************************************************************
+// Copyright (C) 2026 Theia contributors and Qaap product fork.
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+import { injectable } from '@theia/core/shared/inversify';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { nls } from '@theia/core/lib/common/nls';
+import * as monaco from '@theia/monaco-editor-core';
+
+/**
+ * Injects a microphone toggle into every AI chat input toolbar so the user can dictate the prompt
+ * via the browser's SpeechRecognition API. The button is added via DOM observation rather than by
+ * modifying the upstream `AIChatInputWidget` render — that keeps the drift surface to a single new
+ * file in the Qaap layer and survives every chat-input variant (workspace ChatView, mobile project
+ * card, future ones) automatically.
+ */
+@injectable()
+export class QaapChatMicTranscribeContribution implements FrontendApplicationContribution {
+
+    protected static readonly BUTTON_CLASS = 'qaap-chat-mic-btn';
+    protected static readonly TOOLBAR_SELECTOR = '.theia-ChatInputOptions-right';
+    protected static readonly INLINE_WRAP_SELECTOR = '.theia-mobile-projects-inline-input-wrap';
+
+    protected readonly toDispose = new DisposableCollection();
+    protected observer: MutationObserver | undefined;
+
+    onStart(): void {
+        if (typeof document === 'undefined' || !this.isSpeechRecognitionSupported()) {
+            return;
+        }
+        const sweep = (root: ParentNode): void => {
+            root.querySelectorAll?.<HTMLElement>(QaapChatMicTranscribeContribution.TOOLBAR_SELECTOR)
+                .forEach(toolbar => this.injectButton(toolbar));
+            root.querySelectorAll?.<HTMLElement>(QaapChatMicTranscribeContribution.INLINE_WRAP_SELECTOR)
+                .forEach(wrap => this.injectInlineButton(wrap));
+        };
+        sweep(document);
+
+        this.observer = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                mutation.addedNodes.forEach(node => {
+                    if (!(node instanceof HTMLElement)) {
+                        return;
+                    }
+                    if (node.matches?.(QaapChatMicTranscribeContribution.TOOLBAR_SELECTOR)) {
+                        this.injectButton(node);
+                    }
+                    if (node.matches?.(QaapChatMicTranscribeContribution.INLINE_WRAP_SELECTOR)) {
+                        this.injectInlineButton(node);
+                    }
+                    sweep(node);
+                });
+            }
+        });
+        this.observer.observe(document.body, { childList: true, subtree: true });
+        this.toDispose.push(Disposable.create(() => {
+            this.observer?.disconnect();
+            this.observer = undefined;
+        }));
+    }
+
+    onStop(): void {
+        this.toDispose.dispose();
+    }
+
+    protected injectButton(toolbar: HTMLElement): void {
+        if (toolbar.querySelector(`.${QaapChatMicTranscribeContribution.BUTTON_CLASS}`)) {
+            return;
+        }
+        const chatInput = toolbar.closest('.theia-ChatInput');
+        if (!(chatInput instanceof HTMLElement)) {
+            return;
+        }
+        const button = this.buildButton();
+        this.wireRecognition(button, chatInput);
+        // Prepend so the mic sits before the send / token-usage indicator without disturbing layout.
+        toolbar.insertBefore(button, toolbar.firstChild);
+    }
+
+    protected injectInlineButton(wrap: HTMLElement): void {
+        if (wrap.querySelector(`.${QaapChatMicTranscribeContribution.BUTTON_CLASS}`)) {
+            return;
+        }
+        const input = wrap.querySelector<HTMLInputElement>('input.theia-mobile-projects-inline-input');
+        if (!input) {
+            return;
+        }
+        const button = this.buildButton();
+        // Sits absolutely-positioned to the left of the send affordance — the wrap is `position: relative`
+        // already and the input gets extra right padding via the `qaap-has-mic` class.
+        button.classList.add('qaap-chat-mic-btn-inline');
+        wrap.classList.add('qaap-has-mic');
+        this.wireInlineRecognition(button, input);
+        wrap.appendChild(button);
+    }
+
+    protected buildButton(): HTMLSpanElement {
+        const span = document.createElement('span');
+        span.classList.add('option', QaapChatMicTranscribeContribution.BUTTON_CLASS);
+        span.setAttribute('role', 'button');
+        span.tabIndex = 0;
+        const startLabel = nls.localize('qaap/chat/micStart', 'Dictate with microphone');
+        span.setAttribute('aria-label', startLabel);
+        span.title = startLabel;
+        span.setAttribute('aria-pressed', 'false');
+        const icon = document.createElement('span');
+        icon.className = 'codicon codicon-mic';
+        span.appendChild(icon);
+        return span;
+    }
+
+    protected wireRecognition(button: HTMLSpanElement, chatInput: HTMLElement): void {
+        const Ctor = this.getSpeechRecognitionCtor();
+        if (!Ctor) {
+            return;
+        }
+        let recognition: SpeechRecognition | undefined;
+        let baseline = '';
+
+        const stop = (): void => {
+            if (recognition) {
+                try { recognition.onend = null; recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch { /* idempotent */ }
+                recognition = undefined;
+            }
+            this.markButtonIdle(button);
+        };
+
+        const start = (): void => {
+            const editor = this.findEditorForInput(chatInput);
+            if (!editor) {
+                return;
+            }
+            try {
+                recognition = new Ctor();
+            } catch {
+                return;
+            }
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = this.preferredLang();
+            // Snapshot current text so each `onresult` replaces only the dictated portion. Without this
+            // every interim result would re-append the same words and produce duplicated output.
+            const model = editor.getModel();
+            baseline = model?.getValue() ?? '';
+            const trailingSpace = baseline.length > 0 && !/\s$/.test(baseline) ? ' ' : '';
+
+            recognition.onresult = (event: SpeechRecognitionEvent) => {
+                let transcript = '';
+                for (let i = 0; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                this.replaceInputText(editor, baseline + trailingSpace + transcript);
+            };
+            recognition.onerror = () => stop();
+            recognition.onend = () => stop();
+            try {
+                recognition.start();
+                this.markButtonActive(button);
+            } catch {
+                stop();
+            }
+        };
+
+        const toggle = (): void => {
+            if (recognition) {
+                stop();
+            } else {
+                start();
+            }
+        };
+
+        button.addEventListener('click', evt => {
+            evt.preventDefault();
+            evt.stopPropagation();
+            toggle();
+        });
+        button.addEventListener('keydown', evt => {
+            if (evt.key === 'Enter' || evt.key === ' ') {
+                evt.preventDefault();
+                toggle();
+            }
+        });
+
+        // Stop recognition if the button is detached (widget hidden, chat view closed).
+        if (typeof MutationObserver !== 'undefined') {
+            const parent = button.parentElement;
+            if (parent) {
+                const detachObserver = new MutationObserver(() => {
+                    if (!document.body.contains(button)) {
+                        stop();
+                        detachObserver.disconnect();
+                    }
+                });
+                detachObserver.observe(parent, { childList: true });
+                this.toDispose.push(Disposable.create(() => detachObserver.disconnect()));
+            }
+        }
+    }
+
+    protected wireInlineRecognition(button: HTMLSpanElement, input: HTMLInputElement): void {
+        const Ctor = this.getSpeechRecognitionCtor();
+        if (!Ctor) {
+            return;
+        }
+        let recognition: SpeechRecognition | undefined;
+        let baseline = '';
+
+        const stop = (): void => {
+            if (recognition) {
+                try { recognition.onend = null; recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch { /* idempotent */ }
+                recognition = undefined;
+            }
+            this.markButtonIdle(button);
+        };
+
+        const start = (): void => {
+            try {
+                recognition = new Ctor();
+            } catch {
+                return;
+            }
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = this.preferredLang();
+            baseline = input.value;
+            const trailingSpace = baseline.length > 0 && !/\s$/.test(baseline) ? ' ' : '';
+
+            recognition.onresult = (event: SpeechRecognitionEvent) => {
+                let transcript = '';
+                for (let i = 0; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                input.value = baseline + trailingSpace + transcript;
+                // Notify the inline-composer listeners (enable/disable Start button, draft persistence).
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+            recognition.onerror = () => stop();
+            recognition.onend = () => stop();
+            try {
+                recognition.start();
+                this.markButtonActive(button);
+            } catch {
+                stop();
+            }
+        };
+
+        const toggle = (): void => {
+            if (recognition) {
+                stop();
+            } else {
+                start();
+            }
+        };
+
+        button.addEventListener('click', evt => {
+            evt.preventDefault();
+            evt.stopPropagation();
+            toggle();
+        });
+        button.addEventListener('keydown', evt => {
+            if (evt.key === 'Enter' || evt.key === ' ') {
+                evt.preventDefault();
+                toggle();
+            }
+        });
+
+        // Stop recognition if the inline input is removed (composer collapsed, project card replaced).
+        const parent = button.parentElement;
+        if (parent) {
+            const detachObserver = new MutationObserver(() => {
+                if (!document.body.contains(button)) {
+                    stop();
+                    detachObserver.disconnect();
+                }
+            });
+            detachObserver.observe(parent, { childList: true });
+            this.toDispose.push(Disposable.create(() => detachObserver.disconnect()));
+        }
+    }
+
+    protected replaceInputText(editor: monaco.editor.ICodeEditor, text: string): void {
+        const model = editor.getModel();
+        if (!model) {
+            return;
+        }
+        // Use a normal edit so undo/redo and change listeners (token counter, history, etc.) all fire
+        // exactly the way they do when the user types.
+        const fullRange = model.getFullModelRange();
+        editor.executeEdits('qaap-mic', [{ range: fullRange, text, forceMoveMarkers: true }]);
+        const endLine = model.getLineCount();
+        const endCol = model.getLineMaxColumn(endLine);
+        editor.setPosition({ lineNumber: endLine, column: endCol });
+    }
+
+    protected findEditorForInput(chatInput: HTMLElement): monaco.editor.ICodeEditor | undefined {
+        return monaco.editor.getEditors().find(editor => {
+            const domNode = editor.getDomNode();
+            return !!domNode && chatInput.contains(domNode);
+        });
+    }
+
+    protected markButtonActive(button: HTMLSpanElement): void {
+        button.classList.add('qaap-chat-mic-btn-recording');
+        button.setAttribute('aria-pressed', 'true');
+        const stopLabel = nls.localize('qaap/chat/micStop', 'Stop dictation');
+        button.setAttribute('aria-label', stopLabel);
+        button.title = stopLabel;
+        const icon = button.querySelector('.codicon');
+        if (icon) {
+            icon.classList.remove('codicon-mic');
+            icon.classList.add('codicon-stop-circle');
+        }
+    }
+
+    protected markButtonIdle(button: HTMLSpanElement): void {
+        button.classList.remove('qaap-chat-mic-btn-recording');
+        button.setAttribute('aria-pressed', 'false');
+        const startLabel = nls.localize('qaap/chat/micStart', 'Dictate with microphone');
+        button.setAttribute('aria-label', startLabel);
+        button.title = startLabel;
+        const icon = button.querySelector('.codicon');
+        if (icon) {
+            icon.classList.remove('codicon-stop-circle');
+            icon.classList.add('codicon-mic');
+        }
+    }
+
+    protected preferredLang(): string {
+        if (typeof navigator !== 'undefined' && navigator.language) {
+            return navigator.language;
+        }
+        return 'en-US';
+    }
+
+    protected isSpeechRecognitionSupported(): boolean {
+        return !!this.getSpeechRecognitionCtor();
+    }
+
+    protected getSpeechRecognitionCtor(): { new(): SpeechRecognition } | undefined {
+        if (typeof window === 'undefined') {
+            return undefined;
+        }
+        const w = window as unknown as {
+            SpeechRecognition?: { new(): SpeechRecognition };
+            webkitSpeechRecognition?: { new(): SpeechRecognition };
+        };
+        return w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    }
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onerror: ((event: any) => void) | null;
+    onend: ((event: any) => void) | null;
+    start(): void;
+    stop(): void;
+}
+
+interface SpeechRecognitionEvent {
+    results: ArrayLike<ArrayLike<{ transcript: string }>>;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */

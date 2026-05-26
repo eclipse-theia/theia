@@ -8,6 +8,7 @@ import '../../src/browser/style/mobile-workbench.css';
 import '../../src/browser/style/qaap-mobile-touch-scroll.css';
 import '../../src/browser/style/qaap-empty-workbench-brand.css';
 import '../../src/browser/style/qaap-project-bootstrap.css';
+import '../../src/browser/style/qaap-chat-mic.css';
 
 import { bindToolProvider } from '@theia/ai-core/lib/common';
 import { AIVariableContribution } from '@theia/ai-core/lib/common/variable-service';
@@ -53,6 +54,7 @@ import { MobileTouchScrollContribution } from './mobile-touch-scroll-contributio
 import { QaapBootstrapVariableContribution } from './qaap-bootstrap-variable-contribution';
 import { createQaapScmWidgetContainer } from './qaap-scm-tree-widget';
 import { QaapSelectComponentOverlayContribution } from './qaap-select-component-overlay-contribution';
+import { QaapChatMicTranscribeContribution } from './qaap-chat-mic-transcribe-contribution';
 
 export default new ContainerModule(bind => {
     bind(MobileProjectsActiveTasks).toSelf().inSingletonScope();
@@ -114,6 +116,8 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(MobileTouchScrollContribution);
     bind(QaapSelectComponentOverlayContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapSelectComponentOverlayContribution);
+    bind(QaapChatMicTranscribeContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QaapChatMicTranscribeContribution);
 
     bind(QaapProjectBootstrapContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(QaapProjectBootstrapContribution);
