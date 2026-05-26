@@ -183,7 +183,7 @@ export class BackendApplication {
 
     @inject(ILogger) @named('core:BackendApplication')
     protected readonly logger: ILogger;
-    
+
     @inject(RootContainer)
     protected readonly rootContainer: interfaces.Container;
 

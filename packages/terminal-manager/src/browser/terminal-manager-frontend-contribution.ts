@@ -47,7 +47,7 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
 
     @inject(ILogger) @named('terminal-manager:TerminalManagerFrontendContribution')
     protected readonly logger: ILogger;
-    
+
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
 

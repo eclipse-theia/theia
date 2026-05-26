@@ -51,7 +51,7 @@ export class FrontendApplication {
 
     @inject(ILogger) @named('core:FrontendApplication')
     protected readonly logger: ILogger;
-    
+
     private settlementContext?: MeasurementContext<FrontendApplicationContribution>;
 
     constructor(

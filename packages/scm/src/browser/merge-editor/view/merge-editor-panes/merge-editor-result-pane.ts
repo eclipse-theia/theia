@@ -31,7 +31,7 @@ export class MergeEditorResultPane extends MergeEditorPane {
 
     @inject(ILogger) @named('scm:MergeEditorResultPane')
     protected readonly logger: ILogger;
-    
+
     @inject(NavigationLocationService)
     protected readonly navigationLocationService: NavigationLocationService;
 

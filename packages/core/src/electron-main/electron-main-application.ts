@@ -177,7 +177,7 @@ export class ElectronMainApplication {
 
     @inject(ILogger) @named('core:ElectronMainApplication')
     protected readonly logger: ILogger;
-    
+
     @inject(Stopwatch)
     protected readonly stopwatch: Stopwatch;
 

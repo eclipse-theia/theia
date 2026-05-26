@@ -154,7 +154,7 @@ export class DebugSessionManager {
 
     @inject(ILogger) @named('debug:DebugSessionManager')
     protected readonly logger: ILogger;
-    
+
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
 

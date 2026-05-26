@@ -52,7 +52,7 @@ export class CopilotAuthServiceImpl implements CopilotAuthService {
 
     @inject(ILogger) @named('ai-copilot:CopilotAuthServiceImpl')
     protected readonly logger: ILogger;
-    
+
     @inject(CopilotOAuthConfig)
     protected readonly oauthConfig: CopilotOAuthConfig;
 

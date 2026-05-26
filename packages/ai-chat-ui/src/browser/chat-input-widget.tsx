@@ -150,7 +150,7 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ILogger) @named('ai-chat-ui:AIChatInputWidget')
     protected readonly logger: ILogger;
-    
+
     @inject(PendingImageRegistry)
     protected readonly pendingImageRegistry: PendingImageRegistry;
 
