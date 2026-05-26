@@ -55,7 +55,7 @@
     },
     "backend": {
       "config": {
-        "frontendConnectionTimeout": 3000
+        "frontendConnectionTimeout": 600000
       }
     }
   },
