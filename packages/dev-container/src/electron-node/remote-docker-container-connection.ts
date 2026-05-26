@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 Typefox and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -66,6 +66,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         this.container = options.container;
 
         this.config = options.config;
+        this.logger = options.logger;
 
         this.docker.getEvents({ filters: { container: [this.container.id], event: ['stop'] } }).then(stream => {
             this.dockerEventStream = stream;
@@ -73,8 +74,6 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         }).catch(e => {
             this.logger.error('Failed to register Docker event listener:', e);
         });
-
-        this.logger = options.logger;
     }
 
     protected getRemoteEnv(): string[] | undefined {
@@ -88,6 +87,11 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         return entries.length > 0 ? entries : undefined;
     }
 
+    /**
+     * Wraps each argument in double quotes and escapes the shell metacharacters
+     * that are significant inside double-quoted strings: backslash, double quote,
+     * dollar sign, backtick, newline, and carriage return.
+     */
     protected buildShellCommand(cmd: string, args?: string[]): string {
         if (!args || args.length === 0) {
             return cmd;
@@ -268,7 +272,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             return sync ? execFileSync('docker', [...hostArgs, 'stop', this.container.id]) : this.container.stop();
         } else if (shutdownAction === 'stopCompose') {
             if (!this.config.dockerComposeFile) {
-                console.warn('shutdownAction is stopCompose but dockerComposeFile is not defined, falling back to stopContainer');
+                this.logger.warn('shutdownAction is stopCompose but dockerComposeFile is not defined, falling back to stopContainer');
                 return sync ? execFileSync('docker', [...hostArgs, 'stop', this.container.id]) : this.container.stop();
             }
             const composeFilePath = resolveComposeFilePath(this.config);

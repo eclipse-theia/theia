@@ -298,7 +298,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
 
             const containers = await this.connectionProvider.listRunningContainers();
             if (containers.length === 0) {
-                this.messageService.error(
+                this.messageService.info(
                     nls.localize('theia/remote/dev-container/noRunningContainers', 'No running containers found.')
                 );
                 return;

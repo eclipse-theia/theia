@@ -234,8 +234,9 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             }
             // Return the first subfolder config found
             return found[0];
-        } catch {
+        } catch (e) {
             // find/sh might not be available in minimal containers
+            this.logger.debug('Failed to scan for devcontainer.json in container:', e);
             return undefined;
         }
     }
@@ -350,7 +351,11 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         return connection.container.inspect();
     }
 
-    async removeContainer(containerId: string, docker?: Docker): Promise<void> {
+    async removeContainer(containerId: string): Promise<void> {
+        return this.doRemoveContainer(containerId);
+    }
+
+    protected async doRemoveContainer(containerId: string, docker?: Docker): Promise<void> {
         docker ??= await this.createDockerConnection();
         const container = docker.getContainer(containerId);
         try {
