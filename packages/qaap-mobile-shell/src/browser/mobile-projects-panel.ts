@@ -1139,10 +1139,10 @@ export class MobileProjectsPanel {
             const sep = document.createElement('span');
             sep.className = 'theia-mobile-projects-row-meta-sep';
             sep.textContent = '·';
-            const current = document.createElement('button');
-            current.type = 'button';
+            // Status badge — purely informational. The "open in workspace" affordance lives in
+            // the icon button rendered below; tapping the badge itself no longer navigates.
+            const current = document.createElement('span');
             current.className = 'theia-mobile-projects-row-current-open';
-            current.title = nls.localize('qaap/mobileProjects/workspaceFocus', 'Focus');
             const currentLabel = document.createElement('span');
             currentLabel.className = 'theia-mobile-projects-row-current-open-label';
             currentLabel.textContent = nls.localize('qaap/mobileProjects/workspaceOpen', 'Workspace open');
@@ -1167,13 +1167,13 @@ export class MobileProjectsPanel {
                 void this.closeCurrentWorkspace();
             });
             current.append(currentLabel, close);
-            current.addEventListener('click', ev => {
-                ev.stopPropagation();
-                this.delegate.onProjectOpen(project);
-            });
-            current.addEventListener('keydown', ev => ev.stopPropagation());
             metaRow.append(sep, current);
-        } else {
+        }
+        // Explicit "open in workspace" icon button. Rendered for every project — including the
+        // currently-open one — so the user has an unambiguous affordance to focus the workspace
+        // without tapping the badge itself (whose inline `×` is a *close* action and would
+        // otherwise be the only visible glyph on the current row).
+        {
             const openBtn = document.createElement('button');
             openBtn.type = 'button';
             openBtn.className = 'theia-mobile-projects-row-meta-open';
@@ -1467,16 +1467,6 @@ export class MobileProjectsPanel {
         for (const group of this.groupConversationTasks(tasks)) {
             const section = document.createElement('section');
             section.className = `theia-mobile-projects-conversation-group theia-mod-${group.id}`;
-            const groupHead = document.createElement('div');
-            groupHead.className = 'theia-mobile-projects-conversation-group-head';
-            const groupLabel = document.createElement('span');
-            groupLabel.className = 'theia-mobile-projects-conversation-group-label';
-            groupLabel.textContent = group.label;
-            const groupCount = document.createElement('span');
-            groupCount.className = 'theia-mobile-projects-conversation-group-count';
-            groupCount.textContent = String(group.tasks.length);
-            groupHead.append(groupLabel, groupCount);
-            section.append(groupHead);
             for (const task of group.tasks) {
                 const summary = conversations.find(c => c.id === task.id);
                 section.append(this.createTaskItem(project, task, activeInfo, summary, parentIds));

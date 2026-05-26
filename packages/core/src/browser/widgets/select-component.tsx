@@ -423,7 +423,12 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                         hover: index
                     });
                 }}
-                onMouseDown={() => {
+                onPointerDown={event => {
+                    // Use `pointerdown` + `preventDefault` so the field does not lose focus
+                    // (which would call `hide()` before the option is selected). This is
+                    // required for reliable selection on touch devices where the synthetic
+                    // `mousedown` may fire after a focus / blur cycle.
+                    event.preventDefault();
                     this.selectOption(index, option);
                 }}
             >
