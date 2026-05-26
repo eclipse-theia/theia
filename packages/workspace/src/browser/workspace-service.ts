@@ -116,6 +116,19 @@ export interface WorkspaceService {
      * @see getWorkspaceRootUri(uri)
      */
     getWorkspaceRelativePath(uri: URI): Promise<string>;
+    /**
+     * Returns a workspace-relative path prefixed with the containing root's
+     * directory name, e.g. `backend/src/index.ts`.
+     *
+     * In a single-root workspace the root name is still included so that the
+     * format is consistent regardless of how many roots are open.
+     *
+     * Falls back to the absolute filesystem path if the URI is not contained
+     * in any workspace root.
+     *
+     * @param uri URI of the file
+     */
+    getRootPrefixedPath(uri: URI): string;
     areWorkspaceRoots(uris: URI[]): boolean;
     isUntitledWorkspace(candidate?: URI): boolean;
     isSafeToReload(withURI?: URI): Promise<boolean>;
@@ -528,25 +541,14 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         return this.server.removeRecentWorkspace(uri);
     }
 
-    /**
-     * Returns `true` if theia has an opened workspace or folder
-     * @returns {boolean}
-     */
     get opened(): boolean {
         return !!this._workspace;
     }
 
-    /**
-     * Returns `true` if a multiple-root workspace is currently open.
-     * @returns {boolean}
-     */
     get isMultiRootWorkspaceOpened(): boolean {
         return !!this.workspace && !this.workspace.isDirectory;
     }
 
-    /**
-     * Opens directory, or recreates a workspace from the file that `uri` points to.
-     */
     open(uri: URI, options?: WorkspaceInput): void {
         this.doOpen(uri, options);
     }
@@ -586,18 +588,11 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         throw new Error('Invalid workspace root URI. Expected an existing directory or workspace file.');
     }
 
-    /**
-     * Adds root folder(s) to the workspace
-     * @param uris URI or URIs of the root folder(s) to add
-     */
     async addRoot(uris: URI[] | URI): Promise<void> {
         const toAdd = Array.isArray(uris) ? uris : [uris];
         await this.spliceRoots(this._roots.length, 0, ...toAdd);
     }
 
-    /**
-     * Removes root folder(s) from workspace.
-     */
     async removeRoots(uris: URI[]): Promise<void> {
         if (!this.opened) {
             throw new Error('Folder cannot be removed as there is no active folder in the current workspace.');
@@ -667,9 +662,6 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         }
     }
 
-    /**
-     * Clears current workspace root.
-     */
     async close(): Promise<void> {
         if (await this.windowService.isSafeToShutDown(StopReason.Reload)) {
             this.windowService.setSafeToShutDown();
@@ -745,10 +737,6 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         return options !== undefined && !!options.preserveWindow;
     }
 
-    /**
-     * Return true if one of the paths in paths array is present in the workspace
-     * NOTE: You should always explicitly use `/` as the separator between the path segments.
-     */
     async containsSome(paths: string[]): Promise<boolean> {
         await this.roots;
         if (this.opened) {
@@ -766,19 +754,10 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         return false;
     }
 
-    /**
-     * `true` if the current workspace is configured using a configuration file.
-     *
-     * `false` if there is no workspace or the workspace is simply a folder.
-     */
     get saved(): boolean {
         return !!this._workspace && !this._workspace.isDirectory;
     }
 
-    /**
-     * Save workspace data into a file
-     * @param uri URI or FileStat of the workspace file
-     */
     async save(uri: URI | FileStat): Promise<void> {
         const resource = uri instanceof URI ? uri : uri.resource;
         if (!await this.fileService.exists(resource)) {
@@ -855,12 +834,6 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         return Object.keys(patterns).filter(pattern => patterns[pattern]);
     }
 
-    /**
-     * Returns the workspace root uri that the given file belongs to.
-     * In case that the file is found in more than one workspace roots, returns the root that is closest to the file.
-     * If the file is not from the current workspace, returns `undefined`.
-     * @param uri URI of the file
-     */
     getWorkspaceRootUri(uri: URI | undefined): URI | undefined {
         if (!uri) {
             const root = this.tryGetRoots()[0];
@@ -879,11 +852,6 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         return rootUris.sort((r1, r2) => r2.toString().length - r1.toString().length)[0];
     }
 
-    /**
-     * Returns the relative path of the given file to the workspace root.
-     * @param uri URI of the file
-     * @see getWorkspaceRootUri(uri)
-     */
     async getWorkspaceRelativePath(uri: URI): Promise<string> {
         const wsUri = this.getWorkspaceRootUri(uri);
         if (wsUri) {
@@ -895,18 +863,6 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         return uri.path.fsPath();
     }
 
-    /**
-     * Returns a workspace-relative path prefixed with the containing root's
-     * directory name, e.g. `backend/src/index.ts`.
-     *
-     * In a single-root workspace the root name is still included so that the
-     * format is consistent regardless of how many roots are open.
-     *
-     * Falls back to the absolute filesystem path if the URI is not contained
-     * in any workspace root.
-     *
-     * @param uri URI of the file
-     */
     getRootPrefixedPath(uri: URI): string {
         const rootUri = this.getWorkspaceRootUri(uri);
         if (!rootUri) {
@@ -945,11 +901,6 @@ export class WorkspaceServiceImpl implements WorkspaceService, FrontendApplicati
         return !withURI || !this.untitledWorkspaceService.isUntitledWorkspace(withURI) || new URI(await this.getDefaultWorkspaceUri()).isEqual(withURI);
     }
 
-    /**
-     *
-     * @param key the property key under which to store the schema (e.g. tasks, launch)
-     * @param schema the schema for the property. If none is supplied, the update is treated as a deletion.
-     */
     async updateSchema(key: string, schema?: IJSONSchema): Promise<boolean> {
         return this.schemaUpdater.updateSchema({ key, schema });
     }
