@@ -44,6 +44,16 @@ export namespace MarkdownString {
     export function is(candidate: unknown): candidate is MarkdownString {
         return isObject<MarkdownString>(candidate) && isString(candidate.value);
     }
+
+    /**
+     * @returns whether `commandId` is allowed to execute given the markdown string's
+     * {@link MarkdownString.isTrusted} setting. Fully trusted strings allow any command;
+     * partially trusted strings restrict execution to their `enabledCommands` list.
+     */
+    export function isCommandAllowed(isTrusted: MarkdownString['isTrusted'], commandId: string): boolean {
+        return isTrusted === true
+            || (typeof isTrusted === 'object' && isTrusted.enabledCommands.includes(commandId));
+    }
 }
 
 // Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/common/htmlContent.ts

@@ -124,7 +124,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             this.preferenceService.onPreferenceChanged(async event => {
                 if (event.preferenceName === MCP_SERVERS_PREF) {
-                    this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
+                    await this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
                 }
                 if (event.preferenceName === MCP_USE_WORKSPACE_AS_ROOT_PREF) {
                     await this.updateWorkspaceRoots(true);
@@ -237,12 +237,13 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         this.updateBlockedServersStatusBar();
     }
 
-    protected handleServerChanges(newServers: MCPServersPreference): void {
+    protected async handleServerChanges(newServers: MCPServersPreference): Promise<void> {
         const oldServers = this.prevServers;
         const updatedServers = this.convertToMap(newServers);
 
         for (const [name] of oldServers) {
             if (!updatedServers.has(name)) {
+                await this.frontendMCPService.stopServer(name);
                 this.manager.removeServer(name);
                 this.blockedUntrustedServers.delete(name);
             }

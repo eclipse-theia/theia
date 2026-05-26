@@ -171,7 +171,7 @@ export class DefaultSkillService implements SkillService {
         const newDisposables = new DisposableCollection();
         const newSkills = new Map<string, Skill>();
 
-        const workspaceSkillsDir = this.getWorkspaceSkillsDirectoryPath();
+        const workspaceSkillsDirs = this.getWorkspaceSkillsDirectoryPaths();
 
         const homeDirUri = await this.envVariablesServer.getHomeDirUri();
         const homePath = new URI(homeDirUri).path.fsPath();
@@ -183,7 +183,7 @@ export class DefaultSkillService implements SkillService {
         const newWatchedDirectories = new Set<string>();
         const newParentWatchers = new Map<string, string>();
 
-        if (workspaceSkillsDir) {
+        for (const workspaceSkillsDir of workspaceSkillsDirs) {
             await this.processSkillDirectoryWithParentWatching(
                 workspaceSkillsDir,
                 newSkills,
@@ -223,13 +223,9 @@ export class DefaultSkillService implements SkillService {
         this.onSkillsChangedEmitter.fire();
     }
 
-    protected getWorkspaceSkillsDirectoryPath(): string | undefined {
-        const roots = this.workspaceService.tryGetRoots();
-        if (roots.length === 0) {
-            return undefined;
-        }
-        // Use primary workspace root
-        return roots[0].resource.resolve('.prompts/skills').path.fsPath();
+    protected getWorkspaceSkillsDirectoryPaths(): string[] {
+        return this.workspaceService.tryGetRoots()
+            .map(root => root.resource.resolve('.prompts/skills').path.fsPath());
     }
 
     protected async getDefaultSkillsDirectoryPath(): Promise<string> {
