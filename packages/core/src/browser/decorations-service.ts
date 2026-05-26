@@ -148,10 +148,6 @@ class DecorationProviderWrapper {
             const request = new DecorationDataRequest(source, Promise.resolve(dataOrThenable).then(data => {
                 if (this.data.get(uri) === request) {
                     this.keepItem(uri, data);
-                    // Notify subscribers that a lazily-fetched decoration is now
-                    // available so renderers can re-query. Without this, decorations
-                    // dropped by event truncation never reach the UI.
-                    this.onDidChangeDecorationsEmitter.fire(this.decorations);
                 }
             }).catch(err => {
                 if (!(err instanceof Error && err.name === 'Canceled' && err.message === 'Canceled') && this.data.get(uri) === request) {
