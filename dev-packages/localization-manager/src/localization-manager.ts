@@ -26,6 +26,7 @@ export interface LocalizationOptions {
     sourceFile: string
     sourceLanguage?: string
     targetLanguages: string[]
+    forceKeys?: Set<string>
 }
 
 export type LocalizationFunction = (parameters: DeeplParameters) => Promise<DeeplResponse>;
@@ -92,7 +93,7 @@ export class LocalizationManager {
     }
 
     async translateLanguage(source: Localization, target: Localization, targetLanguage: string, options: LocalizationOptions): Promise<boolean> {
-        const map = this.buildLocalizationMap(source, target);
+        const map = this.buildLocalizationMap(source, target, options.forceKeys);
         if (map.text.length > 0) {
             try {
                 const translationResponse = await this.localizationFn({
@@ -109,7 +110,10 @@ export class LocalizationManager {
                 translationResponse.translations.forEach(({ text }, i) => {
                     map.localize(i, this.removeIgnoreTags(text));
                 });
-                console.log(chalk.green(`Successfully translated ${map.text.length} value${map.text.length > 1 ? 's' : ''} for language "${targetLanguage}"`));
+                console.log(chalk.green(`Successfully translated ${map.text.length} value${map.text.length > 1 ? 's' : ''} for language "${targetLanguage}":`));
+                for (const key of map.keys) {
+                    console.log(chalk.green(`  - ${key}`));
+                }
                 return true;
             } catch (e) {
                 console.log(chalk.red(`Could not translate into language "${targetLanguage}"`), e);
@@ -134,10 +138,11 @@ export class LocalizationManager {
         return result.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     }
 
-    protected buildLocalizationMap(source: Localization, target: Localization): LocalizationMap {
+    protected buildLocalizationMap(source: Localization, target: Localization, forceKeys?: Set<string>): LocalizationMap {
         const functionMap = new Map<number, (value: string) => void>();
         const text: string[] = [];
-        const process = (s: Localization, t: Localization) => {
+        const keys: string[] = [];
+        const process = (s: Localization, t: Localization, prefix = '') => {
             // Delete all extra keys in the target translation first
             for (const key of Object.keys(t)) {
                 if (!(key in s)) {
@@ -145,20 +150,26 @@ export class LocalizationManager {
                 }
             }
             for (const [key, value] of Object.entries(s)) {
+                const currentPath = prefix ? `${prefix}/${key}` : key;
                 if (!(key in t)) {
                     if (typeof value === 'string') {
                         functionMap.set(text.length, translation => t[key] = translation);
                         text.push(value);
+                        keys.push(currentPath);
                     } else {
                         const newLocalization: Localization = {};
                         t[key] = newLocalization;
-                        process(value, newLocalization);
+                        process(value, newLocalization, currentPath);
                     }
+                } else if (typeof value === 'string' && forceKeys?.has(currentPath)) {
+                    functionMap.set(text.length, translation => t[key] = translation);
+                    text.push(value);
+                    keys.push(currentPath);
                 } else if (typeof value === 'object') {
                     if (typeof t[key] === 'string') {
                         t[key] = {};
                     }
-                    process(value, t[key] as Localization);
+                    process(value, t[key] as Localization, currentPath);
                 }
             }
         };
@@ -167,6 +178,7 @@ export class LocalizationManager {
 
         return {
             text,
+            keys,
             localize: (index, value) => functionMap.get(index)!(value)
         };
     }
@@ -174,5 +186,6 @@ export class LocalizationManager {
 
 export interface LocalizationMap {
     text: string[]
+    keys: string[]
     localize: (index: number, value: string) => void
 }

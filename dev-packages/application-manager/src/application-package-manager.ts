@@ -45,7 +45,7 @@ export class ApplicationPackageManager {
         return cli
             .option('mode', {
                 description: 'Generation mode to use',
-                choices: ['development', 'production'],
+                choices: ['development', 'production'] as const,
                 default: 'production' as const,
             })
             .option('split-frontend', {
