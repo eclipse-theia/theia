@@ -40,7 +40,10 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
 
     @postConstruct()
     protected init(): void {
-        this.decorationsService.onDidChangeDecorations(() => this.fireDidChangeDecorations());
+        this.decorationsService.onDidChangeDecorations(newDecorations => {
+            this.updateDecorations(this.decorationsByUri.keys(), newDecorations.keys());
+            this.fireDidChangeDecorations();
+        });
     }
 
     decorations(tree: Tree): MaybePromise<Map<string, TreeDecoration.Data>> {
@@ -48,36 +51,19 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
     }
 
     protected collectDecorations(tree: Tree): Map<string, TreeDecoration.Data> {
-        const decorations = new Map<string, TreeDecoration.Data>();
-        if (!tree.root) {
-            return decorations;
-        }
-        this.decorationsByUri = new Map<string, TreeDecoration.Data>();
-        this.parentDecorations = new Map<string, TreeDecoration.Data>();
-        // Query the decorations service per visible URI so that decorations dropped
-        // by event truncation (see plugin-ext maxEventSize) are fetched on demand.
-        for (const node of new TopDownTreeIterator(tree.root)) {
-            const rawUri = this.getUriForNode(node);
-            if (!rawUri || this.decorationsByUri.has(rawUri)) {
-                continue;
-            }
-            const uri = new URI(rawUri);
-            const fetched = this.decorationsService.getDecoration(uri, false);
-            if (fetched.length) {
-                this.decorationsByUri.set(rawUri, this.toTheiaDecoration(fetched, false));
-                this.propagateDecorationsByUri(uri, fetched);
-            }
-        }
-        for (const node of new TopDownTreeIterator(tree.root)) {
-            const rawUri = this.getUriForNode(node);
-            if (!rawUri) {
-                continue;
-            }
-            const ownDecoration = this.decorationsByUri.get(rawUri);
-            const bubbledDecoration = this.parentDecorations.get(rawUri);
-            const combined = this.mergeDecorations(ownDecoration, bubbledDecoration);
-            if (combined) {
-                decorations.set(node.id, combined);
+        const decorations = new Map();
+        if (tree.root) {
+            for (const node of new TopDownTreeIterator(tree.root)) {
+                const uri = this.getUriForNode(node);
+                if (uri) {
+                    const stringified = uri.toString();
+                    const ownDecoration = this.decorationsByUri.get(stringified);
+                    const bubbledDecoration = this.parentDecorations.get(stringified);
+                    const combined = this.mergeDecorations(ownDecoration, bubbledDecoration);
+                    if (combined) {
+                        decorations.set(node.id, combined);
+                    }
+                }
             }
         }
         return decorations;
@@ -95,6 +81,28 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
                 tailDecorations
             };
         }
+    }
+
+    protected updateDecorations(oldKeys: IterableIterator<string>, newKeys: IterableIterator<string>): void {
+        this.parentDecorations.clear();
+        const newDecorations = new Map<string, TreeDecoration.Data>();
+        const handleUri = (rawUri: string) => {
+            if (!newDecorations.has(rawUri)) {
+                const uri = new URI(rawUri);
+                const decorations = this.decorationsService.getDecoration(uri, false);
+                if (decorations.length) {
+                    newDecorations.set(rawUri, this.toTheiaDecoration(decorations, false));
+                    this.propagateDecorationsByUri(uri, decorations);
+                }
+            }
+        };
+        for (const rawUri of oldKeys) {
+            handleUri(rawUri);
+        }
+        for (const rawUri of newKeys) {
+            handleUri(rawUri);
+        }
+        this.decorationsByUri = newDecorations;
     }
 
     protected toTheiaDecoration(decorations: Decoration[], bubble?: boolean): TreeDecoration.Data {
