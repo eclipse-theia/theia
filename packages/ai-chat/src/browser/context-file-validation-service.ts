@@ -18,7 +18,6 @@ import { URI } from '@theia/core';
 
 export enum FileValidationState {
     VALID = 'valid',
-    INVALID_SECONDARY = 'invalid-secondary',
     INVALID_NOT_FOUND = 'invalid-not-found'
 }
 

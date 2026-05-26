@@ -86,7 +86,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                     // Resolve tool requests in resolved variables
                     this.parseFunctionsFromVariableText(resolvedVariable.value, toolRequests);
                 } else {
-                    this.logger.warn(`Failed to resolve variable ${part.variableName} for ${location}`);
+                    this.logger.warn(`Failed to resolve variable ${part.variableName}${part.variableArg ? ':' + part.variableArg : ''} for ${location}`);
                 }
             }
         }

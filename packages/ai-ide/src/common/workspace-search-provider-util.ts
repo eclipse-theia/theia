@@ -18,19 +18,30 @@ import { LinePreview, SearchInWorkspaceResult } from '@theia/search-in-workspace
 import { URI } from '@theia/core';
 
 /**
+ * Interface for workspace scope path resolution.
+ * This allows the utility to work with multi-root workspaces.
+ */
+export interface WorkspacePathResolver {
+    toWorkspaceRelativePath(uri: URI): string | undefined;
+}
+
+/**
  * Optimizes search results for token efficiency while preserving all information.
  * - Groups matches by file to reduce repetition
  * - Trims leading/trailing whitespace from line text
- * - Uses relative file paths
+ * - Uses root-prefixed relative file paths (e.g., "rootName/src/file.ts")
  * - Preserves all line numbers and content
  */
-export function optimizeSearchResults(results: SearchInWorkspaceResult[], workspaceRoot: URI): Array<{ file: string; matches: Array<{ line: number; text: string }> }> {
+export function optimizeSearchResults(
+    results: SearchInWorkspaceResult[],
+    workspacePathResolver: WorkspacePathResolver
+): Array<{ file: string; matches: Array<{ line: number; text: string }> }> {
     return results.map(result => {
         const fileUri = new URI(result.fileUri);
-        const relativePath = workspaceRoot.relative(fileUri);
+        const relativePath = workspacePathResolver.toWorkspaceRelativePath(fileUri);
 
         return {
-            file: relativePath ? relativePath.toString() : result.fileUri,
+            file: relativePath ?? result.fileUri,
             matches: result.matches.map(match => {
                 let lineText: string;
                 if (typeof match.lineText === 'string') {
