@@ -59,6 +59,7 @@ import {
     consumeMobileProjectsPanelDismiss,
     markMobileProjectsHomeVisible,
     markMobileProjectsLeftLanding,
+    markMobileProjectsPanelDismiss,
     shouldSkipMobileProjectsLanding,
     QAAP_AUTH_OPEN_FIRST_REPO_EVENT,
     QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT,
@@ -841,6 +842,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
      */
     protected onLandingDismissed(): void {
         markMobileProjectsLeftLanding();
+        markMobileProjectsPanelDismiss();
         clearMobileProjectsHomeVisible();
         clearMobileWorkHubBootGuard();
         this.landingLeftThisSession = true;
@@ -858,6 +860,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     /** Hide the full-screen landing the moment the user picks a project. */
     protected leaveMobileProjectsLandingNow(): void {
         markMobileProjectsLeftLanding();
+        markMobileProjectsPanelDismiss();
         clearMobileProjectsHomeVisible();
         clearMobileWorkHubBootGuard();
         this.landingLeftThisSession = true;

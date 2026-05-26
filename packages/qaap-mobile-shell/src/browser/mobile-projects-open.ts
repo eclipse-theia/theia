@@ -21,8 +21,10 @@ export const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT = 'qaap-mobile-projects-di
 /** After GitHub OAuth, open the repository picker (or auto-open a single repo). */
 export const QAAP_AUTH_OPEN_FIRST_REPO_EVENT = 'qaap-auth-open-first-repo';
 
-const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_TTL_MS = 8_000;
 const QAAP_MOBILE_WORK_HUB_BOOT_CLASS = 'theia-mobile-workhub-boot';
+
+/** One-shot gate so `consumeMobileProjectsPanelDismiss()` fires its idempotent cleanup once per page load. */
+let mobileProjectsPanelDismissConsumed = false;
 
 installMobileWorkHubBootGuard();
 
@@ -36,8 +38,9 @@ export function hasMobileProjectsLeftLanding(): boolean {
 
 export function markMobileProjectsPanelDismiss(): void {
     if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY, String(Date.now()));
+        sessionStorage.setItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY, '1');
         sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY);
+        mobileProjectsPanelDismissConsumed = false;
         markMobileProjectsLeftLanding();
     }
 }
@@ -49,15 +52,19 @@ export function peekMobileProjectsPanelDismiss(): boolean {
     return isFreshMobileProjectsPanelDismiss(sessionStorage.getItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY));
 }
 
+/**
+ * Fires the idempotent post-reload cleanup at most once per page load. The dismiss flag itself
+ * persists in sessionStorage so future reloads keep skipping the landing — it is cleared only
+ * when the user explicitly returns to the Work Hub via `markMobileProjectsHomeVisible()`.
+ */
 export function consumeMobileProjectsPanelDismiss(): boolean {
-    if (typeof sessionStorage === 'undefined') {
+    if (mobileProjectsPanelDismissConsumed) {
         return false;
     }
-    if (!isFreshMobileProjectsPanelDismiss(sessionStorage.getItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY))) {
-        sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY);
+    if (!peekMobileProjectsPanelDismiss()) {
         return false;
     }
-    sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY);
+    mobileProjectsPanelDismissConsumed = true;
     return true;
 }
 
@@ -75,11 +82,7 @@ export function shouldSkipMobileProjectsLanding(): boolean {
 }
 
 function isFreshMobileProjectsPanelDismiss(raw: string | null): boolean {
-    if (!raw || raw === '1') {
-        return false;
-    }
-    const timestamp = Number(raw);
-    return Number.isFinite(timestamp) && Date.now() - timestamp <= QAAP_MOBILE_PROJECTS_DISMISS_PANEL_TTL_MS;
+    return raw === '1';
 }
 
 export function markMobileProjectsHomeVisible(): void {
