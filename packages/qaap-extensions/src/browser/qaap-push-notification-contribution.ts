@@ -12,6 +12,7 @@ import { QaapWindowBlinkService } from './qaap-window-blink-service';
 
 export const QAAP_BOOTSTRAP_FAILED_EVENT = 'qaap-bootstrap-failed';
 export const QAAP_AGENT_COMPLETED_EVENT = 'qaap-agent-completed';
+export const QAAP_AGENT_CONFIRMATION_NEEDED_EVENT = 'qaap-agent-confirmation-needed';
 
 @injectable()
 export class QaapPushNotificationContribution implements FrontendApplicationContribution {
@@ -33,15 +34,22 @@ export class QaapPushNotificationContribution implements FrontendApplicationCont
             }
         });
         window.addEventListener(QAAP_AGENT_COMPLETED_EVENT, this.onAgentCompleted);
+        window.addEventListener(QAAP_AGENT_CONFIRMATION_NEEDED_EVENT, this.onConfirmationNeeded);
     }
 
     onStop(): void {
         window.removeEventListener(QAAP_AGENT_COMPLETED_EVENT, this.onAgentCompleted);
+        window.removeEventListener(QAAP_AGENT_CONFIRMATION_NEEDED_EVENT, this.onConfirmationNeeded);
     }
 
     protected readonly onAgentCompleted = (event: Event): void => {
         const detail = (event as CustomEvent<{ agentName?: string }>).detail;
         this.notifyAgentCompleted(detail?.agentName);
+    };
+
+    protected readonly onConfirmationNeeded = (event: Event): void => {
+        const detail = (event as CustomEvent<{ agentName?: string }>).detail;
+        this.notifyAgentNeedsConfirmation(detail?.agentName);
     };
 
     protected notifyAgentCompleted(agentName?: string): void {
@@ -55,6 +63,20 @@ export class QaapPushNotificationContribution implements FrontendApplicationCont
             agentName
                 ? nls.localize('qaap/push/agentDoneBody', '{0} completed its task.', agentName)
                 : nls.localize('qaap/push/agentDoneBodyGeneric', 'Your agent completed its task.'),
+        );
+    }
+
+    protected notifyAgentNeedsConfirmation(agentName?: string): void {
+        if (this.blink instanceof QaapWindowBlinkService) {
+            this.blink.notifyAgentNeedsConfirmation(agentName);
+        } else {
+            void this.blink.blinkWindow(agentName);
+        }
+        this.showSystemNotification(
+            nls.localize('qaap/push/agentNeedsConfirmation', 'Agent needs your confirmation'),
+            agentName
+                ? nls.localize('qaap/push/agentNeedsConfirmationBody', '{0} is waiting for you to approve a tool call.', agentName)
+                : nls.localize('qaap/push/agentNeedsConfirmationBodyGeneric', 'Your agent is waiting for you to approve a tool call.'),
         );
     }
 

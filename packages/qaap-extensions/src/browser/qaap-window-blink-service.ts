@@ -24,6 +24,11 @@ export class QaapWindowBlinkService extends WindowBlinkService {
         }
     }
 
+    /** Agent is paused waiting for the user to approve a tool call. */
+    notifyAgentNeedsConfirmation(agentName?: string): void {
+        void this.blinkWindow(agentName);
+    }
+
     protected override getBlinkAlertTitle(agentName?: string): string {
         const app = FrontendApplicationConfigProvider.get().applicationName;
         return '🔔 ' + (agentName

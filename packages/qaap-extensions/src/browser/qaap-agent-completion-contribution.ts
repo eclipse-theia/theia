@@ -7,7 +7,8 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser/fronten
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatService, ChatSession } from '@theia/ai-chat/lib/common/chat-service';
-import { QAAP_AGENT_COMPLETED_EVENT } from './qaap-push-notification-contribution';
+import { ChatChangeEvent } from '@theia/ai-chat/lib/common/chat-model';
+import { QAAP_AGENT_COMPLETED_EVENT, QAAP_AGENT_CONFIRMATION_NEEDED_EVENT } from './qaap-push-notification-contribution';
 
 /**
  * Bridges chat-agent completion to the Qaap notification pipeline: when a chat response
@@ -23,6 +24,8 @@ export class QaapAgentCompletionContribution implements FrontendApplicationContr
 
     /** Response ids already announced — guards against the model firing repeatedly. */
     protected readonly notifiedResponses = new Set<string>();
+    /** Confirmation content-part ids already announced — same prompt fires onDidChange repeatedly. */
+    protected readonly notifiedConfirmations = new Set<string>();
     protected readonly hookedSessions = new Set<string>();
     protected readonly toDispose = new DisposableCollection();
 
@@ -49,7 +52,29 @@ export class QaapAgentCompletionContribution implements FrontendApplicationContr
             return;
         }
         this.hookedSessions.add(session.id);
-        this.toDispose.push(session.model.onDidChange(() => this.checkLatestResponse(session)));
+        this.toDispose.push(session.model.onDidChange(event => {
+            if (ChatChangeEvent.isInteractionNeededEvent(event)) {
+                this.announceConfirmationNeeded(session, event.contentPart.interactionId);
+                return;
+            }
+            this.checkLatestResponse(session);
+        }));
+    }
+
+    protected announceConfirmationNeeded(session: ChatSession, interactionId: string | undefined): void {
+        if (!interactionId) {
+            return;
+        }
+        const key = `${session.id}:${interactionId}`;
+        if (this.notifiedConfirmations.has(key)) {
+            return;
+        }
+        this.notifiedConfirmations.add(key);
+        const requests = session.model.getRequests();
+        const latest = requests[requests.length - 1];
+        window.dispatchEvent(new CustomEvent(QAAP_AGENT_CONFIRMATION_NEEDED_EVENT, {
+            detail: { agentName: latest?.agentId },
+        }));
     }
 
     protected checkLatestResponse(session: ChatSession): void {

@@ -10,6 +10,7 @@ import { QaapProjectBootstrapService } from '@theia/qaap-mobile-shell/lib/browse
 /** Must match `@theia/qaap-extensions` push contribution event names. */
 const QAAP_BOOTSTRAP_FAILED_EVENT = 'qaap-bootstrap-failed';
 const QAAP_AGENT_COMPLETED_EVENT = 'qaap-agent-completed';
+const QAAP_AGENT_CONFIRMATION_NEEDED_EVENT = 'qaap-agent-confirmation-needed';
 import { fetchQaapPushVapid, sendQaapPushNotify, subscribeQaapWebPush } from './qaap-cloud-workspace-client';
 
 @injectable()
@@ -31,11 +32,13 @@ export class QaapWebPushContribution implements FrontendApplicationContribution 
         });
         window.addEventListener(QAAP_BOOTSTRAP_FAILED_EVENT, this.onBootstrapFailed);
         window.addEventListener(QAAP_AGENT_COMPLETED_EVENT, this.onAgentCompleted);
+        window.addEventListener(QAAP_AGENT_CONFIRMATION_NEEDED_EVENT, this.onConfirmationNeeded);
     }
 
     onStop(): void {
         window.removeEventListener(QAAP_BOOTSTRAP_FAILED_EVENT, this.onBootstrapFailed);
         window.removeEventListener(QAAP_AGENT_COMPLETED_EVENT, this.onAgentCompleted);
+        window.removeEventListener(QAAP_AGENT_CONFIRMATION_NEEDED_EVENT, this.onConfirmationNeeded);
     }
 
     protected readonly onBootstrapFailed = (): void => {
@@ -60,6 +63,24 @@ export class QaapWebPushContribution implements FrontendApplicationContribution 
                 : 'Your agent completed its task.',
             tag: 'qaap-agent-done',
             route: 'diff-review',
+        });
+    };
+
+    protected readonly onConfirmationNeeded = (event: Event): void => {
+        // The agent is blocked waiting on the user — always push, even if the tab is foregrounded
+        // but the OS has hidden it (split-screen, screen off). Same `tag` collapses repeats from
+        // chained confirmations into a single visible notification.
+        const detail = (event as CustomEvent<{ agentName?: string }>).detail;
+        if (document.visibilityState === 'visible' && !document.hidden) {
+            return;
+        }
+        void sendQaapPushNotify({
+            title: 'Agent needs your confirmation',
+            body: detail?.agentName
+                ? `${detail.agentName} is waiting for you to approve a tool call.`
+                : 'Your agent is waiting for you to approve a tool call.',
+            tag: 'qaap-agent-confirm',
+            route: 'chat',
         });
     };
 
