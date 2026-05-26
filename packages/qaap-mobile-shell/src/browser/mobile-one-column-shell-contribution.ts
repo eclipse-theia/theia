@@ -55,6 +55,7 @@ import { MobilePullRequestPanel } from './mobile-pull-request-panel';
 import { MobileSnackbar } from './mobile-snackbar';
 import {
     clearMobileProjectsHomeVisible,
+    clearMobileWorkHubBootGuard,
     consumeMobileProjectsPanelDismiss,
     markMobileProjectsHomeVisible,
     markMobileProjectsLeftLanding,
@@ -694,6 +695,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         if (this.hasPendingHubAction()) {
             this.landingLeftThisSession = true;
             clearMobileProjectsHomeVisible();
+            clearMobileWorkHubBootGuard();
             void this.projectBootstrap.refreshFromCurrentWorkspace();
             return;
         }
@@ -827,6 +829,9 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
         const panel = this.projectsPanel;
         const isLanding = !!(panel?.isHomeMode() && panel?.isVisible());
         document.body.classList.toggle('theia-mobile-mod-landing', isLanding);
+        if (isLanding) {
+            clearMobileWorkHubBootGuard();
+        }
     }
 
     /**
@@ -837,6 +842,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected onLandingDismissed(): void {
         markMobileProjectsLeftLanding();
         clearMobileProjectsHomeVisible();
+        clearMobileWorkHubBootGuard();
         this.landingLeftThisSession = true;
         if (this.projectsPanel?.isHomeMode()) {
             this.projectsPanel.dispose();
@@ -853,6 +859,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
     protected leaveMobileProjectsLandingNow(): void {
         markMobileProjectsLeftLanding();
         clearMobileProjectsHomeVisible();
+        clearMobileWorkHubBootGuard();
         this.landingLeftThisSession = true;
         document.body.classList.remove('theia-mobile-mod-landing');
         const panel = this.projectsPanel;
@@ -1569,7 +1576,7 @@ export class MobileOneColumnShellContribution implements FrontendApplicationCont
                 await this.refreshProjectsCount();
                 this.refreshBottomBar();
                 MobileSnackbar.show(
-                    nls.localize('qaap/mobileBottomBar/projectsRefreshed', 'Projects refreshed'),
+                    nls.localize('qaap/mobileBottomBar/projectsRefreshed', 'Work Hub refreshed'),
                     { kind: 'success', duration: 1200 }
                 );
             },

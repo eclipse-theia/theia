@@ -229,7 +229,7 @@ export class MobileProjectsPanel {
         titleBlock.className = 'theia-mobile-projects-title-block';
         const title = document.createElement('h1');
         title.className = 'theia-mobile-projects-title';
-        title.textContent = nls.localize('qaap/mobileProjects/title', 'Projects');
+        title.textContent = nls.localize('qaap/mobileProjects/title', 'Work Hub');
         this.subtitleEl = document.createElement('div');
         this.subtitleEl.className = 'theia-mobile-projects-meta';
         titleBlock.append(title, this.subtitleEl);
@@ -294,7 +294,7 @@ export class MobileProjectsPanel {
             onRefresh: async () => {
                 await this.refreshProjects();
                 MobileSnackbar.show(
-                    nls.localize('qaap/mobileProjects/refreshed', 'Projects refreshed'),
+                    nls.localize('qaap/mobileProjects/refreshed', 'Work Hub refreshed'),
                     { kind: 'success', duration: 1400 }
                 );
             },

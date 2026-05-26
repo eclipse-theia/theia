@@ -12,7 +12,7 @@ export const QAAP_MOBILE_TOGGLE_PROJECTS_DASHBOARD = 'qaap.mobile.toggleProjects
 export namespace QaapMobileProjectsDashboardCommands {
     export const TOGGLE: Command = {
         id: QAAP_MOBILE_TOGGLE_PROJECTS_DASHBOARD,
-        label: nls.localize('qaap/mobileProjects/toggleDashboard', 'Projects dashboard'),
+        label: nls.localize('qaap/mobileProjects/toggleDashboard', 'Work Hub'),
         category: 'View',
     };
 }

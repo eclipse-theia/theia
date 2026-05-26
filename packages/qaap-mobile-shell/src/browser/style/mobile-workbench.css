@@ -2351,8 +2351,25 @@
 }
 
 /*-----------------------------------------------------------------------------
-| Projects landing — full-screen, decoupled from bottom nav until the user opts in.
+| Work Hub landing — full-screen, decoupled from bottom nav until the user opts in.
 |-----------------------------------------------------------------------------*/
+
+/* Applied at module load on mobile so the workspace/editor never flashes before Work Hub mounts. */
+html.theia-mobile-workhub-boot,
+html.theia-mobile-workhub-boot body {
+  background: var(--q-bg, var(--qaap-bg, var(--theia-editor-background))) !important;
+}
+
+html.theia-mobile-workhub-boot #theia-app-shell,
+html.theia-mobile-workhub-boot #theia-top-panel,
+html.theia-mobile-workhub-boot .theia-mobile-workbench-top-bar,
+html.theia-mobile-workhub-boot .theia-mobile-bottom-chrome-host,
+html.theia-mobile-workhub-boot #theia-statusBar,
+html.theia-mobile-workhub-boot .theia-mobile-bottom-bar,
+html.theia-mobile-workhub-boot #theia-app-shell.theia-mod-mobile-one-column #theia-main-content-panel {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
 
 /* When the landing is visible the bottom nav and status bar yield the screen entirely. */
 body.theia-mobile-mod-landing .theia-mobile-bottom-chrome-host,
@@ -2389,7 +2406,7 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
 }
 
 /*-----------------------------------------------------------------------------
-| Projects v2 — collapsible-row layout (overrides earlier rules where needed).
+| Work Hub v2 — collapsible-row layout (overrides earlier rules where needed).
 |-----------------------------------------------------------------------------*/
 
 @keyframes theia-mobile-projects-pulse {

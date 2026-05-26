@@ -21,6 +21,11 @@ export const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT = 'qaap-mobile-projects-di
 /** After GitHub OAuth, open the repository picker (or auto-open a single repo). */
 export const QAAP_AUTH_OPEN_FIRST_REPO_EVENT = 'qaap-auth-open-first-repo';
 
+const QAAP_MOBILE_PROJECTS_DISMISS_PANEL_TTL_MS = 8_000;
+const QAAP_MOBILE_WORK_HUB_BOOT_CLASS = 'theia-mobile-workhub-boot';
+
+installMobileWorkHubBootGuard();
+
 export function markMobileProjectsLeftLanding(): void {
     /* Intentionally no-op. The shell keeps this state in memory for the current runtime only. */
 }
@@ -31,7 +36,7 @@ export function hasMobileProjectsLeftLanding(): boolean {
 
 export function markMobileProjectsPanelDismiss(): void {
     if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY, '1');
+        sessionStorage.setItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY, String(Date.now()));
         sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY);
         markMobileProjectsLeftLanding();
     }
@@ -41,14 +46,15 @@ export function peekMobileProjectsPanelDismiss(): boolean {
     if (typeof sessionStorage === 'undefined') {
         return false;
     }
-    return sessionStorage.getItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY) === '1';
+    return isFreshMobileProjectsPanelDismiss(sessionStorage.getItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY));
 }
 
 export function consumeMobileProjectsPanelDismiss(): boolean {
     if (typeof sessionStorage === 'undefined') {
         return false;
     }
-    if (sessionStorage.getItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY) !== '1') {
+    if (!isFreshMobileProjectsPanelDismiss(sessionStorage.getItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY))) {
+        sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY);
         return false;
     }
     sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY);
@@ -57,6 +63,7 @@ export function consumeMobileProjectsPanelDismiss(): boolean {
 
 export function requestMobileProjectsPanelDismiss(): void {
     markMobileProjectsPanelDismiss();
+    clearMobileWorkHubBootGuard();
     if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_EVENT));
     }
@@ -67,22 +74,51 @@ export function shouldSkipMobileProjectsLanding(): boolean {
     return peekMobileProjectsPanelDismiss() && !peekMobileProjectsHomeVisible();
 }
 
+function isFreshMobileProjectsPanelDismiss(raw: string | null): boolean {
+    if (!raw || raw === '1') {
+        return false;
+    }
+    const timestamp = Number(raw);
+    return Number.isFinite(timestamp) && Date.now() - timestamp <= QAAP_MOBILE_PROJECTS_DISMISS_PANEL_TTL_MS;
+}
+
 export function markMobileProjectsHomeVisible(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY, '1');
         sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_DISMISS_PANEL_KEY);
     }
+    installMobileWorkHubBootGuard();
 }
 
 export function clearMobileProjectsHomeVisible(): void {
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY);
     }
+    clearMobileWorkHubBootGuard();
 }
 
 export function peekMobileProjectsHomeVisible(): boolean {
     return typeof sessionStorage !== 'undefined'
         && sessionStorage.getItem(QAAP_MOBILE_PROJECTS_HOME_VISIBLE_KEY) === '1';
+}
+
+function installMobileWorkHubBootGuard(): void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return;
+    }
+    const mobile = typeof window.matchMedia === 'function'
+        && window.matchMedia('(max-width: 767px)').matches;
+    const hasPendingHubAction = typeof sessionStorage !== 'undefined'
+        && sessionStorage.getItem('qaap.hub.pendingAction') !== null;
+    if (mobile && !shouldSkipMobileProjectsLanding() && !hasPendingHubAction) {
+        document.documentElement.classList.add(QAAP_MOBILE_WORK_HUB_BOOT_CLASS);
+    }
+}
+
+export function clearMobileWorkHubBootGuard(): void {
+    if (typeof document !== 'undefined') {
+        document.documentElement.classList.remove(QAAP_MOBILE_WORK_HUB_BOOT_CLASS);
+    }
 }
 
 export function markMobileProjectReadmeForOpen(): void {
