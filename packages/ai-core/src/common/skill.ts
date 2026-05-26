@@ -166,25 +166,19 @@ export function parseSkillFile(content: string): { metadata: SkillDescription | 
 
 /**
  * Combines skill directories with proper priority ordering.
- * Workspace directory has highest priority, followed by configured directories, then default.
+ * Workspace directories have highest priority, followed by configured directories, then defaults.
  * First directory wins on duplicates.
  */
 export function combineSkillDirectories(
-    workspaceSkillsDir: string | undefined,
+    workspaceSkillsDirs: string[],
     configuredDirectories: string[],
-    defaultSkillsDir: string | undefined
+    defaultSkillsDirs: string[]
 ): string[] {
     const allDirectories: string[] = [];
-    if (workspaceSkillsDir) {
-        allDirectories.push(workspaceSkillsDir);
-    }
-    for (const dir of configuredDirectories) {
+    for (const dir of [...workspaceSkillsDirs, ...configuredDirectories, ...defaultSkillsDirs]) {
         if (!allDirectories.includes(dir)) {
             allDirectories.push(dir);
         }
-    }
-    if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
-        allDirectories.push(defaultSkillsDir);
     }
     return allDirectories;
 }

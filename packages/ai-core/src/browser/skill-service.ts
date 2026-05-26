@@ -178,19 +178,22 @@ export class DefaultSkillService implements SkillService {
 
         const configuredDirectories = (this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [])
             .map(dir => Path.untildify(dir, homePath));
-        const defaultSkillsDir = await this.getDefaultSkillsDirectoryPath();
+        const defaultSkillsDirs = await this.getDefaultSkillsDirectoryPaths();
 
         const newWatchedDirectories = new Set<string>();
         const newParentWatchers = new Map<string, string>();
 
         for (const workspaceSkillsDir of workspaceSkillsDirs) {
-            await this.processSkillDirectoryWithParentWatching(
-                workspaceSkillsDir,
-                newSkills,
-                newDisposables,
-                newWatchedDirectories,
-                newParentWatchers
-            );
+            const workspaceSkillsDirUri = URI.fromFilePath(workspaceSkillsDir).toString();
+            if (!newWatchedDirectories.has(workspaceSkillsDirUri)) {
+                await this.processSkillDirectoryWithParentWatching(
+                    workspaceSkillsDir,
+                    newSkills,
+                    newDisposables,
+                    newWatchedDirectories,
+                    newParentWatchers
+                );
+            }
         }
 
         for (const configuredDir of configuredDirectories) {
@@ -200,15 +203,17 @@ export class DefaultSkillService implements SkillService {
             }
         }
 
-        const defaultSkillsDirUri = URI.fromFilePath(defaultSkillsDir).toString();
-        if (!newWatchedDirectories.has(defaultSkillsDirUri)) {
-            await this.processSkillDirectoryWithParentWatching(
-                defaultSkillsDir,
-                newSkills,
-                newDisposables,
-                newWatchedDirectories,
-                newParentWatchers
-            );
+        for (const defaultSkillsDir of defaultSkillsDirs) {
+            const defaultSkillsDirUri = URI.fromFilePath(defaultSkillsDir).toString();
+            if (!newWatchedDirectories.has(defaultSkillsDirUri)) {
+                await this.processSkillDirectoryWithParentWatching(
+                    defaultSkillsDir,
+                    newSkills,
+                    newDisposables,
+                    newWatchedDirectories,
+                    newParentWatchers
+                );
+            }
         }
 
         if (newSkills.size > 0 && newSkills.size !== this.skills.size) {
@@ -224,14 +229,21 @@ export class DefaultSkillService implements SkillService {
     }
 
     protected getWorkspaceSkillsDirectoryPaths(): string[] {
-        return this.workspaceService.tryGetRoots()
-            .map(root => root.resource.resolve('.prompts/skills').path.fsPath());
+        return this.workspaceService.tryGetRoots().flatMap(root => [
+            root.resource.resolve('.prompts/skills').path.fsPath(),
+            root.resource.resolve('.agents/skills').path.fsPath()
+        ]);
     }
 
-    protected async getDefaultSkillsDirectoryPath(): Promise<string> {
+    protected async getDefaultSkillsDirectoryPaths(): Promise<string[]> {
         const configDirUri = await this.envVariablesServer.getConfigDirUri();
         const configDir = new URI(configDirUri);
-        return configDir.resolve('skills').path.fsPath();
+        const homeDirUri = await this.envVariablesServer.getHomeDirUri();
+        const homeDir = new URI(homeDirUri);
+        return [
+            configDir.resolve('skills').path.fsPath(),
+            homeDir.resolve('.agents/skills').path.fsPath()
+        ];
     }
 
     protected async processSkillDirectoryWithParentWatching(

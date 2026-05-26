@@ -143,7 +143,8 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_SKILL_DIRECTORIES]: {
             description: nls.localize('theia/ai/core/skillDirectories/description',
                 'Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. ' +
-                'The .prompts/skills directory in your workspace and the skills directory in your product\'s configuration folder are always included.'),
+                'The .prompts/skills and .agents/skills directories in your workspace, the .agents/skills directory in your home directory, ' +
+                'and the skills directory in your product\'s configuration folder are always included.'),
             type: 'array',
             items: {
                 type: 'string'

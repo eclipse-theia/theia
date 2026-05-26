@@ -55,26 +55,28 @@ describe('SkillService', () => {
     });
 
     describe('directory prioritization', () => {
-        it('workspace directory comes first when all directories provided', () => {
+        it('workspace directories come first when all directories provided', () => {
             const result = combineSkillDirectories(
-                '/workspace/.prompts/skills',
+                ['/workspace/.prompts/skills', '/workspace/.agents/skills'],
                 ['/custom/skills1', '/custom/skills2'],
-                '/home/user/.theia/skills'
+                ['/home/user/.theia/skills', '/home/user/.agents/skills']
             );
 
             expect(result).to.deep.equal([
                 '/workspace/.prompts/skills',
+                '/workspace/.agents/skills',
                 '/custom/skills1',
                 '/custom/skills2',
-                '/home/user/.theia/skills'
+                '/home/user/.theia/skills',
+                '/home/user/.agents/skills'
             ]);
         });
 
-        it('works without workspace directory', () => {
+        it('works without workspace directories', () => {
             const result = combineSkillDirectories(
-                undefined,
+                [],
                 ['/custom/skills'],
-                '/home/user/.theia/skills'
+                ['/home/user/.theia/skills']
             );
 
             expect(result).to.deep.equal([
@@ -83,21 +85,24 @@ describe('SkillService', () => {
             ]);
         });
 
-        it('works with only default directory', () => {
+        it('works with only default directories', () => {
             const result = combineSkillDirectories(
-                undefined,
                 [],
-                '/home/user/.theia/skills'
+                [],
+                ['/home/user/.theia/skills', '/home/user/.agents/skills']
             );
 
-            expect(result).to.deep.equal(['/home/user/.theia/skills']);
+            expect(result).to.deep.equal([
+                '/home/user/.theia/skills',
+                '/home/user/.agents/skills'
+            ]);
         });
 
         it('deduplicates workspace directory if also in configured', () => {
             const result = combineSkillDirectories(
-                '/workspace/.prompts/skills',
+                ['/workspace/.prompts/skills'],
                 ['/workspace/.prompts/skills', '/custom/skills'],
-                '/home/user/.theia/skills'
+                ['/home/user/.theia/skills']
             );
 
             expect(result).to.deep.equal([
@@ -109,9 +114,9 @@ describe('SkillService', () => {
 
         it('deduplicates default directory if also in configured', () => {
             const result = combineSkillDirectories(
-                '/workspace/.prompts/skills',
+                ['/workspace/.prompts/skills'],
                 ['/home/user/.theia/skills'],
-                '/home/user/.theia/skills'
+                ['/home/user/.theia/skills']
             );
 
             expect(result).to.deep.equal([
@@ -122,9 +127,9 @@ describe('SkillService', () => {
 
         it('handles empty configured directories', () => {
             const result = combineSkillDirectories(
-                '/workspace/.prompts/skills',
+                ['/workspace/.prompts/skills'],
                 [],
-                '/home/user/.theia/skills'
+                ['/home/user/.theia/skills']
             );
 
             expect(result).to.deep.equal([
@@ -133,17 +138,27 @@ describe('SkillService', () => {
             ]);
         });
 
-        it('handles undefined default directory', () => {
+        it('handles empty default directories', () => {
             const result = combineSkillDirectories(
-                '/workspace/.prompts/skills',
+                ['/workspace/.prompts/skills'],
                 ['/custom/skills'],
-                undefined
+                []
             );
 
             expect(result).to.deep.equal([
                 '/workspace/.prompts/skills',
                 '/custom/skills'
             ]);
+        });
+
+        it('deduplicates duplicate workspace directories', () => {
+            const result = combineSkillDirectories(
+                ['/workspace/.prompts/skills', '/workspace/.prompts/skills'],
+                [],
+                []
+            );
+
+            expect(result).to.deep.equal(['/workspace/.prompts/skills']);
         });
     });
 

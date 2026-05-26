@@ -23,9 +23,9 @@ Skills provide reusable instructions and domain knowledge for AI agents. A skill
 
 Skills are discovered from multiple locations, processed in priority order (first wins on duplicates):
 
-1. **Workspace:** `.prompts/skills/` in the workspace root (project-specific skills)
+1. **Workspace:** `.prompts/skills/` and `.agents/skills/` in the workspace root (project-specific skills)
 2. **User-configured:** Directories listed in `ai-features.skills.skillDirectories` preference
-3. **Global:** `~/.theia/skills/` (user defaults)
+3. **Global:** `~/.theia/skills/` (product configuration folder) and `~/.agents/skills/` (home directory)
 
 #### Skill Structure
 
