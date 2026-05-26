@@ -17,6 +17,7 @@
 import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester } from '@theia/remote/lib/electron-node/remote-types';
 import { RemoteSetupResult } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { Emitter, Event, ILogger } from '@theia/core';
+import { BashQuotingFunctions, ShellQuoting, createShellCommandLine } from '@theia/core/lib/common/shell-quoting';
 import { Socket } from 'net';
 import * as Docker from 'dockerode';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -88,21 +89,18 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     }
 
     /**
-     * Wraps each argument in double quotes and escapes the shell metacharacters
-     * that are significant inside double-quoted strings: backslash, double quote,
-     * dollar sign, backtick, newline, and carriage return.
+     * Builds a shell command string safe for use with `sh -c`.
+     * Arguments are strong-quoted (single quotes) using {@link BashQuotingFunctions}
+     * so that no shell expansion occurs inside them.
+     *
+     * **`cmd` is not escaped** and must only contain trusted, internally-constructed
+     * values. All untrusted input must be passed via `args`.
      */
     protected buildShellCommand(cmd: string, args?: string[]): string {
         if (!args || args.length === 0) {
             return cmd;
         }
-        const escapedArgs = args.map(arg => {
-            const escaped = arg.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-                .replace(/\$/g, '\\$').replace(/`/g, '\\`')
-                .replace(/\n/g, '\\n').replace(/\r/g, '\\r');
-            return `"${escaped}"`;
-        });
-        return `${cmd} ${escapedArgs.join(' ')}`;
+        return `${cmd} ${createShellCommandLine(args.map(a => ({ value: a, quoting: ShellQuoting.Strong })), BashQuotingFunctions)}`;
     }
 
     async forwardOut(socket: Socket, port?: number): Promise<void> {

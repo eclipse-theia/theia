@@ -24,6 +24,9 @@ class TestableDockerContainerConnection extends RemoteDockerContainerConnection 
     public testGetRemoteEnv(): string[] | undefined {
         return this.getRemoteEnv();
     }
+    public testBuildShellCommand(cmd: string, args?: string[]): string {
+        return this.buildShellCommand(cmd, args);
+    }
 }
 
 function createConnection(config: DevContainerConfiguration): TestableDockerContainerConnection {
@@ -146,6 +149,53 @@ describe('RemoteDockerContainerConnection', () => {
             expect(env).to.include('PATH_EXTRA=/usr/local/bin:/custom/path');
             expect(env).to.include('QUOTED=hello "world"');
             expect(env).to.include('SPACED=hello world');
+        });
+    });
+
+    describe('buildShellCommand', () => {
+
+        it('should return cmd unchanged when no args are provided', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            expect(connection.testBuildShellCommand('echo')).to.equal('echo');
+            expect(connection.testBuildShellCommand('echo', [])).to.equal('echo');
+        });
+
+        it('should strong-quote arguments to prevent shell expansion', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            expect(connection.testBuildShellCommand('echo', ['hello world'])).to.equal("echo 'hello world'");
+        });
+
+        it('should handle arguments with dollar signs', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            expect(connection.testBuildShellCommand('echo', ['$HOME'])).to.equal("echo '$HOME'");
+        });
+
+        it('should handle arguments with backticks', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            expect(connection.testBuildShellCommand('echo', ['`whoami`'])).to.equal("echo '`whoami`'");
+        });
+
+        it('should handle arguments with single quotes', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            // Single quotes inside strong-quoted strings are handled by breaking out and using double-quoted quote
+            expect(connection.testBuildShellCommand('echo', ["it's"])).to.equal('echo \'it\'"\'"\'s\'');
+        });
+
+        it('should handle arguments with double quotes', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            expect(connection.testBuildShellCommand('echo', ['say "hi"'])).to.equal("echo 'say \"hi\"'");
+        });
+
+        it('should handle multiple arguments', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            expect(connection.testBuildShellCommand('node', ['server.js', '--port=8080'])).to.equal("node 'server.js' '--port=8080'");
+        });
+
+        it('should handle arguments with newlines', () => {
+            const connection = createConnection({ image: 'test' } as DevContainerConfiguration);
+            const result = connection.testBuildShellCommand('echo', ['line1\nline2']);
+            // Literal newline is preserved inside single quotes
+            expect(result).to.equal("echo 'line1\nline2'");
         });
     });
 
