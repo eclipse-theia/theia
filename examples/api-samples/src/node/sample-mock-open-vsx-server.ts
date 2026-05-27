@@ -25,7 +25,6 @@ import { SampleAppInfo } from '../common/vsx/sample-app-info';
 import * as http from 'http';
 import * as https from 'https';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ILogger } from '@theia/core';
 
 type VersionedId = `${string}.${string}@${string}`;
 
