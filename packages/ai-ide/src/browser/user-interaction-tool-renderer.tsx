@@ -33,6 +33,7 @@ import {
     UserInteractionLink,
     UserInteractionResult,
     UserInteractionStep,
+    UserInteractionStepResult,
     buildDiffLabel,
     isEmptyContentRef,
     parseUserInteractionArgs,
@@ -52,49 +53,24 @@ interface UserInteractionComponentProps {
     tool: UserInteractionTool;
     finished: boolean;
     canceled: boolean;
-    /**
-     * Whether the parent response has completed (including restoration). When the
-     * response is complete but no `result` was persisted, the interaction is treated
-     * as canceled because there is no longer a live agent waiting for input.
-     */
-    responseComplete: boolean;
     result: UserInteractionResult | undefined;
-    /** Step states serialized into the parent response on previous edits. */
-    persistedStepStates: string | undefined;
-    /** Persist the current step states into the parent response so they survive session reloads. */
-    onPersistStepStates: (stepStates: StepState[]) => void;
+    /**
+     * Called whenever the user changes any step state. The parent persists this partial
+     * result on the response so it survives chat-session reloads. On restore the
+     * deserializer keeps the result and marks the tool finished, which the status logic
+     * below renders as canceled.
+     */
+    onPartialResult: (result: UserInteractionResult) => void;
     openerService: OpenerService;
 }
 
-const PERSISTED_STEP_STATES_KEY = 'userInteractionStepStates';
-
-function deserializePersistedStepStates(raw: string | undefined, expectedLength: number): StepState[] | undefined {
-    if (!raw) {
-        return undefined;
-    }
-    try {
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed) || parsed.length !== expectedLength) {
-            return undefined;
-        }
-        return parsed.map(entry => ({
-            value: typeof entry?.value === 'string' ? entry.value : undefined,
-            comments: Array.isArray(entry?.comments)
-                ? entry.comments.filter((c: unknown): c is string => typeof c === 'string')
-                : []
-        }));
-    } catch {
-        return undefined;
-    }
-}
-
 const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
-    args, toolCallId, tool, finished, canceled, responseComplete, result, persistedStepStates, onPersistStepStates, openerService
+    args, toolCallId, tool, finished, canceled, result, onPartialResult, openerService
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
     const [currentStep, setCurrentStep] = React.useState(0);
-    // Prefer the tool's result, fall back to the persisted snapshot, else empty.
+    // The tool's result (partial or final) is the single source of truth for step states.
     const [stepStates, setStepStates] = React.useState<StepState[]>(() => {
         if (result) {
             return steps.map((_, i) => ({
@@ -102,24 +78,21 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                 comments: result.steps[i]?.comments ? [...result.steps[i].comments!] : []
             }));
         }
-        const restored = deserializePersistedStepStates(persistedStepStates, stepCount);
-        if (restored) {
-            return restored;
-        }
         return steps.map(() => ({ comments: [] }));
     });
+    // Mirror stepStates into a ref so synchronous listeners (cancellation token) can read
+    // the latest value without re-registering on every change.
+    const stepStatesRef = React.useRef(stepStates);
+    React.useEffect(() => { stepStatesRef.current = stepStates; }, [stepStates]);
     const [pendingComment, setPendingComment] = React.useState('');
 
     const activeStep: UserInteractionStep | undefined = steps[currentStep];
     const isLastStep = currentStep === stepCount - 1;
     const messageRef = useMarkdownRendering(activeStep?.message ?? '', openerService);
 
-    // A parent response that completed without delivering a tool result means the
-    // interaction was restored from a serialized "waiting for input" state. The
-    // agent that was waiting is no longer running, so it must be treated as
-    // canceled and all inputs locked.
-    const restoredWithoutResult = responseComplete && !result;
-    const isFinal = finished || !!result || canceled || restoredWithoutResult;
+    // A finished tool call has no live handler anymore (completion, cancellation, or
+    // restoration of a previously-pending interaction). Lock all inputs in that case.
+    const isFinal = finished || canceled;
 
     // Auto-open the active step's links the first time the user reaches it.
     // Going Back and then Forward must not re-open them.
@@ -137,23 +110,44 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
         }
     }, [currentStep, activeStep, isFinal, tool]);
 
-    const persistStepState = React.useCallback((stepIndex: number, state: StepState) => {
-        tool.setStepResult(toolCallId, stepIndex, {
-            value: state.value,
-            comments: state.comments.length > 0 ? state.comments : undefined
-        });
-    }, [tool, toolCallId]);
+    const buildResult = React.useCallback((completed: boolean, states: StepState[]): UserInteractionResult => ({
+        completed,
+        steps: steps.map((step, i) => {
+            const state = states[i];
+            const stepResult: UserInteractionStepResult = { title: step.title };
+            if (state?.value !== undefined) {
+                stepResult.value = state.value;
+            }
+            if (state?.comments && state.comments.length > 0) {
+                stepResult.comments = [...state.comments];
+            }
+            // For partial/cancel results, mark untouched steps as skipped so the LLM
+            // can distinguish "answered" from "not answered" if the interaction never
+            // completes.
+            if (!completed && stepResult.value === undefined && stepResult.comments === undefined) {
+                stepResult.skipped = true;
+            }
+            return stepResult;
+        })
+    }), [steps]);
+
+    // Hand the tool a way to read the latest partial state on cancellation. The
+    // provider closes over the ref so a single registration covers every state change.
+    React.useEffect(() => {
+        const dispose = tool.setCancellationFallback(toolCallId, () =>
+            buildResult(false, stepStatesRef.current)
+        );
+        return () => dispose.dispose();
+    }, [tool, toolCallId, buildResult]);
 
     const updateStepState = React.useCallback((stepIndex: number, updater: (prev: StepState) => StepState) => {
         setStepStates(prev => {
             const next = prev.slice();
-            const updated = updater(prev[stepIndex]);
-            next[stepIndex] = updated;
-            persistStepState(stepIndex, updated);
-            onPersistStepStates(next);
+            next[stepIndex] = updater(prev[stepIndex]);
+            onPartialResult(buildResult(false, next));
             return next;
         });
-    }, [persistStepState, onPersistStepStates]);
+    }, [buildResult, onPartialResult]);
 
     const isSingleStep = stepCount === 1;
     const hasOptions = !!activeStep?.options && activeStep.options.length > 0;
@@ -163,19 +157,16 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             return;
         }
         if (isSingleStep) {
-            setStepStates(prev => {
-                const next = prev.slice();
-                next[0] = { ...prev[0], value };
-                return next;
-            });
-            tool.completeInteractionWith(toolCallId, 0, { value });
+            const next: StepState[] = [{ ...stepStates[0], value }];
+            setStepStates(next);
+            tool.completeInteraction(toolCallId, buildResult(true, next));
             return;
         }
         updateStepState(currentStep, prev => ({
             ...prev,
             value: prev.value === value ? undefined : value
         }));
-    }, [currentStep, isFinal, isSingleStep, tool, toolCallId, updateStepState]);
+    }, [buildResult, currentStep, isFinal, isSingleStep, stepStates, tool, toolCallId, updateStepState]);
 
     const handleAddComment = React.useCallback(() => {
         const trimmed = pendingComment.trim();
@@ -217,13 +208,13 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
     const handleAdvance = React.useCallback(() => {
         if (isLastStep) {
             if (!isFinal) {
-                tool.completeInteraction(toolCallId);
+                tool.completeInteraction(toolCallId, buildResult(true, stepStates));
             }
             return;
         }
         setCurrentStep(idx => idx + 1);
         setPendingComment('');
-    }, [isFinal, isLastStep, tool, toolCallId]);
+    }, [buildResult, isFinal, isLastStep, stepStates, tool, toolCallId]);
 
     const handleBack = React.useCallback(() => {
         if (currentStep === 0) {
@@ -251,14 +242,14 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
                 <span className={codicon('comment-discussion')} />
                 <span className='user-interaction-tool title'>{activeStep.title}</span>
                 {(() => {
-                    // The tool's own result is authoritative: a completed
-                    // interaction must stay "Completed" even if the chat
-                    // session is canceled later. A response that completed
-                    // without a result indicates the interaction was restored
-                    // from a "waiting" state and is treated as canceled.
+                    // A completed result is authoritative and persists even if the
+                    // chat is later canceled. While the tool is live we may already
+                    // have a partial result (`completed: false`) so distinguish
+                    // "still waiting" from "canceled" using `finished`/`canceled`:
+                    // both are only true once no live handler is around.
                     const status: 'completed' | 'canceled' | 'waiting' =
                         result?.completed === true ? 'completed' :
-                            result?.completed === false || canceled || restoredWithoutResult ? 'canceled' :
+                            finished || canceled ? 'canceled' :
                                 'waiting';
                     if (status === 'completed') {
                         return (
@@ -555,10 +546,8 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
                 tool={this.userInteractionTool}
                 finished={response.finished}
                 canceled={parentNode.response.isCanceled}
-                responseComplete={parentNode.response.isComplete}
                 result={parseUserInteractionResult(response.result)}
-                persistedStepStates={response.clientData?.[PERSISTED_STEP_STATES_KEY]}
-                onPersistStepStates={stepStates => response.addClientData(PERSISTED_STEP_STATES_KEY, JSON.stringify(stepStates))}
+                onPartialResult={partial => response.updateResult(JSON.stringify(partial))}
                 openerService={this.openerService}
                 toolConfirmation={{
                     response,

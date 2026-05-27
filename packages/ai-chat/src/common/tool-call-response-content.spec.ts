@@ -145,17 +145,26 @@ describe('ToolCallChatResponseContentImpl', () => {
         });
     });
 
-    describe('addClientData', () => {
-        it('should fire onDidChange when clientData is added', () => {
+    describe('updateResult', () => {
+        it('should set the result without marking the tool finished', () => {
+            const toolCall = new ToolCallChatResponseContentImpl('id', 'tool', '{}', false);
+
+            toolCall.updateResult('partial');
+
+            expect(toolCall.result).to.equal('partial');
+            expect(toolCall.finished).to.be.false;
+        });
+
+        it('should fire onDidChange so auto-save picks up the partial result', () => {
             const toolCall = new ToolCallChatResponseContentImpl('id', 'tool', '{}', false);
             let fireCount = 0;
             toolCall.onDidChange(() => { fireCount++; });
 
-            toolCall.addClientData('key', 'value');
-            toolCall.addClientData('key2', 'value2');
+            toolCall.updateResult('partial-1');
+            toolCall.updateResult('partial-2');
 
             expect(fireCount).to.equal(2);
-            expect(toolCall.clientData).to.deep.equal({ key: 'value', key2: 'value2' });
+            expect(toolCall.result).to.equal('partial-2');
         });
     });
 

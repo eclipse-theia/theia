@@ -19,7 +19,7 @@ import { MutableChatResponseModel, ToolCallChatResponseContentImpl } from './cha
 
 describe('MutableChatResponseModel', () => {
     describe('content change propagation', () => {
-        it('should fire onDidChange when a tool call\'s clientData is updated after it was added', () => {
+        it('should fire onDidChange when a tool call\'s result is updated after it was added', () => {
             const response = new MutableChatResponseModel('req-1');
             const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
             response.response.addContent(toolCall);
@@ -27,11 +27,12 @@ describe('MutableChatResponseModel', () => {
             let fireCount = 0;
             response.onDidChange(() => { fireCount++; });
 
-            toolCall.addClientData('uiState', 'snapshot');
+            toolCall.updateResult('partial');
 
             // The response model must observe the change so auto-save can persist
-            // the updated clientData. Without this propagation, renderer-only
-            // mutations (e.g. user-interaction wizard state) would be lost on reload.
+            // intermediate state. Without this propagation, mutations that don't go
+            // through addContent/merge (e.g. renderer-side partial results) would be
+            // lost on reload.
             expect(fireCount).to.equal(1);
         });
     });

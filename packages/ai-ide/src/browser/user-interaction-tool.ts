@@ -16,6 +16,7 @@
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
 import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
+import { Disposable } from '@theia/core';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -32,7 +33,6 @@ import {
     UserInteractionLink,
     UserInteractionResult,
     UserInteractionStep,
-    UserInteractionStepResult,
     buildDiffLabel,
     isEmptyContentRef,
     normalizeUserInteractionLink,
@@ -43,8 +43,13 @@ import {
 interface PendingInteraction {
     deferred: Deferred<string>;
     steps: UserInteractionStep[];
-    stepResults: UserInteractionStepResult[];
     resolved: boolean;
+    /**
+     * Provider that yields the latest partial result on cancellation. Set by the renderer
+     * via {@link UserInteractionTool.setCancellationFallback}. If absent (no renderer
+     * mounted) the tool resolves with all steps marked as skipped.
+     */
+    cancellationFallback?: () => UserInteractionResult;
 }
 
 // Schemas are module-level constants so they are built once at load time
@@ -189,66 +194,53 @@ export class UserInteractionTool implements ToolProvider {
         };
     }
 
-    setStepResult(toolCallId: string, stepIndex: number, partial: Partial<UserInteractionStepResult>): void {
-        const pending = this.pendingInteractions.get(toolCallId);
-        if (!pending || pending.resolved) {
-            return;
-        }
-        if (stepIndex < 0 || stepIndex >= pending.steps.length) {
-            return;
-        }
-        const existing = pending.stepResults[stepIndex] ?? { title: pending.steps[stepIndex].title };
-        pending.stepResults[stepIndex] = {
-            ...existing,
-            ...partial,
-            title: pending.steps[stepIndex].title
-        };
-    }
-
-    completeInteraction(toolCallId: string): void {
-        const pending = this.pendingInteractions.get(toolCallId);
-        if (!pending || pending.resolved) {
-            return;
-        }
-        pending.resolved = true;
-        const result: UserInteractionResult = {
-            completed: true,
-            steps: this.normalizeStepResults(pending)
-        };
-        pending.deferred.resolve(JSON.stringify(result));
+    /**
+     * Resolve the pending interaction with the given final result. The renderer is the single
+     * source of truth for the collected user input and passes the full result here on Finish
+     * (or on a per-option click for single-step interactions).
+     */
+    completeInteraction(toolCallId: string, result: UserInteractionResult): void {
+        this.resolveInteraction(toolCallId, result);
     }
 
     /**
-     * Set the result for a step and immediately complete the interaction.
-     * Use this to atomically pass the user's input value into the result, avoiding
-     * any reliance on synchronous state updates between `setStepResult` and `completeInteraction`.
+     * Register a provider that yields the latest partial result on cancellation. The
+     * renderer calls this once on mount and updates a closed-over ref as the user
+     * interacts. On cancellation the tool calls the provider to obtain what was
+     * collected, avoiding any race between renderer- and tool-side resolution.
      */
-    completeInteractionWith(toolCallId: string, stepIndex: number, partial: Partial<UserInteractionStepResult>): void {
-        this.setStepResult(toolCallId, stepIndex, partial);
-        this.completeInteraction(toolCallId);
+    setCancellationFallback(toolCallId: string, provider: () => UserInteractionResult): Disposable {
+        const pending = this.pendingInteractions.get(toolCallId);
+        if (!pending || pending.resolved) {
+            return Disposable.NULL;
+        }
+        pending.cancellationFallback = provider;
+        return Disposable.create(() => {
+            if (pending.cancellationFallback === provider) {
+                pending.cancellationFallback = undefined;
+            }
+        });
     }
 
-    cancelInteraction(toolCallId: string): void {
+    protected resolveInteraction(toolCallId: string, result: UserInteractionResult): void {
         const pending = this.pendingInteractions.get(toolCallId);
         if (!pending || pending.resolved) {
             return;
         }
         pending.resolved = true;
-        const steps = this.normalizeStepResults(pending);
-        // Mark steps without any user input as skipped.
-        for (let i = 0; i < steps.length; i++) {
-            const step = steps[i];
-            const hasInput = step.value !== undefined || (step.comments && step.comments.length > 0);
-            if (!hasInput) {
-                steps[i] = { ...step, skipped: true };
-            }
-        }
-        const result: UserInteractionResult = { completed: false, steps };
         pending.deferred.resolve(JSON.stringify(result));
     }
 
-    protected normalizeStepResults(pending: PendingInteraction): UserInteractionStepResult[] {
-        return pending.steps.map((step, i) => pending.stepResults[i] ?? { title: step.title });
+    protected cancelPending(toolCallId: string): void {
+        const pending = this.pendingInteractions.get(toolCallId);
+        if (!pending || pending.resolved) {
+            return;
+        }
+        const result = pending.cancellationFallback?.() ?? {
+            completed: false,
+            steps: pending.steps.map(step => ({ title: step.title, skipped: true }))
+        };
+        this.resolveInteraction(toolCallId, result);
     }
 
     async openLink(link: UserInteractionLink): Promise<void> {
@@ -354,13 +346,12 @@ export class UserInteractionTool implements ToolProvider {
         const pending: PendingInteraction = {
             deferred: new Deferred<string>(),
             steps,
-            stepResults: new Array(steps.length),
             resolved: false
         };
         this.pendingInteractions.set(toolCallId, pending);
 
         const cancellationToken = ToolInvocationContext.getCancellationToken(ctx);
-        const cancellationListener = cancellationToken?.onCancellationRequested(() => this.cancelInteraction(toolCallId));
+        const cancellationListener = cancellationToken?.onCancellationRequested(() => this.cancelPending(toolCallId));
 
         try {
             return await pending.deferred.promise;

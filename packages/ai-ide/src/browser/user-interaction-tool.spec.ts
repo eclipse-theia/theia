@@ -131,12 +131,14 @@ describe('UserInteractionTool', () => {
         expect(JSON.parse(result as string).error).to.equal('No tool call ID available');
     });
 
-    it('should return single-step result on completion', async () => {
+    it('should resolve the handler with the result passed to completeInteraction', async () => {
         const handler = tool.getTool().handler;
         const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-1' });
 
-        tool.setStepResult('call-1', 0, { value: 'b' });
-        tool.completeInteraction('call-1');
+        tool.completeInteraction('call-1', {
+            completed: true,
+            steps: [{ title: 'Choose', value: 'b' }]
+        });
 
         const result = parseResult(await handlerPromise);
         expect(result.completed).to.be.true;
@@ -144,18 +146,7 @@ describe('UserInteractionTool', () => {
         expect(result.steps[0]).to.deep.equal({ title: 'Choose', value: 'b' });
     });
 
-    it('should atomically set and complete via completeInteractionWith', async () => {
-        const handler = tool.getTool().handler;
-        const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-with' });
-
-        tool.completeInteractionWith('call-with', 0, { value: 'a' });
-
-        const result = parseResult(await handlerPromise);
-        expect(result.completed).to.be.true;
-        expect(result.steps[0]).to.deep.equal({ title: 'Choose', value: 'a' });
-    });
-
-    it('should accumulate per-step state across multiple steps', async () => {
+    it('should forward multi-step results verbatim', async () => {
         const handler = tool.getTool().handler;
         const args = JSON.stringify({
             interactions: [
@@ -166,10 +157,14 @@ describe('UserInteractionTool', () => {
         });
         const handlerPromise = handler(args, { toolCallId: 'call-multi' });
 
-        tool.setStepResult('call-multi', 0, { comments: ['nice summary'] });
-        tool.setStepResult('call-multi', 1, { value: 'approve', comments: ['fix on line 42'] });
-        tool.setStepResult('call-multi', 2, {});
-        tool.completeInteraction('call-multi');
+        tool.completeInteraction('call-multi', {
+            completed: true,
+            steps: [
+                { title: 'Overview', comments: ['nice summary'] },
+                { title: 'Area 1', value: 'approve', comments: ['fix on line 42'] },
+                { title: 'Area 2' }
+            ]
+        });
 
         const result = parseResult(await handlerPromise);
         expect(result.completed).to.be.true;
@@ -179,29 +174,24 @@ describe('UserInteractionTool', () => {
         expect(result.steps[2]).to.deep.equal({ title: 'Area 2' });
     });
 
-    it('should ignore setStepResult after completion', async () => {
+    it('should ignore completeInteraction calls after the interaction resolved', async () => {
         const handler = tool.getTool().handler;
         const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-late' });
-        tool.setStepResult('call-late', 0, { value: 'a' });
-        tool.completeInteraction('call-late');
+        tool.completeInteraction('call-late', {
+            completed: true,
+            steps: [{ title: 'Choose', value: 'a' }]
+        });
         const result = parseResult(await handlerPromise);
         expect(result.steps[0].value).to.equal('a');
         // Late call must not throw or change anything
-        tool.setStepResult('call-late', 0, { value: 'b' });
+        tool.completeInteraction('call-late', {
+            completed: true,
+            steps: [{ title: 'Choose', value: 'b' }]
+        });
         // No assertion needed beyond ensuring no exception
     });
 
-    it('should ignore setStepResult for out-of-range step index', async () => {
-        const handler = tool.getTool().handler;
-        const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-range' });
-        tool.setStepResult('call-range', 5, { value: 'x' });
-        tool.setStepResult('call-range', -1, { value: 'y' });
-        tool.completeInteraction('call-range');
-        const result = parseResult(await handlerPromise);
-        expect(result.steps[0]).to.deep.equal({ title: 'Choose' });
-    });
-
-    it('should return partial results with completed=false on cancellation', async () => {
+    it('should resolve with the renderer-supplied partial on cancellation', async () => {
         const handler = tool.getTool().handler;
         const cts = new CancellationTokenSource();
         const args = JSON.stringify({
@@ -213,8 +203,18 @@ describe('UserInteractionTool', () => {
         });
         const handlerPromise = handler(args, { toolCallId: 'call-cancel', cancellationToken: cts.token });
 
-        tool.setStepResult('call-cancel', 0, { comments: ['first done'] });
-        tool.setStepResult('call-cancel', 1, { value: 'whatever' });
+        // Wait a microtask so the handler has registered the pending interaction.
+        await Promise.resolve();
+        // Simulate the renderer registering a cancellation fallback that yields the
+        // latest partial state.
+        tool.setCancellationFallback('call-cancel', () => ({
+            completed: false,
+            steps: [
+                { title: 'Step A', comments: ['first done'] },
+                { title: 'Step B', value: 'whatever' },
+                { title: 'Step C', skipped: true }
+            ]
+        }));
         cts.cancel();
 
         const result = parseResult(await handlerPromise);
@@ -224,7 +224,7 @@ describe('UserInteractionTool', () => {
         expect(result.steps[2].skipped).to.be.true;
     });
 
-    it('should mark all steps as skipped if user did nothing before cancellation', async () => {
+    it('should fall back to all-skipped when no renderer claims the cancellation', async () => {
         const handler = tool.getTool().handler;
         const cts = new CancellationTokenSource();
         const args = JSON.stringify({
@@ -251,11 +251,8 @@ describe('UserInteractionTool', () => {
             interactions: [{ title: 'Q2', message: 'second', options: [{ text: 'B', value: 'b' }] }]
         }), { toolCallId: 'call-p2' });
 
-        tool.setStepResult('call-p2', 0, { value: 'b' });
-        tool.completeInteraction('call-p2');
-
-        tool.setStepResult('call-p1', 0, { value: 'a' });
-        tool.completeInteraction('call-p1');
+        tool.completeInteraction('call-p2', { completed: true, steps: [{ title: 'Q2', value: 'b' }] });
+        tool.completeInteraction('call-p1', { completed: true, steps: [{ title: 'Q1', value: 'a' }] });
 
         expect(parseResult(await promise1).steps[0].value).to.equal('a');
         expect(parseResult(await promise2).steps[0].value).to.equal('b');
