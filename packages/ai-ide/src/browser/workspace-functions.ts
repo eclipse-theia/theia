@@ -14,8 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken, Disposable, PreferenceService, URI, Path } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { TrustAwarePreferenceReader } from '@theia/ai-core/lib/browser/trust-aware-preference-reader';
+import { CancellationToken, Disposable, OS, PreferenceService, URI, Path } from '@theia/core';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -27,7 +29,12 @@ import {
 import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
-import { CONSIDER_GITIGNORE_PREF, FILE_CONTENT_MAX_SIZE_KB_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
+import {
+    ALLOWED_EXTERNAL_PATHS_PREF,
+    CONSIDER_GITIGNORE_PREF,
+    FILE_CONTENT_MAX_SIZE_KB_PREF,
+    USER_EXCLUDE_PATTERN_PREF
+} from '../common/workspace-preferences';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -46,38 +53,301 @@ export class WorkspaceFunctionScope {
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
 
-    private gitignoreMatcher: ReturnType<typeof ignore> | undefined;
-    private gitignoreWatcherInitialized = false;
+    @inject(TrustAwarePreferenceReader)
+    protected readonly trustAwarePreferences: TrustAwarePreferenceReader;
 
-    async getWorkspaceRoot(): Promise<URI> {
-        const wsRoots = await this.workspaceService.roots;
-        if (wsRoots.length === 0) {
-            throw new Error('No workspace has been opened yet');
-        }
-        return wsRoots[0].resource;
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
+
+    private gitignoreMatchers = new Map<string, ReturnType<typeof ignore>>();
+    private gitignoreWatchersInitialized = new Set<string>();
+
+    private _rootMapping: Map<string, URI> | undefined;
+    private _allRootUris: URI[] | undefined;
+
+    private homeDirUri: Promise<URI | undefined> | undefined;
+
+    // ── Initialization ──────────────────────────────────────────────────
+
+    @postConstruct()
+    protected init(): void {
+        this.workspaceService.onWorkspaceChanged(() => {
+            this._rootMapping = undefined;
+            this._allRootUris = undefined;
+        });
     }
 
+    // ── Multi-root workspace structure ──────────────────────────────────
+
+    /**
+     * Returns all workspace root URIs (synchronous, cached).
+     */
+    private getAllRootUris(): URI[] {
+        if (!this._allRootUris) {
+            this._allRootUris = this.workspaceService.tryGetRoots().map(root => root.resource);
+        }
+        return this._allRootUris;
+    }
+
+    /**
+     * Returns a mapping of root names to root URIs.
+     *
+     * Root names are always the directory basename. When multiple roots share the
+     * same basename, only the first (by URI sort order) is addressable by name —
+     * the others are still reachable via the `resolveRelativePath` supra-relative
+     * check (which examines path segments against all roots).
+     *
+     * **Known limitation:** duplicate basenames are not disambiguated with synthetic
+     * suffixes because agents observe real filesystem paths in terminal output,
+     * compiler errors, stack traces, etc. Synthetic names like `app-1` would
+     * conflict with those observations and cause more confusion than they solve.
+     * A future improvement could let users assign display names to roots.
+     */
+    getRootMapping(): Map<string, URI> {
+        if (this._rootMapping) {
+            return this._rootMapping;
+        }
+
+        const wsRoots = this.workspaceService.tryGetRoots();
+        const sortedRoots = [...wsRoots].sort((a, b) => a.resource.toString().localeCompare(b.resource.toString()));
+        const mapping = new Map<string, URI>();
+
+        for (const root of sortedRoots) {
+            const basename = root.resource.path.base;
+            if (mapping.has(basename)) {
+                console.debug(
+                    `Multiple workspace roots share the basename '${basename}'. ` +
+                    `Only '${mapping.get(basename)!.toString()}' is addressable as '${basename}'. ` +
+                    `'${root.resource.toString()}' can still be accessed but may require full paths.`
+                );
+                continue;
+            }
+            mapping.set(basename, root.resource);
+        }
+
+        this._rootMapping = mapping;
+        return mapping;
+    }
+
+    /**
+     * Returns the root name for a given root URI based on the cached mapping.
+     */
+    getRootName(rootUri: URI): string | undefined {
+        const mapping = this.getRootMapping();
+        for (const [name, uri] of mapping) {
+            if (uri.toString() === rootUri.toString()) {
+                return name;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Returns the workspace root that contains the given URI.
+     * If nested roots exist, returns the most specific (deepest) one.
+     */
+    getContainingRoot(uri: URI): URI | undefined {
+        const roots = this.getAllRootUris();
+        const matchingRoots: URI[] = [];
+
+        for (const rootUri of roots) {
+            if (rootUri.scheme === uri.scheme && rootUri.isEqualOrParent(uri)) {
+                matchingRoots.push(rootUri);
+            }
+        }
+
+        matchingRoots.sort((a, b) => b.toString().length - a.toString().length);
+        return matchingRoots[0];
+    }
+
+    /**
+     * Converts a URI to a workspace-relative path with root name prefix.
+     * Format: <rootName>/<relativePath>
+     */
+    toWorkspaceRelativePath(uri: URI): string | undefined {
+        const containingRoot = this.getContainingRoot(uri);
+        if (!containingRoot) {
+            return undefined;
+        }
+
+        const rootName = this.getRootName(containingRoot);
+        if (!rootName) {
+            return undefined;
+        }
+
+        const relativePath = containingRoot.relative(uri);
+        if (!relativePath || relativePath.toString() === '') {
+            return rootName; // URI is the root itself
+        }
+
+        return `${rootName}/${relativePath.toString()}`;
+    }
+
+    // ── Path resolution ─────────────────────────────────────────────────
+
+    /**
+     * Resolves a relative path to a URI using a deterministic, synchronous algorithm.
+     * No filesystem I/O is performed — the agent is expected to use `<rootName>/<relativePath>`
+     * format. If the path cannot be resolved deterministically, an error is thrown.
+     *
+     * Resolution order:
+     * 1. Root+relative: first segment matches a root name → resolve rest relative to that root.
+     * 2. Supra-relative: a root's basename appears as a segment, and any preceding material
+     *    matches the preceding path components of the root → resolve the trailing portion.
+     * 3. Single-root fallback: if exactly one workspace root, resolve relative to it.
+     * 4. Error: tell the agent how to format the path.
+     */
+    resolveRelativePath(relativePath: string): URI {
+        const normalizedPath = new Path(Path.normalizePathSeparator(relativePath)).normalize().toString();
+        const mapping = this.getRootMapping();
+        const roots = this.getAllRootUris();
+        const segments = normalizedPath.split('/');
+
+        // Phase 1 — Root+relative check:
+        if (segments.length > 0) {
+            const potentialRootName = segments[0];
+            const rootUri = mapping.get(potentialRootName);
+            if (rootUri) {
+                const restOfPath = segments.slice(1).join('/');
+                return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
+            }
+        }
+
+        // Phase 2 — Supra-relative check:
+        for (const rootUri of roots) {
+            const rootBasename = rootUri.path.base;
+            for (let i = 0; i < segments.length; i++) {
+                if (segments[i] !== rootBasename) {
+                    continue;
+                }
+                const rootPathSegments = rootUri.path.toString().split('/').filter(s => s.length > 0);
+                const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
+                const pathPrecedingSegments = segments.slice(0, i);
+
+                let matches = true;
+                if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
+                    matches = false;
+                } else {
+                    const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
+                    for (let j = 0; j < pathPrecedingSegments.length; j++) {
+                        if (pathPrecedingSegments[j] !== rootTail[j]) {
+                            matches = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (matches) {
+                    const restOfPath = segments.slice(i + 1).join('/');
+                    return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
+                }
+            }
+        }
+
+        // Phase 3 — Single-root fallback:
+        if (roots.length === 1) {
+            return roots[0].resolve(normalizedPath);
+        }
+
+        // Phase 4 — Error:
+        const rootNames = Array.from(mapping.keys());
+        throw new Error(
+            `Could not resolve path '${relativePath}'. In a multi-root workspace, prefix paths with the workspace root name ` +
+            `(e.g., 'rootName/path/to/file'). Available roots: ${rootNames.join(', ')}`
+        );
+    }
+
+    async resolveToUri(pathOrUri: string | URI): Promise<URI | undefined> {
+        if (pathOrUri instanceof URI) {
+            return pathOrUri;
+        }
+
+        if (!pathOrUri) {
+            return undefined;
+        }
+
+        if (pathOrUri.includes('://')) {
+            try {
+                const uri = new URI(pathOrUri);
+                return uri;
+            } catch (error) {
+            }
+        }
+
+        const normalizedPath = Path.normalizePathSeparator(pathOrUri);
+
+        // Reject `..` only when it appears as a path SEGMENT. A filename like
+        // `my..file.json` is a legitimate name. `ensureAccessible` normalizes
+        // URI-form inputs separately as defense-in-depth (e.g. against
+        // percent-encoded `%2e%2e` that bypasses the string-form check).
+        if (WorkspaceFunctionScope.hasParentSegment(normalizedPath)) {
+            return undefined;
+        }
+
+        const tilde = await this.resolveTildePath(normalizedPath);
+        if (tilde) {
+            return tilde;
+        }
+
+        if (WorkspaceFunctionScope.isAbsolutePath(normalizedPath)) {
+            return URI.fromFilePath(normalizedPath);
+        }
+
+        return this.resolveRelativePath(normalizedPath);
+    }
+
+    // ── Access control ──────────────────────────────────────────────────
+
     ensureWithinWorkspace(targetUri: URI, workspaceRootUri: URI): void {
-        if (!targetUri.toString().startsWith(workspaceRootUri.toString())) {
+        const normalized = targetUri.normalizePath();
+        if (workspaceRootUri.scheme !== normalized.scheme
+            || !workspaceRootUri.isEqualOrParent(normalized, WorkspaceFunctionScope.pathCaseSensitive)) {
             throw new Error('Access outside of the workspace is not allowed');
         }
     }
 
-    async resolveRelativePath(relativePath: string): Promise<URI> {
-        const workspaceRoot = await this.getWorkspaceRoot();
-        return workspaceRoot.resolve(relativePath);
+    /**
+     * Asserts the target URI is reachable by AI tools that honor the external
+     * allow-list. Allowed when the URI is inside any workspace root, or when it
+     * is covered by an entry of the `ai-features.workspaceFunctions.allowedExternalPaths`
+     * preference. Workspace-scoped overrides of that preference are dropped when
+     * the workspace is not trusted.
+     *
+     * The target URI is normalized before the check so that literal `..`
+     * segments and percent-encoded equivalents (e.g. `%2e%2e`) are resolved
+     * away — otherwise the path-prefix comparison would admit traversals.
+     *
+     * Note: symlinks within allow-listed directories are NOT canonicalized
+     * before the check. Only allow-list directories whose contents you trust.
+     */
+    async ensureAccessible(targetUri: URI): Promise<void> {
+        const normalized = targetUri.normalizePath();
+        const caseSensitive = WorkspaceFunctionScope.pathCaseSensitive;
+        const roots = this.getAllRootUris();
+        for (const rootUri of roots) {
+            if (rootUri.scheme === normalized.scheme && rootUri.isEqualOrParent(normalized, caseSensitive)) {
+                return;
+            }
+        }
+        const allowed = await this.getAllowedExternalUris();
+        if (allowed.some(allowedUri => allowedUri.scheme === normalized.scheme && allowedUri.isEqualOrParent(normalized, caseSensitive))) {
+            return;
+        }
+        throw new Error(
+            `Access to '${normalized.path.toString()}' is not allowed. ` +
+            `Path is outside the workspace and not covered by the '${ALLOWED_EXTERNAL_PATHS_PREF}' preference.`
+        );
     }
 
     isInWorkspace(uri: URI): boolean {
         try {
-            const wsRoots = this.workspaceService.tryGetRoots();
+            const roots = this.getAllRootUris();
 
-            if (wsRoots.length === 0) {
+            if (roots.length === 0) {
                 return false;
             }
 
-            for (const root of wsRoots) {
-                const rootUri = root.resource;
+            for (const rootUri of roots) {
                 if (rootUri.scheme === uri.scheme && rootUri.isEqualOrParent(uri)) {
                     return true;
                 }
@@ -104,39 +374,127 @@ export class WorkspaceFunctionScope {
         }
     }
 
-    async resolveToUri(pathOrUri: string | URI): Promise<URI | undefined> {
-        if (pathOrUri instanceof URI) {
-            return pathOrUri;
-        }
+    // ── External path support ───────────────────────────────────────────
 
-        if (!pathOrUri) {
-            return undefined;
-        }
-
-        if (pathOrUri.includes('://')) {
-            try {
-                const uri = new URI(pathOrUri);
-                return uri;
-            } catch (error) {
+    /**
+     * Resolves the configured external allow-list to URIs. Reads via the
+     * trust-aware preference reader so workspace-scoped overrides are dropped
+     * when the workspace is untrusted. Awaits the reader's `ready` promise so
+     * that the trust state is resolved before the first preference read.
+     * Non-string entries, blanks, and entries that don't parse to a `file://`
+     * URI are filtered out; URIs are returned in normalized form.
+     */
+    async getAllowedExternalUris(resourceUri?: string): Promise<URI[]> {
+        await this.trustAwarePreferences.ready;
+        const raw = this.trustAwarePreferences.get<string[]>(ALLOWED_EXTERNAL_PATHS_PREF, [], resourceUri) ?? [];
+        const result: URI[] = [];
+        for (const entry of raw) {
+            if (typeof entry !== 'string') {
+                continue;
+            }
+            const trimmed = entry.trim();
+            if (!trimmed) {
+                continue;
+            }
+            const uri = await this.toExternalUri(trimmed);
+            if (uri && uri.scheme === 'file') {
+                result.push(uri.normalizePath());
             }
         }
-
-        const normalizedPath = Path.normalizePathSeparator(pathOrUri);
-        const path = new Path(normalizedPath);
-
-        if (normalizedPath.includes('..')) {
-            return undefined;
-        }
-
-        if (path.isAbsolute) {
-            return URI.fromFilePath(normalizedPath);
-        }
-
-        return this.resolveRelativePath(normalizedPath);
+        return result;
     }
 
+    /**
+     * Whether path comparisons should be case-sensitive on the current
+     * backend. Windows and macOS default to case-insensitive file systems
+     * (NTFS, HFS+, APFS); Linux is treated as case-sensitive. This is a
+     * heuristic — a case-sensitive APFS volume on macOS or a case-insensitive
+     * volume mounted on Linux will be misclassified, but querying the actual
+     * file system would require a backend round-trip.
+     */
+    static get pathCaseSensitive(): boolean {
+        return !OS.backend.isWindows && !OS.backend.isOSX;
+    }
+
+    /**
+     * Converts a user-supplied allow-list entry (absolute POSIX path, Windows
+     * drive path, `~`-prefixed path, or `file://` URI) into a normalized URI.
+     * Returns undefined for invalid input (relative paths, malformed URIs).
+     */
+    protected async toExternalUri(entry: string): Promise<URI | undefined> {
+        if (entry.includes('://')) {
+            try {
+                return new URI(entry);
+            } catch {
+                return undefined;
+            }
+        }
+        const normalized = Path.normalizePathSeparator(entry);
+        const tilde = await this.resolveTildePath(normalized);
+        if (tilde) {
+            return tilde;
+        }
+        if (!WorkspaceFunctionScope.isAbsolutePath(normalized)) {
+            return undefined;
+        }
+        return URI.fromFilePath(normalized);
+    }
+
+    /**
+     * If the given separator-normalized path is `~` or starts with `~/`,
+     * expands the leading `~` against the user's home directory and returns
+     * the resulting URI. Returns undefined if the path does not start with
+     * `~` or the home directory cannot be resolved. The remainder is
+     * resolved in URI space to avoid Windows drive-letter round-tripping
+     * issues with `URI.fromFilePath`.
+     */
+    protected async resolveTildePath(normalizedPath: string): Promise<URI | undefined> {
+        if (normalizedPath !== '~' && !normalizedPath.startsWith('~/')) {
+            return undefined;
+        }
+        const home = await this.getHomeDirUri();
+        if (!home) {
+            return undefined;
+        }
+        if (normalizedPath === '~') {
+            return home;
+        }
+        return home.resolve(normalizedPath.substring(2));
+    }
+
+    /**
+     * Whether an already-separator-normalized path is absolute on either
+     * platform: POSIX `/foo`, UNC `//host/share`, or Windows drive `C:/foo`.
+     */
+    static isAbsolutePath(normalized: string): boolean {
+        if (normalized.startsWith('/')) {
+            return true;
+        }
+        return /^[A-Za-z]:\//.test(normalized);
+    }
+
+    protected getHomeDirUri(): Promise<URI | undefined> {
+        if (!this.homeDirUri) {
+            this.homeDirUri = this.envVariablesServer.getHomeDirUri()
+                .then(value => value ? new URI(value) : undefined)
+                .catch(() => undefined);
+        }
+        return this.homeDirUri;
+    }
+
+    /**
+     * Whether the already-separator-normalized path contains `..` as a path
+     * segment (not merely as a substring of a filename like `my..file.json`).
+     */
+    static hasParentSegment(normalizedPath: string): boolean {
+        return normalizedPath.split('/').some(segment => segment === '..');
+    }
+
+    // ── Gitignore / exclusion ───────────────────────────────────────────
+
     private async initializeGitignoreWatcher(workspaceRoot: URI): Promise<void> {
-        if (this.gitignoreWatcherInitialized) {
+        const rootKey = workspaceRoot.toString();
+        if (this.gitignoreWatchersInitialized.has(rootKey)) {
             return;
         }
 
@@ -145,11 +503,11 @@ export class WorkspaceFunctionScope {
 
         this.fileService.onDidFilesChange(async event => {
             if (event.contains(gitignoreUri)) {
-                this.gitignoreMatcher = undefined;
+                this.gitignoreMatchers.delete(rootKey);
             }
         });
 
-        this.gitignoreWatcherInitialized = true;
+        this.gitignoreWatchersInitialized.add(rootKey);
     }
 
     async shouldExclude(stat: FileStat): Promise<boolean> {
@@ -159,8 +517,11 @@ export class WorkspaceFunctionScope {
         if (this.isUserExcluded(stat.resource.path.base, userExcludePatterns)) {
             return true;
         }
-        const workspaceRoot = await this.getWorkspaceRoot();
-        if (shouldConsiderGitIgnore && (await this.isGitIgnored(stat, workspaceRoot))) {
+
+        const containingRoot = this.getContainingRoot(stat.resource);
+        // If the file is outside all workspace roots, we skip gitignore checks
+        // since gitignore rules are relative to their root directory.
+        if (shouldConsiderGitIgnore && containingRoot && (await this.isGitIgnored(stat, containingRoot))) {
             return true;
         }
 
@@ -174,19 +535,22 @@ export class WorkspaceFunctionScope {
     protected async isGitIgnored(stat: FileStat, workspaceRoot: URI): Promise<boolean> {
         await this.initializeGitignoreWatcher(workspaceRoot);
 
+        const rootKey = workspaceRoot.toString();
         const gitignoreUri = workspaceRoot.resolve(this.GITIGNORE_FILE_NAME);
 
         try {
             const fileStat = await this.fileService.resolve(gitignoreUri);
             if (fileStat) {
-                if (!this.gitignoreMatcher) {
+                let matcher = this.gitignoreMatchers.get(rootKey);
+                if (!matcher) {
                     const gitignoreContent = await this.fileService.read(gitignoreUri);
-                    this.gitignoreMatcher = ignore().add(gitignoreContent.value);
+                    matcher = ignore().add(gitignoreContent.value);
+                    this.gitignoreMatchers.set(rootKey, matcher);
                 }
                 const relativePath = workspaceRoot.relative(stat.resource);
                 if (relativePath) {
                     const relativePathStr = relativePath.toString() + (stat.isDirectory ? '/' : '');
-                    if (this.gitignoreMatcher.ignores(relativePathStr)) {
+                    if (matcher.ignores(relativePathStr)) {
                         return true;
                     }
                 }
@@ -207,16 +571,36 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
         return {
             id: GetWorkspaceDirectoryStructure.ID,
             name: GetWorkspaceDirectoryStructure.ID,
-            description: 'Retrieves the complete directory tree structure of the workspace as a nested JSON object. ' +
+            description: 'Retrieves the directory tree structure as a nested JSON object. ' +
+                'By default returns all workspace roots with root names as keys. ' +
+                'Pass `root` to inspect a specific directory listed in the ' +
+                '`ai-features.workspaceFunctions.allowedExternalPaths` preference instead. ' +
                 'Lists only directories (no files), excluding common non-essential directories (node_modules, hidden files, etc.). ' +
                 'Useful for getting a high-level overview of project organization. ' +
                 'For listing files within a specific directory, use getWorkspaceFileList instead. ' +
                 'For finding specific files, use findFilesByPattern.',
             parameters: {
                 type: 'object',
-                properties: {},
+                properties: {
+                    root: {
+                        type: 'string',
+                        description: 'Optional absolute path or `file://` URI to inspect instead of the workspace. ' +
+                            'Must be inside, or equal to, an entry of the `allowedExternalPaths` preference. ' +
+                            'When omitted, all workspace roots are returned.'
+                    }
+                },
             },
-            handler: (_: string, ctx?: ToolInvocationContext) => this.getDirectoryStructure(ctx?.cancellationToken),
+            handler: (arg_string: string, ctx?: ToolInvocationContext) => {
+                let root: string | undefined;
+                if (arg_string) {
+                    try {
+                        root = JSON.parse(arg_string).root;
+                    } catch {
+                        // tolerate empty or non-JSON input — keep prior behavior
+                    }
+                }
+                return this.getDirectoryStructure(root, ctx?.cancellationToken);
+            },
         };
     }
 
@@ -226,19 +610,38 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected workspaceScope: WorkspaceFunctionScope;
 
-    private async getDirectoryStructure(cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
+    private async getDirectoryStructure(root?: string, cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
         if (cancellationToken?.isCancellationRequested) {
             return { error: 'Operation cancelled by user' };
         }
 
-        let workspaceRoot;
         try {
-            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+            if (root) {
+                const resolved = await this.workspaceScope.resolveToUri(root);
+                if (!resolved) {
+                    return { error: `Invalid root: '${root}'` };
+                }
+                await this.workspaceScope.ensureAccessible(resolved);
+                return this.buildDirectoryStructure(resolved, cancellationToken);
+            } else {
+                const rootMapping = this.workspaceScope.getRootMapping();
+                if (rootMapping.size === 0) {
+                    return { error: 'No workspace has been opened yet' };
+                }
+
+                const result: Record<string, unknown> = {};
+                for (const [rootName, rootUri] of rootMapping) {
+                    if (cancellationToken?.isCancellationRequested) {
+                        return { error: 'Operation cancelled by user' };
+                    }
+                    result[rootName] = await this.buildDirectoryStructure(rootUri, cancellationToken);
+                }
+
+                return result;
+            }
         } catch (error) {
             return { error: error.message };
         }
-
-        return this.buildDirectoryStructure(workspaceRoot, cancellationToken);
     }
 
     private async buildDirectoryStructure(uri: URI, cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
@@ -275,9 +678,11 @@ export class FileContentFunction implements ToolProvider {
         return {
             id: FileContentFunction.ID,
             name: FileContentFunction.ID,
-            description: 'Returns the content of a specified file within the workspace as a raw string. ' +
-                'The file path must be provided relative to the workspace root. Only files within ' +
-                'workspace boundaries are accessible; attempting to access files outside the workspace will return an error. ' +
+            description: 'Returns the content of a specified file as a raw string. ' +
+                'File paths use the same format returned by other workspace tools ' +
+                '(e.g., "my-project/src/index.ts"). ' +
+                'Absolute paths and `file://` URIs are accepted when the target is inside the workspace ' +
+                'or covered by the `ai-features.workspaceFunctions.allowedExternalPaths` preference. ' +
                 'If the file is currently open in an editor with unsaved changes, returns the editor\'s current content (not the saved file on disk). ' +
                 'Binary files may not be readable and will return an error. ' +
                 'Use this tool to read file contents before making any edits with replacement functions. ' +
@@ -292,8 +697,10 @@ export class FileContentFunction implements ToolProvider {
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'The relative path to the target file within the workspace (e.g., "src/index.ts", "package.json"). ' +
-                            'Must be relative to the workspace root. Absolute paths and paths outside the workspace will result in an error.',
+                        description: 'Path to the target file. May be workspace-relative ' +
+                            '(e.g., "my-project/src/index.ts"), an absolute path, or a `file://` URI. ' +
+                            'Absolute / URI forms must point inside the workspace ' +
+                            'or inside a directory listed in the `allowedExternalPaths` preference.',
                     },
                     offset: {
                         type: 'number',
@@ -361,9 +768,12 @@ export class FileContentFunction implements ToolProvider {
 
         let targetUri: URI | undefined;
         try {
-            const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-            targetUri = workspaceRoot.resolve(file);
-            this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
+            const resolved = await this.workspaceScope.resolveToUri(file);
+            if (!resolved) {
+                return JSON.stringify({ error: `Invalid file path: '${file}'` });
+            }
+            targetUri = resolved;
+            await this.workspaceScope.ensureAccessible(targetUri);
         } catch (error) {
             return JSON.stringify({ error: error.message });
         }
@@ -552,14 +962,17 @@ export class GetWorkspaceFileList implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Relative path to a directory within the workspace (e.g., "src", "src/components"). ' +
-                            'Use "" or "." to list the workspace root. Paths outside the workspace will result in an error.'
+                        description: 'Path to a directory. Workspace-relative paths use the format \'rootName/path\' ' +
+                            '(e.g., \'my-project/src\', \'backend/src/components\'). ' +
+                            'Use \'\' or \'.\' to list the workspace top-level directories. ' +
+                            'Absolute paths and `file://` URIs are accepted when covered by the `allowedExternalPaths` preference.'
                     }
                 },
                 required: ['path']
             },
-            description: 'Lists files and directories within a specified workspace directory. ' +
-                'Returns an array of names where directories are suffixed with "/" (e.g., ["src/", "package.json", "README.md"]). ' +
+            description: 'Lists files and directories within a specified directory. ' +
+                'Returns a JSON object mapping each immediate child name to its type ("directory" or "file"). ' +
+                'Use "" or "." to list the workspace top-level directories. ' +
                 'Use this to explore directory structure step by step. ' +
                 'For finding specific files by pattern, use findFilesByPattern instead. ' +
                 'For searching file contents, use searchInWorkspace instead.',
@@ -576,22 +989,37 @@ export class GetWorkspaceFileList implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected workspaceScope: WorkspaceFunctionScope;
 
-    async getProjectFileList(path?: string, cancellationToken?: CancellationToken): Promise<string | string[]> {
+    async getProjectFileList(path?: string, cancellationToken?: CancellationToken): Promise<string> {
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
 
-        let workspaceRoot;
         try {
-            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-        } catch (error) {
-            return JSON.stringify({ error: error.message });
-        }
+            const rootMapping = this.workspaceScope.getRootMapping();
+            if (rootMapping.size === 0) {
+                return JSON.stringify({ error: 'No workspace has been opened yet' });
+            }
 
-        const targetUri = path ? workspaceRoot.resolve(path) : workspaceRoot;
-        this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
+            if (!path || path === '.' || path === '') {
+                const roots: Record<string, 'directory'> = {};
+                for (const name of rootMapping.keys()) {
+                    roots[name] = 'directory';
+                }
+                return JSON.stringify(roots);
+            }
 
-        try {
+            let targetUri: URI;
+            try {
+                const resolved = await this.workspaceScope.resolveToUri(path);
+                if (!resolved) {
+                    return JSON.stringify({ error: `Invalid path: '${path}'` });
+                }
+                targetUri = resolved;
+                await this.workspaceScope.ensureAccessible(targetUri);
+            } catch (error) {
+                return JSON.stringify({ error: error.message });
+            }
+
             if (cancellationToken?.isCancellationRequested) {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
@@ -600,23 +1028,23 @@ export class GetWorkspaceFileList implements ToolProvider {
             if (!stat || !stat.isDirectory) {
                 return JSON.stringify({ error: 'Directory not found' });
             }
-            return await this.listFilesDirectly(targetUri, workspaceRoot, cancellationToken);
+            return await this.listFilesDirectly(targetUri, cancellationToken);
         } catch (error) {
             return JSON.stringify({ error: 'Directory not found' });
         }
     }
 
-    private async listFilesDirectly(uri: URI, workspaceRootUri: URI, cancellationToken?: CancellationToken): Promise<string | string[]> {
+    private async listFilesDirectly(uri: URI, cancellationToken?: CancellationToken): Promise<string> {
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
 
         const stat = await this.fileService.resolve(uri);
-        const result: string[] = [];
+        const result: Record<string, 'directory' | 'file'> = {};
 
         if (stat && stat.isDirectory) {
             if (await this.workspaceScope.shouldExclude(stat)) {
-                return result;
+                return JSON.stringify(result);
             }
             const children = await this.fileService.resolve(uri);
             if (children.children) {
@@ -628,13 +1056,12 @@ export class GetWorkspaceFileList implements ToolProvider {
                     if (await this.workspaceScope.shouldExclude(child)) {
                         continue;
                     }
-                    const itemName = child.resource.path.base;
-                    result.push(child.isDirectory ? `${itemName}/` : itemName);
+                    result[child.resource.path.base] = child.isDirectory ? 'directory' : 'file';
                 }
             }
         }
 
-        return result;
+        return JSON.stringify(result);
     }
 }
 
@@ -667,8 +1094,8 @@ export class FileDiagnosticProvider implements ToolProvider {
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'The relative path to the target file within the workspace (e.g., "src/index.ts"). ' +
-                            'Must be relative to the workspace root.'
+                        description: 'The path to the target file within the workspace ' +
+                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
                     }
                 },
                 required: ['file']
@@ -676,9 +1103,12 @@ export class FileDiagnosticProvider implements ToolProvider {
             handler: async (arg: string, ctx?: ToolInvocationContext) => {
                 try {
                     const { file } = JSON.parse(arg);
-                    const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-                    const targetUri = workspaceRoot.resolve(file);
-                    this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
+                    const targetUri = await this.workspaceScope.resolveRelativePath(file);
+                    const containingRoot = this.workspaceScope.getContainingRoot(targetUri);
+                    if (!containingRoot) {
+                        return JSON.stringify({ error: 'Access outside of the workspace is not allowed' });
+                    }
+                    this.workspaceScope.ensureWithinWorkspace(targetUri, containingRoot);
 
                     return this.getDiagnosticsForFile(targetUri, ctx?.cancellationToken);
                 } catch (error) {
@@ -801,10 +1231,14 @@ export class FindFilesByPattern implements ToolProvider {
         return {
             id: FindFilesByPattern.ID,
             name: FindFilesByPattern.ID,
-            description: 'Find files in the workspace that match a given glob pattern. ' +
+            description: 'Find files matching a given glob pattern. ' +
+                'By default searches across all workspace roots. ' +
+                'Pass `searchRoot` to search a directory listed in the ' +
+                '`ai-features.workspaceFunctions.allowedExternalPaths` preference instead. ' +
                 'This function allows efficient discovery of files using patterns like \'**/*.ts\' for all TypeScript files or ' +
                 '\'src/**/*.js\' for JavaScript files in the src directory. The function respects gitignore patterns and user exclusions, ' +
-                'returns relative paths from the workspace root, and limits results to 200 files maximum. ' +
+                'returns workspace-relative paths (e.g., "my-project/src/index.ts") or absolute paths for external roots, ' +
+                'and limits results to 200 files maximum. ' +
                 'Performance note: This traverses directories recursively which may be slow in large workspaces. ' +
                 'For better performance, use specific subdirectory patterns (e.g., \'src/**/*.ts\' instead of \'**/*.ts\'). ' +
                 'Use this to find files by name/extension. Do NOT use this for searching file contents - use searchInWorkspace instead.',
@@ -824,13 +1258,20 @@ export class FindFilesByPattern implements ToolProvider {
                         description: 'Optional glob patterns to exclude. ' +
                             'Examples: [\'**/*.spec.ts\', \'**/node_modules/**\']. ' +
                             'Common exclusions (node_modules, .git) are applied automatically via gitignore.'
+                    },
+                    searchRoot: {
+                        type: 'string',
+                        description: 'Optional absolute path or `file://` URI to search instead of the workspace. ' +
+                            'Must be inside, or equal to, an entry of the `allowedExternalPaths` preference. ' +
+                            'When set, results are returned as absolute paths so they can be passed back to getFileContent. ' +
+                            'When omitted (default), all workspace roots are searched and results are workspace-relative.'
                     }
                 },
                 required: ['pattern']
             },
             handler: (arg_string: string, ctx?: ToolInvocationContext) => {
                 const args = JSON.parse(arg_string);
-                return this.findFiles(args.pattern, args.exclude, ctx?.cancellationToken);
+                return this.findFiles(args.pattern, args.exclude, args.searchRoot, ctx?.cancellationToken);
             },
             providerName: undefined,
             getArgumentsShortLabel: (args: string): { label: string; hasMore: boolean } | undefined => {
@@ -851,37 +1292,89 @@ export class FindFilesByPattern implements ToolProvider {
         };
     }
 
-    private async findFiles(pattern: string, excludePatterns?: string[], cancellationToken?: CancellationToken): Promise<string> {
+    private async findFiles(
+        pattern: string,
+        excludePatterns?: string[],
+        searchRoot?: string,
+        cancellationToken?: CancellationToken
+    ): Promise<string> {
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
 
-        let workspaceRoot;
         try {
-            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-        } catch (error) {
-            return JSON.stringify({ error: error.message });
-        }
-
-        try {
-            // Build ignore patterns from gitignore and user preferences
-            const ignorePatterns = await this.buildIgnorePatterns(workspaceRoot);
-
-            const allExcludes = [...ignorePatterns];
-            if (excludePatterns && excludePatterns.length > 0) {
-                allExcludes.push(...excludePatterns);
-            }
-
-            if (cancellationToken?.isCancellationRequested) {
-                return JSON.stringify({ error: 'Operation cancelled by user' });
-            }
-
             const patternMatcher = new Minimatch(pattern, { dot: false });
-            const excludeMatchers = allExcludes.map(excludePattern => new Minimatch(excludePattern, { dot: true }));
             const files: string[] = [];
             const maxResults = 200;
 
-            await this.traverseDirectory(workspaceRoot, workspaceRoot, patternMatcher, excludeMatchers, files, maxResults, cancellationToken);
+            if (searchRoot) {
+                const resolved = await this.workspaceScope.resolveToUri(searchRoot);
+                if (!resolved) {
+                    return JSON.stringify({ error: `Invalid searchRoot: '${searchRoot}'` });
+                }
+                const rootUri = resolved;
+                const isExternalRoot = !this.workspaceScope.isInWorkspace(rootUri);
+                await this.workspaceScope.ensureAccessible(rootUri);
+
+                const ignorePatterns = isExternalRoot
+                    ? this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, [])
+                    : await this.buildIgnorePatterns(rootUri);
+                const allExcludes = [...ignorePatterns];
+                if (excludePatterns && excludePatterns.length > 0) {
+                    allExcludes.push(...excludePatterns);
+                }
+
+                if (cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+
+                const excludeMatchers = allExcludes.map(excludePattern => new Minimatch(excludePattern, { dot: true }));
+
+                await this.traverseDirectory(
+                    rootUri,
+                    rootUri,
+                    undefined,
+                    patternMatcher,
+                    excludeMatchers,
+                    files,
+                    maxResults,
+                    cancellationToken,
+                    isExternalRoot
+                );
+            } else {
+                const rootMapping = this.workspaceScope.getRootMapping();
+                if (rootMapping.size === 0) {
+                    return JSON.stringify({ error: 'No workspace has been opened yet' });
+                }
+
+                for (const [rootName, rootUri] of rootMapping) {
+                    if (cancellationToken?.isCancellationRequested) {
+                        return JSON.stringify({ error: 'Operation cancelled by user' });
+                    }
+
+                    if (files.length >= maxResults) {
+                        break;
+                    }
+
+                    const ignorePatterns = await this.buildIgnorePatterns(rootUri);
+                    const allExcludes = [...ignorePatterns];
+                    if (excludePatterns && excludePatterns.length > 0) {
+                        allExcludes.push(...excludePatterns);
+                    }
+                    const excludeMatchers = allExcludes.map(excludePattern => new Minimatch(excludePattern, { dot: true }));
+
+                    await this.traverseDirectory(
+                        rootUri,
+                        rootUri,
+                        rootName,
+                        patternMatcher,
+                        excludeMatchers,
+                        files,
+                        maxResults,
+                        cancellationToken
+                    );
+                }
+            }
 
             if (cancellationToken?.isCancellationRequested) {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
@@ -931,12 +1424,14 @@ export class FindFilesByPattern implements ToolProvider {
 
     private async traverseDirectory(
         currentUri: URI,
-        workspaceRoot: URI,
+        searchRoot: URI,
+        rootName: string | undefined,
         patternMatcher: Minimatch,
         excludeMatchers: Minimatch[],
         results: string[],
         maxResults: number,
-        cancellationToken?: CancellationToken
+        cancellationToken?: CancellationToken,
+        emitAbsolutePaths = false
     ): Promise<void> {
         if (cancellationToken?.isCancellationRequested || results.length >= maxResults) {
             return;
@@ -953,7 +1448,7 @@ export class FindFilesByPattern implements ToolProvider {
                     break;
                 }
 
-                const relativePath = workspaceRoot.relative(child.resource)?.toString();
+                const relativePath = searchRoot.relative(child.resource)?.toString();
                 if (!relativePath) {
                     continue;
                 }
@@ -966,9 +1461,25 @@ export class FindFilesByPattern implements ToolProvider {
                 }
 
                 if (child.isDirectory) {
-                    await this.traverseDirectory(child.resource, workspaceRoot, patternMatcher, excludeMatchers, results, maxResults, cancellationToken);
+                    await this.traverseDirectory(
+                        child.resource,
+                        searchRoot,
+                        rootName,
+                        patternMatcher,
+                        excludeMatchers,
+                        results,
+                        maxResults,
+                        cancellationToken,
+                        emitAbsolutePaths
+                    );
                 } else if (patternMatcher.match(relativePath)) {
-                    results.push(relativePath);
+                    if (emitAbsolutePaths) {
+                        results.push(child.resource.path.toString());
+                    } else if (rootName) {
+                        results.push(`${rootName}/${relativePath}`);
+                    } else {
+                        results.push(relativePath);
+                    }
                 }
             }
         } catch {

@@ -9,7 +9,17 @@
 <a name="breaking_changes_1.72.0">[Breaking Changes:](#breaking_changes_1.72.0)</a>
 
 - [ai-chat] the `'*'` magic key inside `ai-features.chat.toolConfirmation` is no longer honored; migrate to the new `ai-features.chat.defaultToolConfirmation` preference [#17452](https://github.com/eclipse-theia/theia/pull/17452)
+- [ai-chat] removed `FileValidationState.INVALID_SECONDARY` enum member from `ContextFileValidationService`; all workspace roots are now treated equally so the "secondary root" concept no longer exists [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-core] `DefaultSkillService.getWorkspaceSkillsDirectoryPath()` has been renamed to `getWorkspaceSkillsDirectoryPaths()` and now returns `string[]` instead of `string | undefined` to scan all workspace roots [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-ide] `WorkspaceFunctionScope.getWorkspaceRoot()` has been removed; use `getRootMapping()`, `getContainingRoot(uri)`, or `resolveRelativePath(path)` instead [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-ide] `WorkspaceFunctionScope.resolveRelativePath()` is now synchronous (returns `URI` instead of `Promise<URI>`) and expects `<rootName>/<relativePath>` format in multi-root workspaces [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-ide] `WorkspaceFunctionScope.isInPrimaryWorkspace()` has been removed; use `isInWorkspace()` instead, which now checks all roots [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-ide] `optimizeSearchResults()` second parameter changed from `URI` to `WorkspacePathResolver` interface [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-ide] `ContextFileValidationServiceImpl.findInSecondaryWorkspaceRoots()` protected method has been removed [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-terminal] `ShellExecutionRequest.workspaceRoot` property has been removed; CWD is now resolved to an absolute path on the frontend before being sent to the backend [#17262](https://github.com/eclipse-theia/theia/pull/17262)
+- [ai-terminal] `ShellExecutionServerImpl.resolveCwd()` protected method has been removed; CWD resolution now happens in `ShellExecutionTool` on the frontend [#17262](https://github.com/eclipse-theia/theia/pull/17262)
 - [native-webpack-plugin] The `@theia/native-webpack-plugin` package has been renamed to `@theia/bundle-plugin` [#14414](https://github.com/eclipse-theia/theia/pull/14414).
+- [core] `BackendApplicationContribution.onStop()` is now dispatched from `gracefulShutdown()` before the root Inversify container is unbound, instead of from `process.on('exit')`. Hooks are dispatched in parallel and may now return `Promise<void>` to participate in the (timeout-bounded) asynchronous shutdown; existing synchronous implementations remain valid. Contributions that somehow relied on a particular synchronous cross-contribution ordering will observe different behaviour (the new parallel contract matches `initialize`/`configure`). The synchronous `process.on('exit')` fallback still runs `onStop` for code paths that bypass `gracefulShutdown` and continues to discard any returned promise. [#17477](https://github.com/eclipse-theia/theia/pull/17477)
 
 ## 1.71.0 - 4/30/2026
 

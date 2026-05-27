@@ -73,7 +73,8 @@ describe('UserInteractionTool', () => {
         container = new Container();
 
         mockWorkspaceScope = {
-            getWorkspaceRoot: sinon.stub().resolves(workspaceRoot),
+            resolveRelativePath: sinon.stub().callsFake((path: string) => workspaceRoot.resolve(path)),
+            getContainingRoot: sinon.stub().returns(workspaceRoot),
             ensureWithinWorkspace: sinon.stub()
         };
 

@@ -204,14 +204,11 @@ describe('AddFileToChatContext Validation Tests', () => {
         expect(addedFiles).to.have.lengthOf(1);
     });
 
-    it('should reject files in secondary workspace roots', async () => {
+    it('should accept files in all workspace roots', async () => {
         const mockValidationService: ContextFileValidationService = {
             validateFile: async file => {
                 if (file === '/secondary/root/file.ts') {
-                    return {
-                        state: FileValidationState.INVALID_SECONDARY,
-                        message: 'File is in a secondary workspace root. AI agents can only access files in the first workspace root.'
-                    };
+                    return { state: FileValidationState.VALID };
                 }
                 return { state: FileValidationState.VALID };
             }
@@ -230,11 +227,11 @@ describe('AddFileToChatContext Validation Tests', () => {
         }
 
         const jsonResponse = JSON.parse(result);
-        expect(jsonResponse.added).to.have.lengthOf(0);
-        expect(jsonResponse.rejected).to.have.lengthOf(1);
-        expect(jsonResponse.rejected[0].file).to.equal('/secondary/root/file.ts');
-        expect(jsonResponse.rejected[0].state).to.equal(FileValidationState.INVALID_SECONDARY);
-        expect(addedFiles).to.have.lengthOf(0);
+        expect(jsonResponse.added).to.have.lengthOf(1);
+        expect(jsonResponse.added[0]).to.equal('/secondary/root/file.ts');
+        expect(jsonResponse.rejected).to.have.lengthOf(0);
+        expect(addedFiles).to.have.lengthOf(1);
+        expect(addedFiles[0].arg).to.equal('/secondary/root/file.ts');
     });
 
     it('should add all files when validation service is not available', async () => {
