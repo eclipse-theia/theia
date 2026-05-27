@@ -21,56 +21,34 @@ export const OpenAiLanguageModelsManager = Symbol('OpenAiLanguageModelsManager')
 export const OPENAI_PROVIDER_ID = 'openai';
 
 export interface OpenAiModelDescription {
-    /**
-     * The identifier of the model which will be shown in the UI.
-     */
+    /** The identifier of the model which will be shown in the UI. */
     id: string;
-    /**
-     * The model ID as used by the OpenAI API.
-     */
+    /** The model ID as used by the OpenAI API. */
     model: string;
-    /**
-     * The OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
-     */
+    /** The OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used. */
     url?: string;
-    /**
-     * The key for the model. If 'true' is provided the global OpenAI API key will be used.
-     */
+    /** The key for the model. If `true` is provided the global OpenAI API key will be used. */
     apiKey: string | true | undefined;
-    /**
-     * The version for the api. If 'true' is provided the global OpenAI version will be used.
-     */
+    /** The version for the api. If `true` is provided the global OpenAI version will be used. */
     apiVersion: string | true | undefined;
-    /**
-     * Optional deployment name for Azure OpenAI.
-     */
+    /** Optional deployment name for Azure OpenAI. */
     deployment?: string;
+    /** Maximum number of retry attempts when a request fails. Default is 3. */
+    maxRetries: number;
+    /** Use the newer OpenAI Response API instead of the Chat Completion API. Default is `false`. */
+    useResponseApi?: boolean;
+    /** Indicate whether the streaming API shall be used. Defaults from the model id when unset. */
+    enableStreaming?: boolean;
     /**
-     * Indicate whether the streaming API shall be used.
-     */
-    enableStreaming: boolean;
-    /**
-     * Property to configure the developer message of the model. Setting this property to 'user', 'system', or 'developer' will use that string as the role for the system message.
-     * Setting it to 'mergeWithFollowingUserMessage' will prefix the following user message with the system message or convert the system message to user if the following message
-     * is not a user message. 'skip' will remove the system message altogether.
-     * Defaults to 'developer'.
+     * Configures how system messages are handled. `'user' | 'system' | 'developer'` use that role for
+     * the system message; `'mergeWithFollowingUserMessage'` prepends the system message to the next
+     * user message (creating one when needed); `'skip'` removes system messages. Defaults from the
+     * model id when unset (typically `'developer'`).
      */
     developerMessageSettings?: 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
-    /**
-     * Flag to configure whether the OpenAPI model supports structured output. Default is `true`.
-     */
-    supportsStructuredOutput: boolean;
-    /**
-     * Maximum number of retry attempts when a request fails. Default is 3.
-     */
-    maxRetries: number;
-    /**
-     * Flag to configure whether to use the newer OpenAI Response API instead of the Chat Completion API.
-     * For official OpenAI models, this defaults to `true`. For custom providers, users must explicitly enable it.
-     * Default is `false` for custom models.
-     */
-    useResponseApi?: boolean;
-    /** When set, the UI exposes a reasoning selector and the level is translated to the OpenAI reasoning parameter. */
+    /** Whether the model supports structured output (`response_format` JSON schemas). Defaults from the model id when unset. */
+    supportsStructuredOutput?: boolean;
+    /** When set, the UI exposes a reasoning selector. Defaults from the model id when unset. */
     reasoningSupport?: ReasoningSupport;
 }
 export interface OpenAiLanguageModelsManager {
