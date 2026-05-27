@@ -77,6 +77,9 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
 
     getPicks(filter: string, token: CancellationToken): QuickPicks {
         const items = this.items.filter(item =>
+            // Some contributions register entries without a label (e.g. an empty view name);
+            // those would otherwise sort to the top and appear as a blank row.
+            item.label.trim().length > 0 &&
             (item.when === undefined || this.contextKexService.match(item.when)) &&
             (!this.hiddenItemLabels.has(item.label))
         );

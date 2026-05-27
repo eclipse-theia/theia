@@ -86,6 +86,14 @@ import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-s
 const colorIdPattern = '^\\w+[.\\w+]*$';
 const iconIdPattern = `^${CSSIcon.iconNameSegment}(-${CSSIcon.iconNameSegment})+$`;
 
+/** Maps the view container locations used by VS Code extensions to the Theia shell locations. */
+const VIEW_CONTAINER_LOCATION_ALIASES: Record<string, string> = {
+    activitybar: 'left',
+    panel: 'bottom',
+    secondarySidebar: 'right',
+    auxiliarybar: 'right'
+};
+
 function getFileExtension(filePath: string): string {
     const index = filePath.lastIndexOf('.');
     return index === -1 ? '' : filePath.substring(index + 1);
@@ -357,10 +365,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
 
                 for (const location of Object.keys(viewsContainers)) {
                     const containers = this.readViewsContainers(viewsContainers[location], rawPlugin);
-                    const loc = location === 'activitybar' ? 'left'
-                        : location === 'panel' ? 'bottom'
-                            : location === 'secondarySidebar' || location === 'auxiliarybar' ? 'right'
-                                : location;
+                    const loc = VIEW_CONTAINER_LOCATION_ALIASES[location] ?? location;
                     if (contributions.viewsContainers[loc]) {
                         contributions.viewsContainers[loc] = contributions.viewsContainers[loc].concat(containers);
                     } else {
