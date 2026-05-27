@@ -24,6 +24,7 @@ import {
     PreferenceSchemaService, PreferenceSchemaServiceImpl, PreferenceScope
 } from '../../common';
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
+import { ILogger } from '../../common';
 
 /* eslint-disable no-null/no-null */
 
@@ -35,6 +36,14 @@ describe('Preference Validation Service', () => {
     } as unknown as PreferenceSchemaService);
     container.bind(PreferenceLanguageOverrideService).to(PreferenceLanguageOverrideService).inSingletonScope();
     container.bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
+    container.bind(ILogger).toConstantValue({
+        error: () => { },
+        warn: () => { },
+        info: () => { },
+        debug: () => { },
+        trace: () => { },
+        fatal: () => { }
+    } as any).whenTargetNamed('core:PreferenceValidationService');
 
     const validator = container.resolve(PreferenceValidationService);
     const validateBySchema: (value: JSONValue, schema: PreferenceDataProperty) => JSONValue = validator.validateBySchema.bind(validator, 'dummy');
