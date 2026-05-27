@@ -75,6 +75,12 @@ export async function replaceFfmpeg(options: ffmpeg.FfmpegOptions = {}): Promise
 
 export async function readElectronVersion(electronDist: string): Promise<string> {
     const electronVersionFilePath = path.resolve(electronDist, 'version');
-    const version = await fs.readFile(electronVersionFilePath, 'utf8');
-    return version.trim();
+    try {
+        const version = await fs.readFile(electronVersionFilePath, 'utf8');
+        return version.trim();
+    } catch {
+        // `dist/version` is part of the Electron binary archive and can be absent after a
+        // partial postinstall extraction on CI. Fall back to the npm package's version.
+        return require('electron/package.json').version;
+    }
 }
