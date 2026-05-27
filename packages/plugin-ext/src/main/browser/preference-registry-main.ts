@@ -90,9 +90,9 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
         key: string, value: any, resource?: string, withLanguageOverride?: boolean, overrideIdentifier?: string): Promise<void> {
         const scope = this.parseConfigurationTarget(target, resource);
         if (this.useOverrideIdentifier(key, scope, withLanguageOverride, resource, overrideIdentifier)) {
-            await this.preferenceService.set(key, undefined, scope, resource, overrideIdentifier);
+            await this.preferenceService.set(key, value, scope, resource, overrideIdentifier);
         } else {
-            await this.preferenceService.set(key, undefined, scope, resource);
+            await this.preferenceService.set(key, value, scope, resource);
         }
     }
 
