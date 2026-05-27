@@ -103,6 +103,6 @@ export class DebugWatchExpression extends ExpressionItem {
         }
     }
     protected valueRef: HTMLSpanElement | undefined;
-    protected setValueRef = (valueRef: HTMLSpanElement | null) => this.valueRef = valueRef || undefined;
+    protected setValueRef = (valueRef: HTMLSpanElement | null): void => { this.valueRef = valueRef || undefined; };
 
 }

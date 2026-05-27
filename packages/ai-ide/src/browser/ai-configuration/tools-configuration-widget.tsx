@@ -392,7 +392,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     }
 
     protected handleAddPatternToList(
-        inputRef: React.RefObject<HTMLInputElement>,
+        inputRef: React.RefObject<HTMLInputElement | null>,
         addFn: (pattern: string) => void,
         getFn: () => string[],
         setPatterns: (patterns: string[]) => void,
