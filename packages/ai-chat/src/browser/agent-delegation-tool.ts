@@ -31,9 +31,6 @@ import {
     MutableChatResponseModel,
     ChatRequestInvocation,
 } from '../common';
-import { DelegationResponseContent } from './delegation-response-content';
-
-export const AGENT_DELEGATION_FUNCTION_ID = 'delegateToAgent';
 import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
 
 @injectable()
