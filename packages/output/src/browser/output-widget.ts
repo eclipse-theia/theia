@@ -114,6 +114,9 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
                 this._state = { ...this._state, pendingSelectedChannelName: storedChannelName };
             }
         }
+        // If no restoration occurred and nothing else has set a selection,
+        // fall back to the first visible channel so the widget isn't empty.
+        this.ensureChannelSelected();
     }
 
     override dispose(): void {
@@ -294,6 +297,19 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
                 const lineNumber = model.getLineCount();
                 const column = model.getLineMaxColumn(lineNumber);
                 editor.getControl().revealPosition({ lineNumber, column }, monaco.editor.ScrollType.Smooth);
+            }
+        }
+    }
+
+    /**
+     * If no channel is currently selected, select the first visible channel
+     * as a default so the widget shows content rather than an empty view.
+     */
+    protected ensureChannelSelected(): void {
+        if (!this.outputChannelManager.selectedChannel) {
+            const firstVisible = this.outputChannelManager.getVisibleChannels()[0];
+            if (firstVisible) {
+                this.outputChannelManager.selectedChannel = firstVisible;
             }
         }
     }
