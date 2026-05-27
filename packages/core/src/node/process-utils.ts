@@ -47,21 +47,28 @@ export class ProcessUtils {
         for (const pid of this.unixGetChildrenRecursive(ppid)) {
             // Prevent killing the current process:
             if (pid !== process.pid) {
-                // Don't stop if a process fails to be killed (keep on killing the others):
-                try {
-                    process.kill(pid);
-                } catch (error) {
-                    console.error(error);
-                }
+                this.unixKill(pid);
             }
         }
         if (ppid === this.unixGetPGID(ppid)) {
             // When a process pgid === pid this means the the process is a group leader.
             // We can then kill every process part of its group by doing `kill(-pgid)`.
             // This can catch leaked processes under `init` that are still part of the group.
-            process.kill(-ppid);
+            this.unixKill(-ppid);
         }
-        process.kill(ppid);
+        this.unixKill(ppid);
+    }
+
+    protected unixKill(pid: number): void {
+        try {
+            process.kill(pid);
+        } catch (error) {
+            // ESRCH means the process is already gone, which is the goal here. Log
+            // anything else but keep going so the rest of the tree is still killed.
+            if ((error as NodeJS.ErrnoException | undefined)?.code !== 'ESRCH') {
+                console.error(`[${pid}] failed to kill`, error);
+            }
+        }
     }
 
     protected unixGetPGID(pid: number): number {

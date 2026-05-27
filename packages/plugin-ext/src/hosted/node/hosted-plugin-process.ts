@@ -140,17 +140,6 @@ export class HostedPluginProcess implements ServerPluginRunner {
         this.processUtils.terminateProcessTree(parentPid);
     }
 
-    protected killProcess(pid: number): void {
-        try {
-            process.kill(pid);
-        } catch (e) {
-            if (e && 'code' in e && e.code === 'ESRCH') {
-                return;
-            }
-            this.logger.error(`[${pid}] failed to kill`, e);
-        }
-    }
-
     public runPluginServer(serverName?: string): void {
         if (this.childProcess) {
             this.terminatePluginServer();
