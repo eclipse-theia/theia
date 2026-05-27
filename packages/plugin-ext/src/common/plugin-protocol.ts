@@ -190,6 +190,7 @@ export interface PluginPackageViewContainer {
     id: string;
     title: string;
     icon: string;
+    when?: string;
 }
 
 export enum PluginViewType {
@@ -851,6 +852,7 @@ export interface ViewContainer {
     title: string;
     iconUrl: string;
     themeIcon?: string;
+    when?: string;
 }
 
 /**

@@ -179,16 +179,19 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get installed(): boolean {
-        return !!this.version && this.model
-            .isInstalledAtSpecificVersion(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
+        return this.model.isInstalled(this.id);
     }
 
     get uninstalled(): boolean {
-        return !!this.version && this.model.isUninstalled(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
+        const installedVersion = this.installedVersion;
+        return !!installedVersion && this.model
+            .isUninstalled(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: installedVersion }));
     }
 
     get deployed(): boolean {
-        return !!this.version && this.model.isDeployed(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
+        const installedVersion = this.installedVersion;
+        return !!installedVersion && this.model
+            .isDeployed(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: installedVersion }));
     }
 
     get disabled(): boolean {
@@ -241,7 +244,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get displayName(): string | undefined {
-        return this.getData('displayName') || this.name;
+        return this.getData('displayName') || this.name || this.id;
     }
 
     get description(): string | undefined {
@@ -315,8 +318,21 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\n${nls.localizeByDefault('Publisher: {0}', this.publisher)}`;
-
+        const version = VSXExtension.formatVersion(this.version);
+        let md = `__${this.displayName}__`;
+        if (version) {
+            md += ` ${version}`;
+        }
+        if (this.disabled && this.installed) {
+            md += ` (${nls.localizeByDefault('Disabled')})`;
+        }
+        if (this.description) {
+            md += `\n\n${this.description}`;
+        }
+        md += '\n_____\n\n';
+        if (this.publisher) {
+            md += nls.localizeByDefault('Publisher: {0}', this.publisher);
+        }
         if (this.license) {
             md += `  \r${nls.localize('theia/vsx-registry/license', 'License: {0}', this.license)}`;
         }
@@ -634,7 +650,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
     override render(): React.ReactNode {
         const {
             builtin, preview, id, iconUrl, publisher, displayName, description, version,
-            averageRating, downloadCount, repository, license, readme, disabledByTrust
+            averageRating, downloadCount, repository, license, readme, disabled, installed, disabledByTrust
         } = this.props.extension;
 
         const sanitizedReadme = !!readme ? DOMPurify.sanitize(readme) : undefined;
@@ -650,6 +666,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         <span title='Extension identifier' className='identifier'>{id}</span>
                         {preview && <span className='preview'>Preview</span>}
                         {builtin && <span className='builtin'>Built-in</span>}
+                        {disabled && installed && <span className='disabled'>{nls.localizeByDefault('Disabled')}</span>}
                         {disabledByTrust && <span className='restricted'>{nls.localizeByDefault('Restricted Mode')}</span>}
                     </div>
                     <div className='subtitle'>
