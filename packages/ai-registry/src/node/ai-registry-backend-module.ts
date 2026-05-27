@@ -16,11 +16,18 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
+import { BackendRequestAllowedContribution } from '@theia/core/lib/node';
+import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
 import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol';
 import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences';
+import { AIRegistryRequestAllowedContribution } from './ai-registry-request-allowed-contribution';
 import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
 
 export default new ContainerModule(bind => {
+    bind(AIRegistryConfiguration).toSelf().inSingletonScope();
+    bind(AIRegistryRequestAllowedContribution).toSelf().inSingletonScope();
+    bind(BackendRequestAllowedContribution).toService(AIRegistryRequestAllowedContribution);
+
     bind(PreferenceContribution).toConstantValue({ schema: SkillRegistryPreferencesSchema });
     bind(SkillInstallBackendServiceImpl).toSelf().inSingletonScope();
     bind(SkillInstallBackendService).toService(SkillInstallBackendServiceImpl);

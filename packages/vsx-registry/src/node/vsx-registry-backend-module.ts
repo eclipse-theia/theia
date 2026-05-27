@@ -14,15 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, JsonRpcConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { CliContribution } from '@theia/core/lib/node';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { PluginDeployerParticipant, PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { VSXRegistryService, VSX_REGISTRY_SERVICE_PATH } from '../common/vsx-registry-service';
 import { VsxCli } from './vsx-cli';
 import { VSXEnvironmentImpl } from './vsx-environment-impl';
 import { VSXExtensionResolver } from './vsx-extension-resolver';
 import { VsxCliDeployerParticipant } from './vsx-cli-deployer-participant';
+import { VSXRegistryServiceImpl } from './vsx-registry-service-impl';
 import { bindExtensionPreferences } from '../common/recommended-extensions-preference-contribution';
 
 export default new ContainerModule(bind => {
@@ -36,5 +38,10 @@ export default new ContainerModule(bind => {
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
     bind(VsxCliDeployerParticipant).toSelf().inSingletonScope();
     bind(PluginDeployerParticipant).toService(VsxCliDeployerParticipant);
+    bind(VSXRegistryServiceImpl).toSelf().inSingletonScope();
+    bind(VSXRegistryService).toService(VSXRegistryServiceImpl);
+    bind(ConnectionHandler)
+        .toDynamicValue(ctx => new RpcConnectionHandler(VSX_REGISTRY_SERVICE_PATH, () => ctx.container.get(VSXRegistryService)))
+        .inSingletonScope();
     bindExtensionPreferences(bind);
 });

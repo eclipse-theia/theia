@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 Ericsson and others.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export { OVSXClientProvider, OVSXUrlResolver } from './ovsx-client-provider';
-export { VSXEnvironment } from './vsx-environment';
-export { VSXExtensionUri } from './vsx-extension-uri';
-export { VSXRegistryService, VSX_REGISTRY_SERVICE_PATH } from './vsx-registry-service';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { BackendRequestAllowedContribution } from '@theia/core/lib/node';
+import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
+
+@injectable()
+export class AIRegistryRequestAllowedContribution implements BackendRequestAllowedContribution {
+
+    @inject(AIRegistryConfiguration)
+    protected readonly configuration: AIRegistryConfiguration;
+
+    getAllowedUrlPatterns(): string[] {
+        const baseUrl = this.configuration.getBaseUrl();
+        try {
+            const parsed = new URL(baseUrl);
+            return [`${parsed.protocol}//${parsed.host}`];
+        } catch {
+            return [];
+        }
+    }
+}

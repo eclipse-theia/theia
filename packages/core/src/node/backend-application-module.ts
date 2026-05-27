@@ -55,7 +55,7 @@ import { ProcessUtils } from './process-utils';
 import { ProxyCliContribution } from './request/proxy-cli-contribution';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendProviderImpl } from './os-backend-provider';
-import { BackendRequestFacade } from './request/backend-request-facade';
+import { BackendRequestFacade, BackendRequestAllowedContribution } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 import { BackendRemoteService } from './remote/backend-remote-service';
 import { RemoteCliContribution } from './remote/remote-cli-contribution';
@@ -152,6 +152,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindRootContributionProvider(bind, RemoteCliContribution);
     bind(BackendRemoteService).toSelf().inSingletonScope();
+    bindRootContributionProvider(bind, BackendRequestAllowedContribution);
     bind(BackendRequestFacade).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(
         ctx => new RpcConnectionHandler(REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade))

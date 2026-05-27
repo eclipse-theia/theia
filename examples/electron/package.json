@@ -21,7 +21,8 @@
     },
     "backend": {
       "config": {
-        "frontendConnectionTimeout": -1
+        "frontendConnectionTimeout": -1,
+        "configureProxyFromPreferences": true
       }
     }
   },

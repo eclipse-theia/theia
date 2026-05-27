@@ -22,6 +22,7 @@ import {
     WidgetStatusBarContribution,
     noopWidgetStatusBarContribution
 } from '@theia/core/lib/browser';
+import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { VSXExtensionsContribution } from './vsx-extensions-contribution';
 import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
@@ -41,6 +42,7 @@ import { bindExtensionPreferences } from '../common/recommended-extensions-prefe
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
 import { bindVsxExtensionsPreferences } from './vsx-extensions-preferences';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { VSXRegistryService, VSX_REGISTRY_SERVICE_PATH } from '../common/vsx-registry-service';
 import { LanguageQuickPickService } from '@theia/core/lib/browser/i18n/language-quick-pick-service';
 import { VSXLanguageQuickPickService } from './vsx-language-quick-pick-service';
 import { VsxExtensionArgumentProcessor } from './vsx-extension-argument-processor';
@@ -59,6 +61,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         return child.get(VSXExtension);
     });
     bind(VSXExtensionsModel).toSelf().inSingletonScope();
+
+    bind(VSXRegistryService)
+        .toDynamicValue(ctx => ServiceConnectionProvider.createProxy<VSXRegistryService>(ctx.container, VSX_REGISTRY_SERVICE_PATH))
+        .inSingletonScope();
 
     bind(VSXExtensionEditor).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
