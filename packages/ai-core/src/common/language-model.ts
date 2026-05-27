@@ -287,6 +287,12 @@ export namespace ToolRequest {
 export interface LanguageModelRequest {
     messages: LanguageModelMessage[],
     tools?: ToolRequest[];
+    /**
+     * Ids of tools whose definitions should be deferred and discovered
+     * on-demand via the provider's built-in tool search mechanism.
+     * Providers that do not support deferred loading should ignore this field.
+     */
+    deferredToolIds?: string[];
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
     clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
