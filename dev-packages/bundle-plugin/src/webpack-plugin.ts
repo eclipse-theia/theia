@@ -17,6 +17,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import resolvePackagePath = require('resolve-package-path');
 
 import type { Compiler } from 'webpack';
 
@@ -101,7 +102,7 @@ export class NativeWebpackPlugin {
     protected async copyRipgrep(issuer: string, compiler: Compiler): Promise<void> {
         const fileName = process.platform === 'win32' ? 'rg.exe' : 'rg';
         const platformPkg = `@vscode/ripgrep-${process.platform}-${process.arch}`;
-        const sourceFile = require.resolve(`${platformPkg}/bin/${fileName}`, { paths: [issuer] });
+        const sourceFile = path.join(resolveModulePath(platformPkg, issuer), 'bin', fileName);
         const targetFile = path.join(compiler.outputPath, this.options.out, fileName);
         await this.copyExecutable(sourceFile, targetFile);
     }
@@ -152,6 +153,14 @@ export class NativeWebpackPlugin {
         await fs.promises.copyFile(source, target);
         await fs.promises.chmod(target, 0o777);
     }
+}
+
+function resolveModulePath(module: string, issuer: string): string {
+    const modulePath = resolvePackagePath(module, issuer);
+    if (!modulePath) {
+        throw new Error('Could not resolve path of module: ' + module);
+    }
+    return path.resolve(modulePath, '..');
 }
 
 function findNativeWatcherFile(issuer: string): string {
