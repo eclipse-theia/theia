@@ -8,7 +8,7 @@
     "@theia/filesystem": "1.71.1",
     "@theia/process": "1.71.1",
     "@theia/workspace": "1.71.1",
-    "@vscode/ripgrep": "^1.17.1",
+    "@vscode/ripgrep": "^1.18.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
