@@ -74,9 +74,6 @@ export class AgentCompletionNotificationService {
     @inject(WindowBlinkService)
     protected readonly windowBlinkService: WindowBlinkService;
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
     @inject(ILogger) @named('ai-core:AgentCompletionNotificationService')
     protected readonly logger: ILogger;
 
