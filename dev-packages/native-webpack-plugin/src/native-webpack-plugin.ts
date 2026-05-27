@@ -17,6 +17,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import resolvePackagePath = require('resolve-package-path');
 
 import type { Compiler } from 'webpack';
 
@@ -99,9 +100,10 @@ export class NativeWebpackPlugin {
     }
 
     protected async copyRipgrep(issuer: string, compiler: Compiler): Promise<void> {
-        const suffix = process.platform === 'win32' ? '.exe' : '';
-        const sourceFile = require.resolve(`@vscode/ripgrep/bin/rg${suffix}`, { paths: [issuer] });
-        const targetFile = path.join(compiler.outputPath, this.options.out, `rg${suffix}`);
+        const fileName = process.platform === 'win32' ? 'rg.exe' : 'rg';
+        const platformPkg = `@vscode/ripgrep-${process.platform}-${process.arch}`;
+        const sourceFile = path.join(resolveModulePath(platformPkg, issuer), 'bin', fileName);
+        const targetFile = path.join(compiler.outputPath, this.options.out, fileName);
         await this.copyExecutable(sourceFile, targetFile);
     }
 
@@ -153,6 +155,14 @@ export class NativeWebpackPlugin {
     }
 }
 
+function resolveModulePath(module: string, issuer: string): string {
+    const modulePath = resolvePackagePath(module, issuer);
+    if (!modulePath) {
+        throw new Error('Could not resolve path of module: ' + module);
+    }
+    return path.resolve(modulePath, '..');
+}
+
 function findNativeWatcherFile(issuer: string): string {
     let name = `@parcel/watcher-${process.platform}-${process.arch}`;
     if (process.platform === 'linux') {
@@ -188,9 +198,7 @@ async function buildFile(root: string, name: string, content: string): Promise<s
 }
 
 const ripgrepReplacement = (nativePath: string = '.'): string => `
-const path = require('path');
-
-exports.rgPath = path.join(__dirname, \`./${nativePath}/rg\${process.platform === 'win32' ? '.exe' : ''}\`);
+export const rgPath = require('path').join(__dirname, \`./${nativePath}/rg\${process.platform === 'win32' ? '.exe' : ''}\`);
 `;
 
 const bindingsReplacement = (issuer: string, entries: [string, string][]): string => {

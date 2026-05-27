@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "detect-libc": "^2.1.2",
+    "resolve-package-path": "^4.0.3",
     "tslib": "^2.6.2",
     "webpack": "^5.105.4"
   },
