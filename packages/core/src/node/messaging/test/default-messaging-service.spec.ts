@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { Container, injectable, preDestroy } from 'inversify';
-import { ConnectionHandler, bindContributionProvider, servicesPath } from '../../../common';
+import { ConnectionHandler, bindContributionProvider, servicesPath, ILogger } from '../../../common';
 import { BasicChannel, Channel } from '../../../common/message-rpc/channel';
 import { Uint8ArrayWriteBuffer } from '../../../common/message-rpc/uint8-array-message-buffer';
 import { ConnectionContainerModule } from '../connection-container-module';
@@ -63,6 +63,14 @@ describe('DefaultMessagingService', () => {
                 }
             };
             container.bind(FrontendConnectionService).toConstantValue(frontendConnectionService);
+            container.bind(ILogger).toConstantValue({
+                error: () => { },
+                warn: () => { },
+                info: () => { },
+                debug: () => { },
+                trace: () => { },
+                fatal: () => { }
+            } as unknown as ILogger).whenTargetNamed('core:DefaultMessagingService');
 
             const messagingService = container.get(DefaultMessagingService);
             messagingService.initialize();

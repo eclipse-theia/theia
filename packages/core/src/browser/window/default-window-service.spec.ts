@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Container } from 'inversify';
-import { ContributionProvider } from '../../common';
+import { ContributionProvider, ILogger } from '../../common';
 import { CorePreferences } from '../../common/core-preferences';
 import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { DefaultWindowService } from './default-window-service';
@@ -42,6 +42,14 @@ describe('DefaultWindowService', () => {
             .toConstantValue({
                 'application.confirmExit': confirmExit,
             });
+        container.bind(ILogger).toConstantValue({
+            error: () => { },
+            warn: () => { },
+            info: () => { },
+            debug: () => { },
+            trace: () => { },
+            fatal: () => { }
+        } as unknown as ILogger).whenTargetNamed('core:DefaultWindowService');
         return container.get(DefaultWindowService);
     }
     it('onWillStop should be called on every contribution (never)', () => {

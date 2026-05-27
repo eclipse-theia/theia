@@ -21,10 +21,9 @@ import { JSONValue } from '@lumino/coreutils';
 import { IJSONSchema, JsonType } from '../../common/json-schema';
 import {
     DefaultsPreferenceProvider, Disposable, PreferenceDataProperty, PreferenceProvider,
-    PreferenceSchemaService, PreferenceSchemaServiceImpl, PreferenceScope
+    PreferenceSchemaService, PreferenceSchemaServiceImpl, PreferenceScope, ILogger
 } from '../../common';
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
-import { ILogger } from '../../common';
 
 /* eslint-disable no-null/no-null */
 
@@ -43,7 +42,7 @@ describe('Preference Validation Service', () => {
         debug: () => { },
         trace: () => { },
         fatal: () => { }
-    } as any).whenTargetNamed('core:PreferenceValidationService');
+    } as unknown as ILogger).whenTargetNamed('core:PreferenceValidationService');
 
     const validator = container.resolve(PreferenceValidationService);
     const validateBySchema: (value: JSONValue, schema: PreferenceDataProperty) => JSONValue = validator.validateBySchema.bind(validator, 'dummy');

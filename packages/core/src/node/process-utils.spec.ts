@@ -17,6 +17,7 @@
 import { expect } from 'chai';
 import { Container } from 'inversify';
 import { ProcessUtils } from './process-utils';
+import { ILogger } from '../common';
 
 /** PPID, PID */
 const mockPsOutput = `\
@@ -36,6 +37,15 @@ describe('ProcessUtils', () => {
     beforeEach(() => {
         const container = new Container();
         container.bind(ProcessUtils).toSelf().inSingletonScope();
+        container.bind(ILogger).toConstantValue({
+            error: () => { },
+            warn: () => { },
+            info: () => { },
+            debug: () => { },
+            trace: () => { },
+            fatal: () => { }
+        } as unknown as ILogger).whenTargetNamed('core:ProcessUtils');
+
         coreProcessManager = container.get(ProcessUtils);
     });
 

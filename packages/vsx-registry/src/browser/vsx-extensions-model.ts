@@ -102,7 +102,7 @@ export class VSXExtensionsModel {
 
     @postConstruct()
     protected init(): void {
-        this.initialized = this.doInit().catch(this.logger.error);
+        this.initialized = this.doInit().catch(e => this.logger.error(e));
     }
 
     protected async doInit(): Promise<void> {
