@@ -109,7 +109,7 @@ export class DefaultFrontendVariableService extends DefaultAIVariableService imp
     @inject(AIVariableResourceResolver) protected readonly aiResourceResolver: AIVariableResourceResolver;
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(ILogger) @named('ai-core:DefaultFrontendVariableService')
-    protected readonly logger: ILogger;
+    protected override readonly logger: ILogger;
 
     onStart(): void {
         this.initContributions();
