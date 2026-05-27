@@ -61,6 +61,16 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/summarize/description', 'Models prioritized for summarization and condensation of content.')
+        },
+        {
+            id: 'default/fast',
+            defaultModelIds: [
+                'anthropic/claude-haiku-4-5',
+                'openai/gpt-5.4-mini',
+                'google/gemini-3.5-flash'
+            ],
+            description: nls.localize('theia/ai/core/defaultModelAliases/fast/description',
+                'Faster and cheaper models for simpler tasks like exploration or basic tool calling, where deep reasoning is not required.')
         }
     ];
     protected readonly onDidChangeEmitter = new Emitter<void>();
