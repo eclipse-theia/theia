@@ -32,25 +32,17 @@ export function buildConversationListMetrics(
 ): QaapAgentConversationListMetrics {
     const turnMessages = sliceLastTurnMessages(input.messages);
     const diff = aggregateDiffStats(input.messages);
-    const metrics: QaapAgentConversationListMetrics = { ...diff };
-
     if (input.status === 'streaming') {
-        const turnStartedAt = findLastUserMessage(input.messages)?.createdAt;
-        if (turnStartedAt !== undefined) {
-            Object.assign(metrics, { turnStartedAt });
-        }
-        const activityLabel = resolveStreamingActivityLabel(turnMessages);
-        if (activityLabel) {
-            Object.assign(metrics, { activityLabel });
-        }
-        return metrics;
+        return {
+            ...diff,
+            turnStartedAt: findLastUserMessage(input.messages)?.createdAt,
+            activityLabel: resolveStreamingActivityLabel(turnMessages),
+        };
     }
-
-    const durationMs = resolveLastTurnDurationMs(input.messages);
-    if (durationMs !== undefined) {
-        Object.assign(metrics, { lastTurnDurationMs: durationMs });
-    }
-    return metrics;
+    return {
+        ...diff,
+        lastTurnDurationMs: resolveLastTurnDurationMs(input.messages),
+    };
 }
 
 /** Best-effort parse of git / agent summaries into line counts. */
