@@ -202,7 +202,6 @@ describe('Chat Content Serialization', () => {
                 id: 'id123',
                 name: 'toolName',
                 arguments: '{"arg": "value"}',
-                finished: true,
                 result: 'result'
             });
 
@@ -240,6 +239,22 @@ describe('Chat Content Serialization', () => {
             expect(deserialized.finished).to.be.true;
             expect(deserialized.result).to.equal('real-result');
         });
+
+        it('should preserve a partial result written via updateResult and finalize the tool call', async () => {
+            // Simulates a still-pending tool that persisted intermediate state
+            // (e.g. user-interaction wizard) before the chat session was reloaded.
+            const original = new ToolCallChatResponseContentImpl('id', 'toolName', '{}', false);
+            original.updateResult('{"completed":false,"steps":[{"title":"S1","value":"a"}]}');
+
+            const serialized = original.toSerializable?.();
+            const withFallback = { ...serialized!, fallbackMessage: '' };
+            const deserialized = await registry.deserialize(withFallback) as ToolCallChatResponseContentImpl;
+
+            expect(deserialized.finished).to.be.true;
+            expect(deserialized.result).to.equal('{"completed":false,"steps":[{"title":"S1","value":"a"}]}');
+            expect(ToolCallChatResponseContent.isErrorResult(deserialized.result)).to.be.false;
+        });
+
     });
 
     describe('ErrorChatResponseContentImpl', () => {
