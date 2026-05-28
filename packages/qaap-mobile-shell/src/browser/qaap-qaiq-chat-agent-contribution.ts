@@ -47,6 +47,10 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
     protected readonly workspaceService: WorkspaceService;
 
     protected registered = false;
+    /** Shared SSE connection reused across concurrent task streams. */
+    protected sharedSource: EventSource | undefined;
+    /** Number of active streamTask() calls currently listening on sharedSource. */
+    protected activeStreamCount = 0;
 
     onStart(): void {
         if (this.registered) {
@@ -64,6 +68,9 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
         this.chatAgentService.unregisterChatAgent(QAIQ_CHAT_AGENT_ID);
         this.agentService.unregisterAgent(QAIQ_CHAT_AGENT_ID);
         this.registered = false;
+        this.sharedSource?.close();
+        this.sharedSource = undefined;
+        this.activeStreamCount = 0;
     }
 
     protected createAgentDescriptor(): Agent {
@@ -139,6 +146,17 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
      *   The `error` handler schedules a delayed state check after each disconnect so the
      *   response resolves correctly instead of hanging until the 90s timeout.
      */
+    /**
+     * Subscribes to the `/stream` SSE feed and drives the chat response in real time.
+     * Resolves once the task reaches a terminal state, is cancelled by the user, or times out.
+     *
+     * Two correctness hazards are handled here:
+     * - Race condition: the task may finish between `startTask()` and the SSE connection
+     *   being established. The `open` handler fires a one-time state check.
+     * - Disconnect: if the SSE connection drops, the `completed` event may be missed.
+     *   The `error` handler schedules a delayed state check after each disconnect so the
+     *   response resolves correctly instead of hanging until the 90s timeout.
+     */
     protected streamTask(
         taskId: string,
         accumulator: QaapQaiqStreamAccumulator,
@@ -146,31 +164,19 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
         request: MutableChatRequestModel,
     ): Promise<void> {
         return new Promise<void>(resolve => {
-            let source: EventSource | undefined;
             let done = false;
             /** Tracks how many bytes of the task log have already been pushed to the accumulator. */
             let logOffset = 0;
 
-            const finish = (state: string): void => {
-                if (done) {
-                    return;
-                }
-                done = true;
-                clearTimeout(timeoutHandle);
-                cancelListener.dispose();
-                source?.close();
-                if (state === 'failed') {
-                    request.response.response.addContent(new ErrorChatResponseContentImpl(
-                        new Error('QAIQ task failed.')
-                    ));
-                } else if (accumulator.getSegments().length === 0) {
-                    request.response.response.addContent(new MarkdownChatResponseContentImpl(
-                        'Still running in background. Track it in **Jobs / Background tasks**.'
-                    ));
-                }
+            const source = this.acquireSource();
+            if (!source) {
+                request.response.response.addContent(new ErrorChatResponseContentImpl(
+                    new Error('SSE not available.')
+                ));
                 request.response.complete();
                 resolve();
-            };
+                return;
+            }
 
             /**
              * Fetches the current task detail and applies any log bytes that have not yet
@@ -200,28 +206,7 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                 }
             };
 
-            const timeoutHandle = setTimeout(() => finish('timeout'), STREAM_TIMEOUT_MS);
-
-            const cancelListener = request.response.cancellationToken.onCancellationRequested(() => {
-                void this.cancelTask(taskId).finally(() => finish('cancelled'));
-            });
-
-            if (typeof EventSource === 'undefined') {
-                finish('error');
-                return;
-            }
-
-            try {
-                source = new EventSource(`${QAAP_AGENT_TASK_API_PATH}/stream`);
-            } catch {
-                finish('error');
-                return;
-            }
-
-            // Race-condition guard: check once as soon as the connection is live.
-            source.addEventListener('open', () => void checkTaskState());
-
-            source.addEventListener('output', ev => {
+            const outputHandler = (ev: Event): void => {
                 if (done) {
                     return;
                 }
@@ -236,9 +221,9 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                 } catch {
                     /* malformed payload */
                 }
-            });
+            };
 
-            const onStateEvent = (ev: Event): void => {
+            const stateHandler = (ev: Event): void => {
                 try {
                     const data = JSON.parse((ev as MessageEvent).data) as QaapTaskSsePayload;
                     if (data.id !== taskId) {
@@ -249,15 +234,89 @@ export class QaapQaiqChatAgentContribution implements FrontendApplicationContrib
                     /* malformed payload */
                 }
             };
-            source.addEventListener('completed', onStateEvent);
-            source.addEventListener('cancelled', onStateEvent);
 
+            const errorHandler = (): void => {
+                setTimeout(() => void checkTaskState(), RECONNECT_CHECK_DELAY_MS);
+            };
+
+            const openHandler = (): void => void checkTaskState();
+
+            const cleanup = (): void => {
+                source.removeEventListener('open', openHandler);
+                source.removeEventListener('output', outputHandler);
+                source.removeEventListener('completed', stateHandler);
+                source.removeEventListener('cancelled', stateHandler);
+                source.removeEventListener('error', errorHandler);
+                this.releaseSource();
+            };
+
+            const finish = (state: string): void => {
+                if (done) {
+                    return;
+                }
+                done = true;
+                clearTimeout(timeoutHandle);
+                cancelListener.dispose();
+                cleanup();
+                if (state === 'failed') {
+                    request.response.response.addContent(new ErrorChatResponseContentImpl(
+                        new Error('QAIQ task failed.')
+                    ));
+                } else if (accumulator.getSegments().length === 0) {
+                    request.response.response.addContent(new MarkdownChatResponseContentImpl(
+                        'Still running in background. Track it in **Jobs / Background tasks**.'
+                    ));
+                }
+                request.response.complete();
+                resolve();
+            };
+
+            const timeoutHandle = setTimeout(() => finish('timeout'), STREAM_TIMEOUT_MS);
+
+            const cancelListener = request.response.cancellationToken.onCancellationRequested(() => {
+                void this.cancelTask(taskId).finally(() => finish('cancelled'));
+            });
+
+            source.addEventListener('output', outputHandler);
+            source.addEventListener('completed', stateHandler);
+            source.addEventListener('cancelled', stateHandler);
             // Disconnect guard: after the browser auto-reconnects, verify task state in case
             // the terminal event was emitted while the connection was down.
-            source.addEventListener('error', () => {
-                setTimeout(() => void checkTaskState(), RECONNECT_CHECK_DELAY_MS);
-            });
+            source.addEventListener('error', errorHandler);
+
+            // Race-condition guard: if the source is already open, check once immediately;
+            // otherwise wait for the open event.
+            if (source.readyState === EventSource.OPEN) {
+                void checkTaskState();
+            } else {
+                source.addEventListener('open', openHandler);
+            }
         });
+    }
+
+    /** Returns the shared EventSource, creating it if needed. Returns undefined if unavailable. */
+    protected acquireSource(): EventSource | undefined {
+        if (typeof EventSource === 'undefined') {
+            return undefined;
+        }
+        if (!this.sharedSource || this.sharedSource.readyState === EventSource.CLOSED) {
+            try {
+                this.sharedSource = new EventSource(`${QAAP_AGENT_TASK_API_PATH}/stream`);
+            } catch {
+                return undefined;
+            }
+        }
+        this.activeStreamCount++;
+        return this.sharedSource;
+    }
+
+    /** Releases one stream's hold on the shared EventSource. Closes it when no streams remain. */
+    protected releaseSource(): void {
+        this.activeStreamCount = Math.max(0, this.activeStreamCount - 1);
+        if (this.activeStreamCount === 0) {
+            this.sharedSource?.close();
+            this.sharedSource = undefined;
+        }
     }
 
     protected stripMention(text: string): string {
