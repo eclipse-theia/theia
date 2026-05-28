@@ -163,7 +163,6 @@ export class QaapAgentConversationEndpoint implements BackendApplicationContribu
             subscription.dispose();
         };
         req.on('close', cleanup);
-        req.on('aborted', cleanup);
         res.on('close', cleanup);
     }
 }

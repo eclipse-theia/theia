@@ -138,7 +138,6 @@ export class QaapAgentTaskEndpoint implements BackendApplicationContribution {
             subscription.dispose();
         };
         req.on('close', cleanup);
-        req.on('aborted', cleanup);
         res.on('close', cleanup);
     }
 }
