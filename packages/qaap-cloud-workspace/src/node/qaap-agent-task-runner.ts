@@ -489,8 +489,10 @@ export class QaapAgentTaskRunner {
                 result.push({ id: candidate.id, label: candidate.label, available: true });
             }
         }
-        for (const candidate of [...this.detectedAgents.values()].filter(candidate => !AGENT_CANDIDATES.some(builtIn => builtIn.id === candidate.id))) {
-            result.push({ id: candidate.id, label: candidate.label, available: true });
+        for (const [, candidate] of this.detectedAgents) {
+            if (!AGENT_CANDIDATES.some(builtIn => builtIn.id === candidate.id)) {
+                result.push({ id: candidate.id, label: candidate.label, available: true });
+            }
         }
         if (process.env.QAAP_AGENT_COMMAND?.trim()) {
             result.push({ id: ENV_AGENT_ID, label: 'Custom (QAAP_AGENT_COMMAND)', available: true });
@@ -717,9 +719,6 @@ export class QaapAgentTaskRunner {
         if (env.OPENAI_API_KEY?.trim()) {
             return '--provider openai';
         }
-        if (env.ANTHROPIC_API_KEY?.trim()) {
-            return '';
-        }
         return '';
     }
 
@@ -893,7 +892,7 @@ export class QaapAgentTaskRunner {
         if (!this.isQaiqRunner(undefined, command)) {
             return;
         }
-        const usesThirdPartyProvider = binding !== undefined && binding.provider !== 'anthropic'
+        const usesThirdPartyProvider = (binding !== undefined && binding.provider !== 'anthropic')
             || command.includes('--provider openai')
             || command.includes('--provider gemini')
             || command.includes('--provider ollama')
@@ -1004,8 +1003,9 @@ export class QaapAgentTaskRunner {
 
     protected async readLog(id: string): Promise<string> {
         try {
-            const stat = await fsp.stat(this.logPath(id));
-            const handle = await fsp.open(this.logPath(id), 'r');
+            const logPath = this.logPath(id);
+            const stat = await fsp.stat(logPath);
+            const handle = await fsp.open(logPath, 'r');
             try {
                 const start = Math.max(0, stat.size - MAX_LOG_BYTES);
                 const { buffer, bytesRead } = await handle.read({
