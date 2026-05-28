@@ -545,8 +545,8 @@
     min-height: 52px;
     height: 52px;
     padding: 0 12px;
-    background: var(--q-bg, var(--qaap-bg, #0E0D0B)) !important;
-    border-bottom: 1px solid var(--q-line, var(--qaap-line, #2A2823)) !important;
+    background: var(--qaap-bg, var(--theia-editor-background, var(--q-bg, #0E0D0B))) !important;
+    border-bottom: 1px solid var(--qaap-line, var(--theia-panel-border, var(--q-line, #2A2823))) !important;
     box-sizing: border-box;
   }
 
@@ -573,7 +573,7 @@
     min-width: 36px;
     min-height: 44px;
     margin: 0;
-    color: var(--q-text-2, var(--qaap-ink-2, #C9C4B5));
+    color: var(--qaap-ink-2, var(--theia-descriptionForeground, var(--q-text-2, #C9C4B5)));
     border-radius: var(--q-radius-icon, 10px);
     opacity: 0.82;
   }
@@ -583,7 +583,7 @@
   }
 
   .theia-workbench-history-nav-group .theia-workbench-history-nav-btn:hover:not(:disabled) {
-    background: var(--q-line-soft, var(--qaap-line-soft, #1F1D19));
+    background: var(--qaap-line-soft, var(--theia-toolbar-hoverBackground, var(--q-line-soft, #1F1D19)));
   }
 
   .theia-workbench-history-nav-group .theia-workbench-history-nav-btn.codicon::before {
@@ -599,7 +599,7 @@
     margin: 0;
     padding-left: 0;
     overflow: hidden;
-    color: var(--q-text, var(--qaap-ink, #F4F1E8));
+    color: var(--qaap-ink, var(--theia-foreground, var(--q-text, #F4F1E8)));
     font-family: var(--q-font-sans, var(--qaap-font-sans, var(--theia-ui-font-family)));
     font-size: 13px;
     font-weight: 700;
@@ -614,7 +614,7 @@
     content: 'workspace';
     display: block;
     margin-left: 0;
-    color: var(--q-muted, var(--qaap-muted, #85816F));
+    color: var(--qaap-muted, var(--theia-descriptionForeground, var(--q-muted, #85816F)));
     font-family: var(--q-font-sans, var(--qaap-font-sans, var(--theia-ui-font-family)));
     font-size: 9px;
     font-weight: 600;
@@ -626,7 +626,7 @@
 
   .theia-workbench-nav-controls .theia-workbench-current-project-name::after {
     content: ' ' attr(data-branch);
-    color: var(--q-muted, var(--qaap-muted, #85816F));
+    color: var(--qaap-muted, var(--theia-descriptionForeground, var(--q-muted, #85816F)));
     font-family: var(--q-font-mono, var(--qaap-font-mono, var(--theia-code-font-family)));
     font-size: 10px;
     font-weight: 400;
@@ -3180,7 +3180,7 @@ body.theia-mobile-mod-landing #theia-app-shell.theia-mod-mobile-one-column #thei
   align-items: center;
   gap: 12px;
   padding: 14px 4px;
-  background: var(--q-bg, var(--qaap-bg, var(--theia-editor-background)));
+  background: var(--qaap-bg, var(--theia-editor-background, var(--q-bg, #0E0D0B)));
   border: none;
   border-bottom: 1px solid var(--theia-panel-border, rgba(128, 128, 128, 0.16));
   cursor: pointer;
