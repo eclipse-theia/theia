@@ -7,6 +7,7 @@
 ## 1.73.0 - tbd
 
 - [ai-core] discovered skills from `.agents/skills` directories alongside `.prompts/skills` (workspace and home directory) [#17553](https://github.com/eclipse-theia/theia/pull/17553)
+- [preview] deprecated the `@theia/preview` extension and stopped publishing it on npm. Please use the built-in VS Code Markdown extension instead, which offers the same feature set. [#tbd](https://github.com/eclipse-theia/theia/pull/tbd)
 - [terminal] fixed Cmd+V / Ctrl+V paste in the integrated terminal and restored the effect of the `terminal.enablePaste` and `terminal.enableCopy` preferences [#17603](https://github.com/eclipse-theia/theia/pull/17603)
 
 <a name="breaking_changes_1.73.0">[Breaking Changes:](#breaking_changes_1.73.0)</a>

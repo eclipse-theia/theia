@@ -81,7 +81,6 @@
     "@theia/plugin-ext-headless": "1.72.0",
     "@theia/plugin-ext-vscode": "1.72.0",
     "@theia/preferences": "1.72.0",
-    "@theia/preview": "1.72.0",
     "@theia/process": "1.72.0",
     "@theia/property-view": "1.72.0",
     "@theia/remote": "1.72.0",

@@ -2,6 +2,7 @@
   "name": "@theia/preview",
   "version": "1.72.0",
   "description": "Theia - Preview Extension",
+  "private": true,
   "dependencies": {
     "@theia/core": "1.72.0",
     "@theia/editor": "1.72.0",
