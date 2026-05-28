@@ -16,6 +16,9 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
+import { MessagingListenerContribution } from '@theia/core/lib/node/messaging/messaging-listeners';
+import { RemoteAutoShutdownService } from './remote-auto-shutdown-service';
+import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
@@ -86,4 +89,12 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(SSHIdentityFileCollector).toSelf().inSingletonScope();
     bindRemotePreferences(bind);
+
+    bind(RemoteAutoShutdownService).toSelf().inSingletonScope();
+    bind(CliContribution).toService(RemoteAutoShutdownService);
+    bind(MessagingListenerContribution).toService(RemoteAutoShutdownService);
+
+    bind(RemoteCliContribution).toConstantValue({
+        enhanceArgs: () => ['--remote-auto-shutdown']
+    });
 });

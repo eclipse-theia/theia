@@ -19,7 +19,6 @@ import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester
 import { Socket } from 'net';
 import { exec, spawn } from 'child_process';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import * as fs from 'fs';
 
 export interface RemoteWslConnectionOptions {
     id: string;
@@ -121,32 +120,17 @@ export class RemoteWslConnection implements RemoteConnection {
         return deferred.promise;
     }
 
-    async copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void> {
+    async copy(localPath: string, remotePath: string): Promise<void> {
         const deferred = new Deferred<void>();
         const wslPath = `\\\\wsl$\\${this.distribution}\\${remotePath}`;
 
-        if (typeof localPath === 'string') {
-            exec(`copy "${localPath}" "${wslPath}"`, error => {
-                if (error) {
-                    deferred.reject(error);
-                } else {
-                    deferred.resolve();
-                }
-            });
-        } else if (Buffer.isBuffer(localPath)) {
-            fs.writeFile(wslPath, localPath, (error: Error) => {
-                if (error) {
-                    deferred.reject(error);
-                } else {
-                    deferred.resolve();
-                }
-            });
-        } else {
-            const writeStream = fs.createWriteStream(wslPath);
-            localPath.pipe(writeStream);
-            writeStream.on('finish', () => deferred.resolve());
-            writeStream.on('error', (error: Error) => deferred.reject(error));
-        }
+        exec(`copy "${localPath}" "${wslPath}"`, error => {
+            if (error) {
+                deferred.reject(error);
+            } else {
+                deferred.resolve();
+            }
+        });
 
         return deferred.promise;
     }

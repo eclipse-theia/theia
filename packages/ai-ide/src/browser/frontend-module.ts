@@ -125,6 +125,7 @@ import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { PRReviewAgent } from './review/pr-review-agent';
+import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -356,4 +357,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
+    bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
 });
