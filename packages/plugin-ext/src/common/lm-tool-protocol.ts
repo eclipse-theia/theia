@@ -47,7 +47,7 @@ export interface LanguageModelToolsMain {
     /**
      * Register a language model tool.
      */
-    $registerTool(handle: number, name: string, metadata: LanguageModelToolDto): void;
+    $registerTool(handle: number, name: string, metadata: LanguageModelToolDto, pluginId: string): void;
 
     /**
      * Unregister a language model tool.

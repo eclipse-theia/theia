@@ -37,6 +37,7 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
     private readonly tools = new Map<number, theia.LanguageModelTool<unknown>>();
     private readonly toolNameToHandle = new Map<string, number>();
     private readonly toolContributions = new Map<string, PluginPackageLanguageModelToolContribution>();
+    private readonly registeredToolMetadata = new Map<number, LanguageModelToolDto>();
 
     constructor(protected readonly rpc: RPCProtocol) {
         this.proxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.LM_TOOLS_MAIN);
@@ -49,10 +50,10 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
         }
     }
 
-    registerTool<T>(name: string, tool: theia.LanguageModelTool<T>): theia.Disposable {
+    registerTool<T>(name: string, tool: theia.LanguageModelTool<T>, pluginId: string): theia.Disposable {
         const contribution = this.toolContributions.get(name);
         if (!contribution) {
-            this.logger.warn(`Tool '${name}' is not declared in package.json contributes.languageModelTools. Registration skipped.`);
+            this.logger.warn(`Tool '${name}' is not declared in package.json contributes.languageModelTools.`);
         }
         const handle = this.handleCounter++;
         this.tools.set(handle, tool);
@@ -64,11 +65,13 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
             inputSchema: contribution?.inputSchema,
             tags: contribution?.tags,
         };
-        this.proxy.$registerTool(handle, name, metadata);
+        this.registeredToolMetadata.set(handle, metadata);
+        this.proxy.$registerTool(handle, name, metadata, pluginId);
 
         return Disposable.create(() => {
             this.tools.delete(handle);
             this.toolNameToHandle.delete(name);
+            this.registeredToolMetadata.delete(handle);
             this.proxy.$unregisterTool(handle);
         });
     }
@@ -86,12 +89,31 @@ export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
     }
 
     getTools(): theia.LanguageModelToolInformation[] {
-        return [...this.toolContributions.values()].map(c => ({
-            name: c.name,
-            description: c.description ?? '',
-            inputSchema: c.inputSchema,
-            tags: c.tags ?? [],
-        }));
+        const result = new Map<string, theia.LanguageModelToolInformation>();
+        // Add declared tool contributions from package.json
+        for (const c of this.toolContributions.values()) {
+            result.set(c.name, {
+                name: c.name,
+                description: c.description ?? '',
+                inputSchema: c.inputSchema,
+                tags: c.tags ?? [],
+            });
+        }
+        // Add dynamically registered tools not already covered by declarations
+        for (const [name, handle] of this.toolNameToHandle.entries()) {
+            if (!result.has(name)) {
+                const metadata = this.registeredToolMetadata.get(handle);
+                if (metadata) {
+                    result.set(name, {
+                        name: metadata.name,
+                        description: metadata.description ?? '',
+                        inputSchema: metadata.inputSchema,
+                        tags: metadata.tags ?? [],
+                    });
+                }
+            }
+        }
+        return [...result.values()];
     }
 
     async $invokeTool(handle: number, argsString: string, token?: CancellationToken): Promise<ToolInvocationResult> {

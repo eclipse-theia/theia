@@ -19913,12 +19913,14 @@ export module '@theia/plugin' {
         /**
          * Options to hint at how many tokens the tool should return in its response, and enable the tool to count tokens
          * accurately.
+         * @stubbed
          */
         tokenizationOptions?: LanguageModelToolTokenizationOptions;
     }
 
     /**
      * Options related to tokenization for a tool invocation.
+     * @stubbed
      */
     export interface LanguageModelToolTokenizationOptions {
         /**
@@ -19989,6 +19991,7 @@ export module '@theia/plugin' {
          *
          * * *Note 1:* Must be free of side-effects.
          * * *Note 2:* A call to `prepareInvocation` is not necessarily followed by a call to `invoke`.
+         * @stubbed
          */
         prepareInvocation?(options: LanguageModelToolInvocationPrepareOptions<T>, token: CancellationToken): ProviderResult<PreparedToolInvocation>;
     }
@@ -19996,6 +19999,7 @@ export module '@theia/plugin' {
     /**
      * When this is returned in {@link PreparedToolInvocation}, the user will be asked to confirm before running the tool. These
      * messages will be shown with buttons that say "Continue" and "Cancel".
+     * @stubbed
      */
     export interface LanguageModelToolConfirmationMessages {
         /**
@@ -20011,6 +20015,7 @@ export module '@theia/plugin' {
 
     /**
      * The result of a call to {@link LanguageModelTool.prepareInvocation}.
+     * @stubbed
      */
     export interface PreparedToolInvocation {
         /**

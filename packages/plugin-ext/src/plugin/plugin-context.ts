@@ -1386,7 +1386,7 @@ export function createAPIFactory(
                 return lmToolExt.invokeTool(name, options, token);
             },
             registerTool<T>(name: string, tool: theia.LanguageModelTool<T>): Disposable {
-                const d = lmToolExt.registerTool(name, tool);
+                const d = lmToolExt.registerTool(name, tool, plugin.model.id);
                 return new Disposable(() => d.dispose());
             },
             get tools(): readonly theia.LanguageModelToolInformation[] {
