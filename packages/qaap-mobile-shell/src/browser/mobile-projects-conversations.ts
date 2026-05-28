@@ -16,6 +16,7 @@ import {
     QaapAgentMessageDTO,
     listAllConversationGroups,
 } from '../common/qaap-agent-conversation-client';
+import { cwdMatchesProject, lookupByCwd, normalizeCwd } from './mobile-projects-active-tasks';
 
 const STREAM_URL = `${QAAP_AGENT_CONVERSATION_API_PATH}/stream`;
 const RECONNECT_DELAY_MS = 5_000;
@@ -434,14 +435,6 @@ function sortConversations(list: QaapAgentConversationSummaryDTO[]): QaapAgentCo
     });
 }
 
-function normalizeCwd(cwd: string): string {
-    let normalized = cwd.replace(/\\/g, '/');
-    while (normalized.length > 1 && normalized.endsWith('/')) {
-        normalized = normalized.slice(0, -1);
-    }
-    return normalized;
-}
-
 function cwdBaseName(cwd: string): string {
     return normalizeCwd(cwd).split('/').pop()?.toLowerCase() ?? '';
 }
@@ -452,38 +445,6 @@ function uriToFsPath(uri: URI): string {
         return raw.slice(1);
     }
     return raw;
-}
-
-function lookupByCwd<T>(map: Map<string, T>, cwd: string): T | undefined {
-    const normalized = normalizeCwd(cwd);
-    const direct = map.get(normalized);
-    if (direct !== undefined) {
-        return direct;
-    }
-    for (const [key, value] of map) {
-        if (normalizeCwd(key) === normalized) {
-            return value;
-        }
-    }
-    return undefined;
-}
-
-function cwdMatchesProject(
-    cwd: string,
-    project: { readonly name: string; readonly github?: { readonly owner: string; readonly name: string } },
-): boolean {
-    const normalized = normalizeCwd(cwd).toLowerCase();
-    const base = normalized.split('/').pop() ?? '';
-    if (base === project.name.toLowerCase()) {
-        return true;
-    }
-    if (project.github) {
-        const repoPath = `${project.github.owner}/${project.github.name}`.toLowerCase();
-        if (normalized.endsWith(`/${repoPath}`) || normalized.endsWith(`/repos/${repoPath}`)) {
-            return true;
-        }
-    }
-    return false;
 }
 
 function excerpt(text: string): string {

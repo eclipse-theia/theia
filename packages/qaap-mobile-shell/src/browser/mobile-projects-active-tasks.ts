@@ -320,7 +320,8 @@ export function normalizeCwd(cwd: string): string {
     return normalized;
 }
 
-function lookupByCwd<T>(map: Map<string, T>, cwd: string): T | undefined {
+/** @internal Exported to avoid duplication with mobile-projects-conversations. */
+export function lookupByCwd<T>(map: Map<string, T>, cwd: string): T | undefined {
     const normalized = normalizeCwd(cwd);
     const direct = map.get(normalized);
     if (direct !== undefined) {
