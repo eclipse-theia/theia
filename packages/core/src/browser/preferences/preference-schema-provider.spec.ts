@@ -24,6 +24,7 @@ import { bindPreferenceService } from '../frontend-application-bindings';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { IndexedAccess, PreferenceDataProperty, PreferenceSchemaService } from '../../common/preferences/preference-schema';
 import { PreferenceProvider, PreferenceProviderProvider, PreferenceScope } from '../../common/preferences';
+import { ILogger } from '../../common';
 
 disableJSDOM();
 
@@ -38,6 +39,16 @@ let testContainer: Container;
 function createTestContainer(): Container {
     const result = new Container();
     bindPreferenceService(result.bind.bind(result));
+
+    result.bind(ILogger).toConstantValue({
+        error: () => { },
+        warn: () => { },
+        info: () => { },
+        debug: () => { },
+        trace: () => { },
+        fatal: () => { }
+    } as unknown as ILogger);
+
     return result;
 }
 
