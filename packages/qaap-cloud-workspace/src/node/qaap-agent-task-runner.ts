@@ -887,6 +887,10 @@ export class QaapAgentTaskRunner {
     /**
      * When QAIQ runs with OpenRouter/Gemini/Ollama/NVIDIA flags, drop Anthropic credentials so the
      * CLI does not fall back to subscription OAuth and return 429 instead of using BYOK keys.
+     *
+     * Always sets CLAUDE_CODE_USE_OPENAI explicitly so that saved profile files
+     * (/root/.openclaude.json, .openclaude-profile.json) cannot override the provider
+     * the user configured in QAAP Settings.
      */
     protected applyQaiqProviderEnv(env: NodeJS.ProcessEnv, command: string, binding?: QaapQaiqModelBinding): void {
         if (!this.isQaiqRunner(undefined, command)) {
@@ -902,9 +906,15 @@ export class QaapAgentTaskRunner {
         }
         if (binding?.vendor === 'openrouter' || (command.includes('--provider openai') && env.OPENROUTER_API_KEY?.trim())) {
             this.applyOpenRouterOpenAiCompatEnv(env);
-        }
-        if (binding?.vendor === 'nvidia' || (command.includes('--provider openai') && env.NVIDIA_API_KEY?.trim() && !env.OPENROUTER_API_KEY?.trim())) {
+            env.CLAUDE_CODE_USE_OPENAI = '1';
+        } else if (binding?.vendor === 'nvidia' || (command.includes('--provider openai') && env.NVIDIA_API_KEY?.trim() && !env.OPENROUTER_API_KEY?.trim())) {
             this.applyNvidiaOpenAiCompatEnv(env);
+            env.CLAUDE_CODE_USE_OPENAI = '1';
+        } else if (command.includes('--provider openai') && env.OPENAI_API_KEY?.trim()) {
+            env.CLAUDE_CODE_USE_OPENAI = '1';
+        } else {
+            // Gemini, Ollama, Anthropic, Mistral — profile files must not force OpenAI mode.
+            env.CLAUDE_CODE_USE_OPENAI = '0';
         }
     }
 
