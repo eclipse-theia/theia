@@ -74,7 +74,7 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
     );
 
 export interface ToolRequestParameterProperty {
-    type?: string;
+    type?: string | string[];
     anyOf?: ToolRequestParameterProperty[];
     [key: string]: unknown;
 }
@@ -117,8 +117,18 @@ export namespace ToolRequest {
                 }
             }
         }
-        if ('type' in record && typeof record.type !== 'string') {
-            return false;
+        // Check type field: it can be a string (single type) or an array of strings (union type)
+        if ('type' in record) {
+            if (typeof record.type !== 'string' && !Array.isArray(record.type)) {
+                return false;
+            }
+            if (Array.isArray(record.type)) {
+                for (const typeItem of record.type) {
+                    if (typeof typeItem !== 'string') {
+                        return false;
+                    }
+                }
+            }
         }
 
         // No further checks required for additional properties.
